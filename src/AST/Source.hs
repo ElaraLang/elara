@@ -1,8 +1,26 @@
-module AST.Source (Expr, Expr (..), Identifier, Identifier (..)) where
+module AST.Source where
 
 data Identifier
   = NormalIdentifier String
   | OpIdentifier String
+  deriving (Show, Eq)
+
+data Type
+  = UnitType
+  | TypeVariable Identifier
+  | TupleType Type Type [Type]
+  | Type String [Type]
+  | PureFunctionType Type Type
+  | ImpureFunctionType Type Type
+  deriving (Show, Eq)
+
+data Def = Def Identifier Type deriving (Show, Eq)
+
+data Let = Let (Maybe Def) Identifier Expr deriving (Show, Eq)
+
+data Line
+  = DefLetLine Let
+  | ExprLine Expr
   deriving (Show, Eq)
 
 data Expr
@@ -10,5 +28,6 @@ data Expr
   | IntE Integer
   | FloatE Double
   | CharE Char
-  | VarE Identifier Expr
+  | Block [Line]
+  | LetE Let Expr Expr -- let a = b in c
   deriving (Show, Eq)

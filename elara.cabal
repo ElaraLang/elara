@@ -27,6 +27,9 @@ library
   exposed-modules:
       AST.Source
       Lib
+      Parse.Construct
+      Parse.File
+      Parse.Indent
       Parse.Literal
       Parse.Space
   other-modules:
