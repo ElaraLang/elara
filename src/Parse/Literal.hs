@@ -1,7 +1,6 @@
 module Parse.Literal where
 
 import AST.Source
-import Debug.Trace
 import qualified Text.Parsec as P
 import Text.ParserCombinators.Parsec ((<|>))
 import qualified Text.ParserCombinators.Parsec as P
@@ -25,7 +24,7 @@ number = do
   integer <- P.many1 P.digit
   float <- P.optionMaybe $ P.char '.' >> P.many1 P.digit
   let intPart = read integer :: Integer
-  return $ case trace "float" float of
+  return $ case float of
     Nothing -> IntE intPart
     Just floatPart -> FloatE $ fromIntegral intPart + read ("0." ++ floatPart)
 
