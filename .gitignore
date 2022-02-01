@@ -1,0 +1,4 @@
+.stack-work/
+*~
+# Project exclude paths
+/out/
