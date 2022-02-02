@@ -1,6 +1,11 @@
 module Lib
-    ( someFunc
-    ) where
+  ( someFunc,
+  )
+where
+
+import Parse.File
 
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+someFunc = do
+  content <- readFile "source.elr"
+  print $ parseElara content

@@ -61,7 +61,7 @@ letName = do
 let_ :: IndentParser Let
 let_ = Indent.withPos $ do
   def_ <- P.optionMaybe (def <* P.newline)
-  b <- Indent.withBlock (\n body -> Let def_ n (Block body)) letName (line <* spaces)
+  b <- Indent.withBlock ((. Block) . Let def_) letName (line <* spaces)
   spaces
   return b
 
