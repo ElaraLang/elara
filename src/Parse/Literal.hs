@@ -5,29 +5,30 @@ import qualified Text.Parsec as P
 import Text.ParserCombinators.Parsec ((<|>))
 import qualified Text.ParserCombinators.Parsec as P
 import Parse.Indent (IndentParser)
+import Text.Parsec (try)
 
 string :: IndentParser Expr
-string = do
+string = try $ do
   _ <- P.char '"'
   body <- P.many (P.noneOf "\"")
   _ <- P.char '"'
   return $ StringE body
 
 char :: IndentParser Expr
-char = do
+char = try $ do
   _ <- P.char '\''
   content <- P.anyChar
   _ <- P.char '\''
   return $ CharE content
 
 number :: IndentParser Expr
-number = do
+number = try $ do
   integer <- P.many1 P.digit
-  float <- P.optionMaybe $ P.char '.' >> P.many1 P.digit
-  let intPart = read integer :: Integer
+  float <-  P.optionMaybe $ try (P.char '.' *> P.many1 P.digit)
+  let intPart = read integer 
   return $ case float of
     Nothing -> IntE intPart
     Just floatPart -> FloatE $ fromIntegral intPart + read ("0." ++ floatPart)
 
 literal :: IndentParser Expr
-literal = string <|> char <|> number
+literal = try (string <|> char <|> number)

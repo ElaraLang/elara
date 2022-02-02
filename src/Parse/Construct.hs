@@ -1,11 +1,13 @@
 module Parse.Construct where
 
 import AST.Source
+import Control.Monad (void)
 import Parse.Indent (IndentParser)
 import Parse.Literal
-import Text.Parsec (spaces, try)
+import Text.Parsec (spaces, try, (<?>))
 import qualified Text.Parsec as P
 import qualified Text.Parsec.Indent as Indent
+import Text.Parsec.Token (reservedOp)
 import Text.ParserCombinators.Parsec (Parser, (<|>))
 
 operatorSymbol :: IndentParser Char
@@ -66,21 +68,24 @@ let_ = Indent.withPos $ do
   return b
 
 line :: IndentParser Line
-line =
-  DefLetLine <$> let_
-    <|> ExprLine <$> expression
-    
+line = linePart
+  where
+    linePart =
+      DefLetLine <$> let_
+          <|> ExprLine <$> expression
+
+parseOp :: IndentParser (Expr -> Expr -> Expr)
+parseOp = do
+  spaces
+  symbol <- P.many1 operatorSymbol
+  spaces
+  return $ BinaryOp symbol
+
 binaryOp :: IndentParser Expr
-binaryOp = do
-  a <- expression
-  spaces
-  op <- P.many1 operatorSymbol
-  spaces
-  b <- expression
-  return $ BinaryOp op a b  
+binaryOp = try $ P.chainl1 literal parseOp
 
 expression :: IndentParser Expr
-expression = literal <|> binaryOp
+expression = binaryOp
 
 file :: IndentParser [Line]
-file = P.many line <* P.eof
+file = P.manyTill line (try P.eof)
