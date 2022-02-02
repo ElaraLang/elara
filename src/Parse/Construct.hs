@@ -69,9 +69,18 @@ line :: IndentParser Line
 line =
   DefLetLine <$> let_
     <|> ExprLine <$> expression
+    
+binaryOp :: IndentParser Expr
+binaryOp = do
+  a <- expression
+  spaces
+  op <- P.many1 operatorSymbol
+  spaces
+  b <- expression
+  return $ BinaryOp op a b  
 
 expression :: IndentParser Expr
-expression = literal
+expression = literal <|> binaryOp
 
 file :: IndentParser [Line]
 file = P.many line <* P.eof

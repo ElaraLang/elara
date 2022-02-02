@@ -30,4 +30,5 @@ data Expr
   | CharE Char
   | Block [Line]
   | LetE Let Expr Expr -- let a = b in c
+  | BinaryOp String Expr Expr
   deriving (Show, Eq)
