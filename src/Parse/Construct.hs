@@ -85,7 +85,7 @@ binaryOp :: IndentParser Expr
 binaryOp = try $ P.chainl1 literal parseOp
 
 expression :: IndentParser Expr
-expression = binaryOp
+expression = binaryOp <|> literal
 
 file :: IndentParser [Line]
 file = P.manyTill line (try P.eof)
