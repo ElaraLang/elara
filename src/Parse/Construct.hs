@@ -1,17 +1,15 @@
 module Parse.Construct where
 
 import AST.Source
-import Control.Monad (void)
 import Parse.Indent (IndentParser)
+import Parse.Language
 import Parse.Literal
 import Text.Parsec (spaces, try, (<?>))
 import qualified Text.Parsec as P
+import Text.Parsec.Expr (Assoc (..), Operator (..), buildExpressionParser)
 import qualified Text.Parsec.Indent as Indent
 import Text.Parsec.Token (reservedOp)
-import Text.ParserCombinators.Parsec (Parser, (<|>))
-
-operatorSymbol :: IndentParser Char
-operatorSymbol = P.oneOf "!#$%+-/*.<>=?@~\\^|"
+import Text.ParserCombinators.Parsec ((<|>))
 
 letter :: [Char]
 letter = ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['_']
@@ -24,16 +22,6 @@ normalIdentifier = do
   c <- P.oneOf letter
   cs <- P.many (P.oneOf letterOrDigit)
   return $ NormalIdentifier (c : cs)
-
-identifier :: IndentParser Identifier
-identifier = do
-  paren <- P.optionMaybe (P.char '(')
-  case paren of
-    Just _ -> do
-      body <- P.many1 operatorSymbol
-      _ <- P.char ')'
-      return $ OpIdentifier body
-    Nothing -> normalIdentifier
 
 type_ :: IndentParser Type
 type_ =
@@ -72,7 +60,22 @@ line = linePart
   where
     linePart =
       DefLetLine <$> let_
-          <|> ExprLine <$> expression
+        <|> ExprLine <$> expression
+
+operatorTable =
+  [ [],
+    [],
+    [standardBinary "*" AssocLeft, standardBinary "/" AssocLeft],
+    [standardBinary "+" AssocLeft, standardBinary "-" AssocLeft]
+  ]
+
+standardBinary :: String -> Assoc -> Operator s2 u2 m2 Expr
+standardBinary c = binary c (BinaryOp c)
+
+binary :: String -> (a -> a -> a) -> Assoc -> Operator s2 u2 m2 a
+binary name fun = Infix $ do
+  reservedOp elaraLexer name
+  return fun
 
 parseOp :: IndentParser (Expr -> Expr -> Expr)
 parseOp = do
@@ -81,11 +84,14 @@ parseOp = do
   spaces
   return $ BinaryOp symbol
 
-binaryOp :: IndentParser Expr
-binaryOp = try $ P.chainl1 literal parseOp
+namedReference :: IndentParser Expr
+namedReference = try (spaces *> (NamedReference <$> identifier) <* spaces)
+
+term :: IndentParser Expr
+term = literal <|> namedReference
 
 expression :: IndentParser Expr
-expression = binaryOp <|> literal
+expression = buildExpressionParser operatorTable term
 
 file :: IndentParser [Line]
 file = P.manyTill line (try P.eof)

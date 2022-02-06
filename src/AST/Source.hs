@@ -31,4 +31,5 @@ data Expr
   | Block [Line]
   | LetE Let Expr Expr -- let a = b in c
   | BinaryOp String Expr Expr
+  | NamedReference Identifier
   deriving (Show, Eq)
