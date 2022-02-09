@@ -65,7 +65,7 @@ data Constant = IntC Int
               | UnitC
               deriving (Show, Eq)
 
-data Expression = ConstE Comnstant
+data Expression = ConstE Constant
                 | LetE Pattern Expression
                 | IdentifierE Identifier
                 | InfixApplicationE Identifier Expression Expression
