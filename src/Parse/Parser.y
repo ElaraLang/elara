@@ -1,23 +1,27 @@
 {
-module Parser where
-import qualified Lexer as L
+module Parse.Parser where
+import Parse.Lexer
 }
 
-%name parseElara
-%tokentype { L.Token }
 %nonassoc int string identifier let op '`'
 %nonassoc APP
+
+%name parseElara
+%tokentype { Token }
+%monad { Alex } { >>= } { return }
+%lexer { lexwrap } { EOF }
+%error { parseError }
 
 
 
 %token
-   let { L.Let _ }
-   int { L.Int _ $$ }
-   string { L.Str _ $$ }
-   identifier { L.Identifier _ $$ }
-   eq { L.Eq _ }
-   op { L.Operator _ $$ }
-   '`' { L.Backtick _ }
+   let { Let _ }
+   int { Int _ $$ }
+   string { Str _ $$ }
+   identifier { Identifier _ $$ }
+   eq { Eq _ }
+   op { Operator _ $$ }
+   '`' { Backtick _ }
 %%
 
 Expression :: { Expression }
@@ -61,19 +65,16 @@ data Constant = IntC Int
               | UnitC
               deriving (Show, Eq)
 
-data Expression = ConstE Constant
+data Expression = ConstE Comnstant
                 | LetE Pattern Expression
                 | IdentifierE Identifier
                 | InfixApplicationE Identifier Expression Expression
                 | FuncApplicationE Expression Expression
                 deriving (Show, Eq)
 
-happyError :: [L.Token] -> a
-happyError tks = error ("Parse error at " ++ lcn ++ "\n")
-	where
-	lcn = 	case tks of
-		  [] -> "end of file"
-		  tk:_ -> "line " ++ show l ++ ", column " ++ show c
-			where
-			L.AlexPn _ l c = L.tokenPosition tk
+parseError _ = do
+  ((AlexPn _ line column), _, _, _) <- alexGetInput
+  alexError ("parse error at line " ++ (show line) ++ ", column " ++ (show column))
+
+lexwrap = (alexMonadScan >>=)
 }

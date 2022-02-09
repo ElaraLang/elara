@@ -26,9 +26,9 @@ source-repository head
 library
   exposed-modules:
       AST.Source
-      Lexer
       Lib
-      Parser
+      Parse.Lexer
+      Parse.Parser
   other-modules:
       Paths_elara
   hs-source-dirs:
