@@ -5,6 +5,10 @@ import qualified Lexer as L
 
 %name parseElara
 %tokentype { L.Token }
+%nonassoc int string identifier let op '`'
+%nonassoc APP
+
+
 
 %token
    let { L.Let _ }
@@ -20,7 +24,7 @@ Expression :: { Expression }
 Expression  : Constant {ConstE $1}
             | let Pattern eq Expression {LetE $2 $4}
             | Identifier {IdentifierE $1}
-            | Expression Expression {FuncApplicationE $1 $2}
+            | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
 
 Identifier :: { Identifier }

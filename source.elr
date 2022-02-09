@@ -1,1 +1,1 @@
-let a = 3 `div` 4
+let a = f a b

@@ -13,4 +13,3 @@ someFunc = do
   let toks = alexScanTokens content
   let ast = parseElara toks
   print ast
---  print $ parseElara content
