@@ -25,6 +25,7 @@ dependencies:
   - indents
   - text
   - mtl
+  - array
 
 library:
   source-dirs: src

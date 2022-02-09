@@ -3,9 +3,14 @@ module Lib
   )
 where
 
-import Parse.File
+import Lexer
+import Parser
 
 someFunc :: IO ()
 someFunc = do
   content <- readFile "source.elr"
-  print $ parseElara content
+
+  let toks = alexScanTokens content
+  let ast = parseElara toks
+  print ast
+--  print $ parseElara content

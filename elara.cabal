@@ -26,19 +26,16 @@ source-repository head
 library
   exposed-modules:
       AST.Source
+      Lexer
       Lib
-      Parse.Construct
-      Parse.File
-      Parse.Indent
-      Parse.Language
-      Parse.Literal
-      Parse.Space
+      Parser
   other-modules:
       Paths_elara
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , indents
     , mtl
     , parsec
@@ -53,7 +50,8 @@ executable elara-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , elara
     , indents
     , mtl
@@ -70,7 +68,8 @@ test-suite elara-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , elara
     , indents
     , mtl
