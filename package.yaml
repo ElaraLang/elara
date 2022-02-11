@@ -6,9 +6,17 @@ author: "Author name here"
 maintainer: "example@example.com"
 copyright: "2022 Author name here"
 
+build-tools:
+  - alex
+  - happy
+
 extra-source-files:
   - README.md
   - ChangeLog.md
+  - src/Parse/Lexer.x
+  - src/Parse/Parser.y
+
+
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

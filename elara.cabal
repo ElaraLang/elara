@@ -18,6 +18,8 @@ build-type:     Simple
 extra-source-files:
     README.md
     ChangeLog.md
+    src/Parse/Lexer.x
+    src/Parse/Parser.y
 
 source-repository head
   type: git
@@ -36,6 +38,9 @@ library
       Paths_elara
   hs-source-dirs:
       src
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
@@ -51,6 +56,9 @@ executable elara-exe
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
@@ -68,6 +76,9 @@ test-suite elara-test
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
