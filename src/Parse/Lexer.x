@@ -8,17 +8,12 @@ import Control.Monad.State.Lazy
 $digit = 0-9
 $alpha = [a-zA-Z]
 $op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| ]
-$nl = [\n\r\f]
-$whitechar = [$nl\v\ ]
-$whitespace_no_newline = $whitechar # \n
-$tab = \t
 
 
 tokens :-
-
-  $white+ ;
   \;                    { simpleTok SemiColon }
-  \n$white              { startWhite }
+  \n$white*              { startWhite }
+  $white+               ;
   "--".*				;
   let					 { simpleTok Let }
   in					 { simpleTok In}
@@ -57,9 +52,11 @@ readToken = do
     [] ->
       case alexScan (input s) (lexSC s) of
         AlexEOF -> do
-                     rval <- startWhite 1 ""
+                     r <- startWhite 1 ""
                      put s {pending'tokens = pending'tokens s ++ [EOF]}
-                     return rval
+                     case r of
+                        Nothing -> readToken
+                        Just rval -> return rval
         AlexError inp' -> error $ "Lexical error on line " ++ (show $ ai_line_number inp')
 
         AlexSkip inp' _ -> do
@@ -75,6 +72,14 @@ readToken = do
             Nothing -> readToken
             Just t -> return t
 
+
+readTokens = do
+  tok <- readToken
+  case tok of
+    EOF -> return []
+    _ -> do
+      rest <- readTokens
+      return (tok : rest)
 
 
 lexer :: (Token -> P a) -> P a

@@ -9,6 +9,7 @@ import Control.Monad.State.Lazy
 %nonassoc int string identifier let op '`'
 %nonassoc APP
 
+
 %name parseElara Body
 %tokentype { Token }
 %monad { P }
@@ -33,11 +34,11 @@ import Control.Monad.State.Lazy
 
 Expression :: { Expression }
 Expression  : Constant {ConstE $1}
-            | let Pattern eq Expression {LetE $2 $4}
+            | let Pattern eq Block {LetE $2 (BlockE $ reverse $4) }
             | Identifier {IdentifierE $1}
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
-            | Block {BlockE $1}
+
 
 Identifier :: { Identifier }
 Identifier : identifier { NormalIdentifier $1 }
@@ -60,17 +61,22 @@ Separator : newLine { [] }
           | semiColon { [] }
 
 Block :: { [Expression] }
-Block : BlockBody { [$1] }
-      | indent BlockBody dedent { [$2] }
-      | indent Block BlockBody dedent { $3 : $2 }
+Block : BlockBody { $1 }
+      | Separator Block { $2 }
+      | indent BlockBody dedent { $2 }
 
-BlockBody : Expression Separator { $1 }
+BlockBody :: { [Expression] }
+BlockBody : BlockBody Separator Expression { $3 : $1 }
+          | BlockBody Separator { $1 }
+          | Expression { [$1] }
 
-Line : Expression Separator { ExpressionL $1 }
+Line : Expression { ExpressionL $1 }
 
 Body :: { [Line] }
-Body : {- empty -} { [] }
-     | Body Line { $2 : $1 }
+Body : Body Separator Line { $3 : $1 }
+      | Body Separator { $1 }
+      | Line { [$1] }
+      | {- empty -} { [] }
 
 {
 
