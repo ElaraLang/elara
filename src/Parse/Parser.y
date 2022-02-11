@@ -30,6 +30,9 @@ import Control.Monad.State.Lazy
    semiColon { SemiColon }
    indent { Indent }
    dedent { Dedent }
+   '[' { LSParen }
+   ']' { RSParen }
+   ',' { Comma }
 %%
 
 Expression :: { Expression }
@@ -38,6 +41,16 @@ Expression  : Constant {ConstE $1}
             | Identifier {IdentifierE $1}
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
+            | ListExpression {$1}
+
+ListExpression :: { Expression }
+ListExpression : '[' ListBody ']' {ListE $ reverse $2}
+
+ListBody : ListBody ',' Expression { $3 : $1 }
+      | ListBody ',' { $1 }
+      | Expression { [$1] }
+      | {- empty -} { [] }
+
 
 
 Identifier :: { Identifier }
@@ -104,6 +117,7 @@ data Expression = ConstE Constant
                 | InfixApplicationE Identifier Expression Expression
                 | FuncApplicationE Expression Expression
                 | BlockE [Expression]
+                | ListE [Expression]
                 deriving (Show, Eq)
 
 parseError tok = do

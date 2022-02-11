@@ -20,6 +20,9 @@ tokens :-
   \=                     { simpleTok Eq }
   \".*\"				 { parametrizedTok Str id }
   \`                     { simpleTok Backtick }
+  \[                     { simpleTok LSParen }
+  \]                     { simpleTok RSParen }
+  \,                     { simpleTok Comma }
   $digit+                { parametrizedTok Int read }
   $alpha($alpha|$digit)* { parametrizedTok Identifier id }
   $op+                   { parametrizedTok Operator id }

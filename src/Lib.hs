@@ -25,7 +25,7 @@ showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = showConst val
 showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode expressions) ++ "}"
 showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier op ++ " " ++ showASTNode b
-showASTNode a = show a
+showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 
 showConst :: Constant -> String
 showConst (StringC s) = s
