@@ -4,11 +4,13 @@ module Lib
 where
 
 import Control.Monad (forM_)
-import Parse.Reader
-import Parse.Parser
-import Parse.Utils
-import Parse.AST
 import Data.List (intercalate)
+import Interpreter.Execute
+import Interpreter.State
+import Parse.AST
+import Parse.Parser
+import Parse.Reader
+import Parse.Utils
 
 someFunc :: IO ()
 someFunc = do
@@ -16,8 +18,9 @@ someFunc = do
   let tokens = evalP readTokens content
   print tokens
   let codeLines = parse content
+  env <- initialEnvironment
   forM_ codeLines $ \(ExpressionL ast) -> do
-    putStrLn $ showASTNode ast
+    execute ast env
 
 showASTNode :: Expression -> String
 showASTNode (FuncApplicationE a b) = showASTNode a ++ " " ++ showASTNode b

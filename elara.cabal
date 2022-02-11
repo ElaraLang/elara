@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Interpreter.Execute
       Interpreter.State
       Interpreter.Value
       Lib
@@ -46,6 +47,7 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , containers
     , mtl
     , text
     , utf8-string
@@ -64,6 +66,7 @@ executable elara-exe
   build-depends:
       array
     , base >=4.7 && <5
+    , containers
     , elara
     , mtl
     , text
@@ -84,6 +87,7 @@ test-suite elara-test
   build-depends:
       array
     , base >=4.7 && <5
+    , containers
     , elara
     , mtl
     , text

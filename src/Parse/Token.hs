@@ -19,7 +19,7 @@ data Token = Let
             | LSParen
             | RSParen
             | Comma
-            | Int Int
+            | Int Integer
             | Str String
             | Identifier String
             | Operator String

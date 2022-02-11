@@ -33,6 +33,7 @@ dependencies:
   - mtl
   - array
   - utf8-string
+  - containers
 
 library:
   source-dirs: src
