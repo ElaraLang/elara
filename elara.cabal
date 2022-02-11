@@ -30,8 +30,10 @@ library
       Interpreter.State
       Interpreter.Value
       Lib
+      Parse.AST
       Parse.Lexer
       Parse.Parser
+      Parse.Reader
       Parse.Token
       Parse.Utils
   other-modules:

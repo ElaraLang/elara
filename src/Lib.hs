@@ -4,9 +4,10 @@ module Lib
 where
 
 import Control.Monad (forM_)
-import Parse.Lexer
+import Parse.Reader
 import Parse.Parser
 import Parse.Utils
+import Parse.AST
 import Data.List (intercalate)
 
 someFunc :: IO ()

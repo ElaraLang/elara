@@ -1,9 +1,11 @@
 {
 module Parse.Parser where
 import Parse.Lexer
+import Parse.Reader
 import Parse.Utils
 import Parse.Token
 import Control.Monad.State.Lazy
+import Parse.AST
 }
 
 %nonassoc int string identifier let op '`'
@@ -93,33 +95,6 @@ Body : Body Separator Line { $3 : $1 }
       | {- empty -} { [] }
 
 {
-
-data Line =
-   ExpressionL Expression
-   deriving (Show, Eq)
-
-data Identifier = NormalIdentifier String
-                 | OpIdentifier String
-                 deriving (Show, Eq)
-
-data Pattern = IdentifierP Identifier
-             | TupleP [Pattern]
-             | WildP
-             deriving (Show, Eq)
-
-data Constant = IntC Int
-              | StringC String
-              | UnitC
-              deriving (Show, Eq)
-
-data Expression = ConstE Constant
-                | LetE Pattern Expression
-                | IdentifierE Identifier
-                | InfixApplicationE Identifier Expression Expression
-                | FuncApplicationE Expression Expression
-                | BlockE [Expression]
-                | ListE [Expression]
-                deriving (Show, Eq)
 
 parseError tok = do
   lno <- getLineNo

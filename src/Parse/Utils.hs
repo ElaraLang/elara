@@ -12,7 +12,7 @@ data AlexInput = AlexInput
     ai_bytes :: [Word8],
     ai_rest :: String,
     ai_line_number :: Int,
-    ai'column'number :: Int
+    ai_column_number :: Int
   }
   deriving (Show)
 
@@ -20,9 +20,9 @@ data ParseState = ParseState
   { input :: AlexInput,
     lexSC :: Int, -- lexer start code
     stringBuf :: String, -- temporary storage for strings
-    pending'tokens :: [Token], -- right now used when Parser consumes the lookeahead and decided to put it back
+    pending_tokens :: [Token], -- right now used when Parser consumes the lookeahead and decided to put it back
     indent_stack :: [Int], -- stack of indentation levels
-    pending'position :: TokPosition -- needed when parsing strings, chars, multi-line strings
+    pending_position :: TokPosition -- needed when parsing strings, chars, multi-line strings
   }
   deriving (Show)
 
@@ -35,13 +35,13 @@ initialState s =
             ai_bytes = [],
             ai_rest = s,
             ai_line_number = 1,
-            ai'column'number = 1
+            ai_column_number = 1
           },
       lexSC = 0,
       stringBuf = "",
-      pending'tokens = [],
+      pending_tokens = [],
       indent_stack = [1],
-      pending'position = TokPosition {line = 1, column = 1}
+      pending_position = TokPosition {line = 1, column = 1}
     }
 
 startWhite :: Int -> String -> P (Maybe Token)
@@ -49,7 +49,7 @@ startWhite n _ = do
   s <- get
   let is@(cur : _) = indent_stack s
   when (n > cur) $ do
-    put s {indent_stack = n : is, pending'tokens = [Indent]}
+    put s {indent_stack = n : is, pending_tokens = [Indent]}
   when (n < cur) $ do
     let (pre, post@(top : _)) = span (> n) is
     if top == n
@@ -57,7 +57,7 @@ startWhite n _ = do
         put
           s
             { indent_stack = post,
-              pending'tokens = map (const Dedent) pre
+              pending_tokens = map (const Dedent) pre
             }
       else error "Indents don't match"
   return $ Just NewLine
@@ -76,7 +76,7 @@ alexGetByte ai =
         (char : chars) ->
           let n = ai_line_number ai
               n' = if char == '\n' then n + 1 else n
-              c = ai'column'number ai
+              c = ai_column_number ai
               c' = if char == '\n' then 1 else c + 1
               (b : bs) = encode [char]
            in Just
@@ -86,12 +86,9 @@ alexGetByte ai =
                       ai_bytes = bs,
                       ai_rest = chars,
                       ai_line_number = n',
-                      ai'column'number = c'
+                      ai_column_number = c'
                     }
                 )
-
--- alexInputPrevChar :: AlexInput -> Char
--- alexInputPrevChar (AlexInput { ai'prev = c }) = c
 
 getLineNo :: P Int
 getLineNo = do
@@ -101,7 +98,8 @@ getLineNo = do
 getColNo :: P Int
 getColNo = do
   s <- get
-  return . ai'column'number . input $ s
+  return . ai_column_number . input $ s
 
 evalP :: P a -> String -> a
 evalP m s = evalState m (initialState s)
+
