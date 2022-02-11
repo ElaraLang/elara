@@ -11,6 +11,8 @@ data Token = Let
             | Backtick
             | NewLine
             | SemiColon
+            | Indent
+            | Dedent
             | Int Int
             | Str String
             | Identifier String

@@ -16,9 +16,9 @@ $tab = \t
 
 tokens :-
 
-  $whitespace_no_newline+ ;
+  $white+ ;
   \;                    { simpleTok SemiColon }
-  \n                    { simpleTok NewLine }
+  \n$white              { startWhite }
   "--".*				;
   let					 { simpleTok Let }
   in					 { simpleTok In}
@@ -56,8 +56,11 @@ readToken = do
       return tok
     [] ->
       case alexScan (input s) (lexSC s) of
-        AlexEOF -> return EOF
-        AlexError inp' -> error $ "Lexical error on line " ++ (show $ ai'line'number inp')
+        AlexEOF -> do
+                     rval <- startWhite 1 ""
+                     put s {pending'tokens = pending'tokens s ++ [EOF]}
+                     return rval
+        AlexError inp' -> error $ "Lexical error on line " ++ (show $ ai_line_number inp')
 
         AlexSkip inp' _ -> do
           put s{ input = inp' }
@@ -65,12 +68,14 @@ readToken = do
 
         AlexToken inp' n act -> do
           -- let ll = layout'stack s
-          let (AlexInput{ ai'rest = buf }) = input s -- TODO: rename airest
+          let (AlexInput{ ai_rest = buf }) = input s -- TODO: rename airest
           put s{ input = inp' }
           res <- act n (take n buf)
           case res of
             Nothing -> readToken
             Just t -> return t
+
+
 
 lexer :: (Token -> P a) -> P a
 lexer cont = do

@@ -5,14 +5,16 @@ where
 
 import Parse.Lexer
 import Parse.Parser
+import Control.Monad (forM_)
 
 someFunc :: IO ()
 someFunc = do
   content <- readFile "source.elr"
 
 
-  let ast = parse content
-  putStrLn $ showASTNode ast
+  let lines = parse content
+  forM_ lines $ \(ExpressionL ast) -> do
+    putStrLn $ showASTNode ast
 
 showASTNode :: Expression -> String
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"

@@ -26,6 +26,7 @@ data ParseState = ParseState
   , lexSC :: Int                      -- lexer start code
   , stringBuf :: String               -- temporary storage for strings
   , pending'tokens :: [Token]         -- right now used when Parser consumes the lookeahead and decided to put it back
+  , indent_stack :: [Int]             -- stack of indentation levels
   , pending'position :: TokPosition } -- needed when parsing strings, chars, multi-line strings
   deriving Show
 
@@ -41,7 +42,23 @@ initialState s = ParseState
   , lexSC = 0
   , stringBuf = ""
   , pending'tokens = []
+  , indent_stack = [1]
   , pending'position = TokPosition { line = 1, column = 1 }}
+
+startWhite :: Int -> String -> P Token
+startWhite n _ = do
+	   s<-get
+           let is@(cur:_) = indent_stack s
+           when (n>cur) $ do
+              put s{indent_stack = n:is,pending'tokens = [Indent]}
+           when (n<cur)  $ do
+              let (pre,post@(top:_)) = span (> n) is
+              if top == n then
+                 put s{indent_stack = post,
+                                    pending'tokens = map (const Dedent) pre}
+              else
+                 error "Indents don't match"
+           return NewLine
 
 
 -- The functions that must be provided to Alex's basic interface
