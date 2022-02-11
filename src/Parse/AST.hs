@@ -26,5 +26,6 @@ data Expression = ConstE Constant
                 | FuncApplicationE Expression Expression
                 | BlockE [Expression]
                 | ListE [Expression]
+                | IfElseE Expression Expression Expression
                 deriving (Show, Eq)
 

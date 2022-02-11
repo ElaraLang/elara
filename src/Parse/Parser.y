@@ -47,6 +47,7 @@ Expression  : Constant {ConstE $1}
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
             | ListExpression {$1}
+            | if Expression then Expression else Expression {IfElseE $2 $4 $6}
 
 ListExpression :: { Expression }
 ListExpression : '[' ListBody ']' {ListE $ reverse $2}
