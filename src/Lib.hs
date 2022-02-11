@@ -11,10 +11,8 @@ someFunc = do
   content <- readFile "source.elr"
 
 
-  let ast = runAlex content parseElara
-  case ast of
-    Left err -> putStrLn err
-    Right ast -> putStrLn $ showASTNode ast
+  let ast = parse content
+  putStrLn $ showASTNode ast
 
 showASTNode :: Expression -> String
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"

@@ -26,6 +26,7 @@ dependencies:
   - text
   - mtl
   - array
+  - utf8-string
 
 library:
   source-dirs: src

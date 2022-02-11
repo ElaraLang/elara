@@ -1,6 +1,9 @@
 {
 module Parse.Parser where
 import Parse.Lexer
+import Parse.Utils
+import Parse.Token
+import Control.Monad.State.Lazy
 }
 
 %nonassoc int string identifier let op '`'
@@ -8,20 +11,22 @@ import Parse.Lexer
 
 %name parseElara
 %tokentype { Token }
-%monad { Alex } { >>= } { return }
-%lexer { lexwrap } { EOF }
+%monad { P }
+%lexer { lexer } { EOF }
 %error { parseError }
 
 
 
 %token
-   let { Let _ }
-   int { Int _ $$ }
-   string { Str _ $$ }
-   identifier { Identifier _ $$ }
-   eq { Eq _ }
-   op { Operator _ $$ }
-   '`' { Backtick _ }
+   let { Let }
+   int { Int $$ }
+   string { Str $$ }
+   identifier { Identifier $$ }
+   eq { Eq }
+   op { Operator $$ }
+   '`' { Backtick }
+   newLine { NewLine }
+   semiColon { SemiColon }
 %%
 
 Expression :: { Expression }
@@ -48,6 +53,13 @@ Constant : int { IntC $1 }
          | string { StringC $1 }
 
 
+Separator : newLine { [] }
+          | semiColon { [] }
+
+Block :: { Expression }
+Block : Expression { BlockE [$1] }
+      | Separator Block { BlockE [$2] }
+
 
 {
 
@@ -70,11 +82,16 @@ data Expression = ConstE Constant
                 | IdentifierE Identifier
                 | InfixApplicationE Identifier Expression Expression
                 | FuncApplicationE Expression Expression
+                | BlockE [Expression]
                 deriving (Show, Eq)
 
 parseError _ = do
-  ((AlexPn _ line column), _, _, _) <- alexGetInput
-  alexError ("parse error at line " ++ (show line) ++ ", column " ++ (show column))
+  lno <- getLineNo
+  colno <- getColNo
+  s <- get
+  error $ "Parse error on line " ++ show lno ++ ", column " ++ show colno ++ "." ++ "  " ++ show s
 
-lexwrap = (alexMonadScan >>=)
+parse :: String -> Expression
+parse s = evalP parseElara s
+
 }

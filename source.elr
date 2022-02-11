@@ -1,1 +1,3 @@
-let main = println "hello"
+let main =
+    println "hello"
+    println "b"

@@ -29,6 +29,8 @@ library
       Lib
       Parse.Lexer
       Parse.Parser
+      Parse.Token
+      Parse.Utils
   other-modules:
       Paths_elara
   hs-source-dirs:
@@ -40,6 +42,7 @@ library
     , mtl
     , parsec
     , text
+    , utf8-string
   default-language: Haskell2010
 
 executable elara-exe
@@ -57,6 +60,7 @@ executable elara-exe
     , mtl
     , parsec
     , text
+    , utf8-string
   default-language: Haskell2010
 
 test-suite elara-test
@@ -75,4 +79,5 @@ test-suite elara-test
     , mtl
     , parsec
     , text
+    , utf8-string
   default-language: Haskell2010
