@@ -1,1 +1,2 @@
-let main = println "Hello world"
+let main =
+    getLine >>= println
