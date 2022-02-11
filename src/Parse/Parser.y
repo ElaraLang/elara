@@ -54,8 +54,6 @@ ListBody : ListBody ',' Expression { $3 : $1 }
       | Expression { [$1] }
       | {- empty -} { [] }
 
-
-
 Identifier :: { Identifier }
 Identifier : identifier { NormalIdentifier $1 }
 
