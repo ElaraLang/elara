@@ -28,8 +28,6 @@ source-repository head
 library
   exposed-modules:
       Interpreter.Execute
-      Interpreter.State
-      Interpreter.Value
       Lib
       Parse.AST
       Parse.Lexer

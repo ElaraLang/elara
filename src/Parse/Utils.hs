@@ -59,7 +59,7 @@ startWhite n _ = do
             { indent_stack = post,
               pending_tokens = map (const Dedent) pre
             }
-      else error "Indents don't match"
+      else error $ "Indents don't match ( " ++ show top ++ " vs " ++ show n ++ ")"
   return $ Just NewLine
 
 -- The functions that must be provided to Alex's basic interface
@@ -102,4 +102,3 @@ getColNo = do
 
 evalP :: P a -> String -> a
 evalP m s = evalState m (initialState s)
-

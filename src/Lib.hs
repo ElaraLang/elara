@@ -6,7 +6,6 @@ where
 import Control.Monad (forM_)
 import Data.List (intercalate)
 import Interpreter.Execute
-import Interpreter.State
 import Parse.AST
 import Parse.Parser
 import Parse.Reader
@@ -19,11 +18,13 @@ someFunc = do
   print tokens
   let codeLines = parse content
   env <- initialEnvironment
+  print $ length codeLines
   forM_ codeLines $ \(ExpressionL ast) -> do
+    putStrLn $ showASTNode ast
     execute ast env
 
 showASTNode :: Expression -> String
-showASTNode (FuncApplicationE a b) = showASTNode a ++ " " ++ showASTNode b
+showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ showPattern pattern ++ " = " ++ showASTNode value
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = showConst val
@@ -40,3 +41,4 @@ showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i
 
 showPattern (IdentifierP p) = showIdentifier p
+showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)

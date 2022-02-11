@@ -8,7 +8,7 @@ import Control.Monad.State.Lazy
 import Parse.AST
 }
 
-%nonassoc int string identifier let op '`'
+%nonassoc int string identifier let op if'`' '['
 %nonassoc APP
 
 
@@ -67,8 +67,8 @@ Operator : op { OpIdentifier $1 }
 
 
 Pattern :: { Pattern }
-Pattern : Identifier { IdentifierP $1 }
-        | Identifier FunctionPattern { FunctionP $1 $2 }
+Pattern : Identifier FunctionPattern { FunctionP $1 $2 }
+        | Identifier { IdentifierP $1 }
 
 FunctionPattern :: { [Pattern] }
 FunctionPattern : Pattern { [$1] }

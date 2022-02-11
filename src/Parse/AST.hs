@@ -1,6 +1,6 @@
 module Parse.AST where
 
-data Line
+newtype Line
   = ExpressionL Expression
   deriving (Show, Eq)
 
@@ -15,7 +15,7 @@ identifierValue (OpIdentifier s) = s
 
 data Pattern
   = IdentifierP Identifier
-  | FunctionP { name :: Identifier, args :: [Pattern] }
+  | FunctionP { functionName :: Identifier, functionArgs :: [Pattern] }
   | TupleP [Pattern]
   | WildP
   deriving (Show, Eq)
