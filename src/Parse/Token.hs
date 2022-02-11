@@ -9,6 +9,7 @@ data Token = Let
             | In
             | Eq
             | If
+            | Then
             | Else
             | Backtick
             | NewLine

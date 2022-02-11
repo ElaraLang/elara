@@ -16,6 +16,9 @@ tokens :-
   $white+               ;
   "--".*				;
   let					 { simpleTok Let }
+  if                    { simpleTok If }
+  then                  { simpleTok Then }
+  else                  { simpleTok Else }
   in					 { simpleTok In}
   \=                     { simpleTok Eq }
   \".*\"				 { parametrizedTok Str id }

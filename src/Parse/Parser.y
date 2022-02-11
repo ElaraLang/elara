@@ -20,6 +20,9 @@ import Control.Monad.State.Lazy
 
 %token
    let { Let }
+   if { If }
+   then { Then }
+   else { Else }
    int { Int $$ }
    string { Str $$ }
    identifier { Identifier $$ }
