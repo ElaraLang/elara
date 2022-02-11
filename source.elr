@@ -1,2 +1,2 @@
-let main =
+let main a =
     println "hello world"

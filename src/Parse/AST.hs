@@ -15,6 +15,7 @@ identifierValue (OpIdentifier s) = s
 
 data Pattern
   = IdentifierP Identifier
+  | FunctionP { name :: Identifier, args :: [Pattern] }
   | TupleP [Pattern]
   | WildP
   deriving (Show, Eq)

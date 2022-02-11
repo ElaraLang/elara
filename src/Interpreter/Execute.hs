@@ -36,7 +36,7 @@ instance Execute Expression where
     bindingMap <- readIORef (bindings env)
     let val = bindingMap ! ident
     return $ Just val
-    
+
   execute (FuncApplicationE a b) state = do
     aVal <- execute a state
     let (Just (FunctionValue func)) = aVal
