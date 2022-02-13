@@ -31,7 +31,7 @@ tokens :-
   \,                     { simpleTok Comma }
   $digit+                { parametrizedTok Int read }
   <0> @variableIdentifer { parametrizedTok Identifier id }
-  $op+                   { parametrizedTok Operator id }
+  <0> $op+                   { parametrizedTok Operator id }
   <0> \"                 { beginString }
   <stringSC> \"          { endString }
   <stringSC> .      { appendToString }
