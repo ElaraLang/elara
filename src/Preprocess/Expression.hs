@@ -3,7 +3,6 @@ module Preprocess.Expression where
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
-import Debug.Trace (traceStack)
 
 preprocessExpression :: P.Expression -> I.Expression
 preprocessExpression (P.ConstE c) = I.Constant (preprocessConst c)

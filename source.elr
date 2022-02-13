@@ -1,1 +1,5 @@
-let f a b = a
+let f a b =
+    println "F!"
+    println a
+    println b
+f "hello" "world"

@@ -21,6 +21,8 @@ someFunc = do
   let ast = parse content
   env <- initialEnvironment
   forM_ ast $ \line -> do
+    print line
+    let preprocessed = preprocess line
     putStrLn "Preprocessed AST: "
-    print $ preprocess line
-    execute line env
+    print preprocessed
+    execute preprocessed env

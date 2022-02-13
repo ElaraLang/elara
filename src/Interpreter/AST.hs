@@ -2,7 +2,6 @@ module Interpreter.AST where
 
 import Data.List (intercalate)
 
-
 data Constant
   = IntC Integer
   | StringC String
@@ -37,7 +36,7 @@ data Expression
   | BindWithBody Pattern Expression Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
-  deriving ( Eq)
+  deriving (Eq)
 
 instance Show Expression where
   show (Constant c) = show c
@@ -46,8 +45,7 @@ instance Show Expression where
   show (Bind p e) = "let " ++ show p ++ " = " ++ show e
   show (BindWithBody p e1 e2) = "let " ++ show p ++ " = " ++ show e1 ++ " in " ++ show e2
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"
-  show (FunctionApplication e1 e2) = show e1 ++ " " ++ show e2
-
+  show (FunctionApplication e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
 
 newtype Line = ExpressionLine Expression deriving (Eq)
 

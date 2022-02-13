@@ -3,8 +3,8 @@ module Interpreter.Execute where
 import Data.IORef
 import Data.Map ((!))
 import qualified Data.Map as M
-import Parse.AST
-
+import Interpreter.AST
+import Debug.Trace (traceShowM)
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
@@ -13,44 +13,44 @@ class Execute a where
   execute :: ElaraExecute a
 
 instance Execute Line where
-  execute (ExpressionL e) = execute e
+  execute (ExpressionLine e) = execute e
 
 instance Execute Expression where
-  execute (ConstE val) _ = case val of
+  execute (Constant val) _ = case val of
     IntC i -> return $ Just $ IntValue i
     StringC b -> return $ Just $ StringValue b
     _ -> return Nothing
-  execute (BlockE expressions) state = do
+  execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results
-  execute (LetE (IdentifierP p) val) state = do
-    let name = identifierValue p
+  execute (Bind pat val) state = do
+    let name = show pat
     val' <- execute val state
     case val' of
       Just val'' -> do
         modifyIORef (bindings state) (M.insert name val'')
         return $ Just val''
       Nothing -> return Nothing
-  execute (LetE (FunctionP i args) body) state = do
-    let name = identifierValue i
-    let paramName = showPattern $ head args 
-    let function = FunctionValue $ createFunction body paramName
-    modifyIORef (bindings state) (M.insert name function)
+  execute (Lambda arg body) _ = do
+    let paramName = show arg
+    let function = FunctionValue arg $ createFunction body paramName
     return $ Just function
-  execute (IdentifierE i) env = do
-    let ident = identifierValue i
+  execute (Reference i) env = do
+    let ident = show i
     bindingMap <- readIORef (bindings env)
     let val = bindingMap ! ident
     return $ Just val
-  execute (FuncApplicationE a b) state = do
+  execute (FunctionApplication a b) state = do
     aVal <- execute a state
-    let (Just (FunctionValue func)) = aVal
+    let (Just (FunctionValue _ func)) = aVal
     bVal <- execute b state
     let (Just i) = bVal
+    traceShowM aVal
+    traceShowM bVal
     func i state
   execute a _ = error $ "Not implemented for " ++ show a
 
-createFunction ::Expression -> String -> ElaraExecute Value
+createFunction :: Expression -> String -> ElaraExecute Value
 createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
   let newBindings = M.insert paramName paramValue stateBindings
@@ -61,10 +61,10 @@ createFunction body paramName paramValue state = do
 newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 
 primitiveFunctions :: M.Map String Value
-primitiveFunctions = M.fromList [("println", FunctionValue printLn)]
+primitiveFunctions = M.fromList [("println", FunctionValue (IdentifierPattern $ SimpleIdentifier "value") println)]
 
-printLn :: ElaraExecute Value
-printLn value _ = do
+println :: ElaraExecute Value
+println value _ = do
   print value
   return $ Just UnitValue
 
@@ -81,11 +81,11 @@ data Value
   | StringValue String
   | ListValue [Value]
   | UnitValue
-  | FunctionValue (ElaraExecute Value)
+  | FunctionValue Pattern (ElaraExecute Value)
 
 instance Show Value where
   show (IntValue i) = show i
   show (StringValue s) = s
   show (ListValue l) = show l
   show UnitValue = "()"
-  show (FunctionValue _) = "<function>"
+  show (FunctionValue arg _) = "<function:" ++ show arg ++ ">"
