@@ -68,12 +68,15 @@ Operator : op { OpIdentifier $1 }
 
 
 Pattern :: { Pattern }
-Pattern : Identifier FunctionPattern { FunctionP $1 $2 }
-        | Identifier { IdentifierP $1 }
+Pattern : SingleValuePattern { $1 }
+        | Identifier FunctionPattern  { FunctionP $1 $2 }
+
+SingleValuePattern :: { Pattern }
+SingleValuePattern : Identifier { IdentifierP $1 }
 
 FunctionPattern :: { [Pattern] }
-FunctionPattern : Pattern { [$1] }
-                | Pattern FunctionPattern { $1 : $2 }
+FunctionPattern : SingleValuePattern { [$1] }
+                | SingleValuePattern FunctionPattern { $1 : $2 }
 
 Constant :: { Constant }
 Constant : int { IntC $1 }

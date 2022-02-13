@@ -2,15 +2,14 @@ module Parse.AST where
 
 import Data.List (intercalate)
 
-
 newtype Line
   = ExpressionL Expression
   deriving (Eq)
 
 instance Show Line where
-    show (ExpressionL e) = show e
+  show (ExpressionL e) = show e
 
-data Separator = Separator deriving Show
+data Separator = Separator deriving (Show)
 
 data Identifier
   = NormalIdentifier String
@@ -21,11 +20,12 @@ identifierValue :: Identifier -> String
 identifierValue (NormalIdentifier s) = s
 identifierValue (OpIdentifier s) = s
 
+-- Patterns that might be used in a let expression
 data Pattern
-  = IdentifierP Identifier
-  | FunctionP { functionName :: Identifier, functionArgs :: [Pattern] }
-  | TupleP [Pattern]
-  | WildP
+  = IdentifierP Identifier -- let x = ...
+  | FunctionP {functionName :: Identifier, functionArgs :: [Pattern]} -- Let f a b = ...
+  | TupleP [Pattern] -- Let (x, y) = ...
+  | WildP -- let _ = ...
   deriving (Show, Eq)
 
 data Constant
@@ -43,10 +43,11 @@ data Expression
   | BlockE [Expression]
   | ListE [Expression]
   | IfElseE Expression Expression Expression
+  | LambdaE Identifier Expression
   deriving (Eq)
 
 instance Show Expression where
-    show = showASTNode
+  show = showASTNode
 
 showASTNode :: Expression -> String
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
@@ -58,7 +59,6 @@ showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier 
 showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch
 
-
 showConst :: Constant -> String
 showConst (StringC s) = s
 showConst (IntC i) = show i
@@ -67,5 +67,6 @@ showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i
 
 showPattern (IdentifierP p) = showIdentifier p
+showPattern e = show e
 
-showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)
+--showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)

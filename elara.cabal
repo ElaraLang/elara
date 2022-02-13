@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Interpreter.AST
       Interpreter.Execute
       Lib
       Parse.AST
@@ -35,6 +36,9 @@ library
       Parse.Reader
       Parse.Token
       Parse.Utils
+      Preprocess.Constant
+      Preprocess.Expression
+      Preprocess.Preprocessor
   other-modules:
       Paths_elara
   hs-source-dirs:

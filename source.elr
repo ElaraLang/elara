@@ -1,5 +1,1 @@
-let main a =
-    a
-    b
-main 3
-main 4
+let f a b = a

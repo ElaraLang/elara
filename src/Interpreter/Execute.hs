@@ -5,6 +5,7 @@ import Data.Map ((!))
 import qualified Data.Map as M
 import Parse.AST
 
+
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
 
@@ -32,8 +33,8 @@ instance Execute Expression where
       Nothing -> return Nothing
   execute (LetE (FunctionP i args) body) state = do
     let name = identifierValue i
-
-    let function = FunctionValue $ createFunction name body
+    let paramName = showPattern $ head args 
+    let function = FunctionValue $ createFunction body paramName
     modifyIORef (bindings state) (M.insert name function)
     return $ Just function
   execute (IdentifierE i) env = do
@@ -49,10 +50,10 @@ instance Execute Expression where
     func i state
   execute a _ = error $ "Not implemented for " ++ show a
 
-createFunction :: String -> Expression -> ElaraExecute Value
-createFunction name body paramValue state = do
+createFunction ::Expression -> String -> ElaraExecute Value
+createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
-  let newBindings = M.insert name paramValue stateBindings
+  let newBindings = M.insert paramName paramValue stateBindings
   newBindingsRef <- newIORef newBindings
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
