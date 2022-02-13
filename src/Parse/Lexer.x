@@ -6,30 +6,35 @@ import Control.Monad.State.Lazy
 }
 
 $digit = 0-9
-$alpha = [a-zA-Z]
-$op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| ]
 
+$lower = [a-z]
+$upper = [A-Z]
+$op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| ]
+$identifier = [$lower $upper $digit]
+
+@variableIdentifer = $lower $identifier*
 
 tokens :-
-  \;                    { simpleTok SemiColon }
+  \;                     { simpleTok SemiColon }
   \n$white*              { startWhite }
-  $white+               ;
-  "--".*				;
+  $white+                ;
+  "--".*				 ;
   let					 { simpleTok Let }
-  if                    { simpleTok If }
-  then                  { simpleTok Then }
-  else                  { simpleTok Else }
+  if                     { simpleTok If }
+  then                   { simpleTok Then }
+  else                   { simpleTok Else }
   in					 { simpleTok In}
   \=                     { simpleTok Eq }
-  \".*\"				 { parametrizedTok Str id }
   \`                     { simpleTok Backtick }
   \[                     { simpleTok LSParen }
   \]                     { simpleTok RSParen }
   \,                     { simpleTok Comma }
   $digit+                { parametrizedTok Int read }
-  $alpha($alpha|$digit)* { parametrizedTok Identifier id }
+  <0> @variableIdentifer { parametrizedTok Identifier id }
   $op+                   { parametrizedTok Operator id }
-
+  <0> \"                 { beginString }
+  <stringSC> \"          { endString }
+  <stringSC> .      { appendToString }
 {
 type NumberOfCharsMatched = Int
 type MatchedSequence = String
@@ -43,4 +48,28 @@ parametrizedTok tc read' _ matched = do
   let token = tc (read' matched)
   return $ Just token
 
+beginString :: LexAction
+beginString len _ = do
+  s <- get
+  pos <- getPosition len
+  put s{ lexSC = stringSC, pending_position = pos }
+  return Nothing
+
+appendToString :: LexAction
+appendToString _ (c : _) = do
+  s <- get
+  put s{ stringBuf = c : (stringBuf s) }
+  return Nothing
+
+endString :: LexAction
+endString _ _ = do
+  s <- get
+  let buf = stringBuf s
+  put
+    s
+      { lexSC = 0,
+        stringBuf = ""
+      }
+  let token = Str (reverse buf)
+  return $ Just token
 }

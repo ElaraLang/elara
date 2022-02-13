@@ -3,8 +3,8 @@ module Parse.Utils where
 import Codec.Binary.UTF8.String (encode)
 import Control.Monad.State.Lazy
 import Data.Word (Word8)
-import Parse.Token
 import Debug.Trace (traceShowId)
+import Parse.Token
 
 type P a = State ParseState a
 
@@ -104,3 +104,9 @@ getColNo = do
 
 evalP :: P a -> String -> a
 evalP m s = evalState m (initialState s)
+
+getPosition :: Int -> P TokPosition
+getPosition tokenLength = do
+  ParseState { input = AlexInput { ai_line_number = ln, ai_column_number = cn } } <- get
+  return $ TokPosition { line = ln, column = cn - tokenLength }
+
