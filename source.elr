@@ -1,5 +1,4 @@
-let f a b =
+let f a =
     println "F!"
     println a
-    println b
-f "hello" "world"
+f "hello world"

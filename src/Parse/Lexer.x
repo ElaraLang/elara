@@ -15,21 +15,21 @@ $identifier = [$lower $upper $digit]
 @variableIdentifer = $lower $identifier*
 
 tokens :-
-  \;                     { simpleTok SemiColon }
-  \n$white*              { startWhite }
-  $white+                ;
-  "--".*				 ;
-  let					 { simpleTok Let }
-  if                     { simpleTok If }
-  then                   { simpleTok Then }
-  else                   { simpleTok Else }
-  in					 { simpleTok In}
-  \=                     { simpleTok Eq }
-  \`                     { simpleTok Backtick }
-  \[                     { simpleTok LSParen }
-  \]                     { simpleTok RSParen }
-  \,                     { simpleTok Comma }
-  $digit+                { parametrizedTok Int read }
+  <0> \;                     { simpleTok SemiColon }
+  <0> \n$white*              { startWhite }
+  <0> $white+                ;
+  <0> "--".*				 ;
+  <0> let					 { simpleTok Let }
+  <0> if                     { simpleTok If }
+  <0> then                   { simpleTok Then }
+  <0> else                   { simpleTok Else }
+  <0> in					 { simpleTok In}
+  <0> \=                     { simpleTok Eq }
+  <0> \`                     { simpleTok Backtick }
+  <0> \[                     { simpleTok LSParen }
+  <0> \]                     { simpleTok RSParen }
+  <0> \,                     { simpleTok Comma }
+  <0> $digit+                { parametrizedTok Int read }
   <0> @variableIdentifer { parametrizedTok Identifier id }
   <0> $op+                   { parametrizedTok Operator id }
   <0> \"                 { beginString }

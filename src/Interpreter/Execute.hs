@@ -45,7 +45,7 @@ instance Execute Expression where
     let (Just (FunctionValue _ func)) = aVal
     bVal <- execute b state
     let (Just i) = bVal
-    func i state
+    func i state -- TODO proper closures
   execute a _ = error $ "Not implemented for " ++ show a
 
 createFunction :: Expression -> String -> ElaraExecute Value
