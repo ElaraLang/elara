@@ -45,8 +45,6 @@ instance Execute Expression where
     let (Just (FunctionValue _ func)) = aVal
     bVal <- execute b state
     let (Just i) = bVal
-    traceShowM aVal
-    traceShowM bVal
     func i state
   execute a _ = error $ "Not implemented for " ++ show a
 
@@ -55,6 +53,7 @@ createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
   let newBindings = M.insert paramName paramValue stateBindings
   newBindingsRef <- newIORef newBindings
+  traceShowM newBindings
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
 
