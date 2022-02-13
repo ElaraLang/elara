@@ -6,6 +6,7 @@ import Parse.Utils
 import Parse.Token
 import Control.Monad.State.Lazy
 import Parse.AST
+import Debug.Trace
 }
 
 %nonassoc int string identifier let op if'`' '['
@@ -79,28 +80,33 @@ Constant : int { IntC $1 }
          | string { StringC $1 }
 
 
-Separator : newLine { [] }
-          | semiColon { [] }
+Separator : newLine { addSemicolon }
+          | semiColon { return Separator }
+          | Separator Separator { return Separator }
 
 Block :: { [Expression] }
-Block : BlockBody { $1 }
-      | Separator Block { $2 }
-      | indent BlockBody dedent { $2 }
+Block : Expression { [$1] }
+      | Separator indent BlockBody dedent { traceName "BlockBody" $3 }
 
 BlockBody :: { [Expression] }
-BlockBody : BlockBody Separator Expression { $3 : $1 }
-          | BlockBody Separator { $1 }
-          | Expression { [$1] }
+BlockBody : ExpressionWithSep { traceName "expression" [$1] }
+          | BlockBody ExpressionWithSep { traceName "bb" ($2 : $1) }
+          | {- empty -} { error "Empty block" }
 
-Line : Expression { ExpressionL $1 }
+ExpressionWithSep :: { Expression }
+ExpressionWithSep : Expression Separator { $1 }
+
+Line : Expression Separator { ExpressionL $1 }
 
 Body :: { [Line] }
-Body : Body Separator Line { $3 : $1 }
-      | Body Separator { $1 }
-      | Line { [$1] }
-      | {- empty -} { [] }
-
+Body : Line { traceName "singleLine" [$1]}
+     | Body Line { traceName "body line" ($2 : $1) }
+     | {- empty -} { [] }
 {
+
+-- DEBUG
+-- traceName name s = trace (name ++ " = " ++ show s) s
+traceName _ s = s
 
 parseError tok = do
   lno <- getLineNo
@@ -108,7 +114,12 @@ parseError tok = do
   s <- get
   error $ "Parse error on line " ++ show lno ++ ", column " ++ show colno ++ "." ++ "  " ++ show s ++ "\nat token " ++ show tok
 
+addSemicolon :: P Separator
+addSemicolon = do
+  s@(ParseState _ _ _ pending _ _) <- get
+  put $ s { pending_tokens = [SemiColon] ++ pending }
+  return Separator
 
-parse s = evalP parseElara s
+parse s = reverse $ evalP parseElara s
 
 }

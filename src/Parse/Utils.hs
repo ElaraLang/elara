@@ -4,6 +4,7 @@ import Codec.Binary.UTF8.String (encode)
 import Control.Monad.State.Lazy
 import Data.Word (Word8)
 import Parse.Token
+import Debug.Trace (traceShowId)
 
 type P a = State ParseState a
 
@@ -48,6 +49,7 @@ startWhite :: Int -> String -> P (Maybe Token)
 startWhite n _ = do
   s <- get
   let is@(cur : _) = indent_stack s
+
   when (n > cur) $ do
     put s {indent_stack = n : is, pending_tokens = [Indent]}
   when (n < cur) $ do
@@ -57,7 +59,7 @@ startWhite n _ = do
         put
           s
             { indent_stack = post,
-              pending_tokens = map (const Dedent) pre
+              pending_tokens = pre >>= const [Dedent, NewLine]
             }
       else error $ "Indents don't match ( " ++ show top ++ " vs " ++ show n ++ ")"
   return $ Just NewLine

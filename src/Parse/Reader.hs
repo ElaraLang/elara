@@ -21,7 +21,7 @@ readToken = do
       case alexScan (input s) (lexSC s) of
         AlexEOF -> do
           r <- startWhite 1 ""
-          put s {pending_tokens = pending_tokens s ++ [EOF]}
+          put s {pending_tokens = [EOF]}
           maybe readToken return r
         AlexError token -> error $ "Lexical error on line " ++ show (ai_line_number token)
         AlexSkip inp _ -> do

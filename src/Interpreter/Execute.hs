@@ -11,6 +11,9 @@ type ElaraExecute a = a -> Environment -> IO (Maybe Value)
 class Execute a where
   execute :: ElaraExecute a
 
+instance Execute Line where
+  execute (ExpressionL e) = execute e
+
 instance Execute Expression where
   execute (ConstE val) _ = case val of
     IntC i -> return $ Just $ IntValue i

@@ -1,2 +1,5 @@
-let main a = println "hello world"
+let main a =
+    a
+    b
 main 3
+main 4
