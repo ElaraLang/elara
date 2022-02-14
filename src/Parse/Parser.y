@@ -74,11 +74,11 @@ Operator : op { OpIdentifier $1 }
 
 Pattern :: { Pattern }
 Pattern : SingleValuePattern { $1 }
-        | Identifier FunctionPattern  { FunctionP $1 $2 }
+        | Identifier FunctionPattern  { FunctionP $1 $2 } -- Function pattern cannot be recursive
 
 SingleValuePattern :: { Pattern }
 SingleValuePattern : Identifier { IdentifierP $1 }
-
+                   | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
 FunctionPattern :: { [Pattern] }
 FunctionPattern : SingleValuePattern { [$1] }
                 | SingleValuePattern FunctionPattern { $1 : $2 }

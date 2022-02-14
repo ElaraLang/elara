@@ -21,12 +21,14 @@ instance Show Identifier where
 
 data Pattern
   = IdentifierPattern Identifier
+  | ConsPattern Pattern Pattern
   | WildcardPattern
   deriving (Eq)
 
 instance Show Pattern where
   show (IdentifierPattern i) = show i
   show WildcardPattern = "_"
+  show (ConsPattern p1 p2) = "(" ++ show p1 ++ "::" ++ show p2 ++ ")"
 
 data Expression
   = Constant Constant

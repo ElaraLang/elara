@@ -6,6 +6,7 @@ import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
 import Interpreter.AST
+import Debug.Trace (traceShowId)
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
@@ -36,16 +37,15 @@ instance Execute Expression where
     results <- mapM (`execute` state) expressions
     return $ last results
   execute (Bind pat val) state = do
-    let name = show pat
     val' <- execute val state
     case val' of
       Just val'' -> do
-        modifyIORef (bindings state) (M.insert name val'')
+        let patternValues = applyPattern val'' pat
+        modifyIORef (bindings state) (patternValues `M.union`)
         return $ Just val''
       Nothing -> return Nothing
   execute (Lambda arg body) state = do
-    let paramName = show arg
-    let function = FunctionValue state arg $ createFunction body paramName
+    let function = FunctionValue state arg $ createFunction body arg
     return $ Just function
   execute (Reference i) env = do
     let ident = show i
@@ -73,13 +73,26 @@ filterResults elems results = map filterNothing results
     filterNothing (Just v) = v
     filterNothing Nothing = error $ "List contains expressions that do not produce a value: " ++ show (zip elems results)
 
-createFunction :: Expression -> String -> ElaraExecute Value
+createFunction :: Expression -> Pattern -> ElaraExecute Value
 createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
-  let newBindings = M.insert paramName paramValue stateBindings
+  let patterns = applyPattern paramValue paramName
+  let newBindings = patterns `M.union` stateBindings
   newBindingsRef <- newIORef newBindings
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
+
+applyPattern :: Value -> Pattern -> M.Map String Value
+applyPattern v (IdentifierPattern i) = M.singleton (show i) v
+applyPattern v (ConsPattern a b) =  case v of
+    ListValue (a' : b') -> do
+                            let tail' = ListValue b'
+                            let headPattern = applyPattern a' a
+                            let tailPattern = applyPattern tail' b
+                            headPattern `M.union` tailPattern
+    ListValue [] -> error "List is empty"
+    o -> error $ "Cons pattern applied to non-list " ++ show o
+
 
 newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 
@@ -89,19 +102,9 @@ primitiveFunctions = do
   return $
     M.fromList
       [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
-        ("head", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "head") elaraHead),
-        ("tail", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "tail") elaraTail),
         ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1),
         ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq)
       ]
-
-elaraHead :: ElaraExecute Value
-elaraHead (ListValue (x : _)) _ = return $ Just x
-elaraHead a _ = error $ "Cannot take head of non-list: " ++ show a
-
-elaraTail :: ElaraExecute Value
-elaraTail (ListValue (_ : xs)) _ = return $ Just $ ListValue xs
-elaraTail a _ = error $ "Cannot take tail of non-list: " ++ show a 
 
 elaraPlus1 :: ElaraExecute Value
 elaraPlus1 left s = do
@@ -118,7 +121,7 @@ println :: ElaraExecute Value
 println value _ = do
   print value
   return $ Just UnitValue
-  
+
 elaraEq :: ElaraExecute Value
 elaraEq left s = do
   return $
