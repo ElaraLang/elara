@@ -131,7 +131,8 @@ ExpressionWithSep : Expression Separator { $1 }
 Line : Expression Separator { ExpressionL $1 }
 
 Body :: { [Line] }
-Body : Line { traceName "singleLine" [$1]}
+Body : Expression { traceName "singleExpr" [ExpressionL $1]}
+     | Line { traceName "singleLine" [$1] }
      | Body Line { traceName "body line" ($2 : $1) }
      | {- empty -} { [] }
 {

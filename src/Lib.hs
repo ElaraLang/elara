@@ -18,7 +18,7 @@ someFunc = do
   print content
   let tokens = evalP readTokens content
   putStrLn "Tokens: "
---  print tokens
+  print tokens
   let ast = parse content
   env <- initialEnvironment
   forM_ ast $ \line -> do

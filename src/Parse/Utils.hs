@@ -3,7 +3,7 @@ module Parse.Utils where
 import Codec.Binary.UTF8.String (encode)
 import Control.Monad.State.Lazy
 import Data.Word (Word8)
-import Debug.Trace (traceShowId)
+import Debug.Trace (traceShowId, traceM, traceShowM)
 import Parse.Token
 
 type P a = State ParseState a
@@ -41,19 +41,20 @@ initialState s =
       lexSC = 0,
       stringBuf = "",
       pending_tokens = [],
-      indent_stack = [1],
+      indent_stack = [0],
       pending_position = TokPosition {line = 1, column = 1}
     }
 
 startWhite :: Int -> String -> P (Maybe Token)
-startWhite n _ = do
+startWhite _ str = do
+  let n = length $ dropWhile (== '\n') str
   s <- get
-  let is@(cur : _) = indent_stack s
-
+  let indents@(cur : _) = indent_stack s
   when (n > cur) $ do
-    put s {indent_stack = n : is, pending_tokens = [Indent]}
+    put s {indent_stack = n : indents, pending_tokens = Indent:pending_tokens s}
   when (n < cur) $ do
-    let (pre, post@(top : _)) = span (> n) is
+    let i = span (> n) indents
+    let (pre, post@(top : _)) = i
     if top == n
       then
         put
@@ -61,9 +62,9 @@ startWhite n _ = do
             { indent_stack = post,
               pending_tokens = pre >>= const [Dedent, NewLine]
             }
-      else error $ "Indents don't match ( " ++ show top ++ " vs " ++ show n ++ ")"
+      else error $ "Indents don't match ( " ++ show top ++ " vs " ++ show n ++ ")" ++ show s
   return $ Just NewLine
-
+startWhite a b = error $ "startWhite: " ++ show a ++ " " ++ show b
 -- The functions that must be provided to Alex's basic interface
 
 -- The input: last character, unused bytes, remaining string

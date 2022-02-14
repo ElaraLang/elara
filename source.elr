@@ -2,5 +2,7 @@ let map f l =
     match l
         [] -> []
         (x:xs) -> f x : map f xs
+
+
 let succ x = x + 1
 println (map succ [1, 2, 3])
