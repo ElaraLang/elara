@@ -23,13 +23,12 @@ instance Execute Expression where
     _ -> return Nothing
   execute (Cons a b) s = do
     (Just a') <- execute a s
- 
+
     b' <- execute b s
     case b' of
       Just (ListValue l) -> return $ Just $ ListValue $ a' : l
       Just a -> error $ "Cannot cons to a non-list (" ++ show a ++ ")"
-      Nothing -> return Nothing   
-    
+      Nothing -> return Nothing
   execute (List elems) s = do
     vals <- filterResults elems <$> mapM (`execute` s) elems
     return $ Just $ ListValue vals
@@ -60,6 +59,12 @@ instance Execute Expression where
     let (Just i) = bVal
     env <- closure `union` state
     func i env
+  execute (IfElse cond ifTrue ifFalse) state = do
+    condVal <- execute cond state
+    case condVal of
+      Just (BoolValue True) -> execute ifTrue state
+      Just (BoolValue False) -> execute ifFalse state
+      _ -> error "Condition in if statement must be a boolean"
   execute a _ = error $ "Not implemented for " ++ show a
 
 filterResults :: (Show a) => [a] -> [Maybe Value] -> [Value]
@@ -84,20 +89,19 @@ primitiveFunctions = do
   return $
     M.fromList
       [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
-        ("map", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "map") elaraMap),
-        ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1)
+        ("head", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "head") elaraHead),
+        ("tail", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "tail") elaraTail),
+        ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1),
+        ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq)
       ]
 
-elaraMap :: ElaraExecute Value
-elaraMap f env = do
-  let (FunctionValue _ _ func) = f
-  return $
-    Just $
-      FunctionValue env (IdentifierPattern $ SimpleIdentifier "list") $ \list s -> do
-        let (ListValue elements) = list
-        results <- filterResults elements <$> mapM (`func` s) elements
+elaraHead :: ElaraExecute Value
+elaraHead (ListValue (x : _)) _ = return $ Just x
+elaraHead a _ = error $ "Cannot take head of non-list: " ++ show a
 
-        return $ Just $ ListValue results
+elaraTail :: ElaraExecute Value
+elaraTail (ListValue (_ : xs)) _ = return $ Just $ ListValue xs
+elaraTail a _ = error $ "Cannot take tail of non-list: " ++ show a 
 
 elaraPlus1 :: ElaraExecute Value
 elaraPlus1 left s = do
@@ -114,6 +118,14 @@ println :: ElaraExecute Value
 println value _ = do
   print value
   return $ Just UnitValue
+  
+elaraEq :: ElaraExecute Value
+elaraEq left s = do
+  return $
+    Just $
+      FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
+        let result = left == right
+        return $ Just $ BoolValue result
 
 initialEnvironment :: IO Environment
 initialEnvironment = do
@@ -143,6 +155,7 @@ data Value
   | StringValue String
   | ListValue [Value]
   | UnitValue
+  | BoolValue Bool
   | FunctionValue Environment Pattern (ElaraExecute Value)
 
 instance Show Value where
@@ -150,4 +163,15 @@ instance Show Value where
   show (StringValue s) = s
   show (ListValue l) = show l
   show UnitValue = "()"
+  show (BoolValue b) = show b
   show (FunctionValue _ arg _) = "<function:" ++ show arg ++ ">"
+
+instance Eq Value where
+  (IntValue a) == (IntValue b) = a == b
+  (StringValue a) == (StringValue b) = a == b
+  (ListValue a) == (ListValue b) = a == b
+  UnitValue == UnitValue = True
+  (BoolValue a) == (BoolValue b) = a == b
+  f@FunctionValue {} == a = error $ "Cannot compare functions: " ++ show f ++ " == " ++ show a
+  a == f@FunctionValue {} = error $ "Cannot compare functions: " ++ show a ++ " == " ++ show f
+  _ == _ = False

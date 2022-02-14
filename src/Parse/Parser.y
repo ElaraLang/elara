@@ -9,7 +9,7 @@ import Parse.AST
 import Debug.Trace
 }
 
-%nonassoc int string identifier let op if'`' '['
+%nonassoc int string identifier let op if'`' '[' '('
 %nonassoc APP
 
 
@@ -37,6 +37,8 @@ import Debug.Trace
    semiColon { SemiColon }
    indent { Indent }
    dedent { Dedent }
+   '(' { LParen }
+   ')' { RParen }
    '[' { LSParen }
    ']' { RSParen }
    ',' { Comma }
@@ -51,6 +53,7 @@ Expression  : Constant {ConstE $1}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression cons Expression {ConsE $1 $3}
+            | '(' Expression ')' {$2}
 
 ListExpression :: { Expression }
 ListExpression : '[' ListBody ']' {ListE $ reverse $2}

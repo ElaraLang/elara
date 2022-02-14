@@ -28,6 +28,8 @@ tokens :-
   <0> \`                     { simpleTok Backtick }
   <0> :                      { simpleTok Colon }
   <0> ::                     { simpleTok DoubleColon }
+  <0> \(                     { simpleTok LParen }
+  <0> \)                     { simpleTok RParen }
   <0> \[                     { simpleTok LSParen }
   <0> \]                     { simpleTok RSParen }
   <0> \,                     { simpleTok Comma }
