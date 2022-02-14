@@ -65,6 +65,7 @@ ListBody : ListBody ',' Expression { $3 : $1 }
 
 Identifier :: { Identifier }
 Identifier : identifier { NormalIdentifier $1 }
+           | '(' op ')' { NormalIdentifier $2 }
 
 Operator :: { Identifier }
 Operator : op { OpIdentifier $1 }
@@ -79,6 +80,7 @@ Pattern : SingleValuePattern { $1 }
 SingleValuePattern :: { Pattern }
 SingleValuePattern : Identifier { IdentifierP $1 }
                    | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
+
 FunctionPattern :: { [Pattern] }
 FunctionPattern : SingleValuePattern { [$1] }
                 | SingleValuePattern FunctionPattern { $1 : $2 }

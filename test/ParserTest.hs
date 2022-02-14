@@ -65,7 +65,7 @@ spec = describe "Test Parser" $ do
 
   it "Parses a function definition with a cons pattern argument" $ do
     "let f (x::xs) = x" <=> LetE (FunctionP (NormalIdentifier "f") [ConsP (IdentifierP $ NormalIdentifier "x") (IdentifierP $ NormalIdentifier "xs")]) (IdentifierE (NormalIdentifier "x"))
-  
+
 infix 4 <=>
 
 (<=>) :: String -> Expression -> IO ()
