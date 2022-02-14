@@ -13,6 +13,8 @@ instance Show Constant where
   show (StringC s) = show s
   show UnitC = "()"
 
+
+
 data Identifier
   = SimpleIdentifier String
   | OperatorIdentifier String
@@ -27,12 +29,14 @@ instance Show Identifier where
 data Pattern
   = IdentifierPattern Identifier
   | ConsPattern Pattern Pattern
+  | ConstantPattern Constant
   | WildcardPattern
   deriving (Eq)
 
 instance Show Pattern where
   show (IdentifierPattern i) = show i
   show WildcardPattern = "_"
+  show (ConstantPattern c) = show c
   show (ConsPattern p1 p2) = "(" ++ show p1 ++ "::" ++ show p2 ++ ")"
 
 data Expression

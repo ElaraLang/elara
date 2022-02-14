@@ -70,11 +70,11 @@ instance Execute Expression where
 
     let matchOption = filter (\(MatchCase pat val) -> matchPattern exprVal pat) cases
     case matchOption of
-      (MatchCase pat val):_ -> do
+      (MatchCase pat val) : _ -> do
         stateBindings <- readIORef (bindings state)
         let newBindings = applyPattern exprVal pat `M.union` stateBindings
         ref <- newIORef newBindings
-        execute val Environment { bindings = ref }
+        execute val Environment {bindings = ref}
       [] -> error "Match case not exhaustive"
   execute a _ = error $ "Not implemented for " ++ show a
 
@@ -95,11 +95,15 @@ createFunction body paramName paramValue state = do
 
 matchPattern :: Value -> Pattern -> Bool
 matchPattern _ (IdentifierPattern _) = True
+matchPattern v (ConstantPattern c) = constantToValue c == v
 matchPattern (ListValue (a : b)) (ConsPattern a' b') = matchPattern a a' && matchPattern (ListValue b) b'
 matchPattern _ _ = False
 
+-- Destructures a pattern into its components.
+-- This function assumes that matchPattern has already been called to ensure that the pattern matches the value.
 applyPattern :: Value -> Pattern -> M.Map String Value
 applyPattern v (IdentifierPattern i) = M.singleton (show i) v
+applyPattern _ (ConstantPattern _) = M.empty
 applyPattern v (ConsPattern a b) = case v of
   ListValue (a' : b') -> do
     let tail' = ListValue b'
@@ -193,3 +197,8 @@ instance Eq Value where
   f@FunctionValue {} == a = error $ "Cannot compare functions: " ++ show f ++ " == " ++ show a
   a == f@FunctionValue {} = error $ "Cannot compare functions: " ++ show a ++ " == " ++ show f
   _ == _ = False
+
+constantToValue :: Constant -> Value
+constantToValue (IntC i) = IntValue i
+constantToValue (StringC s) = StringValue s
+constantToValue UnitC = UnitValue

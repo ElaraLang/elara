@@ -93,6 +93,7 @@ Pattern : SingleValuePattern { $1 }
 
 SingleValuePattern :: { Pattern }
 SingleValuePattern : Identifier { IdentifierP $1 }
+                   | Constant { ConstantP $1 }
                    | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
 
 FunctionPattern :: { [Pattern] }
