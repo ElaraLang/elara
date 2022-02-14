@@ -86,6 +86,7 @@ FunctionPattern : SingleValuePattern { [$1] }
 Constant :: { Constant }
 Constant : int { IntC $1 }
          | string { StringC $1 }
+         | '(' ')' { UnitC }
 
 
 Separator : newLine { addSemicolon }
