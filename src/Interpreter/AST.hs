@@ -37,6 +37,7 @@ data Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
   | List [Expression]
+  | Cons Expression Expression
   deriving (Eq)
 
 instance Show Expression where
@@ -48,6 +49,7 @@ instance Show Expression where
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"
   show (FunctionApplication e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
   show (List es) = "[" ++ intercalate ", " (map show es) ++ "]"
+  show (Cons e1 e2) = show e1 ++ " :: " ++ show e2
 
 newtype Line = ExpressionLine Expression deriving (Eq)
 

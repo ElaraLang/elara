@@ -14,6 +14,8 @@ data Token = Let
             | Backtick
             | NewLine
             | SemiColon
+            | Colon
+            | DoubleColon
             | Indent
             | Dedent
             | LSParen

@@ -26,6 +26,8 @@ tokens :-
   <0> in					 { simpleTok In}
   <0> \=                     { simpleTok Eq }
   <0> \`                     { simpleTok Backtick }
+  <0> :                      { simpleTok Colon }
+  <0> ::                     { simpleTok DoubleColon }
   <0> \[                     { simpleTok LSParen }
   <0> \]                     { simpleTok RSParen }
   <0> \,                     { simpleTok Comma }

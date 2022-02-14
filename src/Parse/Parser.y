@@ -32,6 +32,7 @@ import Debug.Trace
    eq { Eq }
    op { Operator $$ }
    '`' { Backtick }
+   cons { DoubleColon }
    newLine { NewLine }
    semiColon { SemiColon }
    indent { Indent }
@@ -49,6 +50,7 @@ Expression  : Constant {ConstE $1}
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
+            | Expression cons Expression {ConsE $1 $3}
 
 ListExpression :: { Expression }
 ListExpression : '[' ListBody ']' {ListE $ reverse $2}

@@ -6,6 +6,7 @@ import Preprocess.Constant
 
 preprocessExpression :: P.Expression -> I.Expression
 preprocessExpression (P.ConstE c) = I.Constant (preprocessConst c)
+preprocessExpression (P.ConsE a b) = I.Cons (preprocessExpression a) (preprocessExpression b)
 preprocessExpression (P.LetE (P.FunctionP i a) val) = lambdaDesugar i a val
 preprocessExpression (P.LetE pattern val) = I.Bind (preprocessPattern pattern) (preprocessExpression val)
 preprocessExpression (P.BlockE body) = I.Block (preprocessExpression <$> body)

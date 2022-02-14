@@ -33,7 +33,7 @@ data Constant
   | StringC String
   | UnitC
   deriving (Eq)
-  
+
 instance Show Constant where
   show (IntC i) = show i
   show (StringC s) = show s
@@ -49,6 +49,7 @@ data Expression
   | ListE [Expression]
   | IfElseE Expression Expression Expression
   | LambdaE Identifier Expression
+  | ConsE Expression Expression
   deriving (Eq)
 
 instance Show Expression where
@@ -63,6 +64,7 @@ showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode ex
 showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier op ++ " " ++ showASTNode b
 showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch
+showASTNode (ConsE a b) = showASTNode a ++ " :: " ++ showASTNode b
 
 showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i

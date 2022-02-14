@@ -1,4 +1,2 @@
-let s = [1, 2, 3]
-let succ x = x + 1
-let mapped = map succ s
-println mapped
+let cons = 2::3::[4]
+println cons

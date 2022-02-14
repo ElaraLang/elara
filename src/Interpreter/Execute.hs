@@ -21,6 +21,15 @@ instance Execute Expression where
     IntC i -> return $ Just $ IntValue i
     StringC b -> return $ Just $ StringValue b
     _ -> return Nothing
+  execute (Cons a b) s = do
+    (Just a') <- execute a s
+ 
+    b' <- execute b s
+    case b' of
+      Just (ListValue l) -> return $ Just $ ListValue $ a' : l
+      Just a -> error $ "Cannot cons to a non-list (" ++ show a ++ ")"
+      Nothing -> return Nothing   
+    
   execute (List elems) s = do
     vals <- filterResults elems <$> mapM (`execute` s) elems
     return $ Just $ ListValue vals
