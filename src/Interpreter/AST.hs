@@ -36,6 +36,7 @@ data Expression
   | BindWithBody Pattern Expression Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
+  | List [Expression]
   deriving (Eq)
 
 instance Show Expression where
@@ -46,6 +47,7 @@ instance Show Expression where
   show (BindWithBody p e1 e2) = "let " ++ show p ++ " = " ++ show e1 ++ " in " ++ show e2
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"
   show (FunctionApplication e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
+  show (List es) = "[" ++ intercalate ", " (map show es) ++ "]"
 
 newtype Line = ExpressionLine Expression deriving (Eq)
 

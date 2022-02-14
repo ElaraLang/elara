@@ -1,5 +1,2 @@
-let f a b =
-    println "F!"
-    println a
-    println b
-f "hello" "world"
+let s = [1, 2, 3]
+let succ x = x + 1

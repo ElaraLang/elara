@@ -5,6 +5,8 @@ import Data.Map ((!))
 import qualified Data.Map as M
 import Interpreter.AST
 import Debug.Trace (traceShowM)
+import Control.Monad
+import Data.Maybe
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
@@ -20,6 +22,10 @@ instance Execute Expression where
     IntC i -> return $ Just $ IntValue i
     StringC b -> return $ Just $ StringValue b
     _ -> return Nothing
+  execute (List elems) s = do
+    vals <- mapM (`execute` s) elems
+    when (any isNothing vals) $ error $ "List contains expressions that do not produce a value: " ++ show (zip elems vals)
+    return $ Just $ ListValue $ map (\(Just v) -> v) vals
   execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results

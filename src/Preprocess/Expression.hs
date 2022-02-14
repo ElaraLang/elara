@@ -11,6 +11,7 @@ preprocessExpression (P.LetE pattern val) = I.Bind (preprocessPattern pattern) (
 preprocessExpression (P.BlockE body) = I.Block (preprocessExpression <$> body)
 preprocessExpression (P.FuncApplicationE f val) = I.FunctionApplication (preprocessExpression f) (preprocessExpression val)
 preprocessExpression (P.IdentifierE i) = I.Reference (preprocessIdent i)
+preprocessExpression (P.ListE elems) = I.List (preprocessExpression <$> elems)
 preprocessExpression s = error $ "Cannot preprocess expression: " ++ show s
 
 
