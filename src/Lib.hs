@@ -15,6 +15,7 @@ import Preprocess.Preprocessor
 someFunc :: IO ()
 someFunc = do
   content <- readFile "source.elr"
+  print content
   let tokens = evalP readTokens content
   putStrLn "Tokens: "
   print tokens

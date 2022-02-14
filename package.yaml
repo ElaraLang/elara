@@ -34,6 +34,7 @@ dependencies:
   - array
   - utf8-string
   - containers
+  - hspec
 
 library:
   source-dirs: src

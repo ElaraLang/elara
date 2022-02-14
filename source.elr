@@ -2,6 +2,7 @@ let head (x::xs) = x
 let tail (x::xs) = xs
 let map f l =
   if l == [] then [] else (f (head l)) :: map f (tail l)
+
 let suc x = x + 1
 let res = map suc [1,2,3]
 println res
