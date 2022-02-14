@@ -5,7 +5,7 @@ import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
-import Debug.Trace (traceShowM)
+import Debug.Trace (traceShowM, traceIO)
 import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
@@ -23,9 +23,8 @@ instance Execute Expression where
     StringC b -> return $ Just $ StringValue b
     _ -> return Nothing
   execute (List elems) s = do
-    vals <- mapM (`execute` s) elems
-    when (any isNothing vals) $ error $ "List contains expressions that do not produce a value: " ++ show (zip elems vals)
-    return $ Just $ ListValue $ map (\(Just v) -> v) vals
+    vals <- filterResults elems <$> mapM (`execute` s) elems
+    return $ Just $ ListValue vals
   execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results
@@ -51,15 +50,21 @@ instance Execute Expression where
     let (Just (FunctionValue closure _ func)) = aVal
     bVal <- execute b state
     let (Just i) = bVal
-    func i closure
+    env <- closure `union` state
+    func i env
   execute a _ = error $ "Not implemented for " ++ show a
+
+filterResults :: (Show a) => [a] -> [Maybe Value] -> [Value]
+filterResults elems results = map filterNothing results
+  where
+    filterNothing (Just v) = v
+    filterNothing Nothing = error $ "List contains expressions that do not produce a value: " ++ show (zip elems results)
 
 createFunction :: Expression -> String -> ElaraExecute Value
 createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
   let newBindings = M.insert paramName paramValue stateBindings
   newBindingsRef <- newIORef newBindings
-  traceShowM newBindings
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
 
@@ -71,8 +76,20 @@ primitiveFunctions = do
   return $
     M.fromList
       [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
+        ("map", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "map") elaraMap),
         ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1)
       ]
+
+elaraMap :: ElaraExecute Value
+elaraMap f env = do
+  let (FunctionValue _ _ func) = f
+  return $
+    Just $
+      FunctionValue env (IdentifierPattern $ SimpleIdentifier "list") $ \list s -> do
+        let (ListValue elements) = list
+        results <- filterResults elements <$> mapM (`func` s) elements
+
+        return $ Just $ ListValue results
 
 elaraPlus1 :: ElaraExecute Value
 elaraPlus1 left s = do
@@ -105,6 +122,13 @@ emptyEnvironment = do
     Environment
       { bindings = ref
       }
+
+union :: Environment -> Environment -> IO Environment
+envA `union` envB = do
+  a <- readIORef $ bindings envA
+  b <- readIORef $ bindings envB
+  newRef <- newIORef $ a `M.union` b
+  return Environment {bindings = newRef}
 
 data Value
   = IntValue Integer

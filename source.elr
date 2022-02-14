@@ -1,4 +1,4 @@
 let s = [1, 2, 3]
 let succ x = x + 1
-let m = succ 3
-println m
+let mapped = map succ s
+println mapped

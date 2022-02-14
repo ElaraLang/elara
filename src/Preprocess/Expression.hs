@@ -25,8 +25,7 @@ desugarWithoutName (arg : args) body = I.Lambda (preprocessPattern arg) (desugar
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
--- The parser will parse let f a b = ... as let F(A(B))
-preprocessPattern (P.FunctionP i a) = undefined
+preprocessPattern (P.FunctionP _ _ ) = error "Function pattern should not exist anymore" 
 
 preprocessIdent :: P.Identifier -> I.Identifier
 preprocessIdent (P.NormalIdentifier i) = I.SimpleIdentifier i
