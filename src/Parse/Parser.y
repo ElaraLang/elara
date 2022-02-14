@@ -46,7 +46,7 @@ import Debug.Trace
 
 Expression :: { Expression }
 Expression  : Constant {ConstE $1}
-            | let Pattern eq Block {LetE $2 (BlockE $ reverse $4) }
+            | let Pattern eq Block {LetE $2 $4 }
             | Identifier {IdentifierE $1}
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression {InfixApplicationE $2 $1 $3}
@@ -93,9 +93,9 @@ Separator : newLine { addSemicolon }
           | semiColon { return Separator }
           | Separator Separator { return Separator }
 
-Block :: { [Expression] }
-Block : Expression { [$1] }
-      | Separator indent BlockBody dedent { traceName "BlockBody" $3 }
+Block :: { Expression }
+Block : Expression { $1 }
+      | Separator indent BlockBody dedent { traceName "BlockBody" (BlockE $ reverse $3) }
 
 BlockBody :: { [Expression] }
 BlockBody : ExpressionWithSep { traceName "expression" [$1] }
