@@ -31,6 +31,7 @@ preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
 preprocessPattern (P.ConsP a b ) = I.ConsPattern (preprocessPattern a) (preprocessPattern b)
 preprocessPattern (P.ConstantP c) = I.ConstantPattern (preprocessConst c)
+preprocessPattern P.WildP = I.WildcardPattern
 preprocessPattern (P.FunctionP _ _ ) = error "Function pattern should not exist anymore" 
 
 preprocessIdent :: P.Identifier -> I.Identifier

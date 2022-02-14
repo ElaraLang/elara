@@ -20,6 +20,7 @@ data Token
   | SemiColon
   | Colon
   | DoubleColon
+  | Wildcard
   | Indent
   | Dedent
   | LParen

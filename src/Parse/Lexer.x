@@ -30,6 +30,7 @@ tokens :-
   <0> \`                     { simpleTok Backtick }
   <0> :                      { simpleTok Colon }
   <0> ::                     { simpleTok DoubleColon }
+  <0> _                      { simpleTok Wildcard }
   <0> \(                     { simpleTok LParen }
   <0> \)                     { simpleTok RParen }
   <0> \[                     { simpleTok LSParen }

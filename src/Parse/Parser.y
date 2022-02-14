@@ -43,6 +43,7 @@ import Debug.Trace
    '[' { LSParen }
    ']' { RSParen }
    ',' { Comma }
+   '_' { Wildcard }
    '->' { Arrow }
 %%
 
@@ -94,6 +95,7 @@ Pattern : SingleValuePattern { $1 }
 SingleValuePattern :: { Pattern }
 SingleValuePattern : Identifier { IdentifierP $1 }
                    | Constant { ConstantP $1 }
+                   | '_' { WildP }
                    | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
 
 FunctionPattern :: { [Pattern] }

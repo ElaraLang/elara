@@ -8,4 +8,4 @@ println (reverse [1, 2, 3])
 match 3
     2 -> println "Not 2"
     3 -> println "It's 3"
-    a -> println "It's something else!"
+    _ -> println "It's something else!"
