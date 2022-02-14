@@ -9,7 +9,7 @@ $digit = 0-9
 
 $lower = [a-z]
 $upper = [A-Z]
-$op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| ]
+$op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| \$ \& \~]
 $identifier = [$lower $upper $digit]
 
 @variableIdentifer = $lower $identifier*

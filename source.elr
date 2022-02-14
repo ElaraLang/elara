@@ -3,6 +3,10 @@ let map f l =
         [] -> []
         (x:xs) -> f x : map f xs
 
+let ($) f x = f x
+let (|>) f x = x f
 
 let succ x = x + 1
 println (map succ [1, 2, 3])
+
+println $ 3 |> succ
