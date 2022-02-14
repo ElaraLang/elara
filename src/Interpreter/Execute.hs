@@ -5,7 +5,6 @@ import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
-import Debug.Trace (traceShowM, traceIO)
 import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
