@@ -23,7 +23,9 @@ tokens :-
   <0> if                     { simpleTok If }
   <0> then                   { simpleTok Then }
   <0> else                   { simpleTok Else }
-  <0> in					 { simpleTok In}
+  <0> in					 { simpleTok In }
+  <0> match                  { simpleTok Match }
+  <0> \-\>                     { simpleTok Arrow }
   <0> \=                     { simpleTok Eq }
   <0> \`                     { simpleTok Backtick }
   <0> :                      { simpleTok Colon }

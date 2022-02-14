@@ -13,6 +13,8 @@ data Token
   | If
   | Then
   | Else
+  | Match
+  | Arrow
   | Backtick
   | NewLine
   | SemiColon

@@ -5,3 +5,5 @@ let map f l =
 let (++) a b = if a == [] then b else (head a) :: (tail a) ++ b
 let reverse s = if s == [] then [] else (reverse (tail s)) ++ [head s]
 println (reverse [1, 2, 3])
+match 3
+    a -> println a

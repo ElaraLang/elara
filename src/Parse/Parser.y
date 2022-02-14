@@ -9,7 +9,7 @@ import Parse.AST
 import Debug.Trace
 }
 
-%nonassoc int string identifier let op if'`' '[' '('
+%nonassoc int string identifier let op if'`' '[' '(' match
 %nonassoc APP
 
 
@@ -26,6 +26,7 @@ import Debug.Trace
    if { If }
    then { Then }
    else { Else }
+   match { Match }
    int { Int $$ }
    string { Str $$ }
    identifier { Identifier $$ }
@@ -42,6 +43,7 @@ import Debug.Trace
    '[' { LSParen }
    ']' { RSParen }
    ',' { Comma }
+   '->' { Arrow }
 %%
 
 Expression :: { Expression }
@@ -53,7 +55,8 @@ Expression  : Constant {ConstE $1}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression cons Expression {ConsE $1 $3}
-            | '(' Expression ')' {$2}
+            | '(' Expression ')' { $2 }
+            | MatchExpression { $1 }
 
 ListExpression :: { Expression }
 ListExpression : '[' ListBody ']' {ListE $ reverse $2}
@@ -71,6 +74,17 @@ Operator :: { Identifier }
 Operator : op { OpIdentifier $1 }
            | '`'identifier'`' { OpIdentifier $2 }
 
+MatchExpression :: { Expression }
+MatchExpression : match Expression MatchBlock {MatchE $2 $3}
+
+MatchBlock :: { [MatchLine] }
+MatchBlock : Separator indent MatchBody dedent { traceName "MatchBody" (reverse $3) }
+
+MatchBody :: { [MatchLine] }
+MatchBody : MatchLine { [$1] }
+         | MatchBody MatchLine { $2 : $1 }
+
+MatchLine : Pattern '->' Expression Separator { MatchLine $1 $3 }
 
 
 Pattern :: { Pattern }

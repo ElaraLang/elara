@@ -51,6 +51,7 @@ data Expression
   | IfElseE Expression Expression Expression
   | LambdaE Identifier Expression
   | ConsE Expression Expression
+  | MatchE Expression [MatchLine]
   deriving (Eq)
 
 instance Show Expression where
@@ -66,6 +67,12 @@ showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier 
 showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch
 showASTNode (ConsE a b) = showASTNode a ++ " :: " ++ showASTNode b
+showASTNode (MatchE expression matchLines) = "match " ++ showASTNode expression ++ " { " ++ (intercalate "\n" $ map show matchLines) ++ " } "
+
+data MatchLine = MatchLine Pattern Expression deriving (Eq)
+
+instance Show MatchLine where
+  show (MatchLine pattern value) = showPattern pattern ++ " -> " ++ showASTNode value
 
 showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i

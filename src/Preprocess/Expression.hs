@@ -15,6 +15,8 @@ preprocessExpression (P.FuncApplicationE f val) = I.FunctionApplication (preproc
 preprocessExpression (P.IdentifierE i) = I.Reference (preprocessIdent i)
 preprocessExpression (P.ListE elems) = I.List (preprocessExpression <$> elems)
 preprocessExpression (P.InfixApplicationE op l r) = I.FunctionApplication (I.FunctionApplication (I.Reference $ preprocessIdent op) (preprocessExpression l)) (preprocessExpression r)
+preprocessExpression (P.MatchE e cases) = I.Match (preprocessExpression e) (preprocessCase <$> cases)
+  where preprocessCase (P.MatchLine i a) = I.MatchCase (preprocessPattern i) (preprocessExpression a)
 preprocessExpression s = error $ "Cannot preprocess expression: " ++ show s
 
 lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> I.Expression

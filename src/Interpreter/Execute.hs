@@ -5,8 +5,8 @@ import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
-import Interpreter.AST
 import Debug.Trace (traceShowId)
+import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
@@ -65,6 +65,17 @@ instance Execute Expression where
       Just (BoolValue True) -> execute ifTrue state
       Just (BoolValue False) -> execute ifFalse state
       _ -> error "Condition in if statement must be a boolean"
+  execute (Match expr cases) state = do
+    Just exprVal <- execute expr state
+
+    let matchOption = filter (\(MatchCase pat val) -> matchPattern exprVal pat) cases
+    case matchOption of
+      (MatchCase pat val):_ -> do
+        stateBindings <- readIORef (bindings state)
+        let newBindings = applyPattern exprVal pat `M.union` stateBindings
+        ref <- newIORef newBindings
+        execute val Environment { bindings = ref }
+      [] -> error "Match case not exhaustive"
   execute a _ = error $ "Not implemented for " ++ show a
 
 filterResults :: (Show a) => [a] -> [Maybe Value] -> [Value]
@@ -82,17 +93,21 @@ createFunction body paramName paramValue state = do
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
 
+matchPattern :: Value -> Pattern -> Bool
+matchPattern _ (IdentifierPattern _) = True
+matchPattern (ListValue (a : b)) (ConsPattern a' b') = matchPattern a a' && matchPattern (ListValue b) b'
+matchPattern _ _ = False
+
 applyPattern :: Value -> Pattern -> M.Map String Value
 applyPattern v (IdentifierPattern i) = M.singleton (show i) v
-applyPattern v (ConsPattern a b) =  case v of
-    ListValue (a' : b') -> do
-                            let tail' = ListValue b'
-                            let headPattern = applyPattern a' a
-                            let tailPattern = applyPattern tail' b
-                            headPattern `M.union` tailPattern
-    ListValue [] -> error "List is empty"
-    o -> error $ "Cons pattern applied to non-list " ++ show o
-
+applyPattern v (ConsPattern a b) = case v of
+  ListValue (a' : b') -> do
+    let tail' = ListValue b'
+    let headPattern = applyPattern a' a
+    let tailPattern = applyPattern tail' b
+    headPattern `M.union` tailPattern
+  ListValue [] -> error "List is empty"
+  o -> error $ "Cons pattern applied to non-list " ++ show o
 
 newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 

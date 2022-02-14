@@ -6,7 +6,12 @@ data Constant
   = IntC Integer
   | StringC String
   | UnitC
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Constant where
+  show (IntC i) = show i
+  show (StringC s) = show s
+  show UnitC = "()"
 
 data Identifier
   = SimpleIdentifier String
@@ -41,6 +46,7 @@ data Expression
   | List [Expression]
   | Cons Expression Expression
   | IfElse Expression Expression Expression
+  | Match Expression [MatchCase]
   deriving (Eq)
 
 instance Show Expression where
@@ -54,6 +60,12 @@ instance Show Expression where
   show (List es) = "[" ++ intercalate ", " (map show es) ++ "]"
   show (Cons e1 e2) = show e1 ++ " :: " ++ show e2
   show (IfElse e1 e2 e3) = "if " ++ show e1 ++ " then " ++ show e2 ++ " else " ++ show e3
+  show (Match e ms) = "match " ++ show e ++ " { " ++ intercalate "\n" (map show ms) ++ " }"
+
+data MatchCase = MatchCase Pattern Expression deriving (Eq)
+
+instance Show MatchCase where
+  show (MatchCase pattern value) = show pattern ++ " -> " ++ show value
 
 newtype Line = ExpressionLine Expression deriving (Eq)
 
