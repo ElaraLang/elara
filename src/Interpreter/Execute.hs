@@ -31,9 +31,9 @@ instance Execute Expression where
         modifyIORef (bindings state) (M.insert name val'')
         return $ Just val''
       Nothing -> return Nothing
-  execute (Lambda arg body) _ = do
+  execute (Lambda arg body) state = do
     let paramName = show arg
-    let function = FunctionValue arg $ createFunction body paramName
+    let function = FunctionValue state arg $ createFunction body paramName
     return $ Just function
   execute (Reference i) env = do
     let ident = show i
@@ -42,10 +42,10 @@ instance Execute Expression where
     return $ Just val
   execute (FunctionApplication a b) state = do
     aVal <- execute a state
-    let (Just (FunctionValue _ func)) = aVal
+    let (Just (FunctionValue closure _ func)) = aVal
     bVal <- execute b state
     let (Just i) = bVal
-    func i state -- TODO proper closures
+    func i closure
   execute a _ = error $ "Not implemented for " ++ show a
 
 createFunction :: Expression -> String -> ElaraExecute Value
@@ -59,8 +59,10 @@ createFunction body paramName paramValue state = do
 
 newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 
-primitiveFunctions :: M.Map String Value
-primitiveFunctions = M.fromList [("println", FunctionValue (IdentifierPattern $ SimpleIdentifier "value") println)]
+primitiveFunctions :: IO (M.Map String Value)
+primitiveFunctions = do
+  emptyEnv <- emptyEnvironment
+  return $ M.fromList [("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println)]
 
 println :: ElaraExecute Value
 println value _ = do
@@ -69,7 +71,15 @@ println value _ = do
 
 initialEnvironment :: IO Environment
 initialEnvironment = do
-  ref <- newIORef primitiveFunctions
+  ref <- primitiveFunctions >>= newIORef
+  return
+    Environment
+      { bindings = ref
+      }
+
+emptyEnvironment :: IO Environment
+emptyEnvironment = do
+  ref <- newIORef M.empty
   return
     Environment
       { bindings = ref
@@ -80,11 +90,11 @@ data Value
   | StringValue String
   | ListValue [Value]
   | UnitValue
-  | FunctionValue Pattern (ElaraExecute Value)
+  | FunctionValue Environment Pattern (ElaraExecute Value)
 
 instance Show Value where
   show (IntValue i) = show i
   show (StringValue s) = s
   show (ListValue l) = show l
   show UnitValue = "()"
-  show (FunctionValue arg _) = "<function:" ++ show arg ++ ">"
+  show (FunctionValue _ arg _) = "<function:" ++ show arg ++ ">"
