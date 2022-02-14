@@ -9,6 +9,7 @@ import Parse.AST
 import Debug.Trace
 }
 
+%right cons
 %nonassoc int string identifier let op if'`' '[' '(' match
 %nonassoc APP
 
