@@ -68,7 +68,22 @@ newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 primitiveFunctions :: IO (M.Map String Value)
 primitiveFunctions = do
   emptyEnv <- emptyEnvironment
-  return $ M.fromList [("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println)]
+  return $
+    M.fromList
+      [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
+        ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1)
+      ]
+
+elaraPlus1 :: ElaraExecute Value
+elaraPlus1 left s = do
+  -- let (+) a b =
+  let (IntValue a) = left
+  return $
+    Just $
+      FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
+        let (IntValue b) = right
+        let result = a + b
+        return $ Just $ IntValue result
 
 println :: ElaraExecute Value
 println value _ = do
