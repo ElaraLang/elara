@@ -98,6 +98,9 @@ SingleValuePattern : Identifier { IdentifierP $1 }
                    | Constant { ConstantP $1 }
                    | '_' { WildP }
                    | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
+                   | '[' ']' { ListP [] }
+                   | '[' SingleValuePattern ']' { ListP [$2] }
+                   | '[' SingleValuePattern ',' SingleValuePattern ']' { ListP [$2, $4] }
 
 FunctionPattern :: { [Pattern] }
 FunctionPattern : SingleValuePattern { [$1] }

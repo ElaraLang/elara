@@ -5,7 +5,7 @@ import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
-import Debug.Trace (traceShowId)
+import Debug.Trace (traceShowId, trace)
 import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
@@ -97,7 +97,8 @@ matchPattern :: Value -> Pattern -> Bool
 matchPattern _ (IdentifierPattern _) = True
 matchPattern v (ConstantPattern c) = constantToValue c == v
 matchPattern (ListValue (a : b)) (ConsPattern a' b') = matchPattern a a' && matchPattern (ListValue b) b'
-matchPattern _ _ = False
+matchPattern (ListValue l) (ListPattern pats) = length l == length pats && and (zipWith matchPattern l pats)
+matchPattern a _ = trace ("Not matching " ++ show a) False
 
 -- Destructures a pattern into its components.
 -- This function assumes that matchPattern has already been called to ensure that the pattern matches the value.
@@ -112,6 +113,8 @@ applyPattern v (ConsPattern a b) = case v of
     headPattern `M.union` tailPattern
   ListValue [] -> error "List is empty"
   o -> error $ "Cons pattern applied to non-list " ++ show o
+applyPattern (ListValue l) (ListPattern pats) = M.unions $ zipWith applyPattern l pats
+applyPattern v p = error $ "Can't apply pattern " ++ show p ++ " to value " ++ show v
 
 newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
 

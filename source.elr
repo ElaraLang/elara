@@ -1,11 +1,6 @@
-let head (x:xs) = x
-let tail (x:xs) = xs
 let map f l =
-  if l == [] then [] else (f (head l)) : map f (tail l)
-let (++) a b = if a == [] then b else (head a) : (tail a) ++ b
-let reverse s = if s == [] then [] else (reverse (tail s)) ++ [head s]
-println (reverse [1, 2, 3])
-match 3
-    2 -> println "Not 2"
-    3 -> println "It's 3"
-    _ -> println "It's something else!"
+    match l
+        [] -> []
+        (x:xs) -> f x : map f xs
+let succ x = x + 1
+println (map succ [1, 2, 3])

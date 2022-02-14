@@ -16,7 +16,8 @@ preprocessExpression (P.IdentifierE i) = I.Reference (preprocessIdent i)
 preprocessExpression (P.ListE elems) = I.List (preprocessExpression <$> elems)
 preprocessExpression (P.InfixApplicationE op l r) = I.FunctionApplication (I.FunctionApplication (I.Reference $ preprocessIdent op) (preprocessExpression l)) (preprocessExpression r)
 preprocessExpression (P.MatchE e cases) = I.Match (preprocessExpression e) (preprocessCase <$> cases)
-  where preprocessCase (P.MatchLine i a) = I.MatchCase (preprocessPattern i) (preprocessExpression a)
+  where
+    preprocessCase (P.MatchLine i a) = I.MatchCase (preprocessPattern i) (preprocessExpression a)
 preprocessExpression s = error $ "Cannot preprocess expression: " ++ show s
 
 lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> I.Expression
@@ -29,10 +30,11 @@ desugarWithoutName (arg : args) body = I.Lambda (preprocessPattern arg) (desugar
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
-preprocessPattern (P.ConsP a b ) = I.ConsPattern (preprocessPattern a) (preprocessPattern b)
+preprocessPattern (P.ConsP a b) = I.ConsPattern (preprocessPattern a) (preprocessPattern b)
 preprocessPattern (P.ConstantP c) = I.ConstantPattern (preprocessConst c)
 preprocessPattern P.WildP = I.WildcardPattern
-preprocessPattern (P.FunctionP _ _ ) = error "Function pattern should not exist anymore" 
+preprocessPattern (P.ListP elems) = I.ListPattern (preprocessPattern <$> elems)
+preprocessPattern (P.FunctionP _ _) = error "Function pattern should not exist anymore"
 
 preprocessIdent :: P.Identifier -> I.Identifier
 preprocessIdent (P.NormalIdentifier i) = I.SimpleIdentifier i

@@ -64,7 +64,7 @@ spec = describe "Test Parser" $ do
     "let f x =\n    x\n    x\n" <=> LetE (FunctionP (NormalIdentifier "f") [IdentifierP $ NormalIdentifier "x"]) (BlockE [IdentifierE (NormalIdentifier "x"), IdentifierE (NormalIdentifier "x")])
 
   it "Parses a function definition with a cons pattern argument" $ do
-    "let f (x::xs) = x" <=> LetE (FunctionP (NormalIdentifier "f") [ConsP (IdentifierP $ NormalIdentifier "x") (IdentifierP $ NormalIdentifier "xs")]) (IdentifierE (NormalIdentifier "x"))
+    "let f (x:xs) = x" <=> LetE (FunctionP (NormalIdentifier "f") [ConsP (IdentifierP $ NormalIdentifier "x") (IdentifierP $ NormalIdentifier "xs")]) (IdentifierE (NormalIdentifier "x"))
 
 infix 4 <=>
 

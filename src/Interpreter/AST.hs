@@ -30,6 +30,7 @@ data Pattern
   = IdentifierPattern Identifier
   | ConsPattern Pattern Pattern
   | ConstantPattern Constant
+  | ListPattern [Pattern]
   | WildcardPattern
   deriving (Eq)
 
@@ -38,6 +39,7 @@ instance Show Pattern where
   show WildcardPattern = "_"
   show (ConstantPattern c) = show c
   show (ConsPattern p1 p2) = "(" ++ show p1 ++ "::" ++ show p2 ++ ")"
+  show (ListPattern ps) = "[" ++ intercalate "," (map show ps) ++ "]"
 
 data Expression
   = Constant Constant
