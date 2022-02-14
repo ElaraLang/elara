@@ -12,12 +12,11 @@ preprocessExpression (P.BlockE body) = I.Block (preprocessExpression <$> body)
 preprocessExpression (P.FuncApplicationE f val) = I.FunctionApplication (preprocessExpression f) (preprocessExpression val)
 preprocessExpression (P.IdentifierE i) = I.Reference (preprocessIdent i)
 preprocessExpression (P.ListE elems) = I.List (preprocessExpression <$> elems)
+preprocessExpression (P.InfixApplicationE op l r) = I.FunctionApplication (I.FunctionApplication (I.Reference $ preprocessIdent op) (preprocessExpression l)) (preprocessExpression r)
 preprocessExpression s = error $ "Cannot preprocess expression: " ++ show s
-
 
 lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> I.Expression
 lambdaDesugar fName args body = I.Bind (I.IdentifierPattern $ preprocessIdent fName) (desugarWithoutName args body)
-
 
 desugarWithoutName :: [P.Pattern] -> P.Expression -> I.Expression
 desugarWithoutName [] body = preprocessExpression body
@@ -28,7 +27,6 @@ preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
 -- The parser will parse let f a b = ... as let F(A(B))
 preprocessPattern (P.FunctionP i a) = undefined
-
 
 preprocessIdent :: P.Identifier -> I.Identifier
 preprocessIdent (P.NormalIdentifier i) = I.SimpleIdentifier i

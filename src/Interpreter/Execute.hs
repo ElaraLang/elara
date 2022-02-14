@@ -1,12 +1,12 @@
 module Interpreter.Execute where
 
-import Data.IORef
-import Data.Map ((!))
-import qualified Data.Map as M
-import Interpreter.AST
-import Debug.Trace (traceShowM)
 import Control.Monad
+import Data.IORef
+import Data.Map ((!), (!?))
+import qualified Data.Map as M
 import Data.Maybe
+import Debug.Trace (traceShowM)
+import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe Value)
@@ -44,7 +44,7 @@ instance Execute Expression where
   execute (Reference i) env = do
     let ident = show i
     bindingMap <- readIORef (bindings env)
-    let val = bindingMap ! ident
+    let val = fromMaybe (error ("Could not find binding with name " ++ ident)) (bindingMap !? ident)
     return $ Just val
   execute (FunctionApplication a b) state = do
     aVal <- execute a state
