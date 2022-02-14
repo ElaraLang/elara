@@ -33,7 +33,7 @@ import Debug.Trace
    eq { Eq }
    op { Operator $$ }
    '`' { Backtick }
-   cons { DoubleColon }
+   cons { Colon }
    newLine { NewLine }
    semiColon { SemiColon }
    indent { Indent }
