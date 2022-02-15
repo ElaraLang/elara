@@ -74,7 +74,7 @@ showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode ex
 showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier op ++ " " ++ showASTNode b
 showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch
-showASTNode (ConsE a b) = showASTNode a ++ " :: " ++ showASTNode b
+showASTNode (ConsE a b) = showASTNode a ++ " : " ++ showASTNode b
 showASTNode (MatchE expression matchLines) = "match " ++ showASTNode expression ++ " { " ++ (intercalate "\n" $ map show matchLines) ++ " } "
 
 data MatchLine = MatchLine Pattern Expression deriving (Eq)
@@ -95,8 +95,8 @@ data Type
   | ListT Type
   | PureFunT Type Type
   deriving (Eq)
-  
+
 instance Show Type where
   show (NamedT s) = s
   show (ListT t) = "[" ++ show t ++ "]"
-  show (PureFunT t1 t2) = show t1 ++ " -> " ++ show t2 
+  show (PureFunT t1 t2) = show t1 ++ " -> " ++ show t2
