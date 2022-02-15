@@ -9,9 +9,9 @@ import Parse.AST
 import Debug.Trace
 }
 
-%right cons
+%right ':'
 %left op
-%nonassoc int string identifier let if '`' '[' '(' match
+%nonassoc int string identifier let if '`' '[' '(' match def
 %nonassoc APP
 
 
@@ -25,6 +25,7 @@ import Debug.Trace
 
 %token
    let { Let }
+   def { Def }
    if { If }
    then { Then }
    else { Else }
@@ -32,10 +33,11 @@ import Debug.Trace
    int { Int $$ }
    string { Str $$ }
    identifier { Identifier $$ }
+   typeIdentifier { TypeIdentifier $$ }
    eq { Eq }
    op { Operator $$ }
    '`' { Backtick }
-   cons { Colon }
+   ':' { Colon }
    newLine { NewLine }
    semiColon { SemiColon }
    indent { Indent }
@@ -49,6 +51,11 @@ import Debug.Trace
    '->' { Arrow }
 %%
 
+Type :: { Type }
+Type  : typeIdentifier { NamedT $1 }
+      | '[' Type ']' { ListT $2 }
+      | Type '->' Type { PureFunT $1 $3 }
+
 Expression :: { Expression }
 Expression  : Constant {ConstE $1}
             | let Pattern eq Block {LetE $2 $4 }
@@ -57,9 +64,10 @@ Expression  : Constant {ConstE $1}
             | Expression Operator Expression %prec APP {InfixApplicationE $2 $1 $3}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
-            | Expression cons Expression {ConsE $1 $3}
+            | Expression ':' Expression {ConsE $1 $3}
             | '(' Expression ')' { $2 }
             | MatchExpression { $1 }
+
 
 ListExpression :: { Expression }
 ListExpression : '[' ListBody ']' {ListE $ reverse $2}
@@ -98,7 +106,7 @@ SingleValuePattern :: { Pattern }
 SingleValuePattern : Identifier { IdentifierP $1 }
                    | Constant { ConstantP $1 }
                    | '_' { WildP }
-                   | '(' SingleValuePattern cons SingleValuePattern ')' { ConsP $2 $4 }
+                   | '(' SingleValuePattern ':' SingleValuePattern ')' { ConsP $2 $4 }
                    | '[' ']' { ListP [] }
                    | '[' SingleValuePattern ']' { ListP [$2] }
                    | '[' SingleValuePattern ',' SingleValuePattern ']' { ListP [$2, $4] }
@@ -130,6 +138,8 @@ ExpressionWithSep :: { Expression }
 ExpressionWithSep : Expression Separator { $1 }
 
 Line : Expression Separator { ExpressionL $1 }
+     | def Pattern ':' Type Separator { DefL $2 $4 }
+
 
 Body :: { [Line] }
 Body : Expression { traceName "singleExpr" [ExpressionL $1]}

@@ -13,6 +13,7 @@ $op = [!# \$ \% \+ \- \/ \* \. \< \> \= \? \@ \^ \| \$ \& \~]
 $identifier = [$lower $upper $digit]
 
 @variableIdentifer = $lower $identifier*
+@typeIdentifier = $upper $identifier*
 
 tokens :-
   <0> \;                     { simpleTok SemiColon }
@@ -20,6 +21,7 @@ tokens :-
   <0> $white+                ;
   <0> "--".*				 ;
   <0> let					 { simpleTok Let }
+  <0> def                    { simpleTok Def }
   <0> if                     { simpleTok If }
   <0> then                   { simpleTok Then }
   <0> else                   { simpleTok Else }
@@ -37,11 +39,12 @@ tokens :-
   <0> \]                     { simpleTok RSParen }
   <0> \,                     { simpleTok Comma }
   <0> $digit+                { parametrizedTok Int read }
-  <0> @variableIdentifer { parametrizedTok Identifier id }
+  <0> @variableIdentifer     { parametrizedTok Identifier id }
+  <0> @typeIdentifier        { parametrizedTok TypeIdentifier id }
   <0> $op+                   { parametrizedTok Operator id }
-  <0> \"                 { beginString }
-  <stringSC> \"          { endString }
-  <stringSC> .      { appendToString }
+  <0> \"                     { beginString }
+  <stringSC> \"              { endString }
+  <stringSC> .               { appendToString }
 {
 type NumberOfCharsMatched = Int
 type MatchedSequence = String

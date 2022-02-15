@@ -8,6 +8,7 @@ data TokPosition = TokPosition
 
 data Token
   = Let
+  | Def
   | In
   | Eq
   | If
@@ -32,5 +33,6 @@ data Token
   | Str String
   | Identifier String
   | Operator String
+  | TypeIdentifier String
   | EOF
   deriving (Show, Eq)

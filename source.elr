@@ -1,14 +1,8 @@
 let map f l =
     match l
         [] -> []
-        (x:xs) ->
-            println x
-            f x : map f xs
+        (x:xs) -> f x : map f xs
 
-let ($) f x = f x
-let (|>) f x = x f
-
-let succ x = x + 1
+def succ   : Int -> Int
+let succ n = n + 1
 println (map succ [1, 2, 3])
-
-3 |> succ |> println

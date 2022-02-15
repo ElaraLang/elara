@@ -1,38 +1,47 @@
 module Interpreter.Execute where
 
-import Control.Monad
 import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
-import Debug.Trace (traceShowId, trace)
 import Interpreter.AST
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
-type ElaraExecute a = a -> Environment -> IO (Maybe Value)
+type ElaraExecute a = a -> Environment -> IO (Maybe TypedValue)
 
 class Execute a where
   execute :: ElaraExecute a
 
 instance Execute Line where
-  execute (ExpressionLine e) = execute e
+  execute (ExpressionLine e) s = execute e s
+  execute (DefLine pat t) s = do
+    env <- readIORef (bindings s)
+    -- Create the dummy value
+    let val = typeOnlyValue t
+    -- Apply the pattern to the dummy value
+    let matched = applyPattern val pat
+    -- Merge the new bindings into the environment
+    let newEnv = M.union matched env
+    -- Write the new environment back to the bindings
+    writeIORef (bindings s) newEnv
+    return Nothing
 
 instance Execute Expression where
   execute (Constant val) _ = case val of
-    IntC i -> return $ Just $ IntValue i
-    StringC b -> return $ Just $ StringValue b
+    IntC i -> return $ Just $ inferTypes $ IntValue i
+    StringC b -> return $ Just $inferTypes $ StringValue b
     _ -> return Nothing
   execute (Cons a b) s = do
     (Just a') <- execute a s
 
     b' <- execute b s
-    case b' of
-      Just (ListValue l) -> return $ Just $ ListValue $ a' : l
+    case value <$> b' of
+      Just (ListValue l) -> return $ Just $ inferTypes $ ListValue $ a' : l
       Just a -> error $ "Cannot cons to a non-list (" ++ show a ++ ")"
       Nothing -> return Nothing
   execute (List elems) s = do
     vals <- filterResults elems <$> mapM (`execute` s) elems
-    return $ Just $ ListValue vals
+    return $ Just $ inferTypes $ ListValue vals
   execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results
@@ -46,7 +55,7 @@ instance Execute Expression where
       Nothing -> return Nothing
   execute (Lambda arg body) state = do
     let function = FunctionValue state arg $ createFunction body arg
-    return $ Just function
+    return $ Just $ inferTypes function
   execute (Reference i) env = do
     let ident = show i
     bindingMap <- readIORef (bindings env)
@@ -54,37 +63,38 @@ instance Execute Expression where
     return $ Just val
   execute (FunctionApplication a b) state = do
     aVal <- execute a state
-    let (Just (FunctionValue closure _ func)) = aVal
-    bVal <- execute b state
-    let (Just i) = bVal
+    let (Just (FunctionValue closure _ func)) = value <$> aVal
+    (Just arg) <- execute b state
     env <- closure `union` state
-    func i env
+    func arg env
   execute (IfElse cond ifTrue ifFalse) state = do
     condVal <- execute cond state
-    case condVal of
+    case value <$> condVal of
       Just (BoolValue True) -> execute ifTrue state
       Just (BoolValue False) -> execute ifFalse state
       _ -> error "Condition in if statement must be a boolean"
   execute (Match expr cases) state = do
-    Just exprVal <- execute expr state
+    Just matchee <- execute expr state
 
-    let matchOption = filter (\(MatchCase pat val) -> matchPattern exprVal pat) cases
+    let matchOption = filter (\(MatchCase pat _) -> matchPattern matchee pat) cases
     case matchOption of
-      (MatchCase pat val) : _ -> do
+      (MatchCase pat expression) : _ -> do
         stateBindings <- readIORef (bindings state)
-        let newBindings = applyPattern exprVal pat `M.union` stateBindings
+        let patBindings = applyPattern matchee pat
+        let newBindings = patBindings `M.union` stateBindings
         ref <- newIORef newBindings
-        execute val Environment {bindings = ref}
+
+        execute expression Environment {bindings = ref}
       [] -> error "Match case not exhaustive"
   execute a _ = error $ "Not implemented for " ++ show a
 
-filterResults :: (Show a) => [a] -> [Maybe Value] -> [Value]
+filterResults :: (Show a) => [a] -> [Maybe TypedValue] -> [TypedValue]
 filterResults elems results = map filterNothing results
   where
     filterNothing (Just v) = v
     filterNothing Nothing = error $ "List contains expressions that do not produce a value: " ++ show (zip elems results)
 
-createFunction :: Expression -> Pattern -> ElaraExecute Value
+createFunction :: Expression -> Pattern -> ElaraExecute TypedValue
 createFunction body paramName paramValue state = do
   stateBindings <- readIORef $ bindings state
   let patterns = applyPattern paramValue paramName
@@ -93,64 +103,71 @@ createFunction body paramName paramValue state = do
   let stateWithParamValue = state {bindings = newBindingsRef}
   execute body stateWithParamValue
 
-matchPattern :: Value -> Pattern -> Bool
+matchPattern :: TypedValue -> Pattern -> Bool
 matchPattern _ (IdentifierPattern _) = True
-matchPattern v (ConstantPattern c) = constantToValue c == v
-matchPattern (ListValue (a : b)) (ConsPattern a' b') = matchPattern a a' && matchPattern (ListValue b) b'
-matchPattern (ListValue l) (ListPattern pats) = length l == length pats && and (zipWith matchPattern l pats)
-matchPattern a _ = trace ("Not matching " ++ show a) False
+matchPattern (TypedValue (ListValue (a : b)) (ListType _)) (ConsPattern a' b') = matchPattern a a' && matchPattern (inferTypes $ ListValue b) b'
+matchPattern tv p = matchPattern' (value tv) p
+  where
+    matchPattern' v (ConstantPattern c) = constantToValue c == v
+    matchPattern' (ListValue l) (ListPattern pats) = length l == length pats && and (zipWith matchPattern l pats)
+    matchPattern' _ _ = False
 
 -- Destructures a pattern into its components.
 -- This function assumes that matchPattern has already been called to ensure that the pattern matches the value.
-applyPattern :: Value -> Pattern -> M.Map String Value
-applyPattern v (IdentifierPattern i) = M.singleton (show i) v
+applyPattern :: TypedValue -> Pattern -> M.Map String TypedValue
 applyPattern _ (ConstantPattern _) = M.empty
-applyPattern v (ConsPattern a b) = case v of
-  ListValue (a' : b') -> do
-    let tail' = ListValue b'
-    let headPattern = applyPattern a' a
-    let tailPattern = applyPattern tail' b
-    headPattern `M.union` tailPattern
-  ListValue [] -> error "List is empty"
-  o -> error $ "Cons pattern applied to non-list " ++ show o
-applyPattern (ListValue l) (ListPattern pats) = M.unions $ zipWith applyPattern l pats
-applyPattern v p = error $ "Can't apply pattern " ++ show p ++ " to value " ++ show v
+applyPattern v (IdentifierPattern i) = M.singleton (show i) v
+applyPattern t p = applyPattern' (value t) p
+  where
+    applyPattern' :: Value -> Pattern -> M.Map String TypedValue
+    applyPattern' v (ConsPattern a b) = case v of
+      ListValue (a' : b') -> do
+        let headPattern = applyPattern a' a
+        let tail' = inferTypes $ ListValue b'
+        let tailPattern = applyPattern tail' b
+        headPattern `M.union` tailPattern
+      ListValue [] -> error "List is empty"
+      _ -> error "Not a list"
+    applyPattern' (ListValue l) (ListPattern pats) = M.unions $ zipWith applyPattern l pats
+    applyPattern' v pat = error $ "Can't apply pattern " ++ show pat ++ " to value " ++ show v
 
-newtype Environment = Environment {bindings :: IORef (M.Map String Value)}
+newtype Environment = Environment {bindings :: IORef (M.Map String TypedValue)}
 
-primitiveFunctions :: IO (M.Map String Value)
+primitiveFunctions :: IO (M.Map String TypedValue)
 primitiveFunctions = do
   emptyEnv <- emptyEnvironment
   return $
-    M.fromList
-      [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
-        ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1),
-        ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq)
-      ]
+    M.map inferTypes $
+      M.fromList
+        [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
+          ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1),
+          ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq)
+        ]
 
-elaraPlus1 :: ElaraExecute Value
-elaraPlus1 left s = do
-  -- let (+) a b =
-  let (IntValue a) = left
+elaraPlus1 :: ElaraExecute TypedValue
+elaraPlus1 (TypedValue (IntValue a) (NamedType "Int")) s = do
   return $
     Just $
-      FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
-        let (IntValue b) = right
-        let result = a + b
-        return $ Just $ IntValue result
+      inferTypes $
+        FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
+          let (IntValue b) = value right
+          let result = a + b
+          return $ Just $ inferTypes $ IntValue result
+elaraPlus1 a _ = error $ "Can't add " ++ show a
 
-println :: ElaraExecute Value
+println :: ElaraExecute TypedValue
 println value _ = do
   print value
-  return $ Just UnitValue
+  return $ Just $ inferTypes UnitValue
 
-elaraEq :: ElaraExecute Value
+elaraEq :: ElaraExecute TypedValue
 elaraEq left s = do
   return $
     Just $
-      FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
-        let result = left == right
-        return $ Just $ BoolValue result
+      inferTypes $
+        FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
+          let result = left == right
+          return $ Just $inferTypes $ BoolValue result
 
 initialEnvironment :: IO Environment
 initialEnvironment = do
@@ -175,13 +192,18 @@ envA `union` envB = do
   newRef <- newIORef $ a `M.union` b
   return Environment {bindings = newRef}
 
+data TypedValue = TypedValue {value :: Value, type_ :: Type} deriving (Eq)
+
+instance Show TypedValue where
+  show (TypedValue v t) = show v ++ " : " ++ show t
+
 data Value
   = IntValue Integer
   | StringValue String
-  | ListValue [Value]
+  | ListValue [TypedValue]
   | UnitValue
   | BoolValue Bool
-  | FunctionValue Environment Pattern (ElaraExecute Value)
+  | FunctionValue Environment Pattern (ElaraExecute TypedValue)
 
 instance Show Value where
   show (IntValue i) = show i
@@ -205,3 +227,20 @@ constantToValue :: Constant -> Value
 constantToValue (IntC i) = IntValue i
 constantToValue (StringC s) = StringValue s
 constantToValue UnitC = UnitValue
+
+intType :: Type
+intType = NamedType "Int"
+
+inferTypes :: Value -> TypedValue
+inferTypes i@(IntValue _) = addType intType i
+inferTypes i@(ListValue []) = addType (ListType (TypeVariable "a")) i
+inferTypes i@(ListValue l) = addType (ListType (type_ (head l))) i
+inferTypes f@FunctionValue {} = addType (PureFunctionType (NamedType "idk") (NamedType "idk")) f
+inferTypes b@(BoolValue _) = addType (NamedType "Bool") b
+inferTypes v = error $ "Can't infer type of " ++ show v
+
+addType :: Type -> Value -> TypedValue
+addType t v = TypedValue v t
+
+typeOnlyValue :: Type -> TypedValue
+typeOnlyValue = TypedValue (error "Value does not have a type")

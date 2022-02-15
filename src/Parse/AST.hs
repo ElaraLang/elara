@@ -2,19 +2,25 @@ module Parse.AST where
 
 import Data.List (intercalate)
 
-newtype Line
+data Line
   = ExpressionL Expression
+  | DefL Pattern Type
   deriving (Eq)
 
 instance Show Line where
   show (ExpressionL e) = show e
+  show (DefL p t) = "def " ++ show p ++ " : " ++ show t
 
 data Separator = Separator deriving (Show)
 
 data Identifier
   = NormalIdentifier String
   | OpIdentifier String
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Identifier where
+  show (NormalIdentifier s) = s
+  show (OpIdentifier s) = "(" ++ s ++ ")"
 
 identifierValue :: Identifier -> String
 identifierValue (NormalIdentifier s) = s
@@ -83,3 +89,14 @@ showPattern (IdentifierP p) = showIdentifier p
 showPattern e = show e
 
 --showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)
+
+data Type
+  = NamedT String
+  | ListT Type
+  | PureFunT Type Type
+  deriving (Eq)
+  
+instance Show Type where
+  show (NamedT s) = s
+  show (ListT t) = "[" ++ show t ++ "]"
+  show (PureFunT t1 t2) = show t1 ++ " -> " ++ show t2 

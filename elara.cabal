@@ -39,6 +39,7 @@ library
       Preprocess.Constant
       Preprocess.Expression
       Preprocess.Preprocessor
+      Preprocess.Type
   other-modules:
       Paths_elara
   hs-source-dirs:

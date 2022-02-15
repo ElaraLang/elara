@@ -13,8 +13,6 @@ instance Show Constant where
   show (StringC s) = show s
   show UnitC = "()"
 
-
-
 data Identifier
   = SimpleIdentifier String
   | OperatorIdentifier String
@@ -35,7 +33,7 @@ data Pattern
   deriving (Eq)
 
 instance Show Pattern where
-  show (IdentifierPattern i) = show i
+  show (IdentifierPattern i) = "Identifier(" ++ show i ++ ")"
   show WildcardPattern = "_"
   show (ConstantPattern c) = show c
   show (ConsPattern p1 p2) = "(" ++ show p1 ++ "::" ++ show p2 ++ ")"
@@ -73,7 +71,24 @@ data MatchCase = MatchCase Pattern Expression deriving (Eq)
 instance Show MatchCase where
   show (MatchCase pattern value) = show pattern ++ " -> " ++ show value
 
-newtype Line = ExpressionLine Expression deriving (Eq)
+data Line
+  = ExpressionLine Expression
+  | DefLine Pattern Type
+  deriving (Eq)
 
 instance Show Line where
   show (ExpressionLine e) = show e
+  show (DefLine p t) = "def " ++ show p ++ " : " ++ show t
+
+data Type
+  = NamedType String
+  | TypeVariable String
+  | ListType Type
+  | PureFunctionType Type Type
+  deriving (Eq)
+  
+instance Show Type where
+  show (NamedType s) = s
+  show (TypeVariable s) = s
+  show (ListType t) = "[" ++ show t ++ "]"
+  show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
