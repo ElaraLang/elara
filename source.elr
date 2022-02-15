@@ -9,4 +9,4 @@ let (|>) f x = x f
 let succ x = x + 1
 println (map succ [1, 2, 3])
 
-println $ 3 |> succ
+3 |> succ |> println

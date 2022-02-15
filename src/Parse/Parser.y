@@ -10,7 +10,8 @@ import Debug.Trace
 }
 
 %right cons
-%nonassoc int string identifier let op if'`' '[' '(' match
+%left op
+%nonassoc int string identifier let if '`' '[' '(' match
 %nonassoc APP
 
 
@@ -53,7 +54,7 @@ Expression  : Constant {ConstE $1}
             | let Pattern eq Block {LetE $2 $4 }
             | Identifier {IdentifierE $1}
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
-            | Expression Operator Expression {InfixApplicationE $2 $1 $3}
+            | Expression Operator Expression %prec APP {InfixApplicationE $2 $1 $3}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression cons Expression {ConsE $1 $3}
