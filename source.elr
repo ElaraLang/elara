@@ -4,7 +4,7 @@ let bench f =
     let end = currentTime ()
     let diff = end - start
     println result
-    println "Time Taken (ms):"
+    println "Time Taken (ns):"
     println diff
 
 let fact n = match n
