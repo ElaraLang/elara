@@ -43,6 +43,8 @@ spec = describe "Test Parser" $ do
     "f 1" <=> FuncApplicationE (IdentifierE (NormalIdentifier "f")) (ConstE (IntC 1))
   it "Parses a function application with an infix expression" $ do
     "f 1 + 2" <=> InfixApplicationE (OpIdentifier "+") (FuncApplicationE (IdentifierE (NormalIdentifier "f")) (ConstE (IntC 1))) (ConstE (IntC 2))
+  it "Parses an infix expression with a function on the RHS" $ do
+    "n * (f (n - 1))" <=> InfixApplicationE (OpIdentifier "*") (IdentifierE (NormalIdentifier "n")) (FuncApplicationE (IdentifierE (NormalIdentifier "f")) (InfixApplicationE (OpIdentifier "-") (IdentifierE (NormalIdentifier "n")) (ConstE (IntC 1))))
 
   it "Parses a normal variable binding" $ do
     "let x = 1" <=> LetE (IdentifierP (NormalIdentifier "x")) (ConstE (IntC 1))

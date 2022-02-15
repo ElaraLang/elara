@@ -1,8 +1,14 @@
-let map f l =
-    match l
-        [] -> []
-        (x:xs) -> f x : map f xs
+let bench f =
+    let start = currentTime ()
+    let result = f ()
+    let end = currentTime ()
+    let diff = end - start
+    println result
+    println "Time Taken (ms):"
+    println diff
 
-def succ   : Int -> Int
-let succ n = n + 1
-println (map succ [1, 2, 3])
+let fact n = match n
+    0 -> 1
+    n -> n * (fact (n - 1))
+let f _ = fact 50
+bench f

@@ -10,8 +10,8 @@ import Debug.Trace
 }
 
 %right ':'
-%left op
 %nonassoc int string identifier let if '`' '[' '(' match def
+%left op
 %nonassoc APP
 
 
@@ -20,7 +20,6 @@ import Debug.Trace
 %monad { P }
 %lexer { lexer } { EOF }
 %error { parseError }
-
 
 
 %token
@@ -60,12 +59,12 @@ Expression :: { Expression }
 Expression  : Constant {ConstE $1}
             | let Pattern eq Block {LetE $2 $4 }
             | Identifier {IdentifierE $1}
+            | '(' Expression ')' { $2 }
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }
             | Expression Operator Expression %prec APP {InfixApplicationE $2 $1 $3}
             | ListExpression {$1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression ':' Expression {ConsE $1 $3}
-            | '(' Expression ')' { $2 }
             | MatchExpression { $1 }
 
 

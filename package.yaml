@@ -35,6 +35,7 @@ dependencies:
   - utf8-string
   - containers
   - hspec
+  - time
 
 library:
   source-dirs: src

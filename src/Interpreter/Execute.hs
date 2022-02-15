@@ -1,10 +1,12 @@
 module Interpreter.Execute where
 
+import Control.Monad (unless)
 import Data.IORef
 import Data.Map ((!), (!?))
 import qualified Data.Map as M
 import Data.Maybe
 import Interpreter.AST
+import System.CPUTime (getCPUTime)
 
 -- Type of an element in Elara that can be executed. This takes a value (typically a function parameter), an environment, and returns an IO action
 type ElaraExecute a = a -> Environment -> IO (Maybe TypedValue)
@@ -30,7 +32,7 @@ instance Execute Expression where
   execute (Constant val) _ = case val of
     IntC i -> return $ Just $ inferTypes $ IntValue i
     StringC b -> return $ Just $inferTypes $ StringValue b
-    _ -> return Nothing
+    UnitC -> return $ Just $ inferTypes UnitValue
   execute (Cons a b) s = do
     (Just a') <- execute a s
 
@@ -62,10 +64,14 @@ instance Execute Expression where
     let val = fromMaybe (error ("Could not find binding with name " ++ ident)) (bindingMap !? ident)
     return $ Just val
   execute (FunctionApplication a b) state = do
-    aVal <- execute a state
-    let (Just (FunctionValue closure _ func)) = value <$> aVal
+    Just aVal <- execute a state
+    let expectedType = case type_ aVal of
+          PureFunctionType argType _ -> argType
+          _ -> error $ "Cannot apply non-function " ++ show a ++ " (" ++ show aVal ++ ")"
+    let (FunctionValue closure _ func) = value aVal
     (Just arg) <- execute b state
     env <- closure `union` state
+    unless (expectedType `allows` type_ arg) $ error $ "Expected " ++ show expectedType ++ " but got " ++ show (type_ arg) ++ " for value " ++ show b
     func arg env
   execute (IfElse cond ifTrue ifFalse) state = do
     condVal <- execute cond state
@@ -104,6 +110,7 @@ createFunction body paramName paramValue state = do
   execute body stateWithParamValue
 
 matchPattern :: TypedValue -> Pattern -> Bool
+matchPattern _ WildcardPattern = True
 matchPattern _ (IdentifierPattern _) = True
 matchPattern (TypedValue (ListValue (a : b)) (ListType _)) (ConsPattern a' b') = matchPattern a a' && matchPattern (inferTypes $ ListValue b) b'
 matchPattern tv p = matchPattern' (value tv) p
@@ -115,6 +122,7 @@ matchPattern tv p = matchPattern' (value tv) p
 -- Destructures a pattern into its components.
 -- This function assumes that matchPattern has already been called to ensure that the pattern matches the value.
 applyPattern :: TypedValue -> Pattern -> M.Map String TypedValue
+applyPattern _ WildcardPattern = M.empty
 applyPattern _ (ConstantPattern _) = M.empty
 applyPattern v (IdentifierPattern i) = M.singleton (show i) v
 applyPattern t p = applyPattern' (value t) p
@@ -140,24 +148,32 @@ primitiveFunctions = do
     M.map inferTypes $
       M.fromList
         [ ("println", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "value") println),
-          ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") elaraPlus1),
-          ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq)
+          ("+", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "+") (elaraIntInfix (+))),
+          ("-", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "-") (elaraIntInfix (-))),
+          ("*", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "*") (elaraIntInfix (*))),
+          ("==", FunctionValue emptyEnv (IdentifierPattern $ OperatorIdentifier "==") elaraEq),
+          ("currentTime", FunctionValue emptyEnv (IdentifierPattern $ SimpleIdentifier "currentTime") elaraCurrentTime)
         ]
 
-elaraPlus1 :: ElaraExecute TypedValue
-elaraPlus1 (TypedValue (IntValue a) (NamedType "Int")) s = do
+elaraCurrentTime :: ElaraExecute TypedValue
+elaraCurrentTime (TypedValue UnitValue UnitType) _ = do
+  nowNanos <- (\time -> round ((fromIntegral time :: Double) / 1000.0)) <$> getCPUTime
+  return $ Just $ TypedValue (IntValue nowNanos) intType
+
+elaraIntInfix :: (Integer -> Integer -> Integer) -> ElaraExecute TypedValue
+elaraIntInfix f (TypedValue (IntValue a) (NamedType "Int")) s = do
   return $
     Just $
-      inferTypes $
+      flip TypedValue (PureFunctionType intType intType) $
         FunctionValue s (IdentifierPattern $ SimpleIdentifier "b") $ \right _ -> do
           let (IntValue b) = value right
-          let result = a + b
+          let result = f a b
           return $ Just $ inferTypes $ IntValue result
-elaraPlus1 a _ = error $ "Can't add " ++ show a
+elaraIntInfix _ a _ = error $ "Can't add " ++ show a
 
 println :: ElaraExecute TypedValue
-println value _ = do
-  print value
+println tv _ = do
+  print $ value tv
   return $ Just $ inferTypes UnitValue
 
 elaraEq :: ElaraExecute TypedValue
@@ -231,11 +247,16 @@ constantToValue UnitC = UnitValue
 intType :: Type
 intType = NamedType "Int"
 
+stringType :: Type
+stringType = NamedType "String"
+
 inferTypes :: Value -> TypedValue
+inferTypes UnitValue = TypedValue UnitValue UnitType
 inferTypes i@(IntValue _) = addType intType i
+inferTypes i@(StringValue _) = addType stringType i
 inferTypes i@(ListValue []) = addType (ListType (TypeVariable "a")) i
 inferTypes i@(ListValue l) = addType (ListType (type_ (head l))) i
-inferTypes f@FunctionValue {} = addType (PureFunctionType (NamedType "idk") (NamedType "idk")) f
+inferTypes f@FunctionValue {} = addType (PureFunctionType (TypeVariable "idk") (TypeVariable "idk")) f
 inferTypes b@(BoolValue _) = addType (NamedType "Bool") b
 inferTypes v = error $ "Can't infer type of " ++ show v
 

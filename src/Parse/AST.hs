@@ -82,9 +82,11 @@ data MatchLine = MatchLine Pattern Expression deriving (Eq)
 instance Show MatchLine where
   show (MatchLine pattern value) = showPattern pattern ++ " -> " ++ showASTNode value
 
+showIdentifier :: Identifier -> String
 showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i
 
+showPattern :: Pattern -> String
 showPattern (IdentifierP p) = showIdentifier p
 showPattern e = show e
 

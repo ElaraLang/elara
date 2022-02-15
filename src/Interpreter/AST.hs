@@ -84,11 +84,15 @@ data Type
   = NamedType String
   | TypeVariable String
   | ListType Type
+  | UnitType
   | PureFunctionType Type Type
   deriving (Eq)
-  
+
 instance Show Type where
   show (NamedType s) = s
   show (TypeVariable s) = s
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
+
+(TypeVariable _) `allows` _ = True
+typeA `allows` typeB = typeA == typeB

@@ -54,6 +54,7 @@ library
     , hspec
     , mtl
     , text
+    , time
     , utf8-string
   default-language: Haskell2010
 
@@ -75,6 +76,7 @@ executable elara-exe
     , hspec
     , mtl
     , text
+    , time
     , utf8-string
   default-language: Haskell2010
 
@@ -98,5 +100,6 @@ test-suite elara-test
     , hspec
     , mtl
     , text
+    , time
     , utf8-string
   default-language: Haskell2010
