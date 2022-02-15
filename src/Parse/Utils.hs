@@ -64,7 +64,6 @@ startWhite _ str = do
             }
       else error $ "Indents don't match ( " ++ show top ++ " vs " ++ show n ++ ")" ++ show s
   return $ Just NewLine
-startWhite a b = error $ "startWhite: " ++ show a ++ " " ++ show b
 -- The functions that must be provided to Alex's basic interface
 
 -- The input: last character, unused bytes, remaining string
