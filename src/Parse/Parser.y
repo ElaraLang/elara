@@ -87,7 +87,7 @@ MatchBody :: { [MatchLine] }
 MatchBody : MatchLine { [$1] }
          | MatchBody MatchLine { $2 : $1 }
 
-MatchLine : Pattern '->' Expression Separator { MatchLine $1 $3 }
+MatchLine : Pattern '->' Block Separator { MatchLine $1 $3 }
 
 
 Pattern :: { Pattern }
