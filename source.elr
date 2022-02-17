@@ -1,14 +1,1 @@
-let bench f =
-    let start = currentTime ()
-    let result = f ()
-    let end = currentTime ()
-    let diff = end - start
-    println result
-    println "Time Taken (ns):"
-    println diff
-
-let fact n = match n
-    0 -> 1
-    n -> n * (fact (n - 1))
-let f _ = fact 50
-bench f
+let a = 3

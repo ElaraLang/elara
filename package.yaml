@@ -36,6 +36,8 @@ dependencies:
   - containers
   - hspec
   - time
+  - binary
+  - bytestring
 
 library:
   source-dirs: src

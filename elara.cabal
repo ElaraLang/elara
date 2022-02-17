@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Compiler.ClassFile
       Interpreter.AST
       Interpreter.Execute
       Lib
@@ -50,6 +51,8 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , binary
+    , bytestring
     , containers
     , hspec
     , mtl
@@ -71,6 +74,8 @@ executable elara-exe
   build-depends:
       array
     , base >=4.7 && <5
+    , binary
+    , bytestring
     , containers
     , elara
     , hspec
@@ -95,6 +100,8 @@ test-suite elara-test
   build-depends:
       array
     , base >=4.7 && <5
+    , binary
+    , bytestring
     , containers
     , elara
     , hspec
