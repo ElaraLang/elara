@@ -6,6 +6,7 @@ module Lib
 where
 
 import Compiler.ClassFile
+import Compiler.Instruction
 import Control.Monad (forM_)
 import Data.Binary.Put
 import Data.Bits ((.&.), (.|.))
@@ -82,15 +83,10 @@ someFunc = do
                                     { maxStack = 2,
                                       maxLocals = 1,
                                       code =
-                                        [ 178,
-                                          00,
-                                          13,
-                                          18,
-                                          14,
-                                          182,
-                                          00,
-                                          21,
-                                          177
+                                        [ GetStatic 13,
+                                          LDC 14,
+                                          InvokeVirtual 21,
+                                          Return
                                         ],
                                       exceptionTable = [],
                                       codeAttributes = []

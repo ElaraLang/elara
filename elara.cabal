@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Compiler.ClassFile
+      Compiler.Instruction
       Interpreter.AST
       Interpreter.Execute
       Lib

@@ -1,15 +1,16 @@
 module Compiler.Instruction where
 
 import Data.Binary.Put
-import qualified Data.ByteString.Lazy as L
 import Data.Word
 
 data Instruction
   = Return
   | LDC Word8
   | InvokeVirtual Word16
+  | GetStatic Word16
 
 putInstruction :: Instruction -> Put
-putInstruction Return = putWord8 0
-putInstruction (LDC w) = putWord8 1 >> putWord8 w
-putInstruction (InvokeVirtual w) = putWord8 2 >> putWord16be w
+putInstruction Return = putWord8 177
+putInstruction (LDC w) = putWord8 18 >> putWord8 w
+putInstruction (InvokeVirtual w) = putWord8 182 >> putWord16be w
+putInstruction (GetStatic w) = putWord8 178 >> putWord16be w
