@@ -9,11 +9,9 @@ import Compiler.ClassFile
 import Compiler.Instruction
 import Control.Monad (forM_)
 import Data.Binary.Put
-import Data.Bits ((.&.), (.|.))
+import Data.Bits ((.|.))
 import Data.ByteString.Lazy as L (unpack, writeFile)
-import Data.List (intercalate)
 import Interpreter.Execute
-import Parse.AST
 import Parse.Parser
 import Parse.Reader
 import Parse.Utils
