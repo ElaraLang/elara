@@ -26,13 +26,17 @@ transform clazz = evalState (transformClass clazz) (TransformState M.empty empty
 emptyClass :: C.ClassFile
 emptyClass =
   C.ClassFile
-    { C.accessFlags = 0,
+    { C.majorVersion = 0,
+      C.minorVersion = 0,
+      C.magic = 0,
+      C.accessFlags = 0,
       C.thisClass = 0,
       C.superClass = 0,
       C.interfaces = [],
       C.fields = [],
       C.methods = [],
-      C.attributes = []
+      C.attributes = [],
+      C.constantPool = V.empty
     }
 
 transformClass :: A.ClassFile -> Mutate C.ClassFile
