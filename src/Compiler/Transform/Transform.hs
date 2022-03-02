@@ -62,21 +62,34 @@ transformClass clazz = do
         C.attributes = []
       }
 
+loadConstants :: Mutate [C.ConstantPoolInfo]
+loadConstants = do
+  constantMap <- gets constants
+  let asList = M.toList constantMap
+  infos <- mapM (transformConstant . snd) asList
+  newConsts <- gets constants
+  if M.size newConsts /= M.size constantMap
+    then loadConstants
+    else return infos
+
 transformConstantPool :: Mutate (V.Vector C.ConstantPoolInfo)
 transformConstantPool = do
-  constantMap <- gets constants
+  infos <- loadConstants
+  traceShowM infos
   return $
     V.create $ do
-      v <- MV.new (M.size constantMap)
-      forM_ (M.toList constantMap) $ \(index, entry) -> do
-        let info = transformConstant entry
+      v <- MV.new (length infos)
+      forM_ ([0 :: Int ..] `zip` infos) $ \(index, info) -> do
         MV.write v (fromIntegral index) info
       return v
 
-transformConstant :: A.ConstantPoolEntry -> C.ConstantPoolInfo
-transformConstant (A.CPUTF8Entry str) = C.UTF8Info $ Data.Text.Encoding.encodeUtf8 str
-transformConstant (A.CPClassEntry index) = C.ClassInfo index
-transformConstant (A.CPIntegerEntry value) = C.IntegerInfo $ fromIntegral value
+transformConstant :: A.ConstantPoolEntry -> Mutate C.ConstantPoolInfo
+transformConstant (A.CPUTF8Entry str) = return $ C.UTF8Info $ Data.Text.Encoding.encodeUtf8 str
+transformConstant (A.CPClassEntry index) = return $ C.ClassInfo index
+transformConstant (A.CPIntegerEntry value) = return $ C.IntegerInfo $ fromIntegral value
+transformConstant (A.CPStringEntry str) = do
+  strIndex <- getConstantIndex (A.CPUTF8Entry str)
+  return $ C.StringInfo strIndex
 transformConstant a = error $ "Can't transform " ++ show a
 
 getConstantIndex :: A.ConstantPoolEntry -> Mutate Word16
@@ -87,7 +100,8 @@ getConstantIndex constant = do
     Just i -> return i
     Nothing -> do
       let newIndex = fromIntegral $ M.size consts
-      put $ s {constants = M.insert newIndex constant consts}
+      let newConstants = M.insert newIndex constant consts
+      put $ s {constants = newConstants}
       return newIndex
   return (index + 1) -- +1 because the constant pool starts at 1
 

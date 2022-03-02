@@ -10,6 +10,9 @@ compileConstant :: E.Constant -> (JVMType, ConstantPoolEntry)
 compileConstant (E.IntC i) = do
   let converted = fromInteger i :: Int -- TODO overflow but who cares
   (JVMInt, CPIntegerEntry converted)
+compileConstant (E.StringC s) = do
+  let converted = T.pack s
+  (JVMObject "java/lang/String", CPStringEntry converted)
 
 compileExpression :: Compiler E.Expression
 compileExpression (E.Bind (E.IdentifierPattern ident) (E.Constant constant)) clazz = do

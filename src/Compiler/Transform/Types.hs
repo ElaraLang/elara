@@ -15,7 +15,7 @@ toInternalType JVMLong = "J"
 toInternalType JVMFloat = "F"
 toInternalType JVMDouble = "D"
 toInternalType JVMChar = "C"
-toInternalType (JVMObject s) = s -- TODO add the / and ; here?
+toInternalType (JVMObject s) = "L" ++ s ++ ";"
 toInternalType (JVMArray t) = "[" ++ toInternalType t
 
 elaraTypeToJVMType :: E.Type -> JVMType
