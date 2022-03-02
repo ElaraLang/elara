@@ -77,15 +77,7 @@ loadConstants = do
     else return infos
 
 transformConstantPool :: Mutate (V.Vector C.ConstantPoolInfo)
-transformConstantPool = do
-  infos <- loadConstants
-  traceShowM infos
-  return $
-    V.create $ do
-      v <- MV.new (length infos)
-      forM_ ([0 :: Int ..] `zip` infos) $ \(index, info) -> do
-        MV.write v (fromIntegral index) info
-      return v
+transformConstantPool = V.fromList <$> loadConstants
 
 transformConstant :: A.ConstantPoolEntry -> Mutate C.ConstantPoolInfo
 transformConstant (A.CPUTF8Entry str) = return $ C.UTF8Info $ Data.Text.Encoding.encodeUtf8 str
