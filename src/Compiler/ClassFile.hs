@@ -3,15 +3,17 @@ module Compiler.ClassFile where
 import Compiler.Instruction
 import Data.Binary.Builder (toLazyByteString)
 import Data.Binary.Put
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString as B
+import Data.ByteString.Lazy (toStrict)
+import qualified Data.Vector as V
 import Data.Word
-import Debug.Trace (traceShow, traceShowM)
+import Debug.Trace
 
 data ClassFile = ClassFile
   { magic :: Word32,
     minorVersion :: Word16,
     majorVersion :: Word16,
-    constantPool :: [ConstantPoolInfo],
+    constantPool :: V.Vector ConstantPoolInfo,
     accessFlags :: Word16,
     thisClass :: Word16,
     superClass :: Word16,
@@ -23,15 +25,16 @@ data ClassFile = ClassFile
 
 data ConstantPoolInfo
   = ClassInfo {classNameIndex :: Word16}
-  | UTF8Info {utf8InfoBytes :: [Word8]}
+  | UTF8Info {utf8InfoBytes :: B.ByteString}
   | FieldRefInfo {fieldRefClassIndex :: Word16, fieldRefNameAndTypeIndex :: Word16}
   | MethodRefInfo {methodRefClassIndex :: Word16, methodRefNameAndTypeIndex :: Word16}
   | NameAndTypeInfo NameAndType
   | StringInfo {stringIndex :: Word16}
-  deriving (Show)
+  | IntegerInfo {integerValue :: Word32}
+  deriving (Show, Eq, Ord)
 
 data NameAndType = NameAndType {nameAndTypeName :: Word16, nameAndTypeDescriptor :: Word16}
-  deriving (Show)
+  deriving (Show, Eq, Ord)
 
 data FieldInfo = FieldInfo
   { fieldAccessFlags :: Word16,
@@ -45,13 +48,15 @@ data AttributeInfo = AttributeInfo
     attributeInfo :: Attribute
   }
 
-data Attribute = CodeAttribute
-  { maxStack :: Word16,
-    maxLocals :: Word16,
-    code :: [Instruction],
-    exceptionTable :: [ExceptionTableEntry],
-    codeAttributes :: [AttributeInfo]
-  }
+data Attribute
+  = CodeAttribute
+      { maxStack :: Word16,
+        maxLocals :: Word16,
+        code :: [Instruction],
+        exceptionTable :: [ExceptionTableEntry],
+        codeAttributes :: [AttributeInfo]
+      }
+  | ConstantValueAttribute Word16
 
 data ExceptionTableEntry = ExceptionTableEntry
   { startPc :: Word16,
@@ -67,7 +72,7 @@ data MethodInfo = MethodInfo
     methodAttributes :: [AttributeInfo]
   }
 
-putConstantPool :: [ConstantPoolInfo] -> Put
+putConstantPool :: V.Vector ConstantPoolInfo -> Put
 putConstantPool entries = do
   putWord16be $ fromIntegral (length entries + 1)
   mapM_ putConstantPoolInfo entries
@@ -78,8 +83,8 @@ putConstantPoolInfo (ClassInfo ciNameIndex) = do
   putWord16be ciNameIndex
 putConstantPoolInfo (UTF8Info uiBytes) = do
   putWord8 1
-  putWord16be $ fromIntegral $ length uiBytes
-  mapM_ putWord8 uiBytes
+  putWord16be $ fromIntegral $ B.length uiBytes
+  putByteString uiBytes
 putConstantPoolInfo (FieldRefInfo frClassIndex frNameAndTypeIndex) = do
   putWord8 9
   putWord16be frClassIndex
@@ -94,6 +99,10 @@ putConstantPoolInfo (NameAndTypeInfo nameAndType) = do
 putConstantPoolInfo (StringInfo siIndex) = do
   putWord8 8
   putWord16be siIndex
+putConstantPoolInfo (IntegerInfo iValue) = do
+  putWord8 3
+  putWord32be iValue
+putConstantPoolInfo other = error $ "putConstantPoolInfo: " ++ show other
 
 putNameAndType :: NameAndType -> Put
 putNameAndType (NameAndType name descriptor) = do
@@ -124,18 +133,21 @@ putAttributes attributes = do
   where
     putAttributeInfo (AttributeInfo aiNameIndex aiInfo) = do
       putWord16be aiNameIndex
-      let info = runPut $ putAttribute aiInfo
-      let aiLength = L.length info
+      let info = toStrict $ runPut $ putAttribute aiInfo
+      let aiLength = B.length info
       putWord32be $ fromIntegral aiLength
-      putLazyByteString info
+      putByteString info
 
+-- Puts the attribute data. This must not include length or name, just the actual value
 putAttribute :: Attribute -> Put
+putAttribute (ConstantValueAttribute cvIndex) = do
+  putWord16be cvIndex
 putAttribute (CodeAttribute maxStack maxLocals code exceptionTable codeAttributes) = do
   putWord16be maxStack
   putWord16be maxLocals
-  let codeStr = toLazyByteString $ execPut $ mapM_ putInstruction code
-  putWord32be $ fromIntegral $ L.length codeStr
-  putLazyByteString codeStr
+  let codeStr = toStrict $ toLazyByteString $ execPut $ mapM_ putInstruction code
+  putWord32be $ fromIntegral $ B.length codeStr
+  putByteString codeStr
   putExceptionTable exceptionTable
   putAttributes codeAttributes
 
@@ -174,52 +186,3 @@ putClassFile classfile = do
   putFieldTable $ fields classfile
   putMethodTable $ methods classfile
   putAttributes $ attributes (classfile :: ClassFile)
-
--- Access flags
-accPublic :: Word16
-accPublic = 0x0001 :: Word16
-
-accPrivate :: Word16
-accPrivate = 0x0002 :: Word16
-
-accProtected :: Word16
-accProtected = 0x0004 :: Word16
-
-accStatic :: Word16
-accStatic = 0x0008 :: Word16
-
-accFinal :: Word16
-accFinal = 0x0010 :: Word16
-
-accSynchronized :: Word16
-accSynchronized = 0x0020 :: Word16
-
-accBridge :: Word16
-accBridge = 0x0040 :: Word16
-
-accVarargs :: Word16
-accVarargs = 0x0080 :: Word16
-
-accNative :: Word16
-accNative = 0x0100 :: Word16
-
-accAbstract :: Word16
-accAbstract = 0x0400 :: Word16
-
-acStrict :: Word16
-acStrict = 0x0800 :: Word16
-
-accSynthetic :: Word16
-accSynthetic = 0x1000 :: Word16
-
-accSuper :: Word16
-accSuper = 0x0020 :: Word16
-
-accInterface :: Word16
-accInterface = 0x0200 :: Word16
-
-accAnnotation :: Word16
-accAnnotation = 0x2000 :: Word16
-
-accEnum :: Word16
-accEnum = 0x4000 :: Word16

@@ -38,7 +38,8 @@ dependencies:
   - time
   - binary
   - bytestring
-
+  - bimap
+  - vector
 library:
   source-dirs: src
 
