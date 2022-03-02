@@ -20,4 +20,12 @@ toInternalType (JVMArray t) = "[" ++ toInternalType t
 
 elaraTypeToJVMType :: E.Type -> JVMType
 elaraTypeToJVMType (E.NamedType "Int") = JVMInt
-elaraTypeToJVMType _ = error "help"
+elaraTypeToJVMType (E.NamedType "Boolean") = JVMBoolean
+elaraTypeToJVMType (E.NamedType "Char") = JVMChar
+elaraTypeToJVMType (E.NamedType "Byte") = JVMByte
+elaraTypeToJVMType (E.NamedType "Short") = JVMShort
+elaraTypeToJVMType (E.NamedType "Long") = JVMLong
+elaraTypeToJVMType (E.NamedType "Float") = JVMFloat
+elaraTypeToJVMType (E.NamedType "Double") = JVMDouble
+elaraTypeToJVMType (E.NamedType "String") = JVMObject "java/lang/String"
+elaraTypeToJVMType (E.NamedType s) = JVMObject s

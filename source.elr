@@ -1,2 +1,2 @@
-def a : Int
+def a : String
 let a = "hello"
