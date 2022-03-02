@@ -1,4 +1,2 @@
 def a : Int
-let a = 3
-
-let [a, b, c] = [1, 2, 3]
+let a = "hello"

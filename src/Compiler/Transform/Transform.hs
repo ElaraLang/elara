@@ -9,9 +9,7 @@ import qualified Data.Bimap as M
 import Data.Bits ((.|.))
 import Data.Text.Encoding
 import qualified Data.Vector as V
-import qualified Data.Vector.Generic.Mutable as MV
 import Data.Word (Word16)
-import Debug.Trace
 
 data TransformState = TransformState
   { constants :: M.Bimap Word16 A.ConstantPoolEntry,
