@@ -5,7 +5,6 @@ import Compiler.Transform.Environment
 import Compiler.Transform.Types
 import qualified Data.Text as T
 import qualified Interpreter.AST as E
-import Debug.Trace (traceShowM)
 
 compileConstant :: E.Constant -> (JVMType, ConstantPoolEntry)
 compileConstant (E.IntC i) = do

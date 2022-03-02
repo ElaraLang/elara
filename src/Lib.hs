@@ -5,21 +5,17 @@ module Lib
   )
 where
 
-import Compiler.Instruction
+import qualified Compiler.ClassFile as C
 import Compiler.Transform.Abstract
 import Compiler.Transform.Expression
 import Compiler.Transform.Transform
-import Control.Monad (forM_)
 import Data.Binary.Put
-import Data.Bits ((.|.))
-import Data.ByteString.Lazy as L (unpack, writeFile)
+import Data.ByteString.Lazy as L (writeFile)
 import Interpreter.AST
-import Interpreter.Execute
 import Parse.Parser
 import Parse.Reader
 import Parse.Utils
 import Preprocess.Preprocessor
-import qualified Compiler.ClassFile as C
 
 someFunc :: IO ()
 someFunc = do
@@ -29,10 +25,9 @@ someFunc = do
   putStrLn "Tokens: "
   print tokens
   let ast = parse content
-  env <- initialEnvironment
-  
+
   let emptyClass = ClassFile {className = "Test", superName = "", fields = []}
-  
-  let compiled = foldl (\clazz (ExpressionLine e) -> compileExpression e clazz) emptyClass $ preprocess <$>  ast
+
+  let compiled = foldl (\clazz (ExpressionLine e) -> compileExpression e clazz) emptyClass $ preprocess <$> ast
   let classFile = transform compiled
   L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
