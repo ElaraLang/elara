@@ -11,7 +11,6 @@ import Compiler.Transform.Expression
 import Compiler.Transform.Transform
 import Data.Binary.Put
 import Data.ByteString.Lazy as L (writeFile)
-import Interpreter.AST
 import Parse.Parser
 import Preprocess.Preprocessor
 
@@ -22,6 +21,6 @@ someFunc = do
 
   let emptyClass = ClassFile {className = "Test", superName = "java/lang/Object", fields = []}
 
-  let compiled = foldl (\clazz (ExpressionLine e) -> compileExpression e clazz) emptyClass $ preprocess <$> ast
+  let compiled = foldl (flip compileLine) emptyClass $ preprocess <$> ast
   let classFile = transform compiled
   L.writeFile "Test.class" (runPut $ C.putClassFile classFile)

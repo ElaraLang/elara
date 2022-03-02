@@ -73,7 +73,7 @@ instance Show MatchCase where
 
 data Line
   = ExpressionLine Expression
-  | DefLine Pattern Type
+  | DefLine Identifier Type
   deriving (Eq)
 
 instance Show Line where
@@ -94,5 +94,6 @@ instance Show Type where
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
 
+allows :: Type -> Type -> Bool
 (TypeVariable _) `allows` _ = True
 typeA `allows` typeB = typeA == typeB

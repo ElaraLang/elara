@@ -4,6 +4,7 @@ import Compiler.Transform.Abstract
 import Compiler.Transform.Environment
 import Compiler.Transform.Types
 import qualified Data.Text as T
+import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as E
 
 compileConstant :: E.Constant -> (JVMType, ConstantPoolEntry)
@@ -27,3 +28,13 @@ compileExpression (E.Bind (E.IdentifierPattern ident) (E.Constant constant)) cla
               ]
           }
   clazz {fields = field : fields clazz}
+
+compileDefLine :: Compiler (E.Identifier, E.Type)
+compileDefLine (pattern, t) clazz = do
+  let expectedType = elaraTypeToJVMType t
+  
+  clazz
+
+compileLine :: Compiler E.Line
+compileLine (E.ExpressionLine e) = compileExpression e
+compileLine (E.DefLine pattern t) = compileDefLine (pattern, t)

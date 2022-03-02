@@ -21,7 +21,7 @@ instance Execute Line where
     -- Create the dummy value
     let val = typeOnlyValue t
     -- Apply the pattern to the dummy value
-    let matched = applyPattern val pat
+    let matched = applyPattern val (IdentifierPattern pat)
     -- Merge the new bindings into the environment
     let newEnv = M.union matched env
     -- Write the new environment back to the bindings

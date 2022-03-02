@@ -4,7 +4,7 @@ import Data.List (intercalate)
 
 data Line
   = ExpressionL Expression
-  | DefL Pattern Type
+  | DefL Identifier Type
   deriving (Eq)
 
 instance Show Line where

@@ -7,4 +7,4 @@ import Preprocess.Type
 
 preprocess :: P.Line -> I.Line
 preprocess (P.ExpressionL e) = I.ExpressionLine $ preprocessExpression e
-preprocess (P.DefL pat t) = I.DefLine (preprocessPattern pat) (preprocessType t)
+preprocess (P.DefL i t) = I.DefLine (preprocessIdent i) (preprocessType t)

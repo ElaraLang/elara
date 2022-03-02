@@ -106,9 +106,12 @@ SingleValuePattern : Identifier { IdentifierP $1 }
                    | Constant { ConstantP $1 }
                    | '_' { WildP }
                    | '(' SingleValuePattern ':' SingleValuePattern ')' { ConsP $2 $4 }
-                   | '[' ']' { ListP [] }
-                   | '[' SingleValuePattern ']' { ListP [$2] }
-                   | '[' SingleValuePattern ',' SingleValuePattern ']' { ListP [$2, $4] }
+                   | '[' ListPattern ']' { ListP $ reverse $2 }
+
+ListPattern :: { [Pattern] }
+ListPattern : {- empty -} { [] }
+            | SingleValuePattern { [$1] }
+            | ListPattern ',' SingleValuePattern { $3 : $1 }
 
 FunctionPattern :: { [Pattern] }
 FunctionPattern : SingleValuePattern { [$1] }
@@ -137,7 +140,7 @@ ExpressionWithSep :: { Expression }
 ExpressionWithSep : Expression Separator { $1 }
 
 Line : Expression Separator { ExpressionL $1 }
-     | def Pattern ':' Type Separator { DefL $2 $4 }
+     | def Identifier ':' Type Separator { DefL $2 $4 }
 
 
 Body :: { [Line] }
