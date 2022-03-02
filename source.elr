@@ -1,2 +1,2 @@
-def a : String
-let a = "hello"
+let a = 3
+let b = a

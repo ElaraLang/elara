@@ -38,6 +38,7 @@ compileExpression (E.Bind (E.IdentifierPattern ident) (E.Constant constant)) = d
               ]
           }
   modify (\s -> s {classFile = clazz {fields = field : fields clazz}})
+compileExpression expr = error $ "Unsupported expression: " ++ show expr
 
 compileDefLine :: Compiler (E.Identifier, E.Type) ()
 compileDefLine (pattern, t) = do
