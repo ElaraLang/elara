@@ -26,7 +26,7 @@ someFunc = do
   print tokens
   let ast = parse content
 
-  let emptyClass = ClassFile {className = "Test", superName = "", fields = []}
+  let emptyClass = ClassFile {className = "Test", superName = "java/lang/Object", fields = []}
 
   let compiled = foldl (\clazz (ExpressionLine e) -> compileExpression e clazz) emptyClass $ preprocess <$> ast
   let classFile = transform compiled

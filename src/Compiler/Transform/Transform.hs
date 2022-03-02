@@ -40,6 +40,9 @@ transformClass clazz = do
   let name = A.className clazz
   nameIndex <- getConstantIndex (A.CPUTF8Entry name) -- Insert the class name
   classNameIndex <- getConstantIndex (A.CPClassEntry nameIndex) -- Class Info for the class name
+  let superName = A.superName clazz
+  superNameIndex <- getConstantIndex (A.CPUTF8Entry superName) -- Insert the super class name
+  superClassIndex <- getConstantIndex (A.CPClassEntry superNameIndex) -- Class Info for the super class name
   mapM_ transformField (A.fields clazz)
   newConstants <- transformConstantPool
 
@@ -51,7 +54,7 @@ transformClass clazz = do
         C.majorVersion = 60,
         C.accessFlags = 0,
         C.thisClass = classNameIndex,
-        C.superClass = 0,
+        C.superClass = superClassIndex,
         C.constantPool = newConstants,
         C.interfaces = [],
         C.fields = fields,
