@@ -5,14 +5,8 @@ module Lib
   )
 where
 
-import qualified Compiler.ClassFile as C
 import Compiler.Transform.Abstract
 import Compiler.Transform.Environment (emptyCompileState)
-import Compiler.Transform.Expression
-import Compiler.Transform.Transform
-import Control.Monad.State.Lazy (evalState)
-import Data.Binary.Put
-import Data.ByteString.Lazy as L (writeFile)
 import qualified Data.Map as M
 import qualified Interpreter.AST as A
 import Parse.Parser

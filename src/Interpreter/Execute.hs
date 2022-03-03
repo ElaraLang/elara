@@ -2,7 +2,7 @@ module Interpreter.Execute where
 
 import Control.Monad (unless)
 import Data.IORef
-import Data.Map ((!), (!?))
+import Data.Map ((!?))
 import qualified Data.Map as M
 import Data.Maybe
 import Interpreter.AST

@@ -1,8 +1,7 @@
 module Preprocess.Expression (preprocessExpression, preprocessIdent, newState, expressionQueue) where
 
 import Control.Monad.State
-import Data.List.NonEmpty (NonEmpty (..), toList)
-import Debug.Trace (trace, traceM)
+import Data.List.NonEmpty (toList)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
@@ -22,24 +21,12 @@ newState expressionQueue' =
 
 pull :: State ExpState P.Expression
 pull = do
-  state <- get
-  case expressionQueue state of
-    [] -> error "pull: empty list"
-    (x : xs) -> do
-      put $ state {expressionQueue = xs}
-      return x
-
-peek :: State ExpState (Maybe P.Expression)
-peek = do
   s <- get
   case expressionQueue s of
-    [] -> return Nothing
-    (x : _) -> return $ Just x
-
-push :: P.Expression -> State ExpState ()
-push expression = do
-  s <- get
-  put $ s {expressionQueue = expression : expressionQueue s}
+    [] -> error "pull: empty list"
+    (x : xs) -> do
+      put $ s {expressionQueue = xs}
+      return x
 
 preprocessExpression :: ExpProcessor
 preprocessExpression = do
@@ -99,10 +86,6 @@ preprocessPattern P.WildP = I.WildcardPattern
 preprocessPattern (P.ListP elems) = I.ListPattern (preprocessPattern <$> elems)
 preprocessPattern (P.FunctionP _ _) = error "Function pattern should not exist anymore"
 
-traceN n s = trace (n ++ " : " ++ show s) s
-
-traceNM n s = traceM (n ++ " : " ++ show s)
-
 desugarBlock :: [P.Expression] -> State ExpState I.Expression
 desugarBlock exps = desugarBlock' exps []
   where
@@ -112,9 +95,9 @@ desugarBlock exps = desugarBlock' exps []
       body <- desugarBlock others
       return $! I.Block (acc ++ [I.BindWithBody pat val' body])
     desugarBlock' [] acc = return $ I.Block $! reverse acc
-    desugarBlock' (e : exps) acc = do
+    desugarBlock' (e : exs) acc = do
       t <- preprocessExpression' e
-      desugarBlock' exps (t : acc)
+      desugarBlock' exs (t : acc)
 
 preprocessIdent :: P.Identifier -> I.Identifier
 preprocessIdent (P.NormalIdentifier i) = I.SimpleIdentifier i

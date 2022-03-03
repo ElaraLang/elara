@@ -3,10 +3,8 @@ module Compiler.Transform.Expression where
 import Compiler.Transform.Abstract
 import Compiler.Transform.Environment
 import Compiler.Transform.Types
-import Control.Monad (when)
 import Control.Monad.State.Lazy (get, gets, modify)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import qualified Interpreter.AST as E
 
