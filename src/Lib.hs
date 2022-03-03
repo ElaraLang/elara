@@ -23,7 +23,10 @@ someFunc = do
 
   let preprocessed = preprocessAll ast
   print preprocessed
---  let compiled = evalState (compileLines preprocessed) compileState
---  let classFile = transform compiled
---  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
-  let (A.ExpressionLine e) = head preprocessed in print $ "Inferred as " ++ show (runInfer $ infer (TypeEnv M.empty) e)
+  --  let compiled = evalState (compileLines preprocessed) compileState
+  --  let classFile = transform compiled
+  --  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
+  let inferEnv = baseEnv
+
+  let (A.ExpressionLine e) = head preprocessed in print $ "Inferred as " ++ show (runInfer $ infer baseEnv e)
+

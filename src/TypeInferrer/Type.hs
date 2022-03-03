@@ -8,7 +8,10 @@ import qualified Data.Set as Set
 import qualified Interpreter.AST as A
 
 newtype TVar = TV String
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show TVar where
+  show (TV s) = s
 
 data Type
   = TVariable TVar
@@ -34,6 +37,9 @@ data TypeError
 
 newtype TypeEnv = TypeEnv (M.Map TVar Scheme)
 
+baseEnv :: TypeEnv
+baseEnv = TypeEnv $ M.fromList [(TV "println", Forall [] (TImpureFunc (TVariable $ TV "a") (TConcrete "()")))]
+
 type Subst = M.Map TVar Type
 
 extend :: TypeEnv -> (TVar, Scheme) -> TypeEnv
@@ -49,7 +55,7 @@ runInfer m = do
 closeOver :: (M.Map TVar Type, Type) -> Scheme
 closeOver (sub, ty) = normalize sc
   where
-    sc = generalize (TypeEnv M.empty) (apply sub ty)
+    sc = generalize baseEnv (apply sub ty)
 
 normalize :: Scheme -> Scheme
 normalize (Forall ts body) = Forall (fmap snd ord) (normtype body)
@@ -74,6 +80,7 @@ generalize env t = Forall as t
   where
     as = Set.toList $ ftv t `Set.difference` ftv env
 
+-- Generates names for type variables
 letters :: [String]
 letters = [1 ..] >>= flip replicateM ['a' .. 'z']
 
@@ -127,15 +134,54 @@ lookupEnv (TypeEnv env) x =
       return (M.empty, t)
 
 infer :: TypeEnv -> A.Expression -> Infer (Subst, Type)
-infer env e = case e of
+infer env ex = case ex of
+  A.Constant (A.IntC _) -> return (M.empty, typeInt)
   A.Reference x -> lookupEnv env $ TV $ show x
   A.BindWithBody (A.IdentifierPattern i) e body -> do
     (s1, t1) <- infer env e
     let env' = apply s1 env
-        t'  = generalize env' t1
+        t' = generalize env' t1
     (s2, t2) <- infer (env' `extend` (TV $ show i, t')) body
     return (s2 `compose` s1, t2)
+  A.BindGlobal (A.IdentifierPattern _) e -> do
+    (s1, t1) <- infer env e
+    return (s1, t1)
+  A.Block lines ->
+    infer env (last lines) -- yeah this won't work lol
+  A.FunctionApplication e1 e2 -> do
+    tv <- fresh
+    (s1, t1) <- infer env e1
+    (s2, t2) <- infer (apply s1 env) e2
+    let funcType = case t1 of
+          (TFunc _ _) -> TFunc
+          TImpureFunc _ _ -> TImpureFunc
+          _ -> error "function application on non-function"
+    s3 <- unify (apply s2 t1) (funcType t2 tv)
+    return (s3 `compose` s2 `compose` s1, apply s3 tv)
   other -> throwError $ Other $ "Can't infer type of " ++ show other
 
 compose :: Subst -> Subst -> Subst
 s1 `compose` s2 = M.map (apply s1) s2 `M.union` s1
+
+unify :: Type -> Type -> Infer Subst
+unify (l `TFunc` r) (l' `TFunc` r') = do
+  s1 <- unify l l'
+  s2 <- unify (apply s1 r) (apply s1 r')
+  return (s2 `compose` s1)
+unify (l `TImpureFunc` r) (l' `TImpureFunc` r') = do
+  s1 <- unify l l'
+  s2 <- unify (apply s1 r) (apply s1 r')
+  return (s2 `compose` s1)
+unify (TVariable a) t = bind a t
+unify t (TVariable a) = bind a t
+unify (TConcrete a) (TConcrete b) | a == b = return M.empty
+unify t1 t2 = throwError $ UnificationFail t1 t2
+
+bind :: TVar -> Type -> Infer Subst
+bind a t
+  | t == TVariable a = return M.empty
+  | occursCheck a t = throwError $ InfiniteType a t
+  | otherwise = return $ M.singleton a t
+
+occursCheck :: Substitutable a => TVar -> a -> Bool
+occursCheck a t = a `Set.member` ftv t

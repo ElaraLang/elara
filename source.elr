@@ -1,5 +1,1 @@
-let main =
-  let x = 3
-  println x
-  let y = 4
-  println y
+let a = 3
