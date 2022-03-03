@@ -43,7 +43,6 @@ data Expression
   = Constant Constant
   | Reference Identifier
   | Lambda Pattern Expression
-  | Bind Pattern Expression
   | BindWithBody Pattern Expression Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
@@ -57,7 +56,6 @@ instance Show Expression where
   show (Constant c) = show c
   show (Reference i) = show i
   show (Lambda p e) = "\\" ++ show p ++ " -> " ++ show e
-  show (Bind p e) = "let " ++ show p ++ " = " ++ show e
   show (BindWithBody p e1 e2) = "let " ++ show p ++ " = " ++ show e1 ++ " in " ++ show e2
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"
   show (FunctionApplication e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"

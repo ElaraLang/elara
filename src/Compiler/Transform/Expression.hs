@@ -19,25 +19,25 @@ compileConstant (E.StringC s) = do
   (JVMObject "java/lang/String", CPStringEntry converted)
 
 compileExpression :: Compiler E.Expression ()
-compileExpression (E.Bind (E.IdentifierPattern ident) (E.Constant constant)) = do
-  state <- get
-  let clazz = classFile state
-  let (jvmType, compiled) = compileConstant constant
-  let expectedType = fromMaybe jvmType (M.lookup (show ident) (expectedTypes state))
-
-  when (expectedType /= jvmType) $
-    error $ "Expected type " ++ show expectedType ++ " for variable " ++ show ident ++ " but got " ++ show jvmType
-
-  let field =
-        Field
-          { accessFlags = [ACC_PUBLIC, ACC_STATIC, ACC_FINAL],
-            name = T.pack $ show ident,
-            descriptor = T.pack $ toInternalType expectedType,
-            attributes =
-              [ ConstantValueAttribute compiled
-              ]
-          }
-  modify (\s -> s {classFile = clazz {fields = field : fields clazz}})
+--compileExpression (E.Bind (E.IdentifierPattern ident) (E.Constant constant)) = do
+--  state <- get
+--  let clazz = classFile state
+--  let (jvmType, compiled) = compileConstant constant
+--  let expectedType = fromMaybe jvmType (M.lookup (show ident) (expectedTypes state))
+--
+--  when (expectedType /= jvmType) $
+--    error $ "Expected type " ++ show expectedType ++ " for variable " ++ show ident ++ " but got " ++ show jvmType
+--
+--  let field =
+--        Field
+--          { accessFlags = [ACC_PUBLIC, ACC_STATIC, ACC_FINAL],
+--            name = T.pack $ show ident,
+--            descriptor = T.pack $ toInternalType expectedType,
+--            attributes =
+--              [ ConstantValueAttribute compiled
+--              ]
+--          }
+--  modify (\s -> s {classFile = clazz {fields = field : fields clazz}})
 compileExpression expr = error $ "Unsupported expression: " ++ show expr
 
 compileDefLine :: Compiler (E.Identifier, E.Type) ()

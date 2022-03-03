@@ -47,14 +47,14 @@ instance Execute Expression where
   execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results
-  execute (Bind pat val) state = do
-    val' <- execute val state
-    case val' of
-      Just val'' -> do
-        let patternValues = applyPattern val'' pat
-        modifyIORef (bindings state) (patternValues `M.union`)
-        return $ Just val''
-      Nothing -> return Nothing
+--  execute (Bind pat val) state = do
+--    val' <- execute val state
+--    case val' of
+--      Just val'' -> do
+--        let patternValues = applyPattern val'' pat
+--        modifyIORef (bindings state) (patternValues `M.union`)
+--        return $ Just val''
+--      Nothing -> return Nothing
   execute (Lambda arg body) state = do
     let function = FunctionValue state arg $ createFunction body arg
     return $ Just $ inferTypes function

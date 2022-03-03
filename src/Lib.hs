@@ -13,8 +13,11 @@ import Compiler.Transform.Transform
 import Control.Monad.State.Lazy (evalState)
 import Data.Binary.Put
 import Data.ByteString.Lazy as L (writeFile)
+import qualified Data.Map as M
+import qualified Interpreter.AST as A
 import Parse.Parser
 import Preprocess.Preprocessor
+import TypeInferrer.Type
 
 someFunc :: IO ()
 someFunc = do
@@ -24,7 +27,9 @@ someFunc = do
   let emptyClass = ClassFile {className = "Test", superName = "java/lang/Object", fields = []}
   let compileState = emptyCompileState emptyClass
 
-  let preprocessed = preprocess <$> ast
-  let compiled = evalState (compileLines preprocessed) compileState
-  let classFile = transform compiled
-  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
+  let preprocessed = preprocessAll ast
+  print preprocessed
+--  let compiled = evalState (compileLines preprocessed) compileState
+--  let classFile = transform compiled
+--  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
+  let (A.ExpressionLine e) = head preprocessed in print $ "Inferred as " ++ show (runInfer $ infer (TypeEnv M.empty) e)

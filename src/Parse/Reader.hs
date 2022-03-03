@@ -4,7 +4,6 @@ import Control.Monad.State.Lazy
 import Parse.Lexer
 import Parse.Token
 import Parse.Utils
-import Debug.Trace (traceShowM, traceShowId)
 
 -- TODO: maybe also define empty Constructor for TokPosition
 -- use it when constructing and here compute position and update it and return complete and correct Token
@@ -21,7 +20,6 @@ readToken = do
     [] ->
       case alexScan (input s) (lexSC s) of
         AlexEOF -> do
-          traceShowM s
           put s {pending_tokens = [EOF]}
           readToken
         AlexError token -> error $ "Lexical error on line " ++ show (ai_line_number token)
