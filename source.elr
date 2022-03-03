@@ -1,2 +1,5 @@
-let x = 4
-println x
+let main =
+  let x = 3
+  println x
+  let y = 4
+  println y

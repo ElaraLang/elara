@@ -44,6 +44,7 @@ data Expression
   | Reference Identifier
   | Lambda Pattern Expression
   | BindWithBody Pattern Expression Expression
+  | BindGlobal Pattern Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
   | List [Expression]
@@ -57,6 +58,7 @@ instance Show Expression where
   show (Reference i) = show i
   show (Lambda p e) = "\\" ++ show p ++ " -> " ++ show e
   show (BindWithBody p e1 e2) = "let " ++ show p ++ " = " ++ show e1 ++ " in " ++ show e2
+  show (BindGlobal p e) = "let " ++ show p ++ " = " ++ show e
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"
   show (FunctionApplication e1 e2) = "(" ++ show e1 ++ " " ++ show e2 ++ ")"
   show (List es) = "[" ++ intercalate ", " (map show es) ++ "]"

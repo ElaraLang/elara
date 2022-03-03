@@ -23,7 +23,7 @@ someFunc :: IO ()
 someFunc = do
   content <- readFile "source.elr"
   let ast = parse content
-
+  print ast
   let emptyClass = ClassFile {className = "Test", superName = "java/lang/Object", fields = []}
   let compileState = emptyCompileState emptyClass
 

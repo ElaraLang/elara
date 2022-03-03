@@ -16,9 +16,9 @@ preprocessLine (P.DefL i t) = return $ I.DefLine (preprocessIdent i) (preprocess
 preprocessLine (P.ExpressionL e) = do
   codeLines <- get
   let (expressions, statements) = partition isExpression codeLines
-  let (expr, remainingExpressions) = runState preprocessExpression $ e : (toExpr <$> expressions)
+  let (expr, remainingExpressions) = runState preprocessExpression (newState $ e : (toExpr <$> expressions))
 
-  put (statements ++ (P.ExpressionL <$> remainingExpressions))
+  put (statements ++ (P.ExpressionL <$> expressionQueue remainingExpressions))
   return $ I.ExpressionLine expr
   where
     toExpr (P.ExpressionL a) = a

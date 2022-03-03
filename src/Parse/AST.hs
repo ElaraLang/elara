@@ -1,7 +1,7 @@
 module Parse.AST where
 
 import Data.List (intercalate)
-
+import Data.List.NonEmpty (NonEmpty(..), toList)
 data Line
   = ExpressionL Expression
   | DefL Identifier Type
@@ -54,7 +54,7 @@ data Expression
   | IdentifierE Identifier
   | InfixApplicationE Identifier Expression Expression
   | FuncApplicationE Expression Expression
-  | BlockE [Expression]
+  | BlockE (NonEmpty Expression)
   | ListE [Expression]
   | IfElseE Expression Expression Expression
   | LambdaE Identifier Expression
@@ -70,7 +70,7 @@ showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode 
 showASTNode (LetE pattern value) = "let " ++ showPattern pattern ++ " = " ++ showASTNode value
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = show val
-showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode expressions) ++ "}"
+showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode $ toList expressions) ++ "}"
 showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier op ++ " " ++ showASTNode b
 showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch

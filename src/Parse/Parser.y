@@ -7,6 +7,7 @@ import Parse.Token
 import Control.Monad.State.Lazy
 import Parse.AST
 import Debug.Trace
+import Data.List.NonEmpty (fromList)
 }
 
 %right ':'
@@ -129,7 +130,7 @@ Separator : newLine { addSemicolon }
 
 Block :: { Expression }
 Block : Expression { $1 }
-      | Separator indent BlockBody dedent { traceName "BlockBody" (BlockE $ reverse $3) }
+      | Separator indent BlockBody dedent { traceName "BlockBody" (BlockE $ fromList $ reverse $3) }
 
 BlockBody :: { [Expression] }
 BlockBody : ExpressionWithSep { traceName "expression" [$1] }
