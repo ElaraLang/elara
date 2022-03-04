@@ -1,7 +1,8 @@
 module Parse.AST where
 
 import Data.List (intercalate)
-import Data.List.NonEmpty (NonEmpty(..), toList)
+import Data.List.NonEmpty (NonEmpty (..), toList)
+
 data Line
   = ExpressionL Expression
   | DefL Identifier Type
@@ -57,7 +58,7 @@ data Expression
   | BlockE (NonEmpty Expression)
   | ListE [Expression]
   | IfElseE Expression Expression Expression
-  | LambdaE Identifier Expression
+  | LambdaE Pattern Expression
   | ConsE Expression Expression
   | MatchE Expression [MatchLine]
   deriving (Eq)
@@ -66,6 +67,7 @@ instance Show Expression where
   show = showASTNode
 
 showASTNode :: Expression -> String
+showASTNode (LambdaE p e) = "\\" ++ show p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ showPattern pattern ++ " = " ++ showASTNode value
 showASTNode (IdentifierE i) = showIdentifier i

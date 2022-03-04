@@ -2,6 +2,7 @@ module Preprocess.Expression (preprocessExpression, preprocessIdent, newState, e
 
 import Control.Monad.State
 import Data.List.NonEmpty (toList)
+import Debug.Trace (traceShowId, traceShowM)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
@@ -35,6 +36,9 @@ preprocessExpression = do
 
 preprocessExpression' :: P.Expression -> ExpProcessor
 preprocessExpression' (P.ConstE c) = return $ I.Constant (preprocessConst c)
+preprocessExpression' (P.LambdaE x e) = do
+  e' <- preprocessExpression' e
+  return $ I.Lambda (preprocessPattern x) e'
 preprocessExpression' (P.ConsE a b) = do
   a' <- preprocessExpression' a
   b' <- preprocessExpression' b
@@ -44,12 +48,12 @@ preprocessExpression' (P.IfElseE a b c) = do
   b' <- preprocessExpression' b
   c' <- preprocessExpression' c
   return $ I.IfElse a' b' c'
+preprocessExpression' (P.LetE (P.FunctionP i a) val) = lambdaDesugar i a val -- Desugars let a b = ... into let a = \b -> ...
 preprocessExpression' (P.LetE ident val) = do
   let pattern = preprocessPattern ident
   val' <- preprocessExpression' val
   return $ I.BindGlobal pattern val'
 preprocessExpression' (P.BlockE body) = desugarBlock (toList body)
---preprocessExpression (P.LetE (P.FunctionP i a) val) = lambdaDesugar i a val
 preprocessExpression' (P.FuncApplicationE f val) = do
   f' <- preprocessExpression' f
   val' <- preprocessExpression' val
@@ -70,13 +74,19 @@ preprocessExpression' (P.MatchE e cases) = do
       return $ I.MatchCase (preprocessPattern i) a'
 preprocessExpression' s = error $ "Cannot preprocess expression: " ++ show s
 
---lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> I.Expression
---lambdaDesugar fName args body = I.BindWithBody (I.IdentifierPattern $ preprocessIdent fName) (desugarWithoutName args body)
+lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> State ExpState I.Expression
+lambdaDesugar fName args body = do
+  lambdaBody <- expandLambda args body
+  let newLet = P.LetE (P.IdentifierP fName) lambdaBody
+  preprocessExpression' newLet
 
---desugarWithoutName :: [P.Pattern] -> P.Expression -> I.Expression
---desugarWithoutName [] body = preprocessExpression body
---desugarWithoutName [arg] body = I.Lambda (preprocessPattern arg) (preprocessExpression body)
---desugarWithoutName (arg : args) body = I.Lambda (preprocessPattern arg) (desugarWithoutName args body)
+expandLambda :: [P.Pattern] -> P.Expression -> State ExpState P.Expression
+expandLambda [] body = return body
+expandLambda [arg] body = do
+  return $ P.LambdaE arg body
+expandLambda (arg : args) body = do
+  body' <- expandLambda args body
+  return $ P.LambdaE arg body'
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
