@@ -148,6 +148,11 @@ infer :: TypeEnv -> A.Expression -> Infer (Subst, Type)
 infer env ex = case ex of
   A.Constant (A.IntC _) -> return (M.empty, typeInt)
   A.Reference x -> lookupEnv env $ TV $ show x
+  A.Lambda param body -> do
+    tv <- fresh
+    let env' = env `extend` (TV $ show param, Forall [] tv)
+    (s1, t1) <- infer env' body
+    return (s1, apply s1 tv `TFunc` t1)
   A.BindWithBody (A.IdentifierPattern i) e body -> do
     (s1, t1) <- infer env e
     let env' = apply s1 env

@@ -42,7 +42,7 @@ instance Show Pattern where
 data Expression
   = Constant Constant
   | Reference Identifier
-  | Lambda Pattern Expression
+  | Lambda Identifier Expression
   | BindWithBody Pattern Expression Expression
   | BindGlobal Pattern Expression
   | Block [Expression]

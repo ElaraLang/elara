@@ -55,9 +55,9 @@ instance Execute Expression where
 --        modifyIORef (bindings state) (patternValues `M.union`)
 --        return $ Just val''
 --      Nothing -> return Nothing
-  execute (Lambda arg body) state = do
-    let function = FunctionValue state arg $ createFunction body arg
-    return $ Just $ inferTypes function
+--  execute (Lambda arg body) state = do
+--    let function = FunctionValue state arg $ createFunction body arg
+--    return $ Just $ inferTypes function
   execute (Reference i) env = do
     let ident = show i
     bindingMap <- readIORef (bindings env)
