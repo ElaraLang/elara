@@ -36,7 +36,8 @@ data Pattern
   | TupleP [Pattern] -- Let (x, y) = ...
   | ConstantP Constant -- Let 1 = ... Note that this doesn't actually work in let expressions, but is used in matches
   | WildP -- let _ = ...
-  deriving (Show, Eq)
+  deriving (Eq, Show)
+
 
 data Constant
   = IntC Integer
@@ -67,7 +68,7 @@ instance Show Expression where
   show = showASTNode
 
 showASTNode :: Expression -> String
-showASTNode (LambdaE p e) = "\\" ++ show p ++ " -> " ++ show e
+showASTNode (LambdaE p e) = "\\" ++ showPattern p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ showPattern pattern ++ " = " ++ showASTNode value
 showASTNode (IdentifierE i) = showIdentifier i

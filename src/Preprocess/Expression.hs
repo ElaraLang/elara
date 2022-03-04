@@ -2,10 +2,10 @@ module Preprocess.Expression (preprocessExpression, preprocessIdent, newState, e
 
 import Control.Monad.State
 import Data.List.NonEmpty (toList)
+import Debug.Trace (traceShowId)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
-import Debug.Trace (traceShowId)
 
 type ExpProcessor = State ExpState I.Expression
 
@@ -38,7 +38,7 @@ preprocessExpression' :: P.Expression -> ExpProcessor
 preprocessExpression' (P.ConstE c) = return $ I.Constant (preprocessConst c)
 preprocessExpression' (P.LambdaE x e) = do
   e' <- preprocessExpression' e
-  return $ I.Lambda (I.SimpleIdentifier $ show x) e'
+  return $ I.Lambda (I.SimpleIdentifier $ P.showPattern x) e'
 preprocessExpression' (P.ConsE a b) = do
   a' <- preprocessExpression' a
   b' <- preprocessExpression' b

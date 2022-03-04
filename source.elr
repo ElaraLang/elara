@@ -1,2 +1,1 @@
-let a _ =
-  println 3
+let add3 x = x + 3

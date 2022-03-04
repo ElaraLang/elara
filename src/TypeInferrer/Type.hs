@@ -49,7 +49,16 @@ data TypeError
 newtype TypeEnv = TypeEnv (M.Map TVar Scheme) deriving (Show)
 
 baseEnv :: TypeEnv
-baseEnv = TypeEnv $ M.fromList [(TV "println", Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TConcrete "()")))]
+baseEnv =
+  TypeEnv $
+    M.fromList
+      [ ( TV "println",
+          Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TConcrete "()"))
+        ),
+        ( TV "+",
+          Forall [TV "a"] (TFunc (TVariable $ TV "a") (TFunc (TVariable $ TV "a") (TVariable $ TV "a")))
+        )
+      ]
 
 type Subst = M.Map TVar Type
 
