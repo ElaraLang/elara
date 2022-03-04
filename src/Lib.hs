@@ -28,5 +28,4 @@ someFunc = do
   --  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
   let inferEnv = baseEnv
 
-  let (A.ExpressionLine e) = head preprocessed in print $ "Inferred as " ++ show (runInfer $ infer baseEnv e)
-
+  let (A.ExpressionLine e) = head preprocessed in putStrLn $ "Inferred as " ++ show (runInfer $ infer baseEnv e)

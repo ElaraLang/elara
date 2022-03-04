@@ -5,6 +5,7 @@ import Control.Monad.State.Lazy
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
+import Debug.Trace (trace, traceId, traceShowId, traceShowM)
 import qualified Interpreter.AST as A
 
 newtype TVar = TV String
@@ -18,13 +19,23 @@ data Type
   | TConcrete String
   | TFunc Type Type
   | TImpureFunc Type Type
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show Type where
+  show (TVariable t) = show t
+  show (TConcrete s) = s
+  show (TFunc t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
+  show (TImpureFunc t1 t2) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
 
 typeInt :: Type
 typeInt = TConcrete "Int"
 
 data Scheme = Forall [TVar] Type
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show Scheme where
+  show (Forall [] t) = show t
+  show (Forall vars t) = "∀" ++ foldr (\v s -> s ++ " " ++ show v) "" vars ++ "." ++ show t
 
 newtype Unique = Unique {count :: Int}
 
@@ -35,10 +46,10 @@ data TypeError
   | Other String
   deriving (Eq, Ord, Show)
 
-newtype TypeEnv = TypeEnv (M.Map TVar Scheme)
+newtype TypeEnv = TypeEnv (M.Map TVar Scheme) deriving (Show)
 
 baseEnv :: TypeEnv
-baseEnv = TypeEnv $ M.fromList [(TV "println", Forall [] (TImpureFunc (TVariable $ TV "a") (TConcrete "()")))]
+baseEnv = TypeEnv $ M.fromList [(TV "println", Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TConcrete "()")))]
 
 type Subst = M.Map TVar Type
 
@@ -143,9 +154,7 @@ infer env ex = case ex of
         t' = generalize env' t1
     (s2, t2) <- infer (env' `extend` (TV $ show i, t')) body
     return (s2 `compose` s1, t2)
-  A.BindGlobal (A.IdentifierPattern _) e -> do
-    (s1, t1) <- infer env e
-    return (s1, t1)
+  A.BindGlobal (A.IdentifierPattern _) e -> infer env e
   A.Block lines ->
     infer env (last lines) -- yeah this won't work lol
   A.FunctionApplication e1 e2 -> do
