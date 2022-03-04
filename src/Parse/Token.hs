@@ -15,6 +15,7 @@ data Token
   | Then
   | Else
   | Match
+  | Type
   | Arrow
   | Backtick
   | NewLine
@@ -29,6 +30,7 @@ data Token
   | LSParen
   | RSParen
   | Comma
+  | Pipe
   | Int Integer
   | Str String
   | Identifier String

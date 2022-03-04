@@ -3,9 +3,9 @@ module Parse.Parser where
 import Parse.Lexer
 import Parse.Reader
 import Parse.Utils
-import Parse.Token
+import Parse.Token as L
 import Control.Monad.State.Lazy
-import Parse.AST
+import Parse.AST as P
 import Debug.Trace
 import Data.List.NonEmpty (fromList)
 }
@@ -30,10 +30,11 @@ import Data.List.NonEmpty (fromList)
    then { Then }
    else { Else }
    match { Match }
+   type { Type }
    int { Int $$ }
    string { Str $$ }
    identifier { Identifier $$ }
-   typeIdentifier { TypeIdentifier $$ }
+   typeIdentifier { L.TypeIdentifier $$ }
    eq { Eq }
    op { Operator $$ }
    '`' { Backtick }
@@ -49,12 +50,15 @@ import Data.List.NonEmpty (fromList)
    ',' { Comma }
    '_' { Wildcard }
    '->' { Arrow }
+   '|' { Pipe }
 %%
 
 Type :: { Type }
 Type  : typeIdentifier { NamedT $1 }
       | '[' Type ']' { ListT $2 }
       | Type '->' Type { PureFunT $1 $3 }
+
+TypeIdentifier : typeIdentifier { P.TypeIdentifier $1 }
 
 Expression :: { Expression }
 Expression  : Constant {ConstE $1}
@@ -140,8 +144,27 @@ BlockBody : ExpressionWithSep { traceName "expression" [$1] }
 ExpressionWithSep :: { Expression }
 ExpressionWithSep : Expression Separator { $1 }
 
+TypeVariables :: { [TypeVariable] }
+TypeVariables : TypeVariable TypeVariables { $1 : $2 }
+              | {- empty -} { [] }
+
+TypeVariable : identifier { TypeVariable $1 }
+
+TypeDef :: { TypeDef }
+TypeDef : type TypeIdentifier TypeVariables eq TypeDefBody { TypeDef $2 $3 $5 }
+TypeDefBody : Type { AliasType $1 }
+            | TypeVariable { TypeVariableType $1 }
+            | '(' TypeDefBody ')' { $2 }
+            | Type TypeDefBodyMany { TypeConstructor $1 (reverse $2) }
+            | TypeDefBody '|' TypeDefBody { UnionType $1 $3 }
+
+TypeDefBodyMany :: { [TypeDefBody] }
+TypeDefBodyMany : {- empty -} { [] }
+                | TypeDefBody TypeDefBodyMany { $1 : $2 }
+
 Line : Expression Separator { ExpressionL $1 }
      | def Identifier ':' Type Separator { DefL $2 $4 }
+     | TypeDef Separator { TypeDefL $1 }
 
 
 Body :: { [Line] }

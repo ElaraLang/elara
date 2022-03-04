@@ -1,1 +1,1 @@
-let add3 x = x + 3
+type List a = Empty | Cons a (List a)

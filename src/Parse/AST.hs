@@ -6,11 +6,40 @@ import Data.List.NonEmpty (NonEmpty (..), toList)
 data Line
   = ExpressionL Expression
   | DefL Identifier Type
+  | TypeDefL TypeDef
   deriving (Eq)
 
 instance Show Line where
   show (ExpressionL e) = show e
   show (DefL p t) = "def " ++ show p ++ " : " ++ show t
+  show (TypeDefL t) = show t
+
+newtype TypeIdentifier = TypeIdentifier String deriving (Eq)
+
+instance Show TypeIdentifier where
+  show (TypeIdentifier s) = s
+
+newtype TypeVariable = TypeVariable String deriving (Eq)
+
+instance Show TypeVariable where
+  show (TypeVariable s) = s
+
+data TypeDef = TypeDef TypeIdentifier [TypeVariable] TypeDefBody deriving (Eq)
+
+instance Show TypeDef where
+  show (TypeDef ti vs t) = "type " ++ show ti ++ " " ++ unwords (show <$> vs) ++ " = " ++ show t
+
+data TypeDefBody
+  = AliasType Type
+  | TypeVariableType TypeVariable
+  | UnionType TypeDefBody TypeDefBody
+  | TypeConstructor Type [TypeDefBody]
+  | TypeConstructorInvocation TypeIdentifier [TypeDefBody] -- Type constructor invocations
+  deriving (Eq)
+
+instance Show TypeDefBody where
+  show (AliasType t) = show t
+  show (UnionType t1 t2) = "(" ++ show t1 ++ " | " ++ show t2 ++ ")"
 
 data Separator = Separator deriving (Show)
 
@@ -37,7 +66,6 @@ data Pattern
   | ConstantP Constant -- Let 1 = ... Note that this doesn't actually work in let expressions, but is used in matches
   | WildP -- let _ = ...
   deriving (Eq, Show)
-
 
 data Constant
   = IntC Integer

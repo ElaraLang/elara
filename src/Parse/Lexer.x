@@ -27,6 +27,7 @@ tokens :-
   <0> else                   { simpleTok Else }
   <0> in					 { simpleTok In }
   <0> match                  { simpleTok Match }
+  <0> type                   { simpleTok Type }
   <0> \-\>                   { simpleTok Arrow }
   <0> \=                     { simpleTok Eq }
   <0> \`                     { simpleTok Backtick }
@@ -38,6 +39,7 @@ tokens :-
   <0> \[                     { simpleTok LSParen }
   <0> \]                     { simpleTok RSParen }
   <0> \,                     { simpleTok Comma }
+  <0> \|                     { simpleTok Pipe }
   <0> $digit+                { parametrizedTok Int read }
   <0> @variableIdentifer     { parametrizedTok Identifier id }
   <0> @typeIdentifier        { parametrizedTok TypeIdentifier id }
