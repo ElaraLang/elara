@@ -155,7 +155,7 @@ TypeDef : type TypeIdentifier TypeVariables eq TypeDefBody { TypeDef $2 $3 $5 }
 TypeDefBody : Type { AliasType $1 }
             | TypeVariable { TypeVariableType $1 }
             | '(' TypeDefBody ')' { $2 }
-            | Type TypeDefBodyMany { TypeConstructor $1 (reverse $2) }
+            | Type TypeDefBodyMany { TypeConstructor $1 $2 }
             | TypeDefBody '|' TypeDefBody { UnionType $1 $3 }
 
 TypeDefBodyMany :: { [TypeDefBody] }

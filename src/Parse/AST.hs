@@ -35,11 +35,7 @@ data TypeDefBody
   | UnionType TypeDefBody TypeDefBody
   | TypeConstructor Type [TypeDefBody]
   | TypeConstructorInvocation TypeIdentifier [TypeDefBody] -- Type constructor invocations
-  deriving (Eq)
-
-instance Show TypeDefBody where
-  show (AliasType t) = show t
-  show (UnionType t1 t2) = "(" ++ show t1 ++ " | " ++ show t2 ++ ")"
+  deriving (Eq, Show)
 
 data Separator = Separator deriving (Show)
 
