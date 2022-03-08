@@ -11,7 +11,8 @@ import qualified Data.Map as M
 import qualified Interpreter.AST as A
 import Parse.Parser
 import Preprocess.Preprocessor
-import TypeInferrer.Type
+import TypeInferrer.Env
+import TypeInferrer.Infer
 
 someFunc :: IO ()
 someFunc = do
@@ -28,4 +29,4 @@ someFunc = do
   --  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
   let inferEnv = baseEnv
 
-  let (A.ExpressionLine e) = head preprocessed in putStrLn $ "Inferred as " ++ show (runInfer $ infer baseEnv e)
+  let l = head preprocessed in putStrLn $ "Inferred as " ++ show (runInfer $ inferLine baseEnv l)

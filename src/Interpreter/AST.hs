@@ -16,13 +16,11 @@ instance Show Constant where
 data Identifier
   = SimpleIdentifier String
   | OperatorIdentifier String
-  | TypeIdentifier String
   deriving (Eq)
 
 instance Show Identifier where
   show (SimpleIdentifier s) = s
   show (OperatorIdentifier s) = s
-  show (TypeIdentifier s) = s
 
 data Pattern
   = IdentifierPattern Identifier
@@ -74,15 +72,39 @@ instance Show MatchCase where
 data Line
   = ExpressionLine Expression
   | DefLine Identifier Type
+  | TypeDefLine TypeDefinition
   deriving (Eq)
 
 instance Show Line where
   show (ExpressionLine e) = show e
   show (DefLine p t) = "def " ++ show p ++ " : " ++ show t
+  show (TypeDefLine t) = "type " ++ show t
+
+data TypeDefinition = TypeDefinition TypeIdentifier [TypeVariable] TypeDefinitionBody deriving (Eq)
+
+instance Show TypeDefinition where
+  show (TypeDefinition tId tvs tBody) = show tId ++ " " ++ show tvs ++ " = " ++ show tBody
+
+data TypeDefinitionBody
+  = AliasType Type
+  | TypeVariableType TypeVariable
+  | UnionType TypeDefinitionBody TypeDefinitionBody
+  | TypeConstructor TypeIdentifier [TypeDefinitionBody]
+  | TypeConstructorInvocation Type [TypeDefinitionBody] -- Type constructor invocations
+  deriving (Eq, Show)
+
+newtype TypeIdentifier = TypeIdentifier String deriving (Eq)
+
+instance Show TypeIdentifier where
+  show (TypeIdentifier s) = s
+
+newtype TypeVariable = TypeVariable String deriving (Eq)
+
+instance Show TypeVariable where
+  show (TypeVariable s) = s
 
 data Type
   = NamedType String
-  | TypeVariable String
   | ListType Type
   | UnitType
   | PureFunctionType Type Type
@@ -90,10 +112,5 @@ data Type
 
 instance Show Type where
   show (NamedType s) = s
-  show (TypeVariable s) = s
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
-
-allows :: Type -> Type -> Bool
-(TypeVariable _) `allows` _ = True
-typeA `allows` typeB = typeA == typeB

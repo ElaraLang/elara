@@ -33,8 +33,8 @@ data TypeDefBody
   = AliasType Type
   | TypeVariableType TypeVariable
   | UnionType TypeDefBody TypeDefBody
-  | TypeConstructor Type [TypeDefBody]
-  | TypeConstructorInvocation TypeIdentifier [TypeDefBody] -- Type constructor invocations
+  | TypeConstructor TypeIdentifier [TypeDefBody]
+  | TypeConstructorInvocation Type [TypeDefBody] -- Type constructor invocations
   deriving (Eq, Show)
 
 data Separator = Separator deriving (Show)

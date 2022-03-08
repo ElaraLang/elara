@@ -1,1 +1,2 @@
 type List a = Empty | Cons a (List a)
+type Number = Int

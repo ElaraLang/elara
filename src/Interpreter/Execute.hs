@@ -47,17 +47,17 @@ instance Execute Expression where
   execute (Block expressions) state = do
     results <- mapM (`execute` state) expressions
     return $ last results
---  execute (Bind pat val) state = do
---    val' <- execute val state
---    case val' of
---      Just val'' -> do
---        let patternValues = applyPattern val'' pat
---        modifyIORef (bindings state) (patternValues `M.union`)
---        return $ Just val''
---      Nothing -> return Nothing
---  execute (Lambda arg body) state = do
---    let function = FunctionValue state arg $ createFunction body arg
---    return $ Just $ inferTypes function
+  --  execute (Bind pat val) state = do
+  --    val' <- execute val state
+  --    case val' of
+  --      Just val'' -> do
+  --        let patternValues = applyPattern val'' pat
+  --        modifyIORef (bindings state) (patternValues `M.union`)
+  --        return $ Just val''
+  --      Nothing -> return Nothing
+  --  execute (Lambda arg body) state = do
+  --    let function = FunctionValue state arg $ createFunction body arg
+  --    return $ Just $ inferTypes function
   execute (Reference i) env = do
     let ident = show i
     bindingMap <- readIORef (bindings env)
@@ -71,7 +71,6 @@ instance Execute Expression where
     let (FunctionValue closure _ func) = value aVal
     (Just arg) <- execute b state
     env <- closure `union` state
-    unless (expectedType `allows` type_ arg) $ error $ "Expected " ++ show expectedType ++ " but got " ++ show (type_ arg) ++ " for value " ++ show b
     func arg env
   execute (IfElse cond ifTrue ifFalse) state = do
     condVal <- execute cond state
@@ -250,15 +249,7 @@ intType = NamedType "Int"
 stringType :: Type
 stringType = NamedType "String"
 
-inferTypes :: Value -> TypedValue
-inferTypes UnitValue = TypedValue UnitValue UnitType
-inferTypes i@(IntValue _) = addType intType i
-inferTypes i@(StringValue _) = addType stringType i
-inferTypes i@(ListValue []) = addType (ListType (TypeVariable "a")) i
-inferTypes i@(ListValue l) = addType (ListType (type_ (head l))) i
-inferTypes f@FunctionValue {} = addType (PureFunctionType (TypeVariable "idk") (TypeVariable "idk")) f
-inferTypes b@(BoolValue _) = addType (NamedType "Bool") b
-inferTypes v = error $ "Can't infer type of " ++ show v
+inferTypes = undefined -- TODO
 
 addType :: Type -> Value -> TypedValue
 addType t v = TypedValue v t

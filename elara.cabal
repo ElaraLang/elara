@@ -47,6 +47,8 @@ library
       Preprocess.Expression
       Preprocess.Preprocessor
       Preprocess.Type
+      TypeInferrer.Env
+      TypeInferrer.Infer
       TypeInferrer.Type
   other-modules:
       Paths_elara

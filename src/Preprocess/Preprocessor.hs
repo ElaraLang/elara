@@ -11,8 +11,20 @@ type ProcessState = State [P.Line] [I.Line]
 
 type Processor = State [P.Line] I.Line
 
+preprocessTypeDef :: P.TypeDef -> I.TypeDefinition
+preprocessTypeDef (P.TypeDef name args body) =
+  I.TypeDefinition (I.TypeIdentifier . show $ name) (I.TypeVariable . show <$> args) (preprocessTypeDefBody body)
+  where
+    preprocessTypeDefBody :: P.TypeDefBody -> I.TypeDefinitionBody
+    preprocessTypeDefBody (P.AliasType t) = I.AliasType (preprocessType t)
+    preprocessTypeDefBody (P.TypeVariableType t) = I.TypeVariableType (I.TypeVariable . show $ t)
+    preprocessTypeDefBody (P.UnionType a b) = I.UnionType (preprocessTypeDefBody a) (preprocessTypeDefBody b)
+    preprocessTypeDefBody (P.TypeConstructor name fields) = I.TypeConstructor (I.TypeIdentifier . show $ name) (preprocessTypeDefBody <$> fields)
+    preprocessTypeDefBody (P.TypeConstructor t args) = I.TypeConstructor (I.TypeIdentifier . show $ t) (preprocessTypeDefBody <$> args)
+
 preprocessLine :: P.Line -> Processor
 preprocessLine (P.DefL i t) = return $ I.DefLine (preprocessIdent i) (preprocessType t)
+preprocessLine (P.TypeDefL typeDef) = return $ I.TypeDefLine $ preprocessTypeDef typeDef
 preprocessLine (P.ExpressionL e) = do
   codeLines <- get
   let (expressions, statements) = partition isExpression codeLines
