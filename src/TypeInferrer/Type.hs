@@ -1,12 +1,10 @@
 module TypeInferrer.Type where
 
-import Control.Monad (replicateM)
 import Control.Monad.Except
 import Control.Monad.State
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
-import Debug.Trace (trace, traceId, traceShowId, traceShowM)
 import qualified Interpreter.AST as A
 import TypeInferrer.Env
 
@@ -17,7 +15,7 @@ extend :: TypeEnv -> (TVar, Scheme) -> TypeEnv
 extend (TypeEnv env) (tv, scheme) = TypeEnv $ M.insert tv scheme env
 
 normalize :: Scheme -> Scheme
-normalize (Forall ts body) = Forall (fmap snd ord) (normtype body)
+normalize (Forall ts body) = Forall (fmap snd ord) (normalizeType body)
   where
     ord = zip (nub $ fv body) (fmap TV letters)
 
@@ -26,10 +24,10 @@ normalize (Forall ts body) = Forall (fmap snd ord) (normtype body)
     fv (TImpureFunc a b) = fv a ++ fv b
     fv (TConcrete _) = []
 
-    normtype (TFunc a b) = TFunc (normtype a) (normtype b)
-    normtype (TImpureFunc a b) = TImpureFunc (normtype a) (normtype b)
-    normtype (TConcrete a) = TConcrete a
-    normtype (TVariable a) =
+    normalizeType (TFunc a b) = TFunc (normalizeType a) (normalizeType b)
+    normalizeType (TImpureFunc a b) = TImpureFunc (normalizeType a) (normalizeType b)
+    normalizeType (TConcrete a) = TConcrete a
+    normalizeType (TVariable a) =
       case lookup a ord of
         Just x -> TVariable x
         Nothing -> error "type variable not in signature"
@@ -63,31 +61,32 @@ lookupEnv (TypeEnv env) x =
       t <- instantiate s
       return (M.empty, t)
 
-infer :: TypeEnv -> A.Expression -> Infer (Subst, Type)
-infer env ex = case ex of
+inferExpression :: TypeEnv -> A.Expression -> Infer (Subst, Type)
+inferExpression env ex = case ex of
   A.Constant (A.IntC _) -> return (M.empty, typeInt)
   A.Reference x -> lookupEnv env $ TV $ show x
   A.Lambda param body -> do
     tv <- fresh
     let env' = env `extend` (TV $ show param, Forall [] tv)
-    (s1, t1) <- infer env' body
+    (s1, t1) <- inferExpression env' body
     return (s1, apply s1 tv `TFunc` t1)
   A.BindWithBody (A.IdentifierPattern i) e body -> do
-    (s1, t1) <- infer env e
+    (s1, t1) <- inferExpression env e
     let env' = apply s1 env
         t' = generalize env' t1
-    (s2, t2) <- infer (env' `extend` (TV $ show i, t')) body
+    (s2, t2) <- inferExpression (env' `extend` (TV $ show i, t')) body
     return (s2 `compose` s1, t2)
-  A.BindGlobal (A.IdentifierPattern _) e -> infer env e
+  A.BindGlobal (A.IdentifierPattern _) e -> inferExpression env e
   A.Block lines ->
-    infer env (last lines) -- yeah this won't work lol
+    inferExpression env (last lines) -- yeah this won't work lol
   A.FunctionApplication e1 e2 -> do
     tv <- fresh
-    (s1, t1) <- infer env e1
-    (s2, t2) <- infer (apply s1 env) e2
-    let funcType = case t1 of
-          (TFunc _ _) -> TFunc
-          TImpureFunc _ _ -> TImpureFunc
+    (s1, t1) <- inferExpression env e1
+    (s2, t2) <- inferExpression (apply s1 env) e2
+    let funcType = case (t1, t2) of
+          (TFunc _ _, TFunc _ _) -> TFunc
+          (TImpureFunc _ _, _) -> TImpureFunc
+          (_, TImpureFunc _ _) -> TImpureFunc
           _ -> error "function application on non-function"
     s3 <- unify (apply s2 t1) (funcType t2 tv)
     return (s3 `compose` s2 `compose` s1, apply s3 tv)
