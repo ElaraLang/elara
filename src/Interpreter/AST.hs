@@ -41,8 +41,8 @@ data Expression
   = Constant Constant
   | Reference Identifier
   | Lambda Identifier Expression
-  | BindWithBody Pattern Expression Expression
-  | BindGlobal Pattern Expression
+  | BindWithBody Identifier Expression Expression
+  | BindGlobal Identifier Expression
   | Block [Expression]
   | FunctionApplication Expression Expression
   | List [Expression]

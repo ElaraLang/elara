@@ -1,26 +1,41 @@
 module TypeInferrer.Infer where
-import TypeInferrer.Env
-import qualified Data.Map as M
-import Control.Monad.Except (runExceptT)
-import Control.Monad.State.Lazy (evalState)
-import TypeInferrer.Type
+
+import Control.Monad (foldM)
+import Control.Monad.Except (runExcept)
+import Control.Monad.RWS (runRWST)
 import qualified Interpreter.AST as A
+import TypeInferrer.Env
+import TypeInferrer.Expr
 
-runInfer :: Infer (Subst, Type) -> Either TypeError Scheme
-runInfer m = do
-  res <- evalState (runExceptT m) (Unique 0)
-  return $ closeOver res
+runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
+runInfer env m = runExcept $ (\(res, state, constraints) -> (res, typeEnv state, constraints)) <$> runRWST m () (InferState 0 env)
 
+infer :: Infer Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
+infer inf env = do
+  (scheme, nextEnv, cs) <- runInfer env inf
+  subst <- runSolve cs
+  return (nextEnv, closeOver $ apply subst scheme)
 
-closeOver :: (M.Map TVar Type, Type) -> Scheme
-closeOver (sub, ty) = normalize sc
-  where
-    sc = generalize baseEnv (apply sub ty)
+inferExpr :: A.Expression -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
+inferExpr e = infer (inferExpression e)
 
-inferLine :: TypeEnv -> A.Line -> Infer (Subst, Type)
-inferLine env (A.ExpressionLine e) = inferExpression env e
-inferLine env (A.TypeDefLine t) = inferTypeDef env t
+inferLine :: A.Line -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
+inferLine (A.ExpressionLine e) = inferExpr e
 
-inferTypeDef :: TypeEnv -> A.TypeDefinition -> Infer (Subst, Type)
-inferTypeDef env (A.TypeDefinition name args ty) = undefined
+inferLines :: [A.Line] -> TypeEnv -> Either TypeError [Scheme]
+inferLines lines env = do
+  -- Infer all lines, threading the type environment through
+  (env', schemes) <-
+    foldM
+      ( \(env, acc) line -> do
+          (env', scheme) <- inferLine line env
+          return (env', scheme : acc)
+      )
+      (env, [])
+      lines
+  return schemes
 
+inferTypeDef :: TypeEnv -> A.TypeDefinition -> Infer (Subst, Scheme)
+inferTypeDef env (A.TypeDefinition name args ty) = do
+  let typeVariables = TV . show <$> args
+  error "help"

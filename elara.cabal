@@ -48,8 +48,8 @@ library
       Preprocess.Preprocessor
       Preprocess.Type
       TypeInferrer.Env
+      TypeInferrer.Expr
       TypeInferrer.Infer
-      TypeInferrer.Type
   other-modules:
       Paths_elara
   hs-source-dirs:

@@ -49,7 +49,7 @@ preprocessExpression' (P.IfElseE a b c) = do
   return $ I.IfElse a' b' c'
 preprocessExpression' (P.LetE (P.FunctionP i a) val) = lambdaDesugar i a val -- Desugars let a b = ... into let a = \b -> ...
 preprocessExpression' (P.LetE ident val) = do
-  let pattern = preprocessPattern ident
+  let (I.IdentifierPattern pattern) = preprocessPattern ident
   val' <- preprocessExpression' val
   return $ I.BindGlobal pattern val'
 preprocessExpression' (P.BlockE body) = desugarBlock (toList body)
@@ -99,7 +99,7 @@ desugarBlock :: [P.Expression] -> State ExpState I.Expression
 desugarBlock exps = desugarBlock' exps []
   where
     desugarBlock' (P.LetE ident val : others) acc = do
-      let pat = preprocessPattern ident
+      let (I.IdentifierPattern pat) = preprocessPattern ident
       val' <- preprocessExpression' val
       body <- desugarBlock others
       return $! I.Block (acc ++ [I.BindWithBody pat val' body])

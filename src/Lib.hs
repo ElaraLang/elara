@@ -27,6 +27,5 @@ someFunc = do
   --  let compiled = evalState (compileLines preprocessed) compileState
   --  let classFile = transform compiled
   --  L.writeFile "Test.class" (runPut $ C.putClassFile classFile)
-  let inferEnv = baseEnv
 
-  let l = head preprocessed in putStrLn $ "Inferred as " ++ show (runInfer $ inferLine baseEnv l)
+  putStrLn $ "Inferred as " ++ show (inferLines preprocessed baseEnv)
