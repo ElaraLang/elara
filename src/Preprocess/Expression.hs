@@ -5,6 +5,7 @@ import Data.List.NonEmpty (toList)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
+import Debug.Trace (traceShowM)
 
 type ExpProcessor = State ExpState I.Expression
 
@@ -103,6 +104,7 @@ desugarBlock exps = desugarBlock' exps []
       val' <- preprocessExpression' val
       body <- desugarBlock others
       return $! I.Block (acc ++ [I.BindWithBody pat val' body])
+    desugarBlock' [] [acc] = return acc
     desugarBlock' [] acc = return $ I.Block $! reverse acc
     desugarBlock' (e : exs) acc = do
       t <- preprocessExpression' e
