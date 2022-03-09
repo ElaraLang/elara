@@ -17,6 +17,9 @@ instance Show TypeEnv where
 remove :: TypeEnv -> Var -> TypeEnv
 remove (TypeEnv env) var = TypeEnv (M.delete var env)
 
+add :: TypeEnv -> Var -> Scheme -> TypeEnv
+add (TypeEnv env) var scheme = TypeEnv (M.insert var scheme env)
+
 type Infer a = (RWST () [Constraint] InferState (Except TypeError) a) -- Even though we don't need the R part, the api is more convenient
 
 toInfer :: Except TypeError a -> Infer a
@@ -81,7 +84,14 @@ data TypeError
   | InfiniteType TVar Type
   | UnboundVariable String
   | Other String
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show TypeError where
+  show (UnificationFail t1 t2) = "Cannot unify " ++ show t1 ++ " with " ++ show t2
+  show (UnificationMismatch ts1 ts2) = "Cannot unify " ++ show ts1 ++ " with " ++ show ts2
+  show (InfiniteType t t') = "Infinite type: " ++ show t ++ " = " ++ show t'
+  show (UnboundVariable v) = "Unbound variable: " ++ v
+  show (Other s) = s
 
 newtype TVar = TV String
   deriving (Eq, Ord)
@@ -153,6 +163,13 @@ modEnv f m = do
   modify (\s -> s {typeEnv = f env})
   a <- m
   modify (\s -> s {typeEnv = env}) -- Restore original environment
+  return a
+
+withCopyOfEnv :: Infer a -> Infer a
+withCopyOfEnv m = do
+  env <- gets typeEnv
+  a <- m
+  modify $ \s -> s {typeEnv = env}
   return a
 
 addToEnv :: (Var, Scheme) -> Infer ()

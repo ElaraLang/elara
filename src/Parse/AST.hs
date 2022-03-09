@@ -62,7 +62,7 @@ data Pattern
   | ConstantP Constant -- Let 1 = ... Note that this doesn't actually work in let expressions, but is used in matches
   | WildP -- let _ = ...
   deriving (Eq)
-  
+
 instance Show Pattern where
   show (IdentifierP i) = show i
   show (FunctionP i ps) = show i ++ " " ++ unwords (show <$> ps)
@@ -95,6 +95,7 @@ data Expression
   | LambdaE Pattern Expression
   | ConsE Expression Expression
   | MatchE Expression [MatchLine]
+  | FixE Expression -- Fix point operator, only used internally
   deriving (Eq)
 
 instance Show Expression where

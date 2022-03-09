@@ -49,6 +49,7 @@ data Expression
   | Cons Expression Expression
   | IfElse Expression Expression Expression
   | Match Expression [MatchCase]
+  | Fix Expression -- Fix point operator, only used internally
   deriving (Eq)
 
 instance Show Expression where
@@ -63,11 +64,15 @@ instance Show Expression where
   show (Cons e1 e2) = show e1 ++ ":" ++ show e2
   show (IfElse e1 e2 e3) = "if " ++ show e1 ++ " then " ++ show e2 ++ " else " ++ show e3
   show (Match e ms) = "match " ++ show e ++ " { " ++ intercalate "\n" (map show ms) ++ " }"
+  show (Fix e) = "fix " ++ show e
 
 data MatchCase = MatchCase Pattern Expression deriving (Eq)
 
 instance Show MatchCase where
   show (MatchCase pattern value) = show pattern ++ " -> " ++ show value
+
+matchCaseExpression :: MatchCase -> Expression
+matchCaseExpression (MatchCase _ value) = value
 
 data Line
   = ExpressionLine Expression

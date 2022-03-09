@@ -2,10 +2,10 @@ module Preprocess.Expression (preprocessExpression, preprocessIdent, newState, e
 
 import Control.Monad.State
 import Data.List.NonEmpty (toList)
+import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant
-import Debug.Trace (traceShowM)
 
 type ExpProcessor = State ExpState I.Expression
 
@@ -36,6 +36,7 @@ preprocessExpression = do
 
 preprocessExpression' :: P.Expression -> ExpProcessor
 preprocessExpression' (P.ConstE c) = return $ I.Constant (preprocessConst c)
+preprocessExpression' (P.FixE e) = I.Fix <$> preprocessExpression' e
 preprocessExpression' (P.LambdaE x e) = do
   e' <- preprocessExpression' e
   return $ I.Lambda (I.SimpleIdentifier $ show x) e'
@@ -76,17 +77,9 @@ preprocessExpression' s = error $ "Cannot preprocess expression: " ++ show s
 
 lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> State ExpState I.Expression
 lambdaDesugar fName args body = do
-  lambdaBody <- expandLambda args body
-  let newLet = P.LetE (P.IdentifierP fName) lambdaBody
+  let lambdaBody = foldr P.LambdaE body (P.IdentifierP fName : args)
+  let newLet = P.LetE (P.IdentifierP fName) (P.FixE lambdaBody)
   preprocessExpression' newLet
-
-expandLambda :: [P.Pattern] -> P.Expression -> State ExpState P.Expression
-expandLambda [] body = return body
-expandLambda [arg] body = do
-  return $ P.LambdaE arg body
-expandLambda (arg : args) body = do
-  body' <- expandLambda args body
-  return $ P.LambdaE arg body'
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
@@ -103,7 +96,7 @@ desugarBlock exps = desugarBlock' exps []
       let (I.IdentifierPattern pat) = preprocessPattern ident
       val' <- preprocessExpression' val
       body <- desugarBlock others
-      return $! I.Block (acc ++ [I.BindWithBody pat val' body])
+      return $! I.Block (acc ++ [I.BindWithBody pat (I.Fix val') body])
     desugarBlock' [] [acc] = return acc
     desugarBlock' [] acc = return $ I.Block $! reverse acc
     desugarBlock' (e : exs) acc = do
