@@ -9,7 +9,10 @@ import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
 
-newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Show)
+newtype TypeEnv = TypeEnv (M.Map Var Scheme)
+
+instance Show TypeEnv where
+  show (TypeEnv env) = show env
 
 remove :: TypeEnv -> Var -> TypeEnv
 remove (TypeEnv env) var = TypeEnv (M.delete var env)
