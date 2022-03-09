@@ -31,10 +31,10 @@ data Pattern
   deriving (Eq)
 
 instance Show Pattern where
-  show (IdentifierPattern i) = "Identifier(" ++ show i ++ ")"
+  show (IdentifierPattern i) = show i
   show WildcardPattern = "_"
   show (ConstantPattern c) = show c
-  show (ConsPattern p1 p2) = "(" ++ show p1 ++ "::" ++ show p2 ++ ")"
+  show (ConsPattern p1 p2) = "(" ++ show p1 ++ ":" ++ show p2 ++ ")"
   show (ListPattern ps) = "[" ++ intercalate "," (map show ps) ++ "]"
 
 data Expression
