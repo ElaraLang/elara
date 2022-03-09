@@ -38,7 +38,7 @@ preprocessExpression' :: P.Expression -> ExpProcessor
 preprocessExpression' (P.ConstE c) = return $ I.Constant (preprocessConst c)
 preprocessExpression' (P.LambdaE x e) = do
   e' <- preprocessExpression' e
-  return $ I.Lambda (I.SimpleIdentifier $ P.showPattern x) e'
+  return $ I.Lambda (I.SimpleIdentifier $ show x) e'
 preprocessExpression' (P.ConsE a b) = do
   a' <- preprocessExpression' a
   b' <- preprocessExpression' b

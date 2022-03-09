@@ -61,7 +61,16 @@ data Pattern
   | TupleP [Pattern] -- Let (x, y) = ...
   | ConstantP Constant -- Let 1 = ... Note that this doesn't actually work in let expressions, but is used in matches
   | WildP -- let _ = ...
-  deriving (Eq, Show)
+  deriving (Eq)
+  
+instance Show Pattern where
+  show (IdentifierP i) = show i
+  show (FunctionP i ps) = show i ++ " " ++ unwords (show <$> ps)
+  show (ConsP p1 p2) = show p1 ++ ":" ++ show p2
+  show (ListP ps) = "[" ++ intercalate "," (show <$> ps) ++ "]"
+  show (TupleP ps) = "(" ++ intercalate "," (show <$> ps) ++ ")"
+  show (ConstantP c) = show c
+  show WildP = "_"
 
 data Constant
   = IntC Integer
@@ -92,9 +101,9 @@ instance Show Expression where
   show = showASTNode
 
 showASTNode :: Expression -> String
-showASTNode (LambdaE p e) = "\\" ++ showPattern p ++ " -> " ++ show e
+showASTNode (LambdaE p e) = "\\" ++ show p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
-showASTNode (LetE pattern value) = "let " ++ showPattern pattern ++ " = " ++ showASTNode value
+showASTNode (LetE pattern value) = "let " ++ show pattern ++ " = " ++ showASTNode value
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = show val
 showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode $ toList expressions) ++ "}"
@@ -107,18 +116,11 @@ showASTNode (MatchE expression matchLines) = "match " ++ showASTNode expression 
 data MatchLine = MatchLine Pattern Expression deriving (Eq)
 
 instance Show MatchLine where
-  show (MatchLine pattern value) = showPattern pattern ++ " -> " ++ showASTNode value
+  show (MatchLine pattern value) = show pattern ++ " -> " ++ showASTNode value
 
 showIdentifier :: Identifier -> String
 showIdentifier (NormalIdentifier i) = i
 showIdentifier (OpIdentifier i) = i
-
-showPattern :: Pattern -> String
-showPattern (IdentifierP p) = showIdentifier p
-showPattern (WildP) = "_"
-showPattern e = show e
-
---showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)
 
 data Type
   = NamedT String
