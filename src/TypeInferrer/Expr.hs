@@ -12,8 +12,13 @@ import TypeInferrer.Env
 
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
-  A.Constant (A.IntC _) -> return $ TConcrete "Int"
-  A.Constant A.UnitC -> return $ TConcrete "()"
+  A.Constant (A.IntC _) -> return $ TCon "Int"
+  A.Constant A.UnitC -> return $ TCon "()"
+--  A.List [] -> do
+--    tv <- fresh
+--    -- [a]
+
+
   A.Reference x -> lookupEnv (show x)
   A.Lambda param body -> do
     tv <- fresh
@@ -31,7 +36,7 @@ inferExpression ex = case ex of
     env <- gets typeEnv
     let sc = generalize env i
     addToEnv (show name, sc)
-    return (TConcrete "()")
+    return (TCon "()")
   A.FunctionApplication f arg -> do
     t1 <- inferExpression f
     t2 <- inferExpression arg
