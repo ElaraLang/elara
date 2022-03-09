@@ -18,6 +18,7 @@ data Token
   | Type
   | Arrow
   | Backtick
+  | Backslash
   | NewLine
   | SemiColon
   | Colon

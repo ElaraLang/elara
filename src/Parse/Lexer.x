@@ -31,6 +31,7 @@ tokens :-
   <0> \-\>                   { simpleTok Arrow }
   <0> \=                     { simpleTok Eq }
   <0> \`                     { simpleTok Backtick }
+  <0> \\                     { simpleTok Backslash }
   <0> :                      { simpleTok Colon }
   <0> ::                     { simpleTok DoubleColon }
   <0> _                      { simpleTok Wildcard }

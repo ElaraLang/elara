@@ -51,6 +51,7 @@ import Data.List.NonEmpty (fromList)
    '_' { Wildcard }
    '->' { Arrow }
    '|' { Pipe }
+   '\\' { Backslash }
 %%
 
 Type :: { Type }
@@ -71,6 +72,7 @@ Expression  : Constant {ConstE $1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression ':' Expression {ConsE $1 $3}
             | MatchExpression { $1 }
+            | '\\' Pattern '->' Expression {LambdaE $2 $4}
 
 
 ListExpression :: { Expression }

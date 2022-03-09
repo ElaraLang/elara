@@ -1,1 +1,6 @@
-let main _ = []
+let (.) f g = \x -> f (g x)
+
+let someNumber = 21
+
+let emptyList = []
+
