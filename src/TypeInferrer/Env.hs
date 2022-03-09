@@ -12,7 +12,7 @@ import qualified Data.Set as Set
 newtype TypeEnv = TypeEnv (M.Map Var Scheme)
 
 instance Show TypeEnv where
-  show (TypeEnv env) = show env
+  show (TypeEnv env) = show (M.toList env)
 
 remove :: TypeEnv -> Var -> TypeEnv
 remove (TypeEnv env) var = TypeEnv (M.delete var env)
