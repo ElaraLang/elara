@@ -13,6 +13,7 @@ import TypeInferrer.Env
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
   A.Constant (A.IntC _) -> return $ TConcrete "Int"
+  A.Constant A.UnitC -> return $ TConcrete "()"
   A.Reference x -> lookupEnv (show x)
   A.Lambda param body -> do
     tv <- fresh
