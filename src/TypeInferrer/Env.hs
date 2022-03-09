@@ -18,6 +18,9 @@ remove (TypeEnv env) var = TypeEnv (M.delete var env)
 
 type Infer a = (RWST () [Constraint] InferState (Except TypeError) a) -- Even though we don't need the R part, the api is more convenient
 
+toInfer :: Except TypeError a -> Infer a
+toInfer = lift
+
 type Constraint = (Type, Type)
 
 type Unifier = (Subst, [Constraint])
@@ -219,6 +222,7 @@ unifies (TVariable v) t = v `bind` t
 unifies t (TVariable v) = v `bind` t
 unifies (TFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TImpureFunc t1 t2) (TImpureFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
+unifies (TImpureFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
 solver :: Unifier -> Solve Subst

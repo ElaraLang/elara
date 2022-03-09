@@ -1,11 +1,12 @@
 module TypeInferrer.Expr where
 
 import Control.Monad.Except
-import Control.Monad.RWS (ask, listen)
+import Control.Monad.RWS (ask, listen, runRWST)
 import Control.Monad.State
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
+import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as A
 import TypeInferrer.Env
 
@@ -19,13 +20,15 @@ inferExpression ex = case ex of
     return (tv `TFunc` t)
   A.BindWithBody name val body -> do
     env <- gets typeEnv
-    t1 <- inferExpression val
+    (t0, constraints) <- listen $ inferExpression val
+    subst <- liftEither $ runSolve constraints
+    let t1 = apply subst t0
     let sc = generalize env t1
-    inEnv (show name, sc) (inferExpression body)
+    inEnv (show name, sc) $ inferExpression body
   A.BindGlobal name val -> do
+    i <- inferExpression (A.BindWithBody name val (A.Reference name))
     env <- gets typeEnv
-    t1 <- inferExpression val
-    let sc = generalize env t1
+    let sc = generalize env i
     addToEnv (show name, sc)
     return (TConcrete "()")
   A.FunctionApplication f arg -> do
