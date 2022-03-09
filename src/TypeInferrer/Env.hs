@@ -5,11 +5,9 @@ module TypeInferrer.Env where
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.RWS
-import Control.Monad.State
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
-import Debug.Trace (traceShowM)
 
 newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Show)
 

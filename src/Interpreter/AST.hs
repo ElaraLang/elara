@@ -111,6 +111,7 @@ data Type
   deriving (Eq)
 
 instance Show Type where
+  show UnitType = "()"
   show (NamedType s) = s
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2

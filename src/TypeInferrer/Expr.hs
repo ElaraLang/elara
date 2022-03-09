@@ -1,12 +1,8 @@
 module TypeInferrer.Expr where
 
 import Control.Monad.Except
-import Control.Monad.RWS (ask, listen, runRWST)
+import Control.Monad.RWS (listen)
 import Control.Monad.State
-import Data.List (nub)
-import qualified Data.Map as M
-import qualified Data.Set as Set
-import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as A
 import TypeInferrer.Env
 

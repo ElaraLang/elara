@@ -21,9 +21,10 @@ inferExpr e = infer (inferExpression e)
 
 inferLine :: A.Line -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 inferLine (A.ExpressionLine e) = inferExpr e
+inferLine other = error $ "inferLine: " ++ show other
 
 inferLines :: [A.Line] -> TypeEnv -> Either TypeError [Scheme]
-inferLines lines startEnv = do
+inferLines l startEnv = do
   -- Infer all lines, threading the type environment through
   (_, schemes) <-
     foldM
@@ -32,10 +33,10 @@ inferLines lines startEnv = do
           return (env', scheme : acc)
       )
       (startEnv, [])
-      lines
+      l
   return $ reverse schemes
 
 inferTypeDef :: TypeEnv -> A.TypeDefinition -> Infer (Subst, Scheme)
-inferTypeDef env (A.TypeDefinition name args ty) = do
-  let typeVariables = TV . show <$> args
+inferTypeDef _ (A.TypeDefinition _ args _) = do
+  let _ = TV . show <$> args
   error "help"
