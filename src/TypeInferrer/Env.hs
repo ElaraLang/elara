@@ -46,11 +46,13 @@ instance Substitutable Type where
   apply s t@(TVariable a) = M.findWithDefault t a s
   apply s (t1 `TFunc` t2) = apply s t1 `TFunc` apply s t2
   apply s (t1 `TImpureFunc` t2) = apply s t1 `TImpureFunc` apply s t2
+  apply s (TConApp a b) = TConApp (apply s a) (apply s b)
 
   ftv TCon {} = Set.empty
   ftv (TVariable a) = Set.singleton a
   ftv (t1 `TFunc` t2) = ftv t1 `Set.union` ftv t2
   ftv (t1 `TImpureFunc` t2) = ftv t1 `Set.union` ftv t2
+  ftv (TConApp a b) = ftv a `Set.union` ftv b
 
 instance Substitutable TypeEnv where
   apply s (TypeEnv env) = TypeEnv $ M.map (apply s) env
@@ -104,6 +106,7 @@ instance Show Type where
   show (TCon s) = s
   show (TFunc t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
   show (TImpureFunc t1 t2) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
+  show (TConApp t1 t2) = show t1 ++ " " ++ show t2
 
 baseEnv :: TypeEnv
 baseEnv =
@@ -189,11 +192,13 @@ normalize (Forall _ body) = Forall (map snd ord) (normalizeType body)
     fv (TVariable a) = [a]
     fv (TFunc a b) = fv a ++ fv b
     fv (TImpureFunc a b) = fv a ++ fv b
+    fv (TConApp a b) = fv a ++ fv b
     fv (TCon _) = []
 
     normalizeType (TFunc a b) = TFunc (normalizeType a) (normalizeType b)
     normalizeType (TImpureFunc a b) = TImpureFunc (normalizeType a) (normalizeType b)
     normalizeType (TCon a) = TCon a
+    normalizeType (TConApp a b) = TConApp (normalizeType a) (normalizeType b)
     normalizeType (TVariable a) =
       case lookup a ord of
         Just x -> TVariable x
@@ -219,18 +224,18 @@ unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = return nullSubst
 unifies (TVariable v) t = v `bind` t
 unifies t (TVariable v) = v `bind` t
+unifies (TConApp t1 t2) (TConApp t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TImpureFunc t1 t2) (TImpureFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TImpureFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
 solver :: Unifier -> Solve Subst
-solver (su, cs) =
-  case cs of
-    [] -> return su
-    ((t1, t2) : cs0) -> do
-      su1 <- unifies t1 t2
-      solver (su1 `compose` su, apply su1 cs0)
+solver (su, cs) = case cs of
+  [] -> return su
+  (t1, t2) : cs0 -> do
+    su1 <- unifies t1 t2
+    solver (su1 `compose` su, apply su1 cs0)
 
 runSolve :: [Constraint] -> Either TypeError Subst
 runSolve cs = runIdentity $ runExceptT $ solver st

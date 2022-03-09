@@ -1,4 +1,1 @@
-let main _ =
-  let b = 3
-  b
-println (main ())
+let main _ = []

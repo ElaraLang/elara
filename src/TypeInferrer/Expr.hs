@@ -10,10 +10,8 @@ inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
   A.Constant (A.IntC _) -> return $ TCon "Int"
   A.Constant A.UnitC -> return $ TCon "()"
---  A.List [] -> do
---    tv <- fresh
---    -- [a]
-
+  A.List [] -> TConApp (TCon "List") <$> fresh
+  -- [a]
 
   A.Reference x -> lookupEnv (show x)
   A.Lambda param body -> do
