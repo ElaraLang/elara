@@ -37,4 +37,7 @@ inferExpression ex = case ex of
     tv <- fresh
     uni t1 (t2 `TFunc` tv)
     return tv
+  A.Block exprs -> do
+    xs <- mapM inferExpression exprs
+    return $ last xs
   other -> throwError $ Other $ "Cannot infer type of expression: " ++ show other
