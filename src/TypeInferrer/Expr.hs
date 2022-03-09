@@ -51,6 +51,13 @@ inferExpression ex = case ex of
     tv <- fresh
     uni (tv `TFunc` tv) t1
     return tv
+  A.IfElse cond t f -> do
+    t1 <- inferExpression cond
+    t2 <- inferExpression t
+    t3 <- inferExpression f
+    uni t1 (TCon "Bool")
+    uni t2 t3
+    return t2
   A.Match val (main : others) -> do
     t <- inferExpression val
     expected <- inferExpression . matchCaseExpression $ main
