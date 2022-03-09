@@ -115,6 +115,7 @@ showIdentifier (OpIdentifier i) = i
 
 showPattern :: Pattern -> String
 showPattern (IdentifierP p) = showIdentifier p
+showPattern (WildP) = "_"
 showPattern e = show e
 
 --showPattern (FunctionP name args) = showIdentifier name ++ " " ++ (intercalate " " $ map showPattern args)
