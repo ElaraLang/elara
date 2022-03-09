@@ -42,12 +42,12 @@ class Substitutable a where
   ftv :: a -> Set.Set TVar -- Finds free type variables of a type
 
 instance Substitutable Type where
-  apply _ (TConcrete a) = TConcrete a
+  apply _ (TCon a) = TCon a
   apply s t@(TVariable a) = M.findWithDefault t a s
   apply s (t1 `TFunc` t2) = apply s t1 `TFunc` apply s t2
   apply s (t1 `TImpureFunc` t2) = apply s t1 `TImpureFunc` apply s t2
 
-  ftv TConcrete {} = Set.empty
+  ftv TCon {} = Set.empty
   ftv (TVariable a) = Set.singleton a
   ftv (t1 `TFunc` t2) = ftv t1 `Set.union` ftv t2
   ftv (t1 `TImpureFunc` t2) = ftv t1 `Set.union` ftv t2
@@ -93,14 +93,15 @@ instance Show Scheme where
 
 data Type
   = TVariable TVar
-  | TConcrete String
+  | TCon String -- Type Constructors
+  | TConApp Type Type -- Type Constructor Application
   | TFunc Type Type
   | TImpureFunc Type Type
   deriving (Eq, Ord)
 
 instance Show Type where
   show (TVariable t) = show t
-  show (TConcrete s) = s
+  show (TCon s) = s
   show (TFunc t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
   show (TImpureFunc t1 t2) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
 
@@ -109,7 +110,7 @@ baseEnv =
   TypeEnv $
     M.fromList
       [ ( "println",
-          Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TConcrete "()"))
+          Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TCon "()"))
         ),
         ( "+",
           Forall [TV "a"] (TFunc (TVariable $ TV "a") (TFunc (TVariable $ TV "a") (TVariable $ TV "a")))
@@ -188,11 +189,11 @@ normalize (Forall _ body) = Forall (map snd ord) (normalizeType body)
     fv (TVariable a) = [a]
     fv (TFunc a b) = fv a ++ fv b
     fv (TImpureFunc a b) = fv a ++ fv b
-    fv (TConcrete _) = []
+    fv (TCon _) = []
 
     normalizeType (TFunc a b) = TFunc (normalizeType a) (normalizeType b)
     normalizeType (TImpureFunc a b) = TImpureFunc (normalizeType a) (normalizeType b)
-    normalizeType (TConcrete a) = TConcrete a
+    normalizeType (TCon a) = TCon a
     normalizeType (TVariable a) =
       case lookup a ord of
         Just x -> TVariable x
