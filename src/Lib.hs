@@ -11,8 +11,8 @@ import qualified Data.Map as M
 import qualified Interpreter.AST as A
 import Parse.Parser
 import Preprocess.Preprocessor
-import TypeInferrer.Env
-import TypeInferrer.Infer
+import TypeInfer.Env
+import TypeInfer.Infer
 import Text.Pretty.Simple (pPrint)
 
 someFunc :: IO ()

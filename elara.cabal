@@ -47,9 +47,9 @@ library
       Preprocess.Expression
       Preprocess.Preprocessor
       Preprocess.Type
-      TypeInferrer.Env
-      TypeInferrer.Expr
-      TypeInferrer.Infer
+      TypeInfer.Env
+      TypeInfer.Expr
+      TypeInfer.Infer
   other-modules:
       Paths_elara
   hs-source-dirs:

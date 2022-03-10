@@ -1,14 +1,14 @@
-module TypeInferrer.Infer where
+module TypeInfer.Infer where
 
 import Control.Monad (foldM)
 import Control.Monad.Except (runExcept)
 import Control.Monad.RWS (runRWST)
 import qualified Interpreter.AST as A
-import TypeInferrer.Env
-import TypeInferrer.Expr
+import TypeInfer.Env
+import TypeInfer.Expr
 
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
-runInfer env m = runExcept $ (\(res, state, constraints) -> (res, typeEnv state, constraints)) <$> runRWST m () (InferState 0 env)
+runInfer env (Infer m) = runExcept $ (\(res, state, constraints) -> (res, typeEnv state, constraints)) <$> runRWST m () (InferState 0 env)
 
 infer :: Infer Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 infer inf env = do

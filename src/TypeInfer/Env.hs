@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module TypeInferrer.Env where
+module TypeInfer.Env where
 
 import Control.Monad.Except
 import Control.Monad.Identity
@@ -20,10 +21,15 @@ remove (TypeEnv env) var = TypeEnv (M.delete var env)
 add :: TypeEnv -> Var -> Scheme -> TypeEnv
 add (TypeEnv env) var scheme = TypeEnv (M.insert var scheme env)
 
-type Infer a = (RWST () [Constraint] InferState (Except TypeError) a) -- Even though we don't need the R part, the api is more convenient
+-- Even though we don't need the R part, the api is more convenient
+newtype Infer a = Infer (RWST () [Constraint] InferState (Except TypeError) a)
+  deriving (Functor, Applicative, Monad, MonadError TypeError, MonadState InferState, MonadWriter [Constraint])
+
+instance MonadFail Infer where
+  fail = throwError . Other
 
 toInfer :: Except TypeError a -> Infer a
-toInfer = lift
+toInfer = Infer . lift
 
 type Constraint = (Type, Type)
 
