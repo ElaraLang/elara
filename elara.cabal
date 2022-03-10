@@ -50,6 +50,7 @@ library
       TypeInfer.Env
       TypeInfer.Expr
       TypeInfer.Infer
+      TypeInfer.Type
   other-modules:
       Paths_elara
   hs-source-dirs:

@@ -50,14 +50,19 @@ import Data.List.NonEmpty (fromList)
    ',' { Comma }
    '_' { Wildcard }
    '->' { Arrow }
+   '=>' { BigArrow }
    '|' { Pipe }
    '\\' { Backslash }
 %%
 
 Type :: { Type }
 Type  : typeIdentifier { NamedT $1 }
+      | identifier { VarT $1 }
       | '[' Type ']' { ListT $2 }
       | Type '->' Type { PureFunT $1 $3 }
+      | Type '=>' Type { ImpureFunT $1 $3 }
+      | '(' Type ')' { $2 }
+
 
 TypeIdentifier : typeIdentifier { P.TypeIdentifier $1 }
 

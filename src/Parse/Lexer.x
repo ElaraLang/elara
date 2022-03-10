@@ -29,6 +29,7 @@ tokens :-
   <0> match                  { simpleTok Match }
   <0> type                   { simpleTok Type }
   <0> \-\>                   { simpleTok Arrow }
+  <0> \=\>                   { simpleTok BigArrow }
   <0> \=                     { simpleTok Eq }
   <0> \`                     { simpleTok Backtick }
   <0> \\                     { simpleTok Backslash }

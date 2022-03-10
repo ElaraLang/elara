@@ -125,11 +125,15 @@ showIdentifier (OpIdentifier i) = i
 
 data Type
   = NamedT String
+  | VarT String
   | ListT Type
   | PureFunT Type Type
+  | ImpureFunT Type Type
   deriving (Eq)
 
 instance Show Type where
   show (NamedT s) = s
+  show (VarT s) = s
   show (ListT t) = "[" ++ show t ++ "]"
   show (PureFunT t1 t2) = show t1 ++ " -> " ++ show t2
+  show (ImpureFunT t1 t2) = show t1 ++ " => " ++ show t2

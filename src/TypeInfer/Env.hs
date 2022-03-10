@@ -237,6 +237,13 @@ lookupEnv x = do
     Nothing -> throwError $ UnboundVariable x
     Just s -> instantiate s
 
+maybeLookupEnv :: Var -> Infer (Maybe Type)
+maybeLookupEnv x = do
+  (TypeEnv env) <- gets typeEnv
+  case M.lookup x env of
+    Nothing -> return Nothing
+    Just s -> Just <$> instantiate s 
+
 unifyMany :: [Type] -> [Type] -> Solve Subst
 unifyMany [] [] = return nullSubst
 unifyMany (t1 : ts1) (t2 : ts2) =

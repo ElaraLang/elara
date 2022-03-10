@@ -7,6 +7,7 @@ import Debug.Trace (traceShowM)
 import Interpreter.AST (matchCaseExpression)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
+import Data.Maybe (fromJust, isJust)
 
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
@@ -32,7 +33,12 @@ inferExpression ex = case ex of
     (t0, constraints) <- listen $ inferExpression val
     subst <- liftEither $ runSolve constraints
     let sc = generalize (apply subst env) (apply subst t0)
-    inEnv (show name, sc) $ inferExpression body
+    bodyType <- inEnv (show name, sc) $ inferExpression body
+    expected <- maybeLookupEnv (show name)
+    when (isJust expected) $ do
+      let actual = fromJust expected
+      uni bodyType actual
+    return bodyType
   A.BindGlobal name val -> do
     i <- inferExpression (A.BindWithBody name val (A.Reference name))
     env <- gets typeEnv

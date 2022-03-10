@@ -2,6 +2,7 @@ let map f l = match l
   [] -> []
   (x:xs) -> (f x) : (map f xs)
 
+def filter     : (a -> Bool) -> [a] -> [a]
 let filter p l = match l
   [] -> []
   (x:xs) -> if p x then x : (filter p xs) else filter p xs

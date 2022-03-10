@@ -17,6 +17,7 @@ data Token
   | Match
   | Type
   | Arrow
+  | BigArrow
   | Backtick
   | Backslash
   | NewLine

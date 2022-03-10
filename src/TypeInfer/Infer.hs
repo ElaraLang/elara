@@ -6,6 +6,8 @@ import Control.Monad.RWS (runRWST)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
 import TypeInfer.Expr
+import TypeInfer.Type
+import Debug.Trace (traceShowM)
 
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
 runInfer env (Infer m) = runExcept $ (\(res, state, constraints) -> (res, typeEnv state, constraints)) <$> runRWST m () (InferState 0 env)
@@ -19,8 +21,16 @@ infer inf env = do
 inferExpr :: A.Expression -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 inferExpr e = infer (inferExpression e)
 
+inferDefLine :: A.Identifier -> A.Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
+inferDefLine name t env = do
+  (env', scheme) <- infer (inferType t) env
+  (_, env'', cons') <- runInfer env' (addToEnv (show name, scheme))
+  traceShowM cons'
+  return (env'', scheme)
+
 inferLine :: A.Line -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 inferLine (A.ExpressionLine e) = inferExpr e
+inferLine (A.DefLine name ty) = inferDefLine name ty
 inferLine other = error $ "inferLine: " ++ show other
 
 inferLines :: [A.Line] -> TypeEnv -> Either TypeError (TypeEnv, [Scheme])

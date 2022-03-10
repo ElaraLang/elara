@@ -110,13 +110,17 @@ instance Show TypeVariable where
 
 data Type
   = NamedType String
+  | VarType TypeVariable
   | ListType Type
   | UnitType
   | PureFunctionType Type Type
+  | ImpureFunctionType Type Type
   deriving (Eq)
 
 instance Show Type where
   show UnitType = "()"
   show (NamedType s) = s
+  show (VarType s) = show s
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
+  show (ImpureFunctionType t1 t2) = show t1 ++ " => " ++ show t2
