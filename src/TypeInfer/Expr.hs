@@ -3,10 +3,10 @@ module TypeInfer.Expr where
 import Control.Monad.Except
 import Control.Monad.RWS (listen)
 import Control.Monad.State
+import Debug.Trace (traceShowM)
 import Interpreter.AST (matchCaseExpression)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
-import Debug.Trace (traceShowM)
 
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
@@ -20,7 +20,7 @@ inferExpression ex = case ex of
   A.Cons x xs -> do
     t <- inferExpression x
     ts <- inferExpression xs
-    traceShowM ts
+    uni (TConApp (TCon "List") t) ts
     return $ TConApp (TCon "List") t
   A.Reference x -> lookupEnv (show x)
   A.Lambda param body -> do
