@@ -3,11 +3,11 @@ module TypeInfer.Infer where
 import Control.Monad (foldM)
 import Control.Monad.Except (runExcept)
 import Control.Monad.RWS (runRWST)
+import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
 import TypeInfer.Expr
 import TypeInfer.Type
-import Debug.Trace (traceShowM)
 
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
 runInfer env (Infer m) = runExcept $ (\(res, state, constraints) -> (res, typeEnv state, constraints)) <$> runRWST m () (InferState 0 env)
@@ -33,10 +33,10 @@ inferLine (A.ExpressionLine e) = inferExpr e
 inferLine (A.DefLine name ty) = inferDefLine name ty
 inferLine other = error $ "inferLine: " ++ show other
 
-inferLines :: [A.Line] -> TypeEnv -> Either TypeError (TypeEnv, [Scheme])
+inferLines :: [A.Line] -> TypeEnv -> Either TypeError TypeEnv
 inferLines l startEnv = do
   -- Infer all lines, threading the type environment through
-  (env, schemes) <-
+  (env, _) <-
     foldM
       ( \(env, acc) line -> do
           (env', scheme) <- inferLine line env
@@ -44,7 +44,7 @@ inferLines l startEnv = do
       )
       (startEnv, [])
       l
-  return (env, reverse schemes)
+  return env
 
 inferTypeDef :: TypeEnv -> A.TypeDefinition -> Infer (Subst, Scheme)
 inferTypeDef _ (A.TypeDefinition _ args _) = do
