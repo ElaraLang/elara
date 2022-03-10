@@ -86,6 +86,7 @@ instance Show Constant where
 data Expression
   = ConstE Constant
   | LetE Pattern Expression
+  | LetInE Pattern Expression Expression
   | IdentifierE Identifier
   | InfixApplicationE Identifier Expression Expression
   | FuncApplicationE Expression Expression
@@ -105,6 +106,7 @@ showASTNode :: Expression -> String
 showASTNode (LambdaE p e) = "\\" ++ show p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ show pattern ++ " = " ++ showASTNode value
+showASTNode (LetInE pattern value e) = "let " ++ show pattern ++ " = " ++ showASTNode value ++ " in " ++ showASTNode e
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = show val
 showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode $ toList expressions) ++ "}"

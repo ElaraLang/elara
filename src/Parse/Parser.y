@@ -25,6 +25,7 @@ import Data.List.NonEmpty (fromList)
 
 %token
    let { Let }
+   in { In }
    def { Def }
    if { If }
    then { Then }
@@ -69,6 +70,7 @@ TypeIdentifier : typeIdentifier { P.TypeIdentifier $1 }
 Expression :: { Expression }
 Expression  : Constant {ConstE $1}
             | let Pattern eq Block {LetE $2 $4 }
+            | let Pattern eq Block in Expression {LetInE $2 $4 $6 }
             | Identifier {IdentifierE $1}
             | '(' Expression ')' { $2 }
             | Expression Expression %prec APP { FuncApplicationE $1 $2 }

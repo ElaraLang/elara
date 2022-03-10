@@ -54,6 +54,11 @@ preprocessExpression' (P.LetE ident val) = do
   let (I.IdentifierPattern pattern) = preprocessPattern ident
   val' <- preprocessExpression' val
   return $ I.BindGlobal pattern val'
+preprocessExpression' (P.LetInE ident val body) = do
+  let (I.IdentifierPattern pattern) = preprocessPattern ident
+  val' <- preprocessExpression' val
+  body' <- preprocessExpression' body
+  return $ I.BindWithBody pattern (I.Fix val') body'
 preprocessExpression' (P.BlockE body) = desugarBlock (toList body)
 preprocessExpression' (P.FuncApplicationE f val) = do
   f' <- preprocessExpression' f
