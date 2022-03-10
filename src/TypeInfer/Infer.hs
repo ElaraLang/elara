@@ -24,8 +24,7 @@ inferExpr e = infer (inferExpression e)
 inferDefLine :: A.Identifier -> A.Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 inferDefLine name t env = do
   (env', scheme) <- infer (inferType t) env
-  (_, env'', cons') <- runInfer env' (addToEnv (show name, scheme))
-  traceShowM cons'
+  (_, env'', _) <- runInfer env' (addToEnv (show name, scheme))
   return (env'', scheme)
 
 inferLine :: A.Line -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
