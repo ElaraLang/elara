@@ -77,12 +77,13 @@ preprocessExpression' (P.MatchE e cases) = do
       return $ I.MatchCase (preprocessPattern i) a'
 preprocessExpression' s = error $ "Cannot preprocess expression: " ++ show s
 
+preprocessLet :: P.Pattern -> P.Expression -> State ExpState (P.Identifier, I.Expression)
 preprocessLet pat val = do
   let fName = P.NormalIdentifier $ patName pat
   let args = case pat of
         (P.FunctionP _ a) -> (P.IdentifierP fName) : a
         _ -> []
-  let lambdaBody = P.FixE (foldr P.LambdaE val (args))
+  let lambdaBody = P.FixE (foldr P.LambdaE val args)
   val' <- preprocessExpression' lambdaBody
   return (fName, val')
 
@@ -98,10 +99,9 @@ desugarBlock :: [P.Expression] -> State ExpState I.Expression
 desugarBlock exps = desugarBlock' exps []
   where
     desugarBlock' (P.LetE ident val : others) acc = do
-      let (I.IdentifierPattern pat) = preprocessPattern ident
-      val' <- preprocessExpression' val
+      (pat, val') <- preprocessLet ident val
       body <- desugarBlock others
-      return $! I.Block (acc ++ [I.BindWithBody pat (I.Fix val') body])
+      return $! I.Block (acc ++ [I.BindWithBody (preprocessIdent pat) val' body])
     desugarBlock' [] [acc] = return acc
     desugarBlock' [] acc = return $ I.Block $! reverse acc
     desugarBlock' (e : exs) acc = do

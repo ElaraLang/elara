@@ -1,1 +1,3 @@
-let fix f = let x = f x in x
+let fix f =
+   let fix2 f x = f (fix2 f) x
+   fix2 f

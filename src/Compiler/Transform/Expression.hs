@@ -8,6 +8,7 @@ import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Interpreter.AST as E
 
+
 compileConstant :: E.Constant -> (JVMType, ConstantPoolEntry)
 compileConstant (E.IntC i) = do
   let converted = fromInteger i :: Int -- TODO overflow but who cares
