@@ -49,16 +49,13 @@ preprocessExpression' (P.IfElseE a b c) = do
   b' <- preprocessExpression' b
   c' <- preprocessExpression' c
   return $ I.IfElse a' b' c'
-preprocessExpression' (P.LetE (P.FunctionP i a) val) = lambdaDesugar i a val -- Desugars let a b = ... into let a = \b -> ...
 preprocessExpression' (P.LetE ident val) = do
-  let (I.IdentifierPattern pattern) = preprocessPattern ident
-  val' <- preprocessExpression' val
-  return $ I.BindGlobal pattern val'
+  (pattern, val') <- preprocessLet ident val
+  return $ I.BindGlobal (preprocessIdent pattern) val'
 preprocessExpression' (P.LetInE ident val body) = do
-  let (I.IdentifierPattern pattern) = preprocessPattern ident
-  val' <- preprocessExpression' val
+  (pattern, val') <- preprocessLet ident val
   body' <- preprocessExpression' body
-  return $ I.BindWithBody pattern (I.Fix val') body'
+  return $ I.BindWithBody (preprocessIdent pattern) val' body'
 preprocessExpression' (P.BlockE body) = desugarBlock (toList body)
 preprocessExpression' (P.FuncApplicationE f val) = do
   f' <- preprocessExpression' f
@@ -80,11 +77,14 @@ preprocessExpression' (P.MatchE e cases) = do
       return $ I.MatchCase (preprocessPattern i) a'
 preprocessExpression' s = error $ "Cannot preprocess expression: " ++ show s
 
-lambdaDesugar :: P.Identifier -> [P.Pattern] -> P.Expression -> State ExpState I.Expression
-lambdaDesugar fName args body = do
-  let lambdaBody = foldr P.LambdaE body (P.IdentifierP fName : args)
-  let newLet = P.LetE (P.IdentifierP fName) (P.FixE lambdaBody)
-  preprocessExpression' newLet
+preprocessLet pat val = do
+  let fName = P.NormalIdentifier $ patName pat
+  let args = case pat of
+        (P.FunctionP _ a) -> (P.IdentifierP fName) : a
+        _ -> []
+  let lambdaBody = P.FixE (foldr P.LambdaE val (args))
+  val' <- preprocessExpression' lambdaBody
+  return (fName, val')
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
@@ -111,3 +111,8 @@ desugarBlock exps = desugarBlock' exps []
 preprocessIdent :: P.Identifier -> I.Identifier
 preprocessIdent (P.NormalIdentifier i) = I.SimpleIdentifier i
 preprocessIdent (P.OpIdentifier i) = I.OperatorIdentifier i
+
+patName :: P.Pattern -> String
+patName (P.IdentifierP i) = show i
+patName (P.FunctionP i _) = show i
+patName other = error "Cannot get name of pattern " ++ show other

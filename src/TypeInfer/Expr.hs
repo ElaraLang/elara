@@ -58,6 +58,7 @@ inferExpression ex = case ex of
     t1 <- inferExpression e
     tv <- fresh
     uni (tv `TFunc` tv) t1
+
     return tv
   A.IfElse cond t f -> do
     t1 <- inferExpression cond

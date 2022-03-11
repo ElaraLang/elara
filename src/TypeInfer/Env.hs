@@ -133,9 +133,6 @@ baseEnv =
     M.fromList
       [ ( "println",
           Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TCon "()"))
-        ),
-        ( "+",
-          Forall [TV "a"] (TFunc (TVariable $ TV "a") (TFunc (TVariable $ TV "a") (TVariable $ TV "a")))
         )
       ]
 
@@ -242,7 +239,7 @@ maybeLookupEnv x = do
   (TypeEnv env) <- gets typeEnv
   case M.lookup x env of
     Nothing -> return Nothing
-    Just s -> Just <$> instantiate s 
+    Just s -> Just <$> instantiate s
 
 unifyMany :: [Type] -> [Type] -> Solve Subst
 unifyMany [] [] = return nullSubst
