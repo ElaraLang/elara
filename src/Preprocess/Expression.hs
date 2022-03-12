@@ -83,8 +83,9 @@ preprocessLet pat val = do
   let args = case pat of
         (P.FunctionP _ a) -> (P.IdentifierP fName) : a
         _ -> []
-  let lambdaBody = P.FixE (foldr P.LambdaE val args)
-  val' <- preprocessExpression' lambdaBody
+  let lambdaBody = foldr P.LambdaE val args
+  let fixLambdaBody = if null args then lambdaBody else P.FixE lambdaBody
+  val' <- preprocessExpression' fixLambdaBody
   return (fName, val')
 
 preprocessPattern :: P.Pattern -> I.Pattern

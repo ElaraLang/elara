@@ -6,7 +6,7 @@ import Control.Monad.RWS (runRWST)
 import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
-import TypeInfer.Expr
+import TypeInfer.Expr as E
 import TypeInfer.Type
 
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
@@ -19,7 +19,7 @@ infer inf env = do
   return (nextEnv, closeOver $ apply subst scheme)
 
 inferExpr :: A.Expression -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
-inferExpr e = infer (inferExpression e)
+inferExpr e = infer (E.inferExpression e)
 
 inferDefLine :: A.Identifier -> A.Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 inferDefLine name t env = do

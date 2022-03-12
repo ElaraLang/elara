@@ -10,7 +10,7 @@ import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
 
-newtype TypeEnv = TypeEnv (M.Map Var Scheme)
+newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Eq)
 
 instance Show TypeEnv where
   show (TypeEnv env) = show (M.toList env)
