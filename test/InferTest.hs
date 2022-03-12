@@ -6,7 +6,7 @@ import Parse.Parser (parse)
 import Preprocess.Preprocessor (preprocessAll)
 import System.Exit (exitFailure)
 import Test.Hspec
-import TypeInfer.Env (Scheme (..), Type (..), TypeEnv (..), baseEnv)
+import TypeInfer.Env (Scheme (..), TVar (..), Type (..), TypeEnv (..), baseEnv)
 import TypeInfer.Infer
 
 spec :: Spec
@@ -21,6 +21,12 @@ spec = describe "Test Type Inference" $ do
     "let a = 1 in a" <=> Forall [] (TCon "Int")
   it "Infers the type of a simple let binding" $ do
     "let a = 1" <!> TypeEnv (M.fromList [("a", Forall [] (TCon "Int"))])
+  it "Infers the type of a nested let expression" $ do
+    "let a = 1 in let b = a in b" <=> Forall [] (TCon "Int")
+  it "Infers the type of a lambda expression" $ do
+    "\\x -> x" <=> Forall [TV "a"] (TFunc (TVariable $ TV "a") (TVariable $ TV "a"))
+  it "Infers the type of a simple application" $ do
+    "(\\x -> x) 1" <=> Forall [] (TCon "Int")
 
 (<=>) :: String -> Scheme -> IO ()
 (<=>) expr ast = case preprocessAll (parse expr) of
