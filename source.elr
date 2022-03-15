@@ -1,4 +1,3 @@
-def trace   : x => x
 let trace x =
   println x
   x
