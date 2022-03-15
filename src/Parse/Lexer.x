@@ -38,6 +38,8 @@ tokens :-
   <0> _                      { simpleTok Wildcard }
   <0> \(                     { simpleTok LParen }
   <0> \)                     { simpleTok RParen }
+  <0> \{                     { simpleTok LBrace }
+  <0> \}                     { simpleTok RBrace }
   <0> \[                     { simpleTok LSParen }
   <0> \]                     { simpleTok RSParen }
   <0> \,                     { simpleTok Comma }

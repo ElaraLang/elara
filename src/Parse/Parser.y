@@ -46,6 +46,8 @@ import Data.List.NonEmpty (fromList)
    dedent { Dedent }
    '(' { LParen }
    ')' { RParen }
+   '{' { LBrace }
+   '}' { RBrace }
    '[' { LSParen }
    ']' { RSParen }
    ',' { Comma }
@@ -143,15 +145,20 @@ Separator : newLine { addSemicolon }
 
 Block :: { Expression }
 Block : Expression { $1 }
+      | '{' BlockBody '}' { BlockE $ fromList $ reverse $2 }
       | Separator indent BlockBody dedent { traceName "BlockBody" (BlockE $ fromList $ reverse $3) }
 
 BlockBody :: { [Expression] }
-BlockBody : ExpressionWithSep { traceName "expression" [$1] }
-          | BlockBody ExpressionWithSep { traceName "bb" ($2 : $1) }
-          | {- empty -} { error "Empty block" }
+BlockBody : Expression { [$1] }
+          | MultiBlockBody { $1 }
+
+MultiBlockBody : ExpressionWithSep { traceName "expression" [$1] }
+               | BlockBody ExpressionWithSep { traceName "bb" ($2 : $1) }
+               | {- empty -} { error "Empty block" }
 
 ExpressionWithSep :: { Expression }
-ExpressionWithSep : Expression Separator { $1 }
+ExpressionWithSep : Separator Expression { $2 }
+                  | ExpressionWithSep Separator { $1 }
 
 TypeVariables :: { [TypeVariable] }
 TypeVariables : TypeVariable TypeVariables { $1 : $2 }
