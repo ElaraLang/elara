@@ -9,6 +9,7 @@ import Control.Monad.RWS
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
+import Debug.Trace (traceShowM)
 
 newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Eq)
 
@@ -57,13 +58,13 @@ instance Substitutable Type where
   apply _ (TCon a) = TCon a
   apply s t@(TVariable a) = M.findWithDefault t a s
   apply s (t1 `TFunc` t2) = apply s t1 `TFunc` apply s t2
-  apply s (t1 `TImpureFunc` t2) = apply s t1 `TImpureFunc` apply s t2
+  apply s (TImpure t) = TImpure (apply s t)
   apply s (TConApp a b) = TConApp (apply s a) (apply s b)
 
   ftv TCon {} = Set.empty
   ftv (TVariable a) = Set.singleton a
   ftv (t1 `TFunc` t2) = ftv t1 `Set.union` ftv t2
-  ftv (t1 `TImpureFunc` t2) = ftv t1 `Set.union` ftv t2
+  ftv (TImpure t) = ftv t
   ftv (TConApp a b) = ftv a `Set.union` ftv b
 
 instance Substitutable TypeEnv where
@@ -117,14 +118,27 @@ data Type
   | TCon String -- Type Constructors
   | TConApp Type Type -- Type Constructor Application
   | TFunc Type Type
-  | TImpureFunc Type Type
+  | TImpure Type -- An impure function type
   deriving (Eq, Ord)
+
+isImpure :: Type -> Bool
+isImpure (TImpure _) = True
+isImpure _ = False
+
+impurify :: Type -> Type
+impurify = TImpure
+
+purify :: Type -> Type
+purify (TImpure (a `TFunc` b)) = purify a `TFunc` purify b
+purify (TImpure t) = t
+purify t = t
 
 instance Show Type where
   show (TVariable t) = show t
   show (TCon s) = s
   show (TFunc t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
-  show (TImpureFunc t1 t2) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
+  show (TImpure (TFunc t1 t2)) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
+  show (TImpure other) = "!" ++ show other
   show (TConApp t1 t2) = show t1 ++ " " ++ show t2
 
 baseEnv :: TypeEnv
@@ -132,7 +146,7 @@ baseEnv =
   TypeEnv $
     M.fromList
       [ ( "println",
-          Forall [TV "a"] (TImpureFunc (TVariable $ TV "a") (TCon "()"))
+          Forall [TV "a"] (TImpure (TFunc (TVariable $ TV "a") (TCon "()")))
         )
       ]
 
@@ -214,12 +228,12 @@ normalize (Forall _ body) = Forall (map snd ord) (normalizeType body)
 
     fv (TVariable a) = [a]
     fv (TFunc a b) = fv a ++ fv b
-    fv (TImpureFunc a b) = fv a ++ fv b
+    fv (TImpure a) = fv a
     fv (TConApp a b) = fv a ++ fv b
     fv (TCon _) = []
 
     normalizeType (TFunc a b) = TFunc (normalizeType a) (normalizeType b)
-    normalizeType (TImpureFunc a b) = TImpureFunc (normalizeType a) (normalizeType b)
+    normalizeType (TImpure a) = TImpure (normalizeType a)
     normalizeType (TCon a) = TCon a
     normalizeType (TConApp a b) = TConApp (normalizeType a) (normalizeType b)
     normalizeType (TVariable a) =
@@ -256,8 +270,8 @@ unifies (TVariable v) t = v `bind` t
 unifies t (TVariable v) = v `bind` t
 unifies (TConApp t1 t2) (TConApp t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies (TImpureFunc t1 t2) (TImpureFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies (TImpureFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
+unifies (TImpure t1) (TImpure t3) = unifies t1 t3
+unifies f (TImpure t) = unifies f t -- a is assignable to !a
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
 solver :: Unifier -> Solve Subst

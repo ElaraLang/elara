@@ -27,6 +27,14 @@ spec = describe "Test Type Inference" $ do
     "\\x -> x" <=> Forall [TV "a"] (TFunc (TVariable $ TV "a") (TVariable $ TV "a"))
   it "Infers the type of a simple application" $ do
     "(\\x -> x) 1" <=> Forall [] (TCon "Int")
+  it "Infers the type of an impure function" $ do
+    "\\_ -> println 3" <=> Forall [TV "a"] (TImpure (TFunc (TVariable $ TV "a") (TCon "()")))
+  it "Infers the type of an impure function that returns a pure function" $ do
+    "\\_ -> { println 3; \\x -> x }" <=> Forall [TV "a", TV "b"] (TImpure (TFunc (TVariable $ TV "a") (TFunc (TVariable $ TV "b") (TVariable $ TV "b"))))
+  it "Infers the type of an impure function that returns an impure function" $ do
+    "\\_ -> { println 3; \\x -> println x }" <=> Forall [TV "a", TV "b"] (TImpure (TFunc (TVariable $ TV "a") (TImpure (TFunc (TVariable $ TV "b") (TCon "()")))))
+  it "Infers the type of an impure function that returns a normal value" $ do
+    "\\x -> { println x; x }" <=> Forall [TV "a"] (TImpure (TFunc (TVariable $ TV "a") (TVariable $ TV "a")))
 
 (<=>) :: String -> Scheme -> IO ()
 (<=>) expr ast = case preprocessAll (parse expr) of

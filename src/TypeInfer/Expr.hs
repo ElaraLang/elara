@@ -3,11 +3,16 @@ module TypeInfer.Expr where
 import Control.Monad.Except
 import Control.Monad.RWS (listen)
 import Control.Monad.State
+import Data.Maybe (fromJust, isJust)
 import Debug.Trace (traceShowM)
 import Interpreter.AST (matchCaseExpression)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
-import Data.Maybe (fromJust, isJust)
+
+funcCtor :: Type -> (Type -> Type -> Type)
+funcCtor fT t1 tv = case fT of
+  TImpure _ -> TImpure (t1 `TFunc` tv)
+  _ -> (t1 `TFunc` tv)
 
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
@@ -24,10 +29,12 @@ inferExpression ex = case ex of
     uni (TConApp (TCon "List") t) ts
     return $ TConApp (TCon "List") t
   A.Reference x -> lookupEnv (show x)
-  A.Lambda param body -> do
+  A.Lambda param body rec -> do
     tv <- fresh
     t <- inEnv (show param, Forall [] tv) (inferExpression body)
-    return (tv `TFunc` t)
+    -- If recursive, always pure and don't change the body
+    let res = if rec then tv `TFunc` t else funcCtor t tv (purify t)
+    return res
   A.BindWithBody name val body -> do
     env <- gets typeEnv
     (t0, constraints) <- listen $ inferExpression val
@@ -49,16 +56,21 @@ inferExpression ex = case ex of
     t1 <- inferExpression f
     t2 <- inferExpression arg
     tv <- fresh
-    uni t1 (t2 `TFunc` tv)
-    return tv
+    uni t1 (funcCtor t1 t2 tv)
+    let appRes = case t1 of -- If the function is impure, an impure result is returned
+          TImpure _ -> TImpure tv
+          _ -> tv
+    return appRes
   A.Block es -> do
     xs <- mapM inferExpression es
-    return $ last xs
+    return $
+      if any isImpure xs
+        then impurify (last xs)
+        else last xs
   A.Fix e -> do
     t1 <- inferExpression e
     tv <- fresh
-    uni (tv `TFunc` tv) t1
-
+    uni (funcCtor t1 tv tv) t1
     return tv
   A.IfElse cond t f -> do
     t1 <- inferExpression cond

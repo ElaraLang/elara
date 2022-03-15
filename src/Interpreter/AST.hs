@@ -40,7 +40,7 @@ instance Show Pattern where
 data Expression
   = Constant Constant
   | Reference Identifier
-  | Lambda Identifier Expression
+  | Lambda Identifier Expression Bool -- True if it's a recursive lambda. This also signals that the first parameter will be the function name
   | BindWithBody Identifier Expression Expression
   | BindGlobal Identifier Expression
   | Block [Expression]
@@ -55,7 +55,7 @@ data Expression
 instance Show Expression where
   show (Constant c) = show c
   show (Reference i) = show i
-  show (Lambda p e) = "\\" ++ show p ++ " -> " ++ show e
+  show (Lambda p e _) = "\\" ++ show p ++ " -> " ++ show e
   show (BindWithBody p e1 e2) = "let " ++ show p ++ " = " ++ show e1 ++ " in " ++ show e2
   show (BindGlobal p e) = "let " ++ show p ++ " = " ++ show e
   show (Block es) = "{" ++ intercalate "; " (map show es) ++ "}"

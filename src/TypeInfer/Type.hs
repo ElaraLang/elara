@@ -17,4 +17,4 @@ inferType (A.PureFunctionType a b) = do
 inferType (A.ImpureFunctionType a b) = do
   ta <- inferType a
   tb <- inferType b
-  return $ TImpureFunc ta tb
+  return $ TImpure (TFunc ta tb)

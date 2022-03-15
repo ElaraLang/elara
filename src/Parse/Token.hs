@@ -29,6 +29,8 @@ data Token
   | Dedent
   | LParen
   | RParen
+  | LBrace
+  | RBrace
   | LSParen
   | RSParen
   | Comma

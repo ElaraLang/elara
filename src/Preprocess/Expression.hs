@@ -37,9 +37,9 @@ preprocessExpression = do
 preprocessExpression' :: P.Expression -> ExpProcessor
 preprocessExpression' (P.ConstE c) = return $ I.Constant (preprocessConst c)
 preprocessExpression' (P.FixE e) = I.Fix <$> preprocessExpression' e
-preprocessExpression' (P.LambdaE x e) = do
+preprocessExpression' (P.LambdaE x e rec) = do
   e' <- preprocessExpression' e
-  return $ I.Lambda (I.SimpleIdentifier $ show x) e'
+  return $ I.Lambda (I.SimpleIdentifier $ show x) e' rec
 preprocessExpression' (P.ConsE a b) = do
   a' <- preprocessExpression' a
   b' <- preprocessExpression' b
@@ -51,11 +51,11 @@ preprocessExpression' (P.IfElseE a b c) = do
   return $ I.IfElse a' b' c'
 preprocessExpression' (P.LetE ident val) = do
   (pattern, val') <- preprocessLet ident val
-  return $ I.BindGlobal (preprocessIdent pattern) val'
+  return $ I.BindGlobal (pattern) val'
 preprocessExpression' (P.LetInE ident val body) = do
   (pattern, val') <- preprocessLet ident val
   body' <- preprocessExpression' body
-  return $ I.BindWithBody (preprocessIdent pattern) val' body'
+  return $ I.BindWithBody (pattern) val' body'
 preprocessExpression' (P.BlockE body) = desugarBlock (toList body)
 preprocessExpression' (P.FuncApplicationE f val) = do
   f' <- preprocessExpression' f
@@ -77,16 +77,19 @@ preprocessExpression' (P.MatchE e cases) = do
       return $ I.MatchCase (preprocessPattern i) a'
 preprocessExpression' s = error $ "Cannot preprocess expression: " ++ show s
 
-preprocessLet :: P.Pattern -> P.Expression -> State ExpState (P.Identifier, I.Expression)
+preprocessLet :: P.Pattern -> P.Expression -> State ExpState (I.Identifier, I.Expression)
 preprocessLet pat val = do
   let fName = P.NormalIdentifier $ patName pat
   let args = case pat of
         (P.FunctionP _ a) -> (P.IdentifierP fName) : a
         _ -> []
-  let lambdaBody = foldr P.LambdaE val args
-  let fixLambdaBody = if null args then lambdaBody else P.FixE lambdaBody
+  let lambdaBody = foldr (flip flip False . P.LambdaE) val args
+  let fixLambdaBody =
+        if null args
+          then lambdaBody
+          else let (P.LambdaE a b False) = lambdaBody in P.FixE (P.LambdaE a b True) -- Make the first argument recursive
   val' <- preprocessExpression' fixLambdaBody
-  return (fName, val')
+  return (preprocessIdent fName, val')
 
 preprocessPattern :: P.Pattern -> I.Pattern
 preprocessPattern (P.IdentifierP i) = I.IdentifierPattern (preprocessIdent i)
@@ -102,7 +105,7 @@ desugarBlock exps = desugarBlock' exps []
     desugarBlock' (P.LetE ident val : others) acc = do
       (pat, val') <- preprocessLet ident val
       body <- desugarBlock others
-      return $! I.Block (acc ++ [I.BindWithBody (preprocessIdent pat) val' body])
+      return $! I.Block (acc ++ [I.BindWithBody (pat) val' body])
     desugarBlock' [] [acc] = return acc
     desugarBlock' [] acc = return $ I.Block $! reverse acc
     desugarBlock' (e : exs) acc = do

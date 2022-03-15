@@ -93,7 +93,7 @@ data Expression
   | BlockE (NonEmpty Expression)
   | ListE [Expression]
   | IfElseE Expression Expression Expression
-  | LambdaE Pattern Expression
+  | LambdaE Pattern Expression Bool -- For recursive, only used internally
   | ConsE Expression Expression
   | MatchE Expression [MatchLine]
   | FixE Expression -- Fix point operator, only used internally
@@ -103,10 +103,10 @@ instance Show Expression where
   show = showASTNode
 
 showASTNode :: Expression -> String
-showASTNode (LambdaE p e) = "\\" ++ show p ++ " -> " ++ show e
+showASTNode (LambdaE p e _ ) = "\\" ++ show p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ show pattern ++ " = " ++ showASTNode value
-showASTNode (LetInE pattern value e) = "let " ++ show pattern ++ " = " ++ showASTNode value ++ " in " ++ showASTNode e
+showASTNode (LetInE pattern value exp) = "let " ++ show pattern ++ " = " ++ showASTNode value ++ " in " ++ showASTNode exp
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = show val
 showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode $ toList expressions) ++ "}"

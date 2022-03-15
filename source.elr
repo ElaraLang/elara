@@ -1,3 +1,4 @@
-let fix f =
-   let fix2 f x = f (fix2 f) x
-   fix2 f
+def trace   : x => x
+let trace x =
+  println x
+  x

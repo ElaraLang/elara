@@ -79,7 +79,7 @@ Expression  : Constant {ConstE $1}
             | if Expression then Expression else Expression {IfElseE $2 $4 $6}
             | Expression ':' Expression {ConsE $1 $3}
             | MatchExpression { $1 }
-            | '\\' Pattern '->' Expression {LambdaE $2 $4}
+            | '\\' Pattern '->' Block {LambdaE $2 $4 False}
 
 
 ListExpression :: { Expression }
