@@ -29,6 +29,9 @@ spec = describe "Test Type Inference" $ do
     "(\\x -> x) 1" <=> Forall [] (TCon "Int")
   it "Infers the type of an impure function" $ do
     "\\_ -> println 3" <=> Forall [TV "a"] (TImpure (TFunc (TVariable $ TV "a") (TCon "()")))
+  it "Infers the type of an impure function that does 2 things" $ do
+    "\\_ -> { println 3; println 4 }" <=> Forall [TV "a"] (TImpure (TFunc (TVariable $ TV "a") (TCon "()")))
+
   it "Infers the type of an impure function that returns a pure function" $ do
     "\\_ -> { println 3; \\x -> x }" <=> Forall [TV "a", TV "b"] (TImpure (TFunc (TVariable $ TV "a") (TFunc (TVariable $ TV "b") (TVariable $ TV "b"))))
   it "Infers the type of an impure function that returns an impure function" $ do

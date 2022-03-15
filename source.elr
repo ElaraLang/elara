@@ -1,3 +1,6 @@
-let trace x =
-  println x
-  x
+def printEach : [l] => a
+let printEach = \l -> match l
+    [] -> println ""
+    (x:xs) ->
+      println x
+      printEach xs

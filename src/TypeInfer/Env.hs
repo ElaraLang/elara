@@ -9,6 +9,8 @@ import Control.Monad.RWS
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
+import Debug.Pretty.Simple (pTraceShowM)
+import Debug.Trace (traceShowId, traceShowM)
 
 newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Eq)
 
@@ -86,8 +88,10 @@ instance Substitutable a => Substitutable [a] where
 
 data TypeError
   = UnificationFail Type Type
+  | ImpurityMismatch Type Type
   | UnificationMismatch [Type] [Type]
   | InfiniteType TVar Type
+  | LetDefConflict Type Type
   | UnboundVariable String
   | Other String
   deriving (Eq, Ord)
@@ -96,7 +100,9 @@ instance Show TypeError where
   show (UnificationFail t1 t2) = "Cannot unify " ++ show t1 ++ " with " ++ show t2
   show (UnificationMismatch ts1 ts2) = "Cannot unify " ++ show ts1 ++ " with " ++ show ts2
   show (InfiniteType t t') = "Infinite type: " ++ show t ++ " = " ++ show t'
+  show (LetDefConflict t1 t2) = "Expected " ++ show t1 ++ " but found " ++ show t2
   show (UnboundVariable v) = "Unbound variable: " ++ v
+  show (ImpurityMismatch t1 t2) = "Value of type " ++ show t1 ++ " requires impure computations which cannot be performed in the context of a value of type " ++ show t2
   show (Other s) = s
 
 newtype TVar = TV String
@@ -127,16 +133,25 @@ isImpure _ = False
 impurify :: Type -> Type
 impurify = TImpure
 
+impurifyOnce :: Type -> Type
+impurifyOnce (TImpure t) = t
+impurifyOnce t = TImpure t
+
 purify :: Type -> Type
-purify (TImpure (a `TFunc` b)) = purify a `TFunc` purify b
+purify (TImpure (a `TFunc` b)) = completelyPurify a `TFunc` completelyPurify b
 purify (TImpure t) = t
 purify t = t
+
+completelyPurify :: Type -> Type
+completelyPurify (TImpure (a `TFunc` b)) = completelyPurify a `TFunc` completelyPurify b
+completelyPurify (TImpure t) = completelyPurify t
+completelyPurify t = t
 
 instance Show Type where
   show (TVariable t) = show t
   show (TCon s) = s
-  show (TFunc t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
-  show (TImpure (TFunc t1 t2)) = "(" ++ show t1 ++ " => " ++ show t2 ++ ")"
+  show (TFunc t1 t2) = show t1 ++ " -> " ++ show t2
+  show (TImpure (TFunc t1 t2)) = show t1 ++ " => " ++ show t2
   show (TImpure other) = "!" ++ show other
   show (TConApp t1 t2) = show t1 ++ " " ++ show t2
 
@@ -265,12 +280,13 @@ unifyMany t1 t2 = throwError $ UnificationMismatch t1 t2
 
 unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = return nullSubst
-unifies (TVariable v) t = v `bind` t
-unifies t (TVariable v) = v `bind` t
+unifies (TVariable v) t = v `bind` t -- Bind a type variable to a type
+unifies t (TVariable v) = v `bind` t -- Bind a type variable to a type
 unifies (TConApp t1 t2) (TConApp t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TFunc t1 t2) (TFunc t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TImpure t1) (TImpure t3) = unifies t1 t3
 unifies f (TImpure t) = unifies f t -- a is assignable to !a
+unifies t@(TImpure _) f = throwError $ ImpurityMismatch t f
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
 solver :: Unifier -> Solve Subst

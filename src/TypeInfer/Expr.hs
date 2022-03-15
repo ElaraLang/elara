@@ -26,14 +26,16 @@ inferExpression ex = case ex of
   A.Cons x xs -> do
     t <- inferExpression x
     ts <- inferExpression xs
-    uni (TConApp (TCon "List") t) ts
-    return $ TConApp (TCon "List") t
+    let listCon = if isImpure t || isImpure ts then TImpure . (TConApp (TCon "List") . purify) else TConApp (TCon "List")
+    uni (listCon t) ts
+    return $ listCon t
   A.Reference x -> lookupEnv (show x)
   A.Lambda param body rec -> do
     tv <- fresh
     t <- inEnv (show param, Forall [] tv) (inferExpression body)
-    -- If recursive, always pure and don't change the body
+    -- If recursive, always pure and don't purify the body
     let res = if rec then tv `TFunc` t else funcCtor t tv (purify t)
+    traceShowM (t, res, body)
     return res
   A.BindWithBody name val body -> do
     env <- gets typeEnv
@@ -57,6 +59,7 @@ inferExpression ex = case ex of
     t2 <- inferExpression arg
     tv <- fresh
     uni t1 (funcCtor t1 t2 tv)
+    traceShowM (f, t1)
     let appRes = case t1 of -- If the function is impure, an impure result is returned
           TImpure _ -> TImpure tv
           _ -> tv
@@ -65,7 +68,7 @@ inferExpression ex = case ex of
     xs <- mapM inferExpression es
     return $
       if any isImpure xs
-        then impurify (last xs)
+        then impurifyOnce (last xs)
         else last xs
   A.Fix e -> do
     t1 <- inferExpression e
@@ -79,18 +82,21 @@ inferExpression ex = case ex of
     uni t1 (TCon "Bool")
     uni t2 t3
     return t2
-  A.Match val (main : others) -> do
+  A.Match val cases -> do
     t <- inferExpression val
-    expected <- inferExpression . matchCaseExpression $ main
-    withCopyOfEnv $
-      forM_
-        others
-        ( \(A.MatchCase pattern body) -> do
-            pat <- inferPattern pattern
-            uni pat t
-            inferExpression body >>= uni expected
-        )
-    return expected
+    expected <- fresh
+    caseTypes <-
+      withCopyOfEnv $
+        forM
+          cases
+          ( \(A.MatchCase pattern body) -> do
+              pat <- inferPattern pattern
+              uni pat t
+              bodyType <- inferExpression body
+              uni expected bodyType
+              return bodyType
+          )
+    return $ if (any isImpure caseTypes) then impurify expected else expected
   other -> throwError $ Other $ "Cannot infer type of expression: " ++ show other
 
 inferConstant :: A.Constant -> Infer Type

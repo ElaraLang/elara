@@ -63,7 +63,7 @@ instance Show Expression where
   show (List es) = "[" ++ intercalate ", " (map show es) ++ "]"
   show (Cons e1 e2) = show e1 ++ ":" ++ show e2
   show (IfElse e1 e2 e3) = "if " ++ show e1 ++ " then " ++ show e2 ++ " else " ++ show e3
-  show (Match e ms) = "match " ++ show e ++ " { " ++ intercalate "\n" (map show ms) ++ " }"
+  show (Match e ms) = "match " ++ show e ++ " { " ++ intercalate "; " (map show ms) ++ " }"
   show (Fix e) = "fix " ++ show e
 
 data MatchCase = MatchCase Pattern Expression deriving (Eq)
