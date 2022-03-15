@@ -2,7 +2,6 @@ module Preprocess.Expression (preprocessExpression, preprocessIdent, newState, e
 
 import Control.Monad.State
 import Data.List.NonEmpty (toList)
-import Debug.Trace (traceShowM)
 import qualified Interpreter.AST as I
 import qualified Parse.AST as P
 import Preprocess.Constant

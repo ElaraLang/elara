@@ -3,7 +3,6 @@ module Parse.Utils where
 import Codec.Binary.UTF8.String (encode)
 import Control.Monad.State.Lazy
 import Data.Word (Word8)
-import Debug.Trace (traceShowId, traceM, traceShowM)
 import Parse.Token
 
 type P a = State ParseState a

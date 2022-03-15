@@ -9,7 +9,6 @@ import Control.Monad.RWS
 import Data.List (nub)
 import qualified Data.Map as M
 import qualified Data.Set as Set
-import Debug.Trace (traceShowM)
 
 newtype TypeEnv = TypeEnv (M.Map Var Scheme) deriving (Eq)
 
