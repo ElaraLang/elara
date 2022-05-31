@@ -12,7 +12,7 @@ import TypeInfer.Env
 funcCtor :: Type -> (Type -> Type -> Type)
 funcCtor fT t1 tv = case fT of
   TImpure _ -> TImpure (t1 `TFunc` tv)
-  _ -> (t1 `TFunc` tv)
+  _ -> t1 `TFunc` tv
 
 inferExpression :: A.Expression -> Infer Type
 inferExpression ex = case ex of
@@ -21,8 +21,9 @@ inferExpression ex = case ex of
   A.List (x : xs) -> do
     t <- inferExpression x
     ts <- inferExpression (A.List xs)
-    uni t ts
-    return $ TConApp (TCon "List") t
+    let listType = TConApp (TCon "List") t
+    uni listType ts
+    return listType
   A.Cons x xs -> do
     t <- inferExpression x
     ts <- inferExpression xs
@@ -35,7 +36,6 @@ inferExpression ex = case ex of
     t <- inEnv (show param, Forall [] tv) (inferExpression body)
     -- If recursive, always pure and don't purify the body
     let res = if rec then tv `TFunc` t else funcCtor t tv (purify t)
-    traceShowM (t, res, body)
     return res
   A.BindWithBody name val body -> do
     env <- gets typeEnv
@@ -75,8 +75,8 @@ inferExpression ex = case ex of
     tv <- fresh
     uni (funcCtor t1 tv tv) t1
     return tv
-  A.IfElse cond t f -> do
-    t1 <- inferExpression cond
+  A.IfElse condition t f -> do
+    t1 <- inferExpression condition
     t2 <- inferExpression t
     t3 <- inferExpression f
     uni t1 (TCon "Bool")
@@ -96,8 +96,7 @@ inferExpression ex = case ex of
               uni expected bodyType
               return bodyType
           )
-    return $ if (any isImpure caseTypes) then impurify expected else expected
-  other -> throwError $ Other $ "Cannot infer type of expression: " ++ show other
+    return $ if any isImpure caseTypes then impurify expected else expected
 
 inferConstant :: A.Constant -> Infer Type
 inferConstant (A.IntC _) = return $ TCon "Int"
@@ -110,7 +109,7 @@ inferPattern (A.IdentifierPattern x) = do
   ty <- fresh
   addToEnv (show x, Forall [] ty)
   return ty
-inferPattern (A.WildcardPattern) = fresh
+inferPattern A.WildcardPattern = fresh
 inferPattern (A.ListPattern xs) = do
   ts <- mapM inferPattern xs
   l <- if null ts then fresh else return $ last ts
