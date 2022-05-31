@@ -4,7 +4,6 @@ import Control.Monad.Except
 import Control.Monad.RWS (listen)
 import Control.Monad.State
 import Data.Maybe (fromJust, isJust)
-import Debug.Trace (traceShowM)
 import Interpreter.AST (matchCaseExpression)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
@@ -59,7 +58,6 @@ inferExpression ex = case ex of
     t2 <- inferExpression arg
     tv <- fresh
     uni t1 (funcCtor t1 t2 tv)
-    traceShowM (f, t1)
     let appRes = case t1 of -- If the function is impure, an impure result is returned
           TImpure _ -> TImpure tv
           _ -> tv
