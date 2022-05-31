@@ -65,6 +65,7 @@ Type  : typeIdentifier { NamedT $1 }
       | Type '->' Type { PureFunT $1 $3 }
       | Type '=>' Type { ImpureFunT $1 $3 }
       | '(' Type ')' { $2 }
+      | Type Type { ConAppT $1 $2 }
 
 
 TypeIdentifier : typeIdentifier { P.TypeIdentifier $1 }

@@ -103,18 +103,19 @@ instance Show Expression where
   show = showASTNode
 
 showASTNode :: Expression -> String
-showASTNode (LambdaE p e _ ) = "\\" ++ show p ++ " -> " ++ show e
+showASTNode (LambdaE p e _) = "\\" ++ show p ++ " -> " ++ show e
 showASTNode (FuncApplicationE a b) = "(" ++ showASTNode a ++ " " ++ showASTNode b ++ ")"
 showASTNode (LetE pattern value) = "let " ++ show pattern ++ " = " ++ showASTNode value
 showASTNode (LetInE pattern value exp) = "let " ++ show pattern ++ " = " ++ showASTNode value ++ " in " ++ showASTNode exp
 showASTNode (IdentifierE i) = showIdentifier i
 showASTNode (ConstE val) = show val
-showASTNode (BlockE expressions) = "{" ++ (intercalate "; " $ map showASTNode $ toList expressions) ++ "}"
+showASTNode (BlockE expressions) = "{" ++ intercalate "; " (map showASTNode $ toList expressions) ++ "}"
 showASTNode (InfixApplicationE op a b) = showASTNode a ++ " " ++ showIdentifier op ++ " " ++ showASTNode b
-showASTNode (ListE expressions) = "[" ++ (intercalate ", " $ map showASTNode expressions) ++ "]"
+showASTNode (ListE expressions) = "[" ++ intercalate ", " (map showASTNode expressions) ++ "]"
 showASTNode (IfElseE condition thenBranch elseBranch) = "if " ++ showASTNode condition ++ " then " ++ showASTNode thenBranch ++ " else " ++ showASTNode elseBranch
 showASTNode (ConsE a b) = showASTNode a ++ " : " ++ showASTNode b
-showASTNode (MatchE expression matchLines) = "match " ++ showASTNode expression ++ " { " ++ (intercalate "\n" $ map show matchLines) ++ " } "
+showASTNode (MatchE expression matchLines) = "match " ++ showASTNode expression ++ " { " ++ intercalate "\n" (map show matchLines) ++ " } "
+showASTNode (FixE e) = "\\fix " ++ showASTNode e
 
 data MatchLine = MatchLine Pattern Expression deriving (Eq)
 
@@ -131,6 +132,7 @@ data Type
   | ListT Type
   | PureFunT Type Type
   | ImpureFunT Type Type
+  | ConAppT Type Type
   deriving (Eq)
 
 instance Show Type where
@@ -139,3 +141,4 @@ instance Show Type where
   show (ListT t) = "[" ++ show t ++ "]"
   show (PureFunT t1 t2) = show t1 ++ " -> " ++ show t2
   show (ImpureFunT t1 t2) = show t1 ++ " => " ++ show t2
+  show (ConAppT t1 t2) = show t1 ++ " " ++ show t2

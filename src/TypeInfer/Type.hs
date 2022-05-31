@@ -18,3 +18,7 @@ inferType (A.ImpureFunctionType a b) = do
   ta <- inferType a
   tb <- inferType b
   return $ TImpure (TFunc ta tb)
+inferType (A.ConstructorAppType a b) = do
+  ta <- inferType a
+  tb <- inferType b
+  return $ TConApp ta tb

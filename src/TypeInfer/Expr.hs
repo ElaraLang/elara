@@ -7,6 +7,7 @@ import Data.Maybe (fromJust, isJust)
 import Interpreter.AST (matchCaseExpression)
 import qualified Interpreter.AST as A
 import TypeInfer.Env
+import Debug.Trace (traceShowM)
 
 funcCtor :: Type -> (Type -> Type -> Type)
 funcCtor fT t1 tv = case fT of
@@ -48,10 +49,15 @@ inferExpression ex = case ex of
       uni bodyType actual
     return bodyType
   A.BindGlobal name val -> do
+    expectedType <- maybeLookupEnv (show name)
     i <- inferExpression (A.BindWithBody name val (A.Reference name))
     env <- gets typeEnv
     let sc = generalize env i
+    traceShowM (sc, expectedType)
     addToEnv (show name, sc)
+    when (isJust expectedType) $ do
+      let actual = fromJust expectedType
+      uni i actual
     return (TCon "()")
   A.FunctionApplication f arg -> do
     t1 <- inferExpression f

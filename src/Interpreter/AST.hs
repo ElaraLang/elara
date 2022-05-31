@@ -115,6 +115,7 @@ data Type
   | UnitType
   | PureFunctionType Type Type
   | ImpureFunctionType Type Type
+  | ConstructorAppType Type Type
   deriving (Eq)
 
 instance Show Type where
@@ -124,3 +125,4 @@ instance Show Type where
   show (ListType t) = "[" ++ show t ++ "]"
   show (PureFunctionType t1 t2) = show t1 ++ " -> " ++ show t2
   show (ImpureFunctionType t1 t2) = show t1 ++ " => " ++ show t2
+  show (ConstructorAppType t1 t2) = show t1 ++ " " ++ show t2

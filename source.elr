@@ -1,5 +1,4 @@
-def mapM : (a => b) -> [a] => [b]
+def mapM : (a -> m b) -> [a] -> m [b]
 let mapM f list = match list
         [] -> []
         (x:xs) -> f x : mapM f xs
-let a = [1, 2, 3]
