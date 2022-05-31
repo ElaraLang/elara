@@ -1,0 +1,156 @@
+\documentclass{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\title{Elara Language Specification}
+\author{Alexander Wood}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+The Elara programming language is a multi-paradigm, statically typed, general purpose
+programming language with type inference.
+Elara follows a functional-first design - while all major paradigms are supported,
+the functional paradigm is encouraged, and the language is designed around use in a functional way.
+This includes features like structural pattern matching, higher-order functions with compiler-enforced purity,
+and type classes.
+
+Elara is platform agnostic, but its primary target is the JVM, and again, language features are designed
+around interoperability with the JVM\@
+
+For `first-class' code (compiled / source code written in Elara), Elara provides a fully-fledged Hindley-Milner
+type system with type inference.
+For code written in other languages, full interoperability is provided, but a more basic type inference system
+is used.
+
+\subsection{Code Examples}
+While all examples are syntactically correct, they may assume the existence of functions not provided in the examples.
+
+\subsubsection{Hello World}
+\begin{verbatim}
+let main = println "Hello World!"
+\end{verbatim}
+
+\subsubsection{Simple Input and Output}
+\begin{verbatim}
+let main =
+    println "Input a message"
+    let! message = readLine
+    println "Your message reversed is: "
+    println (reverse message)
+\end{verbatim}
+
+\subsubsection{Pattern Matching on Lists}
+\begin{verbatim}
+let map f list =
+    match list
+        [] -> []
+        (x:xs) -> (f x) : (map xs f)
+
+let main = 
+    let list = [1, 2, 3, 4]
+    let doubleNum i = i * 2
+    println (map doubleNum list)
+\end{verbatim}
+
+\subsubsection{Custom Data Types}
+Elara has an extremely flexible type system allowing many different types of custom data types
+\begin{verbatim}
+type Name = String # Type alias
+
+type Animal = Cat | Dog # Union type
+
+type Person = { # Record Type
+    name : Name,
+    age : Int,
+}
+
+type NetworkState = # Discriminated Union with Data constructors
+      Connected
+    | Pending
+    | Failed Error
+
+type Option a = 
+      Some a
+    | None # Generic data types
+
+type JSONElement = # Combination of multiple type features
+      JSONString String
+    | JSONNumber Int
+    | JSONNull
+    | JSONArray [JSONElement]
+    | JSONObject [{ # record syntax can be used anonymously
+        key : String,
+        value : JSONElement
+    }] 
+\end{verbatim}
+
+\subsubsection{Pattern Matching on Data Types}
+\begin{verbatim}
+type JSONElement = # Combination of multiple type features
+      JSONString String
+    | JSONNumber Int
+    | JSONNull
+    | JSONArray [JSONElement]
+    | JSONObject [{
+        key : String,
+        value : JSONElement
+    }]
+
+let jsonToString elem = match elem
+    JSONNull -> "null"
+    JSONString str -> str
+    JSONNumber num -> toString num
+    JSONArray arr -> "[" ++ (join ", " (map jsonToString arr)) ++ "]"
+    JSONObject components -> 
+        let componentToString { key, value } = 
+            "\"" ++ key ++ "\" : " ++ jsonToString value
+        in "{" ++ join ", " (map componentToString components) ++ "}"
+
+\end{verbatim}
+
+\subsubsection{Type Classes}
+\begin{verbatim}
+type class ToString a where
+    toString : a -> String
+
+instance ToString String where
+    toString s = s
+
+instance ToString Char where
+    toString c = [c]
+
+def print : ToString s :> s => () 
+# Impure function taking any s | ToString s, returns Unit
+let print s = println (toString s)
+
+let main = 
+    print "Hello"
+    print 'c'
+    print 123 # Doesn't compile, no ToString instance for Int
+
+\end{verbatim}
+\section{Grammar}
+This section defines the grammars used for parsing code in the Elara language.
+
+\subsection{Notation}
+These notational structures are used to describe different grammar elements:
+\begin{quote}
+    \begin{description}
+        \textit{[pattern]} Optional
+
+        \textit{pattern+} One or more repetitions
+
+        \textit{pattern*} Zero or more repetitions
+
+        \textit{pattern1 | pattern2} Choice
+
+        \textit{(pattern)} Grouping
+
+        \verb=Text= Literal text
+
+    \end{description}
+\end{quote}
+\subsection{Lexical Program Structure}
+
+\end{document}
