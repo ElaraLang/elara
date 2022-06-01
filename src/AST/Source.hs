@@ -18,6 +18,7 @@ data Expr
   | FunctionCall Expr [Expr]
   | If Expr Expr Expr
   | Let Def Expr
+  | LetIn Def Expr Expr
   | Match Expr [(Pattern, Expr)]
   | Unit
   | Tuple Expr Expr [Expr]
@@ -41,7 +42,7 @@ data Pattern
 
 data Def
   = Define EN.Name [Pattern]
-  | Destruct Pattern Expr
+  | Destruct Pattern
   deriving (Show)
 
 data Type
