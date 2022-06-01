@@ -11,7 +11,7 @@ import qualified Data.Text as T
 import Parse.Pattern (pattern)
 import Parse.Primitives (Parser, lexeme, opName, sc, varName)
 import Parse.Value
-import Text.Megaparsec (MonadParsec (try), choice, manyTill, noneOf, sepBy, some, (<?>), (<|>))
+import Text.Megaparsec (MonadParsec (try), choice, many, manyTill, noneOf, sepBy, some, (<?>), (<|>))
 import Text.Megaparsec.Char (char)
 import qualified Text.Megaparsec.Char as C
 import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
@@ -20,7 +20,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 expr :: Parser SRC.Expr
 expr = makeExprParser term [[Prefix (SRC.Negate <$ char '-')], [InfixL (SRC.BinOp . SRC.Var <$> opName)]]
 
-term = choice [character, string, try float, integer, variable, list, op, lambda, letExpression, letInExpression]
+term = choice [try letInExpression, try letExpression, character, string, try float, integer, variable, list, op, lambda]
 
 variable :: Parser SRC.Expr
 variable = SRC.Var <$> varName
@@ -44,7 +44,7 @@ def = choice [define, destruct]
 define :: Parser SRC.Def
 define = do
   n <- lexeme varName
-  args <- some pattern
+  args <- many pattern
   return $ SRC.Define n args
 
 destruct :: Parser SRC.Def

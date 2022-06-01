@@ -32,6 +32,6 @@ typeName :: Parser Name
 typeName = TypeName . pack <$> lexeme ((:) <$> upperChar <*> many alphaNumChar)
 
 opName :: Parser Name
-opName = OpName . pack <$> lexeme (many operatorChar)
+opName = OpName . pack <$> lexeme (some operatorChar)
   where
     operatorChar = oneOf ("!#$%&*+./<=>?@\\^|-~" :: String)
