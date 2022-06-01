@@ -6,15 +6,11 @@ author: "Author name here"
 maintainer: "example@example.com"
 copyright: "2022 Author name here"
 
-build-tools:
-  - alex
-  - happy
+build-tools: []
 
 extra-source-files:
   - README.md
   - ChangeLog.md
-  - src/Parse/Lexer.x
-  - src/Parse/Parser.y
 
 
 
@@ -41,8 +37,12 @@ dependencies:
   - bimap
   - vector
   - pretty-simple
+  - megaparsec
+  - parser-combinators
 library:
   source-dirs: src
+  default-extensions:
+  - OverloadedStrings
 
 
 executables:

@@ -1,4 +1,13 @@
-def mapM : (a -> m b) -> [a] -> m [b]
-let mapM f list = match list
-        [] -> []
-        (x:xs) -> f x : mapM f xs
+let main =
+    1
+    "x"
+    ref
+    4.5
+    [1, ref2, 3.14]
+    []
+    [[]]
+    (+)
+    3 + 4
+    -3
+    3 - 4
+    \x y -> x + 1

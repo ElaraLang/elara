@@ -1,6 +1,6 @@
-module Main where
+import Data.Text
+import Parse.Declaration
+import Text.Megaparsec
 
-import Lib
-
-main :: IO ()
-main = someFunc
+main =
+  readFile "source.elr" >>= parseTest (declaration <* eof) . pack
