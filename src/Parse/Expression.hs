@@ -20,7 +20,8 @@ import qualified Text.Megaparsec.Char.Lexer as L
 expr :: Parser SRC.Expr
 expr = makeExprParser term [[Prefix (SRC.Negate <$ char '-')], [InfixL (SRC.BinOp . SRC.Var <$> opName)]]
 
-term = choice [try letInExpression, try letExpression, character, string, try float, integer, variable, list, op, lambda]
+term :: Parser SRC.Expr
+term = choice [try letInExpression, letExpression, character, string, try float, integer, variable, list, op, lambda]
 
 variable :: Parser SRC.Expr
 variable = SRC.Var <$> varName

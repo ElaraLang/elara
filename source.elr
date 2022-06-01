@@ -1,3 +1,4 @@
 let main =
     let a = 3
     let b = 5 in a + b
+    let (Just b) = x

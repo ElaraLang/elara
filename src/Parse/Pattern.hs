@@ -20,7 +20,7 @@ import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
 import qualified Text.Megaparsec.Char.Lexer as L
 
 pattern :: Parser Pattern
-pattern = choice [consPattern, wildcard, varPattern, unitPattern, listPattern, constructorPattern, charPattern, stringPattern, intPattern, floatPattern]
+pattern = choice [try consPattern, wildcard, varPattern, unitPattern, listPattern, constructorPattern, charPattern, stringPattern, intPattern, floatPattern]
 
 wildcard :: Parser Pattern
 wildcard = lexeme (char '_') $> SRC.PWildcard
