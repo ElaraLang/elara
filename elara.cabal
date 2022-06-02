@@ -25,13 +25,20 @@ source-repository head
 
 library
   exposed-modules:
+      AST.Canonical
       AST.Source
+      Canonicalize.Module
+      Canonicalize.Pattern
+      Compile
+      Elara.ModuleName
       Elara.Name
       Elara.String
+      Error.Error
       Parse.Declaration
       Parse.Expression
       Parse.Pattern
       Parse.Primitives
+      Parse.Type
       Parse.Value
   other-modules:
       Paths_elara

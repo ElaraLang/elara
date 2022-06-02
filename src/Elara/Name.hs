@@ -13,3 +13,9 @@ instance Show Name where
   show (OpName s) = "(" ++ show s ++ ")"
   show (TypeName s) = show s
   show (QualifiedName n1 n2) = show n1 ++ "." ++ show n2
+
+_main :: Name
+_main = VarName "main"
+
+_Main :: Name
+_Main = TypeName "Main"
