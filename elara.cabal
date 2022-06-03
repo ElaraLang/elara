@@ -38,6 +38,7 @@ library
       Error.Error
       Parse.Declaration
       Parse.Expression
+      Parse.Module
       Parse.Pattern
       Parse.Primitives
       Parse.Type
@@ -49,6 +50,7 @@ library
   default-extensions:
       OverloadedStrings
       ImportQualifiedPost
+      OverloadedRecordDot
   build-depends:
       array
     , base >=4.7 && <5

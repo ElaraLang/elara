@@ -8,10 +8,11 @@ import Control.Monad (void)
 import Data.Text (Text, pack)
 import Data.Void
 import Elara.Name (Name (..))
-import qualified GHC.Read as L
+import GHC.Read qualified as L
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
+import Data.List
 
 type Parser = Parsec Void Text
 
@@ -35,3 +36,14 @@ opName :: Parser Name
 opName = OpName . pack <$> lexeme (some operatorChar)
   where
     operatorChar = oneOf ("!#$%&*+./<=>?@\\^|-~" :: String)
+
+inParens :: Parser a -> Parser a
+inParens = between (char '(') (char ')')
+
+
+
+commaSeparated :: Parser a -> Parser [a]
+commaSeparated p = p `sepBy` (lexeme $ char ',')
+
+oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
+oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` (lexeme $ char ','))) <|> singleton <$> p

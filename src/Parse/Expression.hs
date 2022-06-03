@@ -9,7 +9,7 @@ import Control.Monad.Combinators.Expr
 import Data.Functor
 import Data.Text qualified as T
 import Parse.Pattern (pattern)
-import Parse.Primitives (Parser, lexeme, opName, sc, varName)
+import Parse.Primitives (Parser, lexeme, opName, sc, varName, inParens, commaSeparated)
 import Parse.Value
 import Text.Megaparsec (MonadParsec (try), choice, many, manyTill, noneOf, sepBy, some, (<?>), (<|>))
 import Text.Megaparsec.Char (char)
@@ -27,10 +27,10 @@ variable :: Parser SRC.Expr
 variable = SRC.Var <$> varName
 
 list :: Parser SRC.Expr
-list = SRC.List <$> (char '[' *> sepBy expr (lexeme (char ',')) <* char ']')
+list = SRC.List <$> (char '[' *> commaSeparated expr <* char ']')
 
 op :: Parser SRC.Expr
-op = SRC.Op <$> (char '(' *> opName <* char ')')
+op = SRC.Op <$> (inParens opName)
 
 lambda :: Parser SRC.Expr
 lambda = do

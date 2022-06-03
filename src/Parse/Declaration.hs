@@ -1,7 +1,7 @@
 module Parse.Declaration where
 
 import AST.Source (Expr (BlockExpr))
-import qualified AST.Source as SRC
+import qualified AST.Source as Src
 import qualified Data.Text as T
 import Elara.Name
 import Parse.Expression (expr)
@@ -12,7 +12,7 @@ import Text.Megaparsec.Char.Lexer hiding (lexeme)
 import qualified Text.Megaparsec.Char.Lexer as L
 
 newtype Decl
-  = Value SRC.Value
+  = Value Src.Value
   deriving (Show)
 
 declaration :: Parser Decl
@@ -23,4 +23,4 @@ valueDecl = L.indentBlock scn $ do
   lexeme (string "let")
   name <- varName
   lexeme (string "=")
-  return $ L.IndentSome Nothing (\e -> return $ Value $ SRC.Value name [] (BlockExpr e) Nothing) expr
+  return $ L.IndentSome Nothing (\e -> return $ Value $ Src.Value name [] (BlockExpr e) Nothing) expr

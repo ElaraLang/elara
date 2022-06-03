@@ -4,6 +4,7 @@ import Elara.Name (Name)
 import Elara.Name qualified as EN
 import Elara.Name qualified as Name
 import Elara.String qualified as ES
+import Data.Maybe ( fromMaybe )
 
 data Expr
   = Char Char
@@ -58,11 +59,25 @@ data Type
 
 data Module = Module
   { _name :: Maybe Name,
+    _exports :: Exposing,
+    _imports :: [Import],
     _values :: [Value]
   }
 
 data Value = Value Name [Pattern] Expr (Maybe Type) deriving (Show)
 
 getName :: Module -> Name
-getName (Module (Just name) _) = name
-getName _ = Name._Main
+getName mod = fromMaybe (Name._Main) (mod._name)
+
+data Import = Import
+  { _import :: Name,
+    _as :: Maybe Name,
+    _exposing :: Exposing
+  } deriving (Show)
+
+data Exposing
+  = Everything
+  | Some Exposed
+  deriving (Show)
+
+type Exposed = [Name]
