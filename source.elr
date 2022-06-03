@@ -1,8 +1,8 @@
-module Main
+module Test.Main
 import Core exposing map
 
 let a =
      x + 3
 
-let main = 
-    println map a [1, 2, 3]
+let main =
+    println (map a 1)

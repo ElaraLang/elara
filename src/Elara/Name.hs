@@ -1,6 +1,7 @@
 module Elara.Name where
 
 import Elara.String as ES
+import Data.Text (unpack)
 
 data Name
   = VarName ES.String
@@ -9,9 +10,9 @@ data Name
   | QualifiedName Name Name
 
 instance Show Name where
-  show (VarName s) = show s
-  show (OpName s) = "(" ++ show s ++ ")"
-  show (TypeName s) = show s
+  show (VarName s) = unpack s
+  show (OpName s) = "(" ++ (unpack s) ++ ")"
+  show (TypeName s) = unpack s
   show (QualifiedName n1 n2) = show n1 ++ "." ++ show n2
 
 _main :: Name

@@ -4,7 +4,7 @@ import AST.Source qualified as Src
 import Data.Maybe (fromMaybe)
 import Elara.Name (Name)
 import Parse.Declaration
-import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens, opName, typeName, varName)
+import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens, opName, typeName, varName, moduleName)
 import Text.Megaparsec (choice, many, optional, parseMaybe, sepBy, try)
 import Text.Megaparsec.Char (char, newline, string)
 
@@ -29,7 +29,7 @@ parseHeader :: Parser (Maybe Header)
 parseHeader = optional . try $ do
   -- module Name exposing (..)
   m <- lexeme (string "module")
-  moduleName <- lexeme typeName
+  moduleName <- lexeme moduleName
   exposing <- exposing
   pure $ Header moduleName exposing
 
@@ -48,7 +48,7 @@ exposingName = choice [varName, typeName, inParens opName]
 import' :: Parser Src.Import
 import' = do
   i <- lexeme (string "import")
-  name <- lexeme typeName
+  name <- lexeme moduleName
   as <- optional . try $ do
     lexeme (string "as")
     lexeme typeName

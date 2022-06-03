@@ -1,10 +1,10 @@
 module AST.Source where
 
+import Data.Maybe (fromMaybe)
 import Elara.Name (Name)
 import Elara.Name qualified as EN
 import Elara.Name qualified as Name
 import Elara.String qualified as ES
-import Data.Maybe ( fromMaybe )
 
 data Expr
   = Char Char
@@ -17,7 +17,7 @@ data Expr
   | Negate Expr
   | BinOp Expr Expr Expr
   | Lambda [Pattern] Expr
-  | FunctionCall Expr [Expr]
+  | FunctionCall Expr Expr
   | If Expr Expr Expr
   | Let Def Expr
   | LetIn Def Expr Expr
@@ -73,7 +73,8 @@ data Import = Import
   { _import :: Name,
     _as :: Maybe Name,
     _exposing :: Exposing
-  } deriving (Show)
+  }
+  deriving (Show)
 
 data Exposing
   = Everything

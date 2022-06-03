@@ -5,6 +5,7 @@ module Parse.Primitives where
 
 import Control.Applicative hiding (many, some)
 import Control.Monad (void)
+import Data.List
 import Data.Text (Text, pack)
 import Data.Void
 import Elara.Name (Name (..))
@@ -12,9 +13,8 @@ import GHC.Read qualified as L
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
-import Data.List
 
-type Parser = Parsec Void Text
+type Parser = Parsec () Text
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
@@ -37,10 +37,11 @@ opName = OpName . pack <$> lexeme (some operatorChar)
   where
     operatorChar = oneOf ("!#$%&*+./<=>?@\\^|-~" :: String)
 
+moduleName :: Parser Name
+moduleName = foldl1 QualifiedName . reverse <$> sepBy1 typeName (char '.')
+
 inParens :: Parser a -> Parser a
 inParens = between (char '(') (char ')')
-
-
 
 commaSeparated :: Parser a -> Parser [a]
 commaSeparated p = p `sepBy` (lexeme $ char ',')
