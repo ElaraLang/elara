@@ -1,21 +1,21 @@
 module Parse.Expression where
 
 import AST.Source
-import qualified AST.Source as SRC
+import AST.Source qualified as SRC
 import Control.Monad.Combinators.Expr
   ( Operator (InfixL, Prefix),
     makeExprParser,
   )
 import Data.Functor
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Parse.Pattern (pattern)
 import Parse.Primitives (Parser, lexeme, opName, sc, varName)
 import Parse.Value
 import Text.Megaparsec (MonadParsec (try), choice, many, manyTill, noneOf, sepBy, some, (<?>), (<|>))
 import Text.Megaparsec.Char (char)
-import qualified Text.Megaparsec.Char as C
+import Text.Megaparsec.Char qualified as C
 import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
 
 expr :: Parser SRC.Expr
 expr = makeExprParser term [[Prefix (SRC.Negate <$ char '-')], [InfixL (SRC.BinOp . SRC.Var <$> opName)]]
@@ -39,24 +39,25 @@ lambda = do
   lexeme (C.string "->")
   SRC.Lambda args <$> expr
 
-def :: Parser SRC.Def
+def :: Parser (SRC.Expr -> SRC.Def)
 def = choice [define, destruct]
 
-define :: Parser SRC.Def
+define :: Parser (SRC.Expr -> SRC.Def)
 define = do
   n <- lexeme varName
   args <- many pattern
   return $ SRC.Define n args
 
-destruct :: Parser SRC.Def
-destruct = pattern <&> SRC.Destruct
+destruct :: Parser (SRC.Expr -> SRC.Def)
+destruct = SRC.Destruct <$> pattern
 
 letExpression :: Parser SRC.Expr
 letExpression = do
   lexeme (C.string "let")
   def <- lexeme def
   lexeme (char '=')
-  SRC.Let def <$> expr
+  exp <- expr
+  return $ SRC.Let (def exp) exp
 
 letInExpression :: Parser SRC.Expr
 letInExpression = do
@@ -65,4 +66,5 @@ letInExpression = do
   lexeme (char '=')
   val <- expr
   lexeme (C.string "in")
-  SRC.LetIn def val <$> expr
+  exp <- expr
+  return $ SRC.LetIn (def exp) val exp

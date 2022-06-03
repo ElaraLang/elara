@@ -43,6 +43,7 @@ library:
   source-dirs: src
   default-extensions:
   - OverloadedStrings
+  - ImportQualifiedPost
 
 
 executables:

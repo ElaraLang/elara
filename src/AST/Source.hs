@@ -1,9 +1,9 @@
 module AST.Source where
 
 import Elara.Name (Name)
-import qualified Elara.Name as EN
-import qualified Elara.Name as Name
-import qualified Elara.String as ES
+import Elara.Name qualified as EN
+import Elara.Name qualified as Name
+import Elara.String qualified as ES
 
 data Expr
   = Char Char
@@ -42,8 +42,8 @@ data Pattern
   deriving (Show)
 
 data Def
-  = Define EN.Name [Pattern]
-  | Destruct Pattern
+  = Define EN.Name [Pattern] Expr
+  | Destruct Pattern Expr
   deriving (Show)
 
 data Type

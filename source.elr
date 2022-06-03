@@ -1,4 +1,7 @@
-let main =
-    let a = 3
-    let b = 5 in a + b
-    let (Just b) = x
+module Main
+import Core exposing (map)
+
+let a x = x + 3
+
+let main = 
+    println (map a [1, 2, 3])

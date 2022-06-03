@@ -27,8 +27,10 @@ library
   exposed-modules:
       AST.Canonical
       AST.Source
+      Canonicalize.Expression
       Canonicalize.Module
       Canonicalize.Pattern
+      Canonicalize.Type
       Compile
       Elara.ModuleName
       Elara.Name
@@ -46,6 +48,7 @@ library
       src
   default-extensions:
       OverloadedStrings
+      ImportQualifiedPost
   build-depends:
       array
     , base >=4.7 && <5
