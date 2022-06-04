@@ -8,12 +8,12 @@ import Control.Monad (void)
 import Data.List
 import Data.Text (Text, pack)
 import Data.Void
+import Debug.Trace (traceM, traceShowM)
 import Elara.Name (Name (..))
 import GHC.Read qualified as L
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
-import Debug.Trace (traceShowM, traceM)
 
 type Parser = Parsec Void Text
 
@@ -35,5 +35,3 @@ commaSeparated p = p `sepBy` (lexeme $ char ',')
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
 oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` (lexeme $ char ','))) <|> singleton <$> p
-
-

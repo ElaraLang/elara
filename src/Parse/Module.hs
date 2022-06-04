@@ -6,7 +6,7 @@ import Elara.Name (Name)
 import Parse.Declaration
 import Parse.Name
 import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens)
-import Text.Megaparsec (choice, many, optional, parseMaybe, sepBy, try)
+import Text.Megaparsec (choice, endBy, many, optional, parseMaybe, sepBy, try, sepEndBy)
 import Text.Megaparsec.Char (char, newline, string)
 
 data Module = Module
@@ -23,7 +23,8 @@ module' = do
   header <- parseHeader
   many newline
   imports <- many import'
-  decls <- many declaration
+  many newline
+  decls <- declaration `sepEndBy` newline
   return $ Module header imports decls
 
 parseHeader :: Parser (Maybe Header)
