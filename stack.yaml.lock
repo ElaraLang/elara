@@ -228,4 +228,39 @@ packages:
       sha256: 03f8e22f364deb86098dbfbe0bf83c896437b2355f139abdac0402658fb6ac7e
   original:
     hackage: colour-2.3.6@sha256:ebdcbf15023958838a527e381ab3c3b1e99ed12d1b25efeb7feaa4ad8c37664a,2378
+- completed:
+    hackage: parsers-0.12.11@sha256:6066bcf703a53f1ffaf4709a4610663edee1b48a95a5124217c779b66d243a4b,3393
+    pantry-tree:
+      size: 935
+      sha256: 795fb5c0dc0d7cf1640490f8fed376ad4d6686f5da343c17387a595de174337e
+  original:
+    hackage: parsers-0.12.11@sha256:6066bcf703a53f1ffaf4709a4610663edee1b48a95a5124217c779b66d243a4b,3393
+- completed:
+    hackage: attoparsec-0.14.4@sha256:79584bdada8b730cb5138fca8c35c76fbef75fc1d1e01e6b1d815a5ee9843191,5810
+    pantry-tree:
+      size: 5039
+      sha256: 5b8e087f73d334019252606b1f64b986cef61946a085ccb77c6bc4d038691c48
+  original:
+    hackage: attoparsec-0.14.4@sha256:79584bdada8b730cb5138fca8c35c76fbef75fc1d1e01e6b1d815a5ee9843191,5810
+- completed:
+    hackage: base-orphans-0.8.6@sha256:eb6758d0160d607e0c45dbd6b196f515b9a589fd4f6d2f926929dd5d56282d37,3175
+    pantry-tree:
+      size: 1272
+      sha256: f889d6903383305688e6e703982bfdc985649b7d4538429e44f98f99d8f73c07
+  original:
+    hackage: base-orphans-0.8.6@sha256:eb6758d0160d607e0c45dbd6b196f515b9a589fd4f6d2f926929dd5d56282d37,3175
+- completed:
+    hackage: charset-0.3.9@sha256:6f785e4444f07accd1a45a30a412cb1dce36f5b31a243345cbb9c3cf51ff4a94,1659
+    pantry-tree:
+      size: 893
+      sha256: 30ff308927e557c525f7ae4be75a17ed079b16c2297feb2597efbf20f2e041a8
+  original:
+    hackage: charset-0.3.9@sha256:6f785e4444f07accd1a45a30a412cb1dce36f5b31a243345cbb9c3cf51ff4a94,1659
+- completed:
+    hackage: unordered-containers-0.2.19.1@sha256:7d43e557b32a30eeac22e68b8430384bf829b0b2313761026a7f103395b047d5,3638
+    pantry-tree:
+      size: 1517
+      sha256: 1870de393820b94af9efb8fcdd31940543569cdcd3d13296bc224438b2b107d8
+  original:
+    hackage: unordered-containers-0.2.19.1@sha256:7d43e557b32a30eeac22e68b8430384bf829b0b2313761026a7f103395b047d5,3638
 snapshots: []

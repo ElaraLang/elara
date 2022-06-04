@@ -13,8 +13,9 @@ import GHC.Read qualified as L
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
+import Debug.Trace (traceShowM, traceM)
 
-type Parser = Parsec () Text
+type Parser = Parsec Void Text
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
@@ -26,20 +27,6 @@ scn = L.space space1 lineComment empty
 
 lexeme = L.lexeme sc
 
-varName :: Parser Name
-varName = VarName . pack <$> lexeme ((:) <$> lowerChar <*> many alphaNumChar)
-
-typeName :: Parser Name
-typeName = TypeName . pack <$> lexeme ((:) <$> upperChar <*> many alphaNumChar)
-
-opName :: Parser Name
-opName = OpName . pack <$> lexeme (some operatorChar)
-  where
-    operatorChar = oneOf ("!#$%&*+./<=>?@\\^|-~" :: String)
-
-moduleName :: Parser Name
-moduleName = foldl1 QualifiedName . reverse <$> sepBy1 typeName (char '.')
-
 inParens :: Parser a -> Parser a
 inParens = between (char '(') (char ')')
 
@@ -48,3 +35,5 @@ commaSeparated p = p `sepBy` (lexeme $ char ',')
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
 oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` (lexeme $ char ','))) <|> singleton <$> p
+
+

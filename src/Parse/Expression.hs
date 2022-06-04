@@ -8,8 +8,9 @@ import Control.Monad.Combinators.Expr
   )
 import Data.Functor
 import Data.Text qualified as T
+import Parse.Name
 import Parse.Pattern (pattern)
-import Parse.Primitives (Parser, commaSeparated, inParens, lexeme, opName, sc, varName)
+import Parse.Primitives (Parser, commaSeparated, inParens, lexeme, sc)
 import Parse.Value
 import Text.Megaparsec (MonadParsec (try), choice, many, manyTill, noneOf, sepBy, some, (<?>), (<|>))
 import Text.Megaparsec.Char (char)
@@ -18,7 +19,7 @@ import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
 import Text.Megaparsec.Char.Lexer qualified as L
 
 expr :: Parser Src.Expr
-expr = makeExprParser term [[InfixL (sc $> Src.FunctionCall)], [Prefix (Src.Negate <$ char '-')], [InfixL (Src.BinOp . Src.Var <$> opName)]]
+expr = makeExprParser term [[InfixL (Src.FunctionCall <$ sc)], [Prefix (Src.Negate <$ char '-')], [InfixL (Src.BinOp . Src.Var <$> opName)]]
 
 term :: Parser Src.Expr
 term = choice [inParens expr, try letInExpression, letExpression, character, string, try float, integer, variable, list, op, lambda]

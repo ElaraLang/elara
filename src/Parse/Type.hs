@@ -9,7 +9,7 @@ import Control.Monad.Combinators.Expr
 import Data.Functor
 import qualified Data.Text as T
 import Parse.Pattern (pattern)
-import Parse.Primitives (Parser, lexeme, opName, sc, varName)
+import Parse.Primitives (Parser, lexeme, sc)
 import Parse.Value
 import Text.Megaparsec (MonadParsec (try), choice, many, manyTill, noneOf, sepBy, some, (<?>), (<|>))
 import Text.Megaparsec.Char (char)

@@ -1,13 +1,13 @@
 module Parse.Value where
 
-import qualified AST.Source as SRC
-import qualified Data.Text as T
-import Parse.Primitives (Parser, lexeme, opName, sc, varName)
+import AST.Source qualified as SRC
+import Data.Text qualified as T
+import Parse.Primitives (Parser, lexeme, sc)
 import Text.Megaparsec (MonadParsec (try), choice, manyTill, noneOf, sepBy, (<?>), (<|>))
 import Text.Megaparsec.Char (char)
-import qualified Text.Megaparsec.Char as C
+import Text.Megaparsec.Char qualified as C
 import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
 
 character :: Parser SRC.Expr
 character = SRC.Char <$> lexeme (char '\'' *> charLiteral <* char '\'')

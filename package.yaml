@@ -39,6 +39,7 @@ dependencies:
   - pretty-simple
   - megaparsec
   - parser-combinators
+  - parsers
 library:
   source-dirs: src
   default-extensions:

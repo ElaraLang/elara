@@ -1,12 +1,12 @@
 module Elara.Name where
 
-import Elara.String as ES
 import Data.Text (unpack)
+import Elara.String as ES
 
 data Name
   = VarName ES.String
   | OpName ES.String
-  | TypeName ES.String
+  | TypeName ES.String -- Type (or module) name
   | QualifiedName Name Name
 
 instance Show Name where

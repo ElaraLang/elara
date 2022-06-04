@@ -1,8 +1,8 @@
 module Test.Main
-import Core exposing map
+import Core as C exposing map
 
 let a =
      x + 3
 
 let main =
-    println (map a 1)
+    println (C.map a 1)

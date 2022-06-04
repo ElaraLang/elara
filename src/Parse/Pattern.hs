@@ -2,7 +2,7 @@ module Parse.Pattern where
 
 import AST.Source
 import AST.Source (Pattern)
-import qualified AST.Source as SRC
+import AST.Source qualified as SRC
 import Control.Monad.Combinators.Expr
   ( Operator (InfixL, Prefix),
     makeExprParser,
@@ -10,14 +10,15 @@ import Control.Monad.Combinators.Expr
 import Data.ByteString (cons)
 import Data.Functor (($>), (<&>))
 import Data.Text (pack)
-import qualified Data.Text as T
-import Parse.Primitives (Parser, lexeme, opName, sc, typeName, varName)
-import qualified Parse.Value as V
+import Data.Text qualified as T
+import Parse.Name
+import Parse.Primitives (Parser, lexeme, sc)
+import Parse.Value qualified as V
 import Text.Megaparsec (MonadParsec (try), choice, manyTill, noneOf, sepBy, (<?>), (<|>))
 import Text.Megaparsec.Char (char, string)
-import qualified Text.Megaparsec.Char as C
+import Text.Megaparsec.Char qualified as C
 import Text.Megaparsec.Char.Lexer (charLiteral, decimal)
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
 
 pattern :: Parser Pattern
 pattern = choice [try consPattern, wildcard, varPattern, unitPattern, listPattern, constructorPattern, charPattern, stringPattern, intPattern, floatPattern]

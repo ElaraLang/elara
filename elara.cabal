@@ -39,6 +39,7 @@ library
       Parse.Declaration
       Parse.Expression
       Parse.Module
+      Parse.Name
       Parse.Pattern
       Parse.Primitives
       Parse.Type
@@ -62,6 +63,7 @@ library
     , megaparsec
     , mtl
     , parser-combinators
+    , parsers
     , pretty-simple
     , text
     , time
@@ -88,6 +90,7 @@ executable elara-exe
     , megaparsec
     , mtl
     , parser-combinators
+    , parsers
     , pretty-simple
     , text
     , time
@@ -117,6 +120,7 @@ test-suite elara-test
     , megaparsec
     , mtl
     , parser-combinators
+    , parsers
     , pretty-simple
     , text
     , time

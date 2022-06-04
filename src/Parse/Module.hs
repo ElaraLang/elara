@@ -4,7 +4,8 @@ import AST.Source qualified as Src
 import Data.Maybe (fromMaybe)
 import Elara.Name (Name)
 import Parse.Declaration
-import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens, opName, typeName, varName, moduleName)
+import Parse.Name
+import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens)
 import Text.Megaparsec (choice, many, optional, parseMaybe, sepBy, try)
 import Text.Megaparsec.Char (char, newline, string)
 

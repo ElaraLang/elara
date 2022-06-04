@@ -1,15 +1,16 @@
 module Parse.Declaration where
 
 import AST.Source (Expr (BlockExpr))
-import qualified AST.Source as Src
-import qualified Data.Text as T
+import AST.Source qualified as Src
+import Data.Text qualified as T
 import Elara.Name
 import Parse.Expression (expr)
+import Parse.Name
 import Parse.Primitives
 import Text.Megaparsec (many, mkPos, oneOf, some, (<?>))
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer hiding (lexeme)
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
 
 newtype Decl
   = Value Src.Value
