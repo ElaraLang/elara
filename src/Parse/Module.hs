@@ -9,31 +9,22 @@ import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens)
 import Text.Megaparsec (choice, endBy, many, optional, parseMaybe, sepBy, sepEndBy, try)
 import Text.Megaparsec.Char (char, newline, string)
 
-data Module = Module
-  { _header :: Maybe Header,
-    _imports :: [Src.Import],
-    _decls :: [Decl]
-  }
-  deriving (Show)
-
-data Header = Header Name Src.Exposing deriving (Show)
-
-module' :: Parser Module
+module' :: Parser Src.Module
 module' = do
   header <- parseHeader
   many newline
   imports <- many import'
   many newline
   decls <- declaration `sepEndBy` newline
-  return $ Module header imports decls
+  return $ Src.Module (fst <$> header) (fromMaybe Src.Everything $ snd <$> header) imports (toValue <$> decls)
 
-parseHeader :: Parser (Maybe Header)
+parseHeader :: Parser (Maybe (Name, Src.Exposing))
 parseHeader = optional . try $ do
   -- module Name exposing (..)
   m <- lexeme (string "module")
   moduleName <- lexeme moduleName
   exposing <- exposing
-  pure $ Header moduleName exposing
+  pure (moduleName, exposing)
 
 exposing :: Parser Src.Exposing
 exposing =

@@ -11,6 +11,7 @@ import Data.Map qualified as Map
 import Elara.ModuleName qualified as ModuleName
 import Elara.Name (Name)
 import Error.Error qualified as E
+import qualified Elara.Package as Pkg
 
 {-
 Canonicalizing an AST (term and code structure inspired from https://github.com/elm/compiler/)
@@ -18,7 +19,7 @@ is the process of resolving any names in the AST to fully qualified ones, thus r
 This step is essential for making sure that names reference an element that actually exists
 -}
 
-canonicalize :: Name -> Map.Map ModuleName.Raw Src.Module -> Src.Module -> Either E.Error Can.Module
+canonicalize :: Pkg.Name -> Map.Map ModuleName.Raw Src.Module -> Src.Module -> Either E.Error Can.Module
 canonicalize package modulePath module' = do
   let name = ModuleName.Canonical package (Src.getName module')
   let decls = map canonicalizeValue (module'._values)

@@ -34,6 +34,7 @@ library
       Compile
       Elara.ModuleName
       Elara.Name
+      Elara.Package
       Elara.String
       Error.Error
       Parse.Declaration

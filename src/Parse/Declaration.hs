@@ -29,6 +29,9 @@ newtype Decl
 instance Show Decl where
   show (Value v) = show v
 
+toValue :: Decl -> Src.Value
+toValue (Value v) = v
+
 declaration :: Parser Decl
 declaration = valueDecl
 
