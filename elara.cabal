@@ -45,6 +45,8 @@ library
       Parse.Primitives
       Parse.Type
       Parse.Value
+      TypeCheck.Env
+      TypeCheck.Type
   other-modules:
       Paths_elara
   hs-source-dirs:
