@@ -8,7 +8,7 @@ import Control.Monad.Combinators.Expr
   )
 import Data.Functor
 import Data.Text qualified as T
-import Parse.Name
+import Parse.Name (opName, varName)
 import Parse.Pattern (pattern)
 import Parse.Primitives (Parser, commaSeparated, inParens, lexeme, sc)
 import Parse.Value

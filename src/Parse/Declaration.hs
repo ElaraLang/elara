@@ -8,7 +8,16 @@ import Elara.Name
 import Parse.Expression (expr)
 import Parse.Name
 import Parse.Primitives
-import Text.Megaparsec (MonadParsec (try), choice, many, mkPos, oneOf, some, (<?>), (<|>))
+import Text.Megaparsec
+  ( MonadParsec (try),
+    choice,
+    many,
+    mkPos,
+    oneOf,
+    some,
+    (<?>),
+    (<|>),
+  )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer hiding (lexeme)
 import Text.Megaparsec.Char.Lexer qualified as L

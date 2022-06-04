@@ -6,7 +6,7 @@ import Elara.Name (Name)
 import Parse.Declaration
 import Parse.Name
 import Parse.Primitives (Parser, inParens, lexeme, oneOrCommaSeparatedInParens)
-import Text.Megaparsec (choice, endBy, many, optional, parseMaybe, sepBy, try, sepEndBy)
+import Text.Megaparsec (choice, endBy, many, optional, parseMaybe, sepBy, sepEndBy, try)
 import Text.Megaparsec.Char (char, newline, string)
 
 data Module = Module
