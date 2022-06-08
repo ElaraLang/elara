@@ -13,7 +13,7 @@ type Decls = [Def]
 
 data Def
   = Def Name [Pattern] Expr -- The type needs to be inferred
-  | TypedDef Name [Pattern] Expr Type -- Type explicitly stated, but still needs to be type checked!
+  | TypedDef Name [Pattern] Expr Type -- Type explicitly stated with a def x : T, but still needs to be type checked!
 
 data Pattern
   = PWildcard -- _
@@ -51,9 +51,9 @@ data Expr
   | BlockExpr [Expr]
 
 data Type
-  = TLambda Type Type -- a -> b
-  | TVar Name -- a
+  = TVar Name -- a
+  | TLambda Type Type -- a -> b
   | TUnit -- ()
-  | TTuple Type Type [Type] -- (Int, Float, String)
-  | TConstructorApp Type Type [Type] -- Maybe A
+  | -- | TTuple Type Type [Type] -- (Int, Float, String)
+    TConstructorApp Type Type -- Maybe A
   deriving (Show)

@@ -1,7 +1,5 @@
 module Test.Main exposing (main, a)
 import Core as C exposing map
 
-let a = x + 3
-
-let main =
-    println (C.map a 1)
+let main = 1
+let b = 4

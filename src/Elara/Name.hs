@@ -1,6 +1,6 @@
 module Elara.Name where
 
-import Data.Text (unpack)
+import Data.Text (Text, unpack)
 import Elara.String as ES
 
 data Name
@@ -20,3 +20,9 @@ _main = VarName "main"
 
 _Main :: Name
 _Main = TypeName "Main"
+
+value :: Name -> Text
+value (VarName s) = s
+
+stringValue :: Name -> Prelude.String
+stringValue = unpack . value

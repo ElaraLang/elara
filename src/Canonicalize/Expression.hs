@@ -10,3 +10,7 @@ canonicalize exp = do
     Src.String c -> Can.String c
     Src.Float c -> Can.Float c
     Src.Int c -> Can.Int c
+    Src.BinOp op a b -> Can.BinOp (canonicalize op) (canonicalize a) (canonicalize b)
+    Src.BlockExpr [single] -> canonicalize single
+    Src.List exprs -> Can.List (canonicalize <$> exprs)
+    other -> error $ "Can't canonicalize " ++ show other
