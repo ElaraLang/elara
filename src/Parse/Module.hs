@@ -15,7 +15,7 @@ module' = do
   many newline
   imports <- many import'
   many newline
-  decls <- declaration `sepEndBy` newline
+  decls <- declaration `sepEndBy` (many newline)
   return $ Src.Module (fst <$> header) (fromMaybe Src.Everything $ snd <$> header) imports (toValue <$> decls)
 
 parseHeader :: Parser (Maybe (Name, Src.Exposing))
