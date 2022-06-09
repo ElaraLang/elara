@@ -16,6 +16,7 @@ import Data.Text (Text, pack, unpack)
 import Elara.String qualified as Es
 import GHC.Generics
 import Generic.Data (gshowsPrec)
+import Print (debugColored)
 import TypeInfer.Type
 
 -- TYPE ENVIRONMENT
@@ -90,8 +91,9 @@ letters = [1 ..] >>= flip replicateM ['a' .. 'z']
 freshTVar :: Infer Type -- Generate a fresh type variable
 freshTVar = do
   s <- get
-  put s {count = count s + 1}
-  return $ TVariable $ TV $ pack (letters !! count s) -- the !! is not very efficient here
+
+  put s {tVars = tail $ tVars s}
+  return $ TVariable $ TV $ pack (head $ tVars s) -- the !! is not very efficient here
 
 -- SCHEME OPERATIONS
 instantiate :: Scheme -> Infer Type
@@ -182,12 +184,13 @@ type Unifier = (Subst, [Constraint])
 type Solve a = ExceptT TypeError Identity a
 
 data InferState = InferState
-  { count :: Int, -- How many fresh type variables have been generated
+  { tVars :: [String], -- How many fresh type variables have been generated
     typeEnv :: TypeEnv -- The current type environment
   }
+  deriving (Show)
 
 emptyInferState :: TypeEnv -> InferState
-emptyInferState env = InferState {count = 0, typeEnv = env}
+emptyInferState env = InferState {tVars = letters, typeEnv = env}
 
 type Subst = M.Map TVar Type
 

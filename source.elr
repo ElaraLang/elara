@@ -1,6 +1,5 @@
 module Test.Main exposing (main, a)
 import Core as C exposing map
 
-let a = [1, 2, 3]
-let f x = x
-let main = f a
+let f x y = x
+let main = f 1 2

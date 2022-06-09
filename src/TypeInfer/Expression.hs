@@ -4,6 +4,7 @@ import AST.Canonical qualified as Can
 import Control.Monad.Except (liftEither)
 import Control.Monad.RWS.Strict (MonadWriter (listen), gets)
 import Elara.Name qualified as Name
+import Print (debugColored)
 import TypeInfer.Env (Infer)
 import TypeInfer.Env qualified as E
 import TypeInfer.Pattern (inferPattern)
@@ -33,18 +34,16 @@ inferExpression ex = case ex of
     let name = Can.defName def
     let pats = Can.defPatterns def
 
-    (patternTypes, t0) <- E.withCopyOfEnv $ do
+    (functionType, constraints) <- E.withCopyOfEnv $ do
       patternTypes <- mapM inferPattern pats
-      t0 <- inferExpression expr
-      return (patternTypes, t0)
-
-    env <- gets E.typeEnv
-
-    let functionType = foldr T.TFunc t0 patternTypes
-
-    constraints <- snd <$> (listen $ return ())
+      (t0, constraints) <- listen $ inferExpression expr
+      let func = foldr T.TFunc t0 patternTypes
+      debugColored $ show (pats `zip` patternTypes) <> " + " <> show expr <> " :: " <> show t0 <> "= " <> show func
+      return (func, constraints)
 
     subst <- liftEither $ E.runSolve constraints
+    env <- gets E.typeEnv
+
     let sc = E.generalize (E.apply subst env) (E.apply subst functionType)
     bodyType <- E.inEnv (Name.value name, sc) $ inferExpression body
     return bodyType

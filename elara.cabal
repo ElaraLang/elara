@@ -115,7 +115,6 @@ test-suite elara-test
   main-is: Spec.hs
   other-modules:
       InferTest
-      ParserTest
       Paths_elara
   hs-source-dirs:
       test
