@@ -47,6 +47,8 @@ library:
   - OverloadedStrings
   - ImportQualifiedPost
   - OverloadedRecordDot
+  ghc-options:
+  - -Wall
 
 
 executables:

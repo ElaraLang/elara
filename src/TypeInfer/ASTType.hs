@@ -3,7 +3,6 @@ module TypeInfer.ASTType where
 import AST.Canonical qualified as Can
 import Elara.Name qualified as Name
 import TypeInfer.Env (Infer)
-import TypeInfer.Env qualified as E
 import TypeInfer.Type qualified as T
 
 inferType :: Can.Type -> Infer T.Type

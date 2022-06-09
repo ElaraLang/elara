@@ -23,6 +23,9 @@ _Main = TypeName "Main"
 
 value :: Name -> Text
 value (VarName s) = s
+value (OpName s) = s
+value (TypeName s) = s
+value (QualifiedName n1 n2) = value n1 <> "." <> value n2
 
 stringValue :: Name -> Prelude.String
 stringValue = unpack . value
