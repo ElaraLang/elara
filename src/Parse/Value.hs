@@ -26,7 +26,7 @@ rawIntegerLiteral = lexeme L.decimal
 integer :: Parser SRC.Expr
 integer = SRC.Int <$> rawIntegerLiteral
 
-rawFloatLiteral :: Parser Float
+rawFloatLiteral :: Parser Double
 rawFloatLiteral = lexeme L.float
 
 float :: Parser SRC.Expr

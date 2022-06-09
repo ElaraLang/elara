@@ -9,7 +9,7 @@ import Elara.String qualified as ES
 data Expr
   = Char Char
   | String ES.String
-  | Float Float
+  | Float Double
   | Int Int
   | Var Name
   | List [Expr]
@@ -39,7 +39,7 @@ data Pattern
   | PChar Char -- 'a'
   | PString ES.String -- "a"
   | PInt Int -- 1
-  | PFloat Float -- 1.0
+  | PFloat Double -- 1.0
   deriving (Show)
 
 data Def
