@@ -20,3 +20,4 @@ inferExpression ex = case ex of
     T.uni listType ts
     return listType
   -- TODO the others
+  other -> error $ "Cannot infer expression: " ++ show other

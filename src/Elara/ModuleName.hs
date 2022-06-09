@@ -9,3 +9,4 @@ data Canonical = Canonical
   { _package :: Pkg.Name,
     _module :: Raw
   }
+  deriving (Show)

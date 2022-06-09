@@ -24,6 +24,7 @@ canonicalize pkg module' = Mod.canonicalize pkg Map.empty module'
 
 typeCheck :: Src.Module -> Can.Module -> Either E.Error ()
 typeCheck module' canonical = do
+  traceShowM canonical
   defs <- first E.TypeError $ inferMany (inferDef <$> canonical._decls) emptyEnv
   traceShowM defs
   return ()

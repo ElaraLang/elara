@@ -7,14 +7,14 @@ import Elara.String qualified as ES
 data Module = Module
   { _name :: ModuleName.Canonical,
     _decls :: Decls
-  }
+  } deriving (Show)
 
 type Decls = [Def]
 
 data Def
   = Def Name [Pattern] Expr -- The type needs to be inferred
   | TypedDef Name [Pattern] Expr Type -- Type explicitly stated with a def x : T, but still needs to be type checked!
-
+  deriving (Show)
 data Pattern
   = PWildcard -- _
   | PVar Name -- x
@@ -49,6 +49,7 @@ data Expr
   | Unit
   | Tuple Expr Expr [Expr]
   | BlockExpr [Expr]
+  deriving Show
 
 data Type
   = TVar Name -- a

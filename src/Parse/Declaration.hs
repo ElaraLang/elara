@@ -22,6 +22,7 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer hiding (lexeme)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Text.Parser.Combinators hiding (many, some, try)
+import Parse.Pattern (pattern)
 
 newtype Decl
   = Value Src.Value
@@ -37,14 +38,15 @@ declaration = valueDecl
 
 valueDecl :: Parser Decl
 valueDecl = do
-  (name, e) <- optionallyIndented letPreamble
-  return $ Value $ Src.Value name [] e Nothing
+  ((name, patterns), e) <- optionallyIndented letPreamble
+  return $ Value $ Src.Value name patterns e Nothing
   where
     letPreamble = do
       lexeme (string "let")
       name <- varName
+      patterns <- many pattern
       lexeme (char '=')
-      return name
+      return (name, patterns)
 
 optionallyIndented :: Parser a -> Parser (a, Expr)
 optionallyIndented a = try nonIndented <|> try (indentedBlock a)
