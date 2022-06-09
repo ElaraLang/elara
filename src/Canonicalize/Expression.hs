@@ -15,4 +15,5 @@ canonicalize exp = do
     Src.BlockExpr [single] -> canonicalize single
     Src.BlockExpr many -> Can.BlockExpr (canonicalize <$> many)
     Src.List exprs -> Can.List (canonicalize <$> exprs)
+    Src.FunctionCall a b -> Can.FunctionCall (canonicalize a) (canonicalize b)
     other -> error $ "Can't canonicalize " ++ show other

@@ -41,7 +41,7 @@ data Expr
   | Negate Expr
   | BinOp Expr Expr Expr
   | Lambda [Pattern] Expr
-  | FunctionCall Expr [Expr]
+  | FunctionCall Expr Expr
   | If Expr Expr Expr
   | Let Def Expr
   | LetIn Def Expr Expr
