@@ -7,7 +7,7 @@ import TypeInfer.Type qualified as T
 
 inferType :: Can.Type -> Infer T.Type
 inferType (Can.TVar name) = return $ T.TVariable $ T.TV $ Name.value name
-inferType (Can.TUnit) = return $ T.TCon "()"
+inferType Can.TUnit = return $ T.TCon "()"
 inferType (Can.TLambda a b) = do
   ta <- inferType a
   tb <- inferType b

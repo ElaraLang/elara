@@ -10,7 +10,7 @@ import TypeInfer.Type
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
 runInfer env (Infer m) =
   let res = runRWST m () (emptyInferState env)
-   in runExcept $ (first typeEnv) <$> res
+   in runExcept $ first typeEnv <$> res
 
 infer :: Infer Type -> TypeEnv -> Either TypeError (TypeEnv, Scheme)
 infer inf env = do

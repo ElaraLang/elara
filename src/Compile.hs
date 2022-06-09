@@ -19,7 +19,7 @@ compile packageName module' = do
   return ()
 
 canonicalize :: Pkg.Name -> Src.Module -> Either E.Error Can.Module
-canonicalize pkg module' = Mod.canonicalize pkg Map.empty module'
+canonicalize pkg = Mod.canonicalize pkg Map.empty
 
 typeCheck :: Src.Module -> Can.Module -> Either E.Error ()
 typeCheck _ canonical = do

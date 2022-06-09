@@ -45,8 +45,7 @@ inferExpression ex = case ex of
     env <- gets E.typeEnv
 
     let sc = E.generalize (E.apply subst env) (E.apply subst functionType)
-    bodyType <- E.inEnv (Name.value name, sc) $ inferExpression body
-    return bodyType
+    E.inEnv (Name.value name, sc) $ inferExpression body
   Can.Let def expr -> do
     let name = Can.defName def
     i <- inferExpression (Can.LetIn def expr (Can.Var name))

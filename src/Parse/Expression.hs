@@ -26,7 +26,7 @@ list :: Parser Src.Expr
 list = Src.List <$> (char '[' *> commaSeparated expr <* char ']')
 
 op :: Parser Src.Expr
-op = Src.Op <$> (inParens opName)
+op = Src.Op <$> inParens opName
 
 lambda :: Parser Src.Expr
 lambda = do

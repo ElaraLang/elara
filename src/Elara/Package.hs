@@ -1,8 +1,8 @@
 module Elara.Package where
 
-import qualified Elara.String as Es
+import Elara.String qualified as Es
 
-data Name = Name
+newtype Name = Name
   { projectName :: Es.String
   }
   deriving (Show)

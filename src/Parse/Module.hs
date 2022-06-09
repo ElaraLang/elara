@@ -15,8 +15,8 @@ module' = do
   _ <- many newline
   imports <- many import'
   _ <- many newline
-  decls <- declaration `sepEndBy` (many newline)
-  return $ Src.Module (fst <$> header) (fromMaybe Src.Everything $ snd <$> header) imports (toValue <$> decls)
+  decls <- declaration `sepEndBy` many newline
+  return $ Src.Module (fst <$> header) (maybe Src.Everything snd header) imports (toValue <$> decls)
 
 parseHeader :: Parser (Maybe (Name, Src.Exposing))
 parseHeader = optional . try $ do
@@ -45,5 +45,4 @@ import' = do
   as <- optional . try $ do
     _ <- lexeme (string "as")
     lexeme typeName
-  exposing' <- exposing
-  return $ Src.Import name as exposing'
+  Src.Import name as <$> exposing

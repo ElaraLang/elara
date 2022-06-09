@@ -13,7 +13,5 @@ inferPattern (Can.PVar name) = do
   let sc = E.Forall [] tv -- Type variables themselves are *not* polytypes
   E.addToEnv (Name.value name, sc)
   return tv
-inferPattern (Can.PWildcard) = do
-    tv <- E.freshTVar
-    return tv
+inferPattern Can.PWildcard = E.freshTVar
 inferPattern other = error $ "Pattern.inferPattern: " ++ show other

@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module Parse.Primitives where
 
 import Control.Applicative hiding (many, some)
@@ -29,7 +27,7 @@ inParens :: Parser a -> Parser a
 inParens = between (char '(') (char ')')
 
 commaSeparated :: Parser a -> Parser [a]
-commaSeparated p = p `sepBy` (lexeme $ char ',')
+commaSeparated p = p `sepBy` lexeme (char ',')
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
-oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` (lexeme $ char ','))) <|> singleton <$> p
+oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` lexeme (char ','))) <|> singleton <$> p

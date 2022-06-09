@@ -11,7 +11,7 @@ data Name
 
 instance Show Name where
   show (VarName s) = unpack s
-  show (OpName s) = "(" ++ (unpack s) ++ ")"
+  show (OpName s) = "(" ++ unpack s ++ ")"
   show (TypeName s) = unpack s
   show (QualifiedName n1 n2) = show n1 ++ "." ++ show n2
 

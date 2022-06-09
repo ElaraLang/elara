@@ -41,6 +41,6 @@ qualified parser isType = do
   allParts <-
     if isType
       then pure qual
-      else ((qual ++) . singleton) <$> parser
+      else (qual ++) . singleton <$> parser
   when (null allParts) $ void parser
   pure $ foldl1 QualifiedName allParts

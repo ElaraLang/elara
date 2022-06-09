@@ -67,7 +67,7 @@ data Module = Module
 data Value = Value Name [Pattern] Expr (Maybe Type) deriving (Show)
 
 getName :: Module -> Name
-getName m = fromMaybe (Name._Main) (m._name)
+getName m = fromMaybe Name._Main (m._name)
 
 data Import = Import
   { _import :: Name,
