@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -13,6 +14,8 @@ import Data.Map.Strict qualified as M
 import Data.Set qualified as Set
 import Data.Text (Text, pack, unpack)
 import Elara.String qualified as Es
+import GHC.Generics
+import Generic.Data (gshowsPrec)
 
 -- TYPE ENVIRONMENT
 -- Map of type variables to schemes, built up as the inference process goes
@@ -226,7 +229,11 @@ data TypeError
   | LetDefConflict Type Type
   | UnboundVariable Es.String
   | Other Es.String
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Generic)
+
+instance Show TypeError where
+  showsPrec _ (UnificationFail a b) = (("Cannot unify types (" ++ show a ++ ") and (" ++ show b ++ ")") ++)
+  showsPrec n x = gshowsPrec n x
 
 class Substitutable a where
   apply :: Subst -> a -> a

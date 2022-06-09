@@ -40,6 +40,7 @@ dependencies:
   - megaparsec
   - parser-combinators
   - parsers
+  - generic-data
 library:
   source-dirs: src
   default-extensions:

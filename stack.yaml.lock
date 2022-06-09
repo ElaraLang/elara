@@ -263,4 +263,39 @@ packages:
       sha256: 1870de393820b94af9efb8fcdd31940543569cdcd3d13296bc224438b2b107d8
   original:
     hackage: unordered-containers-0.2.19.1@sha256:7d43e557b32a30eeac22e68b8430384bf829b0b2313761026a7f103395b047d5,3638
+- completed:
+    hackage: generic-data-0.9.2.1@sha256:ce1a44b696eafe69424f55aab777af747d0633cd0ff51b3966e35830da1cfea8,3893
+    pantry-tree:
+      size: 2218
+      sha256: 8be4ff40474ac41e73ea9b90b72ff9bac786b5ea95354cbf516dc3f67ad155e1
+  original:
+    hackage: generic-data-0.9.2.1@sha256:ce1a44b696eafe69424f55aab777af747d0633cd0ff51b3966e35830da1cfea8,3893
+- completed:
+    hackage: ap-normalize-0.1.0.1@sha256:85f9f0839de0c593d9ef00fff0d96070f4767c3bdb5926b06ab0ea6ed1573c6c,1321
+    pantry-tree:
+      size: 554
+      sha256: b70dfdd806b022cb12dd39958292327ac379f028181cfadf3ab7dd29a52a0ebf
+  original:
+    hackage: ap-normalize-0.1.0.1@sha256:85f9f0839de0c593d9ef00fff0d96070f4767c3bdb5926b06ab0ea6ed1573c6c,1321
+- completed:
+    hackage: contravariant-1.5.5@sha256:470ed0e040e879e2da4af1b2c8f94e199f6135852a8107858d5ae0a95365835f,3041
+    pantry-tree:
+      size: 652
+      sha256: 9eb62fea28548dc8a0f60fd47c12843092b78b24ed771b8ad63a0bb34dba8bc4
+  original:
+    hackage: contravariant-1.5.5@sha256:470ed0e040e879e2da4af1b2c8f94e199f6135852a8107858d5ae0a95365835f,3041
+- completed:
+    hackage: show-combinators-0.2.0.0@sha256:5d7a36c6383c9eff1dc15970da3206a05b50c2d1e93155970ffcf240eaa57d58,1277
+    pantry-tree:
+      size: 382
+      sha256: 116e496f1bd7e5400e0c599c21a2a2c9901561339311a4d2ca65d77ec2300b08
+  original:
+    hackage: show-combinators-0.2.0.0@sha256:5d7a36c6383c9eff1dc15970da3206a05b50c2d1e93155970ffcf240eaa57d58,1277
+- completed:
+    hackage: StateVar-1.2.2@sha256:3c022c00485fe165e3080d5da6b3ca9c9b02f62c5deebc584d1b3d1309ce673e,1673
+    pantry-tree:
+      size: 314
+      sha256: 204cac98219e99334f47b12c565945611748ea03a4d629273dd697d738bcfd7f
+  original:
+    hackage: StateVar-1.2.2@sha256:3c022c00485fe165e3080d5da6b3ca9c9b02f62c5deebc584d1b3d1309ce673e,1673
 snapshots: []

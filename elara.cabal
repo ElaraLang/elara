@@ -65,6 +65,7 @@ library
     , binary
     , bytestring
     , containers
+    , generic-data
     , hspec
     , megaparsec
     , mtl
@@ -92,6 +93,7 @@ executable elara-exe
     , bytestring
     , containers
     , elara
+    , generic-data
     , hspec
     , megaparsec
     , mtl
@@ -122,6 +124,7 @@ test-suite elara-test
     , bytestring
     , containers
     , elara
+    , generic-data
     , hspec
     , megaparsec
     , mtl
