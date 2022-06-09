@@ -8,3 +8,4 @@ canonicalize pat = do
   case pat of
     Src.PWildcard -> Can.PWildcard
     Src.PVar name -> Can.PVar name
+    other -> error $ "Canonicalize.Pattern.canonicalize: " ++ show other

@@ -2,8 +2,7 @@
 
 module Print where
 
-import Debug.Pretty.Simple (pTraceOpt, pTraceShowOptM)
-import System.IO.Unsafe
+import Debug.Pretty.Simple (pTraceShowOptM)
 import Text.Pretty.Simple
 
 printColored :: (Show a) => a -> IO ()

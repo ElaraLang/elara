@@ -8,3 +8,4 @@ canonicalize type' = do
   case type' of
     Src.TVar x -> Can.TVar x
     Src.TUnit -> Can.TUnit
+    other -> error $ "Canonicalize.Type.canonicalize: " ++ show other

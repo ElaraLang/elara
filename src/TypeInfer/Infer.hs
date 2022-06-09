@@ -4,7 +4,6 @@ import Control.Monad (foldM)
 import Control.Monad.Except (runExcept)
 import Control.Monad.RWS.Strict (runRWST)
 import Data.Bifunctor
-import Debug.Trace (traceShowM)
 import TypeInfer.Env (Constraint, Infer (Infer), InferState (..), Substitutable (apply), TypeEnv, TypeError, closeOver, emptyInferState, runSolve)
 import TypeInfer.Type
 
@@ -21,7 +20,7 @@ infer inf env = do
 
 inferMany :: [Infer Type] -> TypeEnv -> Either TypeError TypeEnv
 inferMany infs startEnv = do
-  (env, s) <-
+  (env, _) <-
     foldM
       ( \(env, acc) inf -> do
           (env', scheme) <- infer inf env

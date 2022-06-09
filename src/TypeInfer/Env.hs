@@ -12,11 +12,10 @@ import Data.Functor.Identity (Identity (runIdentity))
 import Data.List (nub)
 import Data.Map.Strict qualified as M
 import Data.Set qualified as Set
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack)
 import Elara.String qualified as Es
 import GHC.Generics
 import Generic.Data (gshowsPrec)
-import Print (debugColored)
 import TypeInfer.Type
 
 -- TYPE ENVIRONMENT

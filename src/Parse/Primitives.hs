@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 
 module Parse.Primitives where
@@ -6,10 +5,8 @@ module Parse.Primitives where
 import Control.Applicative hiding (many, some)
 import Control.Monad (void)
 import Data.List
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Void
-import Debug.Trace (traceM, traceShowM)
-import Elara.Name (Name (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -22,8 +19,10 @@ lineComment = L.skipLineComment "--"
 sc :: Parser ()
 sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
 
+scn :: Parser ()
 scn = L.space space1 lineComment empty
 
+lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
 inParens :: Parser a -> Parser a

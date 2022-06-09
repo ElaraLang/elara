@@ -9,7 +9,6 @@ import Canonicalize.Pattern qualified as Pat
 import Canonicalize.Type qualified as Type
 import Data.Map qualified as Map
 import Elara.ModuleName qualified as ModuleName
-import Elara.Name (Name)
 import Error.Error qualified as E
 import qualified Elara.Package as Pkg
 
@@ -20,7 +19,7 @@ This step is essential for making sure that names reference an element that actu
 -}
 
 canonicalize :: Pkg.Name -> Map.Map ModuleName.Raw Src.Module -> Src.Module -> Either E.Error Can.Module
-canonicalize package modulePath module' = do
+canonicalize package _ module' = do
   let name = ModuleName.Canonical package (Src.getName module')
   let decls = map canonicalizeValue (module'._values)
   return $ Can.Module name decls

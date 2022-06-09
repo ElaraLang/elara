@@ -2,27 +2,17 @@ module Parse.Declaration where
 
 import AST.Source (Expr (BlockExpr))
 import AST.Source qualified as Src
-import Control.Monad (void)
-import Data.Text qualified as T
-import Elara.Name
 import Parse.Expression (expr)
 import Parse.Name
+import Parse.Pattern (pattern)
 import Parse.Primitives
 import Text.Megaparsec
   ( MonadParsec (try),
-    choice,
     many,
-    mkPos,
-    oneOf,
-    some,
-    (<?>),
     (<|>),
   )
 import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer hiding (lexeme)
 import Text.Megaparsec.Char.Lexer qualified as L
-import Text.Parser.Combinators hiding (many, some, try)
-import Parse.Pattern (pattern)
 
 newtype Decl
   = Value Src.Value
@@ -42,19 +32,19 @@ valueDecl = do
   return $ Value $ Src.Value name patterns e Nothing
   where
     letPreamble = do
-      lexeme (string "let")
+      _ <- lexeme (string "let")
       name <- varName
       patterns <- many pattern
-      lexeme (char '=')
+      _ <- lexeme (char '=')
       return (name, patterns)
 
 optionallyIndented :: Parser a -> Parser (a, Expr)
 optionallyIndented a = try nonIndented <|> try (indentedBlock a)
   where
     nonIndented = do
-      a <- a
+      a' <- a
       b <- expr
-      return (a, b)
+      return (a', b)
 
 indentedBlock :: Parser a -> Parser (a, Expr)
 indentedBlock ref = L.nonIndented scn $

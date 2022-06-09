@@ -5,17 +5,13 @@ module Parse.Name where
 -- (varName, typeName, opName, moduleName, qualified)
 
 import Control.Monad (when)
-import Control.Monad.Combinators.Expr (Operator (InfixL), makeExprParser)
 import Data.Functor
 import Data.List (singleton)
-import Data.Maybe
 import Data.Text (pack)
-import Debug.Trace (traceShowM)
 import Elara.Name
 import Parse.Primitives
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Parser.Combinators (endByNonEmpty)
 
 varName :: Parser Name
 varName = qualified varName' False
@@ -42,9 +38,9 @@ moduleName = typeName
 qualified :: Parser Name -> Bool -> Parser Name
 qualified parser isType = do
   qual <- sepEndBy typeName' (char '.')
-  all <-
+  allParts <-
     if isType
       then pure qual
       else ((qual ++) . singleton) <$> parser
-  when (null all) $ void parser
-  pure $ foldl1 QualifiedName all
+  when (null allParts) $ void parser
+  pure $ foldl1 QualifiedName allParts
