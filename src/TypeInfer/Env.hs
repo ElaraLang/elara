@@ -16,6 +16,7 @@ import Data.Text (Text, pack, unpack)
 import Elara.String qualified as Es
 import GHC.Generics
 import Generic.Data (gshowsPrec)
+import TypeInfer.Type
 
 -- TYPE ENVIRONMENT
 -- Map of type variables to schemes, built up as the inference process goes
@@ -51,9 +52,9 @@ uni t1 t2 = tell [(t1, t2)]
 
 -- Extend type environment
 inEnv :: (Var, Scheme) -> Infer a -> Infer a
-inEnv (x, sc) m = do
-  let scope e = remove e x `extend` (x, sc)
-  modEnv scope m
+inEnv (x, sc) m = withCopyOfEnv $ do
+  addToEnv (x, sc)
+  m
 
 addToEnv :: (Var, Scheme) -> Infer ()
 addToEnv (x, sc) = do
@@ -185,6 +186,9 @@ data InferState = InferState
     typeEnv :: TypeEnv -- The current type environment
   }
 
+emptyInferState :: TypeEnv -> InferState
+emptyInferState env = InferState {count = 0, typeEnv = env}
+
 type Subst = M.Map TVar Type
 
 type Var = Es.String
@@ -194,32 +198,6 @@ nullSubst = M.empty
 
 emptyUnifier :: Unifier
 emptyUnifier = (nullSubst, [])
-
-newtype TVar = TV Text
-  deriving (Eq, Ord)
-
-instance Show TVar where
-  show (TV s) = unpack s
-
-data Scheme = Forall [TVar] Type
-  deriving (Eq, Ord)
-
-instance Show Scheme where
-  show (Forall [] t) = show t
-  show (Forall vars t) = "forall " ++ unwords (map show vars) ++ ". " ++ show t
-
-data Type
-  = TVariable TVar
-  | TCon Text -- Type constructor
-  | TApp Type Type -- Type constructor application
-  | TFunc Type Type -- Function type
-  deriving (Eq, Ord)
-
-instance Show Type where
-  show (TVariable t) = show t
-  show (TCon s) = unpack s
-  show (TApp t1 t2) = show t1 ++ " " ++ show t2
-  show (TFunc t1 t2) = show t1 ++ " -> " ++ show t2
 
 data TypeError
   = UnificationFail Type Type

@@ -45,9 +45,12 @@ library
       Parse.Primitives
       Parse.Type
       Parse.Value
+      Print
+      TypeInfer.ASTType
       TypeInfer.Env
       TypeInfer.Expression
       TypeInfer.Infer
+      TypeInfer.Pattern
       TypeInfer.Type
       TypeInfer.Value
   other-modules:
@@ -84,7 +87,7 @@ executable elara-exe
       Paths_elara
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       array
     , base >=4.7 && <5

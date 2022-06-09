@@ -1,18 +1,29 @@
 module TypeInfer.Type where
 
-import AST.Canonical qualified as Can
-import Elara.Name qualified as Name
-import TypeInfer.Env (Infer)
-import TypeInfer.Env qualified as T
+import Data.Text (Text, unpack)
 
-inferType :: Can.Type -> Infer T.Type
-inferType (Can.TVar name) = return $ T.TVariable $ T.TV $ Name.value name
-inferType (Can.TUnit) = return $ T.TCon "()"
-inferType (Can.TLambda a b) = do
-  ta <- inferType a
-  tb <- inferType b
-  return $ T.TFunc ta tb
-inferType (Can.TConstructorApp con ty) = do
-  con' <- inferType con
-  ty' <- inferType ty
-  return $ T.TApp con' ty'
+newtype TVar = TV Text
+  deriving (Eq, Ord)
+
+instance Show TVar where
+  show (TV s) = unpack s
+
+data Type
+  = TVariable TVar
+  | TCon Text -- Type constructor
+  | TApp Type Type -- Type constructor application
+  | TFunc Type Type -- Function type
+  deriving (Eq, Ord)
+
+instance Show Type where
+  show (TVariable t) = show t
+  show (TCon s) = unpack s
+  show (TApp t1 t2) = show t1 ++ " " ++ show t2
+  show (TFunc t1 t2) = show t1 ++ " -> " ++ show t2
+
+data Scheme = Forall [TVar] Type
+  deriving (Eq, Ord)
+
+instance Show Scheme where
+  show (Forall [] t) = show t
+  show (Forall vars t) = "forall " ++ unwords (map show vars) ++ ". " ++ show t

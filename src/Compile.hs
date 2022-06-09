@@ -5,13 +5,15 @@ import AST.Source qualified as Src
 import Canonicalize.Module qualified as Mod
 import Data.Bifunctor
 import Data.Map qualified as Map
+import Debug.Trace
 import Elara.Name (Name)
 import Elara.Package qualified as Pkg
 import Error.Error qualified as E
+import GHC.IO (unsafePerformIO)
+import Print
 import TypeInfer.Env (emptyEnv)
-import TypeInfer.Infer (inferMany, runInfer)
+import TypeInfer.Infer (infer, inferMany, runInfer)
 import TypeInfer.Value (inferDef)
-import Debug.Trace
 
 compile :: Pkg.Name -> Src.Module -> Either E.Error ()
 compile packageName module' = do
@@ -24,7 +26,6 @@ canonicalize pkg module' = Mod.canonicalize pkg Map.empty module'
 
 typeCheck :: Src.Module -> Can.Module -> Either E.Error ()
 typeCheck module' canonical = do
-  traceShowM canonical
-  defs <- first E.TypeError $ inferMany (inferDef <$> canonical._decls) emptyEnv
-  traceShowM defs
+  defs <- first E.TypeError $ infer (inferDef $ head $ canonical._decls) emptyEnv
+  debugColored defs
   return ()

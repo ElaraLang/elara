@@ -9,6 +9,7 @@ import Elara.Package qualified as Pkg
 import Parse.Module
 import Text.Megaparsec
 import Text.Pretty.Simple
+import Print (printColored)
 
 main = do
   content <- pack <$> readFile "source.elr"
@@ -18,6 +19,3 @@ main = do
     Right mod -> do
       let compiled = compile (Pkg.Name "test") mod
       printColored compiled
-
-printColored :: (Show a) => a -> IO ()
-printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
