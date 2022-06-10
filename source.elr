@@ -3,3 +3,6 @@ import Core as C exposing map
 
 let f x y = x
 let main = f 1 2
+let i x = x
+let letBound = i (i i) (i 3)
+let compose f g = \x -> f (g x)

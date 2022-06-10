@@ -37,6 +37,7 @@ dependencies:
   - bimap
   - vector
   - pretty-simple
+  - pretty
   - megaparsec
   - parser-combinators
   - parsers

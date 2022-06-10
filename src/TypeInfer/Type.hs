@@ -19,7 +19,7 @@ instance Show Type where
   show (TVariable t) = show t
   show (TCon s) = unpack s
   show (TApp t1 t2) = show t1 ++ " " ++ show t2
-  show (TFunc t1 t2) = show t1 ++ " -> " ++ show t2
+  show (TFunc t1 t2) = "(" <> show t1 <> " -> " <> show t2 <> ")"
 
 data Scheme = Forall [TVar] Type
   deriving (Eq, Ord)

@@ -2,6 +2,7 @@ module Canonicalize.Expression where
 
 import AST.Canonical qualified as Can
 import AST.Source qualified as Src
+import Canonicalize.Pattern qualified as Pat
 
 canonicalize :: Src.Expr -> Can.Expr
 canonicalize expr = do
@@ -16,4 +17,5 @@ canonicalize expr = do
     Src.BlockExpr many -> Can.BlockExpr (canonicalize <$> many)
     Src.List exprs -> Can.List (canonicalize <$> exprs)
     Src.FunctionCall a b -> Can.FunctionCall (canonicalize a) (canonicalize b)
+    Src.Lambda a b -> Can.Lambda (Pat.canonicalize <$> a) (canonicalize b)
     other -> error $ "Can't canonicalize " ++ show other

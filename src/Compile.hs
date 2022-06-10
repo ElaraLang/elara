@@ -8,9 +8,10 @@ import Data.Map qualified as Map
 import Elara.Package qualified as Pkg
 import Error.Error qualified as E
 import Print
-import TypeInfer.Env (emptyEnv)
+import TypeInfer.Env (emptyEnv, TypeEnv (TypeEnv))
 import TypeInfer.Infer (inferMany)
 import TypeInfer.Value (inferDef)
+import Pretty (prettyPrint)
 
 compile :: Pkg.Name -> Src.Module -> Either E.Error ()
 compile packageName module' = do
@@ -23,6 +24,6 @@ canonicalize pkg = Mod.canonicalize pkg Map.empty
 
 typeCheck :: Src.Module -> Can.Module -> Either E.Error ()
 typeCheck _ canonical = do
-  defs <- first E.TypeError $ inferMany (inferDef <$> canonical._decls) emptyEnv
-  debugColored defs
+  (TypeEnv defs) <- first E.TypeError $ inferMany (inferDef <$> canonical._decls) emptyEnv
+  debugColored . prettyPrint $ defs
   return ()

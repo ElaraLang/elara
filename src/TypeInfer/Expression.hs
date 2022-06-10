@@ -24,6 +24,12 @@ inferExpression ex = case ex of
     let listType = T.TApp (T.TCon "[]") t
     E.uni listType ts
     return listType
+  Can.Lambda pats body -> do
+    (patternTypes, b) <- E.withCopyOfEnv $ do
+      patternTypes <- mapM inferPattern pats
+      b <- inferExpression body
+      return (patternTypes, b)
+    return $ foldr T.TFunc b patternTypes
   Can.FunctionCall f x -> do
     t1 <- inferExpression f
     t2 <- inferExpression x
@@ -38,7 +44,7 @@ inferExpression ex = case ex of
       patternTypes <- mapM inferPattern pats
       (t0, constraints) <- listen $ inferExpression expr
       let func = foldr T.TFunc t0 patternTypes
-      debugColored $ show (pats `zip` patternTypes) <> " + " <> show expr <> " :: " <> show t0 <> "= " <> show func
+      debugColored $ show (pats `zip` patternTypes) <> " + " <> show expr <> " :: " <> show t0 <> " = " <> show func
       return (func, constraints)
 
     subst <- liftEither $ E.runSolve constraints
