@@ -1,7 +1,9 @@
 module TypeInfer.Module where
 
 import AST.Canonical qualified as Src
+import Control.Monad (when)
 import Control.Monad.RWS (gets)
+import Data.Maybe (isNothing)
 import Elara.Name qualified as Name
 import Error.Error qualified as E
 import TypeInfer.Env (Infer)
@@ -21,4 +23,8 @@ addGenericBinding :: Src.Def -> Infer ()
 addGenericBinding def = do
   tv <- E.freshTVar
   let scheme = E.Forall [] tv
-  E.addToEnv (Name.value $ Src.defName def, scheme)
+  let name = Name.value $ Src.defName def
+  inEnv <- E.maybeLookupEnv name
+  when (isNothing inEnv) $ do
+    -- Don't override the def if there is one
+    E.addToEnv (name, scheme)
