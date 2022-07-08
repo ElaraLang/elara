@@ -2,10 +2,12 @@ module Parse.Declaration where
 
 import AST.Source (Expr (BlockExpr))
 import AST.Source qualified as Src
+import Elara.Name (Name)
 import Parse.Expression (expr)
 import Parse.Name
 import Parse.Pattern (pattern)
 import Parse.Primitives
+import Parse.Type (type')
 import Text.Megaparsec
   ( MonadParsec (try),
     many,
@@ -14,17 +16,27 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 
-newtype Decl
+data Decl
   = Value Src.Value
+  | Def Src.Decl
 
 instance Show Decl where
   show (Value v) = show v
+  show (Def n) = show n
 
-toValue :: Decl -> Src.Value
-toValue (Value v) = v
+asAST :: Decl -> Either Src.Value Src.Decl
+asAST (Value v) = Left v
+asAST (Def n) = Right n
 
 declaration :: Parser Decl
-declaration = valueDecl
+declaration = defDecl <|> valueDecl
+
+defDecl :: Parser Decl
+defDecl = do
+  _ <- lexeme "def"
+  name <- varName
+  _ <- lexeme ":"
+  Def . Src.Decl name <$> type'
 
 valueDecl :: Parser Decl
 valueDecl = do

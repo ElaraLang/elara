@@ -50,6 +50,7 @@ data Def
 data Type
   = TLambda Type Type -- a -> b
   | TVar Name -- a
+  | TCon Name -- Int
   | TUnit -- ()
   | TTuple Type Type [Type] -- (Int, Float, String)
   | TConstructorApp Type Type [Type] -- Maybe A
@@ -61,8 +62,11 @@ data Module = Module
   { _name :: Maybe Name,
     _exports :: Exposing,
     _imports :: [Import],
+    _decls :: [Decl],
     _values :: [Value]
   }
+
+data Decl = Decl Name Type deriving (Show)
 
 data Value = Value Name [Pattern] Expr (Maybe Type) deriving (Show)
 

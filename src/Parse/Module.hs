@@ -1,6 +1,8 @@
 module Parse.Module where
 
+import AST.Source (Module (_name))
 import AST.Source qualified as Src
+import Data.Either (partitionEithers)
 import Data.Maybe (fromMaybe)
 import Elara.Name (Name)
 import Parse.Declaration
@@ -15,8 +17,16 @@ module' = do
   _ <- many newline
   imports <- many import'
   _ <- many newline
-  decls <- declaration `sepEndBy` many newline
-  return $ Src.Module (fst <$> header) (maybe Src.Everything snd header) imports (toValue <$> decls)
+  declarations <- declaration `sepEndBy` many newline
+  let (values, decls) = partitionEithers $ asAST <$> declarations
+  return $
+    Src.Module
+      { Src._name = fst <$> header,
+        Src._exports = maybe Src.Everything snd header,
+        Src._imports = imports,
+        Src._decls = decls,
+        Src._values = values
+      }
 
 parseHeader :: Parser (Maybe (Name, Src.Exposing))
 parseHeader = optional . try $ do

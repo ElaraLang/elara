@@ -9,7 +9,7 @@ import TypeInfer.Infer (runInfer)
 spec :: Spec
 spec = describe "Test Inference" $ do
   it "Should always produce unique TVars" $ do
-    let count = 50
+    let count = 1000
     let (Right (tvs, _, _)) = runInfer emptyEnv $ do
           let someTVars = replicateM count freshTVar
           tv1 <- someTVars

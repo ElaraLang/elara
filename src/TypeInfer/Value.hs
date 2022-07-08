@@ -6,6 +6,7 @@ import TypeInfer.Env (Infer)
 import TypeInfer.Expression (inferExpression)
 import TypeInfer.Type qualified as T
 
+
 inferDef :: Can.Def -> Infer T.Type
 inferDef (Can.Def name pat val) = inferDefWithExpectedType name pat val Nothing
 inferDef (Can.TypedDef name pat val ty) = inferDefWithExpectedType name pat val (Just ty)

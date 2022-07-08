@@ -16,6 +16,7 @@ import Data.Text (pack)
 import Elara.String qualified as Es
 import GHC.Generics
 import Generic.Data (gshowsPrec)
+import Print (debugColored, debugColoredStr)
 import TypeInfer.Type
 
 -- TYPE ENVIRONMENT
@@ -33,7 +34,7 @@ add :: TypeEnv -> Var -> Scheme -> TypeEnv
 add (TypeEnv env) var scheme = TypeEnv (M.insert var scheme env)
 
 emptyEnv :: TypeEnv
-emptyEnv = TypeEnv M.empty
+emptyEnv = TypeEnv $ M.empty
 
 closeOver :: Type -> Scheme
 closeOver = normalize . generalize emptyEnv
@@ -48,7 +49,9 @@ occursCheck :: Substitutable a => TVar -> a -> Bool
 occursCheck a t = a `Set.member` ftv t
 
 uni :: Type -> Type -> Infer ()
-uni t1 t2 = tell [(t1, t2)]
+uni t1 t2 = do
+  debugColoredStr $ "unifying " ++ show t1 ++ " and " ++ show t2
+  tell [(t1, t2)]
 
 -- Extend type environment
 inEnv :: (Var, Scheme) -> Infer a -> Infer a
@@ -85,14 +88,17 @@ bind a t
   | otherwise = return (M.singleton a t)
 
 letters :: [String] -- Infinite list of letters for generating fresh type variables
-letters = [1 ..] >>= flip replicateM ['a' .. 'z']
+letters = (`replicateM` ['a' .. 'z']) =<< [1 ..]
 
 freshTVar :: Infer Type -- Generate a fresh type variable
 freshTVar = do
   s <- get
 
-  put s {tVars = tail $ tVars s}
-  return $ TVariable $ TV $ pack (head $ tVars s) -- the !! is not very efficient here
+  case tVars s of
+    [] -> throwError $ Other "No more type variables"
+    (next : others) -> do
+      put s {tVars = others}
+      return $ TVariable $ TV $ pack next
 
 -- SCHEME OPERATIONS
 instantiate :: Scheme -> Infer Type

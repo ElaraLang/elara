@@ -4,6 +4,7 @@ import Control.Monad (foldM)
 import Control.Monad.Except (runExcept)
 import Control.Monad.RWS.Strict (runRWST)
 import Data.Bifunctor
+import Print (debugColored)
 import TypeInfer.Env (Constraint, Infer (Infer), InferState (..), Substitutable (apply), TypeEnv, TypeError, closeOver, emptyInferState, runSolve)
 import TypeInfer.Type
 
@@ -18,14 +19,8 @@ infer inf env = do
   subst <- runSolve cs
   return (nextEnv, closeOver $ apply subst scheme)
 
-inferMany :: [Infer Type] -> TypeEnv -> Either TypeError TypeEnv
-inferMany infs startEnv = do
-  (env, _) <-
-    foldM
-      ( \(env, acc) inf -> do
-          (env', scheme) <- infer inf env
-          return (env', scheme : acc)
-      )
-      (startEnv, [])
-      infs
-  return env
+inferMany :: Infer [Type] -> TypeEnv -> Either TypeError (TypeEnv, [Scheme])
+inferMany inf env = do
+  (schemes, nextEnv, cs) <- runInfer env inf
+  subst <- runSolve cs
+  return (nextEnv, closeOver . apply subst <$> schemes)

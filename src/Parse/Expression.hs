@@ -2,7 +2,7 @@ module Parse.Expression where
 
 import AST.Source qualified as Src
 import Control.Monad.Combinators.Expr
-  ( Operator (InfixL, Prefix),
+  ( Operator (InfixL, InfixR, Prefix),
     makeExprParser,
   )
 import Parse.Name (opName, varName)
@@ -14,10 +14,10 @@ import Text.Megaparsec.Char (char)
 import Text.Megaparsec.Char qualified as C
 
 expr :: Parser Src.Expr
-expr = makeExprParser term [[InfixL (Src.FunctionCall <$ sc)], [Prefix (Src.Negate <$ char '-')], [InfixL (Src.BinOp . Src.Var <$> opName)]]
+expr = makeExprParser term [[InfixR (Src.FunctionCall <$ sc)], [Prefix (Src.Negate <$ char '-')], [InfixL (Src.BinOp . Src.Var <$> opName)]]
 
 term :: Parser Src.Expr
-term = choice [inParens expr, try letInExpression, letExpression, character, string, try float, integer, variable, list, op, lambda]
+term = choice [try $ inParens expr, try letInExpression, letExpression, character, string, try float, integer, variable, list, op, lambda]
 
 variable :: Parser Src.Expr
 variable = Src.Var <$> varName

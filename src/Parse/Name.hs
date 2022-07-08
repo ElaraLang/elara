@@ -17,7 +17,10 @@ varName :: Parser Name
 varName = qualified varName' False
   where
     varName' :: Parser Name
-    varName' = VarName . pack <$> lexeme ((:) <$> lowerChar <*> many alphaNumChar)
+    varName' = lexeme (inParens opName) <|> lexeme alphaVarName
+
+alphaVarName :: Parser Name
+alphaVarName = VarName <$> (pack <$> lexeme ((:) <$> lowerChar <*> many alphaNumChar))
 
 typeName :: Parser Name
 typeName = qualified typeName' True

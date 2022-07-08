@@ -51,6 +51,7 @@ library
       TypeInfer.Env
       TypeInfer.Expression
       TypeInfer.Infer
+      TypeInfer.Module
       TypeInfer.Pattern
       TypeInfer.Type
       TypeInfer.Value
