@@ -41,7 +41,7 @@ defDecl = do
 valueDecl :: Parser Decl
 valueDecl = do
   ((name, patterns), e) <- optionallyIndented letPreamble
-  return $ Value $ Src.Value name patterns e Nothing
+  return $ Value $ Src.Value name patterns e
   where
     letPreamble = do
       _ <- lexeme (string "let")

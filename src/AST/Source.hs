@@ -66,9 +66,9 @@ data Module = Module
     _values :: [Value]
   }
 
-data Decl = Decl Name Type deriving (Show)
+data Decl = Decl Name Type deriving (Show) -- def name : Type
 
-data Value = Value Name [Pattern] Expr (Maybe Type) deriving (Show)
+data Value = Value Name [Pattern] Expr deriving (Show) -- let name [params] = expr
 
 getName :: Module -> Name
 getName m = fromMaybe Name._Main (m._name)
