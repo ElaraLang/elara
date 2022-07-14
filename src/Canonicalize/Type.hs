@@ -9,4 +9,5 @@ canonicalize type' = do
     Src.TVar x -> Can.TVar x
     Src.TUnit -> Can.TUnit
     Src.TLambda a b -> Can.TLambda (canonicalize a) (canonicalize b)
-    other -> error $ "Canonicalize.Type.canonicalize: " ++ show other
+    other -> error $ "Canonicalize.Type.canonicalize: " ++ show other 
+  

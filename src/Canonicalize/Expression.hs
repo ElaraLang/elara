@@ -18,4 +18,9 @@ canonicalize expr = do
     Src.List exprs -> Can.List (canonicalize <$> exprs)
     Src.FunctionCall a b -> Can.FunctionCall (canonicalize a) (canonicalize b)
     Src.Lambda a b -> Can.Lambda (Pat.canonicalize <$> a) (canonicalize b)
+    Src.Let def e -> Can.Let (canonicalizeDef def) (canonicalize e)
     other -> error $ "Can't canonicalize " ++ show other
+
+canonicalizeDef :: Src.Def -> Can.Def
+canonicalizeDef (Src.Define name pats expr) = Can.Def name (Pat.canonicalize <$> pats) (canonicalize expr)
+canonicalizeDef other = error $ "Can't canonicalize " ++ show other

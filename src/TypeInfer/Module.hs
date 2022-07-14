@@ -10,7 +10,6 @@ import TypeInfer.Env (Infer)
 import TypeInfer.Env qualified as E
 import TypeInfer.Type qualified as E
 import TypeInfer.Value qualified as I
-import Print (debugColored)
 
 inferModule :: Src.Module -> Infer [E.Type]
 inferModule mod' = do

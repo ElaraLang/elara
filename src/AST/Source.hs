@@ -65,6 +65,7 @@ data Module = Module
     _decls :: [Decl],
     _values :: [Value]
   }
+  deriving (Show)
 
 data Decl = Decl Name Type deriving (Show) -- def name : Type
 

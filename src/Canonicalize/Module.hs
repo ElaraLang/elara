@@ -11,6 +11,7 @@ import Data.Map qualified as Map
 import Elara.ModuleName qualified as ModuleName
 import Elara.Package qualified as Pkg
 import Error.Error qualified as E
+import Print (debugColored)
 
 {-
 Canonicalizing an AST (term and code structure inspired from https://github.com/elm/compiler/)

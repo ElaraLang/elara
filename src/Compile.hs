@@ -10,11 +10,10 @@ import Elara.Package qualified as Pkg
 import Error.Error qualified as E
 import Pretty (prettyPrint)
 import Print
-import TypeInfer.Env (TypeEnv (TypeEnv), emptyEnv)
-import TypeInfer.Infer (infer, inferMany, runInfer)
+import TypeInfer.Env (TypeEnv (TypeEnv))
+import TypeInfer.Infer (inferMany)
 import TypeInfer.Module (inferModule)
 import TypeInfer.Type
-import TypeInfer.Value (inferDef)
 
 compile :: Pkg.Name -> Src.Module -> Either E.Error ()
 compile packageName module' = do
@@ -35,6 +34,7 @@ typeCheck _ canonical = do
                 [ ("*", Forall [] (TFunc int (TFunc int int))),
                   ("-", Forall [] (TFunc int (TFunc int int)))
                 ]
-  ((TypeEnv defs), _) <- first E.TypeError $ inferMany (inferModule canonical) emptyEnv
+  (TypeEnv defs, _) <- first E.TypeError $ inferMany (inferModule canonical) emptyEnv
   debugColored . prettyPrint $ defs
   return ()
+

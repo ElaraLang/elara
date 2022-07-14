@@ -27,3 +27,5 @@ data Scheme = Forall [TVar] Type
 instance Show Scheme where
   show (Forall [] t) = show t
   show (Forall vars t) = "forall " ++ unwords (map show vars) ++ ". " ++ show t
+  
+   
