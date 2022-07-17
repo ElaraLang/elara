@@ -5,17 +5,17 @@ import Data.Text qualified as T
 data Name
   = Name T.Text
   | QualifiedName
-      { moduleName :: Maybe ModuleName,
-        name :: Name
+      { _moduleName :: Maybe ModuleName,
+        _name :: Name
       }
-  deriving (Show)
+  deriving (Show, Ord, Eq)
 
 nameQualification :: Name -> Maybe ModuleName
-nameQualification (QualifiedName {moduleName = m}) = m
+nameQualification (QualifiedName {_moduleName = m}) = m
 nameQualification _ = Nothing
 
 newtype ModuleName = ModuleName [T.Text]
-  deriving (Show)
+  deriving (Show, Ord, Eq)
 
 class Named a where
   toText :: a -> T.Text

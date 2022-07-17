@@ -1,2 +1,3 @@
 module Test.Main exposing (main, a)
 import Core as C exposing map
+import Core2 qualified as C2 exposing map

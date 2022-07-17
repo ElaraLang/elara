@@ -32,12 +32,12 @@ instance Functor Located where
 merge :: (Located a -> Located b -> c) -> Located a -> Located b -> Located c
 merge fn l1 l2 =
   Located
-    (mergeRegions (getRegion l1) (getRegion l2))
+    (spanningRegion [getRegion l1, getRegion l2])
     (fn l1 l2)
 
-mergeRegions :: Region -> Region -> Region
-mergeRegions r1 r2 =
+spanningRegion :: [Region] -> Region
+spanningRegion regions =
   Region
-    { startOffset = minimum [r1.startOffset, r2.startOffset],
-      endOffset = maximum [r1.endOffset, r2.endOffset]
+    { startOffset = minimum (map startOffset regions),
+      endOffset = maximum (map endOffset regions)
     }

@@ -6,8 +6,9 @@ import Elara.AST.Frontend qualified as Ast
 import Elara.Data.Located as Located (merge)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, typeName, varName)
-import Elara.Parse.Primitives (Parser, inParens, located, sc)
-import Text.Megaparsec (try)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc)
+import Text.Megaparsec (sepBy, try)
+import Text.Megaparsec.Char qualified as C
 import Text.Parser.Combinators (choice)
 
 expression :: Parser LocatedExpr
@@ -23,6 +24,8 @@ expressionTerm =
   choice $
     try
       <$> [ inParens expression,
+            lambda,
+            ifElse,
             variable,
             constructor,
             int,
@@ -52,3 +55,20 @@ char = located (Ast.Char <$> charLiteral)
 
 string :: Parser LocatedExpr
 string = located (Ast.String <$> stringLiteral)
+
+lambda :: Parser LocatedExpr
+lambda = located $ do
+  _ <- lexeme (C.char '\\')
+  args <- lexeme (sepBy varName sc)
+  _ <- lexeme (C.string "->")
+  Ast.Lambda args <$> expression
+
+ifElse :: Parser LocatedExpr
+ifElse = located $ do
+  _ <- lexeme (C.string "if")
+  cond <- expression
+  _ <- lexeme (C.string "then")
+  thenBranch <- expression
+  _ <- lexeme (C.string "else")
+  elseBranch <- expression
+  return $ Ast.If cond thenBranch elseBranch

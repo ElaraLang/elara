@@ -33,11 +33,15 @@ library
       Elara.Data.TypeAnnotation
       Elara.Error
       Elara.Parse
+      Elara.Parse.Declaration
       Elara.Parse.Expression
+      Elara.Parse.Indents
       Elara.Parse.Literal
+      Elara.Parse.Module
       Elara.Parse.Name
       Elara.Parse.Primitives
       Print
+      Utils
   other-modules:
       Paths_elara
   hs-source-dirs:

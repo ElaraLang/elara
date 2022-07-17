@@ -4,6 +4,7 @@ import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.Type (Type)
 
 data TypeAnnotation = TypeAnnotation
-  { varName :: Name,
-    type' :: Type (Maybe ModuleName)
+  { _varName :: Name,
+    _type' :: Type (Maybe ModuleName)
   }
+  deriving (Show)

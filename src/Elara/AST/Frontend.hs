@@ -29,5 +29,6 @@ data Expr
   | FunctionCall {function :: LocatedExpr, argument :: LocatedExpr}
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}
+  | Block [LocatedExpr]
   | Unit
   deriving (Show)
