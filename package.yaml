@@ -37,7 +37,6 @@ dependencies:
   - bimap
   - vector
   - pretty-simple
-  - pretty
   - megaparsec
   - parser-combinators
   - parsers
@@ -48,6 +47,7 @@ library:
   - OverloadedStrings
   - ImportQualifiedPost
   - OverloadedRecordDot
+  - DuplicateRecordFields
   ghc-options:
   - -Wall
 

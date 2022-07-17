@@ -25,36 +25,19 @@ source-repository head
 
 library
   exposed-modules:
-      AST.Canonical
-      AST.Source
-      Canonicalize.Expression
-      Canonicalize.Module
-      Canonicalize.Pattern
-      Canonicalize.Type
-      Compile
-      Elara.ModuleName
-      Elara.Name
-      Elara.Package
-      Elara.String
-      Error.Error
-      Parse.Declaration
-      Parse.Expression
-      Parse.Module
-      Parse.Name
-      Parse.Pattern
-      Parse.Primitives
-      Parse.Type
-      Parse.Value
-      Pretty
+      Elara.AST.Frontend
+      Elara.Data.Located
+      Elara.Data.Module
+      Elara.Data.Name
+      Elara.Data.Type
+      Elara.Data.TypeAnnotation
+      Elara.Error
+      Elara.Parse
+      Elara.Parse.Expression
+      Elara.Parse.Literal
+      Elara.Parse.Name
+      Elara.Parse.Primitives
       Print
-      TypeInfer.ASTType
-      TypeInfer.Env
-      TypeInfer.Expression
-      TypeInfer.Infer
-      TypeInfer.Module
-      TypeInfer.Pattern
-      TypeInfer.Type
-      TypeInfer.Value
   other-modules:
       Paths_elara
   hs-source-dirs:
@@ -63,6 +46,7 @@ library
       OverloadedStrings
       ImportQualifiedPost
       OverloadedRecordDot
+      DuplicateRecordFields
   ghc-options: -Wall
   build-depends:
       array
@@ -77,7 +61,6 @@ library
     , mtl
     , parser-combinators
     , parsers
-    , pretty
     , pretty-simple
     , text
     , time
@@ -106,7 +89,6 @@ executable elara-exe
     , mtl
     , parser-combinators
     , parsers
-    , pretty
     , pretty-simple
     , text
     , time
@@ -137,7 +119,6 @@ test-suite elara-test
     , mtl
     , parser-combinators
     , parsers
-    , pretty
     , pretty-simple
     , text
     , time
