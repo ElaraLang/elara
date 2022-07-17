@@ -4,7 +4,6 @@ import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser
 import Elara.AST.Frontend (LocatedExpr)
 import Elara.AST.Frontend qualified as Ast
 import Elara.Data.Located as Located (merge)
-import Elara.Data.Name qualified as Name
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, typeName, varName)
 import Elara.Parse.Primitives (Parser, inParens, located, sc)
