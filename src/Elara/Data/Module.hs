@@ -15,7 +15,6 @@ data Module expr annotation qualified = Module
 data Declaration expr annotation qualified = Declaration
   { module_ :: ModuleName,
     name :: Name,
-    patterns :: [Pattern],
     body :: DeclarationBody expr annotation qualified
   }
   deriving (Show)
@@ -23,8 +22,12 @@ data Declaration expr annotation qualified = Declaration
 data DeclarationBody expr annotation qualified
   = Value
       { expression :: expr,
+        -- | The patterns used in things like let f x = ...
+        patterns :: [Pattern],
         typeAnnotation :: Maybe annotation
       }
+  | -- | Used for def <name> : <type>
+    ValueTypeDef annotation
   | TypeAlias (TypeAliasDeclaration qualified)
   deriving (Show)
 

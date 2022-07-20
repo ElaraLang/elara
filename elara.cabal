@@ -42,6 +42,7 @@ library
       Elara.Parse.Name
       Elara.Parse.Pattern
       Elara.Parse.Primitives
+      Elara.Parse.Type
       Print
       Utils
   other-modules:

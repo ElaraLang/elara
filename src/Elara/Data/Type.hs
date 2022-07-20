@@ -7,9 +7,9 @@ data TypeOrId qualified
   | Type (Type qualified)
   deriving (Show)
 
-data Type qual
+data AbsType ty qual
   = TypeVar Name
-  | Function {from :: TypeOrId qual, to :: TypeOrId qual}
+  | Function {from :: ty qual, to :: ty qual}
   | Int
   | Float
   | Bool
@@ -19,6 +19,16 @@ data Type qual
   | UserDefinedType
       { qualified :: qual,
         name :: Name,
-        args :: [TypeOrId qual]
+        args :: [ty qual]
       }
   deriving (Show)
+
+type Type = AbsType TypeOrId
+
+newtype ConcreteType qual = ConcreteType (ConcreteAbs qual)
+  deriving (Show)
+
+type ConcreteAbs = AbsType ConcreteType
+
+makeConcrete :: ConcreteAbs qual -> ConcreteType qual
+makeConcrete = ConcreteType
