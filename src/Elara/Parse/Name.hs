@@ -1,7 +1,7 @@
 module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName) where
 
 import Data.Text qualified as T
-import Elara.Data.Name (ModuleName, Name (QualifiedName), NameFromText)
+import Elara.Data.Name (ModuleName, Name (Qualified), NameFromText, QualifiedName (..))
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Primitives (Parser, inParens, lexeme)
 import Text.Megaparsec
@@ -39,4 +39,4 @@ moduleName = do
 qualified :: Parser Name -> Parser Name
 qualified parser = do
   module' <- optional moduleName
-  QualifiedName module' <$> parser
+  Qualified . QualifiedName module' <$> parser

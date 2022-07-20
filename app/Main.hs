@@ -1,4 +1,3 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -11,7 +10,7 @@ import Text.Pretty.Simple
 main :: IO ()
 main = do
   content <- pack <$> readFile "source.elr"
-  let res =  runParser module' "source.elr" content
+  let res = runParser module' "source.elr" content
   case res of
     Left err -> putStrLn $ errorBundlePretty err
     Right moduleAST -> do

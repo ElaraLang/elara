@@ -7,4 +7,4 @@ let main argv _ =
     println "Hello"
     println "World"
 
-let f x y = 3
+let fact n = if n == 0 then 1 else n * fact (n - 1)

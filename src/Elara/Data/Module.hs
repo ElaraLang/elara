@@ -1,7 +1,7 @@
 module Elara.Data.Module where
 
 import Elara.Data.Name
-import Elara.Data.Pattern (Pattern)
+import Elara.AST.Pattern  (Pattern)
 import Elara.Data.Type (Type)
 
 data Module expr annotation qualified = Module

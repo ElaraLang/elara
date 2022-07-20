@@ -25,11 +25,12 @@ source-repository head
 
 library
   exposed-modules:
+      Elara.AST.Canonical
       Elara.AST.Frontend
+      Elara.AST.Pattern
       Elara.Data.Located
       Elara.Data.Module
       Elara.Data.Name
-      Elara.Data.Pattern
       Elara.Data.Type
       Elara.Data.TypeAnnotation
       Elara.Error

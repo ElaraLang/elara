@@ -1,6 +1,6 @@
 module Elara.Parse.Pattern where
 
-import Elara.Data.Pattern (Pattern (NamedPattern, WildPattern))
+import Elara.AST.Pattern (Pattern (NamedPattern, WildPattern))
 import Elara.Parse.Name (alphaVarName)
 import Elara.Parse.Primitives (Parser)
 import Text.Megaparsec.Char (string)

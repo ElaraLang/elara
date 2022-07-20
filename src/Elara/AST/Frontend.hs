@@ -2,9 +2,9 @@ module Elara.AST.Frontend where
 
 import Data.Map qualified as M
 import Elara.Data.Located (Located)
-import Elara.Data.Module
 import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
+import Elara.Data.Module (Module)
 
 {- Least abstract AST, closest to elara source code.
 Things like comments are preserved

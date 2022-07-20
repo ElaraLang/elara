@@ -4,28 +4,40 @@ import Data.Text qualified as T
 
 data Name
   = Name T.Text
-  | QualifiedName
-      { _moduleName :: Maybe ModuleName,
-        _name :: Name
-      }
+  | Qualified QualifiedName
   deriving (Show, Ord, Eq)
 
-nameQualification :: Name -> Maybe ModuleName
-nameQualification (QualifiedName {_moduleName = m}) = m
-nameQualification _ = Nothing
+data QualifiedName = QualifiedName
+  { _moduleName :: Maybe ModuleName,
+    _name :: Name
+  }
+  deriving (Show, Ord, Eq)
+
+class NameLike a where
+  nameValue :: a -> T.Text
+  nameModule :: a -> Maybe ModuleName
+  fullName :: a -> T.Text
+
+instance NameLike Name where
+  nameValue (Name _name) = _name
+  nameValue (Qualified q) = nameValue q
+  nameModule _ = Nothing
+  fullName = nameValue
+
+instance NameLike QualifiedName where
+  nameValue = nameValue . _name
+  nameModule = _moduleName
+  fullName qn = case qn._moduleName of
+    Nothing -> nameValue qn
+    Just mn -> T.concat [fullName mn, ".", nameValue qn]
 
 newtype ModuleName = ModuleName [T.Text]
   deriving (Show, Ord, Eq)
 
-class Named a where
-  toText :: a -> T.Text
-
-instance Named Name where
-  toText (Name n) = n
-  toText (QualifiedName _ n) = toText n
-
-instance Named ModuleName where
-  toText (ModuleName n) = T.intercalate "." n
+instance NameLike ModuleName where
+  nameValue (ModuleName _name) = T.intercalate "." _name
+  nameModule _ = Nothing
+  fullName = nameValue
 
 class NameFromText a where
   fromText :: T.Text -> a
