@@ -2,15 +2,19 @@ module Elara.Parse.Primitives where
 
 import Control.Applicative hiding (many, some)
 import Control.Monad (void)
-import Control.Monad.Except (MonadError (..))
 import Data.List
-import Data.Set qualified as E
 import Data.Text (Text)
 import Data.Void
 import Elara.Data.Located (Located)
 import Elara.Data.Located qualified as Located
-import Elara.Error (Error)
 import Text.Megaparsec
+  ( MonadParsec (try),
+    Parsec,
+    between,
+    getOffset,
+    sepBy,
+    some,
+  )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 

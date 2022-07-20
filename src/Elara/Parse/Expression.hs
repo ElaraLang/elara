@@ -15,8 +15,8 @@ expression :: Parser LocatedExpr
 expression =
   makeExprParser
     expressionTerm
-    [ [InfixR ((Located.merge Ast.FunctionCall) <$ sc)],
-      [InfixL ((Located.merge . Ast.BinaryOperator) <$> operator)]
+    [ [InfixR (Located.merge Ast.FunctionCall <$ sc)],
+      [InfixL (Located.merge . Ast.BinaryOperator <$> operator)]
     ]
 
 expressionTerm :: Parser LocatedExpr
@@ -66,9 +66,8 @@ lambda = located $ do
 ifElse :: Parser LocatedExpr
 ifElse = located $ do
   _ <- lexeme (C.string "if")
-  cond <- expression
+  condition <- expression
   _ <- lexeme (C.string "then")
   thenBranch <- expression
   _ <- lexeme (C.string "else")
-  elseBranch <- expression
-  return $ Ast.If cond thenBranch elseBranch
+  Ast.If condition thenBranch <$> expression

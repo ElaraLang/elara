@@ -21,7 +21,6 @@ located = Located
 getRegion :: Located expr -> Region
 getRegion (Located r _) = r
 
--- fromSourcePos :: SourcePos -> Region
 
 unlocate :: Located expr -> expr
 unlocate (Located _ expr) = expr

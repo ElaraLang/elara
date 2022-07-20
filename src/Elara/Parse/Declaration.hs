@@ -3,7 +3,7 @@ module Elara.Parse.Declaration where
 import Control.Monad (liftM2)
 import Elara.AST.Frontend (LocatedExpr)
 import Elara.Data.Module (Declaration (Declaration), DeclarationBody (Value, ValueTypeDef))
-import Elara.Data.Name (ModuleName (ModuleName))
+import Elara.Data.Name (ModuleName)
 import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
 import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Name (varName)
