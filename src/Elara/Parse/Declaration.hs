@@ -6,9 +6,10 @@ import Elara.Data.Name (ModuleName (ModuleName))
 import Elara.Data.TypeAnnotation (TypeAnnotation)
 import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Name (varName)
+import Elara.Parse.Pattern (pattern)
 import Elara.Parse.Primitives
 import Text.Megaparsec
-  ( many,
+  ( sepBy,
   )
 import Text.Megaparsec.Char
 
@@ -18,12 +19,12 @@ declaration = valueDecl
 valueDecl :: ModuleName -> Parser (Declaration LocatedExpr TypeAnnotation (Maybe ModuleName))
 valueDecl modName = do
   ((name, patterns), e) <- optionallyIndented letPreamble
-  let decl = Declaration modName name (Value e Nothing)
+  let decl = Declaration modName name patterns (Value e Nothing)
   return decl
   where
     letPreamble = do
       _ <- lexeme (string "let")
       name <- varName
-      patterns <- many varName
+      patterns <- sepBy (lexeme pattern) sc
       _ <- lexeme (char '=')
       return (name, patterns)

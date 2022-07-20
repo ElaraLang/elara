@@ -29,6 +29,7 @@ library
       Elara.Data.Located
       Elara.Data.Module
       Elara.Data.Name
+      Elara.Data.Pattern
       Elara.Data.Type
       Elara.Data.TypeAnnotation
       Elara.Error
@@ -39,6 +40,7 @@ library
       Elara.Parse.Literal
       Elara.Parse.Module
       Elara.Parse.Name
+      Elara.Parse.Pattern
       Elara.Parse.Primitives
       Print
       Utils

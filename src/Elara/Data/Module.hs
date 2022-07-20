@@ -1,20 +1,21 @@
 module Elara.Data.Module where
 
-import Data.Map qualified as M
 import Elara.Data.Name
+import Elara.Data.Pattern (Pattern)
 import Elara.Data.Type (Type)
 
 data Module expr annotation qualified = Module
-  { _imports :: M.Map ModuleName Import,
+  { _name :: ModuleName,
+    _imports :: [Import],
     _exposing :: Exposing,
-    _name :: ModuleName,
-    _declarations :: M.Map Name (Declaration expr annotation qualified)
+    _declarations :: [Declaration expr annotation qualified]
   }
   deriving (Show)
 
 data Declaration expr annotation qualified = Declaration
   { module_ :: ModuleName,
     name :: Name,
+    patterns :: [Pattern],
     body :: DeclarationBody expr annotation qualified
   }
   deriving (Show)
@@ -39,15 +40,15 @@ data Import = Import
     _qualified :: Bool,
     _exposing :: Exposing
   }
-  deriving (Show)
+  deriving (Ord, Eq, Show)
 
 data Exposing
   = ExposingAll
   | ExposingSome [Exposition]
-  deriving (Show)
+  deriving (Ord, Eq, Show)
 
 data Exposition
   = ExposedValue Name -- exposing foo
   | ExposedType Name -- exposing Foo
   | ExposedTypeAndAllConstructors Name -- exposing Foo(..)
-  deriving (Show)
+  deriving (Ord, Eq, Show)

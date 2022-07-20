@@ -1,4 +1,4 @@
-module Elara.Parse.Name (varName, typeName, opName, moduleName) where
+module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName) where
 
 import Data.Text qualified as T
 import Elara.Data.Name (ModuleName, Name (QualifiedName), NameFromText)
@@ -39,5 +39,4 @@ moduleName = do
 qualified :: Parser Name -> Parser Name
 qualified parser = do
   module' <- optional moduleName
-  name <- parser
-  return (QualifiedName module' name)
+  QualifiedName module' <$> parser

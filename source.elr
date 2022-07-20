@@ -1,3 +1,9 @@
 module Test.Main exposing (main, a)
 import Core as C exposing map
-import Core2 qualified as C2 exposing map
+import Core qualified as C2 exposing (map, filter)
+
+let main argv _ = 
+    println "Hello"
+    println "World"
+
+let f x y = 3

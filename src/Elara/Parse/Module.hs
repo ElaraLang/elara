@@ -11,22 +11,22 @@ import Elara.Parse.Name (moduleName, varName)
 import Elara.Parse.Primitives (Parser, lexeme, oneOrCommaSeparatedInParens)
 import Text.Megaparsec (MonadParsec (try), many, optional, sepEndBy)
 import Text.Megaparsec.Char (newline, string)
-import Utils qualified
 
 module' :: Parser (Module LocatedExpr TypeAnnotation (Maybe ModuleName))
 module' = do
   header <- parseHeader
   let _name = maybe (Name.fromString "Main") fst header
   _ <- many newline
-  imports <- import' `sepEndBy` many newline
 
+  imports <- import' `sepEndBy` many newline
   declarations <- declaration _name `sepEndBy` many newline
+
   return $
     Module
       { _name = _name,
         _exposing = maybe ExposingAll snd header,
-        _imports = Utils.associateWithKey _moduleName imports,
-        _declarations = Utils.associateWithKey name declarations
+        _imports = imports,
+        _declarations = declarations
       }
 
 parseHeader :: Parser (Maybe (ModuleName, Exposing))
