@@ -39,4 +39,4 @@ moduleName = do
 qualified :: Parser Name -> Parser Name
 qualified parser = do
   module' <- optional moduleName
-  Qualified . QualifiedName module' <$> parser
+  Name.withModule module' <$> parser

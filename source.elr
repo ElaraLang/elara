@@ -1,6 +1,5 @@
 module Test.Main exposing (main, a)
-import Core as C exposing map
-import Core qualified as C2 exposing (map, filter)
+import Prelude
 
 def main : String -> Int -> String
 let main argv _ = 

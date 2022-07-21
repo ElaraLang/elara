@@ -1,15 +1,17 @@
 module Elara.Parse.Expression where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
+import Data.Set qualified as Set
+import Data.Text (Text)
 import Elara.AST.Frontend (LocatedExpr)
 import Elara.AST.Frontend qualified as Ast
 import Elara.Data.Located as Located (merge)
+import Elara.Data.Name qualified as Name
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, typeName, varName)
-import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc)
-import Text.Megaparsec (sepBy, try)
-import Text.Megaparsec.Char qualified as C
-import Text.Parser.Combinators (choice)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
+import Text.Megaparsec (sepBy, try, (<|>))
+import Text.Megaparsec.Debug (dbg)
 
 expression :: Parser LocatedExpr
 expression =
@@ -21,21 +23,27 @@ expression =
 
 expressionTerm :: Parser LocatedExpr
 expressionTerm =
-  choice $
-    try
-      <$> [ inParens expression,
-            lambda,
-            ifElse,
-            variable,
-            constructor,
-            int,
-            float,
-            char,
-            string
-          ]
+  inParens expression
+    <|> ifElse
+    <|> lambda
+    <|> int
+    <|> try float
+    <|> string
+    <|> char
+    <|> try variable
+    <|> constructor
+
+reservedWords ::
+  -- | Reserved words, used to backtrack accordingly
+  Set.Set Text
+reservedWords = Set.fromList ["if", "else", "then", "let"]
 
 variable :: Parser LocatedExpr
-variable = located (Ast.Var <$> varName)
+variable = located $ do
+  var <- varName
+  if Name.nameValue var `Set.member` reservedWords
+    then fail "Reserved keyword"
+    else return $ Ast.Var var
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: Parser LocatedExpr
@@ -58,16 +66,16 @@ string = located (Ast.String <$> stringLiteral)
 
 lambda :: Parser LocatedExpr
 lambda = located $ do
-  _ <- lexeme (C.char '\\')
+  symbol "\\"
   args <- lexeme (sepBy varName sc)
-  _ <- lexeme (C.string "->")
+  symbol "->"
   Ast.Lambda args <$> expression
 
 ifElse :: Parser LocatedExpr
 ifElse = located $ do
-  _ <- lexeme (C.string "if")
+  symbol "if"
   condition <- expression
-  _ <- lexeme (C.string "then")
+  symbol "then"
   thenBranch <- expression
-  _ <- lexeme (C.string "else")
+  symbol "else"
   Ast.If condition thenBranch <$> expression

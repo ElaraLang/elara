@@ -1,7 +1,16 @@
 module Elara.AST.Canonical where
 
+import Data.Map qualified as M
+import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located
-import Elara.Data.Name (Name, QualifiedName)
+import Elara.Data.Module (Module)
+import Elara.Data.Name (ModuleName, Name (..), QualifiedName)
+import Elara.Data.Qualifications (Qualified)
+import Elara.Data.Type (ConcreteType)
+
+newtype ProjectFields = ProjectFields
+  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified)
+  }
 
 type LocatedExpr = Located Expr
 
@@ -28,6 +37,10 @@ data Expr
   deriving (Show)
 
 data Pattern
-  = NamedPattern QualifiedName
+  = NamedPattern Name
   | WildPattern
   deriving (Eq, Ord, Show)
+
+instance PatternLike Pattern where
+  patternNames (NamedPattern name) = [name]
+  patternNames WildPattern = []

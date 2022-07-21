@@ -4,9 +4,9 @@ import Control.Applicative hiding (many, some)
 import Control.Monad (void)
 import Data.List
 import Data.Text (Text)
-import Data.Void
 import Elara.Data.Located (Located)
 import Elara.Data.Located qualified as Located
+import Elara.Error (Error)
 import Text.Megaparsec
   ( MonadParsec (try),
     Parsec,
@@ -18,7 +18,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 
-type Parser = Parsec Void Text
+type Parser = Parsec Error Text
 
 located :: Parser p -> Parser (Located p)
 located p = lexeme $ do
@@ -38,6 +38,9 @@ scn = L.space space1 lineComment empty
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
+
+symbol :: Text -> Parser ()
+symbol = void . L.symbol sc
 
 inParens :: Parser a -> Parser a
 inParens = between (char '(') (char ')')

@@ -1,7 +1,7 @@
 module Elara.Parse.Declaration where
 
 import Control.Monad (liftM2)
-import Elara.AST.Frontend (LocatedExpr)
+import Elara.AST.Frontend (LocatedExpr, Pattern)
 import Elara.Data.Module (Declaration (Declaration), DeclarationBody (Value, ValueTypeDef))
 import Elara.Data.Name (ModuleName)
 import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
@@ -15,29 +15,30 @@ import Text.Megaparsec
     try,
     (<|>),
   )
-import Text.Megaparsec.Char
 
-declaration :: ModuleName -> Parser (Declaration LocatedExpr TypeAnnotation (Maybe ModuleName))
+type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
+
+declaration :: ModuleName -> Parser FrontendDecl
 declaration = liftM2 ((<|>) . try) defDecl valueDecl
 
-defDecl :: ModuleName -> Parser (Declaration LocatedExpr TypeAnnotation (Maybe ModuleName))
+defDecl :: ModuleName -> Parser FrontendDecl
 defDecl modName = do
-  _ <- lexeme (string "def")
+  symbol "def"
   name <- varName
-  _ <- lexeme (char ':')
+  symbol ":"
   ty <- type'
   let annotation = TypeAnnotation name ty
   let declBody = ValueTypeDef annotation
   return (Declaration modName name declBody)
 
-valueDecl :: ModuleName -> Parser (Declaration LocatedExpr TypeAnnotation (Maybe ModuleName))
+valueDecl :: ModuleName -> Parser FrontendDecl
 valueDecl modName = do
   ((name, patterns), e) <- optionallyIndented letPreamble
   return (Declaration modName name (Value e patterns Nothing))
   where
     letPreamble = do
-      _ <- lexeme (string "let")
+      symbol "let"
       name <- varName
       patterns <- sepBy (lexeme pattern) sc
-      _ <- lexeme (char '=')
+      symbol "="
       return (name, patterns)

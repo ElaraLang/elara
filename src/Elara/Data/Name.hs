@@ -8,35 +8,38 @@ data Name
   deriving (Show, Ord, Eq)
 
 data QualifiedName = QualifiedName
-  { _moduleName :: Maybe ModuleName,
+  { _moduleName :: ModuleName,
     _name :: Name
   }
   deriving (Show, Ord, Eq)
 
+withModule :: Maybe ModuleName -> Name -> Name
+withModule Nothing n = n
+withModule (Just m) n = Qualified (QualifiedName m n)
+
 class NameLike a where
   nameValue :: a -> T.Text
-  nameModule :: a -> Maybe ModuleName
+  moduleName :: a -> Maybe ModuleName
   fullName :: a -> T.Text
 
 instance NameLike Name where
   nameValue (Name _name) = _name
   nameValue (Qualified q) = nameValue q
-  nameModule _ = Nothing
+  moduleName (Name _) = Nothing
+  moduleName (Qualified q) = moduleName q
   fullName = nameValue
 
 instance NameLike QualifiedName where
   nameValue = nameValue . _name
-  nameModule = _moduleName
-  fullName qn = case qn._moduleName of
-    Nothing -> nameValue qn
-    Just mn -> T.concat [fullName mn, ".", nameValue qn]
+  moduleName = Just . _moduleName
+  fullName qn = T.concat [fullName qn._moduleName, ".", nameValue qn]
 
 newtype ModuleName = ModuleName [T.Text]
   deriving (Show, Ord, Eq)
 
 instance NameLike ModuleName where
   nameValue (ModuleName _name) = T.intercalate "." _name
-  nameModule _ = Nothing
+  moduleName _ = Nothing
   fullName = nameValue
 
 class NameFromText a where

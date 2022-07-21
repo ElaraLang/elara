@@ -32,3 +32,6 @@ type ConcreteAbs = AbsType ConcreteType
 
 makeConcrete :: ConcreteAbs qual -> ConcreteType qual
 makeConcrete = ConcreteType
+
+unwrapType :: ConcreteType qual -> ConcreteAbs qual
+unwrapType (ConcreteType t) = t

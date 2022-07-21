@@ -27,12 +27,17 @@ library
   exposed-modules:
       Elara.AST.Canonical
       Elara.AST.Frontend
-      Elara.AST.Pattern
+      Elara.AST.Generic
       Elara.Data.Located
       Elara.Data.Module
+      Elara.Data.Module.Inspection
       Elara.Data.Name
+      Elara.Data.Prelude
+      Elara.Data.Project
+      Elara.Data.Qualifications
       Elara.Data.Type
       Elara.Data.TypeAnnotation
+      Elara.Desugar.Desugar
       Elara.Error
       Elara.Parse
       Elara.Parse.Declaration
@@ -55,6 +60,7 @@ library
       ImportQualifiedPost
       OverloadedRecordDot
       DuplicateRecordFields
+      LambdaCase
   ghc-options: -Wall
   build-depends:
       array

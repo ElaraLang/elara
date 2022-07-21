@@ -1,35 +1,40 @@
 module Elara.Data.Module where
 
-import Elara.Data.Name
-import Elara.AST.Pattern  (Pattern)
+import Data.Map qualified as M
+import Elara.Data.Name hiding (_moduleName)
 import Elara.Data.Type (Type)
 
-data Module expr annotation qualified = Module
+data Module expr pattern annotation qualified = Module
   { _name :: ModuleName,
     _imports :: [Import],
     _exposing :: Exposing,
-    _declarations :: [Declaration expr annotation qualified]
+    _declarations :: M.Map Name (Declaration expr pattern annotation qualified)
   }
   deriving (Show)
 
-data Declaration expr annotation qualified = Declaration
+data Declaration expr pattern annotation qualified = Declaration
   { module_ :: ModuleName,
     name :: Name,
-    body :: DeclarationBody expr annotation qualified
+    body :: DeclarationBody expr pattern annotation qualified
   }
   deriving (Show)
 
-data DeclarationBody expr annotation qualified
+data DeclarationBody expr pattern annotation qualified
   = Value
       { expression :: expr,
         -- | The patterns used in things like let f x = ...
-        patterns :: [Pattern],
+        patterns :: [pattern],
         typeAnnotation :: Maybe annotation
       }
   | -- | Used for def <name> : <type>
     ValueTypeDef annotation
   | TypeAlias (TypeAliasDeclaration qualified)
   deriving (Show)
+
+declarationPatterns :: Declaration expr pattern annotation qualified -> [pattern]
+declarationPatterns dec = case dec.body of
+  v@(Value _ _ _) -> v.patterns
+  _ -> []
 
 data TypeAliasDeclaration qualified = TypeAliasDeclaration
   { parameters :: [Name],

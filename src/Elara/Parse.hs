@@ -1,10 +1,13 @@
 module Elara.Parse where
 
+import Data.Text (Text)
 import Elara.AST.Frontend qualified as Frontend
 import Elara.Data.Module (Module)
+import Elara.Data.Name (ModuleName)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
 import Elara.Error (Error)
-import Elara.Data.Name (ModuleName)
+import Elara.Parse.Module (module')
+import Text.Megaparsec (ParseErrorBundle, runParser)
 
-parse :: String -> Either Error (Module Frontend.LocatedExpr TypeAnnotation (Maybe ModuleName))
-parse = undefined
+parse :: FilePath -> Text -> Either (ParseErrorBundle Text Error) (Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation (Maybe ModuleName))
+parse = runParser module'

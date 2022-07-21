@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveTraversable #-}
+
 module Elara.Data.Located where
 
 {-
@@ -6,7 +8,10 @@ Used for nice error messages.
 -}
 
 data Located expr = Located Region expr
-  deriving (Show)
+  deriving (Show, Traversable, Foldable)
+
+instance Functor Located where
+  fmap f (Located region expr) = Located region (f expr)
 
 -- Region in the source code. This is calculated as an offset for efficiency.
 data Region = Region
@@ -21,12 +26,8 @@ located = Located
 getRegion :: Located expr -> Region
 getRegion (Located r _) = r
 
-
 unlocate :: Located expr -> expr
 unlocate (Located _ expr) = expr
-
-instance Functor Located where
-  fmap f (Located region expr) = Located region (f expr)
 
 merge :: (Located a -> Located b -> c) -> Located a -> Located b -> Located c
 merge fn l1 l2 =
