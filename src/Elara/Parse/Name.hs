@@ -1,7 +1,7 @@
 module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName) where
 
 import Data.Text qualified as T
-import Elara.Data.Name (ModuleName, Name (Qualified), NameFromText, QualifiedName (..))
+import Elara.Data.Name (ModuleName, Name, NameFromText)
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Primitives (Parser, inParens, lexeme)
 import Text.Megaparsec
