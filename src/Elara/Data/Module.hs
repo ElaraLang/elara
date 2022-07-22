@@ -10,14 +10,14 @@ data Module expr pattern annotation qualified = Module
     _exposing :: Exposing,
     _declarations :: M.Map Name (Declaration expr pattern annotation qualified)
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Declaration expr pattern annotation qualified = Declaration
   { module_ :: ModuleName,
     name :: Name,
     body :: DeclarationBody expr pattern annotation qualified
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data DeclarationBody expr pattern annotation qualified
   = Value
@@ -29,18 +29,18 @@ data DeclarationBody expr pattern annotation qualified
   | -- | Used for def <name> : <type>
     ValueTypeDef annotation
   | TypeAlias (TypeAliasDeclaration qualified)
-  deriving (Show)
+  deriving (Show, Eq)
 
 declarationPatterns :: Declaration expr pattern annotation qualified -> [pattern]
 declarationPatterns dec = case dec.body of
-  v@(Value _ _ _) -> v.patterns
+  v@(Value {}) -> v.patterns
   _ -> []
 
 data TypeAliasDeclaration qualified = TypeAliasDeclaration
   { parameters :: [Name],
     definition :: Type qualified
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Import = Import
   { _moduleName :: ModuleName,

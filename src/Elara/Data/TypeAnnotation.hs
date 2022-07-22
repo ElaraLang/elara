@@ -8,4 +8,4 @@ data TypeAnnotation = TypeAnnotation
   { _varName :: Name,
     _type :: ConcreteType MaybeQualified
   }
-  deriving (Show)
+  deriving (Show, Eq)

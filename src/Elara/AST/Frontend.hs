@@ -33,7 +33,7 @@ data Expr
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}
   | Block [LocatedExpr]
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Pattern
   = NamedPattern Name

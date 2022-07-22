@@ -8,9 +8,7 @@ import Data.List (find)
 import Data.Map ((!?))
 import Data.Map qualified as M
 import Data.Maybe (isJust)
-import Elara.AST.Frontend (Pattern (..))
 import Elara.AST.Generic (PatternLike, patternNameMatches)
-import Elara.Data.Located (unlocate)
 import Elara.Data.Module
 import Elara.Data.Name hiding (_moduleName)
 import Elara.Data.Name qualified as Name

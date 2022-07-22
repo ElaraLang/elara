@@ -30,7 +30,6 @@ dependencies:
   - array
   - utf8-string
   - containers
-  - hspec
   - time
   - binary
   - bytestring
@@ -41,6 +40,9 @@ dependencies:
   - parser-combinators
   - parsers
   - generic-data
+  - hspec
+  - HUnit
+
 library:
   source-dirs: src
   default-extensions:
@@ -67,11 +69,18 @@ executables:
 
 tests:
   elara-test:
+    defaults: hspec/hspec@main
     main: Spec.hs
     source-dirs: test
+    default-extensions:
+    - ImportQualifiedPost
+    - OverloadedStrings
+    - OverloadedRecordDot
+    - QuasiQuotes
     ghc-options:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
       - elara
+      - neat-interpolation

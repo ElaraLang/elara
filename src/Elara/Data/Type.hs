@@ -5,7 +5,7 @@ import Elara.Data.Name
 data TypeOrId qualified
   = Id Int
   | Type (Type qualified)
-  deriving (Show)
+  deriving (Show, Eq)
 
 data AbsType ty qual
   = TypeVar Name
@@ -21,12 +21,12 @@ data AbsType ty qual
         name :: Name,
         args :: [ty qual]
       }
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Type = AbsType TypeOrId
 
 newtype ConcreteType qual = ConcreteType (ConcreteAbs qual)
-  deriving (Show)
+  deriving (Show, Eq)
 
 type ConcreteAbs = AbsType ConcreteType
 

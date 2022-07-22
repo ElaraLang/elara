@@ -8,17 +8,18 @@ Used for nice error messages.
 -}
 
 data Located expr = Located Region expr
-  deriving (Show, Traversable, Foldable)
+  deriving (Show, Eq, Traversable, Foldable)
 
 instance Functor Located where
   fmap f (Located region expr) = Located region (f expr)
+
 
 -- Region in the source code. This is calculated as an offset for efficiency.
 data Region = Region
   { startOffset :: Int,
     endOffset :: Int
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 located :: Region -> expr -> Located expr
 located = Located
