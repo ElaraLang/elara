@@ -28,7 +28,7 @@ data Expr
   | Bool Bool
   | Var QualifiedName
   | Constructor QualifiedName
-  | Lambda {arg :: QualifiedName, body :: LocatedExpr}
+  | Lambda {arg :: Pattern, body :: LocatedExpr}
   | FunctionCall {function :: LocatedExpr, argument :: LocatedExpr}
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}

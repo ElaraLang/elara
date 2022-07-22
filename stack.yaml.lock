@@ -1201,4 +1201,88 @@ packages:
       sha256: 350fa6bf54cfa8cc1792635bd8c020321d22e48a96b6e96041fc99f75171bf3f
   original:
     hackage: neat-interpolation-0.5.1.3@sha256:d7ec83ccacabb447f582f9742aefdc34a5121f6127c91d0b1ad84a1e14b6c91c,2996
+- completed:
+    hackage: fsnotify-0.3.0.1@sha256:fbec8cddd3f991d5b905df16895c67717b0f580e1ef33de34d93de814af1a08a,2988
+    pantry-tree:
+      size: 1130
+      sha256: 37a2111006e61b752f3d4690dc81d76a4cedf3415dc486779addb2a033f5de58
+  original:
+    hackage: fsnotify-0.3.0.1@sha256:fbec8cddd3f991d5b905df16895c67717b0f580e1ef33de34d93de814af1a08a,2988
+- completed:
+    hackage: hslogger-1.3.1.0@sha256:e40119589bc3299fe3f1ae84c067b0b056f96338b37daa19e6151d6233f9a2e1,2899
+    pantry-tree:
+      size: 1411
+      sha256: c94a8db23f6e8d7a2e67c5a18884dbb0f24d1b1b9fb9c25a5bf59fc4ca1bad94
+  original:
+    hackage: hslogger-1.3.1.0@sha256:e40119589bc3299fe3f1ae84c067b0b056f96338b37daa19e6151d6233f9a2e1,2899
+- completed:
+    hackage: lens-5.1.1@sha256:c633a481e69bf911d9a6ed11ef156809db8b1d7c7d296fd03249b93be399e3a7,15015
+    pantry-tree:
+      size: 8214
+      sha256: 559bc8cd8f16036142724a98acfa4b05684368e615dd3ff02dd3c7600bd3822c
+  original:
+    hackage: lens-5.1.1@sha256:c633a481e69bf911d9a6ed11ef156809db8b1d7c7d296fd03249b93be399e3a7,15015
+- completed:
+    hackage: safe-exceptions-0.1.7.3@sha256:6e9b1b233af80cc0aa17ea858d2641ba146fb11cbcc5970a52649e89d77282e2,1398
+    pantry-tree:
+      size: 510
+      sha256: 41e57c663a86bd61931f3b9d221c2eca508b394bace069e096c32823e77286a3
+  original:
+    hackage: safe-exceptions-0.1.7.3@sha256:6e9b1b233af80cc0aa17ea858d2641ba146fb11cbcc5970a52649e89d77282e2,1398
+- completed:
+    hackage: hfsevents-0.1.6@sha256:295b29e8a4ac51a0015f4fb92b4140139d7b13ed691318159a20f85ce785dac6,863
+    pantry-tree:
+      size: 438
+      sha256: 14370510ec9a045fdc5b7e614279a84e3540a968f8b5ad12b8796916c4d6d1ee
+  original:
+    hackage: hfsevents-0.1.6@sha256:295b29e8a4ac51a0015f4fb92b4140139d7b13ed691318159a20f85ce785dac6,863
+- completed:
+    hackage: kan-extensions-5.2.5@sha256:6c67ff1ee6426461175619c350e99c189ded30490f795b8327d3a2275f0c551d,2950
+    pantry-tree:
+      size: 1421
+      sha256: b8784ccdde49cec7782f6492ef3fa4055052e598ac175e741dbaa172b5028864
+  original:
+    hackage: kan-extensions-5.2.5@sha256:6c67ff1ee6426461175619c350e99c189ded30490f795b8327d3a2275f0c551d,2950
+- completed:
+    hackage: network-bsd-2.8.1.0@sha256:cd945ea08818281e4a8fa6f0a0640a1502aad3748546a3c197e071772452a9bd,3738
+    pantry-tree:
+      size: 264
+      sha256: f8f2a2d68923368c37ceedb8935fafe39ae6dc1ec9e89e7ddad09088c2b3b053
+  original:
+    hackage: network-bsd-2.8.1.0@sha256:cd945ea08818281e4a8fa6f0a0640a1502aad3748546a3c197e071772452a9bd,3738
+- completed:
+    hackage: parallel-3.2.2.0@sha256:19ff631f3a26ee7cf0603e2b80fc375d77d3f350ae460ae72fe4cf5da665c90b,1821
+    pantry-tree:
+      size: 392
+      sha256: d6a417b6076136ea30d825c9239f44c2f007e0050f58bff57d2aac80359e5287
+  original:
+    hackage: parallel-3.2.2.0@sha256:19ff631f3a26ee7cf0603e2b80fc375d77d3f350ae460ae72fe4cf5da665c90b,1821
+- completed:
+    hackage: reflection-2.1.6@sha256:f41afef54a696377bb7591e12969a56e7a4a1cf1d2a32210ab24c6a7aa9bd7ae,4116
+    pantry-tree:
+      size: 1062
+      sha256: 3d40dd538ec28c67f9c08c69199d6c4848cf9d0898092d45add9d006f00d788c
+  original:
+    hackage: reflection-2.1.6@sha256:f41afef54a696377bb7591e12969a56e7a4a1cf1d2a32210ab24c6a7aa9bd7ae,4116
+- completed:
+    hackage: adjunctions-4.4.1@sha256:baee1b1c55f3072611b8d386a2985c8fbd50e96ee0e6d865ba72b294b9081055,3250
+    pantry-tree:
+      size: 1391
+      sha256: a7664f107f41bfbceb029310dae9fe5d06a33820a3c6970cdf0624916e339afd
+  original:
+    hackage: adjunctions-4.4.1@sha256:baee1b1c55f3072611b8d386a2985c8fbd50e96ee0e6d865ba72b294b9081055,3250
+- completed:
+    hackage: invariant-0.6@sha256:1193c311e5c087406cda2a30b4f497763c597985e3756a4cdd553e98669bd86c,3466
+    pantry-tree:
+      size: 650
+      sha256: be7b90e2fb3bba0ef4ddeac6086f1b84b0900704b8a59dccea7a928e1de5a863
+  original:
+    hackage: invariant-0.6@sha256:1193c311e5c087406cda2a30b4f497763c597985e3756a4cdd553e98669bd86c,3466
+- completed:
+    hackage: void-0.7.3@sha256:13d30f62fcdf065e595d679d4ac8b4b0c1bb1a1b73db7b5b5a8f857cb5c8a546,1857
+    pantry-tree:
+      size: 584
+      sha256: 5730b45e857424c97d24ee1cf530be1fc782cd000221ac97b5568be886cbbc2b
+  original:
+    hackage: void-0.7.3@sha256:13d30f62fcdf065e595d679d4ac8b4b0c1bb1a1b73db7b5b5a8f857cb5c8a546,1857
 snapshots: []

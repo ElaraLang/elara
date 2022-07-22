@@ -6,6 +6,7 @@ import Data.Map qualified as M
 import Data.Text (pack)
 import Elara.AST.Canonical qualified as Canonical
 import Elara.AST.Frontend qualified as Frontend
+import Elara.Data.Located (Located (..))
 import Elara.Data.Module
 import Elara.Data.Module.Inspection
 import Elara.Data.Name (ModuleName, QualifiedName (QualifiedName))
@@ -51,7 +52,13 @@ desugarDeclaration modules thisModule dec@Declaration {..} = do
     _ -> Left . CantDesugar $ "desugarDeclaration: " <> pack (show dec)
 
 desugarExpr :: M.Map ModuleName SourceModule -> SourceModule -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr
-desugarExpr modules thisModule = traverse desugarExpr'
+desugarExpr modules thisModule (Located _ (Frontend.Lambda args body)) = do
+  -- turns \x y z -> ... into \x -> \y -> \z -> ...
+  args' <- traverse desugarPattern args
+  body' <- desugarExpr modules thisModule body
+  let curryLambda = foldr (\arg body'' -> Canonical.Lambda arg body'' <$ body) body' args'
+  return curryLambda
+desugarExpr modules thisModule e = traverse desugarExpr' e
   where
     desugarExpr' :: Frontend.Expr -> DesugarResult Canonical.Expr
     desugarExpr' expr = case expr of

@@ -28,7 +28,9 @@ data Expr
   | Unit
   | Var Name
   | Constructor Name
-  | Lambda {arguments :: [Name], body :: LocatedExpr}
+  | Lambda {arguments :: [Pattern], body :: LocatedExpr}
+  | -- | Refers to a locally scoped variable defined as a lambda parameter or from a let binding, makes canonicalization easier
+    Argument Name
   | FunctionCall {function :: LocatedExpr, argument :: LocatedExpr}
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}

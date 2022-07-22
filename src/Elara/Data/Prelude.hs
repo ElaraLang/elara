@@ -25,6 +25,7 @@ prelude =
       _declarations =
         M.fromList
           [ dummyElement "*" Int,
+            dummyElement "+" Int,
             dummyElement "==" Int,
             dummyElement "-" Int,
             dummyElement "println" String

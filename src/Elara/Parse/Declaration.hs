@@ -6,7 +6,7 @@ import Elara.Data.Module (Declaration (Declaration), DeclarationBody (Value, Val
 import Elara.Data.Name (ModuleName)
 import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
 import Elara.Parse.Expression (expression)
-import Elara.Parse.Indents (indentedBlock, nonIndented, optionallyIndented)
+import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Name (varName)
 import Elara.Parse.Pattern (pattern)
 import Elara.Parse.Primitives

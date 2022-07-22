@@ -7,15 +7,19 @@ import Data.Text (pack)
 import Elara.Data.Module (_name)
 import Elara.Data.Prelude (prelude)
 import Elara.Desugar.Desugar (desugarModule)
-import Elara.Parse.Module (module')
-import Text.Megaparsec
+import Elara.Parse
+import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple
+  ( CheckColorTty (NoCheckColorTty),
+    defaultOutputOptionsDarkBg,
+    pPrintOpt,
+  )
 import Utils qualified
 
 main :: IO ()
 main = do
   content <- pack <$> readFile "source.elr"
-  let res = runParser module' "source.elr" content
+  let res = parse "source.elr" content
   case res of
     Left err -> putStrLn $ errorBundlePretty err
     Right moduleAST -> do
