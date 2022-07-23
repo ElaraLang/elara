@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies #-}
-
 module Elara.Parse.Indents where
 
 import Elara.AST.Frontend

@@ -2,6 +2,7 @@
 
 module Elara.Desugar.Desugar where
 
+import Control.Lens (view)
 import Data.Map qualified as M
 import Data.Text (pack)
 import Elara.AST.Canonical qualified as Canonical
@@ -31,7 +32,7 @@ desugarProject :: Project Frontend.ProjectFields -> DesugarResult (Project Canon
 desugarProject project@Project {..} = do
   let allModules = fields.modules
   modules' <- traverse (desugarModule allModules) (M.elems allModules)
-  let newFields = Canonical.ProjectFields (Utils.associateWithKey _name modules')
+  let newFields = Canonical.ProjectFields (Utils.associateWithKey (view name) modules')
   return project {fields = newFields}
 
 desugarModule :: M.Map ModuleName SourceModule -> SourceModule -> DesugarResult CanonicalModule
@@ -41,14 +42,14 @@ desugarModule modules module'@Module {..} = do
 
 desugarDeclaration :: M.Map ModuleName SourceModule -> SourceModule -> SourceDeclaration -> DesugarResult CanonicalDeclaration
 desugarDeclaration modules thisModule dec@Declaration {..} = do
-  case body of
-    ValueTypeDef annotation -> Declaration module_ name . ValueTypeDef <$> desugarAnnotation annotation
+  case view body dec of
+    ValueTypeDef annotation -> Declaration _declarationModule_ _declarationName . ValueTypeDef <$> desugarAnnotation annotation
     Value expr patterns ty -> do
       expr' <- desugarExpr modules thisModule expr
       patterns' <- traverse desugarPattern patterns
       ty' <- traverse desugarAnnotation ty
 
-      return $ Declaration module_ name $ Value expr' patterns' ty'
+      return $ Declaration _declarationModule_ _declarationName $ Value expr' patterns' ty'
     _ -> Left . CantDesugar $ "desugarDeclaration: " <> pack (show dec)
 
 desugarExpr :: M.Map ModuleName SourceModule -> SourceModule -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr

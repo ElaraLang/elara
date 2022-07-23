@@ -1,5 +1,6 @@
 module Elara.Parse.Module where
 
+import Control.Lens (view)
 import Data.Maybe (fromMaybe, isJust)
 import Elara.AST.Frontend (LocatedExpr, Pattern)
 import Elara.Data.Module (Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
@@ -24,10 +25,10 @@ module' = do
 
   return $
     Module
-      { _name = _name,
+      { _moduleName = _name,
         _exposing = maybe ExposingAll snd header,
-        _imports = imports,
-        _declarations = Utils.associateWithKey name declarations
+        _moduleImports = imports,
+        _declarations = Utils.associateWithKey (view name) declarations
       }
 
 parseHeader :: Parser (Maybe (ModuleName, Exposing))

@@ -1,16 +1,17 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Elara.Data.Module.Inspection where
 
 import Control.Applicative ((<|>))
-import Data.Functor (void)
+import Control.Lens (view, (^.))
 import Data.List (find)
 import Data.Map ((!?))
 import Data.Map qualified as M
 import Data.Maybe (isJust)
-import Elara.AST.Generic (PatternLike, patternNameMatches)
+import Elara.AST.Generic (PatternLike)
 import Elara.Data.Module
-import Elara.Data.Name hiding (_moduleName)
+import Elara.Data.Name hiding (moduleName)
 import Elara.Data.Name qualified as Name
 import Elara.Error (DesugarError (AmbiguousReference, UnknownVarName))
 
@@ -29,7 +30,9 @@ exposes name (Module _ _ exposing declarations) =
           expositions
 
 findAlias :: Module expr pattern annotation qualified -> ModuleName -> Maybe ModuleName
-findAlias module' name = _moduleName <$> find (\imp -> imp._as == Just name) (module'._imports)
+findAlias module' name = undefined
+
+-- _moduleName <$> find (\imp -> imp ^. as == Just name) (module' ^. imports)
 
 findModuleOfVar ::
   (PatternLike pattern) =>
@@ -49,17 +52,17 @@ findModuleOfVar modules thisModule varName = do
 
   case return <$> definedInModule <|> unqualifiedInImported <|> qualifiedInImported <|> qualifiedWithAlias of
     Just x -> x
-    Nothing -> Left $ UnknownVarName varName thisModule._name
+    Nothing -> Left $ UnknownVarName varName (thisModule ^. name)
 
 unqualifiedInThisModule :: (PatternLike pattern) => Module expr pattern annotation qualified -> Name -> Maybe ModuleName
 unqualifiedInThisModule thisModule varName =
   case Name.moduleName varName of
     Just qual ->
-      if qual == thisModule._name
-        then Just thisModule._name
+      if qual == thisModule ^. name
+        then Just (thisModule ^. name)
         else Nothing
     Nothing ->
-      thisModule._name <$ (M.lookup varName thisModule._declarations)
+      thisModule ^. name <$ (M.lookup varName thisModule._declarations)
 
 unqualifiedInImportedModules ::
   M.Map ModuleName (Module expr pattern annotation qualified) ->
@@ -68,11 +71,11 @@ unqualifiedInImportedModules ::
   Maybe (Either DesugarError ModuleName)
 unqualifiedInImportedModules _ _ (Qualified _) = Nothing
 unqualifiedInImportedModules modules thisModule varName = do
-  let acceptableImports = filter (\import' -> maybe False (exposes varName) (modules M.!? import'._moduleName)) thisModule._imports
+  let acceptableImports = filter (\imp -> maybe False (exposes varName) (modules M.!? (imp ^. moduleName))) (thisModule ^. imports)
   case acceptableImports of
     [] -> Nothing
-    [import'] -> Just (return import'._moduleName)
-    multiple -> Just (Left (AmbiguousReference varName thisModule._name (_moduleName <$> multiple)))
+    [import'] -> Just (return $ import' ^. moduleName)
+    multiple -> Just (Left (AmbiguousReference varName (thisModule ^. name) (view moduleName <$> multiple)))
 
 qualifiedInImportedModules ::
   M.Map ModuleName (Module expr pattern annotation qualified) ->

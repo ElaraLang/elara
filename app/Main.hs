@@ -1,10 +1,10 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Main (main) where
 
 import Data.Text (pack)
-import Elara.Data.Module (_name)
+import Elara.Data.Module
 import Elara.Data.Prelude (prelude)
 import Elara.Desugar.Desugar (desugarModule)
 import Elara.Parse
@@ -15,6 +15,7 @@ import Text.Pretty.Simple
     pPrintOpt,
   )
 import Utils qualified
+import Control.Lens.Getter (view)
 
 main :: IO ()
 main = do
@@ -23,7 +24,7 @@ main = do
   case res of
     Left err -> putStrLn $ errorBundlePretty err
     Right moduleAST -> do
-      let modules = Utils.associateWithKey _name [prelude, moduleAST]
+      let modules = Utils.associateWithKey (view name) [prelude, moduleAST]
       let desugared = desugarModule modules moduleAST
       printColored moduleAST
       printColored desugared

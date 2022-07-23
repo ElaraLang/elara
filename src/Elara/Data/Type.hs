@@ -1,15 +1,18 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Elara.Data.Type where
 
+import Data.Data
 import Elara.Data.Name
 
 data TypeOrId qualified
   = Id Int
   | Type (Type qualified)
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 data AbsType ty qual
   = TypeVar Name
-  | Function {from :: ty qual, to :: ty qual}
+  | Function {_from :: ty qual, _to :: ty qual}
   | Int
   | Float
   | Bool
@@ -17,11 +20,11 @@ data AbsType ty qual
   | String
   | Unit
   | UserDefinedType
-      { qualified :: qual,
-        name :: Name,
-        args :: [ty qual]
+      { _qualified :: qual,
+        _name :: Name,
+        _args :: [ty qual]
       }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 type Type = AbsType TypeOrId
 

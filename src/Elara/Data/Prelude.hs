@@ -19,8 +19,8 @@ preludeName = ModuleName ["Prelude"]
 prelude :: Module expr pattern TypeAnnotation qualified
 prelude =
   Module
-    { _name = preludeName,
-      _imports = [],
+    { _moduleName = preludeName,
+      _moduleImports = [],
       _exposing = ExposingAll,
       _declarations =
         M.fromList
