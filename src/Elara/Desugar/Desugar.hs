@@ -6,7 +6,7 @@ import Data.Map qualified as M
 import Data.Text (pack)
 import Elara.AST.Canonical qualified as Canonical
 import Elara.AST.Frontend qualified as Frontend
-import Elara.Data.Located (Located (..))
+import Elara.Data.Located (IsLocated, Located (..))
 import Elara.Data.Module
 import Elara.Data.Module.Inspection
 import Elara.Data.Name (ModuleName, QualifiedName (QualifiedName))
@@ -60,13 +60,14 @@ desugarExpr modules thisModule (Located _ (Frontend.Lambda args body)) = do
   return curryLambda
 desugarExpr modules thisModule e = traverse desugarExpr' e
   where
-    desugarExpr' :: Frontend.Expr -> DesugarResult Canonical.Expr
+    desugarExpr' :: Frontend.Expr IsLocated -> DesugarResult Canonical.Expr
     desugarExpr' expr = case expr of
       Frontend.Int i -> return $ Canonical.Int i
       Frontend.Float f -> return $ Canonical.Float f
       Frontend.String s -> return $ Canonical.String s
       Frontend.Bool b -> return $ Canonical.Bool b
       Frontend.Unit -> return Canonical.Unit
+      Frontend.Argument name -> return $ Canonical.Argument name
       Frontend.Var name -> do
         x <- findModuleOfVar modules thisModule name
         return (Canonical.Var (QualifiedName x name))

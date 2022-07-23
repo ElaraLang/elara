@@ -59,14 +59,7 @@ unqualifiedInThisModule thisModule varName =
         then Just thisModule._name
         else Nothing
     Nothing ->
-      thisModule._name
-        <$ ( do
-               let asDeclarationName = M.lookup varName thisModule._declarations
-               let x = (M.elems thisModule._declarations) >>= declarationPatterns
-               let asPatternName = find (`patternNameMatches` varName) x
-
-               void asDeclarationName <|> void asPatternName
-           )
+      thisModule._name <$ (M.lookup varName thisModule._declarations)
 
 unqualifiedInImportedModules ::
   M.Map ModuleName (Module expr pattern annotation qualified) ->

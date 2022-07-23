@@ -61,6 +61,7 @@ library
       OverloadedRecordDot
       DuplicateRecordFields
       LambdaCase
+      DeriveDataTypeable
   ghc-options: -Wall
   build-depends:
       HUnit
@@ -72,6 +73,7 @@ library
     , containers
     , generic-data
     , hspec
+    , lens
     , megaparsec
     , mtl
     , parser-combinators
@@ -101,6 +103,7 @@ executable elara-exe
     , elara
     , generic-data
     , hspec
+    , lens
     , megaparsec
     , mtl
     , parser-combinators
@@ -137,6 +140,7 @@ test-suite elara-test
     , elara
     , generic-data
     , hspec ==2.*
+    , lens
     , megaparsec
     , mtl
     , neat-interpolation

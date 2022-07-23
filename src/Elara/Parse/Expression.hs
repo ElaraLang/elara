@@ -1,10 +1,12 @@
 module Elara.Parse.Expression where
 
+import Control.Lens.Plated (transform)
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Elara.AST.Frontend (Expr, LocatedExpr)
 import Elara.AST.Frontend qualified as Ast
+import Elara.AST.Generic (patternNames)
 import Elara.Data.Located as Located (merge)
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Indents (optionallyIndented)
@@ -13,8 +15,6 @@ import Elara.Parse.Name (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern)
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, (<|>))
-
--- import Text.Megaparsec (sepBy, try, (<|>))
 
 expression :: Parser LocatedExpr
 expression =
@@ -70,7 +70,8 @@ string = located (Ast.String <$> stringLiteral)
 lambda :: Parser LocatedExpr
 lambda = located $ do
   (args, res) <- optionallyIndented lambdaPreamble expression
-  return $ Ast.Lambda args res
+  let argNames = args >>= patternNames
+  return $ transform (promoteArguments argNames) (Ast.Lambda args res)
   where
     lambdaPreamble = do
       symbol "\\"
@@ -78,7 +79,7 @@ lambda = located $ do
       symbol "->"
       return args
 
-promoteArguments :: [Name.Name] -> Expr -> Expr
+promoteArguments :: [Name.Name] -> Expr a -> Expr a
 promoteArguments allArgs arg = case arg of
   Ast.Var v ->
     case Name.moduleName v of

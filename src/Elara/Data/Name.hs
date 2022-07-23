@@ -1,17 +1,18 @@
 module Elara.Data.Name where
 
+import Data.Data (Data)
 import Data.Text qualified as T
 
 data Name
   = Name T.Text
   | Qualified QualifiedName
-  deriving (Show, Ord, Eq)
+  deriving (Show, Ord, Eq, Data)
 
 data QualifiedName = QualifiedName
   { _moduleName :: ModuleName,
     _name :: Name
   }
-  deriving (Show, Ord, Eq)
+  deriving (Show, Ord, Eq, Data)
 
 withModule :: Maybe ModuleName -> Name -> Name
 withModule Nothing n = n
@@ -35,7 +36,7 @@ instance NameLike QualifiedName where
   fullName qn = T.concat [fullName qn._moduleName, ".", nameValue qn]
 
 newtype ModuleName = ModuleName [T.Text]
-  deriving (Show, Ord, Eq)
+  deriving (Show, Ord, Eq, Data)
 
 instance NameLike ModuleName where
   nameValue (ModuleName _name) = T.intercalate "." _name

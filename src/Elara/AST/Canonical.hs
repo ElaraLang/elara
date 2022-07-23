@@ -12,13 +12,12 @@ newtype ProjectFields = ProjectFields
   { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified)
   }
 
-type LocatedExpr = Located Expr
+type LocatedExpr = (Located Expr)
 
 {-
 Similar to the Frontend AST but with a few simple changes to make later processing easier:
 - All names are fully qualified
 - All lambdas only have a single argument
-
 -}
 data Expr
   = Int Int
@@ -26,6 +25,7 @@ data Expr
   | Char Char
   | String String
   | Bool Bool
+  | Argument Name
   | Var QualifiedName
   | Constructor QualifiedName
   | Lambda {arg :: Pattern, body :: LocatedExpr}

@@ -40,6 +40,7 @@ dependencies:
   - parser-combinators
   - parsers
   - generic-data
+  - lens
   - hspec
   - HUnit
 
@@ -51,6 +52,7 @@ library:
   - OverloadedRecordDot
   - DuplicateRecordFields
   - LambdaCase
+  - DeriveDataTypeable
   ghc-options:
   - -Wall
 
