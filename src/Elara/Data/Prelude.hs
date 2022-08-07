@@ -33,7 +33,6 @@ prelude =
           ]
     }
 
--- dummyElement :: T.Text -> AbsType self MaybeQualified -> (Name, Declaration expr pattern' TypeAnnotation MaybeQualified)
 dummyElement :: Text -> AbsType Concrete MaybeQualified -> (Name, Declaration expr pattern' TypeAnnotation qualified)
 dummyElement nameText type' =
   let name = Name nameText
