@@ -1,0 +1,66 @@
+name: elara
+version: '0.0.0.0'
+synopsis: See README for more info
+description: See README for more info
+author: Alexander Wood
+maintainer: Alexander Wood <alexljwood24@hotmail.co.uk>
+copyright: 2022 Alexander Wood
+license: MIT
+github: ElaraLang/elara
+tested-with: ghc ==9.2.2
+
+
+dependencies:
+  - name: base-noprelude
+    version: ">= 4.7 && < 5"
+  - name: relude
+  - lens
+  - containers
+  - megaparsec
+  - parsers
+  - parser-combinators
+  - pretty-simple
+  - mtl
+
+ghc-options:
+- -fwrite-ide-info
+- -hiedir=.hie
+
+default-extensions:
+- OverloadedStrings
+- OverloadedRecordDot
+- TypeFamilies
+- LambdaCase
+- ImportQualifiedPost
+- DeriveDataTypeable
+
+library:
+  source-dirs: src
+
+executables:
+  elara:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - elara
+
+
+tests:
+  elara-test:
+    defaults: hspec/hspec@main
+    main: Spec.hs
+    source-dirs: test
+    default-extensions:
+    - QuasiQuotes
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - elara
+      - neat-interpolation
+      - HUnit

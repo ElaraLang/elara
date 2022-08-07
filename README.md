@@ -1,9 +1,37 @@
-# elara
+# Elara
 
-[![GitHub CI](https://github.com/ElaraLang/elara/workflows/CI/badge.svg)](https://github.com/ElaraLang/elara/actions)
-[![Hackage](https://img.shields.io/hackage/v/elara.svg?logo=haskell)](https://hackage.haskell.org/package/elara)
-[![Stackage Lts](http://stackage.org/package/elara/badge/lts)](http://stackage.org/lts/package/elara)
-[![Stackage Nightly](http://stackage.org/package/elara/badge/nightly)](http://stackage.org/nightly/package/elara)
-[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Elara is a multi-paradigm, primarily-functional programming language targetting the JVM. It features a Haskell & F#
+inspired syntax, a complete Hindley-Milner type system, functional purity enforcement, and can interoperate with Java
+code.
 
-See README for more info
+Elara is currently a WIP, and is not yet ready for use.
+
+Roadmap:
+
+- [x] Lexing
+- [x] Parsing
+- [x] Type inference
+- [ ] Type checking
+- [ ] Compiling
+- [ ] Possible Interpreter
+- [ ] Standard Library
+- [ ] Interoperability with Java
+
+Language Features:
+
+- [x] Immutable variables
+- [ ] Mutable variables
+- [x] Operator overloading
+- [ ] Custom operator fixity and precedence
+- [x] Function definition
+- [x] Function application
+- [x] Lambda expressions
+- [x] If-else expressions
+- [x] Recursion
+- [x] Pattern matching
+- [x] Type inference
+- [ ] Type classes
+- [ ] Monad syntax sugar (do notation, computation expressions)
+- [ ] OOP Features coming soon (classes, etc)
+
+If you're interested in Elara or contributing, please join our Discord server! https://discord.gg/xu5gSTV

@@ -1,68 +1,138 @@
-cabal-version:       2.4
-name:                elara
-version:             0.0.0.0
-synopsis:            See README for more info
-description:         See README for more info
-homepage:            https://github.com/ElaraLang/elara
-bug-reports:         https://github.com/ElaraLang/elara/issues
-license:             MIT
-license-file:        LICENSE
-author:              Alexander Wood
-maintainer:          Alexander Wood <alexljwood24@hotmail.co.uk>
-copyright:           2022 Alexander Wood
-build-type:          Simple
-extra-doc-files:     README.md
-                     CHANGELOG.md
-tested-with:         GHC == 8.8.3
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           elara
+version:        0.0.0.0
+synopsis:       See README for more info
+description:    See README for more info
+homepage:       https://github.com/ElaraLang/elara#readme
+bug-reports:    https://github.com/ElaraLang/elara/issues
+author:         Alexander Wood
+maintainer:     Alexander Wood <alexljwood24@hotmail.co.uk>
+copyright:      2022 Alexander Wood
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+tested-with:
+    ghc ==9.2.2
 
 source-repository head
-  type:                git
-  location:            https://github.com/ElaraLang/elara.git
-
-common common-options
-  build-depends:       base ^>= 4.13.0.0
-                     , relude
-  
-  mixins:              base hiding (Prelude)
-                     , relude (Relude as Prelude)
-  
-  ghc-options:         -Wall
-                       -Wcompat
-                       -Widentities
-                       -Wincomplete-uni-patterns
-                       -Wincomplete-record-updates
-  if impl(ghc >= 8.0)
-    ghc-options:       -Wredundant-constraints
-  if impl(ghc >= 8.2)
-    ghc-options:       -fhide-source-paths
-  if impl(ghc >= 8.4)
-    ghc-options:       -Wmissing-export-lists
-                       -Wpartial-fields
-  if impl(ghc >= 8.8)
-    ghc-options:       -Wmissing-deriving-strategies
-
-  default-language:    Haskell2010
+  type: git
+  location: https://github.com/ElaraLang/elara
 
 library
-  import:              common-options
-  hs-source-dirs:      src
-  exposed-modules:     Elara
+  exposed-modules:
+      Elara.AST.Canonical
+      Elara.AST.Frontend
+      Elara.AST.Generic
+      Elara.Data.Located
+      Elara.Data.Module
+      Elara.Data.Module.Inspection
+      Elara.Data.Name
+      Elara.Data.Prelude
+      Elara.Data.Project
+      Elara.Data.Qualifications
+      Elara.Data.Type
+      Elara.Data.TypeAnnotation
+      Elara.Desugar.Desugar
+      Elara.Error
+      Elara.Parse
+      Elara.Parse.Declaration
+      Elara.Parse.Expression
+      Elara.Parse.Indents
+      Elara.Parse.Literal
+      Elara.Parse.Module
+      Elara.Parse.Name
+      Elara.Parse.Pattern
+      Elara.Parse.Primitives
+      Elara.Parse.Type
+      Prelude
+      Print
+      Utils
+  other-modules:
+      Paths_elara
+  hs-source-dirs:
+      src
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+  ghc-options: -fwrite-ide-info -hiedir=.hie
+  build-depends:
+      base-noprelude >=4.7 && <5
+    , containers
+    , lens
+    , megaparsec
+    , mtl
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , relude
+  default-language: Haskell2010
 
 executable elara
-  import:              common-options
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  build-depends:       elara
-  ghc-options:         -threaded
-                       -rtsopts
-                       -with-rtsopts=-N
+  main-is: Main.hs
+  other-modules:
+      Paths_elara
+  hs-source-dirs:
+      app
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base-noprelude >=4.7 && <5
+    , containers
+    , elara
+    , lens
+    , megaparsec
+    , mtl
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , relude
+  default-language: Haskell2010
 
 test-suite elara-test
-  import:              common-options
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       elara
-  ghc-options:         -threaded
-                       -rtsopts
-                       -with-rtsopts=-N
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      ParseTest
+      Paths_elara
+  hs-source-dirs:
+      test
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      QuasiQuotes
+  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , base-noprelude >=4.7 && <5
+    , containers
+    , elara
+    , hspec ==2.*
+    , lens
+    , megaparsec
+    , mtl
+    , neat-interpolation
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , relude
+  default-language: Haskell2010
+  build-tool-depends: hspec-discover:hspec-discover == 2.*

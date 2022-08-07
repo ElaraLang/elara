@@ -1,5 +1,9 @@
-module Main (main) where
-
+import ParseTest qualified
+import Test.Hspec
 
 main :: IO ()
-main = putStrLn ("Test suite is not implemented" :: String)
+main = hspec spec
+
+spec :: Spec
+spec = do
+  describe "Parse test" ParseTest.spec
