@@ -122,6 +122,32 @@ spec = describe "Test Parser" $ do
                 _declarationBodyTypeAnnotation = Nothing
               }
         }
+  it "Parses an indented let with an indented lambda" $
+    do
+      [text|
+      let x = 
+        \y ->
+            1
+      |]
+      <: Declaration
+        { _declarationModule_ = ModuleName ["Main"],
+          _declarationName = Name "x",
+          _declarationBody =
+            Value
+              { _declarationBodyExpression =
+                  Identity
+                    ( Lambda
+                        { arguments = [NamedPattern $ Name "y"],
+                          AST.body =
+                            Identity
+                              ( Int 1
+                              )
+                        }
+                    ),
+                _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing
+              }
+        }
 
 testParse :: Text -> IO (Module UnwrappedExpr Pattern TypeAnnotation MaybeQualified)
 testParse source = case parse "" source of
