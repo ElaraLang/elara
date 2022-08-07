@@ -1,5 +1,6 @@
 module Elara.Data.Name where
 
+import Control.Lens (makeFields, makeLenses, (^.))
 import Data.Data (Data)
 import Data.Text qualified as T
 
@@ -9,8 +10,8 @@ data Name
   deriving (Show, Ord, Eq, Data)
 
 data QualifiedName = QualifiedName
-  { _moduleName :: ModuleName,
-    _name :: Name
+  { _qualifiedNameModule :: ModuleName,
+    _qualifiedNameName :: Name
   }
   deriving (Show, Ord, Eq, Data)
 
@@ -31,9 +32,9 @@ instance NameLike Name where
   fullName = nameValue
 
 instance NameLike QualifiedName where
-  nameValue = nameValue . _name
-  moduleName = Just . _moduleName
-  fullName qn = T.concat [fullName qn._moduleName, ".", nameValue qn]
+  nameValue = nameValue . _qualifiedNameName
+  moduleName = Just . _qualifiedNameModule
+  fullName qn = T.concat [fullName (qn._qualifiedNameModule), ".", nameValue qn]
 
 newtype ModuleName = ModuleName [T.Text]
   deriving (Show, Ord, Eq, Data)

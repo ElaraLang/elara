@@ -37,5 +37,4 @@ prelude =
 dummyElement :: Text -> AbsType Concrete MaybeQualified -> (Name, Declaration expr pattern' TypeAnnotation qualified)
 dummyElement nameText type' =
   let name = Name nameText
-   in -- in undefined
-      (name, Declaration preludeName name (ValueTypeDef (TypeAnnotation name (makeConcrete type'))))
+   in (name, Declaration preludeName name (ValueTypeDef (TypeAnnotation name (makeConcrete type'))))
