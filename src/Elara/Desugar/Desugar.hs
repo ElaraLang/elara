@@ -106,8 +106,8 @@ desugarType (Concrete t q) = flip Concrete (fromMaybe (error $ "cannot resolve "
     newType = case t of
       (TypeVar n) -> return (TypeVar n)
       Function from to -> do
-        from' <- desugarType (unwrapType from)
-        to' <- desugarType (unwrapType to)
+        from' <- desugarType from
+        to' <- desugarType to
         return (Function from' to')
       Int -> return Int
       Float -> return Float

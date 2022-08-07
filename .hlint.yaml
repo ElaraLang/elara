@@ -10,7 +10,8 @@
   - "-XTupleSections"
   - "-XTypeApplications"
   - "-XViewPatterns"
-  - "-XPatternSynonyms"
+  - "-XNoPatternSynonyms"
+  - "-XQuasiQuotes"
 - ignore:
     name: Use head
 - ignore:

@@ -53,10 +53,6 @@ data AbsType self qual
 makeConcrete :: self -> ConcreteType' self MaybeQualified
 makeConcrete ty = Concrete ty Nothing
 
-unwrapType = undefined
-
--- unwrapType (Type x _) = x
--- unwrapType (Concrete x _) = x
 
 deriving instance (Show (RType x q)) => Show (AbsType x q)
 

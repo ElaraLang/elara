@@ -1,7 +1,6 @@
 module Elara.Parse.Module where
 
 import Control.Lens (view)
-import Data.Maybe (fromMaybe)
 import Elara.AST.Frontend (LocatedExpr, Pattern)
 import Elara.Data.Module (Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
 import Elara.Data.Name (ModuleName)

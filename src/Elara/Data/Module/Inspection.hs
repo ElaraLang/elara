@@ -3,12 +3,10 @@
 
 module Elara.Data.Module.Inspection where
 
-import Control.Applicative ((<|>))
 import Control.Lens (view, (^.))
 import Data.List (find)
 import Data.Map ((!?))
 import Data.Map qualified as M
-import Data.Maybe (isJust)
 import Elara.AST.Generic (PatternLike)
 import Elara.Data.Module
 import Elara.Data.Name hiding (moduleName)
@@ -62,7 +60,7 @@ unqualifiedInThisModule thisModule varName =
         then Just (thisModule ^. name)
         else Nothing
     Nothing ->
-      thisModule ^. name <$ (M.lookup varName (thisModule ^. declarations))
+      thisModule ^. name <$ M.lookup varName (thisModule ^. declarations)
 
 unqualifiedInImportedModules ::
   M.Map ModuleName (Module expr pattern annotation qualified) ->

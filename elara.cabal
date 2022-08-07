@@ -107,7 +107,9 @@ test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ParseTest
+      Parse
+      Parse.Common
+      Parse.LetDec
       Paths_elara
   hs-source-dirs:
       test

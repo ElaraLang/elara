@@ -19,7 +19,7 @@ import Control.Lens.Getter (view)
 
 main :: IO ()
 main = do
-  content <- pack <$> readFile "source.elr"
+  content <- decodeUtf8 <$> readFileBS  "source.elr"
   let res = parse "source.elr" content
   case res of
     Left err -> putStrLn $ errorBundlePretty err

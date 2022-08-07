@@ -39,7 +39,7 @@ opName = qualified opName'
 moduleName :: Parser ModuleName
 moduleName = do
   parts <- sepEndBy1 capitalizedString (char '.') :: Parser [String]
-  return (Name.ModuleName (T.pack <$> parts))
+  return (Name.ModuleName (toText <$> parts))
 
 qualified :: Parser Name -> Parser Name
 qualified parser = do

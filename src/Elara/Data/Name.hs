@@ -53,4 +53,4 @@ instance NameFromText ModuleName where
   fromText txt = ModuleName (T.splitOn "." txt)
 
 fromString :: (NameFromText a) => String -> a
-fromString = fromText . T.pack
+fromString = fromText . toText
