@@ -40,6 +40,7 @@ library
       Elara.Desugar.Desugar
       Elara.Error
       Elara.Parse
+      Elara.Parse.Combinators
       Elara.Parse.Declaration
       Elara.Parse.Expression
       Elara.Parse.Indents
@@ -58,6 +59,7 @@ library
       src
   default-extensions:
       OverloadedStrings
+      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase
@@ -84,6 +86,7 @@ executable elara
       app
   default-extensions:
       OverloadedStrings
+      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase
@@ -110,11 +113,13 @@ test-suite elara-test
       Parse
       Parse.Common
       Parse.LetDec
+      Parse.Names
       Paths_elara
   hs-source-dirs:
       test
   default-extensions:
       OverloadedStrings
+      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase

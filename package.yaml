@@ -28,6 +28,7 @@ ghc-options:
 
 default-extensions:
 - OverloadedStrings
+- OverloadedLists
 - OverloadedRecordDot
 - TypeFamilies
 - LambdaCase

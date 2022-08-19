@@ -36,11 +36,11 @@ instance NameLike QualifiedName where
   moduleName = Just . _qualifiedNameModule
   fullName qn = T.concat [fullName (qn._qualifiedNameModule), ".", nameValue qn]
 
-newtype ModuleName = ModuleName [T.Text]
+newtype ModuleName = ModuleName (NonEmpty T.Text)
   deriving (Show, Ord, Eq, Data)
 
 instance NameLike ModuleName where
-  nameValue (ModuleName _name) = T.intercalate "." _name
+  nameValue (ModuleName _name) = T.intercalate "." (toList _name)
   moduleName _ = Nothing
   fullName = nameValue
 
@@ -51,7 +51,7 @@ instance NameFromText Name where
   fromText = Name
 
 instance NameFromText ModuleName where
-  fromText txt = ModuleName (T.splitOn "." txt)
+  fromText txt = ModuleName $ fromList (T.splitOn "." txt)
 
 fromString :: (NameFromText a) => String -> a
 fromString = fromText . toText

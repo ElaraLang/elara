@@ -17,12 +17,15 @@ import Test.HUnit.Lang
 import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
 import Text.Megaparsec (errorBundlePretty)
 
+testModuleName :: ModuleName
+testModuleName = ModuleName ("Main" :| [])
+
 spec :: Spec
-spec = describe "Test Parser" $ do
+spec = describe "Test Let Dec Parser" $ do
   it "Parses a simple let declaration" $ do
     "let x = 1"
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value
@@ -39,7 +42,7 @@ spec = describe "Test Parser" $ do
         1
       |]
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value
@@ -56,7 +59,7 @@ spec = describe "Test Parser" $ do
         2
       |]
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value
@@ -79,7 +82,7 @@ spec = describe "Test Parser" $ do
                1
       |]
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value
@@ -101,7 +104,7 @@ spec = describe "Test Parser" $ do
         \y -> 1
       |]
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value
@@ -127,7 +130,7 @@ spec = describe "Test Parser" $ do
             1
       |]
       <: Declaration
-        { _declarationModule_ = ModuleName ["Main"],
+        { _declarationModule_ = testModuleName,
           _declarationName = Name "x",
           _declarationBody =
             Value

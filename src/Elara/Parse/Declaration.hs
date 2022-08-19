@@ -24,7 +24,7 @@ import Text.Megaparsec
 type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
 declaration :: ModuleName -> Parser FrontendDecl
-declaration = liftM2 ((<|>) . try) defDecl valueDecl
+declaration = valueDecl
 
 defDecl :: ModuleName -> Parser FrontendDecl
 defDecl modName = do
@@ -43,7 +43,7 @@ valueDecl modName = do
   let promote = fmap (transform (Name.promoteArguments names))
       value = Value e patterns Nothing
       dec = Declaration modName name (mapExpr promote value)
-  
+
   return dec
   where
     letPreamble = do

@@ -3,14 +3,29 @@ module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName, pr
 import Data.Text qualified as T
 import Elara.AST.Frontend (Expr)
 import Elara.AST.Frontend qualified as Ast
-import Elara.Data.Name (ModuleName, Name, NameFromText)
+import Elara.Data.Name (ModuleName (..), Name (..), NameFromText, QualifiedName (..))
 import Elara.Data.Name qualified as Name
-import Elara.Parse.Primitives (Parser, inParens, lexeme)
+import Elara.Parse.Combinators (sepBy1')
+import Elara.Parse.Primitives (Parser, inParens, lexeme, symbol)
 import Text.Megaparsec
-    ( (<|>), optional, oneOf, many, sepEndBy1, some )
+  ( MonadParsec (try),
+    endBy,
+    many,
+    oneOf,
+    optional,
+    sepBy1,
+    sepEndBy1,
+    some,
+    (<|>),
+  )
 import Text.Megaparsec.Char
-    ( alphaNumChar, char, lowerChar, upperChar )
-import Prelude hiding (some, many)
+  ( alphaNumChar,
+    char,
+    lowerChar,
+    upperChar,
+  )
+import Text.Megaparsec.Debug (dbg)
+import Prelude hiding (many, some)
 
 varName :: Parser Name
 varName = qualified varName'
@@ -21,7 +36,11 @@ alphaVarName :: (NameFromText n) => Parser n
 alphaVarName = Name.fromString <$> lexeme ((:) <$> lowerChar <*> many alphaNumChar)
 
 typeName :: Parser Name
-typeName = qualified (Name.fromString <$> capitalizedString)
+typeName = do
+  ModuleName names <- moduleName
+  return $ case names of
+    x :| [] -> Name x
+    x :| xs -> Qualified $ QualifiedName (ModuleName (fromList $ init names)) (Name (last names))
 
 capitalizedString :: Parser String
 capitalizedString = lexeme $ do
@@ -38,12 +57,13 @@ opName = qualified opName'
 
 moduleName :: Parser ModuleName
 moduleName = do
-  parts <- sepEndBy1 capitalizedString (char '.') :: Parser [String]
+  parts <- sepBy1' capitalizedString (symbol ".")
   return (Name.ModuleName (toText <$> parts))
 
 qualified :: Parser Name -> Parser Name
 qualified parser = do
-  module' <- optional moduleName
+  module' <- optional (moduleName <* symbol ".")
+
   Name.withModule module' <$> parser
 
 -- | Turns a Var into an Argument, if necessary

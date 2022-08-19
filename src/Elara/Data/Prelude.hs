@@ -15,7 +15,7 @@ import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
 import Prelude hiding (String)
 
 preludeName :: ModuleName
-preludeName = ModuleName ["Prelude"]
+preludeName = ModuleName ("Prelude" :| [])
 
 prelude :: Module expr pattern' TypeAnnotation MaybeQualified
 prelude =

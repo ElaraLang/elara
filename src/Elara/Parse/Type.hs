@@ -14,7 +14,7 @@ type' :: Parser (ConcreteType MaybeQualified)
 type' = makeExprParser typeTerm [[InfixR functionType]]
 
 functionType :: Parser (ConcreteType MaybeQualified -> ConcreteType MaybeQualified -> ConcreteType MaybeQualified)
-functionType = do
+functionType = lexeme $ do
   symbol "->"
   return (\a b -> Concrete (Function a b) Nothing)
 
@@ -29,7 +29,8 @@ typeTerm =
               char,
               string,
               unit
-            ]
+            ] ::
+        [Parser (ConcreteType MaybeQualified)]
     )
 
 typeVar :: Parser (ConcreteType MaybeQualified)
@@ -61,6 +62,6 @@ unit = Unit <-> "()"
 -- maybeQualified :: Parser (qual -> ConcreteType qual) -> Parser (ConcreteType qual)
 maybeQualified :: Parser (MaybeQualified -> ConcreteType MaybeQualified) -> Parser (ConcreteType MaybeQualified)
 maybeQualified p = do
-  mod <- optional (lexeme moduleName)
+  mod <- optional $ try (moduleName <* symbol ".")
   t <- p
   return (t mod)
