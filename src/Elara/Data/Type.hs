@@ -15,19 +15,14 @@ data OrId deriving (Data)
 
 data Concrete deriving (Data)
 
-type family TRec typeKind = (typeWrapper :: K.Type -> K.Type -> K.Type) | typeWrapper -> typeKind
+data family TRec kind :: * -> * -> *
 
-type instance TRec OrId = TypeOrId'
+data instance TRec Concrete self qual = Concrete self qual deriving (Show, Eq, Data)
 
-type instance TRec Concrete = ConcreteType'
-
-data TypeOrId' self qual
+data instance TRec OrId self qual
   = Id Int
   | Type self qual
   deriving (Show, Eq, Data)
-
--- Basically the identity type but with 2 parameters
-data ConcreteType' self qual = Concrete self qual deriving (Show, Eq, Data)
 
 type RType p qual = TRec p (AbsType p qual) qual
 
@@ -38,24 +33,25 @@ type TypeOrId qual = RType OrId qual
 data AbsType self qual
   = TypeVar Name
   | Function {_from :: RType self qual, _to :: RType self qual}
-  | Int
-  | Float
-  | Bool
-  | Char
-  | String
   | Unit
+  | TypeConstructorApplication {_constructor :: RType self qual, _arg :: RType self qual}
   | UserDefinedType
-      { _qualified :: RType self qual,
-        _name :: Name,
-        _args :: [RType self qual]
+      { _qualified :: qual,
+        _name :: Name
       }
 
-makeConcrete :: self -> ConcreteType' self MaybeQualified
+typeQual :: (self ~ Concrete) => AbsType self qual -> Maybe qual
+typeQual (TypeVar _) = Nothing
+typeQual (Function _ _) = Nothing
+typeQual Unit = Nothing
+typeQual (TypeConstructorApplication (Concrete x y) _) = typeQual x
+typeQual (UserDefinedType qual _) = Just qual
+
+makeConcrete :: self -> TRec Concrete self MaybeQualified
 makeConcrete ty = Concrete ty Nothing
 
+deriving instance (Show q, Show (RType x q)) => Show (AbsType x q)
 
-deriving instance (Show (RType x q)) => Show (AbsType x q)
-
-deriving instance (Eq (RType x q)) => Eq (AbsType x q)
+deriving instance (Eq q, Eq (RType x q)) => Eq (AbsType x q)
 
 deriving instance ((Data x), (Data q), Typeable (RType x q), Data (RType x q)) => Data (AbsType x q)

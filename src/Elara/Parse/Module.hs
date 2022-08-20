@@ -2,10 +2,11 @@ module Elara.Parse.Module where
 
 import Control.Lens (view)
 import Elara.AST.Frontend (LocatedExpr, Pattern)
-import Elara.Data.Module (Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
+import Elara.Data.Module (Declaration (Declaration), Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
 import Elara.Data.Name (ModuleName)
 import Elara.Data.Name qualified as Name
 import Elara.Data.TypeAnnotation
+import Elara.Data.Uniqueness
 import Elara.Parse.Declaration
 import Elara.Parse.Name (varName)
 import Elara.Parse.Name qualified as Parse (moduleName)
@@ -15,7 +16,7 @@ import Text.Megaparsec.Char (newline)
 import Utils qualified
 import Prelude hiding (many)
 
-module' :: Parser (Module LocatedExpr Pattern TypeAnnotation (Maybe ModuleName))
+module' :: Parser (Module LocatedExpr Pattern TypeAnnotation (Maybe ModuleName) Many)
 module' = do
   header <- parseHeader
   let _name = maybe (Name.fromString "Main") fst header
@@ -29,7 +30,7 @@ module' = do
       { _moduleName = _name,
         _moduleExposing = maybe ExposingAll snd header,
         _moduleImports = imports,
-        _moduleDeclarations = Utils.associateWithKey (view name) declarations
+        _moduleDeclarations = Utils.associateManyWithKey (view name) declarations
       }
 
 parseHeader :: Parser (Maybe (ModuleName, Exposing))

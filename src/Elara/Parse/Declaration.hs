@@ -24,7 +24,7 @@ import Text.Megaparsec
 type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
 declaration :: ModuleName -> Parser FrontendDecl
-declaration = valueDecl
+declaration = liftM2 (<|>) valueDecl defDecl
 
 defDecl :: ModuleName -> Parser FrontendDecl
 defDecl modName = do

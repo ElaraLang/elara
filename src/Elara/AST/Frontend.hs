@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
@@ -16,6 +17,8 @@ import Elara.Data.Module (Module)
 import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.Qualifications (MaybeQualified)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
+import Elara.Data.Uniqueness
+import Prelude hiding (Type)
 
 {- Least abstract AST, closest to elara source code.
 Things like comments are preserved
@@ -23,7 +26,7 @@ Things like comments are preserved
 
 -- Information about the whole project
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern TypeAnnotation MaybeQualified)
+  { modules :: M.Map ModuleName (Module LocatedExpr Pattern TypeAnnotation MaybeQualified Many)
   }
 
 type LocatedExpr = RExpr IsLocated
@@ -48,6 +51,7 @@ data Expr x
   | BinaryOperator {operator :: RExpr x, left :: RExpr x, right :: RExpr x}
   | If {condition :: RExpr x, then_ :: RExpr x, else_ :: RExpr x}
   | Block [RExpr x]
+  | List [RExpr x]
 
 mapXRec :: (Functor (XRec b)) => (forall x. XRec a x -> XRec b x) -> Expr a -> Expr b
 mapXRec f (Int i) = Int i
@@ -99,3 +103,13 @@ makeLenses ''Pattern
 instance PatternLike Pattern where
   patternNames (NamedPattern name) = [name]
   patternNames WildPattern = []
+
+data Type
+  = TypeVar Name
+  | Function {_from :: Type, _to :: Type}
+  | UnitT
+  | TypeConstructorApplication {_constructor :: Type, _arg :: Type}
+  | UserDefinedType
+      { _qualified :: MaybeQualified,
+        _name :: Name
+      }

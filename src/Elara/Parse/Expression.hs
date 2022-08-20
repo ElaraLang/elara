@@ -14,7 +14,7 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Name (opName, promoteArguments, typeName, varName)
 import Elara.Parse.Pattern (pattern)
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
-import Text.Megaparsec (MonadParsec (try), sepBy, (<|>))
+import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<|>))
 
 expression :: Parser LocatedExpr
 expression =
@@ -35,6 +35,7 @@ expressionTerm =
     <|> char
     <|> try variable
     <|> constructor
+    <|> list
 
 reservedWords ::
   -- | Reserved words, used to backtrack accordingly
@@ -87,3 +88,10 @@ ifElse = located $ do
   thenBranch <- expression
   symbol "else"
   Ast.If condition thenBranch <$> expression
+
+list :: Parser LocatedExpr
+list = located $ do
+  symbol "["
+  elements <- lexeme (sepEndBy expression (symbol ","))
+  symbol "]"
+  return $ Ast.List elements

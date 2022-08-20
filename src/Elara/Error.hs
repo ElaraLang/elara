@@ -23,4 +23,9 @@ data DesugarError
         insideModule :: ModuleName,
         candidates :: [ModuleName]
       }
+  | MultipleDeclarations
+      { name :: Name,
+        insideModule :: ModuleName
+      }
+
   deriving (Ord, Eq, Show)

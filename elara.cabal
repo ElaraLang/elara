@@ -37,6 +37,7 @@ library
       Elara.Data.Qualifications
       Elara.Data.Type
       Elara.Data.TypeAnnotation
+      Elara.Data.Uniqueness
       Elara.Desugar.Desugar
       Elara.Error
       Elara.Parse
@@ -65,12 +66,15 @@ library
       LambdaCase
       ImportQualifiedPost
       DeriveDataTypeable
+      DataKinds
   ghc-options: -fwrite-ide-info -hiedir=.hie
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
     , lens
     , megaparsec
+    , monadlist
+    , more-containers
     , mtl
     , parser-combinators
     , parsers
@@ -92,6 +96,7 @@ executable elara
       LambdaCase
       ImportQualifiedPost
       DeriveDataTypeable
+      DataKinds
   ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base-noprelude >=4.7 && <5
@@ -99,6 +104,8 @@ executable elara
     , elara
     , lens
     , megaparsec
+    , monadlist
+    , more-containers
     , mtl
     , parser-combinators
     , parsers
@@ -125,6 +132,7 @@ test-suite elara-test
       LambdaCase
       ImportQualifiedPost
       DeriveDataTypeable
+      DataKinds
       QuasiQuotes
   ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
   build-depends:
@@ -135,6 +143,8 @@ test-suite elara-test
     , hspec ==2.*
     , lens
     , megaparsec
+    , monadlist
+    , more-containers
     , mtl
     , neat-interpolation
     , parser-combinators

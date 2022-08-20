@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Elara.Data.Module.Inspection where
 
@@ -11,12 +12,17 @@ import Elara.AST.Generic (PatternLike)
 import Elara.Data.Module
 import Elara.Data.Name hiding (moduleName)
 import Elara.Data.Name qualified as Name
+import Elara.Data.Uniqueness
 import Elara.Error (DesugarError (AmbiguousReference, UnknownVarName))
 
-exposes :: Name -> Module expr pattern annotation qualified -> Bool
+exposes ::
+  MapLike (Structure uniqueness) f =>
+  Name ->
+  Module expr pattern annotation qualified uniqueness ->
+  Bool
 exposes name (Module _ _ exposing declarations) =
   case exposing of
-    ExposingAll -> isJust (declarations !? name)
+    ExposingAll -> isJust (toMap declarations !? name)
     ExposingSome expositions ->
       isJust $
         find
@@ -28,16 +34,19 @@ exposes name (Module _ _ exposing declarations) =
           expositions
 
 -- Looks in the import .. as list for any modules imported under the given alias, returning the actual module name if it exists
-findAlias :: Module expr pattern annotation qualified -> ModuleName -> Maybe ModuleName
+findAlias ::
+  Module expr pattern annotation qualified uniqueness ->
+  ModuleName ->
+  Maybe ModuleName
 findAlias module' name = _importImporting <$> find impNameMatches (module' ^. imports)
   where
     impNameMatches :: Import -> Bool
     impNameMatches imp = imp ^. as == Just name
 
 findModuleOfVar ::
-  (PatternLike pattern) =>
-  M.Map ModuleName (Module expr pattern annotation qualified) ->
-  Module expr pattern annotation qualified ->
+  (PatternLike pattern, MapLike (Structure uniqueness) f) =>
+  M.Map ModuleName (Module expr pattern annotation qualified uniqueness) ->
+  Module expr pattern annotation qualified uniqueness ->
   Name ->
   Either DesugarError ModuleName
 findModuleOfVar modules thisModule varName = do
@@ -54,7 +63,11 @@ findModuleOfVar modules thisModule varName = do
     Just x -> x
     Nothing -> Left $ UnknownVarName varName (thisModule ^. name)
 
-unqualifiedInThisModule :: (PatternLike pattern) => Module expr pattern annotation qualified -> Name -> Maybe ModuleName
+unqualifiedInThisModule ::
+  (PatternLike pattern, MapLike (Structure uniqueness) f) =>
+  Module expr pattern annotation qualified uniqueness ->
+  Name ->
+  Maybe ModuleName
 unqualifiedInThisModule thisModule varName =
   case Name.moduleName varName of
     Just qual ->
@@ -62,11 +75,12 @@ unqualifiedInThisModule thisModule varName =
         then Just (thisModule ^. name)
         else Nothing
     Nothing ->
-      thisModule ^. name <$ M.lookup varName (thisModule ^. declarations)
+      thisModule ^. name <$ M.lookup varName (toMap $ thisModule ^. declarations)
 
 unqualifiedInImportedModules ::
-  M.Map ModuleName (Module expr pattern annotation qualified) ->
-  Module expr pattern annotation qualified ->
+  MapLike (Structure uniqueness) f =>
+  M.Map ModuleName (Module expr pattern annotation qualified uniqueness) ->
+  Module expr pattern annotation qualified uniqueness ->
   Name ->
   Maybe (Either DesugarError ModuleName)
 unqualifiedInImportedModules _ _ (Qualified _) = Nothing
@@ -78,8 +92,9 @@ unqualifiedInImportedModules modules thisModule varName = do
     multiple -> Just (Left (AmbiguousReference varName (thisModule ^. name) (view importing <$> multiple)))
 
 qualifiedInImportedModules ::
-  M.Map ModuleName (Module expr pattern annotation qualified) ->
-  Module expr pattern annotation qualified ->
+  MapLike (Structure uniqueness) f =>
+  M.Map ModuleName (Module expr pattern annotation qualified uniqueness) ->
+  Module expr pattern annotation qualified uniqueness ->
   Name ->
   Maybe (Either DesugarError ModuleName)
 qualifiedInImportedModules _ _ (Name _) = Nothing
@@ -92,9 +107,11 @@ qualifiedInImportedModules modules _ (Qualified (QualifiedName qualification var
         then Just (return qualification)
         else Nothing
 
+-- Finds `Foo` given `F.bar` and `import Foo as F ; F.bar`
 qualifiedWithAliasModule ::
-  M.Map ModuleName (Module expr pattern annotation qualified) ->
-  Module expr pattern annotation qualified ->
+  MapLike (Structure uniqueness) f =>
+  M.Map ModuleName (Module expr pattern annotation qualified uniqueness) ->
+  Module expr pattern annotation qualified uniqueness ->
   Name ->
   Maybe (Either DesugarError ModuleName)
 qualifiedWithAliasModule modules thisModule varName = do

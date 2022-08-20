@@ -16,11 +16,13 @@ dependencies:
   - name: relude
   - lens
   - containers
+  - more-containers
   - megaparsec
   - parsers
   - parser-combinators
   - pretty-simple
   - mtl
+  - monadlist
 
 ghc-options:
 - -fwrite-ide-info
@@ -34,6 +36,7 @@ default-extensions:
 - LambdaCase
 - ImportQualifiedPost
 - DeriveDataTypeable
+- DataKinds
 
 library:
   source-dirs: src

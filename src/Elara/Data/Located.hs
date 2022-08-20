@@ -10,7 +10,7 @@ import Control.Lens.Plated (Plated (plate), transform)
 import Data.Data (Data)
 import Data.Functor.Identity (Identity)
 import Data.Kind (Type)
-import Elara.Data.Type (TypeOrId' (Id))
+import Elara.Data.Type
 import Relude.Extra (Foldable1 (..))
 
 {-

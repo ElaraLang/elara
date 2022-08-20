@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Elara.Data.Module where
 
@@ -10,16 +13,23 @@ import Control.Lens.Plated (plate)
 import Control.Lens.TH (makeFields, makeLenses)
 import Data.Data (Data)
 import Data.Map qualified as M
+import Data.Multimap qualified as Mu
+import Data.Unique (Unique)
 import Elara.Data.Name hiding (_moduleName)
 import Elara.Data.Type (ConcreteType)
+import Elara.Data.Uniqueness
 
-data Module expr pattern annotation qualified = Module
+data Module expr pattern annotation qualified uniqueness = Module
   { _moduleName :: ModuleName,
     _moduleImports :: [Import],
     _moduleExposing :: Exposing,
-    _moduleDeclarations :: M.Map Name (Declaration expr pattern annotation qualified)
+    _moduleDeclarations :: Structure uniqueness Name (Declaration expr pattern annotation qualified)
   }
-  deriving (Show, Eq)
+
+-- most disgusting line of code i've ever written
+deriving instance
+  (Show (Structure uniqueness Name (Declaration expr pattern annotation qualified))) =>
+  Show (Module expr pattern annotation qualified uniqueness)
 
 data Declaration expr pattern annotation qualified = Declaration
   { _declarationModule_ :: ModuleName,

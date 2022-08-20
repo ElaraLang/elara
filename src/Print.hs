@@ -15,3 +15,6 @@ debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg
 {-# WARNING debugColoredStr "Debug is still in code" #-}
 debugColoredStr :: (Applicative f) => String -> f ()
 debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
+
+prettyShow :: (Show a) => a -> Text
+prettyShow = toStrict . pShow
