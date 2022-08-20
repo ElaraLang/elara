@@ -20,7 +20,7 @@ import Elara.Data.Type
 import Elara.Data.TypeAnnotation (TypeAnnotation (..))
 import Elara.Data.Uniqueness
 import Elara.Error (DesugarError (CantDesugar, MultipleDeclarations))
-import Print (debugColored, prettyShow)
+import Print (prettyShow)
 import Relude
 import Text.Pretty.Simple (pShow)
 import Utils qualified

@@ -24,7 +24,6 @@ import Text.Megaparsec.Char
     lowerChar,
     upperChar,
   )
-import Text.Megaparsec.Debug (dbg)
 import Prelude hiding (many, some)
 
 varName :: Parser Name
