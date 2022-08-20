@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Elara.Data.Module where
 
@@ -30,6 +30,10 @@ data Module expr pattern annotation qualified uniqueness = Module
 deriving instance
   (Show (Structure uniqueness Name (Declaration expr pattern annotation qualified))) =>
   Show (Module expr pattern annotation qualified uniqueness)
+
+deriving instance
+  (Eq (Structure uniqueness Name (Declaration expr pattern annotation qualified))) =>
+  Eq (Module expr pattern annotation qualified uniqueness)
 
 data Declaration expr pattern annotation qualified = Declaration
   { _declarationModule_ :: ModuleName,

@@ -8,7 +8,7 @@ import Elara.AST.Frontend as AST
 import Elara.Data.Located
 import Elara.Data.Module as Mod
 import Elara.Data.Name
-import Elara.Data.Type (TypeOrId' (Id))
+import Elara.Data.Type
 import Elara.Parse (parse)
 import NeatInterpolation
 import Parse.Common
