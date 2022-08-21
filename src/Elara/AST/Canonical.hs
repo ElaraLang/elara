@@ -39,6 +39,8 @@ data Expr
   | Block [LocatedExpr]
   | List [LocatedExpr]
   | Unit
+  | Let { name :: QualifiedName, value :: LocatedExpr}
+  | LetIn { name :: QualifiedName, value :: LocatedExpr, body :: LocatedExpr}
   deriving (Show, Eq)
 
 data Pattern

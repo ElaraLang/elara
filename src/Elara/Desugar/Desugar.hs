@@ -99,12 +99,7 @@ desugarDeclaration dec@Declaration {..} = do
     _ -> lift . Left . CantDesugar $ "desugarDeclaration: " <> show dec
 
 desugarExpr :: Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr
-desugarExpr (Located _ (Frontend.Lambda args body)) = do
-  -- turns \x y z -> ... into \x -> \y -> \z -> ...
-  args' <- traverse desugarPattern args
-  body' <- desugarExpr body
-  let curryLambda = foldr (\arg body'' -> Canonical.Lambda arg body'' <$ body) body' args'
-  return curryLambda
+desugarExpr (Located _ (Frontend.Lambda args body)) = curryLambda args body
 desugarExpr e = traverse desugarExpr' e
   where
     desugarExpr' :: Frontend.Expr IsLocated -> DesugarResult Canonical.Expr
@@ -116,9 +111,8 @@ desugarExpr e = traverse desugarExpr' e
       Frontend.Unit -> return Canonical.Unit
       Frontend.Argument name -> return $ Canonical.Argument name
       Frontend.Var name -> do
-        DesugarState {..} <- ask
-        x <- lift $ findModuleOfVar allModules thisModule name
-        return (Canonical.Var (QualifiedName x name))
+        name' <- qualifyName name
+        return (Canonical.Var name')
       Frontend.BinaryOperator op left right -> do
         op' <- desugarExpr op
         left' <- desugarExpr left
@@ -137,7 +131,29 @@ desugarExpr e = traverse desugarExpr' e
         exprs' <- traverse desugarExpr exprs
         return $ Canonical.Block exprs'
       Frontend.List exprs -> traverse desugarExpr exprs <&> Canonical.List
+      Frontend.Let name pats body -> do
+        body <- curryLambda pats body
+        name' <- qualifyName name
+        return $ Canonical.Let name' body
+      Frontend.LetIn name pats val body -> do
+        val' <- curryLambda pats val
+        body' <- curryLambda pats body
+        name' <- qualifyName name
+        return $ Canonical.LetIn name' val' body'
       other -> lift . Left . CantDesugar $ "desugarExpr: " <> show other
+
+qualifyName :: Name -> DesugarResult QualifiedName
+qualifyName name = do
+  DesugarState {..} <- ask
+  mod <- lift $ findModuleOfVar allModules thisModule name
+  return (QualifiedName mod name)
+
+-- turns \x y z -> ... into \x -> \y -> \z -> ...
+curryLambda :: [Frontend.Pattern] -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr
+curryLambda pats body = do
+  args' <- traverse desugarPattern pats
+  body' <- desugarExpr body
+  return $ foldr (\arg body'' -> Canonical.Lambda arg body'' <$ body) body' args'
 
 desugarPattern :: Frontend.Pattern -> DesugarResult Canonical.Pattern
 desugarPattern pat = case pat of

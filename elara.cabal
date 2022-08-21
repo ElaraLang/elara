@@ -97,7 +97,7 @@ executable elara
       ImportQualifiedPost
       DeriveDataTypeable
       DataKinds
-  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded
   build-depends:
       base-noprelude >=4.7 && <5
     , containers

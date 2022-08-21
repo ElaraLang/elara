@@ -8,10 +8,12 @@ import Elara.AST.Frontend (LocatedExpr)
 import Elara.AST.Frontend qualified as Ast
 import Elara.AST.Generic (patternNames)
 import Elara.Data.Located as Located (merge)
+import Elara.Data.Module (mapExpr)
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, promoteArguments, typeName, varName)
+import Elara.Parse.Name qualified as Name
 import Elara.Parse.Pattern (pattern)
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<|>))
@@ -36,10 +38,11 @@ expressionTerm =
     <|> try variable
     <|> constructor
     <|> list
+    <|> letExpression
+    <|> letInExpression
 
-reservedWords ::
-  -- | Reserved words, used to backtrack accordingly
-  Set.Set Text
+-- | Reserved words, used to backtrack accordingly
+reservedWords :: Set.Set Text
 reservedWords = Set.fromList ["if", "else", "then", "let"]
 
 variable :: Parser LocatedExpr
@@ -95,3 +98,38 @@ list = located $ do
   elements <- lexeme (sepEndBy expression (symbol ","))
   symbol "]"
   return $ Ast.List elements
+
+letExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
+letExpression = located $ do
+  ((name, patterns), e) <- optionallyIndented letPreamble expression
+  let names = patterns >>= patternNames
+  let promote = fmap (transform (Name.promoteArguments names))
+      exp = Ast.Let name patterns (promote e)
+
+  return exp
+  where
+    letPreamble = do
+      symbol "let"
+      name <- varName
+      patterns <- sepBy (lexeme pattern) sc
+      symbol "="
+      return (name, patterns)
+
+letInExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
+letInExpression = located $ do
+  ((name, patterns), e) <- optionallyIndented letPreamble expression
+  (_, body) <- optionallyIndented inPreamble expression
+  let names = patterns >>= patternNames
+  let promote = fmap (transform (Name.promoteArguments names))
+      exp = Ast.LetIn name patterns (promote e) body
+
+  return exp
+  where
+    letPreamble = do
+      symbol "let"
+      name <- varName
+      patterns <- sepBy (lexeme pattern) sc
+      symbol "="
+      return (name, patterns)
+    inPreamble = do
+      symbol "in"

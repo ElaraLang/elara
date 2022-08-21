@@ -52,6 +52,8 @@ data Expr x
   | If {condition :: RExpr x, then_ :: RExpr x, else_ :: RExpr x}
   | Block [RExpr x]
   | List [RExpr x]
+  | Let {name :: Name, arguments :: [Pattern], body :: RExpr x}
+  | LetIn {name :: Name, arguments :: [Pattern], value :: RExpr x, body :: RExpr x}
 
 mapXRec :: (Functor (XRec b)) => (forall x. XRec a x -> XRec b x) -> Expr a -> Expr b
 mapXRec f (Int i) = Int i
