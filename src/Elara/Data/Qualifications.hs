@@ -1,5 +1,4 @@
 module Elara.Data.Qualifications where
-import Data.Void (Void)
 import Elara.Data.Name (ModuleName)
 
 type Unqualified = Void

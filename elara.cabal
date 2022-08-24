@@ -67,7 +67,7 @@ library
       ImportQualifiedPost
       DeriveDataTypeable
       DataKinds
-  ghc-options: -fwrite-ide-info -hiedir=.hie
+  ghc-options: -Wall -threaded
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -97,7 +97,7 @@ executable elara
       ImportQualifiedPost
       DeriveDataTypeable
       DataKinds
-  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded
+  ghc-options: -Wall -threaded
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -134,7 +134,7 @@ test-suite elara-test
       DeriveDataTypeable
       DataKinds
       QuasiQuotes
-  ghc-options: -fwrite-ide-info -hiedir=.hie -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded
   build-depends:
       HUnit
     , base-noprelude >=4.7 && <5

@@ -1,6 +1,5 @@
 module Elara.Data.Name where
 
-import Control.Lens (makeFields, makeLenses, (^.))
 import Data.Data (Data)
 import Data.Text qualified as T
 

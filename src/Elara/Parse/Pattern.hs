@@ -5,8 +5,8 @@ import Elara.Parse.Name (alphaVarName)
 import Elara.Parse.Primitives (Parser, symbol)
 import Text.Parser.Combinators (choice)
 
-pattern :: Parser Pattern
-pattern =
+pattern' :: Parser Pattern
+pattern' =
   choice
     [ varPattern,
       wildcardPattern

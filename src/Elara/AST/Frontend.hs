@@ -8,8 +8,8 @@
 
 module Elara.AST.Frontend where
 
-import Control.Lens hiding (element, op)
-import Data.Data (Data, Typeable)
+import Control.Lens hiding (List, element, op)
+import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located (IsLocated, Located (Located), NoLocated, XRec)
@@ -26,7 +26,7 @@ Things like comments are preserved
 
 -- Information about the whole project
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern TypeAnnotation MaybeQualified Many)
+  { modules :: M.Map ModuleName (Module LocatedExpr Pattern TypeAnnotation MaybeQualified 'Many)
   }
 
 type LocatedExpr = RExpr IsLocated
@@ -56,20 +56,23 @@ data Expr x
   | LetIn {name :: Name, arguments :: [Pattern], value :: RExpr x, body :: RExpr x}
 
 mapXRec :: (Functor (XRec b)) => (forall x. XRec a x -> XRec b x) -> Expr a -> Expr b
-mapXRec f (Int i) = Int i
-mapXRec f (Float d) = Float d
-mapXRec f (Char c) = Char c
-mapXRec f (String s) = String s
-mapXRec f (Bool b) = Bool b
-mapXRec f Unit = Unit
-mapXRec f (Var n) = Var n
-mapXRec f (Constructor n) = Constructor n
+mapXRec _ (Int i) = Int i
+mapXRec _ (Float d) = Float d
+mapXRec _ (Char c) = Char c
+mapXRec _ (String s) = String s
+mapXRec _ (Bool b) = Bool b
+mapXRec _ Unit = Unit
+mapXRec _ (Var n) = Var n
+mapXRec _ (Constructor n) = Constructor n
 mapXRec f (Lambda args body) = Lambda args (mapRExpr f body)
 mapXRec f (Argument n) = Argument n
 mapXRec f (FunctionCall f' arg) = FunctionCall (mapRExpr f f') (mapRExpr f arg)
 mapXRec f (BinaryOperator op l r) = BinaryOperator (mapRExpr f op) (mapRExpr f l) (mapRExpr f r)
 mapXRec f (If c t e) = If (mapRExpr f c) (mapRExpr f t) (mapRExpr f e)
 mapXRec f (Block b) = Block (fmap (mapRExpr f) b)
+mapXRec f (List l) = List (fmap (mapRExpr f) l)
+mapXRec f (Let n args body) = Let n args (mapRExpr f body)
+mapXRec f (LetIn n args v body) = LetIn n args (mapRExpr f v) (mapRExpr f body)
 
 mapRExpr :: (Functor (XRec b)) => (forall x. XRec a x -> XRec b x) -> RExpr a -> RExpr b
 mapRExpr f x = fmap (mapXRec f) (f x)
@@ -82,6 +85,8 @@ unlocateExpr = mapRExpr unlocateExpr'
 deriving instance (Show (RExpr x)) => Show (Expr x)
 
 deriving instance (Eq (RExpr x)) => Eq (Expr x)
+
+deriving instance (Ord (RExpr x)) => Ord (Expr x)
 
 deriving instance (Typeable x, Data x, Data (RExpr x)) => Data (Expr x)
 

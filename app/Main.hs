@@ -3,7 +3,6 @@
 
 module Main (main) where
 
-import Data.Text (pack)
 import Elara.Data.Module
 import Elara.Data.Prelude (prelude)
 import Elara.Desugar.Desugar (desugarModule)

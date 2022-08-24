@@ -14,17 +14,25 @@ import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, promoteArguments, typeName, varName)
 import Elara.Parse.Name qualified as Name
-import Elara.Parse.Pattern (pattern)
+import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
-import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<|>))
+import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>), (<|>))
+import Text.Megaparsec.Debug (dbg)
 
-expression :: Parser LocatedExpr
-expression =
+exprParser :: Parser LocatedExpr
+exprParser =
   makeExprParser
     expressionTerm
     [ [InfixR (Located.merge Ast.FunctionCall <$ sc)],
       [InfixL (Located.merge . Ast.BinaryOperator <$> operator)]
     ]
+    <?> "expression"
+
+expression :: Parser LocatedExpr
+expression =
+  try
+    ( statement <|> dbg "exp" exprParser
+    )
 
 expressionTerm :: Parser LocatedExpr
 expressionTerm =
@@ -38,12 +46,14 @@ expressionTerm =
     <|> try variable
     <|> constructor
     <|> list
-    <|> letExpression
-    <|> letInExpression
+    <|> try letInExpression
+
+statement :: Parser LocatedExpr
+statement = dbg "statement" (letExpression <?> "statement")
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set.Set Text
-reservedWords = Set.fromList ["if", "else", "then", "let"]
+reservedWords = Set.fromList ["if", "else", "then", "let", "in"]
 
 variable :: Parser LocatedExpr
 variable = located $ do
@@ -79,7 +89,7 @@ lambda = located $ do
   where
     lambdaPreamble = do
       symbol "\\"
-      args <- lexeme (sepBy pattern sc)
+      args <- lexeme (sepBy pattern' sc)
       symbol "->"
       return args
 
@@ -111,7 +121,7 @@ letExpression = located $ do
     letPreamble = do
       symbol "let"
       name <- varName
-      patterns <- sepBy (lexeme pattern) sc
+      patterns <- sepBy (lexeme pattern') sc
       symbol "="
       return (name, patterns)
 
@@ -128,7 +138,7 @@ letInExpression = located $ do
     letPreamble = do
       symbol "let"
       name <- varName
-      patterns <- sepBy (lexeme pattern) sc
+      patterns <- sepBy (lexeme pattern') sc
       symbol "="
       return (name, patterns)
     inPreamble = do

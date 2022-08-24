@@ -5,7 +5,7 @@
 
 module Elara.Data.Type where
 
-import Data.Data (Data, Typeable)
+import Data.Data (Data)
 import Data.Kind qualified as K (Type)
 import Elara.Data.Name
 import Elara.Data.Qualifications (MaybeQualified)
@@ -15,7 +15,7 @@ data OrId deriving (Data)
 
 data Concrete deriving (Data)
 
-data family TRec kind :: * -> * -> *
+data family TRec kind :: K.Type -> K.Type -> K.Type
 
 data instance TRec Concrete self qual = Concrete self qual deriving (Show, Eq, Data)
 
@@ -44,7 +44,7 @@ typeQual :: (self ~ Concrete) => AbsType self qual -> Maybe qual
 typeQual (TypeVar _) = Nothing
 typeQual (Function _ _) = Nothing
 typeQual Unit = Nothing
-typeQual (TypeConstructorApplication (Concrete x y) _) = typeQual x
+typeQual (TypeConstructorApplication (Concrete x _) _) = typeQual x
 typeQual (UserDefinedType qual _) = Just qual
 
 makeConcrete :: self -> TRec Concrete self MaybeQualified

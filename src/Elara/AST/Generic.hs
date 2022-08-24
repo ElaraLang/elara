@@ -1,6 +1,6 @@
 module Elara.AST.Generic where
 
-import Elara.Data.Located
+
 import Elara.Data.Name (Name)
 
 -- | Class for things that behave roughly like Patterns.

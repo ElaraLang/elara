@@ -1,6 +1,7 @@
 module Elara.Error where
 
 import Data.Text (Text)
+import Elara.AST.Frontend (LocatedExpr)
 import Elara.Data.Name (ModuleName, Name)
 import Text.Megaparsec (ShowErrorComponent (showErrorComponent))
 
@@ -27,5 +28,13 @@ data DesugarError
       { name :: Name,
         insideModule :: ModuleName
       }
-
+  | EmptyBlock
+      { boundTo :: Name,
+        insideModule :: ModuleName
+      }
+  | LetEndsBlock
+      { boundTo :: Name,
+        insideModule :: ModuleName,
+        expr :: LocatedExpr
+      }
   deriving (Ord, Eq, Show)

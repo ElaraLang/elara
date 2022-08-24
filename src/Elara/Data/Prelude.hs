@@ -2,9 +2,7 @@
 
 module Elara.Data.Prelude (prelude) where
 
-import Data.Map qualified as M
 import Data.Multimap qualified as Mu
-import Data.Text qualified as T
 import Elara.Data.Module
   ( Declaration (Declaration),
     DeclarationBody (ValueTypeDef),
@@ -13,7 +11,7 @@ import Elara.Data.Module
   )
 import Elara.Data.Name (ModuleName (ModuleName), Name (Name))
 import Elara.Data.Qualifications (MaybeQualified)
-import Elara.Data.Type (AbsType (..), Concrete, ConcreteType, makeConcrete)
+import Elara.Data.Type (AbsType (..), Concrete, makeConcrete)
 import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
 import Elara.Data.Uniqueness
 import Prelude hiding (String)
@@ -21,11 +19,13 @@ import Prelude hiding (String)
 preludeName :: ModuleName
 preludeName = ModuleName ("Prelude" :| [])
 
+intType :: AbsType Concrete MaybeQualified
 intType = UserDefinedType Nothing (Name "Int")
 
+stringType :: AbsType Concrete MaybeQualified
 stringType = UserDefinedType Nothing (Name "String")
 
-prelude :: Module expr pattern' TypeAnnotation MaybeQualified Many
+prelude :: Module expr pattern' TypeAnnotation MaybeQualified 'Many
 prelude =
   Module
     { _moduleName = preludeName,

@@ -9,13 +9,9 @@
 module Elara.Data.Module where
 
 import Control.Lens (Plated)
-import Control.Lens.Plated (plate)
 import Control.Lens.TH (makeFields, makeLenses)
 import Data.Data (Data)
-import Data.Map qualified as M
-import Data.Multimap qualified as Mu
-import Data.Unique (Unique)
-import Elara.Data.Name hiding (_moduleName)
+import Elara.Data.Name
 import Elara.Data.Type (ConcreteType)
 import Elara.Data.Uniqueness
 

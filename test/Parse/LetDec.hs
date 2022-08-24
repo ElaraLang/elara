@@ -148,3 +148,60 @@ spec = describe "Test Let Dec Parser" $ do
                 _declarationBodyTypeAnnotation = Nothing
               }
         }
+  it "Parses a nested let" $
+    do
+      do
+        [text|
+      let main = 
+        let x = 1
+        x
+      |]
+      <: Declaration
+        { _declarationModule_ = testModuleName,
+          _declarationName = Name "main",
+          _declarationBody =
+            Value
+              { _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing,
+                _declarationBodyExpression =
+                  Identity
+                    ( Block
+                        [ Identity $
+                            Let
+                              (Name "x")
+                              []
+                              (Identity (Int 1)),
+                          Identity (Var $ Name "x")
+                        ]
+                    )
+              }
+        }
+  it "Parses a nested let with some indentation" $
+    do
+      do
+        [text|
+      let main = 
+        let x =
+          1
+        x
+      |]
+      <: Declaration
+        { _declarationModule_ = testModuleName,
+          _declarationName = Name "main",
+          _declarationBody =
+            Value
+              { _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing,
+                _declarationBodyExpression =
+                  Identity
+                    ( Block
+                        [ Identity $
+                            Let
+                              (Name "x")
+                              []
+                              (Identity (Int 1)),
+                          Identity (Var $ Name "x")
+                        ]
+                    )
+              }
+        }

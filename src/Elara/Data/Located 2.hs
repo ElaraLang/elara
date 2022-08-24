@@ -6,8 +6,11 @@
 module Elara.Data.Located where
 
 import Control.Lens.Extras (uniplate)
-import Control.Lens.Plated (Plated (plate))
+import Control.Lens.Plated (Plated (plate), transform)
 import Data.Data (Data)
+import Data.Functor.Identity (Identity)
+import Data.Kind (Type)
+import Elara.Data.Type (TypeOrId' (Id))
 import Relude.Extra (Foldable1 (..))
 
 {-
@@ -16,7 +19,7 @@ Used for nice error messages.
 -}
 
 data Located expr = Located Region expr
-  deriving (Show, Eq,Ord, Traversable, Foldable, Data)
+  deriving (Show, Eq, Traversable, Foldable, Data)
 
 data NoLocated
 
@@ -37,7 +40,7 @@ data Region = Region
   { startOffset :: Int,
     endOffset :: Int
   }
-  deriving (Show, Ord, Eq, Data)
+  deriving (Show, Eq, Data)
 
 located :: Region -> expr -> Located expr
 located = Located

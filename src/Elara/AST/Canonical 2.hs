@@ -1,22 +1,18 @@
-{-# LANGUAGE DataKinds #-}
-
 module Elara.AST.Canonical where
 
-import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located
 import Elara.Data.Module (Module)
 import Elara.Data.Name (ModuleName, Name (..), QualifiedName)
 import Elara.Data.Qualifications (Qualified)
 import Elara.Data.Type (ConcreteType)
-import Elara.Data.Uniqueness
-import Prelude hiding (Type)
+import Data.Map qualified as M
 
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified Unique)
+  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified)
   }
 
-type LocatedExpr = Located Expr
+type LocatedExpr = (Located Expr)
 
 {-
 Similar to the Frontend AST but with a few simple changes to make later processing easier:
@@ -37,10 +33,8 @@ data Expr
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}
   | Block [LocatedExpr]
-  | List [LocatedExpr]
   | Unit
-  | LetIn {name :: Name, value :: LocatedExpr, body :: LocatedExpr}
-  deriving (Show, Eq)
+  deriving (Show)
 
 data Pattern
   = NamedPattern Name
@@ -50,13 +44,3 @@ data Pattern
 instance PatternLike Pattern where
   patternNames (NamedPattern name) = [name]
   patternNames WildPattern = []
-
-data Type
-  = TypeVar Name
-  | Function {_from :: Type, _to :: Type}
-  | UnitT
-  | TypeConstructorApplication {_constructor :: Type, _args :: [Type]}
-  | UserDefinedType
-      { _qualified :: Qualified,
-        _name :: Name
-      }

@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+
 module Elara.Parse.Indents where
 
 import Elara.AST.Frontend
@@ -24,8 +25,8 @@ indentedBlock ref expression = L.indentBlock scn innerParser
       let merge expressions = case expressions of
             [single] -> return (a, single)
             [] -> error "indentedBlock: empty block"
-            x:xs -> do
-              let region = Located.spanningRegion (Located.getRegion <$> (x:|xs))
+            x : xs -> do
+              let region = Located.spanningRegion (Located.getRegion <$> (x :| xs))
               return (a, Located.located region (Block expressions))
 
       return $ L.IndentSome Nothing merge expression

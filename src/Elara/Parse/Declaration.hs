@@ -12,14 +12,13 @@ import Elara.Parse.Expression (expression)
 import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Name (varName)
 import Elara.Parse.Name qualified as Name
-import Elara.Parse.Pattern (pattern)
+import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
 import Elara.Parse.Type (type')
 import Text.Megaparsec
   ( sepBy,
-    try,
-    (<|>),
-  )
+  (<|>),
+    try)
 
 type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
@@ -39,6 +38,7 @@ defDecl modName = do
 valueDecl :: ModuleName -> Parser FrontendDecl
 valueDecl modName = do
   ((name, patterns), e) <- optionallyIndented letPreamble expression
+
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
       value = Value e patterns Nothing
@@ -49,6 +49,6 @@ valueDecl modName = do
     letPreamble = do
       symbol "let"
       name <- varName
-      patterns <- sepBy (lexeme pattern) sc
+      patterns <- sepBy (lexeme pattern') sc
       symbol "="
       return (name, patterns)

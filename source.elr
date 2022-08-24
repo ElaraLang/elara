@@ -3,6 +3,5 @@ import Prelude
 
 def main : Prelude.IO ()
 let main =
-  let list = 
-    [1, 2, 3, 4, 5]
+  let list = [1, 2, 3, 4, 5]
   println (Prelude.map (\x -> x * x) list)
