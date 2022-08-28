@@ -3,21 +3,18 @@ module Elara.Parse.Expression where
 import Control.Lens.Plated (transform)
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
 import Data.Set qualified as Set
-import Data.Text (Text)
 import Elara.AST.Frontend (LocatedExpr)
 import Elara.AST.Frontend qualified as Ast
 import Elara.AST.Generic (patternNames)
 import Elara.Data.Located as Located (merge)
-import Elara.Data.Module (mapExpr)
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Indents (optionallyIndented)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
-import Elara.Parse.Name (opName, promoteArguments, typeName, varName)
+import Elara.Parse.Name (opName, typeName, varName)
 import Elara.Parse.Name qualified as Name
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
-import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>), (<|>))
-import Text.Megaparsec.Debug (dbg)
+import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
 
 exprParser :: Parser LocatedExpr
 exprParser =
@@ -31,7 +28,7 @@ exprParser =
 expression :: Parser LocatedExpr
 expression =
   try
-    ( statement <|> dbg "exp" exprParser
+    ( statement <|> exprParser
     )
 
 expressionTerm :: Parser LocatedExpr
@@ -49,7 +46,7 @@ expressionTerm =
     <|> try letInExpression
 
 statement :: Parser LocatedExpr
-statement = dbg "statement" (letExpression <?> "statement")
+statement = letExpression <?> "statement"
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set.Set Text
@@ -60,7 +57,7 @@ variable = located $ do
   var <- varName
   if Name.nameValue var `Set.member` reservedWords
     then fail "Reserved keyword"
-    else return $ Ast.Var var
+    else pure $ Ast.Var var
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: Parser LocatedExpr
@@ -85,13 +82,13 @@ lambda :: Parser LocatedExpr
 lambda = located $ do
   (args, res) <- optionallyIndented lambdaPreamble expression
   let argNames = args >>= patternNames
-  return $ transform (promoteArguments argNames) (Ast.Lambda args res)
+  pure (Name.promoteAll argNames (Ast.Lambda args res))
   where
     lambdaPreamble = do
       symbol "\\"
       args <- lexeme (sepBy pattern' sc)
       symbol "->"
-      return args
+      pure args
 
 ifElse :: Parser LocatedExpr
 ifElse = located $ do
@@ -107,23 +104,22 @@ list = located $ do
   symbol "["
   elements <- lexeme (sepEndBy expression (symbol ","))
   symbol "]"
-  return $ Ast.List elements
+  pure $ Ast.List elements
 
 letExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letExpression = located $ do
   ((name, patterns), e) <- optionallyIndented letPreamble expression
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
-      exp = Ast.Let name patterns (promote e)
 
-  return exp
+  pure (Ast.Let name patterns (promote e))
   where
     letPreamble = do
       symbol "let"
       name <- varName
       patterns <- sepBy (lexeme pattern') sc
       symbol "="
-      return (name, patterns)
+      pure (name, patterns)
 
 letInExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = located $ do
@@ -131,15 +127,14 @@ letInExpression = located $ do
   (_, body) <- optionallyIndented inPreamble expression
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
-      exp = Ast.LetIn name patterns (promote e) body
 
-  return exp
+  pure (Ast.LetIn name patterns (promote e) body)
   where
     letPreamble = do
       symbol "let"
       name <- varName
       patterns <- sepBy (lexeme pattern') sc
       symbol "="
-      return (name, patterns)
+      pure (name, patterns)
     inPreamble = do
       symbol "in"

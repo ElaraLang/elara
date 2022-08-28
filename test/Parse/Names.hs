@@ -3,8 +3,9 @@ module Parse.Names where
 import Elara.Data.Name (ModuleName (ModuleName), Name (Name, Qualified), NameLike, QualifiedName (QualifiedName))
 import Elara.Parse.Name (moduleName, typeName, varName)
 import Elara.Parse.Primitives
-import Parse.Common (testParse')
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
+import Test.Hspec (Spec, describe, it)
+import Test.Hspec.Megaparsec (shouldParse)
+import Text.Megaparsec (runParser)
 
 spec :: Spec
 spec = describe "Test Names Parser" $ do
@@ -25,5 +26,4 @@ spec = describe "Test Names Parser" $ do
 
 (<=>) :: (NameLike n, Show n, Eq n) => Text -> (n, Parser n) -> IO ()
 (<=>) source (expected, parser) = do
-  ast <- testParse' source parser
-  ast `shouldBe` expected
+  shouldParse (runParser parser "" source) expected

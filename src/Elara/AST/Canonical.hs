@@ -13,7 +13,7 @@ import Elara.Data.Uniqueness
 import Prelude hiding (Type)
 
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified Unique)
+  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified 'Unique)
   }
 
 type LocatedExpr = Located Expr

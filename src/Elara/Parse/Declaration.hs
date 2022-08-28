@@ -1,11 +1,8 @@
 module Elara.Parse.Declaration where
 
-import Control.Lens (over, set, transform, transformOn, view)
-import Control.Monad (liftM2)
-import Elara.AST.Frontend (Expr, LocatedExpr, Pattern)
+import Elara.AST.Frontend (LocatedExpr, Pattern)
 import Elara.AST.Generic (PatternLike (patternNames))
-import Elara.Data.Located
-import Elara.Data.Module (Declaration (..), DeclarationBody (..), HasBody (body), mapExpr)
+import Elara.Data.Module (Declaration (..), DeclarationBody (..), mapExpr)
 import Elara.Data.Name (ModuleName)
 import Elara.Data.TypeAnnotation (TypeAnnotation (TypeAnnotation))
 import Elara.Parse.Expression (expression)
@@ -17,13 +14,13 @@ import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
 import Elara.Parse.Type (type')
 import Text.Megaparsec
   ( sepBy,
-  (<|>),
-    try)
+  )
+import Text.Megaparsec.Char.Lexer qualified as L
 
 type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
 declaration :: ModuleName -> Parser FrontendDecl
-declaration = liftM2 (<|>) valueDecl defDecl
+declaration = liftA2 (<|>) defDecl valueDecl
 
 defDecl :: ModuleName -> Parser FrontendDecl
 defDecl modName = do
@@ -33,22 +30,21 @@ defDecl modName = do
   ty <- type'
   let annotation = TypeAnnotation name ty
   let declBody = ValueTypeDef annotation
-  return (Declaration modName name declBody)
+  pure (Declaration modName name declBody)
 
 valueDecl :: ModuleName -> Parser FrontendDecl
-valueDecl modName = do
+valueDecl modName = L.nonIndented sc $ do
   ((name, patterns), e) <- optionallyIndented letPreamble expression
 
   let names = patterns >>= patternNames
-  let promote = fmap (transform (Name.promoteArguments names))
+  let promote = fmap (Name.promoteAll names)
       value = Value e patterns Nothing
-      dec = Declaration modName name (mapExpr promote value)
 
-  return dec
+  pure (Declaration modName name (mapExpr promote value))
   where
     letPreamble = do
       symbol "let"
       name <- varName
       patterns <- sepBy (lexeme pattern') sc
       symbol "="
-      return (name, patterns)
+      pure (name, patterns)

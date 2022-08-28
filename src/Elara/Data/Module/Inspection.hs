@@ -1,11 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Elara.Data.Module.Inspection where
 
 import Control.Lens (view, (^.))
-import Data.List (find)
 import Data.Map ((!?))
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike)
@@ -33,7 +32,7 @@ exposes name (Module _ _ exposing declarations) =
           )
           expositions
 
--- Looks in the import .. as list for any modules imported under the given alias, returning the actual module name if it exists
+-- Looks in the import .. as list for any modules imported under the given alias, pureing the actual module name if it exists
 findAlias ::
   Module expr pattern annotation qualified uniqueness ->
   ModuleName ->
@@ -59,7 +58,7 @@ findModuleOfVar modules thisModule varName = do
   -- Finally look for a qualified name with an alias, i.e import Foo as F ; F.bar
   let qualifiedWithAlias = qualifiedWithAliasModule modules thisModule varName
 
-  case return <$> definedInModule <|> unqualifiedInImported <|> qualifiedInImported <|> qualifiedWithAlias of
+  case pure <$> definedInModule <|> unqualifiedInImported <|> qualifiedInImported <|> qualifiedWithAlias of
     Just x -> x
     Nothing -> Left $ UnknownVarName varName (thisModule ^. name)
 
@@ -88,7 +87,7 @@ unqualifiedInImportedModules modules thisModule varName = do
   let acceptableImports = filter (\imp -> maybe False (exposes varName) (modules M.!? (imp ^. importing))) (thisModule ^. imports)
   case acceptableImports of
     [] -> Nothing
-    [import'] -> Just (return $ import' ^. importing)
+    [import'] -> Just (pure $ import' ^. importing)
     multiple -> Just (Left (AmbiguousReference varName (thisModule ^. name) (view importing <$> multiple)))
 
 qualifiedInImportedModules ::
@@ -104,7 +103,7 @@ qualifiedInImportedModules modules _ (Qualified (QualifiedName qualification var
     Nothing -> Nothing
     Just referencedModule' ->
       if exposes varName referencedModule'
-        then Just (return qualification)
+        then Just (pure qualification)
         else Nothing
 
 -- Finds `Foo` given `F.bar` and `import Foo as F ; F.bar`

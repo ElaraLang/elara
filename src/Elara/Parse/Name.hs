@@ -1,26 +1,22 @@
-module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName, promoteArguments) where
+{-# LANGUAGE FlexibleContexts #-}
 
-import Data.Text qualified as T
+module Elara.Parse.Name (varName, typeName, opName, moduleName, alphaVarName, promoteArguments, promoteAll) where
+
+import Control.Lens.Plated (transform)
 import Elara.AST.Frontend (Expr)
 import Elara.AST.Frontend qualified as Ast
+import Elara.Data.Located qualified
 import Elara.Data.Name (ModuleName (..), Name (..), NameFromText, QualifiedName (..))
 import Elara.Data.Name qualified as Name
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, symbol)
 import Text.Megaparsec
-  ( MonadParsec (try),
-    endBy,
-    many,
+  ( many,
     oneOf,
-    optional,
-    sepBy1,
-    sepEndBy1,
     some,
-    (<|>),
   )
 import Text.Megaparsec.Char
   ( alphaNumChar,
-    char,
     lowerChar,
     upperChar,
   )
@@ -37,15 +33,15 @@ alphaVarName = Name.fromString <$> lexeme ((:) <$> lowerChar <*> many alphaNumCh
 typeName :: Parser Name
 typeName = do
   ModuleName names <- moduleName
-  return $ case names of
+  pure $ case names of
     x :| [] -> Name x
-    x :| xs -> Qualified $ QualifiedName (ModuleName (fromList $ init names)) (Name (last names))
+    _ -> Qualified $ QualifiedName (ModuleName (fromList $ init names)) (Name (last names))
 
 capitalizedString :: Parser String
 capitalizedString = lexeme $ do
   x <- upperChar
   xs <- many alphaNumChar
-  return (x : xs)
+  pure (x : xs)
 
 opName :: Parser Name
 opName = qualified opName'
@@ -57,7 +53,7 @@ opName = qualified opName'
 moduleName :: Parser ModuleName
 moduleName = do
   parts <- sepBy1' capitalizedString (symbol ".")
-  return (Name.ModuleName (toText <$> parts))
+  pure (Name.ModuleName (toText <$> parts))
 
 qualified :: Parser Name -> Parser Name
 qualified parser = do
@@ -74,3 +70,6 @@ promoteArguments allArgs arg = case arg of
       Nothing -> if v `elem` allArgs then Ast.Argument v else arg
       _ -> arg
   _ -> arg
+
+promoteAll :: Traversable (Elara.Data.Located.XRec a) => [Name] -> Expr a -> Expr a
+promoteAll names = transform (promoteArguments names)

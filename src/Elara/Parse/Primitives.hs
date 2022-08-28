@@ -1,9 +1,6 @@
 module Elara.Parse.Primitives where
 
-import Prelude hiding (some, many)
-import Control.Monad (void)
 import Data.List
-import Data.Text (Text)
 import Elara.Data.Located (Located)
 import Elara.Data.Located qualified as Located
 import Elara.Error (Error)
@@ -14,11 +11,10 @@ import Text.Megaparsec
     getOffset,
     sepBy,
     some,
-    (<|>),
-    empty
   )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
+import Prelude hiding (many, some)
 
 type Parser = Parsec Error Text
 
@@ -27,7 +23,7 @@ located p = lexeme $ do
   start <- getOffset
   x <- p
   end <- getOffset
-  return $ Located.located (Located.Region start end) x
+  pure $ Located.located (Located.Region start end) x
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"

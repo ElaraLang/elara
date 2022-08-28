@@ -17,6 +17,10 @@
 - ignore:
     name: Use Foldable.forM_
 - hint:
+    lhs: "return"
+    rhs: "pure"
+    note: "Use pure instead of return"
+- hint:
     lhs: "pure ()"
     note: "Use 'pass'"
     rhs: pass

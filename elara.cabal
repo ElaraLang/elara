@@ -67,7 +67,7 @@ library
       ImportQualifiedPost
       DeriveDataTypeable
       DataKinds
-  ghc-options: -Wall -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -97,7 +97,7 @@ executable elara
       ImportQualifiedPost
       DeriveDataTypeable
       DataKinds
-  ghc-options: -Wall -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns -threaded
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -134,13 +134,14 @@ test-suite elara-test
       DeriveDataTypeable
       DataKinds
       QuasiQuotes
-  ghc-options: -Wall -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns
   build-depends:
       HUnit
     , base-noprelude >=4.7 && <5
     , containers
     , elara
     , hspec ==2.*
+    , hspec-megaparsec
     , lens
     , megaparsec
     , monadlist

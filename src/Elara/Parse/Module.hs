@@ -16,7 +16,7 @@ import Text.Megaparsec.Char (newline)
 import Utils qualified
 import Prelude hiding (many)
 
-module' :: Parser (Module LocatedExpr Pattern TypeAnnotation (Maybe ModuleName) Many)
+module' :: Parser (Module LocatedExpr Pattern TypeAnnotation (Maybe ModuleName) 'Many)
 module' = do
   header <- parseHeader
   let _name = maybe (Name.fromString "Main") fst header
@@ -25,7 +25,7 @@ module' = do
   imports <- import' `sepEndBy` many newline
   declarations <- declaration _name `sepEndBy` many newline
 
-  return $
+  pure $
     Module
       { _moduleName = _name,
         _moduleExposing = maybe ExposingAll snd header,
@@ -56,9 +56,9 @@ exposition = ExposedValue <$> varName
 import' :: Parser Import
 import' = do
   symbol "import"
-  name <- lexeme Parse.moduleName
+  moduleName <- lexeme Parse.moduleName
   qualified <- optional (symbol "qualified")
   as <- optional . try $ do
     symbol "as"
     lexeme Parse.moduleName
-  Import name as (isJust qualified) <$> exposing
+  Import moduleName as (isJust qualified) <$> exposing

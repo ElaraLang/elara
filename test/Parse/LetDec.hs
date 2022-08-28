@@ -1,21 +1,11 @@
 module Parse.LetDec where
 
-import Control.Lens ((%~), (^.))
-import Control.Lens.Plated (transformOn)
-import Data.Map qualified as M
-import Data.Text
 import Elara.AST.Frontend as AST
-import Elara.Data.Located
 import Elara.Data.Module as Mod
 import Elara.Data.Name
-import Elara.Data.Type
-import Elara.Parse (parse)
 import NeatInterpolation
 import Parse.Common
-import System.Exit
-import Test.HUnit.Lang
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
-import Text.Megaparsec (errorBundlePretty)
+import Test.Hspec (Spec, describe, it)
 
 testModuleName :: ModuleName
 testModuleName = ModuleName ("Main" :| [])
@@ -123,8 +113,7 @@ spec = describe "Test Let Dec Parser" $ do
               }
         }
   it "Parses an indented let with an indented lambda" $
-    do
-      [text|
+    [text|
       let x = 
         \y ->
             1
@@ -150,8 +139,7 @@ spec = describe "Test Let Dec Parser" $ do
         }
   it "Parses a nested let" $
     do
-      do
-        [text|
+      [text|
       let main = 
         let x = 1
         x
@@ -178,8 +166,7 @@ spec = describe "Test Let Dec Parser" $ do
         }
   it "Parses a nested let with some indentation" $
     do
-      do
-        [text|
+      [text|
       let main = 
         let x =
           1
