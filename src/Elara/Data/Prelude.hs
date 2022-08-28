@@ -20,10 +20,10 @@ preludeName :: ModuleName
 preludeName = ModuleName ("Prelude" :| [])
 
 intType :: AbsType Concrete MaybeQualified
-intType = UserDefinedType Nothing (Name "Int")
+intType = UserDefinedType (Name "Int")
 
 stringType :: AbsType Concrete MaybeQualified
-stringType = UserDefinedType Nothing (Name "String")
+stringType = UserDefinedType (Name "String")
 
 prelude :: Module expr pattern' TypeAnnotation MaybeQualified 'Many
 prelude =
@@ -41,8 +41,8 @@ prelude =
             dummyElement "map" (Function (makeConcrete stringType) (makeConcrete stringType)), -- TODO make this an actual signature
 
             -- the types
-            dummyElement "IO" (UserDefinedType Nothing (Name "IO")),
-            dummyElement "()" (UserDefinedType Nothing (Name "()")),
+            dummyElement "IO" (UserDefinedType (Name "IO")),
+            dummyElement "()" (UserDefinedType (Name "()")),
             dummyElement "Int" intType,
             dummyElement "String" stringType
           ]

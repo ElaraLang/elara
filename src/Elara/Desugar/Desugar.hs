@@ -187,16 +187,15 @@ desugarAnnotation :: TypeAnnotation -> DesugarResult (ConcreteType Qualified)
 desugarAnnotation TypeAnnotation {..} = desugarType _type
 
 desugarType :: ConcreteType MaybeQualified -> DesugarResult (ConcreteType Qualified)
-desugarType (Concrete (UserDefinedType _ typeName) _) = do
+desugarType (Concrete (UserDefinedType typeName) _) = do
   DesugarState {..} <- ask
   qual' <- lift $ findModuleOfVar allModules thisModule typeName
-  let resultType = UserDefinedType qual' typeName
+  let resultType = UserDefinedType typeName
   pure (Concrete resultType qual')
-desugarType (Concrete Unit q) = desugarType (Concrete (UserDefinedType Nothing (Name "()")) q)
+desugarType (Concrete Unit q) = desugarType (Concrete (UserDefinedType (Name "()")) q)
 desugarType (Concrete t q) = do
   newType' <- newType
-  let qual = q <|> typeQual newType'
-  pure $ Concrete newType' $ fromMaybe (error $ "cannot resolve " <> toStrict (pShow newType')) qual
+  pure $ Concrete newType' $ fromMaybe (error $ "cannot resolve " <> toStrict (pShow newType')) q
   where
     newType = case t of
       (TypeVar n) -> pure (TypeVar n)

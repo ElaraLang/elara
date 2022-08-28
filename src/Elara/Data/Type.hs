@@ -35,17 +35,7 @@ data AbsType self qual
   | Function {_from :: RType self qual, _to :: RType self qual}
   | Unit
   | TypeConstructorApplication {_constructor :: RType self qual, _arg :: RType self qual}
-  | UserDefinedType
-      { _qualified :: qual,
-        _name :: Name
-      }
-
-typeQual :: (self ~ Concrete) => AbsType self qual -> Maybe qual
-typeQual (TypeVar _) = Nothing
-typeQual (Function _ _) = Nothing
-typeQual Unit = Nothing
-typeQual (TypeConstructorApplication (Concrete x _) _) = typeQual x
-typeQual (UserDefinedType qual _) = Just qual
+  | UserDefinedType Name
 
 makeConcrete :: self -> TRec Concrete self MaybeQualified
 makeConcrete ty = Concrete ty Nothing

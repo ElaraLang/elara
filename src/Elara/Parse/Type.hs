@@ -46,7 +46,7 @@ unit = Unit <-> "()"
 namedType :: Parser (ConcreteType MaybeQualified)
 namedType = maybeQualified $ do
   name <- typeName
-  pure $ \qual -> Concrete (UserDefinedType qual name) qual
+  pure $ \qual -> Concrete (UserDefinedType name) qual
 
 (<->) :: AbsType Concrete MaybeQualified -> Text -> Parser (ConcreteType MaybeQualified)
 (<->) t str = maybeQualified $ do
