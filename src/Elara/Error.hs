@@ -1,6 +1,5 @@
 module Elara.Error where
 
-import Data.Text (Text)
 import Elara.AST.Frontend (LocatedExpr)
 import Elara.Data.Name (ModuleName, Name)
 import Text.Megaparsec (ShowErrorComponent (showErrorComponent))

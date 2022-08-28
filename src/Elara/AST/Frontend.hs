@@ -12,7 +12,7 @@ import Control.Lens hiding (List, element, op)
 import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
-import Elara.Data.Located (IsLocated, Located (Located), NoLocated, XRec)
+import Elara.Data.Located (IsLocated, Located (Located), NoLocated, XRec, TypeIdentity (TypeIdentity))
 import Elara.Data.Module (Module)
 import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.Qualifications (MaybeQualified)
@@ -80,7 +80,7 @@ mapRExpr f x = fmap (mapXRec f) (f x)
 unlocateExpr :: LocatedExpr -> UnwrappedExpr
 unlocateExpr = mapRExpr unlocateExpr'
   where
-    unlocateExpr' (Located _ e) = Identity e
+    unlocateExpr' (Located _ e) = TypeIdentity e
 
 deriving instance (Show (RExpr x)) => Show (Expr x)
 

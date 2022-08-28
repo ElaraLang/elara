@@ -9,6 +9,7 @@ import Control.Lens.Extras (uniplate)
 import Control.Lens.Plated (Plated (plate))
 import Data.Data (Data)
 import Relude.Extra (Foldable1 (..))
+import Text.Show
 
 {-
 Stores location metadata about where something is in the source code.
@@ -16,14 +17,20 @@ Used for nice error messages.
 -}
 
 data Located expr = Located Region expr
-  deriving (Show, Eq,Ord, Traversable, Foldable, Data)
+  deriving (Show, Eq, Ord, Traversable, Foldable, Data)
 
 data NoLocated
 
 data IsLocated
 
+newtype TypeIdentity x = TypeIdentity x
+  deriving (Eq, Ord, Data, Functor, Foldable, Traversable)
+
+instance (Show x) => Show (TypeIdentity x) where
+  show (TypeIdentity x) = Text.Show.show x
+
 type family XRec wrapKind = (wrapper :: Type -> Type) | wrapper -> wrapKind where
-  XRec NoLocated = Identity
+  XRec NoLocated = TypeIdentity
   XRec IsLocated = Located
 
 instance (Data expr, Plated expr) => Plated (Located expr) where
