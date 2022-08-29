@@ -220,27 +220,26 @@ spec = describe "Test Let Dec Parser" $ do
                 _declarationBodyTypeAnnotation = Nothing,
                 _declarationBodyExpression =
                   let gen n b = TypeIdentity (Let (Name n) [] (TypeIdentity $ Block b))
-                   in ( gen
-                          "x"
-                          [ gen
-                              "y"
-                              [ gen
-                                  "z"
-                                  [ gen
-                                      "a"
-                                      [ gen
-                                          "b"
-                                          [ TypeIdentity (Let (Name "c") [] (TypeIdentity $ Int 1)),
-                                            TypeIdentity (Int 2)
-                                          ],
-                                        TypeIdentity (Int 3)
-                                      ],
-                                    TypeIdentity (Int 4)
-                                  ],
-                                TypeIdentity (Int 5)
-                              ],
-                            TypeIdentity (Int 6)
-                          ]
-                      )
+                   in gen
+                        "x"
+                        [ gen
+                            "y"
+                            [ gen
+                                "z"
+                                [ gen
+                                    "a"
+                                    [ gen
+                                        "b"
+                                        [ TypeIdentity (Let (Name "c") [] (TypeIdentity $ Int 1)),
+                                          TypeIdentity (Int 2)
+                                        ],
+                                      TypeIdentity (Int 3)
+                                    ],
+                                  TypeIdentity (Int 4)
+                                ],
+                              TypeIdentity (Int 5)
+                            ],
+                          TypeIdentity (Int 6)
+                        ]
               }
         }
