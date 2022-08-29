@@ -1,6 +1,7 @@
 module Parse.LetDec where
 
 import Elara.AST.Frontend as AST
+import Elara.Data.Located (TypeIdentity (..))
 import Elara.Data.Module as Mod
 import Elara.Data.Name
 import NeatInterpolation
@@ -19,7 +20,7 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationName = Name "x",
           _declarationBody =
             Value
-              { _declarationBodyExpression = Identity (Int 1),
+              { _declarationBodyExpression = TypeIdentity (Int 1),
                 _declarationBodyPatterns = [],
                 _declarationBodyTypeAnnotation = Nothing
               }
@@ -36,7 +37,7 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationName = Name "x",
           _declarationBody =
             Value
-              { _declarationBodyExpression = Identity (Int 1),
+              { _declarationBodyExpression = TypeIdentity (Int 1),
                 _declarationBodyPatterns = [],
                 _declarationBodyTypeAnnotation = Nothing
               }
@@ -54,10 +55,10 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationBody =
             Value
               { _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Block
-                        [ Identity (Int 1),
-                          Identity (Int 2)
+                        [ TypeIdentity (Int 1),
+                          TypeIdentity (Int 2)
                         ]
                     ),
                 _declarationBodyPatterns = [],
@@ -77,10 +78,10 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationBody =
             Value
               { _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Lambda
                         { arguments = [NamedPattern $ Name "y"],
-                          AST.body = Identity (Int 1)
+                          AST.body = TypeIdentity (Int 1)
                         }
                     ),
                 _declarationBodyPatterns = [],
@@ -99,11 +100,11 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationBody =
             Value
               { _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Lambda
                         { arguments = [NamedPattern $ Name "y"],
                           AST.body =
-                            Identity
+                            TypeIdentity
                               ( Int 1
                               )
                         }
@@ -124,11 +125,11 @@ spec = describe "Test Let Dec Parser" $ do
           _declarationBody =
             Value
               { _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Lambda
                         { arguments = [NamedPattern $ Name "y"],
                           AST.body =
-                            Identity
+                            TypeIdentity
                               ( Int 1
                               )
                         }
@@ -152,14 +153,14 @@ spec = describe "Test Let Dec Parser" $ do
               { _declarationBodyPatterns = [],
                 _declarationBodyTypeAnnotation = Nothing,
                 _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Block
-                        [ Identity $
+                        [ TypeIdentity $
                             Let
                               (Name "x")
                               []
-                              (Identity (Int 1)),
-                          Identity (Var $ Name "x")
+                              (TypeIdentity (Int 1)),
+                          TypeIdentity (Var $ Name "x")
                         ]
                     )
               }
@@ -180,15 +181,66 @@ spec = describe "Test Let Dec Parser" $ do
               { _declarationBodyPatterns = [],
                 _declarationBodyTypeAnnotation = Nothing,
                 _declarationBodyExpression =
-                  Identity
+                  TypeIdentity
                     ( Block
-                        [ Identity $
+                        [ TypeIdentity $
                             Let
                               (Name "x")
                               []
-                              (Identity (Int 1)),
-                          Identity (Var $ Name "x")
+                              (TypeIdentity (Int 1)),
+                          TypeIdentity (Var $ Name "x")
                         ]
                     )
+              }
+        }
+
+  it "Parses a comically nested let with some indentation" $
+    do
+      [text|
+      let main = 
+        let x =
+          let y = 
+            let z =
+              let a = 
+                let b =
+                  let c =
+                    1
+                  2
+                3
+              4
+            5
+          6
+      |]
+      <: Declaration
+        { _declarationModule_ = testModuleName,
+          _declarationName = Name "main",
+          _declarationBody =
+            Value
+              { _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing,
+                _declarationBodyExpression =
+                  let gen n b = TypeIdentity (Let (Name n) [] (TypeIdentity $ Block b))
+                   in ( gen
+                          "x"
+                          [ gen
+                              "y"
+                              [ gen
+                                  "z"
+                                  [ gen
+                                      "a"
+                                      [ gen
+                                          "b"
+                                          [ TypeIdentity (Let (Name "c") [] (TypeIdentity $ Int 1)),
+                                            TypeIdentity (Int 2)
+                                          ],
+                                        TypeIdentity (Int 3)
+                                      ],
+                                    TypeIdentity (Int 4)
+                                  ],
+                                TypeIdentity (Int 5)
+                              ],
+                            TypeIdentity (Int 6)
+                          ]
+                      )
               }
         }
