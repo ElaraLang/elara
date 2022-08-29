@@ -40,6 +40,9 @@ data AbsType self qual
 makeConcrete :: self -> TRec Concrete self MaybeQualified
 makeConcrete ty = Concrete ty Nothing
 
+qual :: ConcreteType qual -> qual
+qual (Concrete _ q) = q
+
 deriving instance (Show q, Show (RType x q)) => Show (AbsType x q)
 
 deriving instance (Eq q, Eq (RType x q)) => Eq (AbsType x q)

@@ -2,27 +2,38 @@
 
 module Elara.Desugar.Desugar where
 
-import Control.Lens (set, view, (^.))
+import Control.Lens (transform, view, (^.))
 import Control.Monad.ListM
-import Data.List (foldl1)
 import Data.Map qualified as M
 import Data.Multimap qualified as Mu
-import Data.Text (pack)
 import Elara.AST.Canonical qualified as Canonical
 import Elara.AST.Frontend qualified as Frontend
 import Elara.Data.Located (IsLocated, Located (..))
 import Elara.Data.Located qualified as Located
 import Elara.Data.Module
-import Elara.Data.Module.Inspection
-import Elara.Data.Name as Name (ModuleName, Name (Name), NameLike (moduleName), QualifiedName (QualifiedName))
+  ( Declaration (..),
+    DeclarationBody
+      ( Value,
+        ValueTypeDef,
+        _declarationBodyTypeAnnotation
+      ),
+    HasBody (body),
+    HasDeclarations (declarations),
+    HasModule_ (module_),
+    HasName (name),
+    Module (..),
+  )
+import Elara.Data.Module.Inspection (findModuleOfVar)
+import Elara.Data.Name (ModuleName, Name (Name), QualifiedName (QualifiedName))
 import Elara.Data.Project (Project (..))
 import Elara.Data.Qualifications (MaybeQualified, Qualified)
 import Elara.Data.Type
+import Elara.Data.Type qualified as Type
 import Elara.Data.TypeAnnotation (TypeAnnotation (..))
 import Elara.Data.Uniqueness
 import Elara.Error (DesugarError (CantDesugar, EmptyBlock, LetEndsBlock, MultipleDeclarations))
+import Elara.Parse.Name qualified as Name
 import Print (prettyShow)
-import Relude
 import Text.Pretty.Simple (pShow)
 import Utils qualified
 
@@ -113,9 +124,9 @@ desugarExpr name e = traverse desugarExpr' e
       Frontend.String s -> pure $ Canonical.String s
       Frontend.Bool b -> pure $ Canonical.Bool b
       Frontend.Unit -> pure Canonical.Unit
-      Frontend.Argument name -> pure $ Canonical.Argument name
-      Frontend.Var name -> do
-        name' <- qualifyName name
+      Frontend.Argument argName -> pure $ Canonical.Argument argName
+      Frontend.Var varName -> do
+        name' <- qualifyName varName
         pure (Canonical.Var name')
       Frontend.BinaryOperator op left right -> do
         op' <- desugarExpr name op
@@ -137,7 +148,8 @@ desugarExpr name e = traverse desugarExpr' e
       Frontend.LetIn name pats val body -> do
         val' <- desugarExpr name val
         curriedVal <- curryLambda pats val'
-        body' <- desugarExpr name body
+        let promotedBody = fmap (transform (Name.promoteArguments [name])) body
+        body' <- desugarExpr name promotedBody
         pure $ Canonical.LetIn name curriedVal body'
       other -> lift . Left . CantDesugar $ "desugarExpr: " <> show other
 
@@ -154,14 +166,15 @@ desugarBlock varName exprs = do
   where
     desugarBlock' :: [Frontend.LocatedExpr] -> [Canonical.LocatedExpr] -> DesugarResult Canonical.Expr
     desugarBlock' [] acc = pure (Canonical.Block acc)
-    desugarBlock' [l@(Located _ (Frontend.Let {}))] acc = do
-      this <- (^. name) . thisModule <$> ask
+    desugarBlock' [l@(Located _ (Frontend.Let {}))] _ = do
+      this <- asks ((^. name) . thisModule)
       lift . Left $ LetEndsBlock varName this l
-    desugarBlock' (l@(Located loc (Frontend.Let name pats body)) : others) acc = do
+    desugarBlock' ((Located loc (Frontend.Let letName pats body)) : others) acc = do
       pats' <- traverse desugarPattern pats
-      body' <- desugarBlock name others
-      in' <- desugarBlock name others
-      pure $! Canonical.Block (acc ++ [Located loc $ Canonical.LetIn name body' in'])
+      let promote = fmap (transform (Name.promoteArguments [letName])) :: Frontend.LocatedExpr -> Frontend.LocatedExpr
+      body' <- desugarBlock letName (promote <$> others)
+      in' <- desugarBlock letName (promote <$> others)
+      pure $! Canonical.Block (acc ++ [Located loc $ Canonical.LetIn letName body' in'])
     desugarBlock' (e : xs) acc = do
       e' <- desugarExpr varName e
       desugarBlock' xs (e' : acc)
@@ -193,6 +206,12 @@ desugarType (Concrete (UserDefinedType typeName) _) = do
   let resultType = UserDefinedType typeName
   pure (Concrete resultType qual')
 desugarType (Concrete Unit q) = desugarType (Concrete (UserDefinedType (Name "()")) q)
+desugarType (Concrete (TypeConstructorApplication con arg) q) = do
+  con' <- desugarType con
+  arg' <- desugarType arg
+  case q <|> pure (Type.qual con') of
+    Nothing -> lift . Left . CantDesugar $ "Elara.Desugar.Desugar.desugarType: " <> show con
+    Just q' -> pure $ Concrete (TypeConstructorApplication con' arg') q'
 desugarType (Concrete t q) = do
   newType' <- newType
   pure $ Concrete newType' $ fromMaybe (error $ "cannot resolve " <> toStrict (pShow newType')) q
