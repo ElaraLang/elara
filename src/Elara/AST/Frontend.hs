@@ -50,7 +50,7 @@ data Expr x
   | FunctionCall {function :: RExpr x, argument :: RExpr x}
   | BinaryOperator {operator :: RExpr x, left :: RExpr x, right :: RExpr x}
   | If {condition :: RExpr x, then_ :: RExpr x, else_ :: RExpr x}
-  | Block [RExpr x]
+  | Block (NonEmpty (RExpr x))
   | List [RExpr x]
   | Let {name :: Name, arguments :: [Pattern], body :: RExpr x}
   | LetIn {name :: Name, arguments :: [Pattern], value :: RExpr x, body :: RExpr x}

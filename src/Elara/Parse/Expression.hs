@@ -15,6 +15,7 @@ import Elara.Parse.Name qualified as Name
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
+import Text.Megaparsec.Debug
 
 exprParser :: Parser LocatedExpr
 exprParser =
@@ -27,23 +28,21 @@ exprParser =
 
 expression :: Parser LocatedExpr
 expression =
-  try
-    ( statement <|> exprParser
-    )
+  try exprParser <|> try statement
 
 expressionTerm :: Parser LocatedExpr
 expressionTerm =
   inParens expression
+    <|> letInExpression
     <|> ifElse
     <|> lambda
-    <|> int
     <|> try float
+    <|> int
     <|> string
     <|> char
     <|> try variable
     <|> constructor
     <|> list
-    <|> try letInExpression
 
 statement :: Parser LocatedExpr
 statement = letExpression <?> "statement"
@@ -122,12 +121,11 @@ letExpression = located $ do
       pure (name, patterns)
 
 letInExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
-letInExpression = located $ do
-  ((name, patterns), e) <- optionallyIndented letPreamble expression
-  (_, body) <- optionallyIndented inPreamble expression
+letInExpression = dbg "letIn" . located $ do
+  ((name, patterns), e) <- dbg "let" $ optionallyIndented letPreamble expression
+  (_, body) <- dbg "in" $ optionallyIndented inPreamble expression
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
-
   pure (Ast.LetIn name patterns (promote e) body)
   where
     letPreamble = do
@@ -137,4 +135,5 @@ letInExpression = located $ do
       symbol "="
       pure (name, patterns)
     inPreamble = do
-      symbol "in"
+      symbol "in" <?> "No `in` after `let`"
+      pass

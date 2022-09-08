@@ -114,7 +114,7 @@ desugarExpr :: Name -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedEx
 desugarExpr name (Located _ (Frontend.Lambda args body)) = do
   body' <- desugarExpr name body
   curryLambda args body'
-desugarExpr name (Located _ (Frontend.Block exprs)) = desugarBlock name exprs
+desugarExpr name (Located _ (Frontend.Block exprs)) = desugarBlock name (toList exprs)
 desugarExpr name e = traverse desugarExpr' e
   where
     desugarExpr' :: Frontend.Expr IsLocated -> DesugarResult Canonical.Expr

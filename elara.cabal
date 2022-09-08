@@ -119,6 +119,7 @@ test-suite elara-test
   other-modules:
       Parse
       Parse.Common
+      Parse.Expression
       Parse.LetDec
       Parse.Names
       Paths_elara

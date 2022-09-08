@@ -10,5 +10,5 @@ import Elara.Error (Error)
 import Elara.Parse.Module (module')
 import Text.Megaparsec (MonadParsec (eof), ParseErrorBundle, runParser)
 
-parse :: FilePath -> Text -> Either (ParseErrorBundle Text Error) (Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation (Maybe ModuleName) Many)
+parse :: FilePath -> Text -> Either (ParseErrorBundle Text Error) (Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation (Maybe ModuleName) 'Many)
 parse = runParser (module' <* eof)

@@ -1,8 +1,8 @@
 module Elara.Parse.Literal where
 
-import Elara.Parse.Primitives (Parser, lexeme, symbol)
+import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
 import Text.Megaparsec.Char (char)
-import Text.Megaparsec.Char.Lexer as L (charLiteral, decimal, float)
+import Text.Megaparsec.Char.Lexer as L (charLiteral, decimal, float, signed)
 import Text.Parser.Combinators (manyTill, surroundedBy)
 
 charLiteral :: Parser Char
@@ -12,7 +12,7 @@ stringLiteral :: Parser String
 stringLiteral = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
 integerLiteral :: Parser Int
-integerLiteral = lexeme L.decimal
+integerLiteral = L.signed sc (lexeme L.decimal)
 
 floatLiteral :: Parser Double
-floatLiteral = lexeme L.float
+floatLiteral = L.signed sc (lexeme L.float)

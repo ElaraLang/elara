@@ -17,7 +17,7 @@ spec = describe "Test Let Dec Parser" $ do
     "let x = 1"
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression = TypeIdentity (Int 1),
@@ -34,7 +34,7 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression = TypeIdentity (Int 1),
@@ -51,7 +51,7 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression =
@@ -74,13 +74,13 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression =
                   TypeIdentity
                     ( Lambda
-                        { arguments = [NamedPattern $ Name "y"],
+                        { arguments = [NamedPattern "y"],
                           AST.body = TypeIdentity (Int 1)
                         }
                     ),
@@ -96,13 +96,13 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression =
                   TypeIdentity
                     ( Lambda
-                        { arguments = [NamedPattern $ Name "y"],
+                        { arguments = [NamedPattern "y"],
                           AST.body =
                             TypeIdentity
                               ( Int 1
@@ -121,13 +121,13 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "x",
+          _declarationName = "x",
           _declarationBody =
             Value
               { _declarationBodyExpression =
                   TypeIdentity
                     ( Lambda
-                        { arguments = [NamedPattern $ Name "y"],
+                        { arguments = [NamedPattern "y"],
                           AST.body =
                             TypeIdentity
                               ( Int 1
@@ -147,7 +147,7 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "main",
+          _declarationName = "main",
           _declarationBody =
             Value
               { _declarationBodyPatterns = [],
@@ -157,10 +157,10 @@ spec = describe "Test Let Dec Parser" $ do
                     ( Block
                         [ TypeIdentity $
                             Let
-                              (Name "x")
+                              "x"
                               []
                               (TypeIdentity (Int 1)),
-                          TypeIdentity (Var $ Name "x")
+                          TypeIdentity (Var "x")
                         ]
                     )
               }
@@ -175,7 +175,7 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "main",
+          _declarationName = "main",
           _declarationBody =
             Value
               { _declarationBodyPatterns = [],
@@ -185,10 +185,10 @@ spec = describe "Test Let Dec Parser" $ do
                     ( Block
                         [ TypeIdentity $
                             Let
-                              (Name "x")
+                              "x"
                               []
                               (TypeIdentity (Int 1)),
-                          TypeIdentity (Var $ Name "x")
+                          TypeIdentity (Var "x")
                         ]
                     )
               }
@@ -213,13 +213,13 @@ spec = describe "Test Let Dec Parser" $ do
       |]
       <: Declaration
         { _declarationModule_ = testModuleName,
-          _declarationName = Name "main",
+          _declarationName = "main",
           _declarationBody =
             Value
               { _declarationBodyPatterns = [],
                 _declarationBodyTypeAnnotation = Nothing,
                 _declarationBodyExpression =
-                  let gen n b = TypeIdentity (Let (Name n) [] (TypeIdentity $ Block b))
+                  let gen n b = TypeIdentity (Let n [] (TypeIdentity $ Block b))
                    in gen
                         "x"
                         [ gen
@@ -230,7 +230,7 @@ spec = describe "Test Let Dec Parser" $ do
                                     "a"
                                     [ gen
                                         "b"
-                                        [ TypeIdentity (Let (Name "c") [] (TypeIdentity $ Int 1)),
+                                        [ TypeIdentity (Let "c" [] (TypeIdentity $ Int 1)),
                                           TypeIdentity (Int 2)
                                         ],
                                       TypeIdentity (Int 3)
@@ -241,5 +241,54 @@ spec = describe "Test Let Dec Parser" $ do
                             ],
                           TypeIdentity (Int 6)
                         ]
+              }
+        }
+  it "Parses a let declaration with a let .. in as its body" $
+    do
+      [text|
+      let main = 
+        let x = 3 in x
+      |]
+      <: Declaration
+        { _declarationModule_ = testModuleName,
+          _declarationName = "main",
+          _declarationBody =
+            Value
+              { _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing,
+                _declarationBodyExpression =
+                  TypeIdentity $
+                    LetIn
+                      "x"
+                      []
+                      (TypeIdentity (Int 3))
+                      (TypeIdentity (Var "x"))
+              }
+        }
+  it "Parses a let declaration with a let and a let .. in as its body" $
+    do
+      [text|
+      let main =
+        let x = 3
+        let y = 2 in x
+      |]
+      <: Declaration
+        { _declarationModule_ = testModuleName,
+          _declarationName = "main",
+          _declarationBody =
+            Value
+              { _declarationBodyPatterns = [],
+                _declarationBodyTypeAnnotation = Nothing,
+                _declarationBodyExpression =
+                  TypeIdentity $
+                    Block
+                      [ TypeIdentity (Let "x" [] (TypeIdentity (Int 3))),
+                        TypeIdentity $
+                          LetIn
+                            "y"
+                            []
+                            (TypeIdentity (Int 2))
+                            (TypeIdentity (Var "x"))
+                      ]
               }
         }

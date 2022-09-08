@@ -8,6 +8,9 @@ data Name
   | Qualified QualifiedName
   deriving (Show, Ord, Eq, Data)
 
+instance IsString Name where
+  fromString = Name . Prelude.fromString
+
 data QualifiedName = QualifiedName
   { _qualifiedNameModule :: ModuleName,
     _qualifiedNameName :: Name

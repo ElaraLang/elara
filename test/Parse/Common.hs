@@ -22,3 +22,4 @@ unlocateModule = Mod.moduleDeclarations . traverse . Mod.declarationBody . decla
 (<=>) source expected = do
   let parsed = unlocateModule <$> parse "" source
   shouldParse parsed expected
+

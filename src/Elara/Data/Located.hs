@@ -33,6 +33,10 @@ type family XRec wrapKind = (wrapper :: Type -> Type) | wrapper -> wrapKind wher
   XRec NoLocated = TypeIdentity
   XRec IsLocated = Located
 
+type family UnIdentity x where
+  UnIdentity (TypeIdentity x) = x
+  UnIdentity x = x
+
 instance (Data expr, Plated expr) => Plated (Located expr) where
   plate = uniplate
 

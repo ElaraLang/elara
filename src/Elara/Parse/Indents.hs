@@ -24,7 +24,8 @@ indentedBlock ref expression = L.indentBlock scn innerParser
             [] -> error "indentedBlock: empty block"
             [single] -> pure (a, single)
             x : xs -> do
-              let region = Located.spanningRegion (Located.getRegion <$> (x :| xs))
-              pure (a, Located.located region (Block expressions))
+              let expressions' = x :| xs
+              let region = Located.spanningRegion (Located.getRegion <$> expressions')
+              pure (a, Located.located region (Block expressions'))
 
       pure $ L.IndentSome Nothing merge expression
