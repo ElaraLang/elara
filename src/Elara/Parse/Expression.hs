@@ -16,7 +16,6 @@ import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
 import Text.Megaparsec.Char.Lexer (indentLevel)
-import Text.Megaparsec.Debug
 
 exprParser :: Parser LocatedExpr
 exprParser =
@@ -27,8 +26,8 @@ exprParser =
     ]
     <?> "expression"
 
--- A top level element, comprised of either an expression or a let declaration
--- Note that top level let declarations are not parsed here, but in the [Declaration] module
+-- | A top level element, comprised of either an expression or a let declaration
+-- Note that top level let declarations are not parsed here, but in the "Elara.Parse.Declaration" module
 element :: Parser LocatedExpr
 element =
   try exprParser <|> try statement
