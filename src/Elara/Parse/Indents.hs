@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiWayIf #-}
+
 
 module Elara.Parse.Indents where
 
@@ -6,9 +6,7 @@ import Elara.AST.Frontend
 import Elara.Data.Located qualified as Located
 import Elara.Parse.Primitives
 import Text.Megaparsec (Pos, mkPos, try, unPos)
-import Text.Megaparsec.Char.Lexer (indentLevel)
 import Text.Megaparsec.Char.Lexer qualified as L
-import Print (debugColored)
 
 optionallyIndented :: Parser a -> Parser LocatedExpr -> Parser (a, LocatedExpr)
 optionallyIndented a expression = try (indentedBlock a expression) <|> try (nonIndented a expression)
@@ -57,7 +55,7 @@ withIndentOrNormal pos parser = unmodified <|> indented
       new <- L.indentGuard scn GT sub1
       res <- parser
       pure (new, res)
-      
+
 
 withCurrentIndentOrNormal :: Parser a -> Parser (Pos, a)
 withCurrentIndentOrNormal p = do

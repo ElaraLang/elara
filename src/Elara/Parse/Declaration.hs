@@ -16,7 +16,6 @@ import Text.Megaparsec
   ( sepBy,
   )
 import Text.Megaparsec.Char.Lexer qualified as L
-import Text.Megaparsec.Debug
 
 type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
@@ -38,9 +37,7 @@ valueDecl modName = L.nonIndented sc $ do
   ((name, patterns), e) <- optionallyIndented letPreamble element
   let names = patterns >>= patternNames
   let promote = fmap (Name.promoteAll names)
-      value = Value e patterns Nothing
-  let y x =
-        3 in pure y
+      value = Value e patterns Nothing 
   pure (Declaration modName name (mapExpr promote value))
   where
     letPreamble = do
