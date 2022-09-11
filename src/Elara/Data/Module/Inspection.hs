@@ -19,28 +19,28 @@ exposes ::
   Name ->
   Module expr pattern annotation qualified uniqueness ->
   Bool
-exposes name (Module _ _ exposing declarations) =
-  case exposing of
-    ExposingAll -> isJust (toMap declarations !? name)
+exposes elemName m =
+  case m ^. exposing of
+    ExposingAll -> isJust (toMap (m ^. declarations) !? elemName)
     ExposingSome expositions ->
       isJust $
         find
           ( \case
-              ExposedValue name' -> name == name'
-              ExposedType name' -> name == name'
-              ExposedTypeAndAllConstructors name' -> name == name'
+              ExposedValue name' -> elemName == name'
+              ExposedType name' -> elemName == name'
+              ExposedTypeAndAllConstructors name' -> elemName == name'
           )
           expositions
 
--- Looks in the import .. as list for any modules imported under the given alias, pureing the actual module name if it exists
+-- Looks in the import .. as list for any modules imported under the given alias, returning the actual module name if it exists
 findAlias ::
   Module expr pattern annotation qualified uniqueness ->
   ModuleName ->
   Maybe ModuleName
-findAlias module' name = _importImporting <$> find impNameMatches (module' ^. imports)
+findAlias module' modName = _importImporting <$> find impNameMatches (module' ^. imports)
   where
     impNameMatches :: Import -> Bool
-    impNameMatches imp = imp ^. as == Just name
+    impNameMatches imp = imp ^. as == Just modName
 
 findModuleOfVar ::
   (PatternLike pattern, MapLike (Structure uniqueness) f) =>
