@@ -2,7 +2,7 @@ module Elara.Parse.Module where
 
 import Control.Lens (view)
 import Elara.AST.Frontend (LocatedExpr, Pattern)
-import Elara.Data.Module (Declaration (Declaration), Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
+import Elara.Data.Module (Exposing (..), Exposition (ExposedValue), Import (..), Module (..), name)
 import Elara.Data.Name (ModuleName)
 import Elara.Data.Name qualified as Name
 import Elara.Data.TypeAnnotation
@@ -11,7 +11,7 @@ import Elara.Parse.Declaration
 import Elara.Parse.Name (varName)
 import Elara.Parse.Name qualified as Parse (moduleName)
 import Elara.Parse.Primitives (Parser, lexeme, oneOrCommaSeparatedInParens, symbol)
-import Text.Megaparsec (MonadParsec (try), many, optional, sepEndBy)
+import Text.Megaparsec (MonadParsec (try), many, sepEndBy)
 import Text.Megaparsec.Char (newline)
 import Utils qualified
 import Prelude hiding (many)

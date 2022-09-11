@@ -33,26 +33,33 @@ spec = describe "Test Expression Parser" $ do
     it "Parses multi line 1" $ do
       [text| 
       let x = 
-       1
+           1
        in x |]
         <=> result
     it "Parses multi line 2" $ do
       [text|
       let x = 
-        1 
-      in 
+           1 
+       in 
         x |]
         <=> result
     it "Parses multi line 3" $ do
       [text| 
      let x = 1 in
-         x |]
+      x |]
         <=> result
     it "Parses multi line 4" $ do
       [text| 
      let x = 1
        in 
-       x |]
+      x |]
+        <=> result
+
+    it "Parses multi line 5" $ do
+      [text| 
+      let x =
+            1 in x
+      |]
         <=> result
 
 (<=>) :: Text -> UnwrappedExpr -> IO ()

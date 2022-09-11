@@ -30,7 +30,7 @@ main = do
       let modules = Utils.associateWithKey (view name) [prelude, moduleAST]
       let desugared = desugarModule modules moduleAST
       printColored (unlocateModule moduleAST)
-      printColored desugared
+      -- printColored (unlocateModule desugared
 
 printColored :: (Show a) => a -> IO ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg

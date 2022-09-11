@@ -8,30 +8,33 @@ import Elara.AST.Frontend qualified as Ast
 import Elara.AST.Generic (patternNames)
 import Elara.Data.Located as Located (merge)
 import Elara.Data.Name qualified as Name
-import Elara.Parse.Indents (optionallyIndented)
+import Elara.Parse.Indents (optionallyIndented, withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Name (opName, typeName, varName)
 import Elara.Parse.Name qualified as Name
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
+import Text.Megaparsec.Char.Lexer (indentLevel)
 import Text.Megaparsec.Debug
 
 exprParser :: Parser LocatedExpr
 exprParser =
   makeExprParser
-    expressionTerm
+    expression
     [ [InfixR (Located.merge Ast.FunctionCall <$ sc)],
       [InfixL (Located.merge . Ast.BinaryOperator <$> operator)]
     ]
     <?> "expression"
 
-expression :: Parser LocatedExpr
-expression =
+-- A top level element, comprised of either an expression or a let declaration
+-- Note that top level let declarations are not parsed here, but in the [Declaration] module
+element :: Parser LocatedExpr
+element =
   try exprParser <|> try statement
 
-expressionTerm :: Parser LocatedExpr
-expressionTerm =
+expression :: Parser LocatedExpr
+expression =
   inParens expression
     <|> letInExpression
     <|> ifElse
@@ -78,14 +81,15 @@ string :: Parser LocatedExpr
 string = located (Ast.String <$> stringLiteral)
 
 lambda :: Parser LocatedExpr
-lambda = located $ do
-  (args, res) <- optionallyIndented lambdaPreamble expression
-  let argNames = args >>= patternNames
-  pure (Name.promoteAll argNames (Ast.Lambda args res))
+lambda = dbg "lambda" $
+  located $ do
+    (args, res) <- optionallyIndented lambdaPreamble element
+    let argNames = args >>= patternNames
+    pure (Name.promoteAll argNames (Ast.Lambda args res))
   where
     lambdaPreamble = do
       symbol "\\"
-      args <- lexeme (sepBy pattern' sc)
+      args <- lexeme (sepBy (lexeme pattern') sc)
       symbol "->"
       pure args
 
@@ -107,7 +111,7 @@ list = located $ do
 
 letExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letExpression = located $ do
-  ((name, patterns), e) <- optionallyIndented letPreamble expression
+  ((name, patterns), e) <- optionallyIndented letPreamble element
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
 
@@ -115,25 +119,27 @@ letExpression = located $ do
   where
     letPreamble = do
       symbol "let"
-      name <- varName
+      name <- lexeme varName
       patterns <- sepBy (lexeme pattern') sc
       symbol "="
       pure (name, patterns)
 
 letInExpression :: Parser LocatedExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
-letInExpression = dbg "letIn" . located $ do
-  ((name, patterns), e) <- dbg "let" $ optionallyIndented letPreamble expression
-  (_, body) <- dbg "in" $ optionallyIndented inPreamble expression
+letInExpression = located $ do
+  start <- indentLevel
+  symbol "let"
+  name <- varName -- we cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
+  (n, patterns) <- withCurrentIndentOrNormal $ do
+    sc -- consume the spaces from the non-lexeme'd varName.
+    sepBy (lexeme pattern') sc
+
+  _ <- withIndentOrNormal n (symbol "=")
+  (_, e) <- withIndentOrNormal n element
+
+  _ <- withIndentOrNormal start (symbol "in")
+
+  (_, body) <- withIndentOrNormal start element
+
   let names = patterns >>= patternNames
   let promote = fmap (transform (Name.promoteArguments names))
   pure (Ast.LetIn name patterns (promote e) body)
-  where
-    letPreamble = do
-      symbol "let"
-      name <- varName
-      patterns <- sepBy (lexeme pattern') sc
-      symbol "="
-      pure (name, patterns)
-    inPreamble = do
-      symbol "in" <?> "No `in` after `let`"
-      pass

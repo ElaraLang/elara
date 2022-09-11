@@ -25,10 +25,10 @@ import Prelude hiding (many, some)
 varName :: Parser Name
 varName = qualified varName'
   where
-    varName' = lexeme (inParens opName) <|> lexeme alphaVarName
+    varName' = inParens opName <|> alphaVarName
 
 alphaVarName :: (NameFromText n) => Parser n
-alphaVarName = Name.fromString <$> lexeme ((:) <$> lowerChar <*> many alphaNumChar)
+alphaVarName = Name.fromString <$> ((:) <$> lowerChar <*> many alphaNumChar)
 
 typeName :: Parser Name
 typeName = do
