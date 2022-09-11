@@ -35,7 +35,7 @@ element =
 
 expression :: Parser LocatedExpr
 expression =
-  inParens expression
+  inParens exprParser
     <|> letInExpression
     <|> ifElse
     <|> lambda
@@ -81,11 +81,10 @@ string :: Parser LocatedExpr
 string = located (Ast.String <$> stringLiteral)
 
 lambda :: Parser LocatedExpr
-lambda = dbg "lambda" $
-  located $ do
-    (args, res) <- optionallyIndented lambdaPreamble element
-    let argNames = args >>= patternNames
-    pure (Name.promoteAll argNames (Ast.Lambda args res))
+lambda = located $ do
+  (args, res) <- optionallyIndented lambdaPreamble element
+  let argNames = args >>= patternNames
+  pure (Name.promoteAll argNames (Ast.Lambda args res))
   where
     lambdaPreamble = do
       symbol "\\"
