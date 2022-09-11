@@ -36,6 +36,7 @@ import Elara.Parse.Name qualified as Name
 import Print (prettyShow)
 import Text.Pretty.Simple (pShow)
 import Utils qualified
+import Prelude hiding (state)
 
 type DesugarResult = ReaderT DesugarState (Either DesugarError)
 
@@ -44,9 +45,9 @@ data DesugarState = DesugarState
     thisModule :: SourceModule
   }
 
-type SourceModule = Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation MaybeQualified Many
+type SourceModule = Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation MaybeQualified 'Many
 
-type CanonicalModule = Module Canonical.LocatedExpr Canonical.Pattern (ConcreteType Qualified) Qualified Unique
+type CanonicalModule = Module Canonical.LocatedExpr Canonical.Pattern (ConcreteType Qualified) Qualified 'Unique
 
 type SourceDeclaration = Declaration Frontend.LocatedExpr Frontend.Pattern TypeAnnotation MaybeQualified
 
@@ -62,11 +63,10 @@ desugarProject project@Project {..} = do
   pure project {fields = newFields}
 
 desugarModule :: M.Map ModuleName SourceModule -> SourceModule -> Either DesugarError CanonicalModule
-desugarModule modules module'@Module {..} = do
-  let state = DesugarState modules module'
-  let declarations' = module' ^. declarations
-  merged <- usingReaderT state $ do
-    declarations' <- traverse desugarDeclaration declarations'
+desugarModule modules module' = do
+  let desugarState = DesugarState modules module'
+  merged <- usingReaderT desugarState $ do
+    declarations' <- traverse desugarDeclaration (module' ^. declarations)
     mergeDeclarations declarations'
   pure module' {_moduleDeclarations = merged}
 
@@ -77,8 +77,8 @@ mergeDeclarations multimap = do
 
 mergeDeclaration :: CanonicalDeclaration -> CanonicalDeclaration -> DesugarResult CanonicalDeclaration
 mergeDeclaration a b = do
-  body <- mergeBodies (a ^. body) (b ^. body)
-  pure $ Declaration (a ^. module_) (a ^. name) body
+  mergedBody <- mergeBodies (a ^. body) (b ^. body)
+  pure $ Declaration (a ^. module_) (a ^. name) mergedBody
   where
     throwDuplicateError :: DesugarResult x
     throwDuplicateError = do
@@ -111,11 +111,11 @@ desugarDeclaration dec@Declaration {..} = do
     _ -> lift . Left . CantDesugar $ "desugarDeclaration: " <> show dec
 
 desugarExpr :: Name -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr
-desugarExpr name (Located _ (Frontend.Lambda args body)) = do
-  body' <- desugarExpr name body
+desugarExpr declName (Located _ (Frontend.Lambda args lambdaBody)) = do
+  body' <- desugarExpr declName lambdaBody
   curryLambda args body'
-desugarExpr name (Located _ (Frontend.Block exprs)) = desugarBlock name (toList exprs)
-desugarExpr name e = traverse desugarExpr' e
+desugarExpr declName (Located _ (Frontend.Block exprs)) = desugarBlock declName (toList exprs)
+desugarExpr declName e = traverse desugarExpr' e
   where
     desugarExpr' :: Frontend.Expr IsLocated -> DesugarResult Canonical.Expr
     desugarExpr' expr = case expr of
@@ -129,33 +129,29 @@ desugarExpr name e = traverse desugarExpr' e
         name' <- qualifyName varName
         pure (Canonical.Var name')
       Frontend.BinaryOperator op left right -> do
-        op' <- desugarExpr name op
-        left' <- desugarExpr name left
-        right' <- desugarExpr name right
+        op' <- desugarExpr declName op
+        left' <- desugarExpr declName left
+        right' <- desugarExpr declName right
         pure $ Canonical.BinaryOperator op' left' right'
       Frontend.FunctionCall f arg -> do
-        f' <- desugarExpr name f
-        arg' <- desugarExpr name arg
+        f' <- desugarExpr declName f
+        arg' <- desugarExpr declName arg
         pure $ Canonical.FunctionCall f' arg'
       Frontend.If cond then_ else_ -> do
-        cond' <- desugarExpr name cond
-        then_' <- desugarExpr name then_
-        else_' <- desugarExpr name else_
+        cond' <- desugarExpr declName cond
+        then_' <- desugarExpr declName then_
+        else_' <- desugarExpr declName else_
         pure $ Canonical.If cond' then_' else_'
-      Frontend.List exprs -> traverse (desugarExpr name) exprs <&> Canonical.List
-      l@(Frontend.Let name pats body) -> do
+      Frontend.List exprs -> traverse (desugarExpr declName) exprs <&> Canonical.List
+      l@(Frontend.Let {}) -> do
         error $ "standalone let " <> show l
-      Frontend.LetIn name pats val body -> do
-        val' <- desugarExpr name val
+      Frontend.LetIn letName pats val letBody -> do
+        val' <- desugarExpr letName val
         curriedVal <- curryLambda pats val'
-        let promotedBody = fmap (transform (Name.promoteArguments [name])) body
-        body' <- desugarExpr name promotedBody
-        pure $ Canonical.LetIn name curriedVal body'
+        let promotedBody = fmap (transform (Name.promoteArguments [letName])) letBody
+        body' <- desugarExpr letName promotedBody
+        pure $ Canonical.LetIn letName curriedVal body'
       other -> lift . Left . CantDesugar $ "desugarExpr: " <> show other
-
-desugarLet :: Name -> [Frontend.Pattern] -> Frontend.LocatedExpr -> DesugarResult (Name, Canonical.LocatedExpr)
-desugarLet name pats val = do
-  error "what"
 
 desugarBlock :: Name -> [Frontend.LocatedExpr] -> DesugarResult Canonical.LocatedExpr
 desugarBlock varName [] = ask >>= (lift . Left . EmptyBlock varName) . (^. name) . thisModule
@@ -169,8 +165,8 @@ desugarBlock varName exprs = do
     desugarBlock' [l@(Located _ (Frontend.Let {}))] _ = do
       this <- asks ((^. name) . thisModule)
       lift . Left $ LetEndsBlock varName this l
-    desugarBlock' ((Located loc (Frontend.Let letName pats body)) : others) acc = do
-      pats' <- traverse desugarPattern pats
+    desugarBlock' ((Located loc (Frontend.Let letName pats _)) : others) acc = do
+      traverse_ desugarPattern pats -- TODO ignoring this is not very good
       let promote = fmap (transform (Name.promoteArguments [letName])) :: Frontend.LocatedExpr -> Frontend.LocatedExpr
       body' <- desugarBlock letName (promote <$> others)
       in' <- desugarBlock letName (promote <$> others)
@@ -180,10 +176,10 @@ desugarBlock varName exprs = do
       desugarBlock' xs (e' : acc)
 
 qualifyName :: Name -> DesugarResult QualifiedName
-qualifyName name = do
+qualifyName n = do
   DesugarState {..} <- ask
-  mod <- lift $ findModuleOfVar allModules thisModule name
-  pure (QualifiedName mod name)
+  modName <- lift $ findModuleOfVar allModules thisModule n
+  pure (QualifiedName modName n)
 
 -- turns \x y z -> ... into \x -> \y -> \z -> ...
 curryLambda :: [Frontend.Pattern] -> Canonical.LocatedExpr -> DesugarResult Canonical.LocatedExpr
@@ -222,7 +218,3 @@ desugarType (Concrete t q) = do
         from' <- desugarType from
         to' <- desugarType to
         pure (Function from' to')
-      TypeConstructorApplication con arg -> do
-        con' <- desugarType con
-        arg' <- desugarType arg
-        pure (TypeConstructorApplication con' arg')
