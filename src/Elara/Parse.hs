@@ -1,6 +1,5 @@
 module Elara.Parse where
 
-import Data.Text (Text)
 import Elara.AST.Frontend qualified as Frontend
 import Elara.Data.Module (Module)
 import Elara.Data.Name (ModuleName)
