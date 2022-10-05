@@ -9,7 +9,7 @@
 module Elara.Data.Module where
 
 import Control.Lens (Plated)
-import Control.Lens.TH (makeFields, makeLenses)
+import Control.Lens.TH (makeFields, makeLenses, makePrisms)
 import Data.Data (Data)
 import Elara.Data.Name
 import Elara.Data.Type (ConcreteType)
@@ -89,6 +89,7 @@ data Exposition
 
 makeLenses ''Exposing
 makeLenses ''DeclarationBody
+makePrisms ''DeclarationBody
 makeLenses ''Module
 makeLenses ''Declaration
 

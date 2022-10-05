@@ -10,6 +10,7 @@ import Control.Lens.Plated (Plated (plate))
 import Data.Data (Data)
 import Relude.Extra (Foldable1 (..))
 import Text.Show
+import Prelude hiding (show)
 
 {-
 Stores location metadata about where something is in the source code.
@@ -27,7 +28,7 @@ newtype TypeIdentity x = TypeIdentity x
   deriving (Eq, Ord, Data, Functor, Foldable, Traversable)
 
 instance (Show x) => Show (TypeIdentity x) where
-  show (TypeIdentity x) = Text.Show.show x
+  show (TypeIdentity x) = show x
 
 type family XRec wrapKind = (wrapper :: Type -> Type) | wrapper -> wrapKind where
   XRec NoLocated = TypeIdentity
@@ -58,6 +59,9 @@ getRegion (Located r _) = r
 
 unlocate :: Located expr -> expr
 unlocate (Located _ expr) = expr
+
+replace :: b -> Located a -> Located b
+replace = fmap . const
 
 merge :: (Located a -> Located b -> c) -> Located a -> Located b -> Located c
 merge fn l1 l2 =

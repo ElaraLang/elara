@@ -19,6 +19,7 @@ import Elara.Data.Qualifications (MaybeQualified)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
 import Elara.Data.Uniqueness
 import Prelude hiding (Type)
+import Control.Lens (makeLenses)
 
 {- Least abstract AST, closest to elara source code.
 Things like comments are preserved
@@ -120,3 +121,5 @@ data Type
       { _qualified :: MaybeQualified,
         _name :: Name
       }
+  deriving (Eq, Ord, Show)
+

@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,6 +28,7 @@ library
       Elara.AST.Canonical
       Elara.AST.Frontend
       Elara.AST.Generic
+      Elara.AST.Typed
       Elara.Data.Located
       Elara.Data.Module
       Elara.Data.Module.Inspection
@@ -51,6 +52,12 @@ library
       Elara.Parse.Pattern
       Elara.Parse.Primitives
       Elara.Parse.Type
+      Elara.TypeInfer.Common
+      Elara.TypeInfer.Environment
+      Elara.TypeInfer.Error
+      Elara.TypeInfer.Expression
+      Elara.TypeInfer.Infer
+      Elara.TypeInfer.Substitute
       Prelude
       Print
       Utils

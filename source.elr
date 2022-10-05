@@ -5,6 +5,3 @@ def main : Prelude.IO ()
 let main =
   let y x =
         3 in y
-  let x = 4
-  println x
-  println (x + 1)

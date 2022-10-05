@@ -36,7 +36,7 @@ data Expr
   | FunctionCall {function :: LocatedExpr, argument :: LocatedExpr}
   | BinaryOperator {operator :: LocatedExpr, left :: LocatedExpr, right :: LocatedExpr}
   | If {condition :: LocatedExpr, then_ :: LocatedExpr, else_ :: LocatedExpr}
-  | Block [LocatedExpr]
+  | Block (NonEmpty LocatedExpr)
   | List [LocatedExpr]
   | Unit
   | LetIn {name :: Name, value :: LocatedExpr, body :: LocatedExpr}
@@ -48,7 +48,7 @@ data Pattern
   deriving (Eq, Ord, Show)
 
 instance PatternLike Pattern where
-  patternNames (NamedPattern name) = [name]
+  patternNames (NamedPattern n) = [n]
   patternNames WildPattern = []
 
 data Type

@@ -161,16 +161,16 @@ desugarBlock varName exprs = do
   pure $ Located spanningRegion block
   where
     desugarBlock' :: [Frontend.LocatedExpr] -> [Canonical.LocatedExpr] -> DesugarResult Canonical.Expr
-    desugarBlock' [] acc = pure (Canonical.Block acc)
+    desugarBlock' [] acc = pure (Canonical.Block (fromList acc))
     desugarBlock' [l@(Located _ (Frontend.Let {}))] _ = do
       this <- asks ((^. name) . thisModule)
       lift . Left $ LetEndsBlock varName this l
     desugarBlock' ((Located loc (Frontend.Let letName pats _)) : others) acc = do
       traverse_ desugarPattern pats -- TODO ignoring this is not very good
-      let promote = fmap (transform (Name.promoteArguments [letName])) :: Frontend.LocatedExpr -> Frontend.LocatedExpr
+      let promote = fmap (transform (Name.promoteArguments [letName]))
       body' <- desugarBlock letName (promote <$> others)
       in' <- desugarBlock letName (promote <$> others)
-      pure $! Canonical.Block (acc ++ [Located loc $ Canonical.LetIn letName body' in'])
+      pure $ Canonical.Block (fromList acc <> [Located loc $ Canonical.LetIn letName body' in'])
     desugarBlock' (e : xs) acc = do
       e' <- desugarExpr varName e
       desugarBlock' xs (e' : acc)
