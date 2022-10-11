@@ -18,7 +18,11 @@ Used for nice error messages.
 -}
 
 data Located expr = Located Region expr
-  deriving (Show, Eq, Ord, Traversable, Foldable, Data)
+  deriving (Eq, Ord, Traversable, Foldable, Data)
+
+instance Show expr => Show (Located expr) where
+  show (Located _ e) = show e
+  -- TODO debug definition, remove
 
 data NoLocated
 
@@ -46,8 +50,8 @@ instance Functor Located where
 
 -- Region in the source code. This is calculated as an offset for efficiency.
 data Region = Region
-  { startOffset :: Int,
-    endOffset :: Int
+  { startOffset :: Int
+  , endOffset :: Int
   }
   deriving (Show, Ord, Eq, Data)
 
@@ -72,6 +76,6 @@ merge fn l1 l2 =
 spanningRegion :: NonEmpty Region -> Region
 spanningRegion regions =
   Region
-    { startOffset = minimum1 (startOffset <$> regions),
-      endOffset = maximum1 (endOffset <$> regions)
+    { startOffset = minimum1 (startOffset <$> regions)
+    , endOffset = maximum1 (endOffset <$> regions)
     }

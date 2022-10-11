@@ -23,6 +23,7 @@ dependencies:
   - pretty-simple
   - mtl
   - monadlist
+  - diagnose
 
 ghc-options:
 - -Wall

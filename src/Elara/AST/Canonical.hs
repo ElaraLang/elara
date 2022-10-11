@@ -2,6 +2,8 @@
 
 module Elara.AST.Canonical where
 
+import Control.Lens
+import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located
@@ -40,12 +42,12 @@ data Expr
   | List [LocatedExpr]
   | Unit
   | LetIn {name :: Name, value :: LocatedExpr, body :: LocatedExpr}
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 data Pattern
   = NamedPattern Name
   | WildPattern
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Data)
 
 instance PatternLike Pattern where
   patternNames (NamedPattern n) = [n]
@@ -57,6 +59,6 @@ data Type
   | UnitT
   | TypeConstructorApplication {_constructor :: Type, _args :: [Type]}
   | UserDefinedType
-      { _qualified :: Qualified,
-        _name :: Name
+      { _qualified :: Qualified
+      , _name :: Name
       }

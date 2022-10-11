@@ -16,5 +16,5 @@ debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg
 debugColoredStr :: (Applicative f) => String -> f ()
 debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
 
-prettyShow :: (Show a) => a -> Text
-prettyShow = toStrict . pShow
+prettyShow :: (Show a, IsString s) => a -> s
+prettyShow = fromString . toString . pShow

@@ -1,7 +1,11 @@
 packages:
   - .
 resolver:
-  compiler: ghc-9.4.2
+  compiler: ghc-9.2.3
+
+flags:
+  diagnose:
+    megaparsec-compat: true
 
 extra-deps:
   - relude-1.1.0.0@sha256:fe82b67d4560b9eff8d7dd12c5e1f786b25d52d64f7302ad82a3bbec9a0bd55e,11747
@@ -231,7 +235,8 @@ extra-deps:
   - type-equality-1@sha256:bb3a34a93ad02866763b325e889ea9f5aa31f7428e32dcaa1cf14015bd21b9cb,1597
   - cpphs-1.20.9.1@sha256:0ad26fef4e6be4cb13e1df93aab7bdbe9c3d3bc6c63b84d9e29cc0f691fe12b9,3331
   - deriving-aeson-0.2.8@sha256:65aabe7fe384360bc4d472787423145c05f8e5ede64fac677a375ed82a3d9d5f,1342
-  - ghc-lib-parser-9.2.4.20220729@sha256:02c229a122d698f055615f2794fbcb01ce4241aaf16ee990068189193c61e228,12741
+  - ghc-lib-parser-9.4.2.20220822@sha256:566b1ddecee9e526f62dadc98dfc89e0f72f5d0d03ebc628c528f9d51b4a5681,14156
+  - ghc-lib-parser-ex-9.4.0.0@sha256:a55b192642e1efd3fd3a358aff416e88b6b04f33572bd1d7be9e9008648f2523,3493
   - hscolour-1.24.4@sha256:3a329fa0ea9138f651088f1fa25522aabeab0eb591932d3fd56c66736bbe78be,1682
   - refact-0.3.0.2@sha256:4ea82b93debdc0711e1bc4b5d8989b9e19613f369ff2049da33c5250b8d33bcd,1065
   - uniplate-1.6.13@sha256:c8b715570d0b4baa72512e677552dd3f98372a64bf9de000e779bd4162fd7be7,3320
@@ -304,3 +309,4 @@ extra-deps:
   - old-time-1.1.0.3@sha256:c91fbb3ee73d20ccd015842b30f1f29a304893ebe0ae3128b7bbc13d5bb0d4c8,1328
   - HsYAML-0.2.1.1@sha256:bbde5ec41f2903fdca2ec1a743dc40bfedf8ca12fb7f3351cb7431ee657eab4a,5691
   - HsYAML-aeson-0.2.0.1@sha256:24340936b00e50bf76963b4f344dbc596ac06edf30a7b249f7c73454ecdc681b,2618
+  - diagnose-2.4.0@sha256:c594a0b512a8d3aa58b240070467d6f337ef0769e367a0e74f2081307b1b13d7,5941
