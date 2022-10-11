@@ -5,7 +5,7 @@ module Elara.AST.Typed where
 import qualified Data.Map                      as M
 import           Elara.AST.Generic              ( PatternLike(patternNames) )
 import           Elara.Data.Located
-import           Elara.Data.Module              ( Module )
+import           Elara.Data.Module              ( Module, Declaration )
 import           Elara.Data.Name                ( ModuleName
                                                 , Name(..)
                                                 , QualifiedName
@@ -16,8 +16,11 @@ import           Elara.Data.Uniqueness
 import           Prelude                 hiding ( Type )
 
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified 'Unique)
+  { modules :: M.Map ModuleName (Module LocatedExpr Void (ConcreteType Qualified) Qualified 'Unique)
   }
+
+
+type TypedDeclaration = Declaration LocatedExpr Void (ConcreteType Qualified) Qualified
 
 type LocatedExpr = Located Expr
 

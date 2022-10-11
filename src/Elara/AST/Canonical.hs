@@ -2,21 +2,29 @@
 
 module Elara.AST.Canonical where
 
-import Control.Lens
 import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located
-import Elara.Data.Module (Module)
+import Elara.Data.Module (Declaration, DeclarationBody, Module)
 import Elara.Data.Name (ModuleName, Name (..), QualifiedName)
 import Elara.Data.Qualifications (Qualified)
 import Elara.Data.Type (ConcreteType)
 import Elara.Data.Uniqueness
 import Prelude hiding (Type)
 
+{-
+Type alias for a canonicalised module
+You may notice the lack of "Canonical.Pattern" instead of "Frontend.Pattern", being replaced with "Void"
+instead. This is because currently the "pattern" parameter is only used in "DeclarationBody", but after canonicalisation/desugaring,
+a top level expression shouldn't have any "free" patterns
+-}
+type CanonicalModule = Module LocatedExpr Void (ConcreteType Qualified) Qualified 'Unique
+type CanonicalDeclaration = Declaration LocatedExpr Void (ConcreteType Qualified) Qualified
+type CanonicalDeclarationBody = DeclarationBody LocatedExpr Void (ConcreteType Qualified) Qualified
+
 newtype ProjectFields = ProjectFields
-  { modules :: M.Map ModuleName (Module LocatedExpr Pattern (ConcreteType Qualified) Qualified 'Unique)
-  }
+  {modules :: M.Map ModuleName CanonicalModule}
 
 type LocatedExpr = Located Expr
 

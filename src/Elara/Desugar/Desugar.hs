@@ -7,6 +7,7 @@ import Control.Monad.ListM
 import Data.List.NonEmpty (prependList)
 import Data.Map qualified as M
 import Data.Multimap qualified as Mu
+import Elara.AST.Canonical (CanonicalModule, CanonicalDeclaration, CanonicalDeclarationBody)
 import Elara.AST.Canonical qualified as Canonical
 import Elara.AST.Frontend qualified as Frontend
 import Elara.Data.Located (IsLocated, Located (..))
@@ -48,13 +49,7 @@ data DesugarState = DesugarState
 
 type SourceModule = Module Frontend.LocatedExpr Frontend.Pattern TypeAnnotation MaybeQualified 'Many
 
-type CanonicalModule = Module Canonical.LocatedExpr Canonical.Pattern (ConcreteType Qualified) Qualified 'Unique
-
 type SourceDeclaration = Declaration Frontend.LocatedExpr Frontend.Pattern TypeAnnotation MaybeQualified
-
-type CanonicalDeclaration = Declaration Canonical.LocatedExpr Canonical.Pattern (ConcreteType Qualified) Qualified
-
-type CanonicalDeclarationBody = DeclarationBody Canonical.LocatedExpr Canonical.Pattern (ConcreteType Qualified) Qualified
 
 desugarProject :: Project Frontend.ProjectFields -> Either DesugarError (Project Canonical.ProjectFields)
 desugarProject project@Project{..} = do
@@ -105,10 +100,9 @@ desugarDeclaration dec@Declaration{..} = do
     ValueTypeDef annotation -> Declaration _declarationModule_ _declarationName . ValueTypeDef <$> desugarAnnotation annotation
     Value expr patterns ty -> do
       expr' <- desugarExpr (view name dec) expr
-      patterns' <- traverse desugarPattern patterns
       ty' <- traverse desugarAnnotation ty
-
-      pure $ Declaration _declarationModule_ _declarationName $ Value expr' patterns' ty'
+      lambda <- curryLambda patterns expr'
+      pure $ Declaration _declarationModule_ _declarationName $ Value lambda [] ty'
     _ -> lift . Left . CantDesugar $ "desugarDeclaration: " <> show dec
 
 desugarExpr :: Name -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr

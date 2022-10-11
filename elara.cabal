@@ -53,6 +53,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Type
       Elara.TypeInfer.Common
+      Elara.TypeInfer.Declaration
       Elara.TypeInfer.Environment
       Elara.TypeInfer.Error
       Elara.TypeInfer.Expression
