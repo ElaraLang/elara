@@ -2,25 +2,26 @@
 
 module Elara.AST.Typed where
 
-import qualified Data.Map                      as M
-import           Elara.AST.Generic              ( PatternLike(patternNames) )
-import           Elara.Data.Located
-import           Elara.Data.Module              ( Module, Declaration )
-import           Elara.Data.Name                ( ModuleName
-                                                , Name(..)
-                                                , QualifiedName
-                                                )
-import           Elara.Data.Qualifications      ( Qualified )
-import           Elara.Data.Type                ( ConcreteType )
-import           Elara.Data.Uniqueness
-import           Prelude                 hiding ( Type )
+import Data.Map qualified as M
+import Elara.AST.Generic (PatternLike (patternNames))
+import Elara.Data.Located
+import Elara.Data.Module (Declaration, DeclarationBody, Module)
+import Elara.Data.Name (
+  ModuleName,
+  Name (..),
+  QualifiedName,
+ )
+import Elara.Data.Qualifications (Qualified)
+import Elara.Data.Type (ConcreteType)
+import Elara.Data.Uniqueness
+import Prelude hiding (Type)
 
 newtype ProjectFields = ProjectFields
   { modules :: M.Map ModuleName (Module LocatedExpr Void (ConcreteType Qualified) Qualified 'Unique)
   }
 
-
 type TypedDeclaration = Declaration LocatedExpr Void (ConcreteType Qualified) Qualified
+type TypedDeclarationBody = DeclarationBody LocatedExpr Void (ConcreteType Qualified) Qualified
 
 type LocatedExpr = Located Expr
 
@@ -62,7 +63,7 @@ data Pattern_
 
 instance PatternLike Pattern_ where
   patternNames (NamedPattern n) = [n]
-  patternNames WildPattern      = []
+  patternNames WildPattern = []
 
 instance PatternLike Pattern where
   patternNames (Pattern p _) = patternNames p
@@ -72,7 +73,7 @@ data Type
   | Type :-> Type
   | TypeConstructorApplication {_constructor :: Type, _args :: [Type]}
   | UserDefinedType
-      { _qualified :: Qualified,
-        _name :: Name
+      { _qualified :: Qualified
+      , _name :: Name
       }
   deriving (Eq, Show, Ord)

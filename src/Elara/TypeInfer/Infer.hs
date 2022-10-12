@@ -2,11 +2,7 @@
 
 module Elara.TypeInfer.Infer where
 
-import Control.Monad.Except (
-  Except,
-  MonadError (..),
-  runExcept,
- )
+import Control.Monad.Except hiding (runExceptT)
 import Control.Monad.RWS.Strict (
   MonadWriter (tell),
   RWST,
@@ -22,7 +18,6 @@ import Elara.TypeInfer.Common
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Error (TypeError (..))
 import Elara.TypeInfer.Substitute
-import Print (debugColored)
 import Relude.Unsafe ((!!))
 import Prelude hiding (
   Constraint,
@@ -102,7 +97,7 @@ solver (su, cs) = case cs of
     solver (su1 `compose` su, apply su1 cs0)
 
 runSolve :: [Constraint] -> Either TypeError Subst
-runSolve cs = runIdentity $ runExceptT $ solver st where st = (nullSubst, cs)
+runSolve cs = runIdentity $ Prelude.runExceptT $ solver st where st = (nullSubst, cs)
 
 lookupEnv :: Name -> Infer Type
 lookupEnv x = do
