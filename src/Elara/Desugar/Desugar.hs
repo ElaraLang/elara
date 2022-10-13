@@ -193,7 +193,8 @@ curryLambda :: Name -> [Frontend.Pattern] -> Canonical.LocatedExpr -> DesugarRes
 curryLambda bindingName pats lambdaBody = do
   args' <- traverse desugarPattern pats
   let lam = foldr (\arg body'' -> Canonical.Lambda arg body'' <$ lambdaBody) lambdaBody args'
-  if null args' then pure lam else pure (fixLambda bindingName lam)
+  pure lam
+  -- if null args' then pure lam else pure (fixLambda bindingName lam) TODO:
 
 fixLambda :: Name -> Canonical.LocatedExpr -> Canonical.LocatedExpr
 fixLambda bindingName e = Canonical.Fix (Canonical.Lambda (Canonical.NamedPattern bindingName) e <$ e) <$ e

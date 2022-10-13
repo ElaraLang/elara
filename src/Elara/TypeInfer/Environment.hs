@@ -3,6 +3,7 @@ module Elara.TypeInfer.Environment where
 import Data.List (lookup)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+import Elara.Data.Name (Name)
 import Elara.TypeInfer.Common
 import Elara.TypeInfer.Substitute
 import Prelude hiding (Type)
@@ -10,16 +11,13 @@ import Prelude hiding (Type)
 emptyEnvironment :: TypeEnv
 emptyEnvironment = TypeEnv Map.empty
 
-remove :: TypeEnv -> Var -> TypeEnv
+remove :: TypeEnv -> Name -> TypeEnv
 remove (TypeEnv env) var = TypeEnv (Map.delete var env)
-
-add :: TypeEnv -> Var -> Scheme -> TypeEnv
-add (TypeEnv env) var scheme = TypeEnv (Map.insert var scheme env)
 
 closeOver :: Type -> Scheme
 closeOver = normalize . generalize emptyEnvironment
 
-extend :: TypeEnv -> (Var, Scheme) -> TypeEnv
+extend :: TypeEnv -> (Name, Scheme) -> TypeEnv
 extend (TypeEnv env) (x, s) = TypeEnv $ Map.insert x s env
 
 compose :: Subst -> Subst -> Subst

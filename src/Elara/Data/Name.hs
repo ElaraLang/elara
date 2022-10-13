@@ -8,7 +8,13 @@ import Prelude hiding (show)
 data Name
   = Name Text
   | Qualified QualifiedName
-  deriving (Ord, Eq, Data)
+  deriving (Data)
+
+instance Eq Name where
+  a == b = nameValue a == nameValue b -- TODO:this is extremely bad and will definitely have bad consequences
+
+instance Ord Name where
+  a `compare` b = nameValue a `compare` nameValue b
 
 instance Show Name where
   show (Name n) = toString n
@@ -28,8 +34,12 @@ withModule Nothing n = n
 withModule (Just m) n = Qualified (QualifiedName m n)
 
 class NameLike a where
+  -- | Get the \"local\" name of a thing, i.e without any module qualification
   nameValue :: a -> Text
+
   moduleName :: a -> Maybe ModuleName
+
+  -- | Get the full name as a string, with module qualification being preceded by a dot
   fullName :: a -> Text
 
 instance NameLike Name where

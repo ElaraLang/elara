@@ -10,14 +10,16 @@ import Control.Monad.RWS.Strict (
  )
 import Data.Map qualified as Map
 
+import Data.Map.Strict (elems, keys)
 import Elara.Data.Name (
-  Name,
+  Name (..),
   nameValue,
  )
 import Elara.TypeInfer.Common
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Error (TypeError (..))
 import Elara.TypeInfer.Substitute
+import Print (debugColored)
 import Relude.Unsafe ((!!))
 import Prelude hiding (
   Constraint,
@@ -28,25 +30,37 @@ import Prelude hiding (
 newtype Infer a = Infer (RWST () [Constraint] InferState (Except TypeError) a)
   deriving (Functor, Applicative, Monad, MonadError TypeError, MonadState InferState, MonadWriter [Constraint])
 
-runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
+runInfer :: InferState -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
 runInfer env (Infer m) =
   runExcept $
     (\(res, inferState, constraints) -> (res, typeEnv inferState, constraints))
-      <$> runRWST m () (InferState 0 env)
+      <$> runRWST m () env
 
 {- | Infers the type of an expression and returns the expression with the inferred type and the inferred type scheme
- | This makes sure that all the constraints emitted by the expression are solved
+ | This makes sure that all the constraints emitted by the expression are solved.
+ | This function solves all the constraints immediately so is not suitable for globally scoped declarations.
 -}
 inferScheme :: (a -> Type) -> Infer a -> Infer (a, Scheme)
 inferScheme f inf = do
   env <- gets typeEnv
-  (res, constrains) <- listen inf
-  subst <- liftEither $ runSolve constrains
-  let sc = normalize $ generalize (apply subst env) (apply subst (f res))
+  (res, constraints) <- listen inf
+  subst <- liftEither $ runSolve constraints
+  let subbedType = apply subst (f res)
+  let sc = generalize (apply subst env) subbedType
   pure (res, sc)
 
-execInfer :: TypeEnv -> Infer a -> Either TypeError a
-execInfer env i = (\(res, _, _) -> res) <$> runInfer env i
+infer :: (a -> Type) -> Infer a -> InferState -> (Type -> Infer ()) -> Either TypeError (a, TypeEnv, Scheme)
+infer f inf env extra = do
+  ((a, ty), nextEnv, cs) <- runInfer env $ do
+    a <- inf
+    let t = f a
+    extra t
+    pure (a, t)
+  subst <- runSolve cs
+  pure (a, nextEnv, generalize nextEnv $ apply subst ty)
+
+execInfer :: Infer a -> Either TypeError a
+execInfer i = (\(res, _, _) -> res) <$> runInfer emptyState i
 
 instance MonadFail Infer where
   fail = throwError . Other . fromString
@@ -55,15 +69,19 @@ toInfer :: Except TypeError a -> Infer a
 toInfer = Infer . lift
 
 data InferState = InferState
-  { count :: Int
+  { typeVariables :: [String]
   , typeEnv :: TypeEnv
   }
 
-unify :: Type -> Type -> Infer ()
-unify t1 t2 = tell [(t1, t2)]
+emptyState :: InferState
+emptyState = InferState letters emptyEnvironment
 
--- Extend type environment
-inEnv :: (Var, Scheme) -> Infer a -> Infer a
+unify :: Type -> Type -> Infer ()
+unify t1 t2 = do
+  tell [(t1, t2)]
+
+-- | Temporarily extend type environment
+inEnv :: (Name, Scheme) -> Infer a -> Infer a
 inEnv (x, sc) m = do
   let scope e = remove e x `extend` (x, sc)
   withModifiedEnv scope m
@@ -98,8 +116,7 @@ unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = pure nullSubst
 unifies (TypeVar v) t = TV v `bind` t -- Bind a type variable to a type
 unifies t (TypeVar v) = TV v `bind` t -- Bind a type variable to a type
-unifies (TypeConstructorApplication t1 t2) (TypeConstructorApplication t3 t4) =
-  unifyMany (t1 : t2) (t3 : t4)
+unifies (TypeConstructorApplication t1 t2) (TypeConstructorApplication t3 t4) = unifyMany (t1 : t2) (t3 : t4)
 unifies (t1 :-> t2) (t3 :-> t4) = unifyMany [t1, t2] [t3, t4]
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
@@ -116,8 +133,9 @@ runSolve cs = runIdentity $ Prelude.runExceptT $ solver (nullSubst, cs)
 lookupEnv :: Name -> Infer Type
 lookupEnv x = do
   (TypeEnv env) <- gets typeEnv
+
   case Map.lookup x env of
-    Nothing -> throwError $ UnboundVariable (nameValue x)
+    Nothing -> throwError $ UnboundVariable x (TypeEnv env)
     Just s -> instantiate s
 
 maybeLookupEnv :: Name -> Infer (Maybe Type)
@@ -129,9 +147,9 @@ maybeLookupEnv x = do
 
 freshTypeVariable :: Infer Type
 freshTypeVariable = do
-  s <- get
-  put s{count = count s + 1}
-  pure $ TypeVar $ fromString (letters !! count s)
+  (tv : others) <- gets typeVariables
+  modify (\s -> s{typeVariables = others})
+  pure $ TypeVar $ fromString tv
 
 instantiate :: Scheme -> Infer Type
 instantiate (Forall as t) = do

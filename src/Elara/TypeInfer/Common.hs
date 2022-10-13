@@ -7,13 +7,12 @@ import Elara.Data.Qualifications (Qualified)
 import Text.Show qualified
 import Prelude hiding (Type)
 
-newtype TypeEnv = TypeEnv (Map Var Scheme) deriving (Eq, Ord, Show)
+newtype TypeEnv = TypeEnv (Map Name Scheme) deriving (Eq, Ord, Show)
 
 type Subst = Map.Map TypeVariable Type
 nullSubst :: Subst
 nullSubst = Map.empty
 
-type Var = Name
 
 type Constraint = (Type, Type)
 
@@ -28,7 +27,7 @@ data Scheme = Forall [TypeVariable] Type
 
 instance Show Scheme where
   show (Forall [] t) = show t
-  show (Forall vars t) = "∀" <> foldr (\v s -> s <> " " <> show v) "" vars <> "." <> show t
+  show (Forall vars t) = "∀" <> foldr (\v s -> s <> " " <> show v) "" vars <> ". " <> show t
 
 data Type
   = TypeVar Text

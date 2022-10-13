@@ -4,14 +4,21 @@ module Main (
   main,
 ) where
 
+import Control.Lens ((^?))
+import Control.Lens.Fold
 import Control.Lens.Getter (view)
+import Control.Lens.Tuple
+import Data.Map qualified as Map
+import Elara.AST.Typed (polytype)
 import Elara.Data.Module
 import Elara.Data.Prelude (prelude)
 import Elara.Desugar.Desugar (desugarModule)
 import Elara.Parse
 import Elara.TypeInfer.Environment
-import Elara.TypeInfer.Infer (execInfer)
+
+import Elara.TypeInfer.Infer
 import Elara.TypeInfer.Module (inferModule)
+import Print (debugColored)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (
   CheckColorTty (NoCheckColorTty),
@@ -29,8 +36,11 @@ main = do
   case desugared of
     Left err -> print err
     Right module' -> do
-      let res = either (error . show) id (execInfer emptyEnvironment $ inferModule module')
-      printColored res
+      let res = either (error . show) id (execInfer $ inferModule module')
+      let decls = Map.toList $ view declarations res
+      decls `forM_` \(name, dec) -> do
+        let poly = polytype $ dec ^?! (body . _Value . _1)
+        putStrLn (show name <> " :: " <> show poly)
 
 printColored :: (Show a) => a -> IO ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg

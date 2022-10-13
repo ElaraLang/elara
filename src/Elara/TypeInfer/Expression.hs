@@ -9,7 +9,7 @@ import Elara.Data.Located qualified as Located
 import Elara.Data.Name as Name
 import Elara.TypeInfer.Common
 import Elara.TypeInfer.Infer
-import Print (prettyShow)
+import Print (debugColored, prettyShow)
 import Prelude hiding (Type, lookupEnv)
 
 preludeType :: Name -> Type

@@ -1,5 +1,6 @@
 module ElaraTest
 import Prelude
 
-let fix f = f (fix f)
+let identity x = x
 
+let z = identity 3

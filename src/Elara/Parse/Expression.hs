@@ -21,7 +21,7 @@ exprParser :: Parser LocatedExpr
 exprParser =
   makeExprParser
     expression
-    [ [InfixR (Located.merge Ast.FunctionCall <$ sc)],
+    [ [InfixL (Located.merge Ast.FunctionCall <$ sc)],
       [InfixL (Located.merge . Ast.BinaryOperator <$> operator)]
     ]
     <?> "expression"

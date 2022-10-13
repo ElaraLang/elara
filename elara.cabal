@@ -81,6 +81,7 @@ library
       base-noprelude >=4.7 && <5
     , containers
     , diagnose
+    , insert-ordered-containers
     , lens
     , megaparsec
     , monadlist
@@ -113,6 +114,7 @@ executable elara
     , containers
     , diagnose
     , elara
+    , insert-ordered-containers
     , lens
     , megaparsec
     , monadlist
@@ -155,6 +157,7 @@ test-suite elara-test
     , elara
     , hspec ==2.*
     , hspec-megaparsec
+    , insert-ordered-containers
     , lens
     , megaparsec
     , monadlist

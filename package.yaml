@@ -17,6 +17,7 @@ dependencies:
   - lens
   - containers
   - more-containers
+  - insert-ordered-containers
   - megaparsec
   - parsers
   - parser-combinators
