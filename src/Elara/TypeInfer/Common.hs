@@ -21,7 +21,7 @@ newtype TypeVariable = TV Text
   deriving (Eq, Ord, Data)
 
 instance Show TypeVariable where
-  show (TV s) = show s
+  show (TV s) = toString s
 
 data Scheme = Forall [TypeVariable] Type
   deriving (Eq, Ord, Data)
