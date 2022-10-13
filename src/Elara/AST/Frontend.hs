@@ -12,14 +12,13 @@ import Control.Lens hiding (List, element, op)
 import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
-import Elara.Data.Located (IsLocated, Located (Located), NoLocated, XRec, TypeIdentity (TypeIdentity))
+import Elara.Data.Located (IsLocated, Located (Located), NoLocated, TypeIdentity (TypeIdentity), XRec)
 import Elara.Data.Module (Module)
 import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.Qualifications (MaybeQualified)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
 import Elara.Data.Uniqueness
 import Prelude hiding (Type)
-import Control.Lens (makeLenses)
 
 {- Least abstract AST, closest to elara source code.
 Things like comments are preserved
@@ -80,8 +79,8 @@ mapRExpr f x = fmap (mapXRec f) (f x)
 
 unlocateExpr :: LocatedExpr -> UnwrappedExpr
 unlocateExpr = mapRExpr unlocateExpr'
-  where
-    unlocateExpr' (Located _ e) = TypeIdentity e
+ where
+  unlocateExpr' (Located _ e) = TypeIdentity e
 
 deriving instance (Show (RExpr x)) => Show (Expr x)
 
@@ -98,6 +97,9 @@ instance Traversable (XRec x) => Plated (Expr x) where
     BinaryOperator op left right -> BinaryOperator op <$> traverse f left <*> traverse f right
     If cond then_ else_ -> If <$> traverse f cond <*> traverse f then_ <*> traverse f else_
     Block exprs -> Block <$> traverse (traverse f) exprs
+    List exprs -> List <$> traverse (traverse f) exprs
+    LetIn name args value body -> LetIn name args <$> traverse f value <*> traverse f body
+    Let name args body -> Let name args <$> traverse f body
     other -> pure other
 
 data Pattern
@@ -109,7 +111,7 @@ makeLenses ''Expr
 makeLenses ''Pattern
 
 instance PatternLike Pattern where
-  patternNames (NamedPattern name) = [name]
+  patternNames (NamedPattern n) = [n]
   patternNames WildPattern = []
 
 data Type
@@ -118,8 +120,7 @@ data Type
   | UnitT
   | TypeConstructorApplication {_constructor :: Type, _arg :: Type}
   | UserDefinedType
-      { _qualified :: MaybeQualified,
-        _name :: Name
+      { _qualified :: MaybeQualified
+      , _name :: Name
       }
   deriving (Eq, Ord, Show)
-

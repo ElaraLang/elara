@@ -4,12 +4,12 @@ module Elara.TypeInfer.Infer where
 
 import Control.Monad.Except hiding (runExceptT)
 import Control.Monad.RWS.Strict (
-  MonadWriter (tell),
+  MonadWriter (listen, tell),
   RWST,
   runRWST,
  )
 import Data.Map qualified as Map
-import Elara.AST.Typed (Type (..))
+
 import Elara.Data.Name (
   Name,
   nameValue,
@@ -31,8 +31,22 @@ newtype Infer a = Infer (RWST () [Constraint] InferState (Except TypeError) a)
 runInfer :: TypeEnv -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
 runInfer env (Infer m) =
   runExcept $
-    (\(res, state, constraints) -> (res, typeEnv state, constraints))
+    (\(res, inferState, constraints) -> (res, typeEnv inferState, constraints))
       <$> runRWST m () (InferState 0 env)
+
+{- | Infers the type of an expression and returns the expression with the inferred type and the inferred type scheme
+ | This makes sure that all the constraints emitted by the expression are solved
+-}
+inferScheme :: (a -> Type) -> Infer a -> Infer (a, Scheme)
+inferScheme f inf = do
+  env <- gets typeEnv
+  (res, constrains) <- listen inf
+  subst <- liftEither $ runSolve constrains
+  let sc = normalize $ generalize (apply subst env) (apply subst (f res))
+  pure (res, sc)
+
+execInfer :: TypeEnv -> Infer a -> Either TypeError a
+execInfer env i = (\(res, _, _) -> res) <$> runInfer env i
 
 instance MonadFail Infer where
   fail = throwError . Other . fromString
@@ -97,7 +111,7 @@ solver (su, cs) = case cs of
     solver (su1 `compose` su, apply su1 cs0)
 
 runSolve :: [Constraint] -> Either TypeError Subst
-runSolve cs = runIdentity $ Prelude.runExceptT $ solver st where st = (nullSubst, cs)
+runSolve cs = runIdentity $ Prelude.runExceptT $ solver (nullSubst, cs)
 
 lookupEnv :: Name -> Infer Type
 lookupEnv x = do

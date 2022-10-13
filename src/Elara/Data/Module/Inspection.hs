@@ -38,9 +38,9 @@ findAlias ::
   ModuleName ->
   Maybe ModuleName
 findAlias module' modName = _importImporting <$> find impNameMatches (module' ^. imports)
-  where
-    impNameMatches :: Import -> Bool
-    impNameMatches imp = imp ^. as == Just modName
+ where
+  impNameMatches :: Import -> Bool
+  impNameMatches imp = imp ^. as == Just modName
 
 findModuleOfVar ::
   (PatternLike pattern, MapLike (Structure uniqueness) f) =>

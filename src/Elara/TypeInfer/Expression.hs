@@ -1,40 +1,36 @@
 module Elara.TypeInfer.Expression where
 
-import Control.Monad.Error.Class (liftEither)
-import Control.Monad.RWS (listen)
-import Data.List.NonEmpty as NE (
-  zipWith,
- )
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
 import Elara.AST.Canonical qualified as Can
-import Elara.AST.Typed (Type ((:->)))
 import Elara.AST.Typed qualified as Typed
 import Elara.Data.Located
 import Elara.Data.Located qualified as Located
 import Elara.Data.Name as Name
 import Elara.TypeInfer.Common
-import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Infer
-import Elara.TypeInfer.Substitute
-import Print (debugColored, prettyShow)
-import Prelude hiding (lookupEnv)
+import Print (prettyShow)
+import Prelude hiding (Type, lookupEnv)
 
-preludeType :: Name -> Typed.Type
-preludeType = Typed.UserDefinedType (ModuleName ("Prelude" :| []))
+preludeType :: Name -> Type
+preludeType = UserDefinedType (ModuleName ("Prelude" :| []))
 
 inferExpr :: Can.Expr -> Infer Typed.Expr
 inferExpr = \case
-  Can.Int x -> pure $ Typed.Expr (Typed.Int x) (preludeType "Int")
-  Can.Float x -> pure $ Typed.Expr (Typed.Float x) (preludeType "Float")
-  Can.Char x -> pure $ Typed.Expr (Typed.Char x) (preludeType "Char")
-  Can.String x -> pure $ Typed.Expr (Typed.String x) (preludeType "String")
-  Can.Bool x -> pure $ Typed.Expr (Typed.Bool x) (preludeType "Bool")
-  Can.Argument x -> do
-    type' <- lookupEnv x
-    pure $ Typed.Expr (Typed.Argument x) type'
-  Can.Var x -> do
-    type' <- lookupEnv (Qualified x)
-    pure $ Typed.Expr (Typed.Var x) type'
+  (Can.Int x) -> pure (Typed.Expr (Typed.Int x) (preludeType "Int"))
+  (Can.Float x) -> pure (Typed.Expr (Typed.Float x) (preludeType "Float"))
+  (Can.Bool x) -> pure (Typed.Expr (Typed.Bool x) (preludeType "Bool"))
+  (Can.Char x) -> pure (Typed.Expr (Typed.Char x) (preludeType "Char"))
+  (Can.String x) -> pure (Typed.Expr (Typed.String x) (preludeType "String"))
+  Can.Unit -> pure (Typed.Expr Typed.Unit (preludeType "Unit"))
+  (Can.Argument x) -> Typed.Expr (Typed.Argument x) <$> lookupEnv x
+  Can.Constructor x -> Typed.Expr (Typed.Constructor x) <$> lookupEnv (Qualified x)
+  (Can.Var x) -> Typed.Expr (Typed.Var x) <$> lookupEnv (Qualified x)
+  (Can.Fix e) -> do
+    t1 <- inferExpr (unlocate e)
+    tv <- freshTypeVariable
+    unify (tv :-> tv) (Typed.typeOf t1)
+    pure $ Typed.Expr (Typed.Fix $ Located.replace t1 e) tv
   Can.Block exprs -> do
     xs <- mapM inferExpr (unlocate <$> exprs)
     let locations = getRegion <$> exprs
@@ -43,12 +39,10 @@ inferExpr = \case
         (Typed.Block (NE.zipWith Located locations xs))
         (Typed.typeOf (last xs))
   Can.LetIn name val body -> do
-    env <- gets typeEnv
-    (typedVal, constraints) <- listen $ inferExpr (unlocate val)
-    subst <- liftEither $ runSolve constraints
-    let sc = generalize (apply subst env) (apply subst (Typed.typeOf typedVal))
+    (typedVal, sc) <- inferScheme Typed.typeOf (inferExpr (unlocate val))
+    let inferWithVal = inEnv (name, sc) (inferExpr (unlocate body))
+    (typedBody, bodyScheme) <- inferScheme Typed.typeOf inferWithVal
 
-    typedBody <- inEnv (name, sc) $ inferExpr (unlocate body)
     expected <- maybeLookupEnv name
     when (isJust expected) $ do
       let actual = fromJust expected
@@ -57,9 +51,9 @@ inferExpr = \case
     let locatedBody = Located.replace typedBody body
     pure $
       Typed.Expr
-        (Typed.LetIn name locatedVal locatedBody)
+        (Typed.LetIn name locatedVal locatedBody bodyScheme)
         (Typed.typeOf typedBody)
-  (Can.Lambda arg body) -> do
+  Can.Lambda arg body -> do
     argType <- freshTypeVariable
     t <- case arg of
       Can.NamedPattern n -> inEnv (n, Forall [] argType) (inferExpr (unlocate body))

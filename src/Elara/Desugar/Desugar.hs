@@ -7,7 +7,7 @@ import Control.Monad.ListM
 import Data.List.NonEmpty (prependList)
 import Data.Map qualified as M
 import Data.Multimap qualified as Mu
-import Elara.AST.Canonical (CanonicalModule, CanonicalDeclaration, CanonicalDeclarationBody)
+import Elara.AST.Canonical (CanonicalDeclaration, CanonicalDeclarationBody, CanonicalModule)
 import Elara.AST.Canonical qualified as Canonical
 import Elara.AST.Frontend qualified as Frontend
 import Elara.Data.Located (IsLocated, Located (..))
@@ -99,16 +99,18 @@ desugarDeclaration dec@Declaration{..} = do
   case view body dec of
     ValueTypeDef annotation -> Declaration _declarationModule_ _declarationName . ValueTypeDef <$> desugarAnnotation annotation
     Value expr patterns ty -> do
-      expr' <- desugarExpr (view name dec) expr
+      let namesInScope = _declarationName : (patterns >>= patternNames)
+      let promoted = promoteArgumentsIn namesInScope expr
+      expr' <- desugarExpr (view name dec) promoted
       ty' <- traverse desugarAnnotation ty
-      lambda <- curryLambda patterns expr'
+      lambda <- curryLambda _declarationName patterns expr'
       pure $ Declaration _declarationModule_ _declarationName $ Value lambda [] ty'
     _ -> lift . Left . CantDesugar $ "desugarDeclaration: " <> show dec
 
 desugarExpr :: Name -> Frontend.LocatedExpr -> DesugarResult Canonical.LocatedExpr
 desugarExpr declName (Located _ (Frontend.Lambda args lambdaBody)) = do
-  body' <- desugarExpr declName lambdaBody
-  curryLambda args body'
+  body' <- desugarExpr declName (promoteArgumentsIn (args >>= patternNames) lambdaBody)
+  curryLambda declName args body'
 desugarExpr declName (Located _ (Frontend.Block exprs)) = desugarBlock declName (toList exprs)
 desugarExpr declName e = traverse desugarExpr' e
  where
@@ -141,12 +143,20 @@ desugarExpr declName e = traverse desugarExpr' e
     l@(Frontend.Let{}) -> do
       error $ "standalone let " <> show l
     Frontend.LetIn letName pats val letBody -> do
+      let namesInScope = letName : (pats >>= patternNames)
       val' <- desugarExpr letName val
-      curriedVal <- curryLambda pats val'
-      let promotedBody = fmap (transform (Name.promoteArguments [letName])) letBody
+      curriedVal <- curryLambda letName pats val'
+      let promotedBody = promoteArgumentsIn namesInScope letBody
       body' <- desugarExpr letName promotedBody
       pure $ Canonical.LetIn letName curriedVal body'
     other -> lift . Left . CantDesugar $ "desugarExpr: " <> show other
+
+promoteArgumentsIn :: [Name] -> Frontend.LocatedExpr -> Frontend.LocatedExpr
+promoteArgumentsIn names = fmap (transform (Name.promoteArguments names))
+
+patternNames :: Frontend.Pattern -> [Name]
+patternNames (Frontend.NamedPattern n) = [n]
+patternNames Frontend.WildPattern = []
 
 desugarBlock :: Name -> [Frontend.LocatedExpr] -> DesugarResult Canonical.LocatedExpr
 desugarBlock varName [] = ask >>= (lift . Left . EmptyBlock varName) . (^. name) . thisModule
@@ -162,10 +172,9 @@ desugarBlock varName exprs = do
     this <- asks ((^. name) . thisModule)
     lift . Left $ LetEndsBlock varName this l
   desugarBlock' ((Located loc (Frontend.Let letName pats letBody)) : others) acc = do
-    let promote = fmap (transform (Name.promoteArguments [letName]))
     body' <- desugarExpr letName letBody
-    r <- curryLambda pats body'
-    in' <- desugarBlock letName (promote <$> others)
+    r <- curryLambda letName pats body'
+    in' <- desugarBlock letName (promoteArgumentsIn [letName] <$> others)
     let letIn = Located loc $ Canonical.LetIn letName r in'
     pure $ Canonical.Block (prependList acc (letIn :| []))
   desugarBlock' (e : xs) acc = do
@@ -175,14 +184,19 @@ desugarBlock varName exprs = do
 qualifyName :: Name -> DesugarResult QualifiedName
 qualifyName n = do
   DesugarState{..} <- ask
+
   modName <- lift $ findModuleOfVar allModules thisModule n
   pure (QualifiedName modName n)
 
 -- turns \x y z -> ... into \x -> \y -> \z -> ...
-curryLambda :: [Frontend.Pattern] -> Canonical.LocatedExpr -> DesugarResult Canonical.LocatedExpr
-curryLambda pats lambdaBody = do
+curryLambda :: Name -> [Frontend.Pattern] -> Canonical.LocatedExpr -> DesugarResult Canonical.LocatedExpr
+curryLambda bindingName pats lambdaBody = do
   args' <- traverse desugarPattern pats
-  pure $ foldr (\arg body'' -> Canonical.Lambda arg body'' <$ lambdaBody) lambdaBody args'
+  let lam = foldr (\arg body'' -> Canonical.Lambda arg body'' <$ lambdaBody) lambdaBody args'
+  if null args' then pure lam else pure (fixLambda bindingName lam)
+
+fixLambda :: Name -> Canonical.LocatedExpr -> Canonical.LocatedExpr
+fixLambda bindingName e = Canonical.Fix (Canonical.Lambda (Canonical.NamedPattern bindingName) e <$ e) <$ e
 
 desugarPattern :: Frontend.Pattern -> DesugarResult Canonical.Pattern
 desugarPattern pat = case pat of

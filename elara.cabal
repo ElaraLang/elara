@@ -58,6 +58,7 @@ library
       Elara.TypeInfer.Error
       Elara.TypeInfer.Expression
       Elara.TypeInfer.Infer
+      Elara.TypeInfer.Module
       Elara.TypeInfer.Substitute
       Prelude
       Print

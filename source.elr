@@ -1,7 +1,5 @@
 module ElaraTest
 import Prelude
 
-def main : Prelude.IO ()
-let main =
-  let y x = 1
-  y 3
+let fix f = f (fix f)
+

@@ -1,6 +1,5 @@
 module Elara.TypeInfer.Error where
 
-import Elara.AST.Typed (Type (..))
 import Elara.TypeInfer.Common
 import Prelude hiding (Type)
 

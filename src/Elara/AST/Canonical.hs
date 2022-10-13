@@ -50,6 +50,7 @@ data Expr
   | List [LocatedExpr]
   | Unit
   | LetIn {name :: Name, value :: LocatedExpr, body :: LocatedExpr}
+  | Fix LocatedExpr -- Fix point, used for recursion
   deriving (Show, Eq, Data)
 
 data Pattern
