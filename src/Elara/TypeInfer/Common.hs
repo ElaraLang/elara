@@ -28,7 +28,7 @@ data Scheme = Forall [TypeVariable] Type
 
 instance Show Scheme where
   show (Forall [] t) = show t
-  show (Forall vars t) = "∀" ++ foldr (\v s -> s ++ " " ++ show v) "" vars ++ "." ++ show t
+  show (Forall vars t) = "∀" <> foldr (\v s -> s <> " " <> show v) "" vars <> "." <> show t
 
 data Type
   = TypeVar Text
@@ -41,7 +41,7 @@ data Type
   deriving (Eq, Ord, Data)
 
 instance Show Type where
-  show (TypeVar s) = show s
+  show (TypeVar s) = toString s
   show (t1 :-> t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
   show (TypeConstructorApplication t1 t2) = show t1 ++ " " ++ foldr (\t s -> s ++ " " ++ show t) "" t2
   show (UserDefinedType q n) = show q ++ "." ++ show n
