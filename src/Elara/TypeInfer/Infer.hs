@@ -77,7 +77,7 @@ emptyState :: InferState
 emptyState = InferState letters emptyEnvironment
 
 unify :: Type -> Type -> Infer ()
-unify t1 t2 = do
+unify t1 t2 =
   tell [(t1, t2)]
 
 -- | Temporarily extend type environment

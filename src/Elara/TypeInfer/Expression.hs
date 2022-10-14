@@ -66,6 +66,7 @@ inferExpr = \case
         (argType :-> Typed.typeOf t)
   Can.FunctionCall f x -> do
     f' <- inferExpr (unlocate f)
+    debugColored (Typed.typeOf f')
     x' <- inferExpr (unlocate x)
     tv <- freshTypeVariable
     unify (Typed.typeOf f') (Typed.typeOf x' :-> tv)

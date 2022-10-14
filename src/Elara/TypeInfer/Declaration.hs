@@ -32,6 +32,8 @@ inferDeclarationBody _ (ValueTypeDef a) = pure $ ValueTypeDef a
 inferDeclarationBody _ (TypeAlias a) = pure $ TypeAlias a
 inferDeclarationBody existing (Value e p a) = do
     env <- get
-    (x, newEnv, scheme) <- liftEither $ infer Typed.typeOf (inferExpr (Located.unlocate e)) env $ \t -> forM_ existing (unify t)
-    modify (\s -> s{typeEnv = newEnv})
+    (x, env, scheme) <- liftEither $ infer Typed.typeOf (inferExpr (Located.unlocate e)) env $ \t -> forM_ existing (\t' -> unify t t')
+    modify (\s -> s{typeEnv = env})
+    -- whenJust existing $ \t -> do
+    -- unify (Typed.typeOf x) t
     pure $ Value (PolytypeExpr (Located.replace x e) scheme) p a

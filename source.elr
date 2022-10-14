@@ -2,5 +2,4 @@ module ElaraTest
 import Prelude
 
 let identity x = x
-
-let z = identity 3
+let g = identity 3
