@@ -27,7 +27,10 @@ data QualifiedName = QualifiedName
   { _qualifiedNameModule :: ModuleName
   , _qualifiedNameName :: Name
   }
-  deriving (Show, Ord, Eq, Data)
+  deriving (Ord, Eq, Data)
+
+instance Show QualifiedName where
+  show (QualifiedName m n) = show m <> "." <> show n
 
 withModule :: Maybe ModuleName -> Name -> Name
 withModule Nothing n = n

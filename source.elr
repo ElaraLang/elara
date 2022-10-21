@@ -1,5 +1,3 @@
-module ElaraTest
-import Prelude
 
 let identity x = x
-let g = identity 3
+let a = 3

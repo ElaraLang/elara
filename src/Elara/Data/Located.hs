@@ -22,7 +22,8 @@ data Located expr = Located Region expr
 
 instance Show expr => Show (Located expr) where
   show (Located _ e) = show e
-  -- TODO debug definition, remove
+
+-- TODO debug definition, remove
 
 data NoLocated
 

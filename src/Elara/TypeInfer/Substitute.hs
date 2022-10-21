@@ -28,6 +28,7 @@ instance Substitutable TypeEnv where
   apply s (TypeEnv env) = TypeEnv $ Map.map (apply s) env
   ftv (TypeEnv env) = ftv $ Map.elems env
 
+
 instance Substitutable Scheme where
   apply s (Forall as t) = Forall as $ apply s' t
    where

@@ -40,6 +40,9 @@ data AbsType self qual
 makeConcrete :: self -> TRec Concrete self MaybeQualified
 makeConcrete ty = Concrete ty Nothing
 
+unconcrete :: TRec Concrete x y -> x
+unconcrete (Concrete x _) = x
+
 qual :: ConcreteType qual -> qual
 qual (Concrete _ q) = q
 

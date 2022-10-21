@@ -10,6 +10,7 @@ import Prelude hiding (Type)
 newtype TypeEnv = TypeEnv (Map Name Scheme) deriving (Eq, Ord, Show)
 
 type Subst = Map.Map TypeVariable Type
+
 nullSubst :: Subst
 nullSubst = Map.empty
 

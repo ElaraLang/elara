@@ -16,7 +16,8 @@ import Elara.Data.Qualifications (Qualified)
 import Elara.Data.Type (ConcreteType)
 import Elara.Data.Uniqueness
 import Elara.TypeInfer.Common (Scheme, Type)
-import Prelude hiding (Type)
+import Text.Show (Show (show))
+import Prelude hiding (Type, show)
 
 newtype ProjectFields = ProjectFields
   { modules :: M.Map ModuleName TypedModule
@@ -35,7 +36,10 @@ data PolytypeExpr = PolytypeExpr
   deriving (Eq, Show, Data)
 
 data Expr = Expr Expr_ Type
-  deriving (Show, Eq, Data)
+  deriving (Eq, Data)
+
+instance Show Expr where
+  show (Expr e t) = "(" <> show e ++ " : " ++ show t <> ")"
 
 typeOf :: Expr -> Type
 typeOf (Expr _ t) = t
@@ -56,15 +60,34 @@ data Expr_
   | FunctionCall LocatedExpr LocatedExpr
   | BinaryOperator LocatedExpr LocatedExpr LocatedExpr
   | -- | Operator, left, right
-    If LocatedExpr LocatedExpr LocatedExpr -- | condition, then, else
-  | Block (NonEmpty LocatedExpr)
+    If LocatedExpr LocatedExpr LocatedExpr
+  | -- | condition, then, else
+    Block (NonEmpty LocatedExpr)
   | List [LocatedExpr]
   | Unit
   | LetIn Name LocatedExpr LocatedExpr Scheme
   | -- | Name of the binding, value, body, and the scheme of the value
     Fix LocatedExpr -- Fix point, used for type inference
-  deriving (Show, Eq, Data)
+  deriving (Eq, Data)
 
+instance Show Expr_ where
+  show (Int i) = show i
+  show (Float f) = show f
+  show (Char c) = show c
+  show (String s) = show s
+  show (Bool b) = show b
+  show (Argument n) = show n
+  show (Var n) = show n
+  show (Constructor n) = show n
+  show (Lambda p e) = "(λ" <> show p <> " -> " <> show e <> ")"
+  show (FunctionCall f a) = "(" <> show f <> " " <> show a <> ")"
+  show (BinaryOperator op l r) = "(" <> show l <> " " <> show op <> " " <> show r <> ")"
+  show (If c t e) = "if " <> show c <> " then " <> show t <> " else " <> show e
+  show (Block es) = "{" <> show es <> "}"
+  show (List es) = "[" <> show es <> "]"
+  show Unit = "()"
+  show (LetIn n v b _) = "let " <> show n <> " = " <> show v <> " in " <> show b
+  show (Fix e) = "fix " <> show e
 transformExpr :: (Expr -> Expr) -> Expr -> Expr
 transformExpr f = \case
   Expr e t -> f (Expr (transformExpr_ f e) t)
@@ -91,12 +114,19 @@ transformExpr_ f (Fix expr) = Fix (transformExpr f <$> expr)
 transformExpr_ _ e = e
 
 data Pattern = Pattern Pattern_ (Maybe Type)
-  deriving (Show, Eq, Data)
+  deriving (Eq, Data)
+
+instance Show Pattern where
+  show (Pattern p t) = show p <> " : " <> show t
 
 data Pattern_
   = NamedPattern Name
   | WildPattern
-  deriving (Eq, Ord, Show, Data)
+  deriving (Eq, Ord, Data)
+
+instance Show Pattern_ where
+  show WildPattern = "_"
+  show (NamedPattern n) = show n
 
 instance PatternLike Pattern_ where
   patternNames (NamedPattern n) = [n]

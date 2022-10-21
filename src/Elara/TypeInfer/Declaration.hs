@@ -1,39 +1,52 @@
 module Elara.TypeInfer.Declaration where
 
 import Control.Monad.Except (liftEither)
-import Data.Maybe (fromJust)
-import Elara.AST.Canonical (CanonicalDeclaration, CanonicalDeclarationBody)
+import Control.Monad.ListM (foldM1)
+import Elara.AST.Canonical (CanonicalDeclaration, CanonicalDeclarationBody, Expr (body))
 import Elara.AST.Typed (PolytypeExpr (PolytypeExpr), TypedDeclaration, TypedDeclarationBody)
 import Elara.AST.Typed qualified as Typed
 import Elara.Data.Located qualified as Located
 import Elara.Data.Module (Declaration (Declaration), DeclarationBody (TypeAlias, Value, ValueTypeDef))
-import Elara.TypeInfer.Common (Scheme (Forall), Type (TypeVar), TypeVariable (..))
-import Elara.TypeInfer.Environment (extend, normalize)
+import Elara.Data.Name
+import Elara.TypeInfer.Common (Scheme (Forall), TypeVariable (TV))
+import Elara.TypeInfer.Environment (closeOver, generalize)
 import Elara.TypeInfer.Expression (inferExpr)
-import Elara.TypeInfer.Infer (Infer (..), InferState (typeEnv), freshTypeVariable, infer, inferScheme, maybeLookupEnv, unify)
+import Elara.TypeInfer.Infer (Infer (..), InferState (typeEnv), addToEnv, freshTypeVariable, inferScheme, maybeLookupEnv, runInfer, runSolve, unify)
+import Elara.TypeInfer.Substitute (apply)
+import Print (debugColored)
 import Prelude hiding (Type)
 
-inferDeclaration :: CanonicalDeclaration -> Infer TypedDeclaration
-inferDeclaration (Declaration m name body) = do
-    existingBinding <- maybeLookupEnv name
-    body' <- inferDeclarationBody existingBinding body
-    pure $ Declaration m name body'
+-- inferDeclaration :: CanonicalDeclaration -> Infer TypedDeclaration
+-- inferDeclaration (Declaration m name body) = do
+--     body' <- inferDeclarationBody name body
+--     pure $ Declaration m name body'
 
-addDeclarationStub :: CanonicalDeclaration -> Infer ()
-addDeclarationStub (Declaration _ name _) = do
+-- inferMany :: [CanonicalDeclaration] -> Infer [TypedDeclaration]
+-- inferMany decls = do
+--     env <- get
+--     let (typeDefs, typeAliases, values) = undefined
+--     undefined
+
+addDeclarationStub :: Name -> Infer ()
+addDeclarationStub name = do
     f <- freshTypeVariable
-    let scheme = Forall [] f
     env <- gets typeEnv
-    let newEnv = extend env (name, scheme)
-    modify (\s -> s{typeEnv = newEnv})
+    let scheme = generalize env f
+    debugColored (name, f)
+    addToEnv (name, scheme)
 
-inferDeclarationBody :: Maybe Type -> CanonicalDeclarationBody -> Infer TypedDeclarationBody
-inferDeclarationBody _ (ValueTypeDef a) = pure $ ValueTypeDef a
-inferDeclarationBody _ (TypeAlias a) = pure $ TypeAlias a
-inferDeclarationBody existing (Value e p a) = do
-    env <- get
-    (x, env, scheme) <- liftEither $ infer Typed.typeOf (inferExpr (Located.unlocate e)) env $ \t -> forM_ existing (\t' -> unify t t')
-    modify (\s -> s{typeEnv = env})
-    -- whenJust existing $ \t -> do
-    -- unify (Typed.typeOf x) t
-    pure $ Value (PolytypeExpr (Located.replace x e) scheme) p a
+-- -- inferDeclarationBody :: Name -> CanonicalDeclarationBody -> Infer TypedDeclarationBody
+-- -- inferDeclarationBody _ (ValueTypeDef a) = pure $ ValueTypeDef a -- TODO: add the type to the environment
+-- -- inferDeclarationBody _ (TypeAlias a) = pure $ TypeAlias a
+-- -- inferDeclarationBody name (Value e p a) = do
+-- --     env <- get
+-- --     (ty, env', cs) <- liftEither $ runInfer env (inferExpr (Located.unlocate e))
+-- --     subst <- liftEither $ runSolve cs
+-- --     let sc = closeOver (apply subst (Typed.typeOf ty))
+-- --     modify (\s -> s{typeEnv = env'})
+-- --     existing <- maybeLookupEnv name
+-- --     whenJust existing $ \t -> do
+-- --         debugColored (Typed.typeOf ty, t)
+
+-- --     addToEnv (name, sc)
+-- --     pure $ Value (PolytypeExpr (Located.replace ty e) sc) p a

@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
 module Elara.TypeInfer.Expression where
 
 import Data.List.NonEmpty qualified as NE
@@ -14,6 +17,36 @@ import Prelude hiding (Type, lookupEnv)
 
 preludeType :: Name -> Type
 preludeType = UserDefinedType (ModuleName ("Prelude" :| []))
+
+inferExprOfType :: Can.Expr -> Infer Type
+inferExprOfType = \case
+  (Can.Int x) -> pure (preludeType "Int")
+  (Can.Float x) -> pure (preludeType "Float")
+  (Can.Char x) -> pure (preludeType "Char")
+  (Can.String x) -> pure (preludeType "String")
+  (Can.Bool x) -> pure (preludeType "Bool")
+  Can.Unit -> pure (preludeType "Unit")
+  Can.Argument x -> lookupEnv x
+  Can.Var x -> lookupEnv (Qualified x)
+  Can.Constructor x -> lookupEnv (Qualified x)
+  Can.Fix e -> do
+    t1 <- inferExprOfType (Located.unlocate e)
+    tv <- freshTypeVariable
+    unify (tv :-> tv) (t1)
+    pure tv
+  Can.Lambda arg body -> do
+    argType <- freshTypeVariable
+    t <- case arg of
+      Can.NamedPattern n -> inEnv (n, Forall [] argType) (inferExprOfType (unlocate body))
+      Can.WildPattern -> inferExprOfType (unlocate body)
+    pure $ argType :-> t
+  Can.FunctionCall f x -> do
+    f' <- inferExprOfType (unlocate f)
+    x' <- inferExprOfType (unlocate x)
+    tv <- freshTypeVariable
+    unify f' (x' :-> tv)
+    pure tv
+  o -> error "other"
 
 inferExpr :: Can.Expr -> Infer Typed.Expr
 inferExpr = \case
@@ -47,6 +80,7 @@ inferExpr = \case
     when (isJust expected) $ do
       let actual = fromJust expected
       unify (Typed.typeOf typedBody) actual
+
     let locatedVal = Located.replace typedVal val
     let locatedBody = Located.replace typedBody body
     pure $
@@ -66,7 +100,6 @@ inferExpr = \case
         (argType :-> Typed.typeOf t)
   Can.FunctionCall f x -> do
     f' <- inferExpr (unlocate f)
-    debugColored (Typed.typeOf f')
     x' <- inferExpr (unlocate x)
     tv <- freshTypeVariable
     unify (Typed.typeOf f') (Typed.typeOf x' :-> tv)

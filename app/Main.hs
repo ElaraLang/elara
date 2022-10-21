@@ -4,7 +4,6 @@ module Main (
   main,
 ) where
 
-import Control.Lens ((^?))
 import Control.Lens.Fold
 import Control.Lens.Getter (view)
 import Control.Lens.Tuple
@@ -14,11 +13,9 @@ import Elara.Data.Module
 import Elara.Data.Prelude (prelude)
 import Elara.Desugar.Desugar (desugarModule)
 import Elara.Parse
-import Elara.TypeInfer.Environment
 
 import Elara.TypeInfer.Infer
 import Elara.TypeInfer.Module (inferModule)
-import Print (debugColored)
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple (
   CheckColorTty (NoCheckColorTty),

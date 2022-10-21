@@ -9,18 +9,14 @@ import Control.Monad.RWS.Strict (
   runRWST,
  )
 import Data.Map qualified as Map
-
-import Data.Map.Strict (elems, keys)
 import Elara.Data.Name (
   Name (..),
-  nameValue,
  )
 import Elara.TypeInfer.Common
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Error (TypeError (..))
 import Elara.TypeInfer.Substitute
 import Print (debugColored)
-import Relude.Unsafe ((!!))
 import Prelude hiding (
   Constraint,
   Type,
@@ -30,10 +26,10 @@ import Prelude hiding (
 newtype Infer a = Infer (RWST () [Constraint] InferState (Except TypeError) a)
   deriving (Functor, Applicative, Monad, MonadError TypeError, MonadState InferState, MonadWriter [Constraint])
 
-runInfer :: InferState -> Infer a -> Either TypeError (a, TypeEnv, [Constraint])
+runInfer :: InferState -> Infer a -> Either TypeError (a, InferState, [Constraint])
 runInfer env (Infer m) =
   runExcept $
-    (\(res, inferState, constraints) -> (res, typeEnv inferState, constraints))
+    (\(res, inferState, constraints) -> (res, inferState, constraints))
       <$> runRWST m () env
 
 {- | Infers the type of an expression and returns the expression with the inferred type and the inferred type scheme
@@ -45,19 +41,24 @@ inferScheme f inf = do
   env <- gets typeEnv
   (res, constraints) <- listen inf
   subst <- liftEither $ runSolve constraints
-  let subbedType = apply subst (f res)
-  let sc = generalize (apply subst env) subbedType
+  let t1 = apply subst (f res)
+      sc = generalize env t1
   pure (res, sc)
 
-infer :: (a -> Type) -> Infer a -> InferState -> (Type -> Infer ()) -> Either TypeError (a, TypeEnv, Scheme)
-infer f inf env extra = do
-  ((a, ty), nextEnv, cs) <- runInfer env $ do
-    a <- inf
-    let t = f a
-    extra t
-    pure (a, t)
+infer :: (a -> Type) -> Infer a -> InferState -> Either TypeError (a, InferState, Scheme)
+infer f inf env = do
+  (a, nextEnv, cs) <- runInfer env inf
+  let ty = f a
   subst <- runSolve cs
-  pure (a, nextEnv, generalize nextEnv $ apply subst ty)
+  pure (a, nextEnv, closeOver $ apply subst ty)
+
+infer' :: Infer Type -> InferState -> Either TypeError (InferState, Scheme)
+infer' inf env = do
+  (scheme, nextEnv, cs) <- runInfer env inf
+  subst <- runSolve cs
+  pure (nextEnv, closeOver $ apply subst scheme)
+
+
 
 execInfer :: Infer a -> Either TypeError a
 execInfer i = (\(res, _, _) -> res) <$> runInfer emptyState i
@@ -77,7 +78,8 @@ emptyState :: InferState
 emptyState = InferState letters emptyEnvironment
 
 unify :: Type -> Type -> Infer ()
-unify t1 t2 =
+unify t1 t2 = do
+  traceShowM (t1, t2)
   tell [(t1, t2)]
 
 -- | Temporarily extend type environment
@@ -93,6 +95,12 @@ withModifiedEnv f m = do
   a <- m
   modify (\s -> s{typeEnv = env}) -- Restore original environment
   pure a
+
+addToEnv :: (Name, Scheme) -> Infer ()
+addToEnv (x, sc) = do
+  env <- gets typeEnv
+  let scope e = remove e x `extend` (x, sc)
+  modify $ \s -> s{typeEnv = scope env}
 
 type Solve a = ExceptT TypeError Identity a
 
