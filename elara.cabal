@@ -17,7 +17,7 @@ license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    ghc ==9.2.2
+    ghc ==9.2.5
 
 source-repository head
   type: git
@@ -57,6 +57,7 @@ library
       Elara.TypeInfer.Environment
       Elara.TypeInfer.Error
       Elara.TypeInfer.Expression
+      Elara.TypeInfer.Graph
       Elara.TypeInfer.Infer
       Elara.TypeInfer.Module
       Elara.TypeInfer.Substitute
@@ -78,7 +79,8 @@ library
       DataKinds
   ghc-options: -Wall -Werror=incomplete-patterns
   build-depends:
-      base-noprelude >=4.7 && <5
+      algebraic-graphs
+    , base-noprelude >=4.7 && <5
     , containers
     , diagnose
     , insert-ordered-containers
@@ -110,7 +112,8 @@ executable elara
       DataKinds
   ghc-options: -Wall -Werror=incomplete-patterns -threaded
   build-depends:
-      base-noprelude >=4.7 && <5
+      algebraic-graphs
+    , base-noprelude >=4.7 && <5
     , containers
     , diagnose
     , elara
@@ -151,6 +154,7 @@ test-suite elara-test
   ghc-options: -Wall -Werror=incomplete-patterns
   build-depends:
       HUnit
+    , algebraic-graphs
     , base-noprelude >=4.7 && <5
     , containers
     , diagnose

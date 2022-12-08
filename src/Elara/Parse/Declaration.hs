@@ -1,6 +1,6 @@
 module Elara.Parse.Declaration where
 
-import Elara.AST.Frontend (LocatedExpr, Pattern)
+import Elara.AST.Frontend (FrontendDecl, LocatedExpr, Pattern)
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Module (Declaration (..), DeclarationBody (..), mapExpr)
 import Elara.Data.Name (ModuleName)
@@ -12,12 +12,10 @@ import Elara.Parse.Name qualified as Name
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
 import Elara.Parse.Type (type')
-import Text.Megaparsec
-  ( sepBy,
-  )
+import Text.Megaparsec (
+  sepBy,
+ )
 import Text.Megaparsec.Char.Lexer qualified as L
-
-type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 
 declaration :: ModuleName -> Parser FrontendDecl
 declaration = liftA2 (<|>) defDecl valueDecl
@@ -37,12 +35,12 @@ valueDecl modName = L.nonIndented sc $ do
   ((name, patterns), e) <- optionallyIndented letPreamble element
   let names = patterns >>= patternNames
   let promote = fmap (Name.promoteAll names)
-      value = Value e patterns Nothing 
+      value = Value e patterns Nothing
   pure (Declaration modName name (mapExpr promote value))
-  where
-    letPreamble = do
-      symbol "let"
-      name <- lexeme varName
-      patterns <- sepBy (lexeme pattern') sc
-      symbol "="
-      pure (name, patterns)
+ where
+  letPreamble = do
+    symbol "let"
+    name <- lexeme varName
+    patterns <- sepBy (lexeme pattern') sc
+    symbol "="
+    pure (name, patterns)

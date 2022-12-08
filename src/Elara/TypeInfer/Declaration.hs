@@ -30,9 +30,7 @@ import Prelude hiding (Type)
 addDeclarationStub :: Name -> Infer ()
 addDeclarationStub name = do
     f <- freshTypeVariable
-    env <- gets typeEnv
-    let scheme = generalize env f
-    debugColored (name, f)
+    let scheme = Forall [] f
     addToEnv (name, scheme)
 
 -- -- inferDeclarationBody :: Name -> CanonicalDeclarationBody -> Infer TypedDeclarationBody

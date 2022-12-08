@@ -13,7 +13,7 @@ import Data.Data (Data)
 import Data.Map qualified as M
 import Elara.AST.Generic (PatternLike (patternNames))
 import Elara.Data.Located (IsLocated, Located (Located), NoLocated, TypeIdentity (TypeIdentity), XRec)
-import Elara.Data.Module (Module)
+import Elara.Data.Module (Declaration (Declaration), Module)
 import Elara.Data.Name (ModuleName, Name)
 import Elara.Data.Qualifications (MaybeQualified)
 import Elara.Data.TypeAnnotation (TypeAnnotation)
@@ -28,7 +28,7 @@ Things like comments are preserved
 newtype ProjectFields = ProjectFields
   { modules :: M.Map ModuleName (Module LocatedExpr Pattern TypeAnnotation MaybeQualified 'Many)
   }
-
+type FrontendDecl = Declaration LocatedExpr Pattern TypeAnnotation (Maybe ModuleName)
 type LocatedExpr = RExpr IsLocated
 
 type UnwrappedExpr = RExpr NoLocated
