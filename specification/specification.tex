@@ -127,7 +127,7 @@ def map : (a -> b \ ef) -> [a] -> [b] \ ef
 let map f list = match list
     [] -> []
     (x:xs) -> let! y = f x in y : (map f xs)
-\end {verbatim}
+\end{verbatim}
 
 \subsubsection{Monad Comprehension}
 \begin{verbatim}
