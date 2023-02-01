@@ -8,10 +8,10 @@ import Text.Parser.Combinators (manyTill, surroundedBy)
 charLiteral :: Parser Char
 charLiteral = lexeme (surroundedBy L.charLiteral (symbol "'"))
 
-stringLiteral :: Parser String
-stringLiteral = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
+stringLiteral :: Parser Text
+stringLiteral = toText <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
 
-integerLiteral :: Parser Int
+integerLiteral :: Parser Integer
 integerLiteral = L.signed sc (lexeme L.decimal)
 
 floatLiteral :: Parser Double

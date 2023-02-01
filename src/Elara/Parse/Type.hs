@@ -1,58 +1,49 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
-import Elara.Data.Qualifications
-import Elara.Data.Type
-import Elara.Parse.Name (alphaVarName, moduleName, typeName)
+import Elara.AST.Name (MaybeQualified, ModuleName)
+import Elara.Data.Type (Type (..))
+import Elara.Parse.Names (alphaVarName, moduleName, typeName)
 import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
-import Text.Megaparsec (MonadParsec (try), choice)
-import Prelude hiding (bool)
+import Text.Megaparsec (choice, try)
+import Prelude hiding (Type)
 
-type' :: Parser (ConcreteType MaybeQualified)
+type' :: Parser (Type MaybeQualified)
 type' =
-  makeExprParser
-    typeTerm
-    [ [InfixR constructorApplication],
-      [InfixR functionType]
-    ]
+    makeExprParser
+        typeTerm
+        [ [InfixR constructorApplication]
+        , [InfixR functionType]
+        ]
 
-constructorApplication :: Parser (ConcreteType MaybeQualified -> ConcreteType MaybeQualified -> ConcreteType MaybeQualified)
-constructorApplication = lexeme $ do
-  sc
-  pure $ \t1 t2 -> Concrete (TypeConstructorApplication t1 t2) Nothing
+constructorApplication :: Parser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+constructorApplication = lexeme (TypeConstructorApplication <$ sc)
 
-functionType :: Parser (ConcreteType MaybeQualified -> ConcreteType MaybeQualified -> ConcreteType MaybeQualified)
-functionType = lexeme $ do
-  symbol "->"
-  pure (\a b -> Concrete (Function a b) Nothing)
+functionType :: Parser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+functionType = lexeme (FunctionType <$ symbol "->")
 
-typeTerm :: Parser (ConcreteType MaybeQualified)
+typeTerm :: Parser (Type MaybeQualified)
 typeTerm =
-  choice
-    ( try . lexeme
-        <$> [ typeVar,
-              unit,
-              namedType
-            ] ::
-        [Parser (ConcreteType MaybeQualified)]
-    )
+    choice
+        ( try . lexeme
+            <$> [ typeVar
+                , unit
+                , namedType
+                ] ::
+            [Parser (Type MaybeQualified)]
+        )
 
-typeVar :: Parser (ConcreteType MaybeQualified)
-typeVar = maybeQualified $ Concrete . TypeVar <$> alphaVarName
+typeVar :: Parser (Type MaybeQualified)
+typeVar = TypeVar <$> alphaVarName
 
-unit :: Parser (ConcreteType MaybeQualified)
-unit = Unit <-> "()"
+unit :: Parser (Type MaybeQualified)
+unit = UnitType <$ symbol "()"
 
-namedType :: Parser (ConcreteType MaybeQualified)
-namedType = maybeQualified $ Concrete . UserDefinedType <$> typeName
+namedType :: Parser (Type MaybeQualified)
+namedType = UserDefinedType <$> typeName
 
-(<->) :: AbsType Concrete MaybeQualified -> Text -> Parser (ConcreteType MaybeQualified)
-(<->) t str = maybeQualified $ do
-  symbol str
-  pure (Concrete t)
-
-maybeQualified :: Parser (MaybeQualified -> ConcreteType MaybeQualified) -> Parser (ConcreteType MaybeQualified)
+maybeQualified :: Parser (Maybe ModuleName -> b) -> Parser b
 maybeQualified p = do
-  moduleQualification <- optional $ try (moduleName <* symbol ".")
-  t <- p
-  pure (t moduleQualification)
+    moduleQualification <- optional $ try (moduleName <* symbol ".")
+    t <- p
+    pure (t moduleQualification)

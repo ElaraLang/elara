@@ -1,29 +1,20 @@
 module Elara.Parse.Primitives where
 
-import Data.List
-import Elara.Data.Located (Located)
-import Elara.Data.Located qualified as Located
-import Elara.Error (Error)
 import Text.Megaparsec
-  ( MonadParsec (try),
-    Parsec,
-    between,
-    getOffset,
-    sepBy,
-    some,
-  )
+
+import Elara.AST.Region (Located (..), SourceRegion (..))
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
 
-type Parser = Parsec Error Text
+type Parser = Parsec Void Text
 
-located :: Parser p -> Parser (Located p)
-located p = lexeme $ do
-  start <- getOffset
-  x <- p
-  end <- getOffset
-  pure $ Located.located (Located.Region start end) x
+located :: Parser a -> Parser (Located a)
+located p = do
+    start <- getOffset
+    x <- p
+    end <- getOffset
+    pure $ Located (SourceRegion start end) x
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
@@ -47,4 +38,4 @@ commaSeparated :: Parser a -> Parser [a]
 commaSeparated p = p `sepBy` lexeme (char ',')
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
-oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` lexeme (char ','))) <|> singleton <$> p
+oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` lexeme (char ','))) <|> one <$> p

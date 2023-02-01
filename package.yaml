@@ -7,7 +7,7 @@ maintainer: Alexander Wood <alexljwood24@hotmail.co.uk>
 copyright: 2022 Alexander Wood
 license: MIT
 github: ElaraLang/elara
-tested-with: ghc ==9.2.5
+tested-with: ghc ==9.4.2
 
 
 dependencies:
@@ -26,6 +26,7 @@ dependencies:
   - mtl
   - monadlist
   - diagnose
+  - pretty
 
 ghc-options:
 - -Wall
@@ -41,6 +42,8 @@ default-extensions:
 - ImportQualifiedPost
 - DeriveDataTypeable
 - DataKinds
+- DeriveFunctor
+- TypeApplications
 
 library:
   source-dirs: src
@@ -68,3 +71,4 @@ tests:
       - neat-interpolation
       - HUnit
       - hspec-megaparsec
+      - QuickCheck

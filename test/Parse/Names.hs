@@ -1,7 +1,7 @@
 module Parse.Names where
 
-import Elara.Data.Name (ModuleName (ModuleName), Name (Name, Qualified), NameLike, QualifiedName (QualifiedName))
-import Elara.Parse.Name (moduleName, typeName, varName)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName (ModuleName), TypeName (TypeName), VarName (..))
+import Elara.Parse.Names (typeName, varName)
 import Elara.Parse.Primitives
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Megaparsec (shouldParse)
@@ -9,21 +9,26 @@ import Text.Megaparsec (runParser)
 
 spec :: Spec
 spec = describe "Test Names Parser" $ do
-  it "Should parse a simple type name correctly" $ do
-    "Int" <=> (Name "Int", typeName)
+    describe "Variable names" varNames
+    describe "Type names" typeNames
 
-  it "Should parse a simple qualified type name correctly" $ do
-    "A.Mod.Int" <=> (Qualified (QualifiedName (ModuleName ["A", "Mod"]) (Name "Int")), typeName)
+varNames :: Spec
+varNames = do
+    it "Parses a simple variable name" $ do
+        "foo" <=> (notQualified $ VarName "foo", varName)
+    it "Parses a variable name with a module qualification" $ do
+        "Foo.bar" <=> (MaybeQualified (VarName "bar") (Just $ ModuleName ("Foo" :| [])), varName)
 
-  it "Should parse a simple variable name correctly" $ do
-    "x" <=> (Name "x", varName)
+typeNames :: Spec
+typeNames = do
+    it "Parses a simple type name" $ do
+        "Foo" <=> (notQualified $ TypeName "Foo", typeName)
+    it "Parses a type name with a module qualification" $ do
+        "Foo.Bar" <=> (MaybeQualified (TypeName "Bar") (Just $ ModuleName ("Foo" :| [])), typeName)
 
-  it "Should parse a simple qualified variable name correctly" $ do
-    "A.Mod.x" <=> (Qualified (QualifiedName (ModuleName ["A", "Mod"]) (Name "x")), varName)
+notQualified :: name -> MaybeQualified name
+notQualified a = MaybeQualified a Nothing
 
-  it "Should parse a module name correctly" $ do
-    "Elara.Parse.Names" <=> (ModuleName ["Elara", "Parse", "Names"], moduleName)
-
-(<=>) :: (NameLike n, Show n, Eq n) => Text -> (n, Parser n) -> IO ()
+(<=>) :: (Show n, Eq n) => Text -> (n, Parser n) -> IO ()
 (<=>) source (expected, parser) = do
-  shouldParse (runParser parser "" source) expected
+    shouldParse (runParser parser "" source) expected

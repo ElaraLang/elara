@@ -1,7 +1,7 @@
 packages:
   - .
 resolver:
-  compiler: ghc-9.4.2
+  compiler: ghc-9.4.4
 
 flags:
   diagnose:
@@ -314,3 +314,5 @@ extra-deps:
   - optics-core-0.4.1@sha256:b163d1a8f392536c645cbd728c3e29d9f35864b25b1e3cef3a29806ee8a21c6b,5545
   - optics-extra-0.4.2.1@sha256:d8221c4beebb8d4bdb4148a775fbf287368881e233228b04e0bcd6b3e60af92e,3974
   - indexed-profunctors-0.1.1@sha256:363e1bcd89f8498a770ae783e8388fcce35e6515b4c38dca47327aad81196a7b,1063
+  - recursion-schemes-5.2.2.2@sha256:8c004c36be481a1893526875bf5fc8e86b43152c64ee87ae59970084fa5fdcd0,3911
+  - deriving-compat-0.6.2@sha256:d36924a93ed9c53753a7b9d4b89c04375d649bb0b81742c2547da38067816d7b,9425
