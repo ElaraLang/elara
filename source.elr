@@ -1,15 +1,1 @@
-let F.l
-       = let Z.s = let M.d = ((Y ((t `f` ((if (0 `R.e` \_ -> let s = [])
-                                           then 0
-                                           else
-                                             "f" (((\_ -> let F.k = ('E' "s")) 'w') `f` ("l" `I.x` 0.0))) `O.s` r)) D.* "i")) $ (() ((let v
-                                                                                                                                           = []
-                                                                                                                                             '0'
-                                                                                                                                       in
-                                                                                                                                          (\_ -> (0 let G.g
-                                                                                                                                                           = let P.m = (W.L 0)
-                                                                                                                                                     in
-                                                                                                                                                        0)
-                                                                                                                                                 'A') `o` ((\[] -> []) "u")) `O.y` k)))
- in
-    E.a
+let main = pure ()

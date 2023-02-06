@@ -2,7 +2,7 @@ module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Parse.Names (alphaVarName, typeName)
-import Elara.Parse.Primitives (Parser, lexeme, located, symbol, sc)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Parser.Combinators (choice, sepEndBy)
 
 pattern' :: Parser Pattern
@@ -12,6 +12,7 @@ pattern' =
         , wildcardPattern
         , listPattern
         , constructorPattern
+        , inParens pattern'
         ]
 
 locatedPattern = (Pattern <$>) . located

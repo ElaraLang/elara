@@ -6,6 +6,7 @@ import Elara.AST.Module (Declaration, Module)
 import Elara.AST.Module qualified as Mod
 import Elara.AST.Select
 import Elara.Parse (parse)
+import Print (prettyShow)
 import Test.Hspec.Megaparsec (parseSatisfies, shouldParse)
 import Test.QuickCheck
 import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
@@ -24,4 +25,4 @@ result `shouldParseProp` a = ioProperty $
     case result of
         Left err -> do
             pure $ counterexample (errorBundlePretty err) False
-        Right ast -> if ast == a then pure $ property True else pure $ counterexample (show ast) False
+        Right ast -> if ast == a then pure $ property True else pure $ counterexample (prettyShow ast) False

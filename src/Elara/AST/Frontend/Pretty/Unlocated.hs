@@ -47,7 +47,7 @@ instance Pretty x => Pretty (MaybeQualified x) where
     ppr p (MaybeQualified n Nothing) = ppr p n
 
 instance Pretty ModuleName where
-    ppr _ (ModuleName m) = PP.hcat (PP.punctuate (".") (fmap (PP.text . toString) (toList m)))
+    ppr _ (ModuleName m) = PP.hcat (PP.punctuate "." (fmap (PP.text . toString) (toList m)))
 
 instance Pretty VarName where
     ppr _ (VarName n) = PP.text (toString n)
@@ -60,7 +60,7 @@ instance Pretty OpName where
 
 instance Pretty Pattern where
     ppr _ (NamedPattern n) = PP.text (toString n)
-    ppr p (ConstructorPattern c ps) = ppr p c <+> PP.hsep (fmap (ppr p) ps)
+    ppr p (ConstructorPattern c ps) = PP.parens (ppr p c <+> PP.hsep (fmap (ppr p) ps))
     ppr p (ListPattern ps) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) ps)))
     ppr _ WildcardPattern = "_"
 
