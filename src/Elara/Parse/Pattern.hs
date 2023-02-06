@@ -2,7 +2,7 @@ module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Parse.Names (alphaVarName, typeName)
-import Elara.Parse.Primitives (Parser, lexeme, located, symbol)
+import Elara.Parse.Primitives (Parser, lexeme, located, symbol, sc)
 import Text.Parser.Combinators (choice, sepEndBy)
 
 pattern' :: Parser Pattern
@@ -32,5 +32,5 @@ listPattern = locatedPattern $ do
 constructorPattern :: Parser Pattern
 constructorPattern = locatedPattern $ do
     con <- lexeme typeName
-    args <- lexeme (sepEndBy pattern' (symbol " "))
+    args <- lexeme (sepEndBy pattern' sc)
     pure $ ConstructorPattern con args

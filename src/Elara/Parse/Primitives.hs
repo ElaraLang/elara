@@ -5,6 +5,7 @@ import Text.Megaparsec
 import Elara.AST.Region (Located (..), SourceRegion (..))
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
+import Text.Megaparsec.Debug (dbg)
 import Prelude hiding (many, some)
 
 type Parser = Parsec Void Text
@@ -20,7 +21,7 @@ lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
 
 sc :: Parser ()
-sc = L.space (void $ some (char ' ' <|> char '\t')) lineComment empty
+sc = L.space hspace1 lineComment empty
 
 scn :: Parser ()
 scn = L.space space1 lineComment empty
@@ -32,7 +33,7 @@ symbol :: Text -> Parser ()
 symbol = void . L.symbol sc
 
 inParens :: Parser a -> Parser a
-inParens = between (char '(') (char ')')
+inParens = between (lexeme $ char '(') (lexeme $ char ')')
 
 commaSeparated :: Parser a -> Parser [a]
 commaSeparated p = p `sepBy` lexeme (char ',')

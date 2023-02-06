@@ -1,10 +1,11 @@
 module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
+import Data.Text (length)
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), VarName (VarName))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText, nameText), OpName (OpName), TypeName (TypeName), VarName (VarName))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
-import Prelude hiding (Op, (<>))
+import Prelude hiding (Op, length, (<>))
 
 parensIf :: Bool -> Doc -> Doc
 parensIf True = PP.parens
@@ -27,24 +28,17 @@ instance Pretty Expr where
     ppr p (Lambda ps e) = parensIf (p > 0) $ char '\\' <> hsep (fmap (ppr 0) ps) <+> "->" <+> ppr (p + 1) e
     ppr p (FunctionCall e1 e2) = PP.parens (ppr p e1 <+> ppr (p + 1) e2) -- until operator precedence is implemented, this is the only way to get the correct precedence
     ppr _ (If e1 e2 e3) =
-        hang
-            ("if" <+> ppr 0 e1)
-            2
-            ( vcat
-                [ hang "then" 2 (ppr 0 e2)
-                , hang "else" 2 (ppr 0 e3)
-                ]
-            )
-    ppr p (BinaryOperator op e1 e2) = ppr p e1 <+> ppr p op <+> ppr p e2
+        vcat
+            [ hang "if" 2 (ppr 0 e1)
+            , hang "then" 2 (ppr 0 e2)
+            , hang "else" 2 (ppr 0 e3)
+            ]
+    ppr p (BinaryOperator op e1 e2) = PP.parens (ppr p e1 <+> ppr p op <+> ppr p e2)
     ppr p (List es) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) es)))
-    ppr p (LetIn n ps e1 e2) =
-        "let"
-            <+> ppr p n
-            <+> PP.hsep (fmap (ppr p) ps)
-            <+> "="
-            <+> ppr p e1
-            <+> "in"
-            <+> ppr p e2
+    ppr p (LetIn n patterns val body) =
+        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns)) (4 + length (fullNameText n)) ("=" <+> ppr p val)
+            $$ nest 1 "in"
+            $+$ nest 4 (ppr p body)
     ppr p (Let n ps e) = "let" <+> ppr p n <+> PP.hsep (fmap (ppr p) ps) <+> "=" <+> ppr p e
     ppr p (Block es) = nest 4 (PP.vcat $ toList (fmap (ppr p) es))
 

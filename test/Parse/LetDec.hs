@@ -13,22 +13,21 @@ testModuleName = ModuleName ("Main" :| [])
 
 spec :: Spec
 spec = describe "Test Let Dec Parser" $ do
-    it "Parses a simple let declaration" $ do
+    it "Parses a simple let declaration" $
         "let x = 1"
             <: Declaration
                 { _declarationModule' = testModuleName
                 , _declarationName = "x"
                 , _declarationBody =
                     Value
-                        { _declarationBodyExpression = (Int 1)
+                        { _declarationBodyExpression = Int 1
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
                 }
 
     it "Parses an indented let declaration" $
-        do
-            [text|
+        [text|
       let x = 
         1
       |]
@@ -37,14 +36,13 @@ spec = describe "Test Let Dec Parser" $ do
                 , _declarationName = "x"
                 , _declarationBody =
                     Value
-                        { _declarationBodyExpression = (Int 1)
+                        { _declarationBodyExpression = Int 1
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
                 }
     it "Parses an indented let declaration with multiple lines" $
-        do
-            [text|
+        [text|
       let x = 
         1
         2
@@ -55,19 +53,17 @@ spec = describe "Test Let Dec Parser" $ do
                 , _declarationBody =
                     Value
                         { _declarationBodyExpression =
-                            ( Block
-                                [ (Int 1)
-                                , (Int 2)
+                            Block
+                                [ Int 1
+                                , Int 2
                                 ]
-                            )
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
                 }
 
     it "Parses a normal let with an indented lambda" $
-        do
-            [text|
+        [text|
       let x = \y ->
                1
       |]
@@ -77,14 +73,13 @@ spec = describe "Test Let Dec Parser" $ do
                 , _declarationBody =
                     Value
                         { _declarationBodyExpression =
-                            (Lambda [NamedPattern "y"] ((Int 1)))
+                            Lambda [NamedPattern "y"] (Int 1)
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
                 }
     it "Parses a normal let with a non-indented lambda" $
-        do
-            [text|
+        [text|
       let x = 
         \y -> 1
       |]
@@ -94,7 +89,7 @@ spec = describe "Test Let Dec Parser" $ do
                 , _declarationBody =
                     Value
                         { _declarationBodyExpression =
-                            (Lambda [NamedPattern "y"] ((Int 1)))
+                            Lambda [NamedPattern "y"] (Int 1)
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
@@ -111,14 +106,13 @@ spec = describe "Test Let Dec Parser" $ do
                 , _declarationBody =
                     Value
                         { _declarationBodyExpression =
-                            (Lambda [NamedPattern "y"] ((Int 1)))
+                            Lambda [NamedPattern "y"] (Int 1)
                         , _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         }
                 }
     it "Parses a nested let" $
-        do
-            [text|
+        [text|
       let main = 
         let x = 1
         x
@@ -131,19 +125,17 @@ spec = describe "Test Let Dec Parser" $ do
                         { _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         , _declarationBodyExpression =
-                            ( Block
+                            Block
                                 [ Let
                                     "x"
                                     []
-                                    ((Int 1))
-                                , (Var "x")
+                                    (Int 1)
+                                , Var "x"
                                 ]
-                            )
                         }
                 }
     it "Parses a nested let with some indentation" $
-        do
-            [text|
+        [text|
       let main = 
         let x =
           1
@@ -157,20 +149,18 @@ spec = describe "Test Let Dec Parser" $ do
                         { _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         , _declarationBodyExpression =
-                            ( Block
+                            Block
                                 [ Let
                                     "x"
                                     []
-                                    ((Int 1))
-                                , (Var "x")
+                                    (Int 1)
+                                , Var "x"
                                 ]
-                            )
                         }
                 }
 
     it "Parses a comically nested let with some indentation" $
-        do
-            [text|
+        [text|
       let main = 
         let x =
           let y = 
@@ -193,7 +183,7 @@ spec = describe "Test Let Dec Parser" $ do
                         { _declarationBodyPatterns = []
                         , _declarationBodyTypeAnnotation = Nothing
                         , _declarationBodyExpression =
-                            let gen n b = (Let n [] (Block b))
+                            let gen n b = Let n [] (Block b)
                              in gen
                                     "x"
                                     [ gen
@@ -204,22 +194,21 @@ spec = describe "Test Let Dec Parser" $ do
                                                 "a"
                                                 [ gen
                                                     "b"
-                                                    [ (Let "c" [] (Int 1))
-                                                    , (Int 2)
+                                                    [ Let "c" [] (Int 1)
+                                                    , Int 2
                                                     ]
-                                                , (Int 3)
+                                                , Int 3
                                                 ]
-                                            , (Int 4)
+                                            , Int 4
                                             ]
-                                        , (Int 5)
+                                        , Int 5
                                         ]
-                                    , (Int 6)
+                                    , Int 6
                                     ]
                         }
                 }
     it "Parses a let declaration with a let .. in as its body" $
-        do
-            [text|
+        [text|
       let main = 
         let x = 3 in x
       |]
@@ -234,13 +223,12 @@ spec = describe "Test Let Dec Parser" $ do
                             LetIn
                                 "x"
                                 []
-                                ((Int 3))
-                                ((Var "x"))
+                                (Int 3)
+                                (Var "x")
                         }
                 }
     it "Parses a let declaration with a let and a let .. in as its body" $
-        do
-            [text|
+        [text|
       let main =
         let x = 3
         let y = 2 in x
@@ -254,12 +242,12 @@ spec = describe "Test Let Dec Parser" $ do
                         , _declarationBodyTypeAnnotation = Nothing
                         , _declarationBodyExpression =
                             Block
-                                [ (Let "x" [] ((Int 3)))
+                                [ Let "x" [] (Int 3)
                                 , LetIn
                                     "y"
                                     []
-                                    ((Int 2))
-                                    ((Var "x"))
+                                    (Int 2)
+                                    (Var "x")
                                 ]
                         }
                 }

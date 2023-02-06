@@ -6,16 +6,18 @@ import Elara.AST.Frontend (BinaryOperator (MkBinaryOperator), Expr (..))
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified, VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
-import Elara.Parse.Indents (optionallyIndented, withCurrentIndentOrNormal, withIndentOrNormal)
+import Elara.Parse.Indents (blockAt, indentedBlock, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndent, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, scn, symbol)
+import Print (debugColored)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
-import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char (char, newline, space1)
 import Text.Megaparsec.Char.Lexer (indentLevel)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Text.Megaparsec.Debug (dbg)
+import Text.Megaparsec.Pos (mkPos)
 
 locatedExpr :: Parser Frontend.Expr' -> Parser Expr
 locatedExpr = (Expr <$>) . located
@@ -71,18 +73,18 @@ operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
 
 expression :: Parser Frontend.Expr
 expression =
-    unit
-        <|> inParens exprParser
-        <|> letInExpression
-        <|> ifElse
-        <|> lambda
-        <|> try float
-        <|> int
-        <|> charL
-        <|> string
-        <|> variable
-        <|> constructor
-        <|> list
+        unit
+        <|> (inParens exprParser <?> "parenthesized expression")
+        <|> (ifElse <?> "if expression")
+        <|> (letInExpression <?> "let-in expression")
+        <|> (lambda <?> "lambda expression")
+        <|> (try float <?> "float")
+        <|> (int <?> "int")
+        <|> (charL <?> "char")
+        <|> (string <?> "string")
+        <|> (variable <?> "variable")
+        <|> (constructor <?> "constructor")
+        <|> (list <?> "list")
         <?> "expression"
 
 -- | Reserved words, used to backtrack accordingly
@@ -125,7 +127,9 @@ list = locatedExpr $ do
 
 lambda :: Parser Expr
 lambda = locatedExpr $ do
-    (args, res) <- optionallyIndented lambdaPreamble element
+    start <- indentLevel
+    args <- lambdaPreamble
+    (_, res) <- blockAt start element
     pure (Frontend.Lambda args res)
   where
     lambdaPreamble = do
@@ -136,13 +140,13 @@ lambda = locatedExpr $ do
 
 ifElse :: Parser Expr
 ifElse = locatedExpr $ do
-    start <- indentLevel
-    symbol "if"
-    (_, condition) <- withIndentOrNormal start expression
-    symbol "then"
-    (_, thenBranch) <- withIndentOrNormal start expression
-    symbol "else"
-    Frontend.If condition thenBranch <$> expression
+    condition <- optionallyIndented' (symbol "if") element
+    _ <- many space1 -- scn doesn't work because it succeeds on an empty input
+    thenBranch <- optionallyIndented' (symbol "then") element
+    _ <- many space1
+    elseBranch <- optionallyIndented' (symbol "else") element
+    _ <- many space1
+    pure (Frontend.If condition thenBranch elseBranch)
 
 letExpression :: Parser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letExpression = locatedExpr $ do
@@ -156,16 +160,17 @@ letInExpression = locatedExpr $ do
     start <- indentLevel
     symbol "let"
     name <- varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
-    (n, patterns) <- withCurrentIndentOrNormal $ do
+    afterName <- indentLevel
+    (afterPatterns, patterns) <- withCurrentIndentOrNormal $ do
         sc -- consume the spaces from the non-lexeme'd varName.
         sepBy (lexeme pattern') sc
 
-    _ <- withIndentOrNormal n (symbol "=")
-    (_, e) <- withIndentOrNormal n element
+    _ <- withIndentOrNormal afterPatterns (symbol "=")
+    (_, e) <- blockAt afterName element
 
     _ <- withIndentOrNormal start (symbol "in")
 
-    (_, body) <- withIndentOrNormal start element
+    (_, body) <- blockAt start element
 
     -- let names = patterns >>= patternNames
     -- let promote = fmap (transform (Name.promoteArguments names))

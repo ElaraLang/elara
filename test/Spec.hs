@@ -1,8 +1,12 @@
 import Parse qualified
+import Parse.Expression (ppEq)
 import Test.Hspec
+import Test.QuickCheck (verboseCheck)
 
 main :: IO ()
-main = hspec spec
+main = do
+  verboseCheck ppEq
+  hspec spec
 
 spec :: Spec
 spec = do

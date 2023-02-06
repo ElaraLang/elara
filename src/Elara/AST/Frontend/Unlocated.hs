@@ -12,8 +12,8 @@ import Elara.Data.Type (Type (..))
 import Prelude hiding (Op, Type)
 
 {- | Frontend AST without location information.
-| Trees that grow was getting quite frustrating, so we're stuck with this for now.
-| I apologise to future me.
+     Trees that grow was getting quite frustrating, so we're stuck with this for now.
+     I apologise to future me.
 -}
 data Expr
     = Int Integer

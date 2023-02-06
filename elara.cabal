@@ -62,7 +62,7 @@ library
       DataKinds
       DeriveFunctor
       TypeApplications
-  ghc-options: -Wall -Werror=incomplete-patterns
+  ghc-options: -Wall -Werror=incomplete-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wmissed-specialisations
   build-depends:
       algebraic-graphs
     , base-noprelude >=4.7 && <5
@@ -98,7 +98,7 @@ executable elara
       DataKinds
       DeriveFunctor
       TypeApplications
-  ghc-options: -Wall -Werror=incomplete-patterns -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wmissed-specialisations -threaded
   build-depends:
       algebraic-graphs
     , base-noprelude >=4.7 && <5
@@ -144,7 +144,7 @@ test-suite elara-test
       DeriveFunctor
       TypeApplications
       QuasiQuotes
-  ghc-options: -Wall -Werror=incomplete-patterns
+  ghc-options: -Wall -Werror=incomplete-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wmissed-specialisations -threaded -O0
   build-depends:
       HUnit
     , QuickCheck

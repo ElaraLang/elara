@@ -31,6 +31,12 @@ dependencies:
 ghc-options:
 - -Wall
 - -Werror=incomplete-patterns
+- -Wredundant-constraints
+- -Wunused-imports
+- -Wunused-foralls
+- -Wmissing-fields
+- -Winaccessible-code
+- -Wmissed-specialisations
 
 
 default-extensions:
@@ -65,7 +71,9 @@ tests:
     source-dirs: test
     default-extensions:
     - QuasiQuotes
-    ghc-options: []
+    ghc-options: 
+    - -threaded
+    - -O0
     dependencies:
       - elara
       - neat-interpolation

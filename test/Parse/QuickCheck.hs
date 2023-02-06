@@ -89,7 +89,7 @@ instance Arbitrary Unlocated.Expr where
             , pure Unit
             , Var <$> arbitrary
             , Constructor <$> arbitrary
-            , Lambda <$> listOf1 arbitrary <*> arbitraryMaybeBlock
+            , Lambda <$> listOf1 arbitrary <*> arbitraryWithBlockElements
             , FunctionCall <$> arbitrary <*> arbitrary
             , If <$> arbitrary <*> arbitrary <*> arbitrary
             , BinaryOperator <$> arbitrary <*> arbitrary <*> arbitrary
@@ -99,8 +99,6 @@ instance Arbitrary Unlocated.Expr where
       where
         arbitaryBlock :: Gen Unlocated.Expr
         arbitaryBlock = Block <$> atLeast 2 arbitrary -- The parser requires at least 2 elements in a block
-        arbitraryMaybeBlock :: Gen Unlocated.Expr
-        arbitraryMaybeBlock = oneof [arbitrary, arbitaryBlock]
         arbitraryWithBlockElements :: Gen Unlocated.Expr
         arbitraryWithBlockElements = oneof [arbitrary, Let <$> arbitrary <*> arbitrary <*> arbitraryWithBlockElements, arbitaryBlock]
 
@@ -111,6 +109,7 @@ instance (Arbitrary a) => Arbitrary (NonEmpty a) where
         pure (x :| xs)
 
 atLeast :: Int -> Gen a -> Gen (NonEmpty a)
+atLeast n _ | n < 1 = error "atLeast: n must be >= 1"
 atLeast n gen = do
     x <- gen
     xs <- vectorOf (n - 1) gen

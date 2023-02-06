@@ -19,9 +19,9 @@ unlocateModule = Mod.moduleDeclarations . traverse . Mod._declarationBodyLens . 
     let matches ast = decl `elem` toList (ast ^. Mod.declarations)
     parseSatisfies parsed matches
 
-shouldParseProp :: (VisualStream s, TraversableStream s, ShowErrorComponent e, Eq a) => Either (ParseErrorBundle s e) a -> a -> Property
+shouldParseProp :: (VisualStream s, TraversableStream s, ShowErrorComponent e, Eq a, Show a) => Either (ParseErrorBundle s e) a -> a -> Property
 result `shouldParseProp` a = ioProperty $
     case result of
         Left err -> do
             pure $ counterexample (errorBundlePretty err) False
-        Right ast -> pure $ property (ast == a)
+        Right ast -> if ast == a then pure $ property True else pure $ counterexample (show ast) False

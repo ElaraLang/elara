@@ -11,17 +11,17 @@ import Elara.AST.Name (ModuleName (ModuleName))
 import Elara.AST.Select
 import Elara.Parse
 import Elara.Parse.Declaration (declaration)
+import Elara.Parse.Expression
 import Print (printColored)
 import Text.Megaparsec (MonadParsec (eof), errorBundlePretty, runParser, sepBy)
 import Text.Megaparsec.Char (char)
-import Elara.Parse.Expression
 
 main :: IO ()
 main = do
   s <- readFileText "source.elr"
-  case runParser exprParser "source.elr" s of
+  case runParser (exprParser <* eof) "source.elr" s of
     Left err -> putStrLn $ errorBundlePretty err
-    Right expr -> 
+    Right expr ->
       printColored (stripLocation expr)
 
 unlocateModule :: Module Frontend -> Module UnlocatedFrontend
