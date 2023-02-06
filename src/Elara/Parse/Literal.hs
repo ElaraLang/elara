@@ -6,7 +6,7 @@ import Text.Megaparsec.Char.Lexer qualified as L (charLiteral, decimal, float, s
 import Text.Parser.Combinators (manyTill, surroundedBy)
 
 charLiteral :: Parser Char
-charLiteral = lexeme (surroundedBy L.charLiteral (symbol "'"))
+charLiteral = lexeme (surroundedBy L.charLiteral "'")
 
 stringLiteral :: Parser Text
 stringLiteral = toText <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
