@@ -34,4 +34,7 @@ alphaVarName = toText <$> ((:) <$> lowerChar <*> many alphaNumChar)
 opName :: Parser (MaybeQualified OpName)
 opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)
  where
-  operatorChar = oneOf (['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~'] :: String)
+  operatorChars :: [Char]
+  operatorChars = ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']
+  operatorChar :: Parser Char
+  operatorChar = oneOf operatorChars

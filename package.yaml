@@ -31,12 +31,18 @@ dependencies:
 ghc-options:
 - -Wall
 - -Werror=incomplete-patterns
+- -Werror=incomplete-uni-patterns
 - -Wredundant-constraints
 - -Wunused-imports
 - -Wunused-foralls
 - -Wmissing-fields
 - -Winaccessible-code
-- -Wmissed-specialisations
+- -Wincomplete-record-updates
+- -Wpartial-fields
+- -Werror=missing-home-modules
+- -Widentities
+#- -Wmissing-export-lists
+- -Wmonomorphism-restriction
 
 
 default-extensions:
@@ -50,6 +56,7 @@ default-extensions:
 - DataKinds
 - DeriveFunctor
 - TypeApplications
+- Strict
 
 library:
   source-dirs: src

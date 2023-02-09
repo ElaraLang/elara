@@ -1,6 +1,6 @@
 module Elara.Parse.Literal where
 
-import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
+import Elara.Parse.Primitives (Parser, lexeme)
 import Text.Megaparsec.Char (char)
 import Text.Megaparsec.Char.Lexer qualified as L (charLiteral, decimal, float, signed)
 import Text.Parser.Combinators (manyTill, surroundedBy)

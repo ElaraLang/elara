@@ -5,7 +5,6 @@ import Text.Megaparsec
 import Elara.AST.Region (Located (..), SourceRegion (..))
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
-import Text.Megaparsec.Debug (dbg)
 import Prelude hiding (many, some)
 
 type Parser = Parsec Void Text

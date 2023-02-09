@@ -2,22 +2,18 @@ module Elara.Parse.Expression where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
-import Elara.AST.Frontend (BinaryOperator (MkBinaryOperator), Expr (..))
+import Elara.AST.Frontend (Expr (..))
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified, VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
-import Elara.Parse.Indents (blockAt, indentedBlock, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndent, withIndentOrNormal)
+import Elara.Parse.Indents (blockAt, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, scn, symbol)
-import Print (debugColored)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
-import Text.Megaparsec.Char (char, newline, space1)
+import Text.Megaparsec.Char (char, space1)
 import Text.Megaparsec.Char.Lexer (indentLevel)
-import Text.Megaparsec.Char.Lexer qualified as L
-import Text.Megaparsec.Debug (dbg)
-import Text.Megaparsec.Pos (mkPos)
 
 locatedExpr :: Parser Frontend.Expr' -> Parser Expr
 locatedExpr = (Expr <$>) . located

@@ -3,7 +3,7 @@ module Elara.AST.Frontend where
 import Control.Lens
 import Data.Data (Data)
 import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName)
-import Elara.AST.Region (Located, unlocate)
+import Elara.AST.Region (Located)
 import Elara.Data.Type (Type (..))
 import Prelude hiding (Type)
 

@@ -2,7 +2,7 @@ module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
 import Data.Text (length)
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText, nameText), OpName (OpName), TypeName (TypeName), VarName (VarName))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText), OpName (OpName), TypeName (TypeName), VarName (VarName))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))

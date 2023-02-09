@@ -1,1 +1,1 @@
-let main = pure ()
+let main = pure 3

@@ -6,10 +6,9 @@ import Elara.AST.Region (Located (..))
 import Elara.AST.Region qualified as Region (getLocation, spanningRegion)
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (Parser, scn)
-import Text.Megaparsec (Pos, mkPos, sepBy1, try, unPos)
+import Text.Megaparsec (Pos, mkPos, try, unPos)
 import Text.Megaparsec.Char (newline)
 import Text.Megaparsec.Char.Lexer qualified as L
-import Text.Megaparsec.Debug (dbg)
 
 optionallyIndented :: Parser a -> Parser Expr -> Parser (a, Expr)
 optionallyIndented a expression = try (indentedBlock a expression) <|> try (nonIndented a expression)
@@ -55,7 +54,7 @@ withCurrentIndent p = do
 {- | Parses with the given parser, either starting at the given position, or indented after the given position.
      Either way, it returns the position where the parser starts, and the parsed expression
 -}
-withIndentOrNormal :: Show a => Pos -> Parser a -> Parser (Pos, a)
+withIndentOrNormal :: Pos -> Parser a -> Parser (Pos, a)
 withIndentOrNormal pos parser = try unmodified <|> indented
   where
     unmodified = do
@@ -90,7 +89,7 @@ blockAt pos parser = do
                     o -> Expr (Located region (Block $ Expr <$> o))
             asBlock expressions'
 
-withCurrentIndentOrNormal :: Show a => Parser a -> Parser (Pos, a)
+withCurrentIndentOrNormal :: Parser a -> Parser (Pos, a)
 withCurrentIndentOrNormal p = do
     current <- L.indentLevel
     withIndentOrNormal current p

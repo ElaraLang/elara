@@ -15,6 +15,7 @@ pattern' =
         , inParens pattern'
         ]
 
+locatedPattern :: Parser Pattern' -> Parser Pattern
 locatedPattern = (Pattern <$>) . located
 
 varPattern :: Parser Pattern
