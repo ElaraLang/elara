@@ -69,9 +69,9 @@ type InspectionContext = M.Map (Name MaybeQualified) (NonEmpty ModuleName)
 
 search ::
     ( ASTQual ast ~ MaybeQualified
-    , Member (Reader InspectionContext) r
-    , Member (Error (InspectionError ast)) r
+    , Members [Reader InspectionContext, Error (InspectionError ast)] r
     ) =>
+    -- | The name to search for
     Name MaybeQualified ->
     Sem r ModuleName
 search elementName = do
@@ -121,7 +121,9 @@ search elementName = do
 buildContext ::
     forall ast.
     (ASTQual ast ~ MaybeQualified) =>
+    -- | The module to build the context in relation to
     Module ast ->
+    -- | All the known modules. The @thisModule@ does not need to be included, but can be (it will be ignored)
     InspectionState ast ->
     InspectionContext
 buildContext thisModule s =
