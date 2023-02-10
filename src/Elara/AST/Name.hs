@@ -10,7 +10,6 @@ module Elara.AST.Name where
 import Control.Lens (makeClassy)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
-import Print
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
 

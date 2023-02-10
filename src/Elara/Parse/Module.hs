@@ -50,9 +50,9 @@ exposition = ExposedValue <$> varName
 import' :: Parser (Import MaybeQualified)
 import' = do
     symbol "import"
-    moduleName <- lexeme Parse.moduleName
+    moduleName' <- lexeme Parse.moduleName
     isQualified <- isJust <$> optional (symbol "qualified")
     as <- optional . try $ do
         symbol "as"
         lexeme Parse.moduleName
-    Import moduleName as isQualified <$> exposing
+    Import moduleName' as isQualified <$> exposing

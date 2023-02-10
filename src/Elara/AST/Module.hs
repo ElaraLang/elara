@@ -12,7 +12,7 @@ module Elara.AST.Module where
 
 import Control.Lens (Lens, makeFields, makeLenses, makePrisms)
 import Control.Lens.Traversal
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, TypeName, VarName)
+import Elara.AST.Name (ModuleName, Name, TypeName, VarName)
 import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTPattern, ASTQual)
 import Elara.Data.Type
 import Prelude hiding (Type)

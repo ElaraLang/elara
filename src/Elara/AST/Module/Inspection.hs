@@ -9,14 +9,12 @@ module Elara.AST.Module.Inspection where
 import Control.Lens ((^.))
 import Data.Map qualified as M
 import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, Qualified, TypeName, Unqualified (..), VarName, moduleName)
-import Elara.AST.Select (ASTQual, Frontend)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, TypeName, VarName)
+import Elara.AST.Select (ASTQual)
 import Polysemy
-import Polysemy.Error (Error, runError, throw)
+import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.State
-import Print (debugColored)
-import Relude.Extra.Lens (view)
 import Prelude hiding (Reader, State, ask, modify, runState)
 
 data InspectionError ast
@@ -38,12 +36,12 @@ exposes ::
     Name (ASTQual ast) ->
     Module ast ->
     Bool
-exposes name (Module _ exposing _ decls) = case exposing of
+exposes elementName (Module _ exposing _ decls) = case exposing of
     ExposingAll -> isJust (find declares decls)
-    ExposingSome expos -> isJust (find (isExposing name) expos) -- just check that it's exposed, not that it's declared. The latter will be checked later on
+    ExposingSome expos -> isJust (find (isExposing elementName) expos) -- just check that it's exposed, not that it's declared. The latter will be checked later on
   where
     declares :: Declaration ast -> Bool
-    declares (Declaration _ name' _) = name == name'
+    declares (Declaration _ name' _) = elementName == name'
 
     isExposing :: Name (ASTQual ast) -> Exposition (ASTQual ast) -> Bool
     isExposing (NVarName q) (ExposedValue name') = q == name'
@@ -54,8 +52,8 @@ exposes name (Module _ exposing _ decls) = case exposing of
 importAliasFor :: Import qual -> ModuleName
 importAliasFor import' = fromMaybe (import' ^. importing) (import' ^. as)
 
-{- | Check if a module is importing another module, returning the import if so, otherwise Nothing.All
-  This function considers a module to be importing itself, for use in @buildContext@
+{- | Check if a module is importing another module, returning the import if so, otherwise Nothing.
+  This function considers a module to be importing itself, for use in [buildContext]
 -}
 importFor :: forall ast. Module ast -> Module ast -> Maybe (Import (ASTQual ast))
 importFor x y | x ^. name == y ^. name = Just (Import (x ^. name) Nothing False ExposingAll)
@@ -76,52 +74,58 @@ search ::
     ) =>
     Name MaybeQualified ->
     Sem r ModuleName
-search name = do
+search elementName = do
     context <- ask
-    case M.lookup name context of
-        Nothing -> throw (UnknownName name)
+    case M.lookup elementName context of
+        Nothing -> throw (UnknownName elementName)
         Just (x :| []) -> pure x
-        Just possibles -> throw (AmbiguousName name possibles)
+        Just possibles -> throw (AmbiguousName elementName possibles)
 
 {- | There are a lot of cases to consider when looking for a module:
-        1. The name is defined in this module, i.e `let bar = ... ; bar`. It may or may not be qualified
-        2. The name is unqualified in an imported module, i.e `import Foo (bar) ; bar`
-        3. The name is qualified in an imported module, i.e `import Foo (bar) ; Foo.bar`
-        4. The name is qualified with an alias in an imported module, i.e `import Foo as F (bar) ; F.bar`
+
+        1. The name is defined in this module, i.e @let bar = ... ; bar@. It may or may not be qualified
+        2. The name is unqualified in an imported module, i.e @import Foo (bar) ; bar@
+        3. The name is qualified in an imported module, i.e @import Foo (bar) ; Foo.bar@
+        4. The name is qualified with an alias in an imported module, i.e @import Foo as F (bar) ; F.bar@
 
         Step 1 is more or less the same as step 2, if we treat every module as if it imports itself.
+
         Similarly, step 3 is the same as step 4, just with a different name for the module.
+
         This can be simplified to a single step where we build a "context" of all the imported modules, each with an optional qualified name, then
         we look for the name in that context.
 
         For example, if we have the following imports:
-            module Quux exposing (quux)
-            ...
-            module This exposing (bar)
-            import Bar (bar)
-            import Foo (fooBar)
-            import Baz as B (baz, Baz)
-            import Quux qualified
+
+        >    module Quux exposing (quux)
+        >    ...
+        >    module This exposing (bar)
+        >    import Bar (bar)
+        >    import Foo (fooBar)
+        >    import Baz as B (baz, Baz)
+        >    import Quux qualified
+
         the context would be
-            { (bar, [This, Bar])
-              (This.bar, [This])
-              (fooBar, [Foo])
-            , Foo.fooBar -> [Foo]
-            , baz -> [Baz]
-            , B.baz -> [Baz]
-            , Baz -> [Baz]
-            , quux -> [Quux]
-            , Quux.quux -> [Quux]
-            }
+
+        >    { (bar, [This, Bar])
+        >    , (This.bar, [This])
+        >    , (fooBar, [Foo])
+        >    , Foo.fooBar -> [Foo]
+        >    , baz -> [Baz]
+        >    , B.baz -> [Baz]
+        >    , Baz -> [Baz]
+        >    , quux -> [Quux]
+        >    , Quux.quux -> [Quux]
+        >    }
 -}
 buildContext ::
-    forall ast r.
+    forall ast.
     (ASTQual ast ~ MaybeQualified) =>
     Module ast ->
     InspectionState ast ->
-    Sem r InspectionContext
+    InspectionContext
 buildContext thisModule s =
-    buildContext' (M.insert (thisModule ^. name) thisModule s)
+    run $ buildContext' (M.insert (thisModule ^. name) thisModule s)
   where
     buildContext' :: InspectionState ast -> Sem r InspectionContext
     buildContext' inspectionState = do
