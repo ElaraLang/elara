@@ -1,12 +1,12 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Module where
 
@@ -20,10 +20,14 @@ import Prelude qualified as Kind
 
 data Module ast = Module
     { _moduleName :: ModuleName
-    , _moduleExposing :: Exposing
-    , _moduleImports :: [Import]
+    , _moduleExposing :: Exposing (ASTQual ast)
+    , _moduleImports :: [Import (ASTQual ast)]
     , _moduleDeclarations :: [Declaration ast]
     }
+
+moduleDeclarations :: (ASTQual ast ~ ASTQual ast2) => Lens (Module ast) (Module ast2) [Declaration ast] [Declaration ast2]
+moduleDeclarations f (Module n e i d) = fmap (Module n e i) (f d)
+
 type ModConstraints :: (Kind.Type -> Constraint) -> Kind.Type -> Constraint
 type ModConstraints c ast =
     ( c (Name (ASTQual ast))
@@ -31,6 +35,8 @@ type ModConstraints c ast =
     , c (ASTPattern ast)
     , c (ASTAnnotation ast)
     , c (Type (ASTQual ast))
+    , c ((ASTQual ast) VarName)
+    , c ((ASTQual ast) TypeName)
     )
 
 deriving instance ModConstraints Show ast => Show (Module ast)
@@ -69,29 +75,41 @@ _declarationBodyExpressionLens _ (TypeAlias t) = pure (TypeAlias t)
 deriving instance ModConstraints Show ast => Show (DeclarationBody ast)
 deriving instance ModConstraints Eq ast => Eq (DeclarationBody ast)
 
-data Import = Import
+type NameConstraints :: (Kind.Type -> Constraint) -> (Kind.Type -> Kind.Type) -> Constraint
+type NameConstraints c qual = (c (qual VarName), c (qual TypeName))
+data Import qual = Import
     { _importImporting :: ModuleName
     , _importAs :: Maybe ModuleName
     , _importQualified :: Bool
-    , _importExposing :: Exposing
+    , _importExposing :: Exposing qual
     }
-    deriving (Ord, Eq, Show)
 
-data Exposing
+deriving instance (NameConstraints Show qual) => Show (Import qual)
+deriving instance (NameConstraints Eq qual) => Eq (Import qual)
+deriving instance (NameConstraints Ord qual) => Ord (Import qual)
+
+data Exposing qual
     = ExposingAll
-    | ExposingSome [Exposition]
-    deriving (Ord, Eq, Show)
+    | ExposingSome [Exposition qual]
 
-data Exposition
-    = ExposedValue (MaybeQualified VarName) -- exposing foo
-    | ExposedType (MaybeQualified TypeName) -- exposing Foo
-    | ExposedTypeAndAllConstructors (MaybeQualified TypeName) -- exposing Foo(..)
-    deriving (Ord, Eq, Show)
+deriving instance (NameConstraints Show qual) => Show (Exposing qual)
+deriving instance (NameConstraints Eq qual) => Eq (Exposing qual)
+deriving instance (NameConstraints Ord qual) => Ord (Exposing qual)
+
+data Exposition qual
+    = ExposedValue (qual VarName) -- exposing foo
+    | ExposedType (qual TypeName) -- exposing Foo
+    | ExposedTypeAndAllConstructors (qual TypeName) -- exposing Foo(..)
+
+deriving instance (NameConstraints Show qual) => Show (Exposition qual)
+deriving instance (NameConstraints Eq qual) => Eq (Exposition qual)
+deriving instance (NameConstraints Ord qual) => Ord (Exposition qual)
 
 makeLenses ''Exposing
 makeLenses ''DeclarationBody
 makePrisms ''DeclarationBody
-makeLenses ''Module
+
+-- makeLenses ''Module
 makeLenses ''Declaration
 
 makeFields ''Module

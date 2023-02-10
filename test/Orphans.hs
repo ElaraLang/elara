@@ -1,10 +1,13 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-module Parse.Orphans where
+module Orphans where
 
 import Data.Char (isLower, isUpper)
-import Elara.AST.Name (MaybeQualified (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), VarName (..))
+import Data.Text (splitOn)
+
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), VarName (..))
 
 instance IsString name => IsString (MaybeQualified name) where
     fromString s = MaybeQualified (fromString s) Nothing
@@ -25,3 +28,6 @@ instance IsString (Name MaybeQualified) where
         c : _ | isLower c -> NVarName (fromString s)
         _ -> NOpName (fromString s)
 
+instance IsString ModuleName where
+    -- oh boy i love having 2 string types
+    fromString s = ModuleName $ fromList (fromString . toString <$> splitOn (fromString ".") (fromString s))

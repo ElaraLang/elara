@@ -23,10 +23,11 @@ dependencies:
   - parsers
   - parser-combinators
   - pretty-simple
-  - mtl
   - monadlist
   - diagnose
   - pretty
+  - polysemy
+  - polysemy-plugin
 
 ghc-options:
 - -Wall
@@ -43,6 +44,7 @@ ghc-options:
 - -Widentities
 #- -Wmissing-export-lists
 - -Wmonomorphism-restriction
+- -fplugin=Polysemy.Plugin
 
 
 default-extensions:

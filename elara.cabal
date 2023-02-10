@@ -25,11 +25,13 @@ source-repository head
 
 library
   exposed-modules:
+      Elara.Annotate.ModuleSearch
       Elara.AST.Annotated
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
       Elara.AST.Frontend.Unlocated
       Elara.AST.Module
+      Elara.AST.Module.Inspection
       Elara.AST.Name
       Elara.AST.Region
       Elara.AST.Select
@@ -64,7 +66,7 @@ library
       DeriveFunctor
       TypeApplications
       Strict
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin
   build-depends:
       algebraic-graphs
     , base-noprelude >=4.7 && <5
@@ -75,9 +77,10 @@ library
     , megaparsec
     , monadlist
     , more-containers
-    , mtl
     , parser-combinators
     , parsers
+    , polysemy
+    , polysemy-plugin
     , pretty
     , pretty-simple
     , relude
@@ -101,7 +104,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       Strict
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded
   build-depends:
       algebraic-graphs
     , base-noprelude >=4.7 && <5
@@ -113,9 +116,10 @@ executable elara
     , megaparsec
     , monadlist
     , more-containers
-    , mtl
     , parser-combinators
     , parsers
+    , polysemy
+    , polysemy-plugin
     , pretty
     , pretty-simple
     , relude
@@ -125,12 +129,14 @@ test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AST.Module.Inspection
+      Data.List.Extra
+      Orphans
       Parse
       Parse.Common
       Parse.Expression
       Parse.LetDec
       Parse.Names
-      Parse.Orphans
       Parse.QuickCheck
       Paths_elara
   hs-source-dirs:
@@ -148,7 +154,7 @@ test-suite elara-test
       TypeApplications
       Strict
       QuasiQuotes
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -threaded -O0
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded -O0
   build-depends:
       HUnit
     , QuickCheck
@@ -164,10 +170,11 @@ test-suite elara-test
     , megaparsec
     , monadlist
     , more-containers
-    , mtl
     , neat-interpolation
     , parser-combinators
     , parsers
+    , polysemy
+    , polysemy-plugin
     , pretty
     , pretty-simple
     , relude

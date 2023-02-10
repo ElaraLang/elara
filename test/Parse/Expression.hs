@@ -7,7 +7,7 @@ import Elara.Parse.Expression (exprParser, operator)
 import Elara.Parse.Primitives (Parser)
 import NeatInterpolation (text)
 import Parse.Common (shouldParseProp)
-import Parse.Orphans ()
+import Orphans ()
 import Parse.QuickCheck
 import Print (printColored)
 import Test.Hspec (Spec, describe, it)

@@ -1,13 +1,12 @@
 import Parse qualified
-import Parse.Expression (ppEq)
 import Test.Hspec
-import Test.QuickCheck (verboseCheck)
+import AST.Module.Inspection qualified as Inspection 
 
 main :: IO ()
 main = do
-  verboseCheck ppEq
   hspec spec
 
 spec :: Spec
 spec = do
+  describe "AST inspection test" Inspection.spec
   describe "Parse test" Parse.spec

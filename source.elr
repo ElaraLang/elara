@@ -1,1 +1,5 @@
+import Prelude
+import Qual qualified
+import As as Q
+import QualAs qualified as Q
 let main = pure 3

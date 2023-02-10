@@ -20,7 +20,7 @@ main = do
     Right file ->
       case parse "source.elr" file of
         Left err -> putStrLn $ errorBundlePretty err
-        Right expr ->
+        Right expr -> do
           printColored (unlocateModule expr)
 
 unlocateModule :: Module Frontend -> Module UnlocatedFrontend

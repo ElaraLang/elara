@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wno-deprecations #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Print where
 

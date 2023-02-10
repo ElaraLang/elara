@@ -27,7 +27,7 @@ module' = do
             , _moduleDeclarations = declarations
             }
 
-parseHeader :: Parser (Maybe (ModuleName, Exposing))
+parseHeader :: Parser (Maybe (ModuleName, Exposing MaybeQualified))
 parseHeader = optional . try $ do
     -- module Name exposing (..)
     symbol "module"
@@ -35,7 +35,7 @@ parseHeader = optional . try $ do
     exposing' <- exposing
     pure (moduleName', exposing')
 
-exposing :: Parser Exposing
+exposing :: Parser (Exposing MaybeQualified)
 exposing =
     fromMaybe ExposingAll
         <$> ( optional . try $ do
@@ -44,10 +44,10 @@ exposing =
                 pure $ ExposingSome es
             )
 
-exposition :: Parser Exposition
+exposition :: Parser (Exposition MaybeQualified)
 exposition = ExposedValue <$> varName
 
-import' :: Parser Import
+import' :: Parser (Import MaybeQualified)
 import' = do
     symbol "import"
     moduleName <- lexeme Parse.moduleName

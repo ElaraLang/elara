@@ -5,7 +5,7 @@ import Elara.AST.Module as Mod
 import Elara.AST.Name
 import NeatInterpolation
 import Parse.Common
-import Parse.Orphans ()
+import Orphans ()
 import Test.Hspec (Spec, describe, it)
 
 testModuleName :: ModuleName

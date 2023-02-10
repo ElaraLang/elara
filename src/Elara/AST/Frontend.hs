@@ -1,7 +1,5 @@
 module Elara.AST.Frontend where
 
-import Control.Lens
-import Data.Data (Data)
 import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.Data.Type (Type (..))
@@ -29,9 +27,6 @@ data Expr'
 newtype Expr = Expr (Located Expr')
   deriving (Show, Eq)
 
-exprIso :: Iso' Expr (Located Expr')
-exprIso = iso (\(Expr e) -> e) Expr
-
 data Pattern'
   = NamedPattern Text
   | ConstructorPattern (MaybeQualified TypeName) [Pattern]
@@ -51,4 +46,4 @@ newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
   deriving (Show, Eq)
 
 data TypeAnnotation = TypeAnnotation (Name MaybeQualified) (Type MaybeQualified)
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq)
