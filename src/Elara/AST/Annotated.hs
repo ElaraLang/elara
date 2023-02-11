@@ -1,9 +1,12 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Elara.AST.Annotated where
 
-import Elara.AST.Name (MaybeQualified, Name, OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
-import Prelude hiding (Type)
 import Elara.Data.Type (Type)
+import Prelude hiding (Type)
+import Control.Lens (makePrisms)
+
 {- |
   This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
 
@@ -17,24 +20,25 @@ data Expr'
     | String Text
     | Char Char
     | Unit
-    | Var (MaybeQualified VarName)
-    | Constructor (MaybeQualified TypeName)
+    | Var (Qualified VarName)
+    | Constructor (Qualified TypeName)
     | Lambda Pattern Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
-    | LetIn (MaybeQualified VarName) Expr Expr
-    | Let (MaybeQualified VarName) Expr
+    | LetIn (Qualified VarName) Expr Expr
+    | Let (Qualified VarName) Expr
     | Block (NonEmpty Expr)
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
+
 data Pattern'
     = NamedPattern Text
-    | ConstructorPattern (MaybeQualified TypeName) [Pattern]
+    | ConstructorPattern (Qualified TypeName) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
     deriving (Show, Eq)
@@ -43,8 +47,8 @@ newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
 
 data BinaryOperator'
-    = Op (MaybeQualified OpName)
-    | Infixed (MaybeQualified VarName)
+    = Op (Qualified OpName)
+    | Infixed (Qualified VarName)
     deriving (Show, Eq)
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
@@ -52,3 +56,5 @@ newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
 
 data TypeAnnotation = TypeAnnotation (Name Qualified) (Type Qualified)
     deriving (Show, Eq)
+
+makePrisms ''Expr

@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveTraversable #-}
+
 module Elara.AST.Region where
 
 import Data.Data (Data)
@@ -10,7 +12,7 @@ data SourceRegion = SourceRegion
     deriving (Show, Eq, Data)
 
 data Located a = Located SourceRegion a
-    deriving (Show, Eq)
+    deriving (Show, Eq, Functor, Traversable, Foldable)
 
 getLocation :: Located a -> SourceRegion
 getLocation (Located region _) = region

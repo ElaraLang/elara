@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Elara.Annotate
       Elara.Annotate.ModuleSearch
       Elara.AST.Annotated
       Elara.AST.Frontend

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
@@ -7,7 +8,7 @@
 
 module Elara.AST.Name where
 
-import Control.Lens (makeClassy)
+import Control.Lens (makeClassy, makeLenses, makePrisms)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Text.Show (Show (..))
@@ -29,6 +30,9 @@ data Name qual
     | NTypeName (qual TypeName)
     | NOpName (qual OpName)
 
+makeLenses ''Name
+makePrisms ''Name
+
 deriving instance (Show (qual VarName), Show (qual TypeName), Show (qual OpName)) => Show (Name qual)
 deriving instance (Eq (qual VarName), Eq (qual TypeName), Eq (qual OpName)) => Eq (Name qual)
 deriving instance (Ord (qual VarName), Ord (qual TypeName), Ord (qual OpName)) => Ord (Name qual)
@@ -43,6 +47,18 @@ class NameLike name where
 
     moduleName :: name -> Maybe ModuleName
     moduleName _ = Nothing
+
+class ToName name qual | name -> qual where
+    toName :: name -> Name qual
+
+instance ToName (qual VarName) qual where
+    toName = NVarName
+
+instance ToName (qual TypeName) qual where
+    toName = NTypeName
+
+instance ToName (qual OpName) qual where
+    toName = NOpName
 
 instance NameLike VarName where
     nameText (VarName name) = name
