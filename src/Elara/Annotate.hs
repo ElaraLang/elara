@@ -40,6 +40,7 @@ annotateModule m = do
 
     annotateExposition :: Exposition MaybeQualified -> Sem (Reader InspectionContext : r) (Exposition Qualified)
     annotateExposition (ExposedValue name') = ExposedValue <$> annotateVarName name'
+    annotateExposition (ExposedOp name') = ExposedOp <$> annotateOpName name'
     annotateExposition (ExposedType name') = ExposedType <$> annotateTypeName name'
     annotateExposition (ExposedTypeAndAllConstructors name') = ExposedTypeAndAllConstructors <$> annotateTypeName name'
 

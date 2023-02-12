@@ -16,6 +16,10 @@ import Prelude hiding (Show, show)
 
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data)
+
+{- | A valid Variable name. This includes anything that could appear in let [name] = ...
+| In other words, a normal alphanumeric name, or a paren wrapped operator name
+-}
 newtype VarName = VarName Text
     deriving (Ord, Show, Eq, Data)
 
@@ -99,17 +103,17 @@ data MaybeQualified name = MaybeQualified
     { _maybeQualifiedNameName :: name
     , _maybeQualifiedNameQualifier :: Maybe ModuleName
     }
-    deriving (Ord, Show, Eq, Data)
+    deriving (Ord, Show, Eq, Data, Functor)
 
 data Qualified name = Qualified
     { _qualifiedNameName :: name
     , _qualifiedNameQualifier :: ModuleName
     }
-    deriving (Show, Eq, Data, Ord)
+    deriving (Show, Eq, Data, Ord, Functor)
 newtype Unqualified name = Unqualified
     { _unqualifiedNameName :: name
     }
-    deriving (Show, Eq, Data, Ord)
+    deriving (Show, Eq, Data, Ord, Functor)
 
 makeClassy ''MaybeQualified
 makeClassy ''Qualified

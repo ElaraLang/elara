@@ -12,7 +12,7 @@ module Elara.AST.Module where
 
 import Control.Lens (Lens, makeFields, makeLenses, makePrisms)
 import Control.Lens.Traversal
-import Elara.AST.Name (ModuleName, Name, TypeName, VarName)
+import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTPattern, ASTQual)
 import Elara.Data.Type
 import Prelude hiding (Type)
@@ -37,6 +37,7 @@ type ModConstraints c ast =
     , c (Type (ASTQual ast))
     , c ((ASTQual ast) VarName)
     , c ((ASTQual ast) TypeName)
+    , c ((ASTQual ast) OpName)
     )
 
 deriving instance ModConstraints Show ast => Show (Module ast)
@@ -76,7 +77,7 @@ deriving instance ModConstraints Show ast => Show (DeclarationBody ast)
 deriving instance ModConstraints Eq ast => Eq (DeclarationBody ast)
 
 type NameConstraints :: (Kind.Type -> Constraint) -> (Kind.Type -> Kind.Type) -> Constraint
-type NameConstraints c qual = (c (qual VarName), c (qual TypeName))
+type NameConstraints c qual = (c (qual VarName), c (qual TypeName), c (qual OpName))
 data Import qual = Import
     { _importImporting :: ModuleName
     , _importAs :: Maybe ModuleName
@@ -98,6 +99,7 @@ deriving instance (NameConstraints Ord qual) => Ord (Exposing qual)
 
 data Exposition qual
     = ExposedValue (qual VarName) -- exposing foo
+    | ExposedOp (qual OpName) -- exposing (+)
     | ExposedType (qual TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (qual TypeName) -- exposing Foo(..)
 

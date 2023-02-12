@@ -10,7 +10,7 @@ module Elara.AST.Module.Inspection where
 
 import Control.Lens ((^.))
 import Data.Map qualified as M
-import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
+import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, TypeName, VarName)
 import Elara.AST.Select (ASTQual)
 import Polysemy
@@ -222,12 +222,14 @@ verifyExposition ::
 verifyExposition imp m e = verifyExists m e *> verifyExposed m e
  where
   verifyExists m' (ExposedValue vn) = verifyExists' m' (NVarName vn)
+  verifyExists m' (ExposedOp vn) = verifyExists' m' (NOpName vn)
   verifyExists m' (ExposedType tn) = verifyExists' m' (NTypeName tn)
   verifyExists m' (ExposedTypeAndAllConstructors op) = verifyExists' m' (NTypeName op)
 
   verifyExists' m' n = unless (isDeclaring m' n) (throw (UnknownImportElement imp n))
 
   verifyExposed m' (ExposedValue vn) = verifyExposed' m' (NVarName vn)
+  verifyExposed m' (ExposedOp vn) = verifyExposed' m' (NOpName vn)
   verifyExposed m' (ExposedType tn) = verifyExposed' m' (NTypeName tn)
   verifyExposed m' (ExposedTypeAndAllConstructors op) = verifyExposed' m' (NTypeName op)
 

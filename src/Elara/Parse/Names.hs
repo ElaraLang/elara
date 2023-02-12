@@ -2,12 +2,20 @@ module Elara.Parse.Names where
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (Parser, lexeme)
-import Text.Megaparsec (MonadParsec (try), oneOf)
+import Elara.Parse.Primitives (Parser, lexeme, inParens)
+import Text.Megaparsec (MonadParsec (try), oneOf, (<?>))
 import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 
 varName :: Parser (MaybeQualified VarName)
-varName = maybeQualified (VarName <$> alphaVarName)
+varName = try operatorVarName <|> normalVarName
+
+normalVarName :: Parser (MaybeQualified VarName)
+normalVarName = maybeQualified (VarName <$> alphaVarName) <?> "variable name"
+
+operatorVarName :: Parser (MaybeQualified VarName)
+operatorVarName = (opToVar <<$>> inParens opName) <?> "operator name in parens"
+ where
+  opToVar (OpName n) = VarName ("(" <> n <> ")")
 
 typeName :: Parser (MaybeQualified TypeName)
 typeName = do
