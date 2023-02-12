@@ -28,7 +28,7 @@ annotateModule ::
     Sem r (Module Annotated)
 annotateModule m = do
     modules <- ask
-    let context = buildContext m modules
+    context <- buildContext m modules
     exposing' <- runReader context $ annotateExposing (m ^. exposing)
     imports' <- runReader context (traverse annotateImport (m ^. imports))
     declarations' <- runReader context (traverse annotateDeclaration (m ^. declarations))
