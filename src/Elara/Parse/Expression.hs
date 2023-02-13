@@ -4,7 +4,7 @@ import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend (Expr (..))
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Name (MaybeQualified (..), OpName (OpName), VarName (VarName), nameText)
+import Elara.AST.Name (MaybeQualified (..), VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
 import Elara.Parse.Indents (blockAt, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)

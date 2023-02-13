@@ -11,7 +11,7 @@ module Elara.AST.Module.Inspection where
 import Control.Lens ((^.))
 import Data.Map qualified as M
 import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, TypeName, VarName)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName (OpName), TypeName, VarName (NormalVarName, OperatorVarName))
 import Elara.AST.Select (ASTQual)
 import Polysemy
 import Polysemy.Error (Error, throw)
@@ -99,6 +99,12 @@ type InspectionState ast = M.Map ModuleName (Module ast)
 
 type InspectionContext = M.Map (Name MaybeQualified) (NonEmpty ModuleName)
 
+-- | Hacky function that turns OpVarName into OpName in order to keep all operators in the context in the same form
+normalizeName :: Name MaybeQualified -> Name MaybeQualified
+normalizeName (NVarName (MaybeQualified n@(NormalVarName _) q)) = NVarName (MaybeQualified n q)
+normalizeName (NVarName (MaybeQualified (OperatorVarName opn) q)) = NOpName (MaybeQualified opn q)
+normalizeName other = other
+
 search ::
   ( ASTQual ast ~ MaybeQualified
   , Members [Reader InspectionContext, Error (InspectionError ast)] r
@@ -108,10 +114,11 @@ search ::
   Sem r ModuleName
 search elementName = do
   context <- ask
-  case M.lookup elementName context of
-    Nothing -> throw (UnknownName elementName)
+  let normName = normalizeName elementName
+  case M.lookup normName context of
+    Nothing -> throw (UnknownName normName)
     Just (x :| []) -> pure x
-    Just possibles -> throw (AmbiguousName elementName possibles)
+    Just possibles -> throw (AmbiguousName normName possibles)
 
 {- | There are a lot of cases to consider when looking for a module:
 
@@ -184,7 +191,7 @@ buildContext thisModule s = do
           modify (M.insertWith (<>) (ctor (qualify qual)) (pure actualModule))
           unless onlyQualified (modify (M.insertWith (<>) (ctor (unqualify qual)) (pure actualModule)))
 
-    case declarationName of
+    case normalizeName declarationName of
       NVarName qual -> addQualAndUnqual NVarName qual
       NTypeName qual -> addQualAndUnqual NTypeName qual
       NOpName op -> addQualAndUnqual NOpName op

@@ -18,6 +18,7 @@ import Polysemy (Member, Sem)
 import Polysemy.Error (Error)
 import Polysemy.Reader (Reader, ask, runReader)
 import Prelude hiding (Reader, Type, ask, runReader)
+import Print (debugColored)
 
 type Modules = M.Map ModuleName (Module Frontend)
 
@@ -29,6 +30,7 @@ annotateModule ::
 annotateModule m = do
     modules <- ask
     context <- buildContext m modules
+    debugColored context
     exposing' <- runReader context $ annotateExposing (m ^. exposing)
     imports' <- runReader context (traverse annotateImport (m ^. imports))
     declarations' <- runReader context (traverse annotateDeclaration (m ^. declarations))

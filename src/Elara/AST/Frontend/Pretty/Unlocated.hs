@@ -2,7 +2,7 @@ module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
 import Data.Text (length)
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText), OpName (OpName), TypeName (TypeName), VarName (VarName))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText), OpName (OpName), TypeName (TypeName), VarName (..))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
@@ -50,7 +50,8 @@ instance Pretty ModuleName where
     ppr _ (ModuleName m) = PP.hcat (PP.punctuate "." (fmap (PP.text . toString) (toList m)))
 
 instance Pretty VarName where
-    ppr _ (VarName n) = PP.text (toString n)
+    ppr _ (NormalVarName n) = PP.text (toString n)
+    ppr p (OperatorVarName n) = "(" <> ppr p n <> ")"
 
 instance Pretty TypeName where
     ppr _ (TypeName n) = PP.text (toString n)

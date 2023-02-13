@@ -20,12 +20,15 @@ newtype ModuleName = ModuleName (NonEmpty Text)
 {- | A valid Variable name. This includes anything that could appear in let [name] = ...
 | In other words, a normal alphanumeric name, or a paren wrapped operator name
 -}
-newtype VarName = VarName Text
+data VarName
+    = NormalVarName Text
+    | OperatorVarName OpName
     deriving (Ord, Show, Eq, Data)
 
 newtype TypeName = TypeName Text
     deriving (Ord, Show, Eq, Data)
 
+-- | A
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data)
 
@@ -65,7 +68,8 @@ instance ToName (qual OpName) qual where
     toName = NOpName
 
 instance NameLike VarName where
-    nameText (VarName name) = name
+    nameText (NormalVarName name) = name
+    nameText (OperatorVarName name) = nameText name
 
 instance NameLike TypeName where
     nameText (TypeName name) = name
