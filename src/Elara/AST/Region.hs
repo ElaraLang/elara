@@ -3,10 +3,12 @@
 module Elara.AST.Region where
 
 import Data.Data (Data)
+import GHC.Exts (the)
 import Relude.Extra
 
 data SourceRegion = SourceRegion
-    { startOffset :: Int
+    { sourceFile :: Maybe FilePath
+    , startOffset :: Int
     , endOffset :: Int
     }
     deriving (Show, Eq, Data)
@@ -26,12 +28,16 @@ merge fn l1 l2 =
         (spanningRegion (getLocation l1 :| [getLocation l2]))
         (fn l1 l2)
 
+-- | Get the region that contains both of the given regions. This function will throw an error if the regions are in different files.
 enclosingRegion :: SourceRegion -> SourceRegion -> SourceRegion
-enclosingRegion (SourceRegion start _) (SourceRegion _ end) = SourceRegion start end
+enclosingRegion (SourceRegion fp _ _) (SourceRegion fp' _ _) | fp /= fp' = error "enclosingRegion: regions are in different files"
+enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
 
+-- | Get the region that contains all of the given regions. This function will throw an error if the regions are in different files.
 spanningRegion :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion regions =
     SourceRegion
-        { startOffset = minimum1 (startOffset <$> regions)
+        { sourceFile = the $ toList (sourceFile <$> regions)
+        , startOffset = minimum1 (startOffset <$> regions)
         , endOffset = maximum1 (endOffset <$> regions)
         }

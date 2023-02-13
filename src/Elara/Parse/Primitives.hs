@@ -12,9 +12,10 @@ type Parser = Parsec Void Text
 located :: Parser a -> Parser (Located a)
 located p = do
     start <- getOffset
+    file <- sourceName . pstateSourcePos . statePosState <$> getParserState
     x <- p
     end <- getOffset
-    pure $ Located (SourceRegion start end) x
+    pure $ Located (SourceRegion (Just file) start end) x
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"
