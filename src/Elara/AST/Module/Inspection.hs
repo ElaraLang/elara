@@ -5,13 +5,14 @@
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Elara.AST.Module.Inspection where
 
 import Control.Lens ((^.))
 import Data.Map qualified as M
 import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName (OpName), TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, TypeName, VarName (NormalVarName, OperatorVarName))
 import Elara.AST.Select (ASTQual)
 import Polysemy
 import Polysemy.Error (Error, throw)
@@ -112,13 +113,12 @@ search ::
   -- | The name to search for
   Name MaybeQualified ->
   Sem r ModuleName
-search elementName = do
+search (normalizeName -> normalizedName) = do
   context <- ask
-  let normName = normalizeName elementName
-  case M.lookup normName context of
-    Nothing -> throw (UnknownName normName)
+  case M.lookup normalizedName context of
+    Nothing -> throw (UnknownName normalizedName)
     Just (x :| []) -> pure x
-    Just possibles -> throw (AmbiguousName normName possibles)
+    Just possibles -> throw (AmbiguousName normalizedName possibles)
 
 {- | There are a lot of cases to consider when looking for a module:
 
