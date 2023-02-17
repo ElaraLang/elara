@@ -22,6 +22,7 @@ data Expr'
   | LetIn (MaybeQualified VarName) [Pattern] Expr Expr
   | Let (MaybeQualified VarName) [Pattern] Expr
   | Block (NonEmpty Expr)
+  | InParens Expr
   deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')

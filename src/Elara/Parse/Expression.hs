@@ -23,7 +23,7 @@ exprParser =
     makeExprParser
         (try expression)
         [ [InfixL functionCall]
-        , [InfixL binOp]
+        , [InfixR binOp]
         ]
         <?> "expression"
 
@@ -70,7 +70,7 @@ operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
 expression :: Parser Frontend.Expr
 expression =
     unit
-        <|> (try (inParens exprParser) <?> "parenthesized expression")
+        <|> (try parensExpr <?> "parenthesized expression")
         <|> (ifElse <?> "if expression")
         <|> (letInExpression <?> "let-in expression")
         <|> (lambda <?> "lambda expression")
@@ -86,6 +86,11 @@ expression =
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text
 reservedWords = Set.fromList ["if", "else", "then", "let", "in"]
+
+parensExpr :: Parser Frontend.Expr
+parensExpr = do
+    e@(Frontend.Expr le) <- inParens exprParser
+    pure (Frontend.Expr (Frontend.InParens e <$ le))
 
 variable :: Parser Frontend.Expr
 variable = locatedExpr $ do

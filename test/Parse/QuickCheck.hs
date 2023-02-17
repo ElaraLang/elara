@@ -53,9 +53,12 @@ instance Arbitrary name => Arbitrary (Qualified name) where
     arbitrary = Qualified <$> arbitrary <*> arbitrary
 
 instance Arbitrary VarName where
-    arbitrary = VarName . getAlphaText <$> suchThat arbitrary isSafe
-      where
-        isSafe (AlphaText name) = name `Set.notMember` reservedWords
+    arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
+        where 
+            arbitraryNormalVarName = NormalVarName . getAlphaText <$> suchThat arbitrary isSafe
+            isSafe (AlphaText name) = name `Set.notMember` reservedWords
+            arbitraryOpVarName = OperatorVarName <$> arbitrary
+
 
 instance Arbitrary TypeName where
     arbitrary = TypeName . getAlphaUpperText <$> arbitrary

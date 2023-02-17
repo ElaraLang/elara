@@ -47,7 +47,7 @@ operators :: Spec
 operators = describe "Parses operators" $ describe "Parses standalone operator symbols" $ do
   let
     prop_InfixedParses :: Text -> Property
-    prop_InfixedParses str = shouldParseProp (stripLocation <$> parse operator ("`" <> str <> "`")) (Infixed (MaybeQualified (VarName str) Nothing))
+    prop_InfixedParses str = shouldParseProp (stripLocation <$> parse operator ("`" <> str <> "`")) (Infixed (MaybeQualified (NormalVarName str) Nothing))
     prop_OpParses :: Text -> Property
     prop_OpParses str = shouldParseProp (stripLocation <$> parse operator str) (Op (MaybeQualified (OpName str) Nothing))
 

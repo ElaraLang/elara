@@ -26,7 +26,7 @@ source-repository head
 library
   exposed-modules:
       Elara.Annotate
-      Elara.Annotate.ModuleSearch
+      Elara.Annotate.Shunt
       Elara.AST.Annotated
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
@@ -85,7 +85,7 @@ library
     , pretty
     , pretty-simple
     , relude
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable elara
   main-is: Main.hs
@@ -124,7 +124,7 @@ executable elara
     , pretty
     , pretty-simple
     , relude
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite elara-test
   type: exitcode-stdio-1.0
@@ -179,5 +179,5 @@ test-suite elara-test
     , pretty
     , pretty-simple
     , relude
-  default-language: Haskell2010
+  default-language: GHC2021
   build-tool-depends: hspec-discover:hspec-discover == 2.*

@@ -30,6 +30,7 @@ data Expr
     | LetIn (MaybeQualified VarName) [Pattern] Expr Expr
     | Let (MaybeQualified VarName) [Pattern] Expr
     | Block (NonEmpty Expr)
+    | InParens Expr
     deriving (Show, Eq)
 
 data Pattern
@@ -70,6 +71,7 @@ instance StripLocation Frontend.Expr Expr where
         Frontend.LetIn v p e1 e2 -> LetIn v (stripLocation p) (stripLocation e1) (stripLocation e2)
         Frontend.Let v p e -> Let v (stripLocation p) (stripLocation e)
         Frontend.Block b -> Block (stripLocation b)
+        Frontend.InParens e -> InParens (stripLocation e)
 
 instance StripLocation Frontend.Pattern Pattern where
     stripLocation (Frontend.Pattern (Located _ pat)) = case pat of
@@ -82,4 +84,3 @@ instance StripLocation Frontend.BinaryOperator BinaryOperator where
     stripLocation (Frontend.MkBinaryOperator (Located _ op)) = case op of
         Frontend.Op o -> Op o
         Frontend.Infixed i -> Infixed i
-

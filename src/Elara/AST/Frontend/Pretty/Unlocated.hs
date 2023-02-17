@@ -41,6 +41,7 @@ instance Pretty Expr where
             $+$ nest 4 (ppr p body)
     ppr p (Let n ps e) = "let" <+> ppr p n <+> PP.hsep (fmap (ppr p) ps) <+> "=" <+> ppr p e
     ppr p (Block es) = nest 4 (PP.vcat $ toList (fmap (ppr p) es))
+    ppr p (InParens e) = PP.parens (ppr p e)
 
 instance Pretty x => Pretty (MaybeQualified x) where
     ppr p (MaybeQualified n (Just m)) = ppr p m <> "." <> ppr p n

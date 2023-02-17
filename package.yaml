@@ -8,6 +8,7 @@ copyright: 2022 Alexander Wood
 license: MIT
 github: ElaraLang/elara
 tested-with: ghc ==9.4.2
+language: GHC2021
 
 
 dependencies:

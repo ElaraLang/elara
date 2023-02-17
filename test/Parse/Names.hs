@@ -15,9 +15,9 @@ spec = describe "Test Names Parser" $ do
 varNames :: Spec
 varNames = do
     it "Parses a simple variable name" $ do
-        "foo" <=> (notQualified $ VarName "foo", varName)
+        "foo" <=> (notQualified $ NormalVarName "foo", varName)
     it "Parses a variable name with a module qualification" $ do
-        "Foo.bar" <=> (MaybeQualified (VarName "bar") (Just $ ModuleName ("Foo" :| [])), varName)
+        "Foo.bar" <=> (MaybeQualified (NormalVarName "bar") (Just $ ModuleName ("Foo" :| [])), varName)
 
 typeNames :: Spec
 typeNames = do

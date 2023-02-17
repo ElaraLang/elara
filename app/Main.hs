@@ -9,10 +9,12 @@ import Elara.AST.Frontend.Unlocated
 import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
+import Elara.Annotate.Shunt (fixOperators)
 import Elara.Parse
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Polysemy.Reader
+import Polysemy.Writer (runWriter)
 import Print (printColored)
 import Text.Megaparsec (errorBundlePretty)
 import Prelude hiding (runReader)
@@ -28,7 +30,10 @@ main = do
       let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
             Left err -> printColored err
-            Right m' -> printColored m'
+            Right m' -> do
+              let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
+              printColored y
+          
 
 loadModule :: FilePath -> IO (Either String (Module Frontend))
 loadModule path = do
@@ -42,3 +47,6 @@ loadModule path = do
 
 unlocateModule :: Module Frontend -> Module UnlocatedFrontend
 unlocateModule = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens %~ stripLocation
+
+overExpressions :: Applicative f => (ASTExpr ast -> f (ASTExpr ast)) -> Module ast -> f (Module ast)
+overExpressions = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens

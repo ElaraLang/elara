@@ -1,11 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Elara.AST.Annotated where
 
-import Elara.AST.Name (Name, OpName, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located)
-import Elara.Data.Type (Type)
-import Prelude hiding (Type)
 import Control.Lens (makePrisms)
+import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
+import Elara.AST.Region (Located (Located))
+import Elara.Data.Type (Type)
+import Prelude hiding (Op, Type)
 
 {- |
   This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
@@ -30,11 +31,11 @@ data Expr'
     | LetIn (Qualified VarName) Expr Expr
     | Let (Qualified VarName) Expr
     | Block (NonEmpty Expr)
+    | InParens Expr
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
-
 
 data Pattern'
     = NamedPattern Text
@@ -50,6 +51,10 @@ data BinaryOperator'
     = Op (Qualified OpName)
     | Infixed (Qualified VarName)
     deriving (Show, Eq)
+    
+operatorName :: BinaryOperator -> Name Qualified
+operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName op
+operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName op
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
@@ -58,3 +63,5 @@ data TypeAnnotation = TypeAnnotation (Name Qualified) (Type Qualified)
     deriving (Show, Eq)
 
 makePrisms ''Expr
+makePrisms ''Pattern
+makePrisms ''BinaryOperator

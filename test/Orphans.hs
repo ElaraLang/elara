@@ -13,7 +13,7 @@ instance IsString name => IsString (MaybeQualified name) where
     fromString s = MaybeQualified (fromString s) Nothing
 
 instance IsString VarName where
-    fromString = VarName . fromString
+    fromString = NormalVarName . fromString
 
 instance IsString TypeName where
     fromString = TypeName . fromString

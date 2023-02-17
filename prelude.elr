@@ -2,3 +2,4 @@ module Prelude
 
 let id = id
 let (+) = 3
+let (*) = 4
