@@ -1,3 +1,2 @@
 import Prelude
-let a = 1
-let main = a + 1 + 2 * 3 + 4
+let main = 1

@@ -11,6 +11,8 @@ import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 import Elara.Annotate.Shunt (fixOperators)
 import Elara.Parse
+import Error.Diagnose
+import Error.Diagnose.Compat.Megaparsec
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Polysemy.Reader
@@ -25,7 +27,7 @@ main = do
   p <- loadModule "prelude.elr"
   let sp = liftA2 (,) s p
   case sp of
-    Left err -> printColored err
+    Left err -> printDiagnostic stdout True True 4 defaultStyle err
     Right (source, prelude) ->
       let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
@@ -33,16 +35,20 @@ main = do
             Right m' -> do
               let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
               printColored y
-          
 
-loadModule :: FilePath -> IO (Either String (Module Frontend))
+loadModule :: FilePath -> IO (Either (Diagnostic Text) (Module Frontend))
 loadModule path = do
   s <- decodeUtf8Strict <$> readFileBS path
   case s of
-    Left err -> pure (Left ("Could not read file: " <> show err))
-    Right file ->
-      case parse path file of
-        Left err -> pure (Left (errorBundlePretty err))
+    Left err ->
+      let report = Err Nothing ("Could not read file: " <> fromString path) [] []
+       in pure . Left $ addReport def report
+    Right contents ->
+      case parse path contents of
+        Left err ->
+          let diag = errorDiagnosticFromBundle Nothing "Parse error on input" Nothing err
+              diag' = addFile diag path (toString contents)
+           in pure (Left diag')
         Right m -> pure (Right m)
 
 unlocateModule :: Module Frontend -> Module UnlocatedFrontend
