@@ -67,17 +67,13 @@ library
       DeriveFunctor
       TypeApplications
       Strict
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmissing-export-lists -Wmonomorphism-restriction -fplugin=Polysemy.Plugin
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin
   build-depends:
-      algebraic-graphs
-    , base-noprelude >=4.7 && <5
+      base-noprelude >=4.7 && <5
     , containers
     , diagnose
-    , insert-ordered-containers
     , lens
     , megaparsec
-    , monadlist
-    , more-containers
     , parser-combinators
     , parsers
     , polysemy
@@ -105,18 +101,14 @@ executable elara
       DeriveFunctor
       TypeApplications
       Strict
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmissing-export-lists -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded
   build-depends:
-      algebraic-graphs
-    , base-noprelude >=4.7 && <5
+      base-noprelude >=4.7 && <5
     , containers
     , diagnose
     , elara
-    , insert-ordered-containers
     , lens
     , megaparsec
-    , monadlist
-    , more-containers
     , parser-combinators
     , parsers
     , polysemy
@@ -155,22 +147,18 @@ test-suite elara-test
       TypeApplications
       Strict
       QuasiQuotes
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmissing-export-lists -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded -O0
+  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -threaded -O0
   build-depends:
       HUnit
     , QuickCheck
-    , algebraic-graphs
     , base-noprelude >=4.7 && <5
     , containers
     , diagnose
     , elara
     , hspec ==2.*
     , hspec-megaparsec
-    , insert-ordered-containers
     , lens
     , megaparsec
-    , monadlist
-    , more-containers
     , neat-interpolation
     , parser-combinators
     , parsers

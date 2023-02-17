@@ -17,15 +17,11 @@ dependencies:
   - name: relude
   - lens
   - containers
-  - more-containers
-  - insert-ordered-containers
-  - algebraic-graphs
   - megaparsec
   - parsers
   - parser-combinators
   - pretty-simple
-  - monadlist
-  - diagnose
+  - diagnose # TODO
   - pretty
   - polysemy
   - polysemy-plugin
