@@ -3,7 +3,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Elara.Annotate.Shunt where
+module Elara.Annotate.Shunt (Precedence, mkPrecedence, OpTable, OpInfo (..), Associativity (..), ShuntError (..), ShuntWarning (..), fixOperators) where
 
 import Control.Lens (over, view)
 import Data.Map (lookup)
@@ -12,7 +12,6 @@ import Elara.AST.Name (Name (NOpName, NVarName), Qualified)
 import Elara.AST.Region (Located (..), SourceRegion, unlocate)
 import Polysemy (Member, Sem)
 import Polysemy.Error (Error, throw)
-import Polysemy.State
 import Polysemy.Writer
 import Prelude hiding (State, execState, gets, modify')
 
@@ -28,8 +27,8 @@ mkPrecedence i
     | otherwise = Precedence i
 
 data OpInfo = OpInfo
-    { opPrecedence :: Precedence
-    , opAssociativity :: Associativity
+    { precedence :: Precedence
+    , associativity :: Associativity
     }
     deriving (Show, Eq)
 
@@ -43,32 +42,15 @@ data ShuntError
     = SamePrecedenceError (Name Qualified) (Name Qualified)
     deriving (Show, Eq)
 
-data ShuntWarning
+newtype ShuntWarning
     = UnknownPrecedence (Name Qualified)
     deriving (Show, Eq, Ord)
-
--- \| The operator has no precedence in the table, so a default precedence is used
-
-data ShuntState = ShuntState [Annotated.Expr] [Annotated.BinaryOperator] [Annotated.Expr]
-
-pushExpr :: (Member (State ShuntState) r) => Annotated.Expr -> Sem r ()
-pushExpr expr = modify' $ \(ShuntState exprs ops out) -> ShuntState (expr : exprs) ops out
-
-pushOp :: (Member (State ShuntState) r) => Annotated.BinaryOperator -> Sem r ()
-pushOp op = modify' $ \(ShuntState exprs ops out) -> ShuntState exprs (op : ops) out
-
-peekOp :: (Member (State ShuntState) r) => Sem r (Maybe Annotated.BinaryOperator)
-peekOp = gets $ \(ShuntState _ ops _) -> viaNonEmpty head ops
 
 opInfo :: OpTable -> Annotated.BinaryOperator -> Maybe OpInfo
 opInfo table op = case unlocate $ view Annotated._MkBinaryOperator op of
     Annotated.Op opName -> lookup (NOpName opName) table
     Annotated.Infixed varName -> lookup (NVarName varName) table
 
-precedence :: OpTable -> Annotated.BinaryOperator -> Maybe Precedence
-precedence table op = case unlocate $ view Annotated._MkBinaryOperator op of
-    Annotated.Op opName -> opPrecedence <$> lookup (NOpName opName) table
-    Annotated.Infixed varName -> opPrecedence <$> lookup (NVarName varName) table
 
 pattern InExpr :: Annotated.Expr' -> Annotated.Expr
 pattern InExpr y <- Annotated.Expr (Located _ y)
@@ -100,10 +82,10 @@ fixOperators opTable = reassoc
     reassoc' sr o1 e1 r@(InExpr (Annotated.BinaryOperator o2 e2 e3)) = do
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
-        case compare info1.opPrecedence info2.opPrecedence of
+        case compare info1.precedence info2.precedence of
             GT -> assocLeft
             LT -> assocRight
-            EQ -> case (info1.opAssociativity, info2.opAssociativity) of
+            EQ -> case (info1.associativity, info2.associativity) of
                 (LeftAssociative, LeftAssociative) -> assocLeft
                 (RightAssociative, RightAssociative) -> assocRight
                 _ -> throw (SamePrecedenceError (Annotated.operatorName o1) (Annotated.operatorName o2))

@@ -43,7 +43,7 @@ ghc-options:
 - -Wpartial-fields
 - -Werror=missing-home-modules
 - -Widentities
-#- -Wmissing-export-lists
+# - -Wmissing-export-lists
 - -Wmonomorphism-restriction
 - -fplugin=Polysemy.Plugin
 

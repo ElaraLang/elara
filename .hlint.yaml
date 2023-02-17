@@ -12,6 +12,8 @@
   - "-XViewPatterns"
   - "-XNoPatternSynonyms"
   - "-XQuasiQuotes"
+  - "-XGHC2021"
+
 - ignore:
     name: Use head
 - ignore:

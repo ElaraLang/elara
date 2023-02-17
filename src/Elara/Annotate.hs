@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Elara.Annotate where
+module Elara.Annotate (annotateModule, Modules) where
 
 import Control.Lens (over, view, (^.))
 import Data.Map qualified as M

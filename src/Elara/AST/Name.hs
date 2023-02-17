@@ -6,7 +6,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.Name where
+module Elara.AST.Name (ModuleName(..), VarName(..), TypeName(..), OpName(..), Name(..), NameLike (..), 
+    ToName(..), MaybeQualified(..), Unqualified (..), Qualified(..)) where
 
 import Control.Lens (makeClassy, makeLenses, makePrisms)
 import Data.Data (Data)
@@ -18,7 +19,7 @@ newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data)
 
 {- | A valid Variable name. This includes anything that could appear in let [name] = ...
-| In other words, a normal alphanumeric name, or a paren wrapped operator name
+| In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}
 data VarName
     = NormalVarName Text

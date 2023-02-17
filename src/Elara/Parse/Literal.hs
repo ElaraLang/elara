@@ -1,4 +1,4 @@
-module Elara.Parse.Literal where
+module Elara.Parse.Literal (charLiteral, stringLiteral, integerLiteral, floatLiteral) where
 
 import Elara.Parse.Primitives (Parser, lexeme)
 import Text.Megaparsec.Char (char)

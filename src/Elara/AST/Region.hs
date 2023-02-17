@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveTraversable #-}
 
-module Elara.AST.Region where
+module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion) where
 
 import Data.Data (Data)
 import GHC.Exts (the)

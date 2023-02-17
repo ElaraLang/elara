@@ -1,4 +1,4 @@
-module Elara.Parse.Combinators where
+module Elara.Parse.Combinators (sepBy1') where
 
 import Elara.Parse.Primitives (Parser)
 import Text.Megaparsec (try)

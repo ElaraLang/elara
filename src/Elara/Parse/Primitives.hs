@@ -1,4 +1,4 @@
-module Elara.Parse.Primitives where
+module Elara.Parse.Primitives (Parser, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens) where
 
 import Text.Megaparsec
 
