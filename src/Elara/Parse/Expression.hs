@@ -6,11 +6,12 @@ import Elara.AST.Frontend (Expr (..))
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified (..), VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
+import Elara.Parse.Error
 import Elara.Parse.Indents (blockAt, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
+import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol, withPredicate)
 import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
 import Text.Megaparsec.Char (char, space1)
 import Text.Megaparsec.Char.Lexer (indentLevel)
@@ -85,7 +86,7 @@ expression =
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text
-reservedWords = Set.fromList ["if", "else", "then", "let", "in"]
+reservedWords = Set.fromList ["if", "else", "then", "let", "in", "class"]
 
 parensExpr :: Parser Frontend.Expr
 parensExpr = do
@@ -93,11 +94,11 @@ parensExpr = do
     pure (Frontend.Expr (Frontend.InParens e <$ le))
 
 variable :: Parser Frontend.Expr
-variable = locatedExpr $ do
-    var <- lexeme varName
-    if nameText var `Set.member` reservedWords
-        then fail ("Reserved keyword: " <> toString (nameText var))
-        else pure $ Frontend.Var var
+variable =
+    locatedExpr $
+        Frontend.Var <$> withPredicate (not . validName) (KeywordUsedAsName . nameText) (lexeme varName)
+  where
+    validName var = nameText var `Set.member` reservedWords
 
 constructor :: Parser Frontend.Expr
 constructor = locatedExpr $ do

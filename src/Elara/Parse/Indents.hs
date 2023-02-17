@@ -5,7 +5,7 @@ import Elara.AST.Frontend (Expr (..), Expr' (Block))
 import Elara.AST.Region (Located (..))
 import Elara.AST.Region qualified as Region (getLocation, spanningRegion)
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (Parser, scn)
+import Elara.Parse.Primitives (Parser, scn, skipNewlines)
 import Text.Megaparsec (Pos, mkPos, try, unPos)
 import Text.Megaparsec.Char (newline)
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -73,7 +73,7 @@ sub1 pos = case unPos pos of
 -- | Parses a block, starting at the given position. The given parser should parse a single expression, which will be merged into a block
 blockAt :: Pos -> Parser Expr -> Parser (Pos, Expr)
 blockAt pos parser = do
-    _ <- many newline
+    skipNewlines
     exprs <- fmap snd <$> sepBy1' (withIndent (sub1 pos) parser) scn
     pure (pos, merge exprs)
   where

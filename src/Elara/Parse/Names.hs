@@ -1,9 +1,10 @@
 module Elara.Parse.Names where
 
+import Data.Set (member)
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (Parser, inParens, lexeme)
-import Text.Megaparsec (MonadParsec (try), oneOf, (<?>))
+import Text.Megaparsec (MonadParsec (try), satisfy, (<?>))
 import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 
 varName :: Parser (MaybeQualified VarName)
@@ -40,7 +41,7 @@ alphaVarName = toText <$> ((:) <$> lowerChar <*> many alphaNumChar)
 opName :: Parser (MaybeQualified OpName)
 opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)
  where
-  operatorChars :: [Char]
+  operatorChars :: Set Char
   operatorChars = ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']
   operatorChar :: Parser Char
-  operatorChar = oneOf operatorChars
+  operatorChar = satisfy (`member` operatorChars)

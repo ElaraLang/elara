@@ -12,7 +12,7 @@ import Elara.Annotate (annotateModule)
 import Elara.Annotate.Shunt (fixOperators)
 import Elara.Parse
 import Error.Diagnose
-import Error.Diagnose.Compat.Megaparsec
+import Elara.Parse.Error.Internal
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Polysemy.Reader
@@ -24,12 +24,12 @@ import Prelude hiding (runReader)
 main :: IO ()
 main = do
   s <- loadModule "source.elr"
-  p <- loadModule "prelude.elr"
-  let sp = liftA2 (,) s p
-  case sp of
+  -- p <- loadModule "prelude.elr"
+  -- let sp = liftA2 (,) s p
+  case s of
     Left err -> printDiagnostic stdout True True 4 defaultStyle err
-    Right (source, prelude) ->
-      let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
+    Right (source) ->
+      let modules = fromList [(source ^. name, source)]
        in case run $ runError $ runReader modules (annotateModule source) of
             Left err -> printColored err
             Right m' -> do
@@ -40,13 +40,13 @@ loadModule :: FilePath -> IO (Either (Diagnostic Text) (Module Frontend))
 loadModule path = do
   s <- decodeUtf8Strict <$> readFileBS path
   case s of
-    Left err ->
-      let report = Err Nothing ("Could not read file: " <> fromString path) [] []
+    Left unicodeError -> do
+      let report = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
        in pure . Left $ addReport def report
     Right contents ->
       case parse path contents of
-        Left err ->
-          let diag = errorDiagnosticFromBundle Nothing "Parse error on input" Nothing err
+        Left parseError ->
+          let diag = diagnosticFromBundle (const True) (Just "E0001") "Parse error on input" Nothing parseError
               diag' = addFile diag path (toString contents)
            in pure (Left diag')
         Right m -> pure (Right m)

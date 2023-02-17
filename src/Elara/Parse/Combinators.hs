@@ -1,4 +1,4 @@
-module Elara.Parse.Combinators (sepBy1') where
+module Elara.Parse.Combinators (sepBy1', sepEndBy') where
 
 import Elara.Parse.Primitives (Parser)
 import Text.Megaparsec (try)
@@ -8,4 +8,11 @@ import Text.Megaparsec (try)
 sepBy1' :: Parser a -> Parser sep -> Parser (NonEmpty a)
 sepBy1' p sep = do
     x <- try p
-    (x :|) <$> many (try (sep >> p))
+    (x :|) <$> many (try (sep *> p))
+
+-- Greedy version of [sepEndBy] that won't backtrack if the parser after the separator fails.
+sepEndBy' :: Parser a -> Parser sep -> Parser [a]
+sepEndBy' p sep = do
+    x <- try p
+    xs <- many (try (sep *> p))
+    pure (x : xs)

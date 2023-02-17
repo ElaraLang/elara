@@ -1,13 +1,15 @@
-module Elara.Parse.Primitives (Parser, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens) where
+module Elara.Parse.Primitives (Parser, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate) where
 
 import Text.Megaparsec
 
 import Elara.AST.Region (Located (..), SourceRegion (..))
+import Elara.Parse.Error
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
+import Print (debugColored)
 
-type Parser = Parsec Void Text
+type Parser = Parsec ElaraParseError Text
 
 located :: Parser a -> Parser (Located a)
 located p = do
@@ -40,3 +42,14 @@ commaSeparated p = p `sepBy` lexeme (char ',')
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
 oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` lexeme (char ','))) <|> one <$> p
+
+skipNewlines :: Parser ()
+skipNewlines = void (takeWhileP (Just "newline") (== '\n'))
+
+withPredicate :: (MonadParsec e s m) => (b -> Bool) -> (b -> e) -> m b -> m b
+withPredicate f msg p = do
+    o <- getOffset
+    r <- p
+    if f r
+        then pure r
+        else region (setErrorOffset o) (customFailure (msg r))

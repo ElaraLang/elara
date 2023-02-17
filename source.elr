@@ -1,2 +1,2 @@
-import Prelude
-let main = 1
+module A 
+let noBody = class
