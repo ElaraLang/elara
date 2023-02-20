@@ -15,6 +15,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 import Test.Hspec.QuickCheck
 import Test.QuickCheck.Property
 import Text.Megaparsec (ParseErrorBundle, eof, runParser)
+import Elara.Parse.Error
 import Prelude hiding (Op)
 
 spec :: Spec
@@ -162,7 +163,7 @@ ppEq expr =
    in
     whenFail' (putTextLn source) (parsed `shouldParseProp` expr)
 
-parse :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
+parse :: Parser a -> Text -> Either (ParseErrorBundle Text ElaraParseError) a
 parse p = runParser (p <* eof) ""
 
 (<=>) :: Text -> Unlocated.Expr -> IO ()
