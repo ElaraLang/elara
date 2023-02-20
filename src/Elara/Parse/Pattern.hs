@@ -3,11 +3,11 @@ module Elara.Parse.Pattern (pattern') where
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Parse.Names (alphaVarName, typeName)
 import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
-import Text.Parser.Combinators (choice, sepEndBy)
+import Text.Megaparsec (choice, sepEndBy)
 
 pattern' :: Parser Pattern
 pattern' =
-    choice
+    choice @[]
         [ varPattern
         , wildcardPattern
         , listPattern

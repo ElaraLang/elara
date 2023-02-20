@@ -1,12 +1,12 @@
 module Elara.Parse.Literal (charLiteral, stringLiteral, integerLiteral, floatLiteral) where
 
 import Elara.Parse.Primitives (Parser, lexeme)
+import Text.Megaparsec (manyTill)
 import Text.Megaparsec.Char (char)
 import Text.Megaparsec.Char.Lexer qualified as L (charLiteral, decimal, float, signed)
-import Text.Parser.Combinators (manyTill, surroundedBy)
 
 charLiteral :: Parser Char
-charLiteral = lexeme (surroundedBy L.charLiteral "'")
+charLiteral = lexeme ("'" *> L.charLiteral <* "'")
 
 stringLiteral :: Parser Text
 stringLiteral = toText <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
