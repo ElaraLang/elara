@@ -11,8 +11,8 @@ import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 import Elara.Annotate.Shunt (fixOperators)
 import Elara.Parse
-import Error.Diagnose
 import Elara.Parse.Error.Internal
+import Error.Diagnose
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Polysemy.Reader
@@ -24,12 +24,12 @@ import Prelude hiding (runReader)
 main :: IO ()
 main = do
   s <- loadModule "source.elr"
-  -- p <- loadModule "prelude.elr"
-  -- let sp = liftA2 (,) s p
-  case s of
+  p <- loadModule "prelude.elr"
+  let sp = liftA2 (,) s p
+  case sp of
     Left err -> printDiagnostic stdout True True 4 defaultStyle err
-    Right (source) ->
-      let modules = fromList [(source ^. name, source)]
+    Right (source, prelude) ->
+      let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
             Left err -> printColored err
             Right m' -> do

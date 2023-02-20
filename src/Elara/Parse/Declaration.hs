@@ -5,17 +5,19 @@ import Elara.AST.Module (Declaration (..), DeclarationBody (Value, ValueTypeDef)
 import Elara.AST.Name (ModuleName, Name (..))
 import Elara.AST.Select (Frontend)
 import Elara.Parse.Expression (letRaw)
+import Elara.Parse.Indents (nonIndented)
 import Elara.Parse.Names (varName)
-import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
+import Elara.Parse.Primitives (HParser, lexeme, sc, symbol)
 import Elara.Parse.Type (type')
-import Text.Megaparsec.Char.Lexer qualified as L
+import HeadedMegaparsec (endHead)
 
-declaration :: ModuleName -> Parser (Declaration Frontend)
+declaration :: ModuleName -> HParser (Declaration Frontend)
 declaration = liftA2 (<|>) defDec letDec
 
-defDec :: ModuleName -> Parser (Declaration Frontend)
+defDec :: ModuleName -> HParser (Declaration Frontend)
 defDec modName = do
   symbol "def"
+  endHead
   name <- NVarName <$> lexeme varName
   symbol ":"
   ty <- type'
@@ -23,8 +25,8 @@ defDec modName = do
   let declBody = ValueTypeDef (Just annotation)
   pure (Declaration modName name declBody)
 
-letDec :: ModuleName -> Parser (Declaration Frontend)
+letDec :: ModuleName -> HParser (Declaration Frontend)
 letDec modName = do
-  (name, patterns, e) <- L.nonIndented sc letRaw
+  (name, patterns, e) <- snd <$> nonIndented sc letRaw
   let value = Value e patterns Nothing
   pure (Declaration modName (NVarName name) value)

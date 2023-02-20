@@ -3,45 +3,46 @@ module Elara.Parse.Names where
 import Data.Set (member)
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (Parser, inParens, lexeme)
+import Elara.Parse.Primitives (HParser, Parser, inParens, lexeme, (<??>))
+import HeadedMegaparsec qualified as H (parse)
 import Text.Megaparsec (MonadParsec (try), satisfy, (<?>))
 import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 
-varName :: Parser (MaybeQualified VarName)
-varName = try operatorVarName <|> normalVarName
+varName :: HParser (MaybeQualified VarName)
+varName = operatorVarName <|> normalVarName
 
-normalVarName :: Parser (MaybeQualified VarName)
-normalVarName = maybeQualified (NormalVarName <$> alphaVarName) <?> "variable name"
+normalVarName :: HParser (MaybeQualified VarName)
+normalVarName = maybeQualified (NormalVarName <$> alphaVarName) <??> "variable name"
 
-operatorVarName :: Parser (MaybeQualified VarName)
-operatorVarName = (OperatorVarName <<$>> inParens opName) <?> "operator name in parens"
+operatorVarName :: HParser (MaybeQualified VarName)
+operatorVarName = (OperatorVarName <<$>> inParens opName) <??> "operator name in parens"
 
-typeName :: Parser (MaybeQualified TypeName)
+typeName :: HParser (MaybeQualified TypeName)
 typeName = do
   ModuleName names <- moduleName
   pure $ case names of
     x :| [] -> MaybeQualified (TypeName x) Nothing
     _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
 
-maybeQualified :: Parser name -> Parser (MaybeQualified name)
+maybeQualified :: HParser name -> HParser (MaybeQualified name)
 maybeQualified name = do
-  qual <- optional . try $ (moduleName <* char '.')
+  qual <- optional (moduleName <* H.parse (char '.'))
   name' <- name
   pure $ MaybeQualified name' qual
 
-moduleName :: Parser ModuleName
-moduleName = ModuleName <$> sepBy1' upperVarName (char '.')
+moduleName :: HParser ModuleName
+moduleName = ModuleName <$> sepBy1' upperVarName (H.parse $ char '.')
 
-upperVarName :: Parser Text
-upperVarName = toText <$> ((:) <$> upperChar <*> many alphaNumChar)
+upperVarName :: HParser Text
+upperVarName = toText <$> ((:) <$> H.parse upperChar <*> H.parse (many alphaNumChar))
 
-alphaVarName :: Parser Text
-alphaVarName = toText <$> ((:) <$> lowerChar <*> many alphaNumChar)
+alphaVarName :: HParser Text
+alphaVarName = toText <$> ((:) <$> H.parse lowerChar <*> H.parse (many alphaNumChar))
 
-opName :: Parser (MaybeQualified OpName)
+opName :: HParser (MaybeQualified OpName)
 opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)
  where
   operatorChars :: Set Char
   operatorChars = ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']
-  operatorChar :: Parser Char
-  operatorChar = satisfy (`member` operatorChars)
+  operatorChar :: HParser Char
+  operatorChar = H.parse $ satisfy (`member` operatorChars)

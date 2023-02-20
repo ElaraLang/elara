@@ -3,20 +3,20 @@ module Elara.Parse.Module where
 import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Module (..))
 import Elara.AST.Name
 import Elara.AST.Select
-import Elara.Parse.Combinators (sepEndBy')
 import Elara.Parse.Declaration (declaration)
 import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-import Text.Megaparsec (MonadParsec (try), sepEndBy)
+import HeadedMegaparsec (endHead)
+import Text.Megaparsec (sepBy, sepEndBy)
 
-module' :: Parser (Module Frontend)
+module' :: HParser (Module Frontend)
 module' = do
-    mHeader <- optional . try $ header
+    mHeader <- optional header
     let _name = maybe (ModuleName ("Main" :| [])) fst mHeader
     skipNewlines
     imports <- import' `sepEndBy` skipNewlines
-    declarations <- declaration _name `sepEndBy'` skipNewlines
+    declarations <- declaration _name `sepBy` skipNewlines
 
     pure $
         Module
@@ -26,35 +26,38 @@ module' = do
             , _moduleDeclarations = declarations
             }
 
-header :: Parser (ModuleName, Exposing MaybeQualified)
+header :: HParser (ModuleName, Exposing MaybeQualified)
 header = do
     -- module Name exposing (..)
     symbol "module"
+    endHead
     moduleName' <- lexeme Parse.moduleName
     exposing' <- exposing
     pure (moduleName', exposing')
 
-exposing :: Parser (Exposing MaybeQualified)
+exposing :: HParser (Exposing MaybeQualified)
 exposing =
     fromMaybe ExposingAll
-        <$> ( optional . try $ do
+        <$> optional
+            ( do
                 symbol "exposing"
                 es <- lexeme (oneOrCommaSeparatedInParens exposition)
                 pure $ ExposingSome es
             )
 
-exposition :: Parser (Exposition MaybeQualified)
+exposition :: HParser (Exposition MaybeQualified)
 exposition = exposedValue <|> exposedOp
   where
     exposedValue = ExposedValue <$> varName
     exposedOp = ExposedOp <$> inParens opName
 
-import' :: Parser (Import MaybeQualified)
+import' :: HParser (Import MaybeQualified)
 import' = do
     symbol "import"
+    endHead
     moduleName' <- lexeme Parse.moduleName
     isQualified <- isJust <$> optional (symbol "qualified")
-    as <- optional . try $ do
+    as <- optional $ do
         symbol "as"
         lexeme Parse.moduleName
     Import moduleName' as isQualified <$> exposing

@@ -1,2 +1,3 @@
-module A 
-let noBody = class
+module A
+import Prelude
+let noBody = 3
