@@ -1,6 +1,6 @@
 module Elara.Parse.Module where
 
-import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Module (..))
+import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Select
 import Elara.Parse.Combinators (sepEndBy')
@@ -11,7 +11,7 @@ import Elara.Parse.Primitives
 import Text.Megaparsec (MonadParsec (try), sepEndBy)
 
 module' :: Parser (Module Frontend)
-module' = do
+module' = (Module <$>) . located $ do
     mHeader <- optional . try $ header
     let _name = maybe (ModuleName ("Main" :| [])) fst mHeader
     skipNewlines
@@ -19,11 +19,11 @@ module' = do
     declarations <- declaration _name `sepEndBy'` skipNewlines
 
     pure $
-        Module
-            { _moduleName = _name
-            , _moduleExposing = maybe ExposingAll snd mHeader
-            , _moduleImports = imports
-            , _moduleDeclarations = declarations
+        Module'
+            { _module'Name = _name
+            , _module'Exposing = maybe ExposingAll snd mHeader
+            , _module'Imports = imports
+            , _module'Declarations = declarations
             }
 
 header :: Parser (ModuleName, Exposing MaybeQualified)

@@ -6,8 +6,18 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.Name (ModuleName(..), VarName(..), TypeName(..), OpName(..), Name(..), NameLike (..), 
-    ToName(..), MaybeQualified(..), Unqualified (..), Qualified(..)) where
+module Elara.AST.Name (
+    ModuleName (..),
+    VarName (..),
+    TypeName (..),
+    OpName (..),
+    Name (..),
+    NameLike (..),
+    ToName (..),
+    MaybeQualified (..),
+    Unqualified (..),
+    Qualified (..),
+) where
 
 import Control.Lens (makeClassy, makeLenses, makePrisms)
 import Data.Data (Data)
@@ -104,6 +114,20 @@ instance NameLike n => NameLike (Unqualified n) where
 
     moduleName _ = Nothing
 
+instance (NameLike (q VarName), NameLike (q TypeName), NameLike (q OpName)) => NameLike (Name q) where
+    nameText (NVarName name) = nameText name
+    nameText (NTypeName name) = nameText name
+    nameText (NOpName name) = nameText name
+
+    fullNameText (NVarName name) = fullNameText name
+    fullNameText (NTypeName name) = fullNameText name
+    fullNameText (NOpName name) = fullNameText name
+
+    moduleName (NVarName name) = moduleName name
+    moduleName (NTypeName name) = moduleName name
+    moduleName (NOpName name) = moduleName name
+
+    
 data MaybeQualified name = MaybeQualified
     { _maybeQualifiedNameName :: name
     , _maybeQualifiedNameQualifier :: Maybe ModuleName

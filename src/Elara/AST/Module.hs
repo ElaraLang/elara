@@ -13,20 +13,23 @@ module Elara.AST.Module where
 import Control.Lens (Lens, makeFields, makeLenses, makePrisms)
 import Control.Lens.Traversal
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
+import Elara.AST.Region (Located)
 import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTPattern, ASTQual)
 import Elara.Data.Type
 import Prelude hiding (Type)
 import Prelude qualified as Kind
 
-data Module ast = Module
-    { _moduleName :: ModuleName
-    , _moduleExposing :: Exposing (ASTQual ast)
-    , _moduleImports :: [Import (ASTQual ast)]
-    , _moduleDeclarations :: [Declaration ast]
+newtype Module ast = Module (Located (Module' ast))
+
+data Module' ast = Module'
+    { _module'Name :: ModuleName
+    , _module'Exposing :: Exposing (ASTQual ast)
+    , _module'Imports :: [Import (ASTQual ast)]
+    , _module'Declarations :: [Declaration ast]
     }
 
-moduleDeclarations :: (ASTQual ast ~ ASTQual ast2) => Lens (Module ast) (Module ast2) [Declaration ast] [Declaration ast2]
-moduleDeclarations f (Module n e i d) = fmap (Module n e i) (f d)
+moduleDeclarations :: (ASTQual ast ~ ASTQual ast2) => Lens (Module' ast) (Module' ast2) [Declaration ast] [Declaration ast2]
+moduleDeclarations f (Module' n e i d) = fmap (Module' n e i) (f d)
 
 type ModConstraints :: (Kind.Type -> Constraint) -> Kind.Type -> Constraint
 type ModConstraints c ast =
@@ -40,8 +43,8 @@ type ModConstraints c ast =
     , c ((ASTQual ast) OpName)
     )
 
-deriving instance ModConstraints Show ast => Show (Module ast)
-deriving instance ModConstraints Eq ast => Eq (Module ast)
+deriving instance ModConstraints Show ast => Show (Module' ast)
+deriving instance ModConstraints Eq ast => Eq (Module' ast)
 
 data Declaration ast = Declaration
     { _declarationModule' :: ModuleName
@@ -114,6 +117,7 @@ makePrisms ''DeclarationBody
 -- makeLenses ''Module
 makeLenses ''Declaration
 
+makeFields ''Module'
 makeFields ''Module
 makeFields ''Import
 makeFields ''Declaration

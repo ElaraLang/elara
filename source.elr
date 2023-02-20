@@ -1,2 +1,4 @@
 module A 
-let noBody = class
+import Prelude
+import Random
+let a = 3 + 4

@@ -10,9 +10,10 @@ import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 import Elara.Annotate.Shunt (fixOperators)
+import Elara.Error
 import Elara.Parse
-import Error.Diagnose
 import Elara.Parse.Error.Internal
+import Error.Diagnose
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Polysemy.Reader
@@ -24,14 +25,13 @@ import Prelude hiding (runReader)
 main :: IO ()
 main = do
   s <- loadModule "source.elr"
-  -- p <- loadModule "prelude.elr"
-  -- let sp = liftA2 (,) s p
-  case s of
+  p <- loadModule "prelude.elr"
+  case liftA2 (,) s p of
     Left err -> printDiagnostic stdout True True 4 defaultStyle err
-    Right (source) ->
-      let modules = fromList [(source ^. name, source)]
+    Right (source, prelude) ->
+      let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left err -> printColored err
+            Left err -> printDiagnostic stdout True True 4 defaultStyle (reportDiagnostic err)
             Right m' -> do
               let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
               printColored y
@@ -41,12 +41,12 @@ loadModule path = do
   s <- decodeUtf8Strict <$> readFileBS path
   case s of
     Left unicodeError -> do
-      let report = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
-       in pure . Left $ addReport def report
+      let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
+       in pure . Left $ addReport def errReport
     Right contents ->
       case parse path contents of
         Left parseError ->
-          let diag = diagnosticFromBundle (const True) (Just "E0001") "Parse error on input" Nothing parseError
+          let diag = reportDiagnostic parseError
               diag' = addFile diag path (toString contents)
            in pure (Left diag')
         Right m -> pure (Right m)
