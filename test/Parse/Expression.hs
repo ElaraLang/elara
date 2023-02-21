@@ -4,7 +4,7 @@ import Elara.AST.Frontend.Pretty.Unlocated
 import Elara.AST.Frontend.Unlocated as Unlocated
 import Elara.AST.Name
 import Elara.Parse.Expression (exprParser, operator)
-import Elara.Parse.Primitives (Parser)
+import Elara.Parse.Primitives (Parser, HParser, toParsec)
 import NeatInterpolation (text)
 import Parse.Common (shouldParseProp)
 import Orphans ()
@@ -15,6 +15,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 import Test.Hspec.QuickCheck
 import Test.QuickCheck.Property
 import Text.Megaparsec (ParseErrorBundle, eof, runParser)
+import Elara.Parse.Error
 import Prelude hiding (Op)
 
 spec :: Spec
@@ -162,8 +163,8 @@ ppEq expr =
    in
     whenFail' (putTextLn source) (parsed `shouldParseProp` expr)
 
-parse :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
-parse p = runParser (p <* eof) ""
+parse :: HParser a -> Text -> Either (ParseErrorBundle Text ElaraParseError) a
+parse p = runParser (toParsec p <* eof) ""
 
 (<=>) :: Text -> Unlocated.Expr -> IO ()
 (<=>) source expected = do

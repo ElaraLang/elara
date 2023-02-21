@@ -76,10 +76,10 @@ library
       base-noprelude >=4.7 && <5
     , containers
     , diagnose
+    , headed-megaparsec
     , lens
     , megaparsec
     , parser-combinators
-    , parsers
     , polysemy
     , polysemy-plugin
     , pretty
@@ -111,10 +111,10 @@ executable elara
     , containers
     , diagnose
     , elara
+    , headed-megaparsec
     , lens
     , megaparsec
     , parser-combinators
-    , parsers
     , polysemy
     , polysemy-plugin
     , pretty
@@ -159,13 +159,13 @@ test-suite elara-test
     , containers
     , diagnose
     , elara
+    , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec
     , lens
     , megaparsec
     , neat-interpolation
     , parser-combinators
-    , parsers
     , polysemy
     , polysemy-plugin
     , pretty
