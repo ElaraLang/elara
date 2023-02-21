@@ -19,7 +19,6 @@ import Polysemy.Error (runError)
 import Polysemy.Reader
 import Polysemy.Writer (runWriter)
 import Print (printColored)
-import Text.Megaparsec (errorBundlePretty)
 import Prelude hiding (runReader)
 
 main :: IO ()

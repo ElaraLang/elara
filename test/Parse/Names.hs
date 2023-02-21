@@ -29,6 +29,6 @@ typeNames = do
 notQualified :: name -> MaybeQualified name
 notQualified a = MaybeQualified a Nothing
 
-(<=>) :: (Show n, Eq n) => Text -> (n, Parser n) -> IO ()
+(<=>) :: (Show n, Eq n) => Text -> (n, HParser n) -> IO ()
 (<=>) source (expected, parser) = do
-    shouldParse (runParser parser "" source) expected
+    shouldParse (runParser (toParsec parser) "" source) expected

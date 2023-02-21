@@ -4,11 +4,11 @@ import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
 import Elara.AST.Name (MaybeQualified, ModuleName)
 import Elara.Data.Type (Type (..))
 import Elara.Parse.Names (alphaVarName, moduleName, typeName)
-import Elara.Parse.Primitives (Parser, lexeme, sc, symbol)
-import Text.Megaparsec (choice, try)
+import Elara.Parse.Primitives (HParser, lexeme, sc, symbol)
+import Text.Megaparsec (choice)
 import Prelude hiding (Type)
 
-type' :: Parser (Type MaybeQualified)
+type' :: HParser (Type MaybeQualified)
 type' =
     makeExprParser
         typeTerm
@@ -16,34 +16,34 @@ type' =
         , [InfixR functionType]
         ]
 
-constructorApplication :: Parser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
-constructorApplication = lexeme (TypeConstructorApplication <$ sc)
+constructorApplication :: HParser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+constructorApplication = lexeme (TypeConstructorApplication <$ (sc :: HParser ()))
 
-functionType :: Parser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
-functionType = lexeme (FunctionType <$ symbol "->")
+functionType :: HParser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+functionType = lexeme (FunctionType <$ (symbol "->" :: HParser ()))
 
-typeTerm :: Parser (Type MaybeQualified)
+typeTerm :: HParser (Type MaybeQualified)
 typeTerm =
     choice
-        ( try . lexeme
+        ( lexeme
             <$> [ typeVar
                 , unit
                 , namedType
                 ] ::
-            [Parser (Type MaybeQualified)]
+            [HParser (Type MaybeQualified)]
         )
 
-typeVar :: Parser (Type MaybeQualified)
+typeVar :: HParser (Type MaybeQualified)
 typeVar = TypeVar <$> alphaVarName
 
-unit :: Parser (Type MaybeQualified)
+unit :: HParser (Type MaybeQualified)
 unit = UnitType <$ symbol "()"
 
-namedType :: Parser (Type MaybeQualified)
+namedType :: HParser (Type MaybeQualified)
 namedType = UserDefinedType <$> typeName
 
-maybeQualified :: Parser (Maybe ModuleName -> b) -> Parser b
+maybeQualified :: HParser (Maybe ModuleName -> b) -> HParser b
 maybeQualified p = do
-    moduleQualification <- optional $ try (moduleName <* symbol ".")
+    moduleQualification <- optional (moduleName <* symbol ".")
     t <- p
     pure (t moduleQualification)

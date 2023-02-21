@@ -1,57 +1,88 @@
-module Elara.Parse.Primitives (Parser, located, fmapLocated, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate) where
+module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate, (<??>), IsParser (..), char, char', skipSpaces) where
 
 import Text.Megaparsec
 
 import Elara.AST.Region (Located (..), SourceRegion (..))
 import Elara.Parse.Error
-import Text.Megaparsec.Char
+import HeadedMegaparsec qualified as H
+import Print (debugColored)
+import Text.Megaparsec.Char qualified as MC
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
-import Print (debugColored)
 
 type Parser = Parsec ElaraParseError Text
+type HParser = H.HeadedParsec ElaraParseError Text
 
-located :: Parser a -> Parser (Located a)
+(<??>) :: HParser a -> String -> HParser a
+(<??>) = flip H.label
+
+class Monad m => IsParser m where
+    toParsec :: m a -> Parser a
+    fromParsec :: Parser a -> m a
+instance IsParser Parser where
+    toParsec = id
+    fromParsec = id
+
+instance IsParser HParser where
+    toParsec = H.toParsec
+    fromParsec = H.parse
+
+located :: IsParser m => m a -> m (Located a)
 located p = do
-    start <- getOffset
-    file <- sourceName . pstateSourcePos . statePosState <$> getParserState
+    start <- fromParsec getOffset
+    file <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
     x <- p
-    end <- getOffset
+    end <- fromParsec getOffset
     pure $ Located (SourceRegion (Just file) start end) x
 
 fmapLocated f = (f <$>) . located
 
-lineComment :: Parser ()
-lineComment = L.skipLineComment "--"
 
-sc :: Parser ()
-sc = L.space hspace1 lineComment empty
+lineComment :: IsParser m => m ()
+lineComment = fromParsec $ L.skipLineComment "--"
+
+sc :: IsParser m => m ()
+sc = fromParsec $ L.space MC.hspace1 lineComment empty
 
 scn :: Parser ()
-scn = L.space space1 lineComment empty
+scn = L.space MC.space1 lineComment empty
 
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
+lexeme :: IsParser m => m a -> m a
+lexeme = fromParsec . L.lexeme sc . toParsec
 
-symbol :: Text -> Parser ()
-symbol = void . L.symbol sc
+symbol :: IsParser m => Text -> m ()
+symbol = fromParsec . void . L.symbol sc
 
-inParens :: Parser a -> Parser a
-inParens = between (lexeme $ char '(') (lexeme $ char ')')
+inParens :: HParser a -> HParser a
+inParens p = do
+    H.parse $ symbol "("
+    H.endHead
+    x <- p
+    H.parse $ symbol ")"
+    pure x
 
-commaSeparated :: Parser a -> Parser [a]
+char :: IsParser m => Char -> m Char
+char = fromParsec . MC.char
+
+char' :: IsParser m => Char -> m ()
+char' = void . char
+
+commaSeparated :: HParser a -> HParser [a]
 commaSeparated p = p `sepBy` lexeme (char ',')
 
-oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
-oneOrCommaSeparatedInParens p = try (inParens (p `sepBy` lexeme (char ','))) <|> one <$> p
+oneOrCommaSeparatedInParens :: HParser a -> HParser [a]
+oneOrCommaSeparatedInParens p = inParens (p `sepBy` lexeme (char ',')) <|> one <$> p
 
-skipNewlines :: Parser ()
-skipNewlines = void (takeWhileP (Just "newline") (== '\n'))
+skipNewlines :: IsParser m => m ()
+skipNewlines = fromParsec $ void (takeWhileP (Just "newline") (== '\n'))
 
-withPredicate :: (MonadParsec e s m) => (b -> Bool) -> (b -> e) -> m b -> m b
+skipSpaces :: IsParser m => m ()
+skipSpaces = fromParsec $ void $ many MC.space1
+
+withPredicate :: IsParser m => (t -> Bool) -> (t -> ElaraParseError) -> m t -> m t
 withPredicate f msg p = do
-    o <- getOffset
+    o <- fromParsec getOffset
     r <- p
     if f r
         then pure r
-        else region (setErrorOffset o) (customFailure (msg r))
+        else fromParsec $ region (setErrorOffset o) (fromParsec $ customFailure (msg r))

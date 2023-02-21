@@ -18,10 +18,10 @@ dependencies:
   - lens
   - containers
   - megaparsec
-  - parsers
+  - headed-megaparsec
   - parser-combinators
   - pretty-simple
-  - diagnose # TODO
+  - diagnose
   - pretty
   - polysemy
   - polysemy-plugin

@@ -1,4 +1,3 @@
-module A 
+module A
 import Prelude
-import Random
-let a = 3 + 4
+let noBody = 3

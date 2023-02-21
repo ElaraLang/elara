@@ -2,12 +2,13 @@ module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Parse.Names (alphaVarName, typeName)
-import Elara.Parse.Primitives (Parser, inParens, lexeme, located, sc, symbol)
-import Text.Parser.Combinators (choice, sepEndBy)
+import Elara.Parse.Primitives (HParser, Parser, inParens, lexeme, located, sc, symbol)
+import HeadedMegaparsec qualified as H (parse, toParsec)
+import Text.Megaparsec (choice, sepEndBy)
 
-pattern' :: Parser Pattern
+pattern' :: HParser Pattern
 pattern' =
-    choice
+    choice @[]
         [ varPattern
         , wildcardPattern
         , listPattern
@@ -15,23 +16,23 @@ pattern' =
         , inParens pattern'
         ]
 
-locatedPattern :: Parser Pattern' -> Parser Pattern
-locatedPattern = (Pattern <$>) . located
+locatedPattern :: HParser Pattern' -> HParser Pattern
+locatedPattern = (Pattern <$>) . H.parse . located . H.toParsec
 
-varPattern :: Parser Pattern
+varPattern :: HParser Pattern
 varPattern = locatedPattern (NamedPattern <$> alphaVarName)
 
-wildcardPattern :: Parser Pattern
+wildcardPattern :: HParser Pattern
 wildcardPattern = locatedPattern (WildcardPattern <$ symbol "_")
 
-listPattern :: Parser Pattern
+listPattern :: HParser Pattern
 listPattern = locatedPattern $ do
     symbol "["
     elements <- lexeme (sepEndBy pattern' (symbol ","))
     symbol "]"
     pure $ ListPattern elements
 
-constructorPattern :: Parser Pattern
+constructorPattern :: HParser Pattern
 constructorPattern = locatedPattern $ do
     con <- located $ lexeme typeName
     args <- lexeme (sepEndBy pattern' sc)
