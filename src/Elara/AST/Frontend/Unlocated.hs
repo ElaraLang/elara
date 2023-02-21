@@ -51,6 +51,9 @@ data TypeAnnotation = TypeAnnotation (Name MaybeQualified) (Type MaybeQualified)
 class StripLocation a b | a -> b where
     stripLocation :: a -> b
 
+instance StripLocation (Located a) a where
+    stripLocation (Located _ a) = a
+
 instance (Functor f, StripLocation a b) => StripLocation (f a) (f b) where
     stripLocation = fmap stripLocation
 
@@ -61,26 +64,26 @@ instance StripLocation Frontend.Expr Expr where
         Frontend.String s -> String s
         Frontend.Char c -> Char c
         Frontend.Unit -> Unit
-        Frontend.Var v -> Var v
-        Frontend.Constructor c -> Constructor c
+        Frontend.Var v -> Var (stripLocation v)
+        Frontend.Constructor c -> Constructor (stripLocation c)
         Frontend.Lambda p e -> Lambda (stripLocation p) (stripLocation e)
         Frontend.FunctionCall e1 e2 -> FunctionCall (stripLocation e1) (stripLocation e2)
         Frontend.If e1 e2 e3 -> If (stripLocation e1) (stripLocation e2) (stripLocation e3)
         Frontend.BinaryOperator o e1 e2 -> BinaryOperator (stripLocation o) (stripLocation e1) (stripLocation e2)
         Frontend.List l -> List (stripLocation l)
-        Frontend.LetIn v p e1 e2 -> LetIn v (stripLocation p) (stripLocation e1) (stripLocation e2)
-        Frontend.Let v p e -> Let v (stripLocation p) (stripLocation e)
+        Frontend.LetIn v p e1 e2 -> LetIn (stripLocation v) (stripLocation p) (stripLocation e1) (stripLocation e2)
+        Frontend.Let v p e -> Let (stripLocation v) (stripLocation p) (stripLocation e)
         Frontend.Block b -> Block (stripLocation b)
         Frontend.InParens e -> InParens (stripLocation e)
 
 instance StripLocation Frontend.Pattern Pattern where
     stripLocation (Frontend.Pattern (Located _ pat)) = case pat of
         Frontend.NamedPattern n -> NamedPattern n
-        Frontend.ConstructorPattern c p -> ConstructorPattern c (stripLocation p)
+        Frontend.ConstructorPattern c p -> ConstructorPattern (stripLocation c) (stripLocation p)
         Frontend.ListPattern p -> ListPattern (stripLocation p)
         Frontend.WildcardPattern -> WildcardPattern
 
 instance StripLocation Frontend.BinaryOperator BinaryOperator where
     stripLocation (Frontend.MkBinaryOperator (Located _ op)) = case op of
-        Frontend.Op o -> Op o
-        Frontend.Infixed i -> Infixed i
+        Frontend.Op o -> Op (stripLocation o)
+        Frontend.Infixed i -> Infixed (stripLocation i)

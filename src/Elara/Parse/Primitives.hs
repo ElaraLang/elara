@@ -1,4 +1,4 @@
-module Elara.Parse.Primitives (Parser, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate) where
+module Elara.Parse.Primitives (Parser, located, fmapLocated, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate) where
 
 import Text.Megaparsec
 
@@ -18,6 +18,8 @@ located p = do
     x <- p
     end <- getOffset
     pure $ Located (SourceRegion (Just file) start end) x
+
+fmapLocated f = (f <$>) . located
 
 lineComment :: Parser ()
 lineComment = L.skipLineComment "--"

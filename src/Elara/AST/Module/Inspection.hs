@@ -59,6 +59,23 @@ deriving instance
   ) =>
   Eq (InspectionError ast)
 
+
+deriving instance
+  ( Show (Name (ASTQual ast))
+  , Show (Import (ASTQual ast))
+  , AllNames Show ast
+  ) =>
+  Show (ContextBuildingError ast)
+
+deriving instance
+  ( Eq (Name (ASTQual ast))
+  , Eq (Import (ASTQual ast))
+  , AllNames Eq ast
+  ) =>
+  Eq (ContextBuildingError ast)
+
+
+
 -- | Returns whether or not a given name is declared in a given module
 isDeclaring ::
   forall ast.
@@ -66,7 +83,7 @@ isDeclaring ::
   Module ast ->
   Name (ASTQual ast) ->
   Bool
-isDeclaring (Module _ _ _ decls) name' = isJust (find (declares name') decls)
+isDeclaring m name' = isJust (find (declares name') (m^.declarations))
  where
   declares :: Name (ASTQual ast) -> Declaration ast -> Bool
   declares name'' (Declaration _ name''' _) = name'' == name'''

@@ -31,10 +31,11 @@ main = do
     Right (source, prelude) ->
       let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left err -> printDiagnostic stdout True True 4 defaultStyle (reportDiagnostic err)
+            Left err -> print err
             Right m' -> do
-              let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
-              printColored y
+              print m'
+              -- let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
+              -- printColored y
 
 loadModule :: FilePath -> IO (Either (Diagnostic Text) (Module Frontend))
 loadModule path = do
@@ -51,8 +52,8 @@ loadModule path = do
            in pure (Left diag')
         Right m -> pure (Right m)
 
-unlocateModule :: Module Frontend -> Module UnlocatedFrontend
-unlocateModule = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens %~ stripLocation
+-- unlocateModule :: Module Frontend -> Module UnlocatedFrontend
+-- unlocateModule = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens %~ stripLocation
 
-overExpressions :: Applicative f => (ASTExpr ast -> f (ASTExpr ast)) -> Module ast -> f (Module ast)
-overExpressions = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens
+-- overExpressions :: Applicative f => (ASTExpr ast -> f (ASTExpr ast)) -> Module ast -> f (Module ast)
+-- overExpressions = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens

@@ -33,6 +33,6 @@ listPattern = locatedPattern $ do
 
 constructorPattern :: Parser Pattern
 constructorPattern = locatedPattern $ do
-    con <- lexeme typeName
+    con <- located $ lexeme typeName
     args <- lexeme (sepEndBy pattern' sc)
     pure $ ConstructorPattern con args

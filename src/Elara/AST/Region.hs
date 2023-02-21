@@ -1,23 +1,29 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE TemplateHaskell #-}
 
+module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion, _SourceRegion, _Unlocate) where
 
-module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion) where
-
+import Control.Lens (makeLenses, Lens)
 import Data.Data (Data)
 import GHC.Exts (the)
 import Relude.Extra
-import Control.Lens (makeLenses)
 
 data SourceRegion = SourceRegion
     { sourceFile :: Maybe FilePath
     , startOffset :: Int
     , endOffset :: Int
     }
-    deriving (Show, Eq, Data)
+    deriving (Show, Eq, Ord, Data)
 
 data Located a = Located SourceRegion a
-    deriving (Show, Eq, Functor, Traversable, Foldable)
+    deriving (Show, Eq, Ord, Functor, Traversable, Foldable)
+
+_SourceRegion :: Lens' (Located a) SourceRegion
+_SourceRegion f (Located region x) = fmap (`Located` x) (f region)
+
+_Unlocate :: Lens (Located a) (Located b) a b
+_Unlocate f (Located region x) = fmap (Located region) (f x)
+
 
 getLocation :: Located a -> SourceRegion
 getLocation (Located region _) = region
@@ -44,6 +50,3 @@ spanningRegion regions =
         , startOffset = minimum1 (startOffset <$> regions)
         , endOffset = maximum1 (endOffset <$> regions)
         }
-
-
-makeLenses ''Located

@@ -61,10 +61,10 @@ operator :: Parser Frontend.BinaryOperator
 operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
   where
     asciiOp = located $ do
-        Frontend.Op <$> opName
+        Frontend.Op <$> located opName
     infixOp = located $ lexeme $ do
         _ <- char '`'
-        op <- varName
+        op <- located varName
         _ <- char '`'
         pure $ Frontend.Infixed op
 
@@ -96,13 +96,13 @@ parensExpr = do
 variable :: Parser Frontend.Expr
 variable =
     locatedExpr $
-        Frontend.Var <$> withPredicate (not . validName) (KeywordUsedAsName . nameText) (lexeme varName)
+        Frontend.Var <$> withPredicate (not . validName) (KeywordUsedAsName . nameText) (located $ lexeme varName)
   where
     validName var = nameText var `Set.member` reservedWords
 
 constructor :: Parser Frontend.Expr
 constructor = locatedExpr $ do
-    con <- lexeme typeName
+    con <- located $ lexeme typeName
     pure $ Frontend.Constructor con
 
 unit :: Parser Frontend.Expr
@@ -161,7 +161,7 @@ letInExpression :: Parser Frontend.Expr -- TODO merge this, Declaration.valueDec
 letInExpression = locatedExpr $ do
     start <- indentLevel
     symbol "let"
-    name <- varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
+    name <- located varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
     afterName <- indentLevel
     (afterPatterns, patterns) <- withCurrentIndentOrNormal $ do
         sc -- consume the spaces from the non-lexeme'd varName.
@@ -178,14 +178,14 @@ letInExpression = locatedExpr $ do
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.LetIn name patterns e body)
 
-letRaw :: Parser (MaybeQualified VarName, [Frontend.Pattern], Frontend.Expr)
+letRaw :: Parser (Located (MaybeQualified VarName), [Frontend.Pattern], Frontend.Expr)
 letRaw = do
     ((name, patterns), e) <- optionallyIndented letPreamble element
     pure (name, patterns, e)
   where
     letPreamble = do
         symbol "let"
-        name <- lexeme varName
+        name <- located $ lexeme varName
         patterns <- sepBy (lexeme pattern') sc
         symbol "="
         pure (name, patterns)
