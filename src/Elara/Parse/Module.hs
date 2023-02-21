@@ -1,6 +1,6 @@
 module Elara.Parse.Module where
 
-import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Module (..))
+import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Select
 import Elara.Parse.Declaration (declaration)
@@ -19,11 +19,11 @@ module' = do
     declarations <- declaration _name `sepBy` skipNewlines
 
     pure $
-        Module
-            { _moduleName = _name
-            , _moduleExposing = maybe ExposingAll snd mHeader
-            , _moduleImports = imports
-            , _moduleDeclarations = declarations
+        Module'
+            { _module'Name = _name
+            , _module'Exposing = maybe ExposingAll snd mHeader
+            , _module'Imports = imports
+            , _module'Declarations = declarations
             }
 
 header :: HParser (ModuleName, Exposing MaybeQualified)

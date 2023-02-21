@@ -37,6 +37,8 @@ library
       Elara.AST.Region
       Elara.AST.Select
       Elara.Data.Type
+      Elara.Error
+      Elara.Error.Codes
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration

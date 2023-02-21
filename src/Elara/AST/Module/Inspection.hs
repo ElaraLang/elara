@@ -9,11 +9,14 @@
 
 module Elara.AST.Module.Inspection where
 
-import Control.Lens ((^.))
+import Control.Lens (Context, (^.))
 import Data.Map qualified as M
 import Elara.AST.Module (Declaration (Declaration), Exposing (ExposingAll, ExposingSome), Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Module (..), importing, qualified)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (NormalVarName, OperatorVarName))
 import Elara.AST.Select (ASTQual)
+import Elara.Error (ReportableError (report))
+import Elara.Error.Codes qualified as Codes
+import Error.Diagnose
 import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
@@ -23,16 +26,21 @@ import Prelude hiding (Reader, State, ask, modify, runState)
 data InspectionError ast
   = -- | The name is not defined in any known module
     UnknownName (Name (ASTQual ast))
-  | -- | Importing an unknown module
+  | -- | The name is defined in multiple modules
+    AmbiguousName (Name (ASTQual ast)) (NonEmpty ModuleName)
+  
+data ContextBuildingError ast
+  = -- | Importing an unknown module
     UnknownImportModule (Import (ASTQual ast))
   | -- | Importing an unknown element from a known module
     UnknownImportElement (Import (ASTQual ast)) (Name (ASTQual ast))
-  | -- | The name is defined in multiple modules
-    AmbiguousName (Name (ASTQual ast)) (NonEmpty ModuleName)
-  | -- | The exposition of an import does not exist in the module
-    ExpositionDoesNotExist (Exposition (ASTQual ast))
   | -- | The exposition of an import is not exposed by the module
     ExpositionNotPublic (Import (ASTQual ast)) (Name (ASTQual ast))
+
+instance (NameLike (ASTQual ast VarName), NameLike (ASTQual ast TypeName), NameLike (ASTQual ast OpName)) => ReportableError (InspectionError ast) where
+  report (UnknownName un) = Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
+  -- report (UnknownImportModule un) = Err (Just Codes.unknownModule) ("Unknown module: " <> fullNameText (un ^. importing)) [] []
+  report _ = error "Not implemented"
 
 type AllNames :: (Type -> Constraint) -> Type -> Constraint
 type AllNames c ast = (c (ASTQual ast VarName), c (ASTQual ast TypeName), c (ASTQual ast OpName))
@@ -159,7 +167,7 @@ search (normalizeName -> normalizedName) = do
 -}
 buildContext ::
   forall ast r.
-  (Member (Error (InspectionError ast)) r, ASTQual ast ~ MaybeQualified) =>
+  (Member (Error (ContextBuildingError ast)) r, ASTQual ast ~ MaybeQualified) =>
   -- | The module to build the context in relation to
   Module ast ->
   -- | All the known modules. The @thisModule@ does not need to be included, but can be (it will be ignored)
@@ -199,7 +207,7 @@ buildContext thisModule s = do
 -- | Verify that all the imports in a module are valid, i.e. that they are importing a module that exists, and that they are exposing the correct things
 verifyImports ::
   forall ast r.
-  ( Member (Error (InspectionError ast)) r
+  ( Member (Error (ContextBuildingError ast)) r
   , AllNames Eq ast
   ) =>
   Module ast ->
@@ -220,7 +228,7 @@ verifyImports thisModule inspectionState = do
 
 verifyExposition ::
   ( AllNames Eq ast
-  , Member (Error (InspectionError ast)) r
+  , Member (Error (ContextBuildingError ast)) r
   ) =>
   Import (ASTQual ast) ->
   Module ast ->

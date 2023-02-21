@@ -1,10 +1,13 @@
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 
 module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion) where
 
 import Data.Data (Data)
 import GHC.Exts (the)
 import Relude.Extra
+import Control.Lens (makeLenses)
 
 data SourceRegion = SourceRegion
     { sourceFile :: Maybe FilePath
@@ -41,3 +44,6 @@ spanningRegion regions =
         , startOffset = minimum1 (startOffset <$> regions)
         , endOffset = maximum1 (endOffset <$> regions)
         }
+
+
+makeLenses ''Located

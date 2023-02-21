@@ -11,19 +11,29 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), DeclarationBody (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Module (..))
 import Elara.AST.Module.Inspection (InspectionContext, InspectionError, buildContext, search)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, Qualified (Qualified), TypeName, VarName)
-import Elara.AST.Region (Located (Located), getLocation, unlocate)
+import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate)
 import Elara.AST.Select (Annotated, Frontend)
 import Elara.Data.Type (Type (..))
 import Polysemy (Member, Sem)
-import Polysemy.Error (Error)
+import Polysemy.Error (Error, catch, runError, throw)
 import Polysemy.Reader (Reader, ask, runReader)
-import Prelude hiding (Reader, Type, ask, runReader)
+import Prelude hiding (Reader, Type, ask, catch, runReader, throw)
 
 type Modules = M.Map ModuleName (Module Frontend)
 
+data AnnotationError = AnnotationError (InspectionError Frontend) SourceRegion
+    deriving (Show)
+
+
+wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
+wrapError region sem = do
+    runError sem >>= \case
+        Left err -> throw (AnnotationError err region)
+        Right a -> pure a
+
 annotateModule ::
     forall r.
-    (Member (Reader Modules) r, Member (Error (InspectionError Frontend)) r) =>
+    (Member (Reader Modules) r, Member (Error AnnotationError) r) =>
     Module Frontend ->
     Sem r (Module Annotated)
 annotateModule m = do
