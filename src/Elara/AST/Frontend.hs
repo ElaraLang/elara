@@ -49,7 +49,7 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
   deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located (Name MaybeQualified)) (Type MaybeQualified)
+data TypeAnnotation = TypeAnnotation (Located (MaybeQualified Name)) (Type MaybeQualified)
   deriving (Show, Eq)
 
 makePrisms ''Expr

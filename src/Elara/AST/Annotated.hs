@@ -51,15 +51,15 @@ data BinaryOperator'
     = Op (Qualified OpName)
     | Infixed (Qualified VarName)
     deriving (Show, Eq)
-    
-operatorName :: BinaryOperator -> Name Qualified
-operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName op
-operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName op
+
+operatorName :: BinaryOperator -> Qualified Name
+operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName <$> op
+operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName <$> op
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Name Qualified) (Type Qualified)
+data TypeAnnotation = TypeAnnotation (Qualified Name) (Type Qualified)
     deriving (Show, Eq)
 
 makePrisms ''Expr

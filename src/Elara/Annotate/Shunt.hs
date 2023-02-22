@@ -15,7 +15,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.Writer
 import Prelude hiding (State, execState, gets, modify')
 
-type OpTable = Map (Name Qualified) OpInfo
+type OpTable = Map (Qualified Name) OpInfo
 
 newtype Precedence = Precedence Int
     deriving (Show, Eq, Ord)
@@ -39,17 +39,17 @@ data Associativity
     deriving (Show, Eq)
 
 data ShuntError
-    = SamePrecedenceError (Name Qualified) (Name Qualified)
+    = SamePrecedenceError (Qualified Name) (Qualified Name)
     deriving (Show, Eq)
 
 newtype ShuntWarning
-    = UnknownPrecedence (Name Qualified)
+    = UnknownPrecedence (Qualified Name)
     deriving (Show, Eq, Ord)
 
 opInfo :: OpTable -> Annotated.BinaryOperator -> Maybe OpInfo
 opInfo table op = case unlocate $ view Annotated._MkBinaryOperator op of
-    Annotated.Op opName -> lookup (NOpName opName) table
-    Annotated.Infixed varName -> lookup (NVarName varName) table
+    Annotated.Op opName -> lookup (NOpName <$> opName) table
+    Annotated.Infixed varName -> lookup (NVarName <$> varName) table
 
 
 pattern InExpr :: Annotated.Expr' -> Annotated.Expr

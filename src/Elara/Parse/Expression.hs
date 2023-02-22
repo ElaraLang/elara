@@ -65,10 +65,10 @@ operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <??> "operator"
     asciiOp = located $ do
         Frontend.Op <$> located opName
     infixOp = located $ lexeme $ do
-        _ <- char '`'
+        char' '`'
         endHead
         op <- located varName
-        _ <- char '`'
+        char' '`'
         pure $ Frontend.Infixed op
 
 expression :: HParser Frontend.Expr
@@ -163,7 +163,7 @@ letExpression = locatedExpr $ do
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do
     start <- fromParsec indentLevel
-    H.parse symbol "let"
+    H.parse $ symbol "let"
     H.endHead
     name <- located varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
     afterName <- fromParsec indentLevel
@@ -182,7 +182,7 @@ letInExpression = locatedExpr $ do
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.LetIn name patterns e body)
 
-letRaw :: HParser (MaybeQualified VarName, [Frontend.Pattern], Frontend.Expr)
+letRaw :: HParser (Located (MaybeQualified VarName), [Frontend.Pattern], Frontend.Expr)
 letRaw = do
     ((name, patterns), e) <- optionallyIndented letPreamble element
     pure (name, patterns, e)

@@ -45,7 +45,7 @@ data BinaryOperator
     | Infixed (MaybeQualified VarName)
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Name MaybeQualified) (Type MaybeQualified)
+data TypeAnnotation = TypeAnnotation (MaybeQualified Name) (Type MaybeQualified)
     deriving (Show, Eq)
 
 class StripLocation a b | a -> b where

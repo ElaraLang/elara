@@ -5,6 +5,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Elara.AST.Name (
     ModuleName (..),
@@ -44,17 +46,16 @@ newtype TypeName = TypeName Text
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data)
 
-data Name qual
-    = NVarName (qual VarName)
-    | NTypeName (qual TypeName)
-    | NOpName (qual OpName)
+data Name
+    = NVarName VarName
+    | NTypeName TypeName
+    | NOpName OpName
+    deriving (Show, Eq, Ord)
+
 
 makeLenses ''Name
 makePrisms ''Name
 
-deriving instance (Show (qual VarName), Show (qual TypeName), Show (qual OpName)) => Show (Name qual)
-deriving instance (Eq (qual VarName), Eq (qual TypeName), Eq (qual OpName)) => Eq (Name qual)
-deriving instance (Ord (qual VarName), Ord (qual TypeName), Ord (qual OpName)) => Ord (Name qual)
 
 class NameLike name where
     -- | Get the name as a Text. This will not include qualification, if present
@@ -67,16 +68,16 @@ class NameLike name where
     moduleName :: name -> Maybe ModuleName
     moduleName _ = Nothing
 
-class ToName name qual | name -> qual where
-    toName :: name -> Name qual
+class ToName name where
+    toName :: name -> Name
 
-instance ToName (qual VarName) qual where
+instance ToName  VarName where
     toName = NVarName
 
-instance ToName (qual TypeName) qual where
+instance ToName TypeName where
     toName = NTypeName
 
-instance ToName (qual OpName) qual where
+instance ToName OpName where
     toName = NOpName
 
 instance NameLike VarName where
@@ -115,7 +116,7 @@ instance NameLike n => NameLike (Unqualified n) where
 
     moduleName _ = Nothing
 
-instance (NameLike (q VarName), NameLike (q TypeName), NameLike (q OpName)) => NameLike (Name q) where
+instance NameLike Name where
     nameText (NVarName name) = nameText name
     nameText (NTypeName name) = nameText name
     nameText (NOpName name) = nameText name
@@ -137,17 +138,17 @@ data MaybeQualified name = MaybeQualified
     { _maybeQualifiedNameName :: name
     , _maybeQualifiedNameQualifier :: Maybe ModuleName
     }
-    deriving (Ord, Show, Eq, Data, Functor)
+    deriving (Ord, Show, Eq, Data, Functor, Foldable,  Traversable)
 
 data Qualified name = Qualified
     { _qualifiedNameName :: name
     , _qualifiedNameQualifier :: ModuleName
     }
-    deriving (Show, Eq, Data, Ord, Functor)
+    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
 newtype Unqualified name = Unqualified
     { _unqualifiedNameName :: name
     }
-    deriving (Show, Eq, Data, Ord, Functor)
+    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
 
 makeClassy ''MaybeQualified
 makeClassy ''Qualified
