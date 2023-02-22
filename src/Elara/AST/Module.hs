@@ -34,7 +34,7 @@ data Module' ast = Module'
 
 newtype Declaration ast = Declaration (Located (Declaration' ast))
 data Declaration' ast = Declaration'
-    { _declarationModule' :: Located ModuleName
+    { _declarationModule' :: ASTLocate ast ModuleName
     , _declarationName :: FullASTQual ast Name
     , _declarationBody :: DeclarationBody ast
     }
@@ -101,18 +101,29 @@ makePrisms ''Import
 makePrisms ''Declaration
 makeFields ''Declaration'
 
--- instance (a ~ [Import (ASTQual ast)], HasImports (Module' ast) a) => HasImports (Module ast) a where
---     imports = _Module . _Unlocate . imports
+instance (a ~ [Import ast], HasImports (Module' ast) a) => HasImports (Module ast) a where
+    imports = _Module . _Unlocate . imports
 
--- instance (a ~ [Declaration ast], HasDeclarations (Module' ast) a) => HasDeclarations (Module ast) a where
---     declarations = _Module . _Unlocate . declarations
+instance (a ~ [Declaration ast], HasDeclarations (Module' ast) a) => HasDeclarations (Module ast) a where
+    declarations = _Module . _Unlocate . declarations
 
--- instance (a ~ Located ModuleName, HasName (Module' ast) a) => HasName (Module ast) a where
---     name = _Module . _Unlocate . name
+instance (a ~ ASTLocate ast ModuleName, HasName (Module' ast) a) => HasName (Module ast) a where
+    name = _Module . _Unlocate . name
 
--- instance (a ~ Exposing (ASTQual ast), HasExposing (Module' ast) a) => HasExposing (Module ast) a where
---     exposing = _Module . _Unlocate . exposing
+instance (a ~ Exposing  ast, HasExposing (Module' ast) a) => HasExposing (Module ast) a where
+    exposing = _Module . _Unlocate . exposing
 
+instance (a ~ ASTLocate ast ModuleName, HasImporting (Import' ast) a) => HasImporting (Import ast) a where
+    importing = _Import . _Unlocate . importing
+
+instance (a ~ Maybe (ASTLocate ast ModuleName), HasAs (Import' ast) a) => HasAs (Import ast) a where
+    as = _Import . _Unlocate . as
+
+instance (a ~ Bool, HasQualified (Import' ast) a) => HasQualified (Import ast) a where
+    qualified = _Import . _Unlocate . qualified
+
+instance (a ~ Exposing ast, HasExposing (Import' ast) a) => HasExposing (Import ast) a where
+    exposing = _Import . _Unlocate . exposing
 
 
 

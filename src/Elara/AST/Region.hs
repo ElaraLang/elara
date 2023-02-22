@@ -13,7 +13,7 @@ data SourceRegion = SourceRegion
     , startOffset :: Int
     , endOffset :: Int
     }
-    deriving (Show, Eq, Ord, Data)
+     deriving (Show, Eq, Ord, Data)
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable)

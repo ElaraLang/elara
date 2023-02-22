@@ -8,7 +8,7 @@ import Control.Lens
 import Elara.AST.Frontend.Unlocated
 import Elara.AST.Module
 import Elara.AST.Select
-import Elara.Annotate (annotateModule)
+-- import Elara.Annotate (annotateModule)
 import Elara.Annotate.Shunt (fixOperators)
 import Elara.Error
 import Elara.Parse
@@ -25,16 +25,17 @@ main :: IO ()
 main = do
   s <- loadModule "source.elr"
   p <- loadModule "prelude.elr"
-  case liftA2 (,) s p of
-    Left err -> printDiagnostic stdout True True 4 defaultStyle err
-    Right (source, prelude) ->
-      let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
-       in case run $ runError $ runReader modules (annotateModule source) of
-            Left err -> print err
-            Right m' -> do
-              print m'
-              -- let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
-              -- printColored y
+  pass
+  -- case liftA2 (,) s p of
+  --   Left err -> printDiagnostic stdout True True 4 defaultStyle err
+  --   Right (source, prelude) ->
+  --     let modules = fromList [(source ^. name, source), (prelude ^. name, prelude)]
+  --      in case run $ runError $ runReader modules (annotateModule source) of
+  --           Left err -> print err
+  --           Right m' -> do
+  --             print m'
+  --             -- let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
+  --             -- printColored y
 
 loadModule :: FilePath -> IO (Either (Diagnostic Text) (Module Frontend))
 loadModule path = do
