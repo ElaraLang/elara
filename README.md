@@ -5,6 +5,6 @@ inspired syntax, a complete Hindley-Milner type system, functional purity enforc
 code.
 
 Elara is currently a WIP, and is not yet ready for use.
-See [specification/specification.pdf](the specification)for some examples and a very incomplete specification
+See [the specification](specification/specification.pdf) for some examples and a very incomplete specification
 
 If you're interested in Elara or contributing, please join our Discord server! <https://discord.gg/xu5gSTV>
