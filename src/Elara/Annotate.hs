@@ -12,10 +12,11 @@ import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
 import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, Qualified (Qualified), TypeName, VarName)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate, _Unlocate)
 import Elara.AST.Select (Annotated, Frontend)
-import Elara.Error (ReportDiagnostic, ReportableError (report), addPosition, sourceRegionToPosition)
+import Elara.Error (ReportableError (report), addPosition, sourceRegionToPosition)
+import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
 import Polysemy (Member, Sem)
 import Polysemy.Error (Error, runError, throw)
@@ -27,25 +28,38 @@ type Modules = M.Map ModuleName (Module Frontend)
 data AnnotationError
     = AnnotationError (InspectionError Frontend) SourceRegion
     | ContextBuildingError (ContextBuildingError Frontend)
+    | QualifiedWithWrongModule (Located (Qualified Name)) ModuleName
     deriving (Show)
 
 instance ReportableError AnnotationError where
     report (AnnotationError e sr) = do
         r <- report e
         pos <- sourceRegionToPosition sr
-        pure (addPosition (pos, Blank) r)
+        pure (addPosition (pos, This "") r)
     report (ContextBuildingError e) = report e
+    report (QualifiedWithWrongModule (Located sr (Qualified n qual)) modName) = do
+        pos <- sourceRegionToPosition sr
+        pure $
+            Err
+                (Just Codes.unknownModule)
+                ("Qualification of name doesn't match module name: " <> fullNameText modName)
+                [(pos, This "")]
+                [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."
+                , Hint $ "Try changing " <> fullNameText qual <> " to " <> fullNameText modName
+                , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
+                , Hint $ "Try renaming your module to " <> fullNameText qual
+                ]
 
 wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
 wrapError region sem = do
     runError sem >>= \case
-        Left err -> throw (AnnotationError err region)
+        Left e -> throw (AnnotationError e region)
         Right a -> pure a
 
 wrapCtxError :: Member (Error AnnotationError) r => Sem (Error (ContextBuildingError Frontend) : r) b -> Sem r b
 wrapCtxError sem = do
     runError sem >>= \case
-        Left err -> throw (ContextBuildingError err)
+        Left e -> throw (ContextBuildingError e)
         Right a -> pure a
 
 annotateModule ::
@@ -53,16 +67,16 @@ annotateModule ::
     (Member (Reader Modules) r, Member (Error AnnotationError) r) =>
     Module Frontend ->
     Sem r (Module Annotated)
-annotateModule m = traverseOf (_Module . _Unlocate) (const annotate) m
+annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) thisModule
   where
     annotate :: Sem r (Module' Annotated)
     annotate = do
         modules <- ask
-        context <- wrapCtxError $ buildContext m modules
-        exposing' <- runReader context $ annotateExposing (m ^. exposing)
-        imports' <- runReader context (traverse annotateImport (m ^. imports))
-        declarations' <- runReader context (traverse annotateDeclaration (m ^. declarations))
-        pure (Module' (m ^. name) exposing' imports' declarations')
+        context <- wrapCtxError $ buildContext thisModule modules
+        exposing' <- runReader context $ annotateExposing (thisModule ^. exposing)
+        imports' <- runReader context (traverse annotateImport (thisModule ^. imports))
+        declarations' <- runReader context (traverse annotateDeclaration (thisModule ^. declarations))
+        pure (Module' (thisModule ^. name) exposing' imports' declarations')
 
     annotateExposing :: Exposing Frontend -> Sem (Reader InspectionContext : r) (Exposing Annotated)
     annotateExposing ExposingAll = pure ExposingAll
@@ -74,31 +88,32 @@ annotateModule m = traverseOf (_Module . _Unlocate) (const annotate) m
     annotateExposition (ExposedType name') = ExposedType <$> annotateTypeName name'
     annotateExposition (ExposedTypeAndAllConstructors name') = ExposedTypeAndAllConstructors <$> annotateTypeName name'
 
+    annotateGenericName ctor nv@(Located loc mq@(MaybeQualified name' mMod)) = case mMod of
+        Just qual -> pure (nv $> Qualified name' qual)
+        Nothing -> do
+            q <- wrapError loc $ search (ctor <$> mq)
+            pure (nv $> Qualified name' q)
+
     annotateVarName :: Located (MaybeQualified VarName) -> Sem (Reader InspectionContext : r) (Located (Qualified VarName))
-    annotateVarName nv@(Located loc mq@(MaybeQualified name' mMod)) = case mMod of
-        Just qual -> pure (nv $> Qualified name' qual)
-        Nothing -> do
-            q <- wrapError loc $ search (NVarName <$> mq)
-            pure (nv $> Qualified name' q)
-
+    annotateVarName = annotateGenericName NVarName
     annotateTypeName :: Located (MaybeQualified TypeName) -> Sem (Reader InspectionContext : r) (Located (Qualified TypeName))
-    annotateTypeName nv@(Located loc mq@(MaybeQualified name' mMod)) = case mMod of
-        Just qual -> pure (nv $> Qualified name' qual)
-        Nothing -> do
-            q <- wrapError loc $ search (NTypeName <$> mq)
-            pure (nv $> Qualified name' q)
-
+    annotateTypeName = annotateGenericName NTypeName
     annotateOpName :: Located (MaybeQualified OpName) -> Sem (Reader InspectionContext : r) (Located (Qualified OpName))
-    annotateOpName nv@(Located loc mq@(MaybeQualified name' mMod)) = case mMod of
-        Just qual -> pure (nv $> Qualified name' qual)
-        Nothing -> do
-            q <- wrapError loc $ search (NOpName <$> mq)
-            pure (nv $> Qualified name' q)
+    annotateOpName = annotateGenericName NOpName
+
+    qualifyInThisModule :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
+    qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . _Unlocate) <$ nv)
+    qualifyInThisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
+        let qualified = nv $> Qualified name' q
+         in if q == thisModule ^. name . _Unlocate
+                then pure qualified
+                else throw (QualifiedWithWrongModule qualified (thisModule ^. name . _Unlocate))
 
     annotateName :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NTypeName name') _)) = NTypeName <<<$>>> annotateTypeName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NOpName name') _)) = NOpName <<<$>>> annotateOpName (name' <<$ nv)
+
 
     annotateImport :: Import Frontend -> Sem (Reader InspectionContext : r) (Import Annotated)
     annotateImport = traverseOf (_Import . _Unlocate) (\(Import' name' as' qualified' exposing') -> Import' name' as' qualified' <$> annotateExposing exposing')
@@ -108,7 +123,7 @@ annotateModule m = traverseOf (_Module . _Unlocate) (const annotate) m
         traverseOf
             (_Declaration . _Unlocate)
             ( \(Declaration' module' name' body') -> do
-                annotatedName <- annotateName name'
+                annotatedName <- qualifyInThisModule name'
                 annotatedBody <- annotateDeclarationBody body'
                 pure (Declaration' module' annotatedName annotatedBody)
             )

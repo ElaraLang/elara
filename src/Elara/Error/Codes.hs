@@ -13,3 +13,6 @@ unknownModule = "E0003"
 
 ambiguousName :: ErrorCode
 ambiguousName = "E0004"
+
+qualifiedWithWrongModule :: ErrorCode
+qualifiedWithWrongModule = "E0005"

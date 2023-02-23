@@ -1,4 +1,4 @@
 module A
 import Prelude
-let id = id
-let noBody = id
+
+let Prelude.x = 1
