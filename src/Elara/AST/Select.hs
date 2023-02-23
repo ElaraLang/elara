@@ -2,7 +2,7 @@
 
 module Elara.AST.Select where
 
-import Control.Lens (Getting, view, (^.))
+import Control.Lens (Getting, view)
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
