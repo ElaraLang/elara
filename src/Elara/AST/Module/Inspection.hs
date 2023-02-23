@@ -33,8 +33,9 @@ import Elara.AST.Module (
   _Module,
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
-import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..), rUnlocateVia')
-import Elara.Error (ReportableError (report))
+import Elara.AST.Region (_SourceRegion, _Unlocate)
+import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, RUnlocate (..), rUnlocateVia')
+import Elara.Error (ReportableError (report), sourceRegionToPosition)
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
 import Polysemy
@@ -58,8 +59,18 @@ data ContextBuildingError ast
     ExpositionNotPublic (Import ast) (FullASTQual ast Name)
 
 instance (NameLike (FullASTQual ast VarName), NameLike (FullASTQual ast TypeName), NameLike (ASTQual ast OpName)) => ReportableError (InspectionError ast) where
-  report (UnknownName un) = Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
-  -- report (UnknownImportModule un) = Err (Just Codes.unknownModule) ("Unknown module: " <> fullNameText (un ^. importing)) [] []
+  report (UnknownName un) = pure $ Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
+  report _ = error "Not implemented"
+
+instance (ast ~ Frontend, NameLike (ASTLocate ast ModuleName), RUnlocate ast) => ReportableError (ContextBuildingError ast) where
+  report (UnknownImportModule un) = do
+    position <- sourceRegionToPosition (un ^. (_Import . _Unlocate . importing . _SourceRegion))
+    pure $
+      Err
+        (Just Codes.unknownModule)
+        ("Unknown module: " <> fullNameText (un ^. importing))
+        [(position, This "Imported here")]
+        [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
   report _ = error "Not implemented"
 
 type AllNames :: (Type -> Constraint) -> Type -> Constraint

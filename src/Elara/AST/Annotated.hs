@@ -3,7 +3,6 @@
 module Elara.AST.Annotated where
 
 import Control.Lens (makePrisms)
-import Data.Functor.Extra ((<<<$>>>))
 import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (Located), unlocate)
 import Prelude hiding (Op, Type)

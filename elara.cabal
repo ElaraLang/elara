@@ -43,7 +43,6 @@ library
       Elara.Parse.Combinators
       Elara.Parse.Declaration
       Elara.Parse.Error
-      Elara.Parse.Error.Internal
       Elara.Parse.Expression
       Elara.Parse.Indents
       Elara.Parse.Literal

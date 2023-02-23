@@ -13,12 +13,13 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
 import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, Qualified (Qualified), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate, _SourceRegion, _Unlocate)
+import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate, _Unlocate)
 import Elara.AST.Select (Annotated, Frontend)
+import Elara.Error (ReportableError (report))
 import Polysemy (Member, Sem)
-import Polysemy.Error (Error, catch, runError, throw)
+import Polysemy.Error (Error, runError, throw)
 import Polysemy.Reader (Reader, ask, runReader)
-import Prelude hiding (Reader, Type, ask, catch, runReader, throw)
+import Prelude hiding (Reader, Type, ask, runReader)
 
 type Modules = M.Map ModuleName (Module Frontend)
 
@@ -27,6 +28,9 @@ data AnnotationError
     | ContextBuildingError (ContextBuildingError Frontend)
     deriving (Show)
 
+instance ReportableError AnnotationError where
+    report (AnnotationError e _) = report e
+    report (ContextBuildingError e) = report e
 wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
 wrapError region sem = do
     runError sem >>= \case
@@ -50,7 +54,6 @@ annotateModule m = traverseOf (_Module . _Unlocate) (const annotate) m
     annotate = do
         modules <- ask
         context <- wrapCtxError $ buildContext m modules
-        let sr = m ^. _Module . _SourceRegion
         exposing' <- runReader context $ annotateExposing (m ^. exposing)
         imports' <- runReader context (traverse annotateImport (m ^. imports))
         declarations' <- runReader context (traverse annotateDeclaration (m ^. declarations))

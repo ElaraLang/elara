@@ -5,56 +5,58 @@ module Main (
 ) where
 
 import Control.Lens
-import Elara.AST.Frontend.Unlocated
 import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 
 -- import Elara.Annotate.Shunt (fixOperators)
 
-import Elara.AST.Region (unlocate, _Unlocate)
+import Elara.AST.Region (_Unlocate)
 import Elara.Error
 import Elara.Parse
-import Elara.Parse.Error.Internal
 import Error.Diagnose
-import Polysemy (run)
+import Polysemy (Embed, Member, Sem, embed, run, runM)
 import Polysemy.Error (runError)
 import Polysemy.Reader
-import Polysemy.Writer (runWriter)
+import Polysemy.State (State, execState, modify)
 import Print (printColored)
-import Prelude hiding (runReader)
+import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
+  s <- runElara
+  when (hasReports s) $ do
+    printDiagnostic stdout True True 4 defaultStyle s
+    exitFailure
+
+runElara :: IO (Diagnostic Text)
+runElara = runM $ execState def $ do
   s <- loadModule "source.elr"
   p <- loadModule "prelude.elr"
-  pass
   case liftA2 (,) s p of
-    Left err -> printDiagnostic stdout True True 4 defaultStyle err
-    Right (source, prelude) ->
+    Nothing -> pass
+    Just (source, prelude) ->
       let modules = fromList [(source ^. (name . _Unlocate), source), (prelude ^. (name . _Unlocate), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left err -> print err
+            Left annotateError -> runFileContentsIO $ reportDiagnostic annotateError >>= modify . flip (<>)
             Right m' -> do
-              printColored m'
+              embed (printColored m')
 
--- let y = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m'
--- printColored y
-
-loadModule :: FilePath -> IO (Either (Diagnostic Text) (Module Frontend))
+loadModule :: (Member (Embed IO) r, Member (State (Diagnostic Text)) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do
   s <- decodeUtf8Strict <$> readFileBS path
   case s of
     Left unicodeError -> do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
-       in pure . Left $ addReport def errReport
-    Right contents ->
+       in modify (`addReport` errReport) $> Nothing
+    Right contents -> do
+      modify (\x -> addFile x path (toString contents)) -- add every loaded file to the diagnostic
       case parse path contents of
-        Left parseError ->
-          let diag = reportDiagnostic parseError
-              diag' = addFile diag path (toString contents)
-           in pure (Left diag')
-        Right m -> pure (Right m)
+        Left parseError -> do
+          diag <- runFileContentsIO $ reportDiagnostic parseError
+          modify (<> diag)
+          pure Nothing
+        Right m -> pure (Just m)
 
 -- unlocateModule :: Module Frontend -> Module UnlocatedFrontend
 -- unlocateModule = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens %~ stripLocation
