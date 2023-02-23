@@ -1,3 +1,4 @@
 module A
-import Random
-let noBody = 3
+import Prelude
+let id = id
+let noBody = id

@@ -70,3 +70,7 @@ sourceRegionToPosition :: Member FileContents r => SourceRegion -> Sem r Positio
 sourceRegionToPosition sr@(SourceRegion fp _ _) = do
     (SourcePos _ startLine startColumn, SourcePos _ endLine endColumn) <- sourceRegionToSourcePos sr
     pure (Position (unPos startLine, unPos startColumn) (unPos endLine, unPos endColumn) (fromMaybe "<unknown>" fp))
+
+addPosition :: (Position, Marker msg) -> Report msg -> Report msg
+addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
+addPosition marker (Warn code m markers notes) = Warn code m (marker : markers) notes

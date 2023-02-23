@@ -15,7 +15,8 @@ import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, Ins
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), OpName, Qualified (Qualified), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate, _Unlocate)
 import Elara.AST.Select (Annotated, Frontend)
-import Elara.Error (ReportableError (report))
+import Elara.Error (ReportDiagnostic, ReportableError (report), addPosition, sourceRegionToPosition)
+import Error.Diagnose
 import Polysemy (Member, Sem)
 import Polysemy.Error (Error, runError, throw)
 import Polysemy.Reader (Reader, ask, runReader)
@@ -29,8 +30,12 @@ data AnnotationError
     deriving (Show)
 
 instance ReportableError AnnotationError where
-    report (AnnotationError e _) = report e
+    report (AnnotationError e sr) = do
+        r <- report e
+        pos <- sourceRegionToPosition sr
+        pure (addPosition (pos, Blank) r)
     report (ContextBuildingError e) = report e
+
 wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
 wrapError region sem = do
     runError sem >>= \case

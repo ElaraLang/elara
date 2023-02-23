@@ -10,3 +10,6 @@ unknownName = "E0002"
 
 unknownModule :: ErrorCode
 unknownModule = "E0003"
+
+ambiguousName :: ErrorCode
+ambiguousName = "E0004"

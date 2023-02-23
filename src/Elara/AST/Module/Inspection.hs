@@ -6,11 +6,15 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "[Replace {rtype = Expr, pos = SrcSpan {startLine = 71, startCol = 118, endLine = 71, endCol = 132}, subts = [("x",SrcSpan {startLine = 71, startCol = 119, endLine = 71, endCol = 131})], orig = "x"}]" #-}
 
 module Elara.AST.Module.Inspection where
 
 import Control.Lens ((^.))
 import Data.Map qualified as M
+import Data.Text (intercalate)
 import Elara.AST.Module (
   Declaration,
   Declaration' (..),
@@ -42,7 +46,7 @@ import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.State
-import Prelude hiding (Reader, State, ask, modify, runState)
+import Prelude hiding (Reader, State, ask, intercalate, intersperse, modify, runState)
 
 data InspectionError ast
   = -- | The name is not defined in any known module
@@ -60,7 +64,15 @@ data ContextBuildingError ast
 
 instance ReportableError (InspectionError ast) where
   report (UnknownName un) = pure $ Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
-  report _ = error "Not implemented"
+  report (AmbiguousName un modules) =
+    pure $
+      Err
+        (Just Codes.ambiguousName)
+        ("Ambiguous name: " <> fullNameText un)
+        []
+        [ Note $ "The name is defined in multiple modules: " <> intercalate ", " (fullNameText <$> toList modules)
+        , Hint $ "Try to qualify the name with the module name, e.g. " <> fullNameText (head modules) <> "." <> fullNameText un
+        ]
 
 instance (ast ~ Frontend, RUnlocate ast) => ReportableError (ContextBuildingError ast) where
   report (UnknownImportModule un) = do
