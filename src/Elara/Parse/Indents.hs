@@ -5,15 +5,13 @@ import Elara.AST.Frontend (Expr (..), Expr' (Block))
 import Elara.AST.Region (Located (..))
 import Elara.AST.Region qualified as Region (getLocation, spanningRegion)
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, Parser, scn, skipNewlines)
-import HeadedMegaparsec (parse)
+import Elara.Parse.Primitives (HParser, scn, skipNewlines)
 import HeadedMegaparsec qualified as H
-import Text.Megaparsec (Pos, mkPos, try, unPos)
-import Text.Megaparsec.Char (newline)
+import Text.Megaparsec (Pos, mkPos, unPos)
 import Text.Megaparsec.Char.Lexer qualified as L
 
 optionallyIndented :: HParser a -> HParser Expr -> HParser (a, Expr)
-optionallyIndented a expression = (indentedBlock a expression) <|> (nonIndented a expression)
+optionallyIndented a expression = indentedBlock a expression <|> nonIndented a expression
 
 optionallyIndented' :: HParser a -> HParser Expr -> HParser Expr
 optionallyIndented' = (fmap snd .) . optionallyIndented

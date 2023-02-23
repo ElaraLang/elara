@@ -2,7 +2,7 @@ module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Parse.Names (alphaVarName, typeName)
-import Elara.Parse.Primitives (HParser, Parser, inParens, lexeme, located, sc, symbol)
+import Elara.Parse.Primitives (HParser, inParens, lexeme, located, sc, symbol)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
 

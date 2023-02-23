@@ -49,14 +49,6 @@ type family UnwrapUnlocated g where
 type FullASTQual ast a = UnwrapUnlocated ((ASTLocate ast) (ASTQual ast a))
 
 
-
--- rUnlocate Located (MaybeQualified a) = MaybeQualified a 
--- fmapRUnlocate :: (a -> b) -> Located (MaybeQualified a) -> Located (MaybeQualified b)
--- rUnlocate MaybeQualified a = MaybeQualified b
--- fmapRUnlocate :: (a -> b) -> MaybeQualified a -> MaybeQualified b
-
-
-
 type family Unlocate g where
     Unlocate (Located a) = a
     Unlocate a = a

@@ -1,7 +1,8 @@
 module Elara.Parse.Module where
 
-import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import'(..), Module (..), Module' (..))
+import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import' (..), Module (..), Module' (..))
 import Elara.AST.Name
+import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Parse.Declaration (declaration)
 import Elara.Parse.Names (opName, varName)
@@ -9,7 +10,6 @@ import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (sepBy, sepEndBy)
-import Elara.AST.Region
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
@@ -50,6 +50,7 @@ exposing =
 exposition :: HParser (Exposition Frontend)
 exposition = exposedValue <|> exposedOp
   where
+    exposedValue, exposedOp :: HParser (Exposition Frontend)
     exposedValue = ExposedValue <$> located varName
     exposedOp = ExposedOp <$> located (inParens opName)
 

@@ -9,11 +9,28 @@
 
 module Elara.AST.Module.Inspection where
 
-import Control.Lens (Context, view, (^.))
+import Control.Lens (view, (^.))
 import Data.Map qualified as M
-import Elara.AST.Module (Declaration (Declaration), Declaration' (..), Exposing (ExposingAll, ExposingSome), Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue), HasAs (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (..), Import (Import), Import' (..), Module (..), importing, qualified, _Declaration, _Import)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (NormalVarName, OperatorVarName))
-import Elara.AST.Region (Located (..), unlocate, _Unlocate)
+import Elara.AST.Module (
+  Declaration (Declaration),
+  Declaration' (..),
+  Exposing (ExposingAll, ExposingSome),
+  Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue),
+  HasAs (..),
+  HasDeclarations (declarations),
+  HasExposing (exposing),
+  HasImports (imports),
+  HasName (..),
+  Import,
+  Import' (..),
+  Module (..),
+  importing,
+  qualified,
+  _Declaration,
+  _Import,
+ )
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
+import Elara.AST.Region (Located (..), _Unlocate)
 import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..))
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes

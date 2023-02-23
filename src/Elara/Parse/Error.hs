@@ -4,13 +4,8 @@ import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec
 import Text.Megaparsec.Error
 
-import Data.Foldable (Foldable (foldl))
-import Data.List (lines)
-import Data.Set qualified as Set (toList)
 import Data.Text qualified as T
-import Elara.AST.Region (SourceRegion)
-import Elara.Error (ReportableError (reportDiagnostic), report)
-import Error.Diagnose.Position
+import Elara.Error (ReportableError (reportDiagnostic))
 import Text.Megaparsec qualified as MP
 import Prelude hiding (error, lines)
 

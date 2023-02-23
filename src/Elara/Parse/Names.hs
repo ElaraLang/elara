@@ -3,9 +3,9 @@ module Elara.Parse.Names where
 import Data.Set (member)
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, Parser, inParens, lexeme, (<??>))
+import Elara.Parse.Primitives (HParser, inParens, lexeme, (<??>))
 import HeadedMegaparsec qualified as H (parse)
-import Text.Megaparsec (MonadParsec (try), satisfy, (<?>))
+import Text.Megaparsec (satisfy)
 import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 
 varName :: HParser (MaybeQualified VarName)

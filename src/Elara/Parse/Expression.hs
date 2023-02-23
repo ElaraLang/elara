@@ -11,11 +11,10 @@ import Elara.Parse.Indents (blockAt, optionallyIndented, optionallyIndented', wi
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), Parser, char', inParens, lexeme, located, sc, skipNewlines, skipSpaces, symbol, withPredicate, (<??>))
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, skipSpaces, symbol, withPredicate, (<??>))
 import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (endHead, parse, toParsec)
-import Text.Megaparsec (MonadParsec (try), sepBy, sepEndBy, (<?>))
-import Text.Megaparsec.Char (char, space1)
+import Text.Megaparsec (sepBy, sepEndBy)
 import Text.Megaparsec.Char.Lexer (indentLevel)
 
 locatedExpr :: HParser Frontend.Expr' -> HParser Expr

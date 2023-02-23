@@ -1,9 +1,8 @@
 {-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion, _SourceRegion, _Unlocate) where
 
-import Control.Lens (makeLenses, Lens)
+import Control.Lens (Lens)
 import Data.Data (Data)
 import GHC.Exts (the)
 import Relude.Extra

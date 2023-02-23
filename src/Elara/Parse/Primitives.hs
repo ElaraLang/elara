@@ -5,7 +5,6 @@ import Text.Megaparsec
 import Elara.AST.Region (Located (..), SourceRegion (..))
 import Elara.Parse.Error
 import HeadedMegaparsec qualified as H
-import Print (debugColored)
 import Text.Megaparsec.Char qualified as MC
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
@@ -35,8 +34,8 @@ located p = do
     end <- fromParsec getOffset
     pure $ Located (SourceRegion (Just file) start end) x
 
+fmapLocated :: IsParser f => (Located a -> b) -> f a -> f b
 fmapLocated f = (f <$>) . located
-
 
 lineComment :: IsParser m => m ()
 lineComment = fromParsec $ L.skipLineComment "--"

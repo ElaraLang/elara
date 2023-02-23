@@ -10,7 +10,7 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (Lens, makeFields, makeLenses, makePrisms)
+import Control.Lens (makeFields, makeLenses, makePrisms)
 import Control.Lens.Traversal
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located, _Unlocate)

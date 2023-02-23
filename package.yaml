@@ -43,6 +43,7 @@ ghc-options:
 # - -Wmissing-export-lists
 - -Wmonomorphism-restriction
 - -fplugin=Polysemy.Plugin
+- -optP-Wno-nonportable-include-path # Fix annoying error on macOS
 
 
 default-extensions:
