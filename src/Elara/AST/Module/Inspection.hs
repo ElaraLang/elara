@@ -9,7 +9,7 @@
 
 module Elara.AST.Module.Inspection where
 
-import Control.Lens (view, (^.))
+import Control.Lens ((^.))
 import Data.Map qualified as M
 import Elara.AST.Module (
   Declaration,
@@ -25,14 +25,15 @@ import Elara.AST.Module (
   Import,
   Import' (..),
   Module (..),
+  Module',
   importing,
   qualified,
   _Declaration,
   _Import,
+  _Module,
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
-import Elara.AST.Region (Located (..), _Unlocate)
-import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..), rUnlocateVia, rUnlocateVia')
+import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..), rUnlocateVia')
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
@@ -197,6 +198,7 @@ buildContext ::
   ( Member (Error (ContextBuildingError ast)) r
   , ASTQual ast ~ MaybeQualified
   , RUnlocate ast
+  , Eq (Module' ast)
   ) =>
   -- | The module to build the context in relation to
   Module ast ->
@@ -211,7 +213,11 @@ buildContext thisModule s = do
   buildContext' inspectionState = fst <$> runState M.empty (traverse_ addDecls (M.elems inspectionState))
 
   addDecls :: Member (State InspectionContext) r0 => Module ast -> Sem r0 ()
-  -- addDecls m | thisModule == m = error "TODO" TODO DONT FORGET
+  addDecls m
+    | unlocateModule thisModule == unlocateModule m =
+        traverse_ (add (rUnlocate' @ast (m ^. name)) False) (m ^. declarations)
+   where
+    unlocateModule = rUnlocateVia' @ast _Module :: Module ast -> Module' ast
   addDecls m =
     let mImport = thisModule `importFor` m
      in whenJust mImport $ \import' -> do

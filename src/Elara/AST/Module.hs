@@ -10,12 +10,11 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (Getter, Lens', classyRules, defaultFieldRules, makeFields, makeLenses, makeLensesWith, makePrisms, over, (^.))
+import Control.Lens (defaultFieldRules, makeLenses, makeLensesWith, makePrisms)
 import Control.Lens.Internal.FieldTH (LensRules (_allowUpdates))
-import Control.Lens.Traversal
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTQual, FullASTQual, RUnlocate (rUnlocate, rUnlocate'))
-import Elara.Data.Type
+import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTQual, FullASTQual, RUnlocate (rUnlocate'))
+import Elara.Data.Type (Type)
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -28,20 +27,12 @@ data Module' ast = Module'
     , _module'Declarations :: [Declaration ast]
     }
 
--- moduleDeclarations :: (ASTQual ast ~ ASTQual ast2) => Lens (Module' ast) (Module' ast2) [Declaration ast] [Declaration ast2]
--- moduleDeclarations f (Module' n e i d) = fmap (Module' n e i) (f d)
-
 newtype Declaration ast = Declaration (ASTLocate ast (Declaration' ast))
 data Declaration' ast = Declaration'
     { _declaration'Module' :: ASTLocate ast ModuleName
     , _declaration'Name :: FullASTQual ast Name
     , _declaration'Body :: DeclarationBody ast
     }
-
--- _declarationBodyLens ::
---     (ASTQual ast ~ ASTQual ast2) =>
---     Lens (Declaration' ast) (Declaration' ast2) (DeclarationBody ast) (DeclarationBody ast2)
--- _declarationBodyLens f (Declaration' m n b) = fmap (Declaration' m n) (f b)
 
 newtype DeclarationBody ast = DeclarationBody (ASTLocate ast (DeclarationBody' ast))
 data DeclarationBody' ast
@@ -56,13 +47,6 @@ data DeclarationBody' ast
       ValueTypeDef (ASTLocate ast (ASTAnnotation ast))
     | -- | type <name> = <type>
       TypeAlias (Type (ASTQual ast))
-
--- _declarationBodyExpressionLens ::
---     (ASTPattern ast ~ ASTPattern ast2, ASTAnnotation ast ~ ASTAnnotation ast2, (ASTQual ast ~ ASTQual ast2)) =>
---     Traversal (DeclarationBody' ast) (DeclarationBody' ast2) (ASTExpr ast) (ASTExpr ast2)
--- _declarationBodyExpressionLens f (Value e ps t) = fmap (\e' -> Value e' ps t) (f e)
--- _declarationBodyExpressionLens _ (ValueTypeDef t) = pure (ValueTypeDef t)
--- _declarationBodyExpressionLens _ (TypeAlias t) = pure (TypeAlias t)
 
 newtype Import ast = Import (ASTLocate ast (Import' ast))
 
@@ -82,6 +66,8 @@ data Exposition ast
     | ExposedOp (FullASTQual ast OpName) -- exposing (+)
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
+
+-- Vile lens and deriving boilerplate
 
 makeLenses ''Exposing
 makeLenses ''DeclarationBody
@@ -158,22 +144,22 @@ deriving instance (Show (FullASTQual ast ModuleName), Show (ASTLocate ast Module
 deriving instance (Eq (FullASTQual ast ModuleName), Eq (ASTLocate ast ModuleName), Eq (Exposing ast)) => Eq (Import' ast)
 deriving instance (Ord (FullASTQual ast ModuleName), Ord (ASTLocate ast ModuleName), Ord (Exposing ast)) => Ord (Import' ast)
 
--- deriving instance Show (Import' ast) => Show (Import ast)
--- deriving instance Eq (Import' ast) => Eq (Import ast)
--- deriving instance Ord (Import' ast) => Ord (Import ast)
+deriving instance Show (ASTLocate ast (Import' ast)) => Show (Import ast)
+deriving instance Eq (ASTLocate ast (Import' ast)) => Eq (Import ast)
+deriving instance Ord (ASTLocate ast (Import' ast)) => Ord (Import ast)
 
--- deriving instance ModConstraints Show ast => Show (Module ast)
--- deriving instance ModConstraints Show ast => Show (Module' ast)
--- deriving instance ModConstraints Show ast => Show (Declaration ast)
--- deriving instance ModConstraints Show ast => Show (Declaration' ast)
--- deriving instance ModConstraints Show ast => Show (DeclarationBody ast)
--- deriving instance ModConstraints Show ast => Show (DeclarationBody' ast)
--- deriving instance ModConstraints Eq ast => Eq (Module ast)
--- deriving instance ModConstraints Eq ast => Eq (Module' ast)
--- deriving instance ModConstraints Eq ast => Eq (Declaration ast)
--- deriving instance ModConstraints Eq ast => Eq (Declaration' ast)
--- deriving instance ModConstraints Eq ast => Eq (DeclarationBody ast)
--- deriving instance ModConstraints Eq ast => Eq (DeclarationBody' ast)
+deriving instance (ModConstraints Show ast) => Show (Module ast)
+deriving instance ModConstraints Show ast => Show (Module' ast)
+deriving instance ModConstraints Show ast => Show (Declaration ast)
+deriving instance ModConstraints Show ast => Show (Declaration' ast)
+deriving instance ModConstraints Show ast => Show (DeclarationBody ast)
+deriving instance ModConstraints Show ast => Show (DeclarationBody' ast)
+deriving instance ModConstraints Eq ast => Eq (Module ast)
+deriving instance ModConstraints Eq ast => Eq (Module' ast)
+deriving instance ModConstraints Eq ast => Eq (Declaration ast)
+deriving instance ModConstraints Eq ast => Eq (Declaration' ast)
+deriving instance ModConstraints Eq ast => Eq (DeclarationBody ast)
+deriving instance ModConstraints Eq ast => Eq (DeclarationBody' ast)
 
 type NameConstraints :: (Kind.Type -> Constraint) -> (Kind.Type -> Kind.Type) -> Constraint
 type NameConstraints c qual = (c (qual VarName), c (qual TypeName), c (qual OpName))
@@ -189,6 +175,12 @@ type ModConstraints c ast =
     , c (FullASTQual ast TypeName)
     , c (FullASTQual ast OpName)
     , c (FullASTQual ast Name)
-    , c (FullASTQual ast ModuleName)
     , c (ASTLocate ast ModuleName)
+    , c (ASTLocate ast (Module' ast))
+    , c (ASTLocate ast (Import' ast))
+    , c (ASTLocate ast (Declaration' ast))
+    , c (ASTLocate ast (DeclarationBody' ast))
+    , c (ASTLocate ast (ASTAnnotation ast))
+    , c (ASTLocate ast (Exposition ast))
+    , c (ASTLocate ast (Exposing ast))
     )
