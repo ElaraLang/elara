@@ -69,7 +69,7 @@ instance (ast ~ Frontend, NameLike (ASTLocate ast ModuleName), RUnlocate ast) =>
       Err
         (Just Codes.unknownModule)
         ("Unknown module: " <> fullNameText (un ^. importing))
-        [(position, This "Imported here")]
+        [(position, This "imported here")]
         [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
   report _ = error "Not implemented"
 
