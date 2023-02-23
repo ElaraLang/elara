@@ -7,7 +7,6 @@ module Elara.AST.Frontend.Unlocated where
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located (Located))
-import Elara.Data.Type (Type (..))
 import Prelude hiding (Op, Type)
 
 {- | Frontend AST without location information.
@@ -45,8 +44,16 @@ data BinaryOperator
     | Infixed (MaybeQualified VarName)
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (MaybeQualified Name) (Type MaybeQualified)
+data TypeAnnotation = TypeAnnotation (MaybeQualified Name) Type
     deriving (Show, Eq)
+
+data Type
+  = TypeVar Text
+  | FunctionType Type Type
+  | UnitType
+  | TypeConstructorApplication Type Type
+  | UserDefinedType ((MaybeQualified TypeName))
+  deriving (Show, Eq)
 
 class StripLocation a b | a -> b where
     stripLocation :: a -> b

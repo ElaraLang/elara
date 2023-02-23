@@ -20,6 +20,11 @@ type family ASTExpr ast where
     ASTExpr UnlocatedFrontend = Frontend.Unlocated.Expr
     ASTExpr Annotated = Annotated.Expr
 
+type family ASTType ast where
+    ASTType Frontend = Frontend.Type
+    ASTType UnlocatedFrontend = Frontend.Unlocated.Type
+    ASTType Annotated = Annotated.Type
+
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
     ASTPattern UnlocatedFrontend = Frontend.Pattern

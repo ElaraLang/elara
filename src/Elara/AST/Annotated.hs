@@ -3,9 +3,9 @@
 module Elara.AST.Annotated where
 
 import Control.Lens (makePrisms)
+import Data.Functor.Extra ((<<<$>>>))
 import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located (Located))
-import Elara.Data.Type (Type)
+import Elara.AST.Region (Located (Located), unlocate)
 import Prelude hiding (Op, Type)
 
 {- |
@@ -21,15 +21,15 @@ data Expr'
     | String Text
     | Char Char
     | Unit
-    | Var (Qualified VarName)
-    | Constructor (Qualified TypeName)
+    | Var (Located (Qualified VarName))
+    | Constructor (Located (Qualified TypeName))
     | Lambda Pattern Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
-    | LetIn (Qualified VarName) Expr Expr
-    | Let (Qualified VarName) Expr
+    | LetIn (Located (Qualified VarName)) Expr Expr
+    | Let (Located (Qualified VarName)) Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -39,7 +39,7 @@ newtype Expr = Expr (Located Expr')
 
 data Pattern'
     = NamedPattern Text
-    | ConstructorPattern (Qualified TypeName) [Pattern]
+    | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
     deriving (Show, Eq)
@@ -48,18 +48,26 @@ newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
 
 data BinaryOperator'
-    = Op (Qualified OpName)
-    | Infixed (Qualified VarName)
+    = Op (Located (Qualified OpName))
+    | Infixed (Located (Qualified VarName))
     deriving (Show, Eq)
 
 operatorName :: BinaryOperator -> Qualified Name
-operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName <$> op
-operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName <$> op
+operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName <$> unlocate op
+operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName <$> unlocate op
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Qualified Name) (Type Qualified)
+data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
+    deriving (Show, Eq)
+
+data Type
+    = TypeVar Text
+    | FunctionType Type Type
+    | UnitType
+    | TypeConstructorApplication Type Type
+    | UserDefinedType (Located (Qualified TypeName))
     deriving (Show, Eq)
 
 makePrisms ''Expr

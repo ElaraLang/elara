@@ -13,8 +13,7 @@ module Elara.AST.Module where
 import Control.Lens (defaultFieldRules, makeLenses, makeLensesWith, makePrisms)
 import Control.Lens.Internal.FieldTH (LensRules (_allowUpdates))
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTQual, FullASTQual, RUnlocate (rUnlocate'))
-import Elara.Data.Type (Type)
+import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTQual, ASTType, FullASTQual, RUnlocate (rUnlocate'))
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -46,7 +45,7 @@ data DeclarationBody' ast
     | -- | def <name> : <type>.
       ValueTypeDef (ASTLocate ast (ASTAnnotation ast))
     | -- | type <name> = <type>
-      TypeAlias (Type (ASTQual ast))
+      TypeAlias (ASTType ast)
 
 newtype Import ast = Import (ASTLocate ast (Import' ast))
 
@@ -170,7 +169,7 @@ type ModConstraints c ast =
     , c (ASTExpr ast)
     , c (ASTPattern ast)
     , c (ASTAnnotation ast)
-    , c (Type (ASTQual ast))
+    , c (ASTType ast)
     , c (FullASTQual ast VarName)
     , c (FullASTQual ast TypeName)
     , c (FullASTQual ast OpName)

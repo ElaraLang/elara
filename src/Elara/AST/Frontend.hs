@@ -5,7 +5,6 @@ module Elara.AST.Frontend where
 import Control.Lens.TH
 import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
-import Elara.Data.Type (Type (..))
 import Prelude hiding (Type)
 
 -- | Frontend AST
@@ -49,7 +48,15 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
   deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located (MaybeQualified Name)) (Type MaybeQualified)
+data TypeAnnotation = TypeAnnotation (Located (MaybeQualified Name)) Type
+  deriving (Show, Eq)
+
+data Type
+  = TypeVar Text
+  | FunctionType Type Type
+  | UnitType
+  | TypeConstructorApplication Type Type
+  | UserDefinedType (Located (MaybeQualified TypeName))
   deriving (Show, Eq)
 
 makePrisms ''Expr

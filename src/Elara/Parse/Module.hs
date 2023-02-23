@@ -9,7 +9,7 @@ import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
-import Text.Megaparsec (sepBy, sepEndBy)
+import Text.Megaparsec (sepEndBy)
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
@@ -18,7 +18,7 @@ module' = fmapLocated Module $ do
     let _name = maybe (Located (SourceRegion thisFile 0 4) (ModuleName ("Main" :| []))) fst mHeader
     skipNewlines
     imports <- import' `sepEndBy` skipNewlines
-    declarations <- declaration _name `sepBy` skipNewlines
+    declarations <- declaration _name `sepEndBy` skipNewlines
 
     pure $
         Module'

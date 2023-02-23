@@ -1,14 +1,14 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
+import Elara.AST.Frontend (Type (..))
 import Elara.AST.Name (MaybeQualified, ModuleName)
-import Elara.Data.Type (Type (..))
 import Elara.Parse.Names (alphaVarName, moduleName, typeName)
-import Elara.Parse.Primitives (HParser, lexeme, sc, symbol)
+import Elara.Parse.Primitives (HParser, lexeme, sc, symbol, located)
 import Text.Megaparsec (choice)
 import Prelude hiding (Type)
 
-type' :: HParser (Type MaybeQualified)
+type' :: HParser (Type)
 type' =
     makeExprParser
         typeTerm
@@ -16,13 +16,13 @@ type' =
         , [InfixR functionType]
         ]
 
-constructorApplication :: HParser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+constructorApplication :: HParser (Type -> Type -> Type)
 constructorApplication = lexeme (TypeConstructorApplication <$ (sc :: HParser ()))
 
-functionType :: HParser (Type MaybeQualified -> Type MaybeQualified -> Type MaybeQualified)
+functionType :: HParser (Type -> Type -> Type)
 functionType = lexeme (FunctionType <$ (symbol "->" :: HParser ()))
 
-typeTerm :: HParser (Type MaybeQualified)
+typeTerm :: HParser Type
 typeTerm =
     choice
         ( lexeme
@@ -30,17 +30,17 @@ typeTerm =
                 , unit
                 , namedType
                 ] ::
-            [HParser (Type MaybeQualified)]
+            [HParser Type]
         )
 
-typeVar :: HParser (Type MaybeQualified)
+typeVar :: HParser Type
 typeVar = TypeVar <$> alphaVarName
 
-unit :: HParser (Type MaybeQualified)
+unit :: HParser Type
 unit = UnitType <$ symbol "()"
 
-namedType :: HParser (Type MaybeQualified)
-namedType = UserDefinedType <$> typeName
+namedType :: HParser Type
+namedType = UserDefinedType <$> located typeName
 
 maybeQualified :: HParser (Maybe ModuleName -> b) -> HParser b
 maybeQualified p = do
