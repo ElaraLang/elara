@@ -2,13 +2,13 @@ module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
 import Elara.AST.Frontend (Type (..))
-import Elara.AST.Name (MaybeQualified, ModuleName)
+import Elara.AST.Name (ModuleName)
 import Elara.Parse.Names (alphaVarName, moduleName, typeName)
-import Elara.Parse.Primitives (HParser, lexeme, sc, symbol, located)
+import Elara.Parse.Primitives (HParser, lexeme, located, sc, symbol)
 import Text.Megaparsec (choice)
 import Prelude hiding (Type)
 
-type' :: HParser (Type)
+type' :: HParser Type
 type' =
     makeExprParser
         typeTerm
