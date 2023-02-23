@@ -58,11 +58,11 @@ data ContextBuildingError ast
   | -- | The exposition of an import is not exposed by the module
     ExpositionNotPublic (Import ast) (FullASTQual ast Name)
 
-instance (NameLike (FullASTQual ast VarName), NameLike (FullASTQual ast TypeName), NameLike (ASTQual ast OpName)) => ReportableError (InspectionError ast) where
+instance ReportableError (InspectionError ast) where
   report (UnknownName un) = pure $ Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
   report _ = error "Not implemented"
 
-instance (ast ~ Frontend, NameLike (ASTLocate ast ModuleName), RUnlocate ast) => ReportableError (ContextBuildingError ast) where
+instance (ast ~ Frontend, RUnlocate ast) => ReportableError (ContextBuildingError ast) where
   report (UnknownImportModule un) = do
     position <- sourceRegionToPosition (un ^. (_Import . _Unlocate . importing . _SourceRegion))
     pure $

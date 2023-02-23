@@ -9,7 +9,6 @@ import Error.Diagnose
 import Text.Megaparsec.Error
 
 import Data.Text qualified as T
-import Elara.Error (ReportableError (reportDiagnostic))
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import Text.Megaparsec qualified as MP
 import Prelude hiding (error, lines)
@@ -17,6 +16,7 @@ import Prelude hiding (error, lines)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
+import Elara.Error (ReportDiagnostic (reportDiagnostic))
 import Prelude hiding (error, lines)
 
 data ElaraParseError
@@ -29,9 +29,6 @@ instance HasHints ElaraParseError Text where
         , Hint "Try using a different name"
         ]
 
-instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStream e, MP.TraversableStream e) => ReportableError (ParseErrorBundle e m) where
-    reportDiagnostic = pure . diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing
-
 class ErrorRegionSize e where
     errorRegion :: e -> Int
 
@@ -40,6 +37,11 @@ instance ErrorRegionSize ElaraParseError where
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
+
+newtype WParseErrorBundle e m = WParseErrorBundle (ParseErrorBundle e m)
+
+instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStream e, MP.TraversableStream e) => ReportDiagnostic (WParseErrorBundle e m) where
+    reportDiagnostic (WParseErrorBundle e) = pure $ diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
    | It adds the ability to highlight a region of the source code rather than a single point for error highlighting.

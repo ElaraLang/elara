@@ -1,4 +1,6 @@
+{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Elara.Error where
@@ -16,11 +18,13 @@ import Text.Megaparsec.Pos (mkPos)
 import Prelude hiding (Reader, asks, readFile)
 
 class ReportableError e where
-    reportDiagnostic :: Member FileContents r => e -> Sem r (Diagnostic Text)
     report :: Member FileContents r => e -> Sem r (Report Text)
 
+class ReportDiagnostic e where
+    reportDiagnostic :: Member FileContents r => e -> Sem r (Diagnostic Text)
+
+instance ReportableError e => ReportDiagnostic e where
     reportDiagnostic = fmap (addReport def) . report
-    {-# MINIMAL report #-}
 
 collectErrors :: [Either (Diagnostic Text) a] -> Either (Diagnostic Text) [a]
 collectErrors (partitionEithers -> partitioned) =
@@ -40,7 +44,10 @@ runFileContentsPure = interpret $ \case
 runFileContentsIO :: Member (Embed IO) r => Sem (FileContents ': r) a -> Sem r a
 runFileContentsIO = interpret $ \case
     GetContents fp -> embed $ do
-        catch (Just <$> readFileText fp) (\(_ :: IOException) -> pure Nothing)
+        c <- decodeUtf8Strict <$> readFileBS fp
+        case c of
+            Left _ -> pure Nothing
+            Right t -> pure (Just t)
 
 sourceRegionToSourcePos :: Member FileContents r => SourceRegion -> Sem r (SourcePos, SourcePos)
 sourceRegionToSourcePos (SourceRegion Nothing _ _) = error "sourceRegionToSourcePos: SourceRegion has no file path"
