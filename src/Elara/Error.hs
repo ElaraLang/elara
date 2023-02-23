@@ -1,11 +1,9 @@
-{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Elara.Error where
 
-import Control.Exception (IOException, catch)
 import Data.Map (lookup)
 import Data.Text qualified as T
 import Elara.AST.Region (SourceRegion (SourceRegion))
@@ -23,7 +21,7 @@ class ReportableError e where
 class ReportDiagnostic e where
     reportDiagnostic :: Member FileContents r => e -> Sem r (Diagnostic Text)
 
-instance ReportableError e => ReportDiagnostic e where
+instance {-# OVERLAPPABLE #-} ReportableError e => ReportDiagnostic e where
     reportDiagnostic = fmap (addReport def) . report
 
 collectErrors :: [Either (Diagnostic Text) a] -> Either (Diagnostic Text) [a]
