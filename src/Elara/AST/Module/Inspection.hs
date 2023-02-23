@@ -12,7 +12,7 @@ module Elara.AST.Module.Inspection where
 import Control.Lens (view, (^.))
 import Data.Map qualified as M
 import Elara.AST.Module (
-  Declaration (Declaration),
+  Declaration,
   Declaration' (..),
   Exposing (ExposingAll, ExposingSome),
   Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue),
@@ -20,6 +20,7 @@ import Elara.AST.Module (
   HasDeclarations (declarations),
   HasExposing (exposing),
   HasImports (imports),
+  HasModule' (module'),
   HasName (..),
   Import,
   Import' (..),
@@ -31,7 +32,7 @@ import Elara.AST.Module (
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
 import Elara.AST.Region (Located (..), _Unlocate)
-import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..))
+import Elara.AST.Select (ASTLocate, ASTQual, FullASTQual, RUnlocate (..), rUnlocateVia, rUnlocateVia')
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
@@ -98,7 +99,7 @@ isDeclaring ::
   Module ast ->
   FullASTQual ast Name ->
   Bool
-isDeclaring m name' = isJust (find (declares (rUnlocate @ast name')) (m ^. declarations <&> view (_Declaration . _Unlocate)))
+isDeclaring m name' = isJust (find (declares (rUnlocate @ast name')) (m ^. declarations <&> rUnlocateVia' @ast _Declaration))
  where
   declares :: ASTQual ast Name -> Declaration' ast -> Bool
   declares name'' (Declaration' _ name''' _) = name'' == rUnlocate @ast name'''
@@ -122,13 +123,13 @@ isExposing m name' = case m ^. exposing of
   isExposing' mq@(MaybeQualified (NTypeName tn) _) (ExposedTypeAndAllConstructors name'') = (tn <$ mq) == rUnlocate @ast name''
   isExposing' _ _ = False
 
-importAliasFor :: Import ast -> ASTLocate ast ModuleName
+importAliasFor :: RUnlocate ast => Import ast -> ASTLocate ast ModuleName
 importAliasFor import' = fromMaybe (import' ^. importing) (import' ^. as)
 
 -- | Check if a module is importing another module, returning the import if so, otherwise Nothing.
 importFor :: forall ast. RUnlocate ast => Module ast -> Module ast -> Maybe (Import ast)
 importFor this imported =
-  find (isImporting' (rUnlocate' @ast (imported ^. name)) . view (_Import . _Unlocate)) (this ^. imports)
+  find (isImporting' (rUnlocate' @ast (imported ^. name)) . rUnlocateVia' @ast _Import) (this ^. imports)
  where
   isImporting' :: ModuleName -> Import' ast -> Bool
   isImporting' name' (Import' name'' _ _ _) = name' == rUnlocate' @ast name''
@@ -217,19 +218,24 @@ buildContext thisModule s = do
           traverse_ (add (rUnlocate' @ast (importAliasFor import')) (import' ^. qualified)) (m ^. declarations)
 
   add :: forall r0. Member (State InspectionContext) r0 => ModuleName -> Bool -> Declaration ast -> Sem r0 ()
-  add moduleAlias onlyQualified (Declaration (Located _ (Declaration' actualModule declarationName _))) = do
-    -- insert the qualified AND unqualified name into the context
-    let qualify :: MaybeQualified a -> MaybeQualified a
+  add moduleAlias onlyQualified declaration = do
+    let actualModule :: ModuleName
+        actualModule = rUnlocate' @ast (declaration ^. module')
+        declarationName = declaration ^. name
+
+        qualify :: MaybeQualified a -> MaybeQualified a
         qualify (MaybeQualified x _) = MaybeQualified x (Just moduleAlias)
+
         unqualify :: MaybeQualified a -> MaybeQualified a
         unqualify (MaybeQualified x _) = MaybeQualified x Nothing
 
+        -- insert the qualified AND unqualified name into the context
         addQualAndUnqual :: MaybeQualified Name -> Sem r0 ()
         addQualAndUnqual qual = do
-          modify (M.insertWith (<>) (qualify qual) (pure (rUnlocate' @ast actualModule)))
+          modify (M.insertWith (<>) (qualify qual) (pure actualModule))
           unless
             onlyQualified
-            (modify (M.insertWith (<>) (unqualify qual) (pure (rUnlocate' @ast actualModule))))
+            (modify (M.insertWith (<>) (unqualify qual) (pure actualModule)))
 
         normalizedName :: MaybeQualified Name
         normalizedName = normalizeName (rUnlocate @ast declarationName)

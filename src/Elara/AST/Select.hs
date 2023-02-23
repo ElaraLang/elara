@@ -1,11 +1,14 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Elara.AST.Select where
 
+import Control.Lens (Getting, view, (^.))
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
 import Elara.AST.Name (MaybeQualified, Qualified)
 import Elara.AST.Region (Located (Located))
+
 data Frontend
 
 data UnlocatedFrontend
@@ -45,9 +48,7 @@ type family UnwrapUnlocated g where
     UnwrapUnlocated (Unlocated a) = a
     UnwrapUnlocated a = a
 
-
 type FullASTQual ast a = UnwrapUnlocated ((ASTLocate ast) (ASTQual ast a))
-
 
 type family Unlocate g where
     Unlocate (Located a) = a
@@ -58,6 +59,21 @@ class RUnlocate ast where
     rUnlocate' :: ASTLocate ast a -> a
     fmapRUnlocate :: (a -> b) -> FullASTQual ast a -> FullASTQual ast b
 
+rUnlocateVia ::
+    forall ast a s.
+    RUnlocate ast =>
+    Getting (UnwrapUnlocated (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a)))) s (UnwrapUnlocated (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a)))) ->
+    s ->
+    ASTQual ast a
+rUnlocateVia f = rUnlocate @ast . view f
+
+rUnlocateVia' ::
+    forall ast s c.
+    RUnlocate ast =>
+    Getting (UnwrapUnlocated (ASTLocate' ast c)) s (UnwrapUnlocated (ASTLocate' ast c)) ->
+    s ->
+    c
+rUnlocateVia' f = rUnlocate' @ast . view f
 
 instance RUnlocate Frontend where
     rUnlocate (Located _ a) = a
