@@ -1,4 +1,4 @@
 module A
 import Prelude
 
-let Prelude.x = 1
+let x = 1
