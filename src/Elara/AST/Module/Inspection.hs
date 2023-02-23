@@ -131,7 +131,7 @@ importFor this imported =
   find (isImporting' (rUnlocate' @ast (imported ^. name)) . view (_Import . _Unlocate)) (this ^. imports)
  where
   isImporting' :: ModuleName -> Import' ast -> Bool
-  isImporting' name' (Import' name'' _ _ _) = name' == (rUnlocate' @ast name'')
+  isImporting' name' (Import' name'' _ _ _) = name' == rUnlocate' @ast name''
 
 type InspectionState ast = M.Map ModuleName (Module ast)
 
