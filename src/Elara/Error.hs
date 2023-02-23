@@ -56,15 +56,27 @@ sourceRegionToSourcePos sr@(SourceRegion (Just fp) _ _) = do
 sourceRegionToSourcePos' :: Text -> SourceRegion -> (SourcePos, SourcePos)
 sourceRegionToSourcePos' _ (SourceRegion Nothing _ _) = error "sourceRegionToSourcePos: SourceRegion has no file path"
 sourceRegionToSourcePos' fileContents (SourceRegion (Just fp) start end) =
-    -- TODO this is probably not very efficient
     let
-        segment = T.take (end - start) (T.drop start fileContents)
-        lineNumberOfStart = T.count "\n" (T.take start fileContents) + 1
-        startColumn = T.length $ last $ fromList $ T.splitOn "\n" $ T.take start fileContents
-        lineNumberOfEnd = lineNumberOfStart + T.count "\n" segment
-        endColumn = T.length $ last $ fromList $ T.splitOn "\n" $ T.take end fileContents
+        startSegment = T.take start fileContents -- take the whole file up to the start of the region
+        segment = T.take (end - start) (T.drop start fileContents) -- take the region
+        startLine = T.count "\n" startSegment + 1 -- count the number of newlines in the start segment, and add 1 to get the line number
+        endLine = startLine + T.count "\n" segment -- count the number of newlines in the region, and add the start line to get the end line
+        startColumn =
+            startSegment
+                & T.splitOn "\n"
+                & fromList
+                & last
+                & T.length
+        endColumn =
+            fileContents
+                & T.take end -- take the whole file up to the end of the region
+                & T.splitOn "\n" -- split into lines
+                & fromList -- convert to nonempty list, it should never be empty
+                & last -- get the last line, i.e. the line containing the end of the region
+                & T.dropWhileEnd (== ' ') -- drop the trailing whitespace. kinda a hack but it's easier than changing how parsing works
+                & T.length -- get the length of the line
      in
-        (SourcePos fp (mkPos lineNumberOfStart) (mkPos (startColumn + 1)), SourcePos fp (mkPos lineNumberOfEnd) (mkPos (endColumn + 1)))
+        (SourcePos fp (mkPos startLine) (mkPos (startColumn + 1)), SourcePos fp (mkPos endLine) (mkPos (endColumn + 1)))
 
 sourceRegionToPosition :: Member FileContents r => SourceRegion -> Sem r Position
 sourceRegionToPosition sr@(SourceRegion fp _ _) = do

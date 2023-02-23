@@ -23,7 +23,7 @@ locatedExpr = (Expr <$>) . (H.parse . located . H.toParsec)
 exprParser :: HParser Expr
 exprParser =
     makeExprParser
-        (expression)
+        expression
         [ [InfixL functionCall]
         , [InfixR binOp]
         ]
