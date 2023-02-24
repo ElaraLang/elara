@@ -63,6 +63,9 @@ class RUnlocate ast where
     rUnlocate :: FullASTQual ast a -> ASTQual ast a
     rUnlocate' :: ASTLocate ast a -> a
     fmapRUnlocate :: (a -> b) -> FullASTQual ast a -> FullASTQual ast b
+    fmapRUnlocate' :: (a -> b) -> ASTLocate ast a -> ASTLocate ast b
+
+    sequenceRUnlocate' :: Functor f => ASTLocate ast (f a) -> f (ASTLocate ast a)
 
 rUnlocateVia ::
     forall ast a s.
@@ -84,8 +87,21 @@ instance RUnlocate Frontend where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
+    fmapRUnlocate' f (Located r a) = Located r (f a)
+    sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
+    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
+
+instance RUnlocate Annotated where
+    rUnlocate (Located _ a) = a
+    rUnlocate' (Located _ a) = a
+    fmapRUnlocate f (Located r a) = Located r (fmap f a)
+    fmapRUnlocate' f (Located r a) = Located r (f a)
+    sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
+    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
 instance RUnlocate UnlocatedFrontend where
     rUnlocate a = a
     rUnlocate' a = a
     fmapRUnlocate = fmap
+    fmapRUnlocate' = id
+    sequenceRUnlocate' = id

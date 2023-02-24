@@ -4,104 +4,129 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Elara.Annotate.Shunt where
+
 --  (Precedence, mkPrecedence, OpTable, OpInfo (..), Associativity (..), ShuntError (..), ShuntWarning (..), fixOperators) where
 
--- import Control.Lens (over, view)
--- import Data.Map (lookup)
--- import Elara.AST.Annotated qualified as Annotated
--- import Elara.AST.Name (Name (NOpName, NVarName), Qualified)
--- import Elara.AST.Region (Located (..), SourceRegion, unlocate)
--- import Polysemy (Member, Sem)
--- import Polysemy.Error (Error, throw)
--- import Polysemy.Writer
--- import Prelude hiding (State, execState, gets, modify')
+import Control.Lens (over, view, (^.))
+import Data.Map (lookup)
+import Elara.AST.Annotated qualified as Annotated
+import Elara.AST.Name (Name (NOpName, NVarName), NameLike (fullNameText), Qualified)
+import Elara.AST.Region (Located (..), SourceRegion, unlocate, _SourceRegion, _Unlocate)
+import Elara.Error (ReportableError (..), sourceRegionToPosition)
+import Elara.Error.Codes qualified as Codes
+import Error.Diagnose
+import Polysemy (Member, Sem)
+import Polysemy.Error (Error, throw)
+import Polysemy.Writer
+import Prelude hiding (State, execState, gets, modify')
 
--- type OpTable = Map (Qualified Name) OpInfo
+type OpTable = Map (Qualified Name) OpInfo
 
--- newtype Precedence = Precedence Int
---     deriving (Show, Eq, Ord)
+newtype Precedence = Precedence Int
+    deriving (Show, Eq, Ord)
 
--- mkPrecedence :: Int -> Precedence
--- mkPrecedence i
---     | i < 0 = error "Precedence must be positive"
---     | i > 9 = error "Precedence must be less than 10"
---     | otherwise = Precedence i
+mkPrecedence :: Int -> Precedence
+mkPrecedence i
+    | i < 0 = error "Precedence must be positive"
+    | i > 9 = error "Precedence must be less than 10"
+    | otherwise = Precedence i
 
--- data OpInfo = OpInfo
---     { precedence :: Precedence
---     , associativity :: Associativity
---     }
---     deriving (Show, Eq)
+data OpInfo = OpInfo
+    { precedence :: Precedence
+    , associativity :: Associativity
+    }
+    deriving (Show, Eq)
 
--- data Associativity
---     = LeftAssociative
---     | RightAssociative
---     | NonAssociative
---     deriving (Show, Eq)
+data Associativity
+    = LeftAssociative
+    | RightAssociative
+    | NonAssociative
+    deriving (Show, Eq)
 
--- data ShuntError
---     = SamePrecedenceError (Qualified Name) (Qualified Name)
---     deriving (Show, Eq)
+data ShuntError
+    = SamePrecedenceError (Located (Qualified Name)) (Located (Qualified Name))
+    deriving (Show, Eq)
 
--- newtype ShuntWarning
---     = UnknownPrecedence (Qualified Name)
---     deriving (Show, Eq, Ord)
+instance ReportableError ShuntError where
+    report (SamePrecedenceError op1 op2) = do
+        op1Src <- sourceRegionToPosition $ op1 ^. _SourceRegion
+        op2Src <- sourceRegionToPosition $ op2 ^. _SourceRegion
+        pure $
+            Err
+                (Just Codes.samePrecedence)
+                ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. _Unlocate) <> " and " <> fullNameText (op2 ^. _Unlocate) <> " when both operators have different associativity.")
+                [(op1Src, This "operator 1"), (op2Src, This "operator 2")]
+                [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
--- opInfo :: OpTable -> Annotated.BinaryOperator -> Maybe OpInfo
--- opInfo table op = case unlocate $ view Annotated._MkBinaryOperator op of
---     Annotated.Op opName -> lookup (NOpName <$> opName) table
---     Annotated.Infixed varName -> lookup (NVarName <$> varName) table
+newtype ShuntWarning
+    = UnknownPrecedence (Located (Qualified Name))
+    deriving (Show, Eq, Ord)
 
+instance ReportableError ShuntWarning where
+    report (UnknownPrecedence op) = do
+        opSrc <- sourceRegionToPosition $ op ^. _SourceRegion
+        pure $
+            Warn
+                (Just Codes.unknownPrecedence)
+                ("Unknown precedence/associativity for operator " <> fullNameText (op ^. _Unlocate) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                [(opSrc, This "operator")]
+                [Hint "Define the precedence and associativity of the operator explicitly"]
 
--- pattern InExpr :: Annotated.Expr' -> Annotated.Expr
--- pattern InExpr y <- Annotated.Expr (Located _ y)
+opInfo :: OpTable -> Annotated.BinaryOperator -> Maybe OpInfo
+opInfo table op = case unlocate $ view Annotated._MkBinaryOperator op of
+    Annotated.Op opName -> lookup (NOpName <$> opName ^. _Unlocate) table
+    Annotated.Infixed varName -> lookup (NVarName <$> varName ^. _Unlocate) table
 
--- pattern InExpr' :: SourceRegion -> Annotated.Expr' -> Annotated.Expr
--- pattern InExpr' loc y <- Annotated.Expr (Located loc y)
+pattern InExpr :: Annotated.Expr' -> Annotated.Expr
+pattern InExpr y <- Annotated.Expr (Located _ y)
 
--- {- | Fix the operators in an expression to the correct precedence
--- | For example given ((+) = 1l) and ((*) = 2r)
--- | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
--- | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
--- -}
--- fixOperators :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r) => OpTable -> Annotated.Expr -> Sem r Annotated.Expr
--- fixOperators opTable = reassoc
---   where
---     withLocationOf :: Annotated.Expr -> Annotated.Expr' -> Annotated.Expr
---     withLocationOf s repl = over Annotated._Expr (repl <$) s
+pattern InExpr' :: SourceRegion -> Annotated.Expr' -> Annotated.Expr
+pattern InExpr' loc y <- Annotated.Expr (Located loc y)
 
---     reassoc :: Annotated.Expr -> Sem r Annotated.Expr
---     reassoc e@(InExpr (Annotated.InParens e2)) = withLocationOf e . Annotated.InParens <$> reassoc e2
---     reassoc e@(InExpr' loc (Annotated.BinaryOperator op l r)) = do
---         l' <- reassoc l
---         r' <- reassoc r
---         withLocationOf e <$> reassoc' loc op l' r'
---     reassoc e = pure e
+{-
+ | Fix the operators in an expression to the correct precedence
+ | For example given ((+) = 1l) and ((*) = 2r)
+ | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
+ | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
+-}
+fixOperators :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r) => OpTable -> Annotated.Expr -> Sem r Annotated.Expr
+fixOperators opTable = reassoc
+  where
+    withLocationOf :: Annotated.Expr -> Annotated.Expr' -> Annotated.Expr
+    withLocationOf s repl = over Annotated._Expr (repl <$) s
 
---     reassoc' :: SourceRegion -> Annotated.BinaryOperator -> Annotated.Expr -> Annotated.Expr -> Sem r Annotated.Expr'
---     reassoc' sr op l (InExpr (Annotated.InParens r)) = reassoc' sr op l r
---     reassoc' sr o1 e1 r@(InExpr (Annotated.BinaryOperator o2 e2 e3)) = do
---         info1 <- getInfoOrWarn o1
---         info2 <- getInfoOrWarn o2
---         case compare info1.precedence info2.precedence of
---             GT -> assocLeft
---             LT -> assocRight
---             EQ -> case (info1.associativity, info2.associativity) of
---                 (LeftAssociative, LeftAssociative) -> assocLeft
---                 (RightAssociative, RightAssociative) -> assocRight
---                 _ -> throw (SamePrecedenceError (Annotated.operatorName o1) (Annotated.operatorName o2))
---       where
---         assocLeft = do
---             reassociated <- Annotated.Expr . Located sr <$> reassoc' sr o1 e1 e2
---             pure (Annotated.BinaryOperator o2 (withLocationOf reassociated (Annotated.InParens reassociated)) e3)
+    reassoc :: Annotated.Expr -> Sem r Annotated.Expr
+    reassoc e@(InExpr (Annotated.InParens e2)) = withLocationOf e . Annotated.InParens <$> reassoc e2
+    reassoc e@(InExpr' loc (Annotated.BinaryOperator op l r)) = do
+        l' <- reassoc l
+        r' <- reassoc r
+        withLocationOf e <$> reassoc' loc op l' r'
+    reassoc e = pure e
 
---         assocRight = do
---             pure (Annotated.BinaryOperator o1 e1 r)
+    reassoc' :: SourceRegion -> Annotated.BinaryOperator -> Annotated.Expr -> Annotated.Expr -> Sem r Annotated.Expr'
+    reassoc' sr op l (InExpr (Annotated.InParens r)) = reassoc' sr op l r
+    reassoc' sr o1 e1 r@(InExpr (Annotated.BinaryOperator o2 e2 e3)) = do
+        info1 <- getInfoOrWarn o1
+        info2 <- getInfoOrWarn o2
+        case compare info1.precedence info2.precedence of
+            GT -> assocLeft
+            LT -> assocRight
+            EQ -> case (info1.associativity, info2.associativity) of
+                (LeftAssociative, LeftAssociative) -> assocLeft
+                (RightAssociative, RightAssociative) -> assocRight
+                _ -> throw (SamePrecedenceError (Annotated.locatedOperatorName o1) (Annotated.locatedOperatorName o2))
+      where
+        assocLeft = do
+            reassociated <- Annotated.Expr . Located sr <$> reassoc' sr o1 e1 e2
+            pure (Annotated.BinaryOperator o2 (withLocationOf reassociated (Annotated.InParens reassociated)) e3)
 
---         getInfoOrWarn :: Annotated.BinaryOperator -> Sem r OpInfo
---         getInfoOrWarn op = case opInfo opTable op of
---             Just info -> pure info
---             Nothing -> do
---                 tell (fromList [UnknownPrecedence (Annotated.operatorName op)])
---                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
---     reassoc' _ op l r = pure (Annotated.BinaryOperator op l r)
+        assocRight = do
+            pure (Annotated.BinaryOperator o1 e1 r)
+
+        getInfoOrWarn :: Annotated.BinaryOperator -> Sem r OpInfo
+        getInfoOrWarn op = case opInfo opTable op of
+            Just info -> pure info
+            Nothing -> do
+                tell (fromList [UnknownPrecedence (Annotated.locatedOperatorName op)])
+                pure (OpInfo (mkPrecedence 9) LeftAssociative)
+    reassoc' _ op l r = pure (Annotated.BinaryOperator op l r)

@@ -41,7 +41,7 @@ instance ReportableError AnnotationError where
         pos <- sourceRegionToPosition sr
         pure $
             Err
-                (Just Codes.unknownModule)
+                (Just Codes.qualifiedWithWrongModule)
                 ("Qualification of name doesn't match module name: " <> fullNameText modName)
                 [(pos, This "")]
                 [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."

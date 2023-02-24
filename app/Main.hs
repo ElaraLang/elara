@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 
 module Main (
   main,
@@ -9,9 +10,9 @@ import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 
--- import Elara.Annotate.Shunt (fixOperators)
+import Elara.Annotate.Shunt (fixOperators)
 
-import Elara.AST.Region (_Unlocate)
+import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
 import Elara.Parse
 import Error.Diagnose
@@ -19,6 +20,7 @@ import Polysemy (Embed, Member, Sem, embed, run, runM)
 import Polysemy.Error (runError)
 import Polysemy.Reader
 import Polysemy.State (State, execState, modify)
+import Polysemy.Writer (runWriter)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
@@ -40,7 +42,20 @@ runElara = runM $ execState def $ do
        in case run $ runError $ runReader modules (annotateModule source) of
             Left annotateError -> runFileContentsIO $ reportDiagnostic annotateError >>= modify . flip (<>)
             Right m' -> do
-              embed (printColored m')
+              runFileContentsIO $ fixOperatorsInModule m' >>= embed . printColored
+
+fixOperatorsInModule :: (Member (State (Diagnostic Text)) r, Member FileContents r) => Module Annotated -> Sem r (Maybe (Module Annotated))
+fixOperatorsInModule m = do
+  let x = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m
+  case x of
+    Left shuntErr -> do
+      diag <- reportDiagnostic shuntErr
+      modify (concatDiagnostics diag)
+      pure Nothing
+    Right (warnings, finalM) -> do
+      warnings' <- traverse report (toList warnings)
+      for_ warnings' (modify . flip addReport)
+      pure (Just finalM)
 
 loadModule :: (Member (Embed IO) r, Member (State (Diagnostic Text)) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do
@@ -54,12 +69,19 @@ loadModule path = do
       case parse path contents of
         Left parseError -> do
           diag <- runFileContentsIO $ reportDiagnostic parseError
-          modify (<> diag)
+          modify (concatDiagnostics diag)
           pure Nothing
         Right m -> pure (Just m)
 
--- unlocateModule :: Module Frontend -> Module UnlocatedFrontend
--- unlocateModule = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens %~ stripLocation
-
--- overExpressions :: Applicative f => (ASTExpr ast -> f (ASTExpr ast)) -> Module ast -> f (Module ast)
--- overExpressions = moduleDeclarations . traverse . _declarationBodyLens . _declarationBodyExpressionLens
+overExpressions ::
+  ( UnwrapUnlocated (ASTLocate' ast2 (DeclarationBody' ast2))
+      ~ Located (DeclarationBody' ast)
+  , HasDeclarations s (t a)
+  , Traversable t
+  , Applicative f
+  , HasBody a (DeclarationBody ast2)
+  ) =>
+  (ASTExpr ast -> f (ASTExpr ast)) ->
+  s ->
+  f s
+overExpressions = declarations . traverse . body . _DeclarationBody . _Unlocate . expression

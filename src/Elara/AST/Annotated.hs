@@ -4,7 +4,7 @@ module Elara.AST.Annotated where
 
 import Control.Lens (makePrisms)
 import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located (Located), unlocate)
+import Elara.AST.Region (Located (Located))
 import Prelude hiding (Op, Type)
 
 {- |
@@ -51,9 +51,9 @@ data BinaryOperator'
     | Infixed (Located (Qualified VarName))
     deriving (Show, Eq)
 
-operatorName :: BinaryOperator -> Qualified Name
-operatorName (MkBinaryOperator (Located _ (Op op))) = NOpName <$> unlocate op
-operatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName <$> unlocate op
+locatedOperatorName :: BinaryOperator -> Located (Qualified Name)
+locatedOperatorName (MkBinaryOperator (Located _ (Op op))) = NOpName <<$>> op
+locatedOperatorName (MkBinaryOperator (Located _ (Infixed op))) = NVarName <<$>> op
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)

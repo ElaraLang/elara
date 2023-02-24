@@ -10,10 +10,9 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (defaultFieldRules, makeLenses, makeLensesWith, makePrisms)
-import Control.Lens.Internal.FieldTH (LensRules (_allowUpdates))
+import Control.Lens (makeFields, makeLenses, makePrisms)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTQual, ASTType, FullASTQual, RUnlocate (rUnlocate'))
+import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, RUnlocate (..))
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -37,10 +36,10 @@ newtype DeclarationBody ast = DeclarationBody (ASTLocate ast (DeclarationBody' a
 data DeclarationBody' ast
     = -- | let <p> = <e>
       Value
-        { _declarationBodyExpression :: ASTExpr ast
-        , _declarationBodyPatterns :: [ASTPattern ast]
+        { _expression :: ASTExpr ast
+        , _patterns :: [ASTPattern ast]
         -- ^ The patterns used in things like let f x = ...
-        , _declarationBodyTypeAnnotation :: ASTAnnotation ast
+        , _typeAnnotation :: ASTAnnotation ast
         }
     | -- | def <name> : <type>.
       ValueTypeDef (ASTLocate ast (ASTAnnotation ast))
@@ -69,14 +68,18 @@ data Exposition ast
 -- Vile lens and deriving boilerplate
 
 makeLenses ''Exposing
+
 makeLenses ''DeclarationBody
+makeLenses ''DeclarationBody'
+
 makePrisms ''DeclarationBody
+makePrisms ''DeclarationBody'
 
 makeLenses ''Declaration'
 
-makeLensesWith (defaultFieldRules{_allowUpdates = False}) ''Module'
-makeLensesWith (defaultFieldRules{_allowUpdates = False}) ''Import'
-makeLensesWith (defaultFieldRules{_allowUpdates = False}) ''Declaration'
+makeFields ''Module'
+makeFields ''Import'
+makeFields ''Declaration'
 makePrisms ''Module
 makePrisms ''Import
 makePrisms ''Declaration
@@ -130,6 +133,11 @@ instance (RUnlocate ast, a ~ FullASTQual ast Name, HasName (Declaration' ast) a)
     name f d@(Declaration d') =
         let d'' = rUnlocate' @ast d' :: Declaration' ast
          in fmap (const d) (f (d''._declaration'Name))
+
+instance (RUnlocate ast, a ~ DeclarationBody ast, HasBody (Declaration' ast) a) => HasBody (Declaration ast) a where
+    body f d@(Declaration d') =
+        let d'' = rUnlocate' @ast d' :: Declaration' ast
+         in fmap (const d) (f (d''._declaration'Body))
 
 deriving instance (Show (FullASTQual ast VarName), Show (FullASTQual ast OpName), Show (FullASTQual ast TypeName)) => Show (Exposition ast)
 deriving instance (Eq (FullASTQual ast VarName), Eq (FullASTQual ast OpName), Eq (FullASTQual ast TypeName)) => Eq (Exposition ast)

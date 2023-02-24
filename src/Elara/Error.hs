@@ -86,3 +86,7 @@ sourceRegionToPosition sr@(SourceRegion fp _ _) = do
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
 addPosition marker (Warn code m markers notes) = Warn code m (marker : markers) notes
+
+-- | Concatenate two diagnostics, keeping the first one's file map. Use this instead of the Semigroup instance for Diagnostics.
+concatDiagnostics :: Diagnostic msg -> Diagnostic msg -> Diagnostic msg
+concatDiagnostics diag = (<> diag)
