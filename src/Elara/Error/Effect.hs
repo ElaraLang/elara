@@ -9,6 +9,10 @@ import Polysemy
 import Polysemy.State
 import Prelude hiding (modify, modify', runState)
 
+{- | Essentially a very specialised Writer effect for Diagnostics, but safer
+| Because the Semigroup instance for Diagnostics is a little funky, there's a chance of accidentally overwriting the
+| entire FileMap, so this effect is designed to prevent that, and also prevent the state / writer boilerplate as an added bonus :)
+-}
 data DiagnosticWriter t m a where
     AddDiagnostic :: Diagnostic t -> DiagnosticWriter t m ()
     AddReport :: Report t -> DiagnosticWriter t m ()
