@@ -7,6 +7,9 @@ import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
 
+indentDepth :: Int
+indentDepth = 2
+
 parensIf :: Bool -> Doc -> Doc
 parensIf True = PP.parens
 parensIf False = id
@@ -26,24 +29,26 @@ instance Pretty Expr where
     ppr p (Var v) = ppr p v
     ppr p (Constructor c) = ppr p c
     ppr p (Lambda ps e) = parensIf (p > 0) $ char '\\' <> hsep (fmap (ppr 0) ps) <+> "->" <+> ppr (p + 1) e
-    ppr p (FunctionCall e1 e2) = PP.parens (ppr p e1 <+> ppr (p + 1) e2) -- until operator precedence is implemented, this is the only way to get the correct precedence
-    ppr _ (If e1 e2 e3) =
-        vcat
-            [ hang "if" 2 (ppr 0 e1)
-            , hang "then" 2 (ppr 0 e2)
-            , hang "else" 2 (ppr 0 e3)
-            ]
+    ppr p (FunctionCall e1 e2) = PP.parens (PP.parens (ppr p e1) <+> PP.parens (ppr (p + 1) e2)) -- until operator precedence is implemented, this is the only way to get the correct precedence
+    ppr p (If e1 e2 e3) =
+        parensIf (p > 0) $
+            vcat
+                [ "if" $+$ nest indentDepth (ppr 0 e1)
+                , "then" $+$ nest indentDepth (ppr 0 e2)
+                , "else" $+$ nest indentDepth (ppr 0 e3)
+                ]
     ppr p (BinaryOperator op e1 e2) = PP.parens (ppr p e1 <+> ppr p op <+> ppr p e2)
     ppr p (List es) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) es)))
     ppr p (LetIn n patterns val body) =
-        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns)) (4 + length (fullNameText n)) ("=" <+> ppr p val)
+        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns)) (indentDepth + 2 + length (fullNameText n)) ("=" <+> ppr p val)
             $$ nest 1 "in"
-            $+$ nest 4 (ppr p body)
-    ppr p (Let n ps e) = "let" <+> ppr p n <+> PP.hsep (fmap (ppr p) ps) <+> "=" <+> ppr p e
-    ppr p (Block es) = nest 4 (PP.vcat $ toList (fmap (ppr p) es))
+            $+$ nest indentDepth (ppr p body)
+    ppr p (Let n patterns body) =
+        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns) <+> "=") (indentDepth + 2 + length (fullNameText n)) (ppr p body)
+    ppr p (Block es) = PP.vcat $ toList (fmap (ppr p) es)
     ppr p (InParens e) = PP.parens (ppr p e)
 
-instance Pretty x => Pretty (MaybeQualified x) where
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     ppr p (MaybeQualified n (Just m)) = ppr p m <> "." <> ppr p n
     ppr p (MaybeQualified n Nothing) = ppr p n
 
@@ -53,6 +58,11 @@ instance Pretty ModuleName where
 instance Pretty VarName where
     ppr _ (NormalVarName n) = PP.text (toString n)
     ppr p (OperatorVarName n) = "(" <> ppr p n <> ")"
+
+instance Pretty (MaybeQualified VarName) where
+    ppr p (MaybeQualified (OperatorVarName n) (Just q)) = "(" <> ppr p q <> "." <> ppr p n <> ")"
+    ppr p (MaybeQualified n (Just q)) = ppr p q <> "." <> ppr p n
+    ppr p (MaybeQualified n Nothing) = ppr p n
 
 instance Pretty TypeName where
     ppr _ (TypeName n) = PP.text (toString n)

@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 module Elara.Parse.Indents where
 
 import Elara.AST.Frontend (Expr (..), Expr' (Block))
@@ -10,10 +11,10 @@ import HeadedMegaparsec qualified as H
 import Text.Megaparsec (Pos, mkPos, unPos)
 import Text.Megaparsec.Char.Lexer qualified as L
 
-optionallyIndented :: HParser a -> HParser Expr -> HParser (a, Expr)
+optionallyIndented ::Show a =>  HParser a -> HParser Expr -> HParser (a, Expr)
 optionallyIndented a expression = indentedBlock a expression <|> nonIndented a expression
 
-optionallyIndented' :: HParser a -> HParser Expr -> HParser Expr
+optionallyIndented' :: Show a => HParser a -> HParser Expr -> HParser Expr
 optionallyIndented' = (fmap snd .) . optionallyIndented
 
 nonIndented :: HParser a -> HParser b -> HParser (a, b)
@@ -22,8 +23,8 @@ nonIndented a expression = do
     b <- expression
     pure (a', b)
 
-indentedBlock :: HParser a -> HParser Expr -> HParser (a, Expr)
-indentedBlock ref expression = H.parse (L.indentBlock scn innerParser)
+indentedBlock :: Show a => HParser a -> HParser Expr -> HParser (a, Expr)
+indentedBlock ref expression = H.dbg "indentedBlock" $ H.parse (L.indentBlock scn innerParser)
   where
     innerParser = H.toParsec $ do
         a <- ref
@@ -61,9 +62,10 @@ withIndentOrNormal pos parser = unmodified <|> indented
     unmodified = do
         res <- parser
         pure (pos, res)
-    indented = H.parse $ do
-        new <- L.indentGuard scn GT (sub1 pos)
-        res <- H.toParsec parser
+    indented = do
+        new <- H.parse $ L.indentGuard scn GT (sub1 pos)
+        H.endHead
+        res <- parser
         pure (new, res)
 
 sub1 :: Pos -> Pos
@@ -73,7 +75,7 @@ sub1 pos = case unPos pos of
 
 -- | Parses a block, starting at the given position. The given parser should parse a single expression, which will be merged into a block
 blockAt :: Pos -> HParser Expr -> HParser (Pos, Expr)
-blockAt pos parser = do
+blockAt pos parser = H.dbg ("blockAt " <> show pos) $ do
     H.parse skipNewlines
     exprs <- fmap snd <$> sepBy1' (withIndent (sub1 pos) parser) (H.parse scn)
     pure (pos, merge exprs)

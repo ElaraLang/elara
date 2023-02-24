@@ -9,9 +9,6 @@ import Data.Text (splitOn)
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), VarName (..))
 
-instance IsString name => IsString (MaybeQualified name) where
-    fromString s = MaybeQualified (fromString s) Nothing
-
 instance IsString VarName where
     fromString = NormalVarName . fromString
 
@@ -21,12 +18,15 @@ instance IsString TypeName where
 instance IsString OpName where
     fromString = OpName . fromString
 
-instance IsString (Name MaybeQualified) where
+instance IsString Name where
     fromString s = case s of
         "" -> error "Empty string is not a valid name"
         c : _ | isUpper c -> NTypeName (fromString s)
         c : _ | isLower c -> NVarName (fromString s)
         _ -> NOpName (fromString s)
+
+instance IsString s => IsString (MaybeQualified s) where
+    fromString s = MaybeQualified (fromString s) Nothing
 
 instance IsString ModuleName where
     -- oh boy i love having 2 string types

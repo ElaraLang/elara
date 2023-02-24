@@ -12,7 +12,7 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, skipSpaces, symbol, withPredicate, (<??>))
-import HeadedMegaparsec (endHead)
+import HeadedMegaparsec (endHead, dbg)
 import HeadedMegaparsec qualified as H (endHead, parse, toParsec)
 import Text.Megaparsec (sepBy, sepEndBy)
 import Text.Megaparsec.Char.Lexer (indentLevel)
@@ -104,8 +104,19 @@ variable =
 
 constructor :: HParser Frontend.Expr
 constructor = locatedExpr $ do
-    con <- located $ lexeme typeName
+    con <- located $ lexeme (failIfDotAfter typeName)
     pure $ Frontend.Constructor con
+  where
+    -- Nasty hacky function that causes the parser to fail if the next token is a dot
+    -- This is needed for cases like @a Prelude.+ b@. Without this function, it will parse as @(a Prelude) + (b)@, since module names and type names look the same.
+    -- Having this parser fail means that the exprParser for function calls can't extend too far if there's a dot, causing it to get parsed as the intended @(Prelude.+) a b@
+    failIfDotAfter :: HParser a -> HParser a
+    failIfDotAfter p = do
+        res <- p
+        endHead
+        o <- optional (char' '.')
+        whenJust o $ \_ -> fail "Cannot use dot after expression"
+        pure res
 
 unit :: HParser Frontend.Expr
 unit = locatedExpr (Frontend.Unit <$ symbol "()") <??> "unit"
@@ -125,26 +136,28 @@ charL = locatedExpr (Frontend.Char <$> charLiteral) <??> "char"
 list :: HParser Frontend.Expr
 list = locatedExpr $ do
     symbol "["
-    elements <- lexeme (sepEndBy expression (symbol ","))
+    endHead
+    elements <- lexeme (sepEndBy exprParser (symbol ","))
     symbol "]"
     pure $ Frontend.List elements
 
 lambda :: HParser Expr
 lambda = locatedExpr $ do
-    start <- fromParsec indentLevel
-    args <- lambdaPreamble
-    (_, res) <- blockAt start element
+    (args, res) <- optionallyIndented lambdaPreamble element
+    endHead
     pure (Frontend.Lambda args res)
   where
-    lambdaPreamble = do
+    lambdaPreamble = dbg "lambdaPreamble" $ do
         symbol "\\"
+        endHead
         args <- lexeme (sepBy (lexeme pattern') sc)
         symbol "->"
         pure args
 
 ifElse :: HParser Expr
-ifElse = locatedExpr $ do
+ifElse = dbg "ifElse" $ locatedExpr $ do
     condition <- optionallyIndented' (symbol "if") element
+    endHead
     skipSpaces -- scn doesn't work because it succeeds on an empty input
     thenBranch <- optionallyIndented' (symbol "then") element
     skipSpaces

@@ -3,7 +3,8 @@ module Elara.Parse.Names where
 import Data.Set (member)
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, inParens, lexeme, (<??>))
+import Elara.Parse.Primitives (HParser, inParens, lexeme, symbol, (<??>))
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse)
 import Text.Megaparsec (satisfy)
 import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
@@ -25,19 +26,31 @@ typeName = do
     _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
 
 maybeQualified :: HParser name -> HParser (MaybeQualified name)
-maybeQualified name = do
-  qual <- optional (moduleName <* H.parse (char '.'))
-  name' <- name
-  pure $ MaybeQualified name' qual
+maybeQualified name = unqualified <|> qualified
+ where
+  unqualified = MaybeQualified <$> name <*> pure Nothing
+  qualified = do
+    qual <- moduleName
+    endHead
+    symbol "."
+    MaybeQualified <$> name <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
 moduleName = ModuleName <$> sepBy1' upperVarName (H.parse $ char '.')
 
 upperVarName :: HParser Text
-upperVarName = toText <$> ((:) <$> H.parse upperChar <*> H.parse (many alphaNumChar))
+upperVarName =
+  toText <$> do
+    start <- H.parse upperChar
+    rest <- H.parse (many alphaNumChar)
+    pure (start : rest)
 
 alphaVarName :: HParser Text
-alphaVarName = toText <$> ((:) <$> H.parse lowerChar <*> H.parse (many alphaNumChar))
+alphaVarName =
+  toText <$> do
+    start <- H.parse lowerChar
+    rest <- H.parse (many alphaNumChar)
+    pure (start : rest)
 
 opName :: HParser (MaybeQualified OpName)
 opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)

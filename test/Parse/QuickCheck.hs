@@ -83,27 +83,37 @@ instance Arbitrary Unlocated.BinaryOperator where
             ]
 
 instance Arbitrary Unlocated.Expr where
-    arbitrary =
-        oneof
-            [ Int <$> arbitrary
-            , Float <$> arbitrary
-            , String . getAlphaText <$> arbitrary
-            , Char <$> arbitraryPrintableChar
-            , pure Unit
-            , Var <$> arbitrary
-            , Constructor <$> arbitrary
-            , Lambda <$> listOf1 arbitrary <*> arbitraryWithBlockElements
-            , FunctionCall <$> arbitrary <*> arbitrary
-            , If <$> arbitrary <*> arbitrary <*> arbitrary
-            , BinaryOperator <$> arbitrary <*> arbitrary <*> arbitrary
-            , List <$> listOf arbitrary
-            , LetIn <$> arbitrary <*> arbitrary <*> arbitraryWithBlockElements <*> arbitraryWithBlockElements
+    arbitrary = sized expr'
+      where 
+        expr' :: Int -> Gen Unlocated.Expr
+        expr' n = if n <= 0 then nonRecursiveExpr else oneof [nonRecursiveExpr, recursiveExpr (n `div` 2)]
+        nonRecursiveExpr =
+                oneof 
+                [
+                    Int <$> arbitrary
+                    , Float <$> arbitrary
+                    , String . getAlphaText <$> arbitrary
+                    , Char <$> arbitraryPrintableChar
+                    , pure Unit
+                    , Var <$> arbitrary
+                    , Constructor <$> arbitrary
+                ]
+        recursiveExpr n = 
+             oneof 
+            [ Lambda <$> listOf1 arbitrary <*> arbitraryBody n
+            , FunctionCall <$> expr' (n `div` 2) <*> expr' (n `div` 2)
+            , If <$> expr' (n `div` 3)  <*> expr' (n `div` 3) <*> expr' (n `div` 3)
+            , BinaryOperator <$> arbitrary <*> expr' (n `div` 2)  <*> expr' (n `div` 2)
+            , List <$> listOf (expr' (n `div` 2))
+            , LetIn <$> arbitrary <*> arbitrary <*> arbitraryBody (n `div` 2) <*> arbitraryBody (n `div` 2)
             ]
-      where
-        arbitaryBlock :: Gen Unlocated.Expr
-        arbitaryBlock = Block <$> atLeast 2 arbitrary -- The parser requires at least 2 elements in a block
-        arbitraryWithBlockElements :: Gen Unlocated.Expr
-        arbitraryWithBlockElements = oneof [arbitrary, Let <$> arbitrary <*> arbitrary <*> arbitraryWithBlockElements, arbitaryBlock]
+
+        -- arbitaryBlock :: Gen Unlocated.Expr
+        arbitaryBlock n = Block <$> atLeast 2 (arbitraryWithBlockElements n)
+        -- arbitraryBody :: Gen Unlocated.Expr -- Elements that are allowed as the body of a let or lambda
+        arbitraryBody n = oneof [expr' n, arbitaryBlock n]
+        -- arbitraryWithBlockElements :: Gen Unlocated.Expr -- Elements that are allowed in a block, but not alone
+        arbitraryWithBlockElements n = oneof [expr' n, Let <$> arbitrary <*> arbitrary <*> arbitraryBody n]
 
 instance (Arbitrary a) => Arbitrary (NonEmpty a) where
     arbitrary = do

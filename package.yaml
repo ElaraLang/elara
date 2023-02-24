@@ -58,7 +58,6 @@ default-extensions:
 - DataKinds
 - DeriveFunctor
 - TypeApplications
-- Strict
 
 library:
   source-dirs: src
@@ -83,6 +82,7 @@ tests:
     ghc-options: 
     - -threaded
     - -O0
+    - -feager-blackholing
     dependencies:
       - elara
       - neat-interpolation

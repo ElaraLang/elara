@@ -55,7 +55,6 @@ symbol = fromParsec . void . L.symbol sc
 inParens :: HParser a -> HParser a
 inParens p = do
     H.parse $ symbol "("
-    H.endHead
     x <- p
     H.parse $ symbol ")"
     pure x

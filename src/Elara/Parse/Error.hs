@@ -38,7 +38,7 @@ instance ErrorRegionSize ElaraParseError where
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
 
-newtype WParseErrorBundle e m = WParseErrorBundle (ParseErrorBundle e m)
+newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 
 instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStream e, MP.TraversableStream e) => ReportDiagnostic (WParseErrorBundle e m) where
     reportDiagnostic (WParseErrorBundle e) = pure $ diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e

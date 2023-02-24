@@ -27,12 +27,12 @@ type family ASTType ast where
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
-    ASTPattern UnlocatedFrontend = Frontend.Pattern
+    ASTPattern UnlocatedFrontend = Frontend.Unlocated.Pattern
     ASTPattern Annotated = Annotated.Pattern
 
 type family ASTAnnotation ast where
     ASTAnnotation Frontend = Maybe Frontend.TypeAnnotation
-    ASTAnnotation UnlocatedFrontend = Maybe Frontend.TypeAnnotation
+    ASTAnnotation UnlocatedFrontend = Maybe Frontend.Unlocated.TypeAnnotation
     ASTAnnotation Annotated = Maybe Annotated.TypeAnnotation
 
 type family ASTQual ast where
