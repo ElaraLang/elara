@@ -14,8 +14,12 @@ import Elara.Annotate.Shunt (fixOperators)
 
 import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
+import Elara.Error.Effect (DiagnosticWriter, addReport, execDiagnosticWriter, runDiagnosticWriter)
 import Elara.Parse
-import Error.Diagnose
+
+import Elara.Error.Effect (addDiagnostic, addFile)
+import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
+import Error.Diagnose.Diagnostic (hasReports)
 import Polysemy (Embed, Member, Sem, embed, run, runM)
 import Polysemy.Error (runError)
 import Polysemy.Reader
@@ -32,7 +36,7 @@ main = do
     exitFailure
 
 runElara :: IO (Diagnostic Text)
-runElara = runM $ execState def $ do
+runElara = runM $ execDiagnosticWriter $ do
   s <- loadModule "source.elr"
   p <- loadModule "prelude.elr"
   case liftA2 (,) s p of
@@ -40,11 +44,11 @@ runElara = runM $ execState def $ do
     Just (source, prelude) ->
       let modules = fromList [(source ^. (name . _Unlocate), source), (prelude ^. (name . _Unlocate), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left annotateError -> runFileContentsIO $ reportDiagnostic annotateError >>= modify . flip (<>)
+            Left annotateError -> runFileContentsIO $ reportDiagnostic annotateError >>= addDiagnostic
             Right m' -> do
               runFileContentsIO $ fixOperatorsInModule m' >>= embed . printColored
 
-fixOperatorsInModule :: (Member (State (Diagnostic Text)) r, Member FileContents r) => Module Annotated -> Sem r (Maybe (Module Annotated))
+fixOperatorsInModule :: (Member (DiagnosticWriter Text) r, Member FileContents r) => Module Annotated -> Sem r (Maybe (Module Annotated))
 fixOperatorsInModule m = do
   let x =
         run $
@@ -60,26 +64,26 @@ fixOperatorsInModule m = do
   case x of
     Left shuntErr -> do
       diag <- reportDiagnostic shuntErr
-      modify (concatDiagnostics diag)
+      addDiagnostic diag
       pure Nothing
     Right (warnings, finalM) -> do
       warnings' <- traverse report (toList warnings)
-      for_ warnings' (modify . flip addReport)
+      for_ warnings' addReport
       pure (Just finalM)
 
-loadModule :: (Member (Embed IO) r, Member (State (Diagnostic Text)) r) => FilePath -> Sem r (Maybe (Module Frontend))
+loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do
   s <- decodeUtf8Strict <$> readFileBS path
   case s of
     Left unicodeError -> do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
-       in modify (`addReport` errReport) $> Nothing
+       in addReport errReport $> Nothing
     Right contents -> do
-      modify (\x -> addFile x path (toString contents)) -- add every loaded file to the diagnostic
+      addFile path (toString contents) -- add every loaded file to the diagnostic
       case parse path contents of
         Left parseError -> do
           diag <- runFileContentsIO $ reportDiagnostic parseError
-          modify (concatDiagnostics diag) $> Nothing
+          addDiagnostic diag $> Nothing
         Right m -> pure (Just m)
 
 overExpressions ::

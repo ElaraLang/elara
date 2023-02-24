@@ -39,6 +39,7 @@ library
       Elara.AST.Select
       Elara.Error
       Elara.Error.Codes
+      Elara.Error.Effect
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
