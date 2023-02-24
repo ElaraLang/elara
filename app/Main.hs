@@ -10,8 +10,9 @@ import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 
-import Elara.Annotate.Shunt (fixOperators)
+import Elara.Annotate.Shunt (Associativity (RightAssociative), OpInfo (OpInfo), Precedence (Precedence), fixOperators)
 
+import Elara.AST.Name
 import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
 import Elara.Parse
@@ -46,7 +47,17 @@ runElara = runM $ execState def $ do
 
 fixOperatorsInModule :: (Member (State (Diagnostic Text)) r, Member FileContents r) => Module Annotated -> Sem r (Maybe (Module Annotated))
 fixOperatorsInModule m = do
-  let x = run $ runError $ runWriter $ overExpressions (fixOperators (fromList [])) m
+  let x =
+        run $
+          runError $
+            runWriter $
+              overExpressions
+                ( fixOperators
+                    ( fromList
+                        [(Qualified (NOpName (OpName "*")) (ModuleName ("Prelude" :| [])), OpInfo (Precedence 9) RightAssociative)]
+                    )
+                )
+                m
   case x of
     Left shuntErr -> do
       diag <- reportDiagnostic shuntErr

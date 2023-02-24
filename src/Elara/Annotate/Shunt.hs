@@ -44,18 +44,18 @@ data Associativity
     deriving (Show, Eq)
 
 data ShuntError
-    = SamePrecedenceError (Located (Qualified Name)) (Located (Qualified Name))
+    = SamePrecedenceError (Located (Qualified Name), Associativity) (Located (Qualified Name), Associativity)
     deriving (Show, Eq)
 
 instance ReportableError ShuntError where
-    report (SamePrecedenceError op1 op2) = do
+    report (SamePrecedenceError (op1, a1) (op2, a2)) = do
         op1Src <- sourceRegionToPosition $ op1 ^. _SourceRegion
         op2Src <- sourceRegionToPosition $ op2 ^. _SourceRegion
         pure $
             Err
                 (Just Codes.samePrecedence)
                 ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. _Unlocate) <> " and " <> fullNameText (op2 ^. _Unlocate) <> " when both operators have different associativity.")
-                [(op1Src, This "operator 1"), (op2Src, This "operator 2")]
+                [(op1Src, This (show a1)), (op2Src, This (show a2))]
                 [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
 newtype ShuntWarning
@@ -114,7 +114,7 @@ fixOperators opTable = reassoc
             EQ -> case (info1.associativity, info2.associativity) of
                 (LeftAssociative, LeftAssociative) -> assocLeft
                 (RightAssociative, RightAssociative) -> assocRight
-                _ -> throw (SamePrecedenceError (Annotated.locatedOperatorName o1) (Annotated.locatedOperatorName o2))
+                (a1, a2) -> throw (SamePrecedenceError (Annotated.locatedOperatorName o1, a1) (Annotated.locatedOperatorName o2, a2))
       where
         assocLeft = do
             reassociated <- Annotated.Expr . Located sr <$> reassoc' sr o1 e1 e2
