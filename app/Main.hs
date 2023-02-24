@@ -10,9 +10,8 @@ import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
 
-import Elara.Annotate.Shunt (Associativity (RightAssociative), OpInfo (OpInfo), Precedence (Precedence), fixOperators)
+import Elara.Annotate.Shunt (fixOperators)
 
-import Elara.AST.Name
 import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
 import Elara.Parse
@@ -54,7 +53,7 @@ fixOperatorsInModule m = do
               overExpressions
                 ( fixOperators
                     ( fromList
-                        [(Qualified (NOpName (OpName "*")) (ModuleName ("Prelude" :| [])), OpInfo (Precedence 9) RightAssociative)]
+                        []
                     )
                 )
                 m
