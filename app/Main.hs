@@ -14,16 +14,19 @@ import Elara.Annotate.Shunt (fixOperators)
 
 import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
-import Elara.Error.Effect (DiagnosticWriter, addReport, execDiagnosticWriter, runDiagnosticWriter)
+import Elara.Error.Effect (
+  DiagnosticWriter,
+  addDiagnostic,
+  addFile,
+  addReport,
+  execDiagnosticWriter,
+ )
 import Elara.Parse
-
-import Elara.Error.Effect (addDiagnostic, addFile)
 import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
 import Error.Diagnose.Diagnostic (hasReports)
 import Polysemy (Embed, Member, Sem, embed, run, runM)
 import Polysemy.Error (runError)
 import Polysemy.Reader
-import Polysemy.State (State, execState, modify)
 import Polysemy.Writer (runWriter)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
