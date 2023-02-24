@@ -79,8 +79,7 @@ loadModule path = do
       case parse path contents of
         Left parseError -> do
           diag <- runFileContentsIO $ reportDiagnostic parseError
-          modify (concatDiagnostics diag)
-          pure Nothing
+          modify (concatDiagnostics diag) $> Nothing
         Right m -> pure (Just m)
 
 overExpressions ::
