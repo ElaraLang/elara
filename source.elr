@@ -1,14 +1,5 @@
 module A
 import Prelude
 
-let y =  \sk ->
-           let kjrf =
-                 -3
-            in
-             2.121034661348035
-           (if
-              0.1476994575937471
-            then
-              ()
-            else
-              3)
+let y =
+    let a = 3 in a

@@ -13,7 +13,6 @@ language: GHC2021
 
 dependencies:
   - name: base-noprelude
-    version: ">= 4.7 && < 5"
   - name: relude
   - lens
   - containers

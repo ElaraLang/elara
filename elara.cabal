@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -73,7 +73,7 @@ library
       TypeApplications
   ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing
   build-depends:
-      base-noprelude >=4.7 && <5
+      base-noprelude
     , containers
     , diagnose
     , headed-megaparsec
@@ -106,7 +106,7 @@ executable elara
       TypeApplications
   ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded
   build-depends:
-      base-noprelude >=4.7 && <5
+      base-noprelude
     , containers
     , diagnose
     , elara
@@ -153,7 +153,7 @@ test-suite elara-test
   build-depends:
       HUnit
     , QuickCheck
-    , base-noprelude >=4.7 && <5
+    , base-noprelude
     , containers
     , diagnose
     , elara
