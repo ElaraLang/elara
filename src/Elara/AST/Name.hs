@@ -78,6 +78,9 @@ instance ToName TypeName where
 instance ToName OpName where
     toName = NOpName
 
+instance ToName Name where
+    toName = id
+
 instance NameLike VarName where
     nameText (NormalVarName name) = name
     nameText (OperatorVarName name) = nameText name

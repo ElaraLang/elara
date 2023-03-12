@@ -12,7 +12,7 @@ import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
 import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), TypeName, VarName)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), ToName (toName), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, getLocation, sourceRegionToDiagnosePosition, unlocate, _Unlocate)
 import Elara.AST.Select (Annotated, Frontend)
 import Elara.Error (ReportableError (report), addPosition)
@@ -100,13 +100,13 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
     annotateOpName :: Located (MaybeQualified OpName) -> Sem (Reader InspectionContext : r) (Located (Qualified OpName))
     annotateOpName = annotateGenericName NOpName
 
-    qualifyInThisModule :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
+    qualifyInThisModule :: ToName n => Located (MaybeQualified n) -> Sem (Reader InspectionContext : r) (Located (Qualified n))
     qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . _Unlocate) <$ nv)
     qualifyInThisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
         let qualified = nv $> Qualified name' q
          in if q == thisModule ^. name . _Unlocate
                 then pure qualified
-                else throw (QualifiedWithWrongModule qualified (thisModule ^. name . _Unlocate))
+                else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . _Unlocate))
 
     annotateName :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
@@ -174,14 +174,14 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
         pure (Annotated.BinaryOperator annotatedOp annotatedLeft annotatedRight)
     annotateExpr' (Frontend.List xs) = Annotated.List <$> traverse annotateExpr xs
     annotateExpr' (Frontend.LetIn lName lPats lExp lBody) = do
-        annotatedName <- annotateVarName lName
+        annotatedName <- qualifyInThisModule lName
         annotatedPats <- traverse annotatePattern lPats
         annotatedExp <- annotateExpr lExp
         annotatedBody <- annotateExpr lBody
         let lambdaExp = unfoldLambda annotatedPats annotatedExp
         pure (Annotated.LetIn annotatedName lambdaExp annotatedBody)
     annotateExpr' (Frontend.Let lName lPats lExp) = do
-        annotatedName <- annotateVarName lName
+        annotatedName <- qualifyInThisModule lName
         annotatedPats <- traverse annotatePattern lPats
         annotatedExp <- annotateExpr lExp
         let lambdaExp = unfoldLambda annotatedPats annotatedExp
