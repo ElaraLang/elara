@@ -2,8 +2,9 @@ module Elara.Parse.Indents where
 
 import Elara.AST.Frontend (Expr (..), Expr' (Block))
 
-import Elara.AST.Region (Located (..))
-import Elara.AST.Region qualified as Region (getLocation, spanningRegion)
+import Control.Lens (mapped, over, view, (^.))
+import Elara.AST.Region (Located (..), sourceRegion)
+import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, Parser, scn, skipNewlines)
 import HeadedMegaparsec qualified as H
@@ -35,7 +36,7 @@ indentedBlock ref expression = H.parse (L.indentBlock scn innerParser)
         x : xs -> do
             let unwrap (Expr e) = e
             let expressions' = unwrap <$> (x :| xs)
-            let region = Region.spanningRegion (Region.getLocation <$> expressions')
+            let region = Region.spanningRegion' (over mapped (^. sourceRegion) expressions')
             let asBlock = \case
                     single :| [] -> Expr single
                     o -> Expr (Located region (Block $ Expr <$> o))
@@ -86,7 +87,7 @@ blockAt pos parser = do
         x :| xs -> do
             let unwrap (Expr e) = e
             let expressions' = unwrap <$> (x :| xs)
-            let region = Region.spanningRegion (Region.getLocation <$> expressions')
+            let region = Region.spanningRegion' (over mapped (view sourceRegion) expressions')
             let asBlock = \case
                     single :| [] -> Expr single
                     o -> Expr (Located region (Block $ Expr <$> o))

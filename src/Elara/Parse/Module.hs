@@ -1,5 +1,6 @@
 module Elara.Parse.Module where
 
+import Control.Lens (view, (^.))
 import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import' (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Region
@@ -9,13 +10,13 @@ import Elara.Parse.Names (maybeQualified, opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
-import Text.Megaparsec (sepEndBy)
+import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
     mHeader <- optional header
-    thisFile <- sourceFile . getLocation <$> located pass
-    let _name = maybe (Located (SourceRegion thisFile dummyPosition dummyPosition) (ModuleName ("Main" :| []))) fst mHeader
+    thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
+    let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
     skipNewlines
     imports <- import' `sepEndBy` skipNewlines
     declarations <- declaration _name `sepEndBy` skipNewlines

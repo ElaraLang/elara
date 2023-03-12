@@ -1,11 +1,12 @@
 module Elara.Parse.Expression where
 
+import Control.Lens ((^.))
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend (Expr (..))
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified (..), Unqualified, VarName, nameText)
-import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
+import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
 import Elara.Parse.Error
 import Elara.Parse.Indents (blockAt, optionallyIndented, sub1, withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
@@ -49,7 +50,7 @@ liftedBinary :: Monad m => m t -> (t -> Expr -> Expr -> Frontend.Expr') -> m (Ex
 liftedBinary op f = do
     op' <- op
     let create l'@(Expr l) r'@(Expr r) =
-            let region = enclosingRegion (getLocation l) (getLocation r)
+            let region = enclosingRegion' (l ^. sourceRegion) (r ^. sourceRegion)
              in Expr $ Located region (f op' l' r')
     pure create
 

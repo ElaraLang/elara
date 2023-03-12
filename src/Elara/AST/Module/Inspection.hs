@@ -34,7 +34,7 @@ import Elara.AST.Module (
   _Module,
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
-import Elara.AST.Region (sourceRegionToDiagnosePosition, _SourceRegion, _Unlocate)
+import Elara.AST.Region (sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, RUnlocate (..), rUnlocateVia')
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
@@ -72,7 +72,7 @@ instance ReportableError (InspectionError ast) where
 
 instance (ast ~ Frontend, RUnlocate ast) => ReportableError (ContextBuildingError ast) where
   report (UnknownImportModule un) = do
-    let position = sourceRegionToDiagnosePosition (un ^. (_Import . _Unlocate . importing . _SourceRegion))
+    let position = sourceRegionToDiagnosePosition (un ^. (_Import . unlocated . importing . sourceRegion))
     Err
       (Just Codes.unknownModule)
       ("Unknown module: " <> fullNameText (un ^. importing))

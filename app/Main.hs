@@ -12,7 +12,7 @@ import Elara.Annotate (annotateModule)
 
 import Elara.Annotate.Shunt (fixOperators)
 
-import Elara.AST.Region (Located, _Unlocate)
+import Elara.AST.Region (Located, unlocated)
 import Elara.Error
 import Elara.Error.Effect (
   DiagnosticWriter,
@@ -45,7 +45,7 @@ runElara = runM $ execDiagnosticWriter $ do
   case liftA2 (,) s p of
     Nothing -> pass
     Just (source, prelude) ->
-      let modules = fromList [(source ^. (name . _Unlocate), source), (prelude ^. (name . _Unlocate), prelude)]
+      let modules = fromList [(source ^. (name . unlocated), source), (prelude ^. (name . unlocated), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
             Left annotateError -> addDiagnostic (reportDiagnostic annotateError)
             Right m' -> do
@@ -98,4 +98,4 @@ overExpressions ::
   (ASTExpr ast -> f (ASTExpr ast)) ->
   s ->
   f s
-overExpressions = declarations . traverse . body . _DeclarationBody . _Unlocate . expression
+overExpressions = declarations . traverse . body . _DeclarationBody . unlocated . expression

@@ -13,7 +13,7 @@ module Elara.AST.Name where
 import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, view)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
-import Elara.AST.Region (Located, _Unlocate)
+import Elara.AST.Region (Located, unlocated)
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
 
@@ -120,9 +120,9 @@ instance NameLike Name where
     moduleName (NOpName name) = moduleName name
 
 instance NameLike n => NameLike (Located n) where
-    nameText = nameText . view _Unlocate
-    fullNameText = fullNameText . view _Unlocate
-    moduleName = moduleName . view _Unlocate
+    nameText = nameText . view unlocated
+    fullNameText = fullNameText . view unlocated
+    moduleName = moduleName . view unlocated
 
 data MaybeQualified name = MaybeQualified
     { _maybeQualifiedName :: name

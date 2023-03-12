@@ -27,7 +27,7 @@ defDec modName = fmapLocated Declaration $ do
     symbol ":"
     TypeAnnotation name <$> type'
 
-  let annotationLocation = spanningRegion (view _SourceRegion name :| [view _SourceRegion ty])
+  let annotationLocation = spanningRegion' (view sourceRegion name :| [view sourceRegion ty])
   let declBody = Located annotationLocation $ ValueTypeDef (Just <$> ty)
   pure (Declaration' modName name (DeclarationBody declBody))
 
@@ -35,6 +35,6 @@ letDec :: Located ModuleName -> HParser (Declaration Frontend)
 letDec modName = fmapLocated Declaration $ do
   (name, patterns, e) <- snd <$> nonIndented sc letRaw
   let
-    valueLocation = spanningRegion (view (_Expr . _SourceRegion) e :| (view (_Pattern . _SourceRegion) <$> patterns))
+    valueLocation = spanningRegion' (view (_Expr . sourceRegion) e :| (view (_Pattern . sourceRegion) <$> patterns))
     value = DeclarationBody $ Located valueLocation (Value e patterns Nothing)
   pure (Declaration' modName (NVarName <<$>> name) value)

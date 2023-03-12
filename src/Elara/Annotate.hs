@@ -13,7 +13,7 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
 import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), ToName (toName), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, getLocation, sourceRegionToDiagnosePosition, unlocate, _Unlocate)
+import Elara.AST.Region (Located (Located), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (Annotated, Frontend)
 import Elara.Error (ReportableError (report), addPosition)
 import Elara.Error.Codes qualified as Codes
@@ -66,7 +66,7 @@ annotateModule ::
     (Member (Reader Modules) r, Member (Error AnnotationError) r) =>
     Module Frontend ->
     Sem r (Module Annotated)
-annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) thisModule
+annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) thisModule
   where
     annotate :: Sem r (Module' Annotated)
     annotate = do
@@ -101,12 +101,12 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
     annotateOpName = annotateGenericName NOpName
 
     qualifyInThisModule :: ToName n => Located (MaybeQualified n) -> Sem (Reader InspectionContext : r) (Located (Qualified n))
-    qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . _Unlocate) <$ nv)
+    qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . unlocated) <$ nv)
     qualifyInThisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
         let qualified = nv $> Qualified name' q
-         in if q == thisModule ^. name . _Unlocate
+         in if q == thisModule ^. name . unlocated
                 then pure qualified
-                else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . _Unlocate))
+                else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . unlocated))
 
     annotateName :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
@@ -114,12 +114,12 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
     annotateName nv@(Located _ (MaybeQualified (NOpName name') _)) = NOpName <<<$>>> annotateOpName (name' <<$ nv)
 
     annotateImport :: Import Frontend -> Sem (Reader InspectionContext : r) (Import Annotated)
-    annotateImport = traverseOf (_Import . _Unlocate) (\(Import' name' as' qualified' exposing') -> Import' name' as' qualified' <$> annotateExposing exposing')
+    annotateImport = traverseOf (_Import . unlocated) (\(Import' name' as' qualified' exposing') -> Import' name' as' qualified' <$> annotateExposing exposing')
 
     annotateDeclaration :: Declaration Frontend -> Sem (Reader InspectionContext : r) (Declaration Annotated)
     annotateDeclaration =
         traverseOf
-            (_Declaration . _Unlocate)
+            (_Declaration . unlocated)
             ( \(Declaration' module' name' body') -> do
                 annotatedName <- qualifyInThisModule name'
                 annotatedBody <- annotateDeclarationBody body'
@@ -127,7 +127,7 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
             )
 
     annotateDeclarationBody :: DeclarationBody Frontend -> Sem (Reader InspectionContext : r) (DeclarationBody Annotated)
-    annotateDeclarationBody = traverseOf (_DeclarationBody . _Unlocate) annotateDeclarationBody'
+    annotateDeclarationBody = traverseOf (_DeclarationBody . unlocated) annotateDeclarationBody'
 
     annotateDeclarationBody' (Value expr patterns typeAnnotation) = do
         annotatedExpr <- annotateExpr expr
@@ -136,7 +136,7 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
 
         pure (Value annotatedExpr annotatedPatterns annotatedTypeAnnotation)
     annotateDeclarationBody' (ValueTypeDef type') = do
-        annotatedType <- traverseOf _Unlocate (traverse annotateType) type'
+        annotatedType <- traverseOf unlocated (traverse annotateType) type'
         pure (ValueTypeDef annotatedType)
     annotateDeclarationBody' (TypeAlias type') = do
         annotatedType <- annotateType' type'
@@ -160,7 +160,7 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
         annotatedPatterns <- traverse annotatePattern patterns
         annotatedExpr <- annotateExpr expr
         let lambda = unfoldLambda annotatedPatterns annotatedExpr
-        pure (unlocate (view Annotated._Expr lambda))
+        pure (lambda ^. (Annotated._Expr . unlocated))
     annotateExpr' (Frontend.FunctionCall f x) = Annotated.FunctionCall <$> annotateExpr f <*> annotateExpr x
     annotateExpr' (Frontend.If cond then' else') = do
         annotatedCond <- annotateExpr cond
@@ -221,5 +221,5 @@ unfoldLambda [] expr = expr
 unfoldLambda (p : ps) expr =
     over
         Annotated._Expr
-        (\expr' -> Located (getLocation expr') (Annotated.Lambda p (unfoldLambda ps expr)))
+        (\expr' -> Located (expr' ^. sourceRegion) (Annotated.Lambda p (unfoldLambda ps expr)))
         expr
