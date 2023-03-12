@@ -157,7 +157,7 @@ ifElse = describe "Parses if-then-else expressions" $ do
       <=> result
 
 quickCheck :: Spec
-quickCheck = modifyMaxSize (const 5) $ fprop "Arbitrary expressions parse prettyPrinted" (\e -> verboseCheck (ppEq e))
+quickCheck = modifyMaxSize (const 5) $ fprop "Arbitrary expressions parse prettyPrinted" ppEq
 
 removeInParens :: Expr -> Expr
 removeInParens (Lambda p e) = Lambda p (removeInParens e)
@@ -177,7 +177,7 @@ ppEq (removeInParens -> expr) =
     source = prettyPrint expr
     parsed = removeInParens . stripLocation <$> parse exprParser source
    in
-    ioProperty (print source $> whenFail' (putTextLn source) (parsed `shouldParseProp` expr))
+    counterexample (toString source) (parsed `shouldParseProp` expr)
 
 parse :: HParser a -> Text -> Either (ParseErrorBundle Text ElaraParseError) a
 parse p = runParser (toParsec p <* eof) ""

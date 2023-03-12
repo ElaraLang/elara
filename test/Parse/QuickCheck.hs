@@ -2,6 +2,7 @@
 
 module Parse.QuickCheck where
 
+import Data.List.NonEmpty (appendList)
 import Data.Set qualified as Set
 import Elara.AST.Frontend.Unlocated as Unlocated
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), VarName (..), nameText)
@@ -54,11 +55,10 @@ instance Arbitrary name => Arbitrary (Qualified name) where
 
 instance Arbitrary VarName where
     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
-        where 
-            arbitraryNormalVarName = NormalVarName . getAlphaText <$> suchThat arbitrary isSafe
-            isSafe (AlphaText name) = name `Set.notMember` reservedWords
-            arbitraryOpVarName = OperatorVarName <$> arbitrary
-
+      where
+        arbitraryNormalVarName = NormalVarName . getAlphaText <$> suchThat arbitrary isSafe
+        isSafe (AlphaText name) = name `Set.notMember` reservedWords
+        arbitraryOpVarName = OperatorVarName <$> arbitrary
 
 instance Arbitrary TypeName where
     arbitrary = TypeName . getAlphaUpperText <$> arbitrary
@@ -67,13 +67,19 @@ instance Arbitrary OpName where
     arbitrary = OpName . getOpText <$> arbitrary
 
 instance Arbitrary Unlocated.Pattern where
-    arbitrary =
-        oneof
-            [ NamedPattern . getAlphaText <$> arbitrary
-            , ConstructorPattern <$> arbitrary <*> listOf arbitrary
-            , ListPattern <$> listOf arbitrary
-            , pure WildcardPattern
-            ]
+    arbitrary = sized pattern'
+      where
+        pattern' n = if n <= 0 then nonRecursivePattern else oneof [nonRecursivePattern, recursivePattern (n `div` 2)]
+        nonRecursivePattern =
+            oneof
+                [ NamedPattern . getAlphaText <$> arbitrary
+                , pure WildcardPattern
+                ]
+        recursivePattern n =
+            oneof
+                [ ConstructorPattern <$> arbitrary <*> listOf (pattern' (n `div` 2))
+                , ListPattern <$> listOf (pattern' (n `div` 2))
+                ]
 
 instance Arbitrary Unlocated.BinaryOperator where
     arbitrary =
@@ -84,36 +90,35 @@ instance Arbitrary Unlocated.BinaryOperator where
 
 instance Arbitrary Unlocated.Expr where
     arbitrary = sized expr'
-      where 
+      where
         expr' :: Int -> Gen Unlocated.Expr
         expr' n = if n <= 0 then nonRecursiveExpr else oneof [nonRecursiveExpr, recursiveExpr (n `div` 2)]
         nonRecursiveExpr =
-                oneof 
-                [
-                    Int <$> arbitrary
-                    , Float <$> arbitrary
-                    , String . getAlphaText <$> arbitrary
-                    , Char <$> arbitraryPrintableChar
-                    , pure Unit
-                    , Var <$> arbitrary
-                    , Constructor <$> arbitrary
+            oneof
+                [ Int <$> arbitrary
+                , Float <$> arbitrary
+                , String . getAlphaText <$> arbitrary
+                , Char <$> arbitraryPrintableChar
+                , pure Unit
+                , Var <$> arbitrary
+                , Constructor <$> arbitrary
                 ]
-        recursiveExpr n = 
-             oneof 
-            [ Lambda <$> listOf1 arbitrary <*> arbitraryBody n
-            , FunctionCall <$> expr' (n `div` 2) <*> expr' (n `div` 2)
-            , If <$> expr' (n `div` 3)  <*> expr' (n `div` 3) <*> expr' (n `div` 3)
-            , BinaryOperator <$> arbitrary <*> expr' (n `div` 2)  <*> expr' (n `div` 2)
-            , List <$> listOf (expr' (n `div` 2))
-            , LetIn <$> arbitrary <*> arbitrary <*> arbitraryBody (n `div` 2) <*> arbitraryBody (n `div` 2)
-            ]
+        recursiveExpr n =
+            oneof
+                [ Lambda <$> listOf1 arbitrary <*> arbitraryBody n
+                , FunctionCall <$> expr' (n `div` 2) <*> expr' (n `div` 2)
+                , If <$> expr' (n `div` 3) <*> expr' (n `div` 3) <*> expr' (n `div` 3)
+                , BinaryOperator <$> arbitrary <*> expr' (n `div` 2) <*> expr' (n `div` 2)
+                , List <$> listOf (expr' (n `div` 2))
+                , LetIn <$> arbitrary <*> arbitrary <*> arbitraryBody (n `div` 2) <*> arbitraryBody (n `div` 2)
+                ]
 
         -- arbitaryBlock :: Gen Unlocated.Expr
         arbitaryBlock n = Block <$> atLeast 2 (arbitraryWithBlockElements n)
         -- arbitraryBody :: Gen Unlocated.Expr -- Elements that are allowed as the body of a let or lambda
         arbitraryBody n = oneof [expr' n, arbitaryBlock n]
         -- arbitraryWithBlockElements :: Gen Unlocated.Expr -- Elements that are allowed in a block, but not alone
-        arbitraryWithBlockElements n = oneof [expr' n, Let <$> arbitrary <*> arbitrary <*> arbitraryBody n]
+        arbitraryWithBlockElements n = oneof [expr' n, Let <$> arbitrary <*> sizedList arbitrary <*> arbitraryBody n]
 
 instance (Arbitrary a) => Arbitrary (NonEmpty a) where
     arbitrary = do
@@ -127,3 +132,8 @@ atLeast n gen = do
     x <- gen
     xs <- vectorOf (n - 1) gen
     pure (x :| xs)
+
+sizedList :: Gen a -> Gen [a]
+sizedList gen = sized $ \n -> do
+    k <- choose (0, n)
+    vectorOf k gen

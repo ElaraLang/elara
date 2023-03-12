@@ -3,7 +3,7 @@ module Elara.Parse.Names where
 import Data.Set (member)
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, inParens, lexeme, symbol, (<??>))
+import Elara.Parse.Primitives (HParser, char', inParens, lexeme, (<??>))
 import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse)
 import Text.Megaparsec (satisfy)
@@ -32,7 +32,7 @@ maybeQualified name = unqualified <|> qualified
   qualified = do
     qual <- moduleName
     endHead
-    symbol "."
+    char' '.'
     MaybeQualified <$> name <*> pure (Just qual)
 
 moduleName :: HParser ModuleName

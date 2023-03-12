@@ -1,8 +1,7 @@
 module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
-import Data.Text (length)
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), NameLike (fullNameText), OpName (OpName), TypeName (TypeName), VarName (..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), VarName (..))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
@@ -23,12 +22,14 @@ class Pretty p where
 instance Pretty Expr where
     ppr _ (Int i) = PP.integer i
     ppr _ (Float f) = PP.double f
-    ppr _ (String s) = PP.char '"' <> PP.text (toString s) <> PP.char '"'
-    ppr _ (Char c) = PP.char '\'' <> PP.char c <> PP.char '\''
+    ppr _ (String s) = PP.char '"' <> fromString (toString s) <> PP.char '"'
+    ppr _ (Char c) = PP.char '\'' <> escapeChar c <> PP.char '\''
     ppr _ Unit = "()"
     ppr p (Var v) = ppr p v
     ppr p (Constructor c) = ppr p c
-    ppr p (Lambda ps e) = parensIf (p > 0) $ char '\\' <> hsep (fmap (ppr 0) ps) <+> "->" <+> ppr (p + 1) e
+    ppr p (Lambda ps e) =
+        parensIf (p > 0) $
+            char '\\' <> hsep (fmap (ppr 0) ps) <+> "->" $+$ nest indentDepth (ppr (p + 1) e)
     ppr p (FunctionCall e1 e2) = PP.parens (PP.parens (ppr p e1) <+> PP.parens (ppr (p + 1) e2)) -- until operator precedence is implemented, this is the only way to get the correct precedence
     ppr p (If e1 e2 e3) =
         parensIf (p > 0) $
@@ -37,14 +38,14 @@ instance Pretty Expr where
                 , "then" $+$ nest indentDepth (ppr 0 e2)
                 , "else" $+$ nest indentDepth (ppr 0 e3)
                 ]
-    ppr p (BinaryOperator op e1 e2) = PP.parens (ppr p e1 <+> ppr p op <+> ppr p e2)
+    ppr p (BinaryOperator op e1 e2) = PP.parens (PP.parens (ppr p e1) <+> ppr p op <+> PP.parens (ppr p e2))
     ppr p (List es) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) es)))
     ppr p (LetIn n patterns val body) =
-        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns)) (indentDepth + 2 + length (fullNameText n)) ("=" <+> ppr p val)
-            $$ nest 1 "in"
+        ppr p (Let n patterns val)
+            $+$ nest 1 "in"
             $+$ nest indentDepth (ppr p body)
     ppr p (Let n patterns body) =
-        hang ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns) <+> "=") (indentDepth + 2 + length (fullNameText n)) (ppr p body)
+        ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns) <+> "=") $+$ nest (indentDepth + 4) (ppr p body)
     ppr p (Block es) = PP.vcat $ toList (fmap (ppr p) es)
     ppr p (InParens e) = PP.parens (ppr p e)
 
@@ -79,3 +80,17 @@ instance Pretty Pattern where
 instance Pretty BinaryOperator where
     ppr _ (Op o) = ppr 0 o
     ppr _ (Infixed i) = "`" <> ppr 0 i <> "`"
+
+escapeChar :: IsString s => Char -> s
+escapeChar c = case c of
+    '\a' -> "\\a"
+    '\b' -> "\\b"
+    '\f' -> "\\f"
+    '\n' -> "\\n"
+    '\r' -> "\\r"
+    '\t' -> "\\t"
+    '\v' -> "\\v"
+    '\\' -> "\\\\"
+    '\'' -> "\\'"
+    '"' -> "\\\""
+    _ -> fromString [c]

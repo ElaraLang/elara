@@ -1,20 +1,19 @@
 module Parse.Common where
 
 import Control.Lens
-import Elara.AST.Frontend.Unlocated
 import Elara.AST.Frontend.StripLocation
-import Elara.AST.Module (Declaration(..), Module, Declaration')
+import Elara.AST.Frontend.Unlocated
+import Elara.AST.Module (Declaration (..), Declaration', Module)
 import Elara.AST.Module qualified as Mod
+import Elara.AST.Name
+import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Parse (parse)
+import Elara.Parse.Error (unWParseErrorBundle)
 import Print (prettyShow)
 import Test.Hspec.Megaparsec (parseSatisfies, shouldParse)
 import Test.QuickCheck
 import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
-import Elara.AST.Region
-import Elara.Parse.Error (unWParseErrorBundle)
-import Elara.AST.Name
-
 
 (<:) :: Text -> Declaration' UnlocatedFrontend -> IO ()
 (<:) source decl = do
@@ -22,6 +21,7 @@ import Elara.AST.Name
     let matches ast = Declaration decl `elem` toList (ast ^. Mod.declarations)
     parseSatisfies (first unWParseErrorBundle parsed) matches
 
+makeMQName :: (t -> name) -> t -> Maybe ModuleName -> MaybeQualified name
 makeMQName ctor n = MaybeQualified (ctor n)
 
 shouldParseProp :: (VisualStream s, TraversableStream s, ShowErrorComponent e, Eq a, Show a) => Either (ParseErrorBundle s e) a -> a -> Property

@@ -7,16 +7,15 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified (..), VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
 import Elara.Parse.Error
-import Elara.Parse.Indents (blockAt, optionallyIndented, optionallyIndented', withCurrentIndentOrNormal, withIndentOrNormal)
+import Elara.Parse.Indents (blockAt, optionallyIndented, sub1, withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, skipSpaces, symbol, withPredicate, (<??>))
-import HeadedMegaparsec (dbg, endHead)
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, symbol, withPredicate, (<??>))
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (endHead, parse, toParsec)
-import Text.Megaparsec (sepBy, sepEndBy)
+import Text.Megaparsec (Pos, sepBy, sepEndBy)
 import Text.Megaparsec.Char.Lexer (indentLevel)
-import Print (debugColored)
 
 locatedExpr :: HParser Frontend.Expr' -> HParser Expr
 locatedExpr = (Expr <$>) . (H.parse . located . H.toParsec)
@@ -144,23 +143,19 @@ list = locatedExpr $ do
 
 lambda :: HParser Expr
 lambda = locatedExpr $ do
-    (args, res) <- optionallyIndented lambdaPreamble element
+    symbol "\\"
     endHead
+    start <- fromParsec indentLevel
+    args <- lexeme (sepBy (lexeme pattern') sc)
+    symbol "->"
+    (_, res) <- blockAt start element
     pure (Frontend.Lambda args res)
-  where
-    lambdaPreamble = do
-        symbol "\\"
-        endHead
-        args <- lexeme (sepBy (lexeme pattern') sc)
-        symbol "->"
-        pure args
 
 ifElse :: HParser Expr
-ifElse = dbg "ifElse" $ locatedExpr $ do
-    start <- fromParsec indentLevel
+ifElse = locatedExpr $ do
+    start <- sub1 <$> fromParsec indentLevel
     symbol "if"
     endHead
-    debugColored $ "starting at " <> show start
     afterIf <- fromParsec indentLevel
     (_, condition) <- blockAt afterIf element
     (afterThen, _) <- withIndentOrNormal start (symbol "then")
@@ -172,24 +167,15 @@ ifElse = dbg "ifElse" $ locatedExpr $ do
 
 letExpression :: HParser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letExpression = locatedExpr $ do
-    (name, patterns, e) <- letRaw
+    (_, name, patterns, e) <- letPreamble
+
     -- let names = patterns >>= patternNames
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.Let name patterns e)
 
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do
-    start <- fromParsec indentLevel
-    symbol "let"
-    H.endHead
-    name <- located varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
-    afterName <- fromParsec indentLevel
-    (afterPatterns, patterns) <- withCurrentIndentOrNormal $ do
-        sc -- consume the spaces from the non-lexeme'd varName.
-        sepBy (lexeme pattern') sc
-
-    _ <- withIndentOrNormal afterPatterns (symbol "=")
-    (_, e) <- blockAt afterName element
+    (start, name, patterns, e) <- letPreamble
 
     _ <- withIndentOrNormal start (symbol "in")
 
@@ -198,6 +184,19 @@ letInExpression = locatedExpr $ do
     -- let names = patterns >>= patternNames
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.LetIn name patterns e body)
+
+letPreamble :: HParser (Pos, Located (MaybeQualified VarName), [Frontend.Pattern], Expr)
+letPreamble = do
+    start <- fromParsec indentLevel
+    symbol "let"
+    H.endHead
+    afterLet <- fromParsec indentLevel
+    name <- lexeme $ located varName
+    (_, patterns) <- withCurrentIndentOrNormal $ do
+        sepBy (lexeme pattern') sc
+    _ <- withIndentOrNormal afterLet (symbol "=")
+    (_, e) <- blockAt afterLet element
+    pure (start, name, patterns, e)
 
 letRaw :: HParser (Located (MaybeQualified VarName), [Frontend.Pattern], Frontend.Expr)
 letRaw = do

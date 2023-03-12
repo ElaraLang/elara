@@ -57,6 +57,7 @@ mainTest = do
     let ctx = (run $ runError $ buildContext this (M.fromList (fmapToFst (view name) [quux, bar, fooBar, baz, this]))) :: Either (ContextBuildingError UnlocatedFrontend) InspectionContext
     it "Doesn't error when creating the module" $ ctx `shouldSatisfy` isRight
     let ctx' = fromRight (error "shouldn't happen") ctx
+    
     let withCtx = (run . runReader ctx' . runError) :: _ -> Either (InspectionError UnlocatedFrontend) ModuleName
     context "When provided with unambiguous names" $ do
         it "Finds the This/Bar elements correctly" $ do

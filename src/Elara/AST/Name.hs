@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -5,8 +7,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Elara.AST.Name (
     ModuleName (..),
@@ -24,9 +24,9 @@ module Elara.AST.Name (
 import Control.Lens (makeClassy, makeLenses, makePrisms, view)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
+import Elara.AST.Region (Located, _Unlocate)
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
-import Elara.AST.Region (Located, _Unlocate)
 
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data)
@@ -52,10 +52,8 @@ data Name
     | NOpName OpName
     deriving (Show, Eq, Ord)
 
-
 makeLenses ''Name
 makePrisms ''Name
-
 
 class NameLike name where
     -- | Get the name as a Text. This will not include qualification, if present
@@ -71,7 +69,7 @@ class NameLike name where
 class ToName name where
     toName :: name -> Name
 
-instance ToName  VarName where
+instance ToName VarName where
     toName = NVarName
 
 instance ToName TypeName where
@@ -133,12 +131,12 @@ instance NameLike n => NameLike (Located n) where
     nameText = nameText . view _Unlocate
     fullNameText = fullNameText . view _Unlocate
     moduleName = moduleName . view _Unlocate
-    
+
 data MaybeQualified name = MaybeQualified
     { _maybeQualifiedNameName :: name
     , _maybeQualifiedNameQualifier :: Maybe ModuleName
     }
-    deriving (Ord, Show, Eq, Data, Functor, Foldable,  Traversable)
+    deriving (Ord, Show, Eq, Data, Functor, Foldable, Traversable)
 
 data Qualified name = Qualified
     { _qualifiedNameName :: name

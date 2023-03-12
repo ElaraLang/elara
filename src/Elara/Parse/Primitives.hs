@@ -2,8 +2,9 @@ module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, lineCommen
 
 import Text.Megaparsec
 
-import Elara.AST.Region (Located (..), SourceRegion, mkSourceRegion)
+import Elara.AST.Region (Located (..), mkSourceRegion)
 import Elara.Parse.Error
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H
 import Text.Megaparsec.Char qualified as MC
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -58,6 +59,7 @@ inParens :: HParser a -> HParser a
 inParens p = do
     H.parse $ symbol "("
     x <- p
+    endHead
     H.parse $ symbol ")"
     pure x
 
