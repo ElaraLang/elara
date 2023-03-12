@@ -28,6 +28,7 @@ dependencies:
 
 ghc-options:
 - -Wall
+- -Wcompat
 # - -Weverything
 - -Werror=incomplete-patterns
 - -Werror=incomplete-uni-patterns

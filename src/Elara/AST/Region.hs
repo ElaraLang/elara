@@ -1,18 +1,52 @@
 {-# LANGUAGE DeriveTraversable #-}
 
-module Elara.AST.Region (SourceRegion (..), Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion, _SourceRegion, _Unlocate) where
+module Elara.AST.Region (SourceRegion (..), Position, dummyPosition, mkSourceRegion, sourceRegionToDiagnosePosition, Located (..), getLocation, unlocate, merge, enclosingRegion, spanningRegion, _SourceRegion, _Unlocate) where
 
 import Control.Lens (Lens)
 import Data.Data (Data)
+import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
 import Relude.Extra
+import Text.Megaparsec (SourcePos (sourceColumn, sourceLine, sourceName), unPos)
+
+data Position = Position
+    { line :: Int
+    , column :: Int
+    }
+    deriving (Show, Eq, Ord, Data)
+
+dummyPosition :: Position
+dummyPosition = Position 0 0
 
 data SourceRegion = SourceRegion
     { sourceFile :: Maybe FilePath
-    , startOffset :: Int
-    , endOffset :: Int
+    , startPos :: Position
+    , endPos :: Position
     }
-     deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data)
+
+mkSourceRegion :: SourcePos -> SourcePos -> SourceRegion
+mkSourceRegion start end =
+    SourceRegion
+        { sourceFile = Just $ the (sourceName <$> [start, end])
+        , startPos = spToPosition start
+        , endPos = spToPosition end
+        }
+
+spToPosition :: SourcePos -> Position
+spToPosition sp =
+    Position
+        { line = unPos $ sourceLine sp
+        , column = unPos $ sourceColumn sp
+        }
+
+sourceRegionToDiagnosePosition :: SourceRegion -> Diag.Position
+sourceRegionToDiagnosePosition (SourceRegion fp (Position startLine startCol) (Position endLine endCol)) =
+    Diag.Position
+        { Diag.begin = (startLine, startCol)
+        , Diag.end = (endLine, endCol)
+        , Diag.file = fromMaybe "<unknown file>" fp
+        }
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable)
@@ -22,7 +56,6 @@ _SourceRegion f (Located region x) = fmap (`Located` x) (f region)
 
 _Unlocate :: Lens (Located a) (Located b) a b
 _Unlocate f (Located region x) = fmap (Located region) (f x)
-
 
 getLocation :: Located a -> SourceRegion
 getLocation (Located region _) = region
@@ -46,6 +79,6 @@ spanningRegion :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion regions =
     SourceRegion
         { sourceFile = the $ toList (sourceFile <$> regions)
-        , startOffset = minimum1 (startOffset <$> regions)
-        , endOffset = maximum1 (endOffset <$> regions)
+        , startPos = minimum1 (startPos <$> regions)
+        , endPos = maximum1 (endPos <$> regions)
         }

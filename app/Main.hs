@@ -47,11 +47,11 @@ runElara = runM $ execDiagnosticWriter $ do
     Just (source, prelude) ->
       let modules = fromList [(source ^. (name . _Unlocate), source), (prelude ^. (name . _Unlocate), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left annotateError -> runFileContentsIO $ reportDiagnostic annotateError >>= addDiagnostic
+            Left annotateError -> addDiagnostic (reportDiagnostic annotateError)
             Right m' -> do
-              runFileContentsIO $ fixOperatorsInModule m' >>= embed . printColored
+              fixOperatorsInModule m' >>= embed . printColored
 
-fixOperatorsInModule :: (Member (DiagnosticWriter Text) r, Member FileContents r) => Module Annotated -> Sem r (Maybe (Module Annotated))
+fixOperatorsInModule :: (Member (DiagnosticWriter Text) r) => Module Annotated -> Sem r (Maybe (Module Annotated))
 fixOperatorsInModule m = do
   let x =
         run $
@@ -66,11 +66,10 @@ fixOperatorsInModule m = do
                 m
   case x of
     Left shuntErr -> do
-      diag <- reportDiagnostic shuntErr
-      addDiagnostic diag
+      addDiagnostic (reportDiagnostic shuntErr)
       pure Nothing
     Right (warnings, finalM) -> do
-      warnings' <- traverse report (toList warnings)
+      let warnings' =  fmap report (toList warnings)
       for_ warnings' addReport
       pure (Just finalM)
 
@@ -85,8 +84,7 @@ loadModule path = do
       addFile path (toString contents) -- add every loaded file to the diagnostic
       case parse path contents of
         Left parseError -> do
-          diag <- runFileContentsIO $ reportDiagnostic parseError
-          addDiagnostic diag $> Nothing
+          addDiagnostic (reportDiagnostic parseError) $> Nothing
         Right m -> pure (Just m)
 
 overExpressions ::

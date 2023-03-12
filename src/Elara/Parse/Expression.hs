@@ -12,10 +12,11 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (opName, typeName, varName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, skipSpaces, symbol, withPredicate, (<??>))
-import HeadedMegaparsec (endHead, dbg)
+import HeadedMegaparsec (dbg, endHead)
 import HeadedMegaparsec qualified as H (endHead, parse, toParsec)
 import Text.Megaparsec (sepBy, sepEndBy)
 import Text.Megaparsec.Char.Lexer (indentLevel)
+import Print (debugColored)
 
 locatedExpr :: HParser Frontend.Expr' -> HParser Expr
 locatedExpr = (Expr <$>) . (H.parse . located . H.toParsec)
@@ -147,7 +148,7 @@ lambda = locatedExpr $ do
     endHead
     pure (Frontend.Lambda args res)
   where
-    lambdaPreamble = dbg "lambdaPreamble" $ do
+    lambdaPreamble = do
         symbol "\\"
         endHead
         args <- lexeme (sepBy (lexeme pattern') sc)
@@ -156,13 +157,17 @@ lambda = locatedExpr $ do
 
 ifElse :: HParser Expr
 ifElse = dbg "ifElse" $ locatedExpr $ do
-    condition <- optionallyIndented' (symbol "if") element
+    start <- fromParsec indentLevel
+    symbol "if"
     endHead
-    skipSpaces -- scn doesn't work because it succeeds on an empty input
-    thenBranch <- optionallyIndented' (symbol "then") element
-    skipSpaces
-    elseBranch <- optionallyIndented' (symbol "else") element
-    skipSpaces
+    debugColored $ "starting at " <> show start
+    afterIf <- fromParsec indentLevel
+    (_, condition) <- blockAt afterIf element
+    (afterThen, _) <- withIndentOrNormal start (symbol "then")
+    (_, thenBranch) <- blockAt afterThen element
+    (afterElse, _) <- withIndentOrNormal start (symbol "else")
+    (_, elseBranch) <- blockAt afterElse element
+
     pure (Frontend.If condition thenBranch elseBranch)
 
 letExpression :: HParser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
@@ -175,7 +180,7 @@ letExpression = locatedExpr $ do
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do
     start <- fromParsec indentLevel
-    H.parse $ symbol "let"
+    symbol "let"
     H.endHead
     name <- located varName -- cant use a lexeme here or it'll push the current indent level too far forwards, breaking withCurrentIndentOrNormal
     afterName <- fromParsec indentLevel
@@ -200,9 +205,9 @@ letRaw = do
     pure (name, patterns, e)
   where
     letPreamble = do
-        H.parse $ symbol "let"
+        symbol "let"
         endHead
         name <- located $ lexeme varName
         patterns <- sepBy (lexeme pattern') sc
-        H.parse $ symbol "="
+        symbol "="
         pure (name, patterns)

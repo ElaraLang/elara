@@ -15,7 +15,7 @@ module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
     mHeader <- optional header
     thisFile <- sourceFile . getLocation <$> located pass
-    let _name = maybe (Located (SourceRegion thisFile 0 4) (ModuleName ("Main" :| []))) fst mHeader
+    let _name = maybe (Located (SourceRegion thisFile dummyPosition dummyPosition) (ModuleName ("Main" :| []))) fst mHeader
     skipNewlines
     imports <- import' `sepEndBy` skipNewlines
     declarations <- declaration _name `sepEndBy` skipNewlines

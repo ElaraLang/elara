@@ -1,4 +1,5 @@
-{-# LANGUAGE MultiWayIf #-}
+
+
 module Elara.Parse.Indents where
 
 import Elara.AST.Frontend (Expr (..), Expr' (Block))
@@ -7,14 +8,15 @@ import Elara.AST.Region (Located (..))
 import Elara.AST.Region qualified as Region (getLocation, spanningRegion)
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, scn, skipNewlines)
+import HeadedMegaparsec (dbg)
 import HeadedMegaparsec qualified as H
 import Text.Megaparsec (Pos, mkPos, unPos)
 import Text.Megaparsec.Char.Lexer qualified as L
 
-optionallyIndented ::Show a =>  HParser a -> HParser Expr -> HParser (a, Expr)
+optionallyIndented :: HParser a -> HParser Expr -> HParser (a, Expr)
 optionallyIndented a expression = indentedBlock a expression <|> nonIndented a expression
 
-optionallyIndented' :: Show a => HParser a -> HParser Expr -> HParser Expr
+optionallyIndented' :: HParser a -> HParser Expr -> HParser Expr
 optionallyIndented' = (fmap snd .) . optionallyIndented
 
 nonIndented :: HParser a -> HParser b -> HParser (a, b)
@@ -23,15 +25,15 @@ nonIndented a expression = do
     b <- expression
     pure (a', b)
 
-indentedBlock :: Show a => HParser a -> HParser Expr -> HParser (a, Expr)
-indentedBlock ref expression = H.dbg "indentedBlock" $ H.parse (L.indentBlock scn innerParser)
+indentedBlock :: HParser a -> HParser Expr -> HParser (a, Expr)
+indentedBlock ref expression = H.parse (L.indentBlock scn innerParser)
   where
     innerParser = H.toParsec $ do
         a <- ref
         H.endHead
         pure $ L.IndentSome Nothing (merge a) (H.toParsec expression)
     merge a expressions = case expressions of
-        [] -> error "indentedBlock: empty block"
+        [] -> error "indentedBlock: empty block. shouldn't happen"
         [single] -> pure (a, single)
         x : xs -> do
             let unwrap (Expr e) = e
@@ -56,13 +58,13 @@ withCurrentIndent p = do
 {- | Parses with the given parser, either starting at the given position, or indented after the given position.
      Either way, it returns the position where the parser starts, and the parsed expression
 -}
-withIndentOrNormal :: Pos -> HParser a -> HParser (Pos, a)
-withIndentOrNormal pos parser = unmodified <|> indented
+withIndentOrNormal :: Show a => Pos -> HParser a -> HParser (Pos, a)
+withIndentOrNormal pos parser = dbg ("withIndentOrNormal @ " <> show pos) unmodified <|> indented
   where
-    unmodified = do
+    unmodified = dbg "unmodified" $ do
         res <- parser
         pure (pos, res)
-    indented = do
+    indented = dbg ("indented @ " <> show pos) $ do
         new <- H.parse $ L.indentGuard scn GT (sub1 pos)
         H.endHead
         res <- parser
@@ -92,7 +94,7 @@ blockAt pos parser = H.dbg ("blockAt " <> show pos) $ do
                     o -> Expr (Located region (Block $ Expr <$> o))
             asBlock expressions'
 
-withCurrentIndentOrNormal :: HParser a -> HParser (Pos, a)
+withCurrentIndentOrNormal :: Show a => HParser a -> HParser (Pos, a)
 withCurrentIndentOrNormal p = do
     current <- H.parse L.indentLevel
     withIndentOrNormal current p

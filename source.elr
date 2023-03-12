@@ -1,9 +1,9 @@
 module A
 import Prelude
 
-let y = \dtd -> (if
-                   'a'
-                 then
-                   '['
-                 else
-                   0)
+let y =if
+            'a'
+         then
+            'a'
+         else
+            0

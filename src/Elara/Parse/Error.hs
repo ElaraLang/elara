@@ -41,7 +41,7 @@ instance ShowErrorComponent ElaraParseError where
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 
 instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStream e, MP.TraversableStream e) => ReportDiagnostic (WParseErrorBundle e m) where
-    reportDiagnostic (WParseErrorBundle e) = pure $ diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
+    reportDiagnostic (WParseErrorBundle e) = diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
    | It adds the ability to highlight a region of the source code rather than a single point for error highlighting.

@@ -6,9 +6,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "[Replace {rtype = Expr, pos = SrcSpan {startLine = 71, startCol = 118, endLine = 71, endCol = 132}, subts = [("x",SrcSpan {startLine = 71, startCol = 119, endLine = 71, endCol = 131})], orig = "x"}]" #-}
 
 module Elara.AST.Module.Inspection where
 
@@ -37,9 +34,9 @@ import Elara.AST.Module (
   _Module,
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
-import Elara.AST.Region (_SourceRegion, _Unlocate)
+import Elara.AST.Region (sourceRegionToDiagnosePosition, _SourceRegion, _Unlocate)
 import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, RUnlocate (..), rUnlocateVia')
-import Elara.Error (ReportableError (report), sourceRegionToPosition)
+import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
 import Polysemy
@@ -63,26 +60,24 @@ data ContextBuildingError ast
     ExpositionNotPublic (Import ast) (FullASTQual ast Name)
 
 instance ReportableError (InspectionError ast) where
-  report (UnknownName un) = pure $ Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
+  report (UnknownName un) = Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
   report (AmbiguousName un modules) =
-    pure $
-      Err
-        (Just Codes.ambiguousName)
-        ("Ambiguous name: " <> fullNameText un)
-        []
-        [ Note $ "The name is defined in multiple modules: " <> intercalate ", " (fullNameText <$> toList modules)
-        , Hint $ "Try to qualify the name with the module name, e.g. " <> fullNameText (head modules) <> "." <> fullNameText un
-        ]
+    Err
+      (Just Codes.ambiguousName)
+      ("Ambiguous name: " <> fullNameText un)
+      []
+      [ Note $ "The name is defined in multiple modules: " <> intercalate ", " (fullNameText <$> toList modules)
+      , Hint $ "Try to qualify the name with the module name, e.g. " <> fullNameText (head modules) <> "." <> fullNameText un
+      ]
 
 instance (ast ~ Frontend, RUnlocate ast) => ReportableError (ContextBuildingError ast) where
   report (UnknownImportModule un) = do
-    position <- sourceRegionToPosition (un ^. (_Import . _Unlocate . importing . _SourceRegion))
-    pure $
-      Err
-        (Just Codes.unknownModule)
-        ("Unknown module: " <> fullNameText (un ^. importing))
-        [(position, This "imported here")]
-        [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
+    let position = sourceRegionToDiagnosePosition (un ^. (_Import . _Unlocate . importing . _SourceRegion))
+    Err
+      (Just Codes.unknownModule)
+      ("Unknown module: " <> fullNameText (un ^. importing))
+      [(position, This "imported here")]
+      [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
   report _ = error "Not implemented"
 
 type AllNames :: (Type -> Constraint) -> Type -> Constraint

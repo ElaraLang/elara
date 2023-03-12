@@ -13,9 +13,9 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
 import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, getLocation, unlocate, _Unlocate)
+import Elara.AST.Region (Located (Located), SourceRegion, getLocation, sourceRegionToDiagnosePosition, unlocate, _Unlocate)
 import Elara.AST.Select (Annotated, Frontend)
-import Elara.Error (ReportableError (report), addPosition, sourceRegionToPosition)
+import Elara.Error (ReportableError (report), addPosition)
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose
 import Polysemy (Member, Sem)
@@ -33,22 +33,21 @@ data AnnotationError
 
 instance ReportableError AnnotationError where
     report (AnnotationError e sr) = do
-        r <- report e
-        pos <- sourceRegionToPosition sr
-        pure (addPosition (pos, This "") r)
+        let r = report e
+        let pos = sourceRegionToDiagnosePosition sr
+        addPosition (pos, This "") r
     report (ContextBuildingError e) = report e
     report (QualifiedWithWrongModule (Located sr (Qualified n qual)) modName) = do
-        pos <- sourceRegionToPosition sr
-        pure $
-            Err
-                (Just Codes.qualifiedWithWrongModule)
-                ("Qualification of name doesn't match module name: " <> fullNameText modName)
-                [(pos, This "")]
-                [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."
-                , Hint $ "Try changing " <> fullNameText qual <> " to " <> fullNameText modName
-                , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
-                , Hint $ "Try renaming your module to " <> fullNameText qual
-                ]
+        let pos = sourceRegionToDiagnosePosition sr
+        Err
+            (Just Codes.qualifiedWithWrongModule)
+            ("Qualification of name doesn't match module name: " <> fullNameText modName)
+            [(pos, This "")]
+            [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."
+            , Hint $ "Try changing " <> fullNameText qual <> " to " <> fullNameText modName
+            , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
+            , Hint $ "Try renaming your module to " <> fullNameText qual
+            ]
 
 wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
 wrapError region sem = do
@@ -113,7 +112,6 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NTypeName name') _)) = NTypeName <<<$>>> annotateTypeName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NOpName name') _)) = NOpName <<<$>>> annotateOpName (name' <<$ nv)
-
 
     annotateImport :: Import Frontend -> Sem (Reader InspectionContext : r) (Import Annotated)
     annotateImport = traverseOf (_Import . _Unlocate) (\(Import' name' as' qualified' exposing') -> Import' name' as' qualified' <$> annotateExposing exposing')

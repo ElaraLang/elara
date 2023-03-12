@@ -71,7 +71,7 @@ library
       DataKinds
       DeriveFunctor
       TypeApplications
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing
+  ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -104,7 +104,7 @@ executable elara
       DataKinds
       DeriveFunctor
       TypeApplications
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded
+  ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded
   build-depends:
       base-noprelude >=4.7 && <5
     , containers
@@ -149,7 +149,7 @@ test-suite elara-test
       DeriveFunctor
       TypeApplications
       QuasiQuotes
-  ghc-options: -Wall -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded -O0 -feager-blackholing
+  ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded -O0 -feager-blackholing
   build-depends:
       HUnit
     , QuickCheck

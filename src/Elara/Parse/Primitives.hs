@@ -2,7 +2,7 @@ module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, lineCommen
 
 import Text.Megaparsec
 
-import Elara.AST.Region (Located (..), SourceRegion (..))
+import Elara.AST.Region (Located (..), SourceRegion, mkSourceRegion)
 import Elara.Parse.Error
 import HeadedMegaparsec qualified as H
 import Text.Megaparsec.Char qualified as MC
@@ -28,11 +28,13 @@ instance IsParser HParser where
 
 located :: IsParser m => m a -> m (Located a)
 located p = do
-    start <- fromParsec getOffset
-    file <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
+    start <- getPos
     x <- p
-    end <- fromParsec getOffset
-    pure $ Located (SourceRegion (Just file) start end) x
+    end <- getPos
+    pure $ Located (mkSourceRegion start end) x
+  where
+    getPos :: IsParser m => m SourcePos
+    getPos = pstateSourcePos . statePosState <$> fromParsec getParserState
 
 fmapLocated :: IsParser f => (Located a -> b) -> f a -> f b
 fmapLocated f = (f <$>) . located
