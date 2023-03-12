@@ -10,12 +10,16 @@ github: ElaraLang/elara
 tested-with: ghc ==9.4.2
 language: GHC2021
 
+extra-source-files:
+- src/Elara/Lexer/Lexer.x
+
 
 dependencies:
   - name: base-noprelude
   - name: relude
   - lens
   - containers
+  - array
   - megaparsec
   - headed-megaparsec
   - parser-combinators
@@ -61,6 +65,8 @@ default-extensions:
 
 library:
   source-dirs: src
+  build-tools:
+  - alex
 
 executables:
   elara:

@@ -18,6 +18,8 @@ license-file:   LICENSE
 build-type:     Simple
 tested-with:
     ghc ==9.4.2
+extra-source-files:
+    src/Elara/Lexer/Lexer.x
 
 source-repository head
   type: git
@@ -41,6 +43,8 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Lexer.Lexer
+      Elara.Lexer.Token
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
@@ -72,8 +76,11 @@ library
       DeriveFunctor
       TypeApplications
   ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing
+  build-tools:
+      alex
   build-depends:
-      base-noprelude
+      array
+    , base-noprelude
     , containers
     , diagnose
     , headed-megaparsec
@@ -106,7 +113,8 @@ executable elara
       TypeApplications
   ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded
   build-depends:
-      base-noprelude
+      array
+    , base-noprelude
     , containers
     , diagnose
     , elara
@@ -153,6 +161,7 @@ test-suite elara-test
   build-depends:
       HUnit
     , QuickCheck
+    , array
     , base-noprelude
     , containers
     , diagnose
