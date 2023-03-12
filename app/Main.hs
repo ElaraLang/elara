@@ -9,9 +9,8 @@ import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
-
+import Elara.Lexer.Lexer
 import Elara.Annotate.Shunt (fixOperators)
-
 import Elara.AST.Region (Located, unlocated)
 import Elara.Error
 import Elara.Error.Effect (
@@ -33,10 +32,12 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
-  s <- runElara
-  when (hasReports s) $ do
-    printDiagnostic stdout True True 4 defaultStyle s
-    exitFailure
+  y <- runM $ lexFile "source.elr"
+  print y
+  -- s <- runElara
+  -- when (hasReports s) $ do
+  --   printDiagnostic stdout True True 4 defaultStyle s
+  --   exitFailure
 
 runElara :: IO (Diagnostic Text)
 runElara = runM $ execDiagnosticWriter $ do
@@ -72,6 +73,11 @@ fixOperatorsInModule m = do
       let warnings' =  fmap report (toList warnings)
       for_ warnings' addReport
       pure (Just finalM)
+
+lexFile :: (Member (Embed IO) r) => FilePath -> Sem r (Either String [Lexeme])
+lexFile path = do
+  bs <- readFileLBS path
+  pure (lex path bs)
 
 loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do

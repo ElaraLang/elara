@@ -1,5 +1,1 @@
-module A
-import Prelude
-
-let y =
-    let a = 3 in a
+let 1234;

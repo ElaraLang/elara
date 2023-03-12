@@ -81,6 +81,7 @@ library
   build-depends:
       array
     , base-noprelude
+    , bytestring
     , containers
     , diagnose
     , headed-megaparsec
@@ -115,6 +116,7 @@ executable elara
   build-depends:
       array
     , base-noprelude
+    , bytestring
     , containers
     , diagnose
     , elara
@@ -163,6 +165,7 @@ test-suite elara-test
     , QuickCheck
     , array
     , base-noprelude
+    , bytestring
     , containers
     , diagnose
     , elara

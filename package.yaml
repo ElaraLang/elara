@@ -19,6 +19,7 @@ dependencies:
   - name: relude
   - lens
   - containers
+  - bytestring
   - array
   - megaparsec
   - headed-megaparsec
