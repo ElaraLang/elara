@@ -83,7 +83,6 @@ tests:
     ghc-options: 
     - -threaded
     - -O0
-    - -feager-blackholing
     dependencies:
       - elara
       - neat-interpolation

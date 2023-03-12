@@ -149,7 +149,7 @@ test-suite elara-test
       DeriveFunctor
       TypeApplications
       QuasiQuotes
-  ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded -O0 -feager-blackholing
+  ghc-options: -Wall -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -Wmonomorphism-restriction -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -threaded -O0
   build-depends:
       HUnit
     , QuickCheck

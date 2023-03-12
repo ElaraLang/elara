@@ -4,12 +4,12 @@ import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend (Expr (..))
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Name (MaybeQualified (..), VarName, nameText)
+import Elara.AST.Name (MaybeQualified (..), Unqualified, VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
 import Elara.Parse.Error
 import Elara.Parse.Indents (blockAt, optionallyIndented, sub1, withCurrentIndentOrNormal, withIndentOrNormal)
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
-import Elara.Parse.Names (opName, typeName, varName)
+import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, symbol, withPredicate, (<??>))
 import HeadedMegaparsec (endHead)
@@ -62,7 +62,7 @@ operator :: HParser Frontend.BinaryOperator
 operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <??> "operator"
   where
     asciiOp = located $ do
-        Frontend.Op <$> located opName
+        Frontend.Op <$> located (maybeQualified opName)
     infixOp = located $ lexeme $ do
         char' '`'
         endHead
@@ -156,12 +156,11 @@ ifElse = locatedExpr $ do
     start <- sub1 <$> fromParsec indentLevel
     symbol "if"
     endHead
-    afterIf <- fromParsec indentLevel
-    (_, condition) <- blockAt afterIf element
-    (afterThen, _) <- withIndentOrNormal start (symbol "then")
-    (_, thenBranch) <- blockAt afterThen element
-    (afterElse, _) <- withIndentOrNormal start (symbol "else")
-    (_, elseBranch) <- blockAt afterElse element
+    (_, condition) <- blockAt start element
+    _ <- withIndentOrNormal start (symbol "then")
+    (_, thenBranch) <- blockAt start element
+    _ <- withIndentOrNormal start (symbol "else")
+    (_, elseBranch) <- blockAt start element
 
     pure (Frontend.If condition thenBranch elseBranch)
 
@@ -185,13 +184,13 @@ letInExpression = locatedExpr $ do
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.LetIn name patterns e body)
 
-letPreamble :: HParser (Pos, Located (MaybeQualified VarName), [Frontend.Pattern], Expr)
+letPreamble :: HParser (Pos, Located (Unqualified VarName), [Frontend.Pattern], Expr)
 letPreamble = do
     start <- fromParsec indentLevel
     symbol "let"
     H.endHead
     afterLet <- fromParsec indentLevel
-    name <- lexeme $ located varName
+    name <- lexeme $ located unqualifiedVarName
     (_, patterns) <- withCurrentIndentOrNormal $ do
         sepBy (lexeme pattern') sc
     _ <- withIndentOrNormal afterLet (symbol "=")

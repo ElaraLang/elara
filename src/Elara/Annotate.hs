@@ -174,18 +174,16 @@ annotateModule thisModule = traverseOf (_Module . _Unlocate) (const annotate) th
         pure (Annotated.BinaryOperator annotatedOp annotatedLeft annotatedRight)
     annotateExpr' (Frontend.List xs) = Annotated.List <$> traverse annotateExpr xs
     annotateExpr' (Frontend.LetIn lName lPats lExp lBody) = do
-        annotatedName <- qualifyInThisModule lName
         annotatedPats <- traverse annotatePattern lPats
         annotatedExp <- annotateExpr lExp
         annotatedBody <- annotateExpr lBody
         let lambdaExp = unfoldLambda annotatedPats annotatedExp
-        pure (Annotated.LetIn annotatedName lambdaExp annotatedBody)
+        pure (Annotated.LetIn lName lambdaExp annotatedBody)
     annotateExpr' (Frontend.Let lName lPats lExp) = do
-        annotatedName <- qualifyInThisModule lName
         annotatedPats <- traverse annotatePattern lPats
         annotatedExp <- annotateExpr lExp
         let lambdaExp = unfoldLambda annotatedPats annotatedExp
-        pure (Annotated.Let annotatedName lambdaExp)
+        pure (Annotated.Let lName lambdaExp)
     annotateExpr' (Frontend.Block exprs) = do
         annotatedExprs <- traverse annotateExpr exprs
         pure (Annotated.Block annotatedExprs)

@@ -13,25 +13,22 @@ import NeatInterpolation (text)
 import Orphans ()
 import Parse.Common (shouldParseProp)
 import Parse.QuickCheck
-import Print (printColored)
 import Test.Hspec (Spec, describe, it, parallel)
 import Test.Hspec.Megaparsec (shouldParse)
 import Test.Hspec.QuickCheck
-import Test.QuickCheck (verboseCheck)
 import Test.QuickCheck.Property
 import Text.Megaparsec (ParseErrorBundle, eof, runParser)
 import Prelude hiding (Op)
 
 spec :: Spec
-spec = describe "Test Expression Parser" $ do
+spec = parallel $ describe "Test Expression Parser" $ do
   literals
   operators
   letIn
   ifElse
-  quickCheck
 
 literals :: Spec
-literals = describe "Parses literals" $ do
+literals = parallel $ describe "Parses literals" $ do
   it "Parses integer literals" $ do
     "3" <=> Int 3
     "-1" <=> Int (-1)
@@ -49,7 +46,7 @@ literals = describe "Parses literals" $ do
     [text| "" |] <=> String ""
 
 operators :: Spec
-operators = describe "Parses operators" $ describe "Parses standalone operator symbols" $ do
+operators = parallel $ describe "Parses operators" $ describe "Parses standalone operator symbols" $ do
   let
     prop_InfixedParses :: Text -> Property
     prop_InfixedParses str = shouldParseProp (stripLocation <$> parse operator ("`" <> str <> "`")) (Infixed (MaybeQualified (NormalVarName str) Nothing))
@@ -62,7 +59,7 @@ operators = describe "Parses operators" $ describe "Parses standalone operator s
   prop "ASCII operators don't parse as Infix operators" (expectFailure . prop_InfixedParses . getOpText)
 
 letIn :: Spec
-letIn =
+letIn = parallel $
   describe "Parses let .. in expressions" $ do
     let result = LetIn "x" [] (Int 1) (Var "x")
     it "Parses on the same line " $ [text| let x = 1 in x |] <=> result
@@ -99,7 +96,7 @@ letIn =
         <=> result
 
 ifElse :: Spec
-ifElse = describe "Parses if-then-else expressions" $ do
+ifElse = parallel $ describe "Parses if-then-else expressions" $ do
   let result = If (Int 1) (Int 2) (Int 3)
   it "Parses on the same line" $ [text| if 1 then 2 else 3 |] <=> result
   it "Parses multi line 1" $
@@ -157,7 +154,7 @@ ifElse = describe "Parses if-then-else expressions" $ do
       <=> result
 
 quickCheck :: Spec
-quickCheck = modifyMaxSize (const 5) $ fprop "Arbitrary expressions parse prettyPrinted" ppEq
+quickCheck = modifyMaxSize (const 5) $ prop "Arbitrary expressions parse prettyPrinted" ppEq
 
 removeInParens :: Expr -> Expr
 removeInParens (Lambda p e) = Lambda p (removeInParens e)

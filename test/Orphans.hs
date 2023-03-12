@@ -7,7 +7,7 @@ module Orphans where
 import Data.Char (isLower, isUpper)
 import Data.Text (splitOn)
 
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), VarName (..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), Unqualified (..), VarName (..))
 
 instance IsString VarName where
     fromString = NormalVarName . fromString
@@ -27,6 +27,9 @@ instance IsString Name where
 
 instance IsString s => IsString (MaybeQualified s) where
     fromString s = MaybeQualified (fromString s) Nothing
+
+instance IsString s => IsString (Unqualified s) where
+    fromString s = Unqualified (fromString s)
 
 instance IsString ModuleName where
     -- oh boy i love having 2 string types

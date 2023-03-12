@@ -3,7 +3,7 @@
 module Elara.AST.Annotated where
 
 import Control.Lens (makePrisms)
-import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
 import Elara.AST.Region (Located (Located))
 import Prelude hiding (Op, Type)
 
@@ -27,8 +27,8 @@ data Expr'
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
-    | LetIn (Located (Qualified VarName)) Expr Expr
-    | Let (Located (Qualified VarName)) Expr
+    | LetIn (Located (Unqualified VarName)) Expr Expr
+    | Let (Located (Unqualified VarName)) Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)

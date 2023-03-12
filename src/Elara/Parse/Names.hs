@@ -1,7 +1,8 @@
 module Elara.Parse.Names where
 
+import Control.Lens ((^.))
 import Data.Set (member)
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
+import Elara.AST.Name (HasName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), Unqualified (Unqualified), VarName (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, char', inParens, lexeme, (<??>))
 import HeadedMegaparsec (endHead)
@@ -12,11 +13,20 @@ import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 varName :: HParser (MaybeQualified VarName)
 varName = operatorVarName <|> normalVarName
 
+unqualifiedVarName :: HParser (Unqualified VarName)
+unqualifiedVarName = unqualifiedOperatorVarName <|> unqualifiedNormalVarName
+
 normalVarName :: HParser (MaybeQualified VarName)
-normalVarName = maybeQualified (NormalVarName <$> alphaVarName) <??> "variable name"
+normalVarName = maybeQualified $ (^. name) <$> unqualifiedNormalVarName <??> "variable name"
+
+unqualifiedNormalVarName :: HParser (Unqualified VarName)
+unqualifiedNormalVarName = Unqualified . NormalVarName <$> alphaVarName <??> "variable name"
 
 operatorVarName :: HParser (MaybeQualified VarName)
-operatorVarName = (OperatorVarName <<$>> inParens opName) <??> "operator name in parens"
+operatorVarName = (OperatorVarName <<$>> inParens (maybeQualified opName)) <??> "operator name in parens"
+
+unqualifiedOperatorVarName :: HParser (Unqualified VarName)
+unqualifiedOperatorVarName = (Unqualified . OperatorVarName <$> inParens opName) <??> "operator name in parens"
 
 typeName :: HParser (MaybeQualified TypeName)
 typeName = do
@@ -52,8 +62,8 @@ alphaVarName =
     rest <- H.parse (many alphaNumChar)
     pure (start : rest)
 
-opName :: HParser (MaybeQualified OpName)
-opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)
+opName :: HParser OpName
+opName = OpName . toText <$> lexeme (some operatorChar)
  where
   operatorChars :: Set Char
   operatorChars = ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']

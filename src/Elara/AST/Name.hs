@@ -8,20 +8,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.Name (
-    ModuleName (..),
-    VarName (..),
-    TypeName (..),
-    OpName (..),
-    Name (..),
-    NameLike (..),
-    ToName (..),
-    MaybeQualified (..),
-    Unqualified (..),
-    Qualified (..),
-) where
+module Elara.AST.Name where
 
-import Control.Lens (makeClassy, makeLenses, makePrisms, view)
+import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, view)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, _Unlocate)
@@ -136,20 +125,21 @@ instance NameLike n => NameLike (Located n) where
     moduleName = moduleName . view _Unlocate
 
 data MaybeQualified name = MaybeQualified
-    { _maybeQualifiedNameName :: name
-    , _maybeQualifiedNameQualifier :: Maybe ModuleName
+    { _maybeQualifiedName :: name
+    , _maybeQualifiedQualifier :: Maybe ModuleName
     }
     deriving (Ord, Show, Eq, Data, Functor, Foldable, Traversable)
 
 data Qualified name = Qualified
-    { _qualifiedNameName :: name
-    , _qualifiedNameQualifier :: ModuleName
+    { _qualifiedName :: name
+    , _qualifiedQualifier :: ModuleName
     }
     deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
 newtype Unqualified name = Unqualified
-    { _unqualifiedNameName :: name
+    { _unqualifiedName :: name
     }
     deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
 
-makeClassy ''MaybeQualified
-makeClassy ''Qualified
+makeFields ''MaybeQualified
+makeFields ''Qualified
+makeFields ''Unqualified

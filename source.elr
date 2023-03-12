@@ -11,4 +11,4 @@ let y =  \sk ->
             then
               ()
             else
-              K)
+              3)

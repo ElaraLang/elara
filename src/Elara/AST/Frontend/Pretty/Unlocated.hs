@@ -1,7 +1,8 @@
 module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
+import Control.Lens ((^.))
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), VarName (..))
+import Elara.AST.Name (HasName (name), MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), Unqualified, VarName (..))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
@@ -52,6 +53,9 @@ instance Pretty Expr where
 instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     ppr p (MaybeQualified n (Just m)) = ppr p m <> "." <> ppr p n
     ppr p (MaybeQualified n Nothing) = ppr p n
+
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
+    ppr p uq = ppr p (uq ^. name)
 
 instance Pretty ModuleName where
     ppr _ (ModuleName m) = PP.hcat (PP.punctuate "." (fmap (PP.text . toString) (toList m)))

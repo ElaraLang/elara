@@ -1,6 +1,6 @@
 module Elara.AST.Frontend.Unlocated where
 
-import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName)
+import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName, Unqualified)
 import Prelude hiding (Op, Type)
 
 {- | Frontend AST without location information.
@@ -20,8 +20,8 @@ data Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
-    | LetIn (MaybeQualified VarName) [Pattern] Expr Expr
-    | Let (MaybeQualified VarName) [Pattern] Expr
+    | LetIn (Unqualified VarName) [Pattern] Expr Expr
+    | Let (Unqualified VarName) [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
