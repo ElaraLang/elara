@@ -8,7 +8,6 @@ import Control.Lens
 import Data.Data (Data)
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
-import Relude.Extra (Foldable1 (toNonEmpty))
 import Text.Megaparsec (SourcePos (sourceColumn, sourceLine, sourceName), unPos)
 
 data RealPosition = Position

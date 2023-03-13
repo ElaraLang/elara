@@ -7,11 +7,10 @@ module Main (
 
 import Control.Lens
 import Elara.AST.Module
+import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
-import Elara.Lexer.Lexer
 import Elara.Annotate.Shunt (fixOperators)
-import Elara.AST.Region (Located, unlocated)
 import Elara.Error
 import Elara.Error.Effect (
   DiagnosticWriter,
@@ -20,6 +19,7 @@ import Elara.Error.Effect (
   addReport,
   execDiagnosticWriter,
  )
+import Elara.Lexer.Lexer
 import Elara.Parse
 import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
 import Error.Diagnose.Diagnostic (hasReports)
@@ -33,11 +33,12 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 main :: IO ()
 main = do
   y <- runM $ lexFile "source.elr"
-  print y
-  -- s <- runElara
-  -- when (hasReports s) $ do
-  --   printDiagnostic stdout True True 4 defaultStyle s
-  --   exitFailure
+  printColored (view unlocated <<$>> y)
+
+-- s <- runElara
+-- when (hasReports s) $ do
+--   printDiagnostic stdout True True 4 defaultStyle s
+--   exitFailure
 
 runElara :: IO (Diagnostic Text)
 runElara = runM $ execDiagnosticWriter $ do
@@ -70,7 +71,7 @@ fixOperatorsInModule m = do
       addDiagnostic (reportDiagnostic shuntErr)
       pure Nothing
     Right (warnings, finalM) -> do
-      let warnings' =  fmap report (toList warnings)
+      let warnings' = fmap report (toList warnings)
       for_ warnings' addReport
       pure (Just finalM)
 
