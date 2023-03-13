@@ -6,7 +6,6 @@
 module Elara.Annotate where
 
 import Control.Lens (over, traverseOf, view, (^.))
-import Data.Functor.Extra ((<<$), (<<<$>>>))
 import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend

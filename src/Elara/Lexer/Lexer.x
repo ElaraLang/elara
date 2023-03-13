@@ -6,6 +6,7 @@
 module Elara.Lexer.Lexer where
 
 import Elara.Lexer.Token
+import Elara.Lexer.Utils
 import Data.List.NonEmpty ((<|))
 import Elara.AST.Region
 import Control.Lens ((^.))
@@ -14,6 +15,7 @@ import Prelude hiding (ByteString)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Relude.Unsafe (read)
+import Print
 }
 
 %wrapper "monadUserState-bytestring"
@@ -52,25 +54,56 @@ Elara :-
     <0> {
         \n { beginCode beginOfLines }
 
+        -- Literals
+        \-? @decimal 
+            | 0[o0] @octal
+            | 0[xX] @hexadecimal
+        { parametrizedTok TokenInt (read . toString) }
+
+        \-? @decimal . @decimal
+        { parametrizedTok TokenFloat parseFloat }
+
         -- Symbols 
         \; { emptyTok TokenSemicolon }
         \, { emptyTok TokenComma }
         \. { emptyTok TokenDot }
         \: { emptyTok TokenColon }
         \= { emptyTok TokenEquals }
+        \\ { emptyTok TokenBackslash }
+        \-\> { emptyTok TokenRightArrow }
+        \<\- { emptyTok TokenLeftArrow }
+        \=\> { emptyTok TokenDoubleRightArrow }
+        \@ { emptyTok TokenAt }
+        \( { emptyTok TokenLeftParen }
+        \) { emptyTok TokenRightParen }
+        \[ { emptyTok TokenLeftBracket }
+        \] { emptyTok TokenRightBracket }
+        \{ { emptyTok TokenLeftBrace }
+        \} { emptyTok TokenRightBrace }
+
 
         -- Keywords
         let { emptyTok TokenLet }
+        in { emptyTok TokenIn }
+        if { emptyTok TokenIf }
+        then { emptyTok TokenThen }
+        else { emptyTok TokenElse }
+        class { emptyTok TokenClass }
+        data { emptyTok TokenData }
+        type { emptyTok TokenType }
+        module { emptyTok TokenModule }
+        match { emptyTok TokenMatch `andBegin` 3}
 
-        -- Literals
-        @decimal 
-            | 0[o0] @octal
-            | 0[xX] @hexadecimal
-        { parametrizedTok TokenInt (read . toString) }
+
 
 
         -- Identifiers
         @variableIdentifier { parametrizedTok TokenVariableIdentifier id }
+        @typeIdentifier { parametrizedTok TokenConstructorIdentifier id }
+    }
+
+    <match> {
+      @variableIdentifier { parametrizedTok TokenVariableIdentifier id `andBegin` 0} 
     }
     
     -- String literals
@@ -101,6 +134,7 @@ Elara :-
 data LayoutType =
     NoLayout -- ^ No layout, analogous to the <0> rule
     | Layout !Int
+    deriving (Show)
 
 data AlexUserState = AlexUserState {
     fileName :: FilePath,
@@ -108,7 +142,7 @@ data AlexUserState = AlexUserState {
     strBuffer :: [Char], 
     layoutStack :: [LayoutType],
     alexStartCodes :: [Int]
-}
+} deriving (Show)
 
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState {
@@ -172,7 +206,8 @@ mkLConstPos toktype src alexStartPos alexEndPos = do
         endPos   = Position endLine endCol
         srcSpan  = SourceRegion (Just fname) startPos endPos
         token = toktype src
-    when (startsNewLayout token) (pushLexState layout)
+    startNew <- startsNewLayout token <$> getLexState
+    when startNew (pushLexState layout)
     pure $ Located (RealSourceRegion srcSpan) token
 
 mkTokenPure :: AlexPosn -> Int -> (Text -> Token) -> Text -> Alex Lexeme
@@ -239,6 +274,13 @@ popLexState = do
       putA s { alexStartCodes = scs' }
       alexSetStartCode sc
       pure csc
+
+getLexState :: Alex Int
+getLexState = do
+  AlexUserState { alexStartCodes = scs } <- getA
+  case scs of
+    []        -> alexError "State code expected but no state code available"
+    sc : _scs' -> pure sc
 
 popLayout :: Alex LayoutType
 popLayout = do

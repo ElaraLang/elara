@@ -3,27 +3,46 @@ module Elara.Lexer.Token where
 data Token
   = -- | Symbols
     TokenSemicolon
-  | TokenComma
-  | TokenDot
-  | TokenColon
-  | TokenDoubleColon
-  | TokenEquals
-  | TokenBackslash
-  | TokenPipe
-  | TokenLeftParen
-  | TokenRightParen
-  | TokenLeftBrace
-  | TokenRightBrace
-  | TokenLeftBracket
-  | TokenRightBracket
-  | TokenLeftArrow
-  | TokenRightArrow
-  | TokenDoubleRightArrow
-  | TokenAt
-  | -- | Literals
+  | -- | ;
+    TokenComma
+  | -- | ,
+    TokenDot
+  | -- | .
+    TokenColon
+  | -- | :
+    TokenDoubleColon
+  | -- | ::
+    TokenEquals
+  | -- | =
+    TokenBackslash
+  | -- | \
+    TokenPipe
+  | -- | |
+    TokenLeftParen
+  | -- | (
+    TokenRightParen
+  | -- | )
+    TokenLeftBrace
+  | -- | {
+    TokenRightBrace
+  | -- | }
+    TokenLeftBracket
+  | -- | [
+    TokenRightBracket
+  | -- | ]
+    TokenLeftArrow
+  | -- | <-
+    TokenRightArrow
+  | -- | ->
+    TokenDoubleRightArrow
+  | -- | =>
+    TokenAt
+  | -- \| Literals
+
+    -- | @
     TokenInt Integer
-  | TokenFloat Text
-  | TokenChar Text
+  | TokenFloat Double
+  | TokenChar Char
   | TokenString Text
   | -- | Keywords
     TokenLet
@@ -44,6 +63,7 @@ data Token
   | TokenClass
   | TokenInstance
   | TokenDeriving
+  | TokenMatch
   | -- | Identifiers
     TokenVariableIdentifier Text
   | TokenConstructorIdentifier Text
@@ -52,8 +72,10 @@ data Token
   | TokenEOF
   deriving (Show, Eq)
 
-startsNewLayout :: Token -> Bool
-startsNewLayout TokenEquals = True
-startsNewLayout TokenWhere = True
-startsNewLayout TokenOf = True
-startsNewLayout _ = False
+startsNewLayout :: Token -> Int -> Bool
+startsNewLayout TokenEquals _ = True
+startsNewLayout TokenWhere _ = True
+startsNewLayout TokenOf _ = True
+startsNewLayout TokenIn _ = True
+startsNewLayout _ 3 = True
+startsNewLayout _ _ = False

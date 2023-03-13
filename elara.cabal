@@ -27,7 +27,6 @@ source-repository head
 
 library
   exposed-modules:
-      Data.Functor.Extra
       Elara.Annotate
       Elara.Annotate.Shunt
       Elara.AST.Annotated
@@ -45,6 +44,7 @@ library
       Elara.Error.Effect
       Elara.Lexer.Lexer
       Elara.Lexer.Token
+      Elara.Lexer.Utils
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
