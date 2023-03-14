@@ -14,7 +14,7 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (HParser, inBraces, inParens, located, token', withPredicate, (<??>))
-import HeadedMegaparsec (dbg, endHead)
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (sepEndBy, sepEndBy1)
 

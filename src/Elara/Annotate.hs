@@ -5,7 +5,7 @@
 
 module Elara.Annotate where
 
-import Control.Lens (over, traverseOf, view, (^.), _2)
+import Control.Lens (over, traverseOf, (^.), _2)
 import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend

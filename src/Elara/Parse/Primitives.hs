@@ -10,7 +10,6 @@ import Elara.Lexer.Token
 import Elara.Parse.Error
 import Elara.Parse.Stream (TokenStream (tokenStreamTokens))
 import HeadedMegaparsec qualified as H
-import Print (debugColored)
 import Prelude hiding (many, some)
 
 type Parser = Parsec ElaraParseError TokenStream
@@ -73,8 +72,8 @@ token' :: IsParser m => Token -> m ()
 token' = void . token
 
 locatedTokens' :: IsParser m => NonEmpty Token -> m SourceRegion
-locatedTokens' tokens = do
-    ts <- traverse lexeme tokens
+locatedTokens' tokenList = do
+    ts <- traverse lexeme tokenList
     pure $ spanningRegion' (view sourceRegion <$> ts)
 
 inParens :: HParser a -> HParser a

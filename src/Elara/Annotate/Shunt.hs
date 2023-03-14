@@ -5,9 +5,7 @@
 
 module Elara.Annotate.Shunt where
 
---  (Precedence, mkPrecedence, OpTable, OpInfo (..), Associativity (..), ShuntError (..), ShuntWarning (..), fixOperators) where
-
-import Control.Lens (over, view, (^.))
+import Control.Lens (over, (^.))
 import Data.Map (lookup)
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Name (Name (NOpName, NVarName), NameLike (fullNameText), Qualified)

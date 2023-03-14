@@ -54,7 +54,7 @@ instance TraversableStream TokenStream where
             { pstateInput =
                 TokenStream
                     { tokenStreamInput = postStr
-                    , tokenStreamTokens = post
+                    , tokenStreamTokens = postLexemes
                     }
             , pstateOffset = max pstateOffset o
             , pstateSourcePos = newSourcePos
@@ -69,14 +69,14 @@ instance TraversableStream TokenStream where
                 else preLine
         sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
         newSourcePos =
-            case post of
+            case postLexemes of
                 [] -> pstateSourcePos
                 (x : _) -> sourceRegionToSourcePos x sourceRegion startPos
-        (pre, post) = splitAt (o - pstateOffset) (tokenStreamTokens pstateInput)
+        (preLexemes, postLexemes) = splitAt (o - pstateOffset) (tokenStreamTokens pstateInput)
         (preStr, postStr) = splitAt tokensConsumed (tokenStreamInput pstateInput)
         preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
         tokensConsumed =
-            case nonEmpty pre of
+            case nonEmpty preLexemes of
                 Nothing -> 0
                 Just nePre -> tokensLength (Proxy @TokenStream) nePre
         restOfLine = takeWhile (/= '\n') postStr

@@ -15,7 +15,6 @@ import Prelude hiding (ByteString)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Relude.Unsafe (read)
-import Print
 }
 
 %wrapper "monadUserState-bytestring"

@@ -1,10 +1,9 @@
 module Elara.Parse.Type where
 
-import Control.Lens
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
 import Elara.AST.Frontend (Type (..))
 import Elara.AST.Name (ModuleName, Unqualified, VarName)
-import Elara.AST.Region (Located, sourceRegion)
+import Elara.AST.Region (Located)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
