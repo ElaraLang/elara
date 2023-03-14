@@ -27,6 +27,7 @@ data Expr'
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
+    | Match Expr [(Pattern, Expr)]
     | LetIn (Located (Unqualified VarName)) Expr Expr
     | Let (Located (Unqualified VarName)) Expr
     | Block (NonEmpty Expr)
@@ -41,6 +42,10 @@ data Pattern'
     | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
+    | IntegerPattern Integer
+    | FloatPattern Double
+    | StringPattern Text
+    | CharPattern Char
     deriving (Show, Eq)
 
 newtype Pattern = Pattern (Located Pattern')
@@ -67,6 +72,7 @@ data Type
     | UnitType
     | TypeConstructorApplication Type Type
     | UserDefinedType (Located (Qualified TypeName))
+    | RecordType (NonEmpty (Located (Unqualified VarName), Type))
     deriving (Show, Eq)
 
 makePrisms ''Expr

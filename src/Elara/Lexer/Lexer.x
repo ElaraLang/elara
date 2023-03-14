@@ -32,6 +32,7 @@ $octit = [0-7]
 $lower = [a-z]
 $upper = [A-Z]
 $identifierChar = [$lower $upper $digit]
+$opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 
 
 @reservedid = match|class|data|default|type|if|else|then|let|in
@@ -47,9 +48,17 @@ $identifierChar = [$lower $upper $digit]
 @exponent    = [eE] [\-\+] @decimal
 
 @string = [^\"]
+@notNewline = .
 
 Elara :-
-    $white_no_nl        ;
+    $white_no_nl       ;
+    -- Layout Rules
+    <layout> {
+        \n ;
+        \{ { explicitBraceLeft }
+        () { newLayoutContext }
+    }
+
 
     <0> {
         \n { beginCode beginOfLines }
@@ -83,6 +92,7 @@ Elara :-
 
 
         -- Keywords
+        def { emptyTok TokenDef }
         let { emptyTok TokenLet }
         in { emptyTok TokenIn }
         if { emptyTok TokenIf }
@@ -92,19 +102,17 @@ Elara :-
         data { emptyTok TokenData }
         type { emptyTok TokenType }
         module { emptyTok TokenModule }
-        match { emptyTok TokenMatch `andBegin` 3}
-
-
+        match { emptyTok TokenMatch}
+        with { emptyTok TokenWith }
 
 
         -- Identifiers
         @variableIdentifier { parametrizedTok TokenVariableIdentifier id }
         @typeIdentifier { parametrizedTok TokenConstructorIdentifier id }
+        $opChar+ { parametrizedTok TokenOperatorIdentifier id }
     }
 
-    <match> {
-      @variableIdentifier { parametrizedTok TokenVariableIdentifier id `andBegin` 0} 
-    }
+
     
     -- String literals
     <0> \" { enterString `andBegin` string }
@@ -117,12 +125,7 @@ Elara :-
         .    { addCurrentStringChar }
     }
 
-    -- Layout Rules
-    <layout> {
-        \n ;
-        \{ { explicitBraceLeft }
-        () { newLayoutContext }
-    }
+  
 
     <beginOfLines> {
         \n ;

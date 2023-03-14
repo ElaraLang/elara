@@ -13,10 +13,14 @@ import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import Text.Megaparsec qualified as MP
 import Prelude hiding (error, lines)
 
+import Control.Lens (folded, mapped, mapping, over, sumOf, to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
+import Elara.AST.Region (Located (Located), unlocated)
 import Elara.Error (ReportDiagnostic (reportDiagnostic))
+import Elara.Lexer.Lexer (Lexeme)
+import Elara.Lexer.Token (tokenRepr)
 import Prelude hiding (error, lines)
 
 data ElaraParseError
@@ -37,6 +41,13 @@ instance ErrorRegionSize ElaraParseError where
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
+
+instance MP.VisualStream [Lexeme] where
+    tokensLength Proxy ne = sum (T.length . tokenRepr . view unlocated <$> ne)
+    showTokens Proxy ne = T.unpack $ T.intercalate " " $ toList (tokenRepr . view unlocated <$> ne)
+
+instance MP.TraversableStream [Lexeme] where
+    reachOffsetNoLine o pst = pst
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 

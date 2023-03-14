@@ -3,7 +3,7 @@
 module Elara.AST.Frontend where
 
 import Control.Lens.TH
-import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, VarName, Unqualified)
+import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, Unqualified, VarName)
 import Elara.AST.Region (Located)
 import Prelude hiding (Type)
 
@@ -21,6 +21,7 @@ data Expr'
   | If Expr Expr Expr
   | BinaryOperator BinaryOperator Expr Expr
   | List [Expr]
+  | Match Expr [(Pattern, Expr)]
   | LetIn (Located (Unqualified VarName)) [Pattern] Expr Expr
   | Let (Located (Unqualified VarName)) [Pattern] Expr
   | Block (NonEmpty Expr)
@@ -35,6 +36,10 @@ data Pattern'
   | ConstructorPattern (Located (MaybeQualified TypeName)) [Pattern]
   | ListPattern [Pattern]
   | WildcardPattern
+  | IntegerPattern Integer
+  | FloatPattern Double
+  | StringPattern Text
+  | CharPattern Char
   deriving (Show, Eq)
 
 newtype Pattern = Pattern (Located Pattern')
@@ -57,8 +62,8 @@ data Type
   | UnitType
   | TypeConstructorApplication Type Type
   | UserDefinedType (Located (MaybeQualified TypeName))
+  | RecordType (NonEmpty (Located (Unqualified VarName), Type))
   deriving (Show, Eq)
-
 
 makePrisms ''Expr
 makePrisms ''Pattern

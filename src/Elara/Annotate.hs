@@ -5,7 +5,7 @@
 
 module Elara.Annotate where
 
-import Control.Lens (over, traverseOf, view, (^.))
+import Control.Lens (over, traverseOf, view, (^.), _2)
 import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
@@ -172,6 +172,10 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
         annotatedRight <- annotateExpr right
         pure (Annotated.BinaryOperator annotatedOp annotatedLeft annotatedRight)
     annotateExpr' (Frontend.List xs) = Annotated.List <$> traverse annotateExpr xs
+    annotateExpr' (Frontend.Match xs cases) = do
+        annotatedXs <- annotateExpr xs
+        annotatedCases <- traverse (bitraverse annotatePattern annotateExpr) cases
+        pure (Annotated.Match annotatedXs annotatedCases)
     annotateExpr' (Frontend.LetIn lName lPats lExp lBody) = do
         annotatedPats <- traverse annotatePattern lPats
         annotatedExp <- annotateExpr lExp
@@ -199,8 +203,12 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
         pure (Annotated.ConstructorPattern annotatedConstructorName annotatedPatterns)
     annotatePattern' (Frontend.ListPattern i) = Annotated.ListPattern <$> traverse annotatePattern i
     annotatePattern' Frontend.WildcardPattern = pure Annotated.WildcardPattern
+    annotatePattern' (Frontend.IntegerPattern i) = pure (Annotated.IntegerPattern i)
+    annotatePattern' (Frontend.FloatPattern f) = pure (Annotated.FloatPattern f)
+    annotatePattern' (Frontend.StringPattern s) = pure (Annotated.StringPattern s)
+    annotatePattern' (Frontend.CharPattern c) = pure (Annotated.CharPattern c)
 
-    -- annotateOp :: Frontend.BinaryOperator -> Sem (Reader InspectionContext : r) Annotated.BinaryOperator
+    annotateOp :: Frontend.BinaryOperator -> Sem (Reader InspectionContext : r) Annotated.BinaryOperator
     annotateOp (Frontend.MkBinaryOperator o) = Annotated.MkBinaryOperator <$> traverse annotateOp' o
     annotateOp' (Frontend.Op o) = Annotated.Op <$> annotateOpName o
     annotateOp' (Frontend.Infixed o) = Annotated.Infixed <$> annotateVarName o
@@ -214,6 +222,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
     annotateType' Frontend.UnitType = pure Annotated.UnitType
     annotateType' (Frontend.TypeConstructorApplication ctor arg) = Annotated.TypeConstructorApplication <$> annotateType' ctor <*> annotateType' arg
     annotateType' (Frontend.UserDefinedType tn) = Annotated.UserDefinedType <$> annotateTypeName tn
+    annotateType' (Frontend.RecordType fields) = Annotated.RecordType <$> traverseOf (traverse . _2) annotateType' fields
 
 unfoldLambda :: [Annotated.Pattern] -> Annotated.Expr -> Annotated.Expr
 unfoldLambda [] expr = expr

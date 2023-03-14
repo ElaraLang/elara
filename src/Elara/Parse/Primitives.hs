@@ -1,8 +1,12 @@
-module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, lineComment, sc, scn, lexeme, symbol, inParens, commaSeparated, oneOrCommaSeparatedInParens, skipNewlines, withPredicate, (<??>), IsParser (..), char, char', skipSpaces) where
+module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, inParens, inBraces, inParens, commaSeparated, oneOrCommaSeparatedInParens, token, token', withPredicate, (<??>), IsParser (..), satisfyMap) where
 
-import Text.Megaparsec
+import Text.Megaparsec hiding (Token, token)
+import Text.Megaparsec qualified as MP (token)
 
-import Elara.AST.Region (Located (..), SourceRegion (RealSourceRegion), mkSourceRegion)
+import Control.Lens
+import Elara.AST.Region
+import Elara.Lexer.Lexer hiding (token)
+import Elara.Lexer.Token
 import Elara.Parse.Error
 import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H
@@ -10,8 +14,8 @@ import Text.Megaparsec.Char qualified as MC
 import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
 
-type Parser = Parsec ElaraParseError Text
-type HParser = H.HeadedParsec ElaraParseError Text
+type Parser = Parsec ElaraParseError [Lexeme]
+type HParser = H.HeadedParsec ElaraParseError [Lexeme]
 
 (<??>) :: HParser a -> String -> HParser a
 (<??>) = flip H.label
@@ -19,6 +23,7 @@ type HParser = H.HeadedParsec ElaraParseError Text
 class Monad m => IsParser m where
     toParsec :: m a -> Parser a
     fromParsec :: Parser a -> m a
+
 instance IsParser Parser where
     toParsec = id
     fromParsec = id
@@ -26,7 +31,6 @@ instance IsParser Parser where
 instance IsParser HParser where
     toParsec = H.toParsec
     fromParsec = H.parse
-
 
 located :: IsParser m => m a -> m (Located a)
 located p = do
@@ -41,46 +45,42 @@ located p = do
 fmapLocated :: IsParser f => (Located a -> b) -> f a -> f b
 fmapLocated f = (f <$>) . located
 
-lineComment :: IsParser m => m ()
-lineComment = fromParsec $ L.skipLineComment "--"
+token :: IsParser m => Token -> m Token
+token = fromParsec . singleToken
+  where
+    singleToken :: Token -> Parser Token
+    singleToken t = MP.token (test t) []
+    test :: Token -> Lexeme -> Maybe Token
+    test t (Located _ t2) | t == t2 = Just t
+    test _ _ = Nothing
 
-sc :: IsParser m => m ()
-sc = fromParsec $ L.space MC.hspace1 lineComment empty
+satisfyMap :: forall m a. IsParser m => (Token -> Maybe a) -> m a
+satisfyMap f = fromParsec $ MP.token test []
+  where
+    test :: Lexeme -> Maybe a
+    test (Located _ t) = f t
 
-scn :: Parser ()
-scn = L.space MC.space1 lineComment empty
-
-lexeme :: IsParser m => m a -> m a
-lexeme = fromParsec . L.lexeme sc . toParsec
-
-symbol :: IsParser m => Text -> m ()
-symbol = fromParsec . void . L.symbol sc
+token' :: IsParser m => Token -> m ()
+token' = void . token
 
 inParens :: HParser a -> HParser a
-inParens p = do
-    H.parse $ symbol "("
+inParens = surroundedBy (token' TokenLeftParen) (token' TokenRightParen)
+
+inBraces :: HParser a -> HParser a
+inBraces = surroundedBy (token' TokenLeftBrace) (token' TokenRightBrace)
+
+surroundedBy :: Monad m => m a1 -> m a2 -> m b -> m b
+surroundedBy before after p = do
+    _ <- before
     x <- p
-    endHead
-    H.parse $ symbol ")"
+    _ <- after
     pure x
 
-char :: IsParser m => Char -> m Char
-char = fromParsec . MC.char
-
-char' :: IsParser m => Char -> m ()
-char' = void . char
-
 commaSeparated :: HParser a -> HParser [a]
-commaSeparated p = p `sepBy` lexeme (char ',')
+commaSeparated p = p `sepBy` token' TokenComma
 
 oneOrCommaSeparatedInParens :: HParser a -> HParser [a]
-oneOrCommaSeparatedInParens p = inParens (p `sepBy` lexeme (char ',')) <|> one <$> p
-
-skipNewlines :: IsParser m => m ()
-skipNewlines = fromParsec $ void (takeWhileP (Just "newline") (== '\n'))
-
-skipSpaces :: IsParser m => m ()
-skipSpaces = fromParsec $ void $ many MC.space1
+oneOrCommaSeparatedInParens p = inParens (p `sepBy` token' TokenComma) <|> one <$> p
 
 withPredicate :: IsParser m => (t -> Bool) -> (t -> ElaraParseError) -> m t -> m t
 withPredicate f msg p = do

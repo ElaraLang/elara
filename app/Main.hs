@@ -32,13 +32,11 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
-  y <- runM $ lexFile "source.elr"
-  printColored (view unlocated <<$>> y)
-
--- s <- runElara
--- when (hasReports s) $ do
---   printDiagnostic stdout True True 4 defaultStyle s
---   exitFailure
+  (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
+  s <- runElara
+  when (hasReports s) $ do
+    printDiagnostic stdout True True 4 defaultStyle s
+    exitFailure
 
 runElara :: IO (Diagnostic Text)
 runElara = runM $ execDiagnosticWriter $ do
@@ -82,17 +80,22 @@ lexFile path = do
 
 loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do
-  s <- decodeUtf8Strict <$> readFileBS path
-  case s of
+  s <- readFileLBS path
+  case decodeUtf8Strict s of
     Left unicodeError -> do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
        in addReport errReport $> Nothing
-    Right contents -> do
+    Right (contents :: Text) -> do
       addFile path (toString contents) -- add every loaded file to the diagnostic
-      case parse path contents of
-        Left parseError -> do
-          addDiagnostic (reportDiagnostic parseError) $> Nothing
-        Right m -> pure (Just m)
+      case lex path s of
+        Left lexError -> do
+          print lexError
+          pure Nothing
+        Right lexemes -> do
+          case parse path lexemes of
+            Left parseError -> do
+              addDiagnostic (reportDiagnostic parseError) $> Nothing
+            Right m -> pure (Just m)
 
 overExpressions ::
   ( UnwrapUnlocated (ASTLocate' ast2 (DeclarationBody' ast2))
