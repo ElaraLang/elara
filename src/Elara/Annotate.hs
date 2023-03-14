@@ -5,7 +5,8 @@
 
 module Elara.Annotate where
 
-import Control.Lens (over, traverseOf, (^.), (^..), _2)
+import Control.Lens (over, to, traverseOf, view, (^.), (^..), _2)
+import Data.List.NonEmpty ((<|))
 import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
@@ -31,7 +32,7 @@ data AnnotationError
     | ContextBuildingError (ContextBuildingError Frontend)
     | ContextCleaningError (NonEmpty (ContextCleaningError Frontend))
     | QualifiedWithWrongModule (Located (Qualified Name)) ModuleName
-    | DuplicateDefinition (Located (Qualified Name)) (Located (Qualified Name))
+    | DuplicateDefinition (Located (Qualified Name)) (NonEmpty (Located (Qualified Name)))
     deriving (Show)
 
 instance ReportableError AnnotationError where
@@ -57,14 +58,15 @@ instance ReportableError AnnotationError where
                 , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
                 , Hint $ "Try renaming your module to " <> fullNameText qual
                 ]
-    report (DuplicateDefinition (Located sr1 n1) (Located sr2 _)) = do
+    report (DuplicateDefinition (Located sr1 n1) others) = do
         let pos1 = sourceRegionToDiagnosePosition sr1
-        let pos2 = sourceRegionToDiagnosePosition sr2
+        let otherPoses = view (sourceRegion . to sourceRegionToDiagnosePosition) <$> others
+        let markers = (pos1, This "defined here") <| ((,Where "also defined here") <$> otherPoses)
         writeReport $
             Err
                 (Just Codes.duplicateDefinition)
                 ("Duplicate definition of " <> fullNameText n1)
-                [(pos1, This "defined here"), (pos2, This "defined here")]
+                (toList markers)
                 [Note "If you're trying to do pattern matching a-la Haskell, you can't do that in Elara. Make a single definition and use a match expression"]
 
 searchOrThrow :: (Member (Error AnnotationError) r, Member (Reader (CleanedInspectionContext Frontend)) r) => Located (MaybeQualified Name) -> Sem r ModuleName
@@ -96,8 +98,9 @@ verifyUniqueDeclarations thisModule = do
     qualifiedNames <- traverse (qualifyInModule thisModule) declNames
     let grouped = M.fromListWith (<>) (qualifiedNames <&> \n -> (n ^. unlocated, pure n)) :: Map (Qualified Name) (NonEmpty (Located (Qualified Name)))
     for_ (M.toList grouped) $ \(_', locs) ->
-        when (length locs > 1) $
-            throw (DuplicateDefinition (head locs) (last locs))
+        case locs of
+            _ :| [] -> pass
+            a :| (b : xs) -> throw (DuplicateDefinition a (b :| xs))
 
 qualifyInModule ::
     (ToName n, Member (Error AnnotationError) r) =>
