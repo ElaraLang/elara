@@ -1,7 +1,8 @@
 module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
+import Control.Lens ((^.))
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), VarName (..))
+import Elara.AST.Name (HasName (name), MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), Unqualified, VarName (..))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
@@ -46,12 +47,20 @@ instance Pretty Expr where
             $+$ nest indentDepth (ppr p body)
     ppr p (Let n patterns body) =
         ("let" <+> ppr p n <+> hsep (fmap (ppr p) patterns) <+> "=") $+$ nest (indentDepth + 4) (ppr p body)
+    ppr p (Match e cases) =
+        "match" <+> PP.braces (ppr p e) <+> "with" $+$ nest indentDepth (vcat (fmap (ppr p) cases))
     ppr p (Block es) = PP.vcat $ toList (fmap (ppr p) es)
     ppr p (InParens e) = PP.parens (ppr p e)
+
+instance Pretty (Pattern, Expr) where
+    ppr p (p', e) = ppr p p' <+> "->" $+$ nest indentDepth (ppr p e)
 
 instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     ppr p (MaybeQualified n (Just m)) = ppr p m <> "." <> ppr p n
     ppr p (MaybeQualified n Nothing) = ppr p n
+
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
+    ppr p uq = ppr p (uq ^. name)
 
 instance Pretty ModuleName where
     ppr _ (ModuleName m) = PP.hcat (PP.punctuate "." (fmap (PP.text . toString) (toList m)))
@@ -76,6 +85,10 @@ instance Pretty Pattern where
     ppr p (ConstructorPattern c ps) = PP.parens (ppr p c <+> PP.hsep (fmap (ppr p) ps))
     ppr p (ListPattern ps) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) ps)))
     ppr _ WildcardPattern = "_"
+    ppr _ (IntegerPattern i) = PP.integer i
+    ppr _ (FloatPattern f) = PP.double f
+    ppr _ (StringPattern s) = PP.char '"' <> fromString (toString s) <> PP.char '"'
+    ppr _ (CharPattern c) = PP.char '\'' <> escapeChar c <> PP.char '\''
 
 instance Pretty BinaryOperator where
     ppr _ (Op o) = ppr 0 o

@@ -7,6 +7,6 @@ main = do
   hspec spec
 
 spec :: Spec
-spec = do
+spec = parallel $ do
   describe "AST inspection test" Inspection.spec
   describe "Parse test" Parse.spec

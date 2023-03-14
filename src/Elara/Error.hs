@@ -3,23 +3,13 @@
 
 module Elara.Error where
 
+import Elara.Error.Effect (DiagnosticWriter)
 import Error.Diagnose
+import Polysemy
 import Prelude hiding (Reader, asks, readFile)
 
 class ReportableError e where
-    report :: e -> Report Text
-
-class ReportDiagnostic e where
-    reportDiagnostic :: e -> Diagnostic Text
-
-instance {-# OVERLAPPABLE #-} ReportableError e => ReportDiagnostic e where
-    reportDiagnostic = addReport def . report
-
-collectErrors :: [Either (Diagnostic Text) a] -> Either (Diagnostic Text) [a]
-collectErrors (partitionEithers -> partitioned) =
-    case partitioned of
-        ([], xs) -> Right xs
-        (es, _) -> Left (foldr (<>) def es)
+    report :: (Member (DiagnosticWriter Text) r) => e -> Sem r ()
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes

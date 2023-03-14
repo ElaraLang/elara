@@ -2,16 +2,13 @@ module Parse.Common where
 
 import Control.Lens
 import Elara.AST.Frontend.StripLocation
-import Elara.AST.Frontend.Unlocated
-import Elara.AST.Module (Declaration (..), Declaration', Module)
+import Elara.AST.Module (Declaration (..), Declaration')
 import Elara.AST.Module qualified as Mod
 import Elara.AST.Name
-import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Parse (parse)
 import Elara.Parse.Error (unWParseErrorBundle)
-import Print (prettyShow)
-import Test.Hspec.Megaparsec (parseSatisfies, shouldParse)
+import Test.Hspec.Megaparsec (parseSatisfies)
 import Test.QuickCheck
 import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
 

@@ -15,10 +15,14 @@ class StripLocation a b | a -> b where
     stripLocation :: a -> b
 
 instance StripLocation (Located a) a where
+    stripLocation :: Located a -> a
     stripLocation (Located _ a) = a
 
 instance {-# OVERLAPPABLE #-} (Functor f, StripLocation a b) => StripLocation (f a) (f b) where
     stripLocation = fmap stripLocation
+
+instance (StripLocation a a', StripLocation b b') => StripLocation (a, b) (a', b') where
+    stripLocation (a, b) = (stripLocation a, stripLocation b)
 
 instance StripLocation Frontend.Expr Expr where
     stripLocation (Frontend.Expr (Located _ expr)) = case expr of
@@ -34,6 +38,7 @@ instance StripLocation Frontend.Expr Expr where
         Frontend.If e1 e2 e3 -> If (stripLocation e1) (stripLocation e2) (stripLocation e3)
         Frontend.BinaryOperator o e1 e2 -> BinaryOperator (stripLocation o) (stripLocation e1) (stripLocation e2)
         Frontend.List l -> List (stripLocation l)
+        Frontend.Match e m -> Match (stripLocation e) (stripLocation m)
         Frontend.LetIn v p e1 e2 -> LetIn (stripLocation v) (stripLocation p) (stripLocation e1) (stripLocation e2)
         Frontend.Let v p e -> Let (stripLocation v) (stripLocation p) (stripLocation e)
         Frontend.Block b -> Block (stripLocation b)
@@ -45,6 +50,10 @@ instance StripLocation Frontend.Pattern Pattern where
         Frontend.ConstructorPattern c p -> ConstructorPattern (stripLocation c) (stripLocation p)
         Frontend.ListPattern p -> ListPattern (stripLocation p)
         Frontend.WildcardPattern -> WildcardPattern
+        Frontend.IntegerPattern i -> IntegerPattern i
+        Frontend.FloatPattern f -> FloatPattern f
+        Frontend.StringPattern s -> StringPattern s
+        Frontend.CharPattern c -> CharPattern c
 
 instance StripLocation Frontend.BinaryOperator BinaryOperator where
     stripLocation (Frontend.MkBinaryOperator (Located _ op)) = case op of
@@ -57,6 +66,7 @@ instance StripLocation Frontend.Type Type where
     stripLocation Frontend.UnitType = UnitType
     stripLocation (Frontend.TypeConstructorApplication t1 t2) = TypeConstructorApplication (stripLocation t1) (stripLocation t2)
     stripLocation (Frontend.UserDefinedType t) = UserDefinedType (stripLocation t)
+    stripLocation (Frontend.RecordType r) = RecordType (stripLocation r)
 
 instance StripLocation (Module Frontend) (Module UnlocatedFrontend) where
     stripLocation (Module m) = Module (stripLocation (stripLocation m :: Module' Frontend))

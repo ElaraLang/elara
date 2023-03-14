@@ -1,21 +1,22 @@
 module Elara.Parse.Expression where
 
+import Control.Lens ((^.))
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
-import Elara.AST.Frontend (Expr (..))
+import Elara.AST.Frontend (Expr (..), Pattern (..))
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Name (MaybeQualified (..), VarName, nameText)
-import Elara.AST.Region (Located (..), enclosingRegion, getLocation)
+import Elara.AST.Name (Unqualified, VarName, nameText)
+import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
+import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error
-import Elara.Parse.Indents (blockAt, optionallyIndented, sub1, withCurrentIndentOrNormal, withIndentOrNormal)
+import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
-import Elara.Parse.Names (opName, typeName, varName)
-import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), char', inParens, lexeme, located, sc, symbol, withPredicate, (<??>))
+import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
+import Elara.Parse.Pattern
+import Elara.Parse.Primitives (HParser, inBraces, inParens, located, token', withPredicate, (<??>))
 import HeadedMegaparsec (endHead)
-import HeadedMegaparsec qualified as H (endHead, parse, toParsec)
-import Text.Megaparsec (Pos, sepBy, sepEndBy)
-import Text.Megaparsec.Char.Lexer (indentLevel)
+import HeadedMegaparsec qualified as H (parse, toParsec)
+import Text.Megaparsec (sepEndBy, sepEndBy1)
 
 locatedExpr :: HParser Frontend.Expr' -> HParser Expr
 locatedExpr = (Expr <$>) . (H.parse . located . H.toParsec)
@@ -42,41 +43,42 @@ element =
 | in places where they are valid, such as in the body of a function.
 -}
 statement :: HParser Expr
-statement = letExpression <??> "statement"
+statement = letStatement <??> "statement"
 
 -- Lift a binary operator to work on `Expr` instead of `Frontend.Expr`. Probably not the best way to do this, but it works
 liftedBinary :: Monad m => m t -> (t -> Expr -> Expr -> Frontend.Expr') -> m (Expr -> Expr -> Expr)
 liftedBinary op f = do
     op' <- op
     let create l'@(Expr l) r'@(Expr r) =
-            let region = enclosingRegion (getLocation l) (getLocation r)
+            let region = enclosingRegion' (l ^. sourceRegion) (r ^. sourceRegion)
              in Expr $ Located region (f op' l' r')
     pure create
 
 binOp, functionCall :: HParser (Expr -> Expr -> Expr)
 binOp = liftedBinary operator Frontend.BinaryOperator
-functionCall = liftedBinary sc (const Frontend.FunctionCall)
+functionCall = liftedBinary pass (const Frontend.FunctionCall)
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: HParser Frontend.BinaryOperator
 operator = Frontend.MkBinaryOperator <$> (asciiOp <|> infixOp) <??> "operator"
   where
     asciiOp = located $ do
-        Frontend.Op <$> located opName
-    infixOp = located $ lexeme $ do
-        char' '`'
+        Frontend.Op <$> located (maybeQualified opName)
+    infixOp = located $ do
+        token' TokenBacktick
         endHead
         op <- located varName
-        char' '`'
+        token' TokenBacktick
         pure $ Frontend.Infixed op
 
 expression :: HParser Frontend.Expr
 expression =
     unit
         <|> (parensExpr <??> "parenthesized expression")
-        <|> (ifElse <??> "if expression")
+        -- <|> (ifElse <??> "if expression")
         <|> (letInExpression <??> "let-in expression")
-        <|> (lambda <??> "lambda expression")
+        -- <|> (lambda <??> "lambda expression")
+        <|> (match <??> "match expression")
         <|> (float <??> "float")
         <|> (int <??> "int")
         <|> (charL <??> "char")
@@ -98,13 +100,13 @@ parensExpr = do
 variable :: HParser Frontend.Expr
 variable =
     locatedExpr $
-        Frontend.Var <$> withPredicate (not . validName) (KeywordUsedAsName . nameText) (located $ lexeme varName)
+        Frontend.Var <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
   where
     validName var = nameText var `Set.member` reservedWords
 
 constructor :: HParser Frontend.Expr
 constructor = locatedExpr $ do
-    con <- located $ lexeme (failIfDotAfter typeName)
+    con <- located (failIfDotAfter typeName)
     pure $ Frontend.Constructor con
   where
     -- Nasty hacky function that causes the parser to fail if the next token is a dot
@@ -114,12 +116,12 @@ constructor = locatedExpr $ do
     failIfDotAfter p = do
         res <- p
         endHead
-        o <- optional (char' '.')
+        o <- optional (token' TokenDot)
         whenJust o $ \_ -> fail "Cannot use dot after expression"
         pure res
 
 unit :: HParser Frontend.Expr
-unit = locatedExpr (Frontend.Unit <$ symbol "()") <??> "unit"
+unit = locatedExpr (Frontend.Unit <$ token' TokenLeftParen <* token' TokenRightParen) <??> "unit"
 
 int :: HParser Frontend.Expr
 int = locatedExpr (Frontend.Int <$> integerLiteral) <??> "int"
@@ -135,78 +137,81 @@ charL = locatedExpr (Frontend.Char <$> charLiteral) <??> "char"
 
 list :: HParser Frontend.Expr
 list = locatedExpr $ do
-    symbol "["
+    token' TokenLeftBracket
     endHead
-    elements <- lexeme (sepEndBy exprParser (symbol ","))
-    symbol "]"
+    elements <- sepEndBy exprParser (token' TokenComma)
+    token' TokenRightBracket
     pure $ Frontend.List elements
 
-lambda :: HParser Expr
-lambda = locatedExpr $ do
-    symbol "\\"
+match :: HParser Frontend.Expr
+match = locatedExpr $ do
+    token' TokenMatch
     endHead
-    start <- fromParsec indentLevel
-    args <- lexeme (sepBy (lexeme pattern') sc)
-    symbol "->"
-    (_, res) <- blockAt start element
-    pure (Frontend.Lambda args res)
+    expr <- block element
+    token' TokenWith
 
-ifElse :: HParser Expr
-ifElse = locatedExpr $ do
-    start <- sub1 <$> fromParsec indentLevel
-    symbol "if"
-    endHead
-    afterIf <- fromParsec indentLevel
-    (_, condition) <- blockAt afterIf element
-    (afterThen, _) <- withIndentOrNormal start (symbol "then")
-    (_, thenBranch) <- blockAt afterThen element
-    (afterElse, _) <- withIndentOrNormal start (symbol "else")
-    (_, elseBranch) <- blockAt afterElse element
+    cases <- inBraces $ sepEndBy1 matchCase (token' TokenSemicolon)
+    pure $ Frontend.Match expr cases
+  where
+    matchCase :: HParser (Pattern, Frontend.Expr)
+    matchCase = do
+        case' <- pattern'
+        token' TokenRightArrow
+        expr <- block element
+        pure (case', expr)
 
-    pure (Frontend.If condition thenBranch elseBranch)
+-- lambda :: HParser Expr
+-- lambda = locatedExpr $ do
+--     token' TokenBackslash
+--     endHead
+--     start <- fromParsec indentLevel
+--     args <- lexeme (sepBy (lexeme pattern') sc)
+--     symbol "->"
+--     (_, res) <- blockAt start element
+--     pure (Frontend.Lambda args res)
 
-letExpression :: HParser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
-letExpression = locatedExpr $ do
-    (_, name, patterns, e) <- letPreamble
+-- ifElse :: HParser Expr
+-- ifElse = locatedExpr $ do
+--     start <- sub1 <$> fromParsec indentLevel
+--     symbol "if"
+--     endHead
+--     (_, condition) <- blockAt start element
+--     _ <- withIndentOrNormal start (symbol "then")
+--     (_, thenBranch) <- blockAt start element
+--     _ <- withIndentOrNormal start (symbol "else")
+--     (_, elseBranch) <- blockAt start element
 
-    -- let names = patterns >>= patternNames
-    -- let promote = fmap (transform (Name.promoteArguments names))
-    pure (Frontend.Let name patterns e)
+--     pure (Frontend.If condition thenBranch elseBranch)
+
+-- -- letExpression :: HParser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
+-- -- letExpression = locatedExpr $ do
+-- --     (_, name, patterns, e) <- letPreamble
+
+-- --     -- let names = patterns >>= patternNames
+-- --     -- let promote = fmap (transform (Name.promoteArguments names))
+-- --     pure (Frontend.Let name patterns e)
 
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do
-    (start, name, patterns, e) <- letPreamble
-
-    _ <- withIndentOrNormal start (symbol "in")
-
-    (_, body) <- blockAt start element
+    (name, patterns, e) <- letPreamble
+    token' TokenIn
+    body <- block element
 
     -- let names = patterns >>= patternNames
     -- let promote = fmap (transform (Name.promoteArguments names))
     pure (Frontend.LetIn name patterns e body)
 
-letPreamble :: HParser (Pos, Located (MaybeQualified VarName), [Frontend.Pattern], Expr)
-letPreamble = do
-    start <- fromParsec indentLevel
-    symbol "let"
-    H.endHead
-    afterLet <- fromParsec indentLevel
-    name <- lexeme $ located varName
-    (_, patterns) <- withCurrentIndentOrNormal $ do
-        sepBy (lexeme pattern') sc
-    _ <- withIndentOrNormal afterLet (symbol "=")
-    (_, e) <- blockAt afterLet element
-    pure (start, name, patterns, e)
+letStatement :: HParser Frontend.Expr
+letStatement = locatedExpr $ do
+    (name, patterns, e) <- letPreamble
+    pure (Frontend.Let name patterns e)
 
-letRaw :: HParser (Located (MaybeQualified VarName), [Frontend.Pattern], Frontend.Expr)
-letRaw = do
-    ((name, patterns), e) <- optionallyIndented letPreamble element
+letPreamble :: HParser (Located (Unqualified VarName), [Frontend.Pattern], Frontend.Expr)
+letPreamble = do
+    token' TokenLet
+    endHead
+    name <- located unqualifiedVarName
+    patterns <- many pattern'
+    token' TokenEquals
+    e <- block element
     pure (name, patterns, e)
-  where
-    letPreamble = do
-        symbol "let"
-        endHead
-        name <- located $ lexeme varName
-        patterns <- sepBy (lexeme pattern') sc
-        symbol "="
-        pure (name, patterns)

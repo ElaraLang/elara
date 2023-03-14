@@ -5,7 +5,7 @@ module Parse.QuickCheck where
 import Data.List.NonEmpty (appendList)
 import Data.Set qualified as Set
 import Elara.AST.Frontend.Unlocated as Unlocated
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), VarName (..), nameText)
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), VarName (..), nameText, Unqualified (..))
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 import Prelude hiding (Op)
@@ -52,6 +52,9 @@ instance Arbitrary name => Arbitrary (MaybeQualified name) where
 
 instance Arbitrary name => Arbitrary (Qualified name) where
     arbitrary = Qualified <$> arbitrary <*> arbitrary
+
+instance Arbitrary name => Arbitrary (Unqualified name) where
+    arbitrary = Unqualified <$>  arbitrary
 
 instance Arbitrary VarName where
     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]

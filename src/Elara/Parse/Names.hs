@@ -1,22 +1,29 @@
 module Elara.Parse.Names where
 
-import Data.Set (member)
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
+import Control.Lens ((^.))
+import Elara.AST.Name (HasName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), Unqualified (Unqualified), VarName (..))
+import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, char', inParens, lexeme, (<??>))
+import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token', (<??>))
 import HeadedMegaparsec (endHead)
-import HeadedMegaparsec qualified as H (parse)
-import Text.Megaparsec (satisfy)
-import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, upperChar)
 
 varName :: HParser (MaybeQualified VarName)
 varName = operatorVarName <|> normalVarName
 
+unqualifiedVarName :: HParser (Unqualified VarName)
+unqualifiedVarName = unqualifiedOperatorVarName <|> unqualifiedNormalVarName
+
 normalVarName :: HParser (MaybeQualified VarName)
-normalVarName = maybeQualified (NormalVarName <$> alphaVarName) <??> "variable name"
+normalVarName = maybeQualified $ (^. name) <$> unqualifiedNormalVarName <??> "variable name"
+
+unqualifiedNormalVarName :: HParser (Unqualified VarName)
+unqualifiedNormalVarName = Unqualified . NormalVarName <$> alphaVarName <??> "variable name"
 
 operatorVarName :: HParser (MaybeQualified VarName)
-operatorVarName = (OperatorVarName <<$>> inParens opName) <??> "operator name in parens"
+operatorVarName = (OperatorVarName <<$>> inParens (maybeQualified opName)) <??> "operator name in parens"
+
+unqualifiedOperatorVarName :: HParser (Unqualified VarName)
+unqualifiedOperatorVarName = (Unqualified . OperatorVarName <$> inParens opName) <??> "operator name in parens"
 
 typeName :: HParser (MaybeQualified TypeName)
 typeName = do
@@ -32,30 +39,24 @@ maybeQualified name = unqualified <|> qualified
   qualified = do
     qual <- moduleName
     endHead
-    char' '.'
+    token' TokenDot
     MaybeQualified <$> name <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
-moduleName = ModuleName <$> sepBy1' upperVarName (H.parse $ char '.')
+moduleName = ModuleName <$> sepBy1' upperVarName (token' TokenDot)
 
 upperVarName :: HParser Text
-upperVarName =
-  toText <$> do
-    start <- H.parse upperChar
-    rest <- H.parse (many alphaNumChar)
-    pure (start : rest)
-
+upperVarName = satisfyMap $
+  \case
+    TokenConstructorIdentifier i -> Just i
+    _ -> Nothing
 alphaVarName :: HParser Text
-alphaVarName =
-  toText <$> do
-    start <- H.parse lowerChar
-    rest <- H.parse (many alphaNumChar)
-    pure (start : rest)
+alphaVarName = satisfyMap $
+  \case
+    TokenVariableIdentifier i -> Just i
+    _ -> Nothing
 
-opName :: HParser (MaybeQualified OpName)
-opName = maybeQualified $ OpName . toText <$> lexeme (some operatorChar)
- where
-  operatorChars :: Set Char
-  operatorChars = ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']
-  operatorChar :: HParser Char
-  operatorChar = H.parse $ satisfy (`member` operatorChars)
+opName :: HParser OpName
+opName = satisfyMap $ \case
+  TokenOperatorIdentifier i -> Just (OpName i)
+  _ -> Nothing

@@ -3,7 +3,7 @@
 module Elara.AST.Annotated where
 
 import Control.Lens (makePrisms)
-import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
 import Elara.AST.Region (Located (Located))
 import Prelude hiding (Op, Type)
 
@@ -27,8 +27,9 @@ data Expr'
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
-    | LetIn (Located (Qualified VarName)) Expr Expr
-    | Let (Located (Qualified VarName)) Expr
+    | Match Expr [(Pattern, Expr)]
+    | LetIn (Located (Unqualified VarName)) Expr Expr
+    | Let (Located (Unqualified VarName)) Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -41,6 +42,10 @@ data Pattern'
     | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
+    | IntegerPattern Integer
+    | FloatPattern Double
+    | StringPattern Text
+    | CharPattern Char
     deriving (Show, Eq)
 
 newtype Pattern = Pattern (Located Pattern')
@@ -67,6 +72,7 @@ data Type
     | UnitType
     | TypeConstructorApplication Type Type
     | UserDefinedType (Located (Qualified TypeName))
+    | RecordType (NonEmpty (Located (Unqualified VarName), Type))
     deriving (Show, Eq)
 
 makePrisms ''Expr

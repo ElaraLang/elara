@@ -7,21 +7,20 @@ module Main (
 
 import Control.Lens
 import Elara.AST.Module
+import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
-
 import Elara.Annotate.Shunt (fixOperators)
-
-import Elara.AST.Region (Located, _Unlocate)
 import Elara.Error
 import Elara.Error.Effect (
   DiagnosticWriter,
-  addDiagnostic,
   addFile,
-  addReport,
   execDiagnosticWriter,
+  writeReport,
  )
+import Elara.Lexer.Lexer
 import Elara.Parse
+import Elara.Parse.Stream
 import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
 import Error.Diagnose.Diagnostic (hasReports)
 import Polysemy (Embed, Member, Sem, embed, run, runM)
@@ -33,6 +32,7 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
+  -- (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
   s <- runElara
   when (hasReports s) $ do
     printDiagnostic stdout True True 4 defaultStyle s
@@ -45,9 +45,9 @@ runElara = runM $ execDiagnosticWriter $ do
   case liftA2 (,) s p of
     Nothing -> pass
     Just (source, prelude) ->
-      let modules = fromList [(source ^. (name . _Unlocate), source), (prelude ^. (name . _Unlocate), prelude)]
+      let modules = fromList [(source ^. (name . unlocated), source), (prelude ^. (name . unlocated), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left annotateError -> addDiagnostic (reportDiagnostic annotateError)
+            Left annotateError -> report annotateError
             Right m' -> do
               fixOperatorsInModule m' >>= embed . printColored
 
@@ -66,26 +66,36 @@ fixOperatorsInModule m = do
                 m
   case x of
     Left shuntErr -> do
-      addDiagnostic (reportDiagnostic shuntErr)
-      pure Nothing
+      report shuntErr $> Nothing
     Right (warnings, finalM) -> do
-      let warnings' =  fmap report (toList warnings)
-      for_ warnings' addReport
+      traverse_ report (toList warnings)
       pure (Just finalM)
+
+lexFile :: (Member (Embed IO) r) => FilePath -> Sem r (Either String [Lexeme])
+lexFile path = do
+  bs <- readFileLBS path
+  pure (lex path bs)
 
 loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe (Module Frontend))
 loadModule path = do
-  s <- decodeUtf8Strict <$> readFileBS path
-  case s of
+  s <- readFileLBS path
+  case decodeUtf8Strict s of
     Left unicodeError -> do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
-       in addReport errReport $> Nothing
-    Right contents -> do
-      addFile path (toString contents) -- add every loaded file to the diagnostic
-      case parse path contents of
-        Left parseError -> do
-          addDiagnostic (reportDiagnostic parseError) $> Nothing
-        Right m -> pure (Just m)
+       in writeReport errReport $> Nothing
+    Right (contents :: Text) -> do
+      let contentsAsString = toString contents
+      addFile path contentsAsString -- add every loaded file to the diagnostic
+      case lex path s of
+        Left lexError -> do
+          print lexError
+          pure Nothing
+        Right lexemes -> do
+          let tokenStream = TokenStream contentsAsString lexemes
+          case parse path tokenStream of
+            Left parseError -> do
+              report parseError $> Nothing
+            Right m -> pure (Just m)
 
 overExpressions ::
   ( UnwrapUnlocated (ASTLocate' ast2 (DeclarationBody' ast2))
@@ -98,4 +108,4 @@ overExpressions ::
   (ASTExpr ast -> f (ASTExpr ast)) ->
   s ->
   f s
-overExpressions = declarations . traverse . body . _DeclarationBody . _Unlocate . expression
+overExpressions = declarations . traverse . body . _DeclarationBody . unlocated . expression

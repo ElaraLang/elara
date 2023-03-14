@@ -38,7 +38,7 @@ mainTest = do
             import Quux qualified
         the context would be
     -}
-    let quux = makeModule "Quux" [Declaration' "Quux" (makeMQName NVarName "quux" Nothing) (DeclarationBody $ (Value (Int 0) [] Nothing))] []
+    let quux = makeModule "Quux" [Declaration' "Quux" (makeMQName NVarName "quux" Nothing) (DeclarationBody $ Value (Int 0) [] Nothing)] []
     let bar = makeModule "Bar" [Declaration' "Bar" (makeMQName NVarName "bar" Nothing) (DeclarationBody $ Value (Int 0) [] Nothing)] []
     let fooBar = makeModule "Foo" [Declaration' "Foo" (makeMQName NVarName "fooBar" Nothing) (DeclarationBody $ Value (Int 0) [] Nothing)] []
     let baz = makeModule "Baz" [
