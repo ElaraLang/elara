@@ -10,11 +10,11 @@ import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
-import Elara.AST.Module.Inspection (CleanedInspectionContext, ContextBuildingError, ContextCleaningError, DirtyInspectionContext, buildContext, search, verifyContext)
+import Elara.AST.Module.Inspection (CleanedInspectionContext, ContextBuildingError, ContextCleaningError, buildContext, search, verifyContext)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), ToName (toName), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion (GeneratedRegion), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (Located (Located), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (Annotated, Frontend)
-import Elara.Error (ReportableError (report), addPosition)
+import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect
 import Error.Diagnose hiding (addReport)

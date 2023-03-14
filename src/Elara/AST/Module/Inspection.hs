@@ -302,12 +302,12 @@ buildContext thisModule s = do
         addQualAndUnqual qual = do
           let unlocatedName = rUnlocate' @ast qual :: MaybeQualified Name
           let modNamePair = (actualModule, qual)
-          let modify' = modify . over _DirtyInspectionContext
-          modify' (M.insertWith (<>) (qualify unlocatedName) (pure modNamePair))
+          let modifyDE = modify . over _DirtyInspectionContext
+          modifyDE (M.insertWith (<>) (qualify unlocatedName) (pure modNamePair))
 
           unless
             onlyQualified
-            (modify' (M.insertWith (<>) (unqualify unlocatedName) (pure modNamePair)))
+            (modifyDE (M.insertWith (<>) (unqualify unlocatedName) (pure modNamePair)))
 
         normalizedName :: ASTLocate ast (MaybeQualified Name)
         normalizedName = fmapRUnlocate' @ast normalizeName declarationName

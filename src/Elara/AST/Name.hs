@@ -10,7 +10,7 @@
 
 module Elara.AST.Name where
 
-import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, view)
+import Control.Lens ( makeFields, makeLenses, makePrisms, view)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)

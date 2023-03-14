@@ -23,7 +23,6 @@ import Elara.Lexer.Lexer (Lexeme)
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
 import Elara.Error.Effect (writeDiagnostic)
 import Elara.Parse.Stream (TokenStream)
-import GHC.Conc (reportError)
 import Prelude hiding (error, lines)
 
 data ElaraParseError
