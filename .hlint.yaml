@@ -13,6 +13,7 @@
   - "-XNoPatternSynonyms"
   - "-XQuasiQuotes"
   - "-XGHC2021"
+  - "-XExplicitNamespaces"
 
 
 - ignore:
