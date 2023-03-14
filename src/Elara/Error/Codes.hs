@@ -29,6 +29,9 @@ ambiguousName = "E1003"
 qualifiedWithWrongModule :: ErrorCode
 qualifiedWithWrongModule = "E1004"
 
+duplicateDefinition :: ErrorCode
+duplicateDefinition = "E1005"
+
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
 

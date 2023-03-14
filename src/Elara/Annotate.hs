@@ -5,7 +5,7 @@
 
 module Elara.Annotate where
 
-import Control.Lens (over, traverseOf, (^.), _2)
+import Control.Lens (over, traverseOf, (^.), (^..), _2)
 import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
@@ -31,6 +31,7 @@ data AnnotationError
     | ContextBuildingError (ContextBuildingError Frontend)
     | ContextCleaningError (NonEmpty (ContextCleaningError Frontend))
     | QualifiedWithWrongModule (Located (Qualified Name)) ModuleName
+    | DuplicateDefinition (Located (Qualified Name)) (Located (Qualified Name))
     deriving (Show)
 
 instance ReportableError AnnotationError where
@@ -56,6 +57,15 @@ instance ReportableError AnnotationError where
                 , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
                 , Hint $ "Try renaming your module to " <> fullNameText qual
                 ]
+    report (DuplicateDefinition (Located sr1 n1) (Located sr2 _)) = do
+        let pos1 = sourceRegionToDiagnosePosition sr1
+        let pos2 = sourceRegionToDiagnosePosition sr2
+        writeReport $
+            Err
+                (Just Codes.duplicateDefinition)
+                ("Duplicate definition of " <> fullNameText n1)
+                [(pos1, This "defined here"), (pos2, This "defined here")]
+                [Note "If you're trying to do pattern matching a-la Haskell, you can't do that in Elara. Make a single definition and use a match expression"]
 
 searchOrThrow :: (Member (Error AnnotationError) r, Member (Reader (CleanedInspectionContext Frontend)) r) => Located (MaybeQualified Name) -> Sem r ModuleName
 searchOrThrow l@(Located _ mq) = do
@@ -76,6 +86,31 @@ wrapCtxCleanError sem = do
         Left e -> throw (ContextCleaningError e)
         Right a -> pure a
 
+verifyUniqueDeclarations ::
+    forall r.
+    (Member (Error AnnotationError) r) =>
+    Module Frontend ->
+    Sem r ()
+verifyUniqueDeclarations thisModule = do
+    let declNames = thisModule ^.. declarations . traverse . _Declaration . unlocated . name :: [Located (MaybeQualified Name)]
+    qualifiedNames <- traverse (qualifyInModule thisModule) declNames
+    let grouped = M.fromListWith (<>) (qualifiedNames <&> \n -> (n ^. unlocated, pure n)) :: Map (Qualified Name) (NonEmpty (Located (Qualified Name)))
+    for_ (M.toList grouped) $ \(_', locs) ->
+        when (length locs > 1) $
+            throw (DuplicateDefinition (head locs) (last locs))
+
+qualifyInModule ::
+    (ToName n, Member (Error AnnotationError) r) =>
+    Module Frontend ->
+    Located (MaybeQualified n) ->
+    Sem r (Located (Qualified n))
+qualifyInModule thisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . unlocated) <$ nv)
+qualifyInModule thisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
+    let qualified = nv $> Qualified name' q
+     in if q == thisModule ^. name . unlocated
+            then pure qualified
+            else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . unlocated))
+
 annotateModule ::
     forall r.
     (Member (Reader Modules) r, Member (Error AnnotationError) r) =>
@@ -85,6 +120,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
   where
     annotate :: Sem r (Module' Annotated)
     annotate = do
+        verifyUniqueDeclarations thisModule
         modules <- ask
         context <- wrapCtxError $ buildContext thisModule modules
         cleanedContext <- wrapCtxCleanError $ runReader context (verifyContext @Frontend)
@@ -116,14 +152,6 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
     annotateOpName :: Located (MaybeQualified OpName) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified OpName))
     annotateOpName = annotateGenericName NOpName
 
-    qualifyInThisModule :: ToName n => Located (MaybeQualified n) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified n))
-    qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . unlocated) <$ nv)
-    qualifyInThisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
-        let qualified = nv $> Qualified name' q
-         in if q == thisModule ^. name . unlocated
-                then pure qualified
-                else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . unlocated))
-
     annotateName :: Located (MaybeQualified Name) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified Name))
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NTypeName name') _)) = NTypeName <<<$>>> annotateTypeName (name' <<$ nv)
@@ -137,7 +165,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
         traverseOf
             (_Declaration . unlocated)
             ( \(Declaration' module' name' body') -> do
-                annotatedName <- qualifyInThisModule name'
+                annotatedName <- qualifyInModule thisModule name'
                 annotatedBody <- annotateDeclarationBody body'
                 pure (Declaration' module' annotatedName annotatedBody)
             )
