@@ -16,7 +16,6 @@ import Elara.Error.Effect (
   DiagnosticWriter,
   addFile,
   execDiagnosticWriter,
-  writeDiagnostic,
   writeReport,
  )
 import Elara.Lexer.Lexer
