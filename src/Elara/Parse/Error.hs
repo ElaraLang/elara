@@ -8,23 +8,20 @@ module Elara.Parse.Error where
 
 import Error.Diagnose
 import Text.Megaparsec.Error
-
-import Data.Text qualified as T
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import Text.Megaparsec qualified as MP
 import Prelude hiding (error, lines)
 
-import Control.Lens (folded, mapped, mapping, over, sumOf, to, view, (^.))
+import Control.Lens (to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Region (Located (Located), RealSourceRegion (SourceRegion), SourceRegion (..), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Error (ReportDiagnostic (reportDiagnostic))
 import Elara.Lexer.Lexer (Lexeme)
-import Elara.Lexer.Token (tokenRepr)
 
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
-import Elara.Parse.Stream (TokenStream (TokenStream))
+import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (error, lines)
 
 data ElaraParseError
@@ -105,7 +102,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
     errorLength' :: MP.ErrorFancy e -> Int
     errorLength' (MP.ErrorFail _) = 1
     errorLength' (MP.ErrorIndentation{}) = 1
-    errorLength' (MP.ErrorCustom e) = 1
+    errorLength' (MP.ErrorCustom _) = 1
 
     fromSourcePos :: Int -> MP.SourcePos -> Position
     fromSourcePos size MP.SourcePos{..} =
