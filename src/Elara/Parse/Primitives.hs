@@ -1,14 +1,16 @@
-module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, inParens, inBraces, commaSeparated, oneOrCommaSeparatedInParens, token, token', withPredicate, (<??>), IsParser (..), satisfyMap) where
+module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, inParens, inBraces, commaSeparated, oneOrCommaSeparatedInParens, token, token', withPredicate, (<??>), IsParser (..), satisfyMap, lexeme, locatedTokens') where
 
 import Text.Megaparsec hiding (Token, token)
 import Text.Megaparsec qualified as MP (token)
 
+import Control.Lens
 import Elara.AST.Region
 import Elara.Lexer.Lexer hiding (token)
 import Elara.Lexer.Token
 import Elara.Parse.Error
 import Elara.Parse.Stream (TokenStream)
 import HeadedMegaparsec qualified as H
+import Print (debugColored)
 import Prelude hiding (many, some)
 
 type Parser = Parsec ElaraParseError TokenStream
@@ -43,12 +45,15 @@ fmapLocated :: IsParser f => (Located a -> b) -> f a -> f b
 fmapLocated f = (f <$>) . located
 
 token :: IsParser m => Token -> m Token
-token = fromParsec . singleToken
+token = fmap (view unlocated) . lexeme
+
+lexeme :: IsParser m => Token -> m Lexeme
+lexeme = fromParsec . singleToken
   where
-    singleToken :: Token -> Parser Token
+    singleToken :: Token -> Parser Lexeme
     singleToken t = MP.token (test t) []
-    test :: Token -> Lexeme -> Maybe Token
-    test t (Located _ t2) | t == t2 = Just t
+    test :: Token -> Lexeme -> Maybe Lexeme
+    test t l@(Located _ t2) | t == t2 = Just l
     test _ _ = Nothing
 
 satisfyMap :: forall m a. IsParser m => (Token -> Maybe a) -> m a
@@ -59,6 +64,11 @@ satisfyMap f = fromParsec $ MP.token test []
 
 token' :: IsParser m => Token -> m ()
 token' = void . token
+
+locatedTokens' :: IsParser m => NonEmpty Token -> m SourceRegion
+locatedTokens' tokens = do
+    ts <- traverse lexeme tokens
+    pure $ spanningRegion' (view sourceRegion <$> ts)
 
 inParens :: HParser a -> HParser a
 inParens = surroundedBy (token' TokenLeftParen) (token' TokenRightParen)

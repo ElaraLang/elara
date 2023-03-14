@@ -1,14 +1,17 @@
 module Elara.Parse.Type where
 
+import Control.Lens
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
 import Elara.AST.Frontend (Type (..))
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Unqualified (Unqualified), VarName)
-import Elara.AST.Region (Located)
+import Elara.AST.Name (ModuleName, Unqualified, VarName)
+import Elara.AST.Region (Located, sourceRegion)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Names (alphaVarName, moduleName, typeName, unqualifiedVarName, varName)
-import Elara.Parse.Primitives (HParser, inBraces, located, token')
-import Text.Megaparsec (choice)
+import Elara.Parse.Error (ElaraParseError (EmptyRecord))
+import Elara.Parse.Names (alphaVarName, moduleName, typeName, unqualifiedVarName)
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, located, locatedTokens', token')
+import HeadedMegaparsec (endHead)
+import Text.Megaparsec (choice, customFailure)
 import Prelude hiding (Type)
 
 type' :: HParser Type
@@ -31,6 +34,7 @@ typeTerm =
         [ typeVar
         , unit
         , namedType
+        , emptyRecordError
         , recordType
         , inBraces type'
         ]
@@ -61,3 +65,9 @@ recordType = inBraces $ do
         token' TokenColon
         t <- type'
         pure (name, t)
+
+emptyRecordError :: HParser Type
+emptyRecordError = do
+    sr <- locatedTokens' (TokenLeftBrace :| [TokenRightBrace])
+    endHead
+    fromParsec $ customFailure (EmptyRecord sr)

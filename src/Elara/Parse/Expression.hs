@@ -100,7 +100,7 @@ parensExpr = do
 variable :: HParser Frontend.Expr
 variable =
     locatedExpr $
-        Frontend.Var <$> withPredicate (not . validName) (KeywordUsedAsName . nameText) (located varName)
+        Frontend.Var <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
   where
     validName var = nameText var `Set.member` reservedWords
 
