@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Elara.Parse.Error where
@@ -17,10 +18,12 @@ import Control.Lens (folded, mapped, mapping, over, sumOf, to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Region (Located (Located), unlocated)
+import Elara.AST.Region (Located (Located), RealSourceRegion (SourceRegion), SourceRegion (..), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Error (ReportDiagnostic (reportDiagnostic))
 import Elara.Lexer.Lexer (Lexeme)
 import Elara.Lexer.Token (tokenRepr)
+
+import Elara.Parse.Stream (TokenStream (TokenStream))
 import Prelude hiding (error, lines)
 
 data ElaraParseError
@@ -42,16 +45,9 @@ instance ErrorRegionSize ElaraParseError where
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
 
-instance MP.VisualStream [Lexeme] where
-    tokensLength Proxy ne = sum (T.length . tokenRepr . view unlocated <$> ne)
-    showTokens Proxy ne = T.unpack $ T.intercalate " " $ toList (tokenRepr . view unlocated <$> ne)
-
-instance MP.TraversableStream [Lexeme] where
-    reachOffsetNoLine o pst = pst
-
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 
-instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStream e, MP.TraversableStream e) => ReportDiagnostic (WParseErrorBundle e m) where
+instance (HasHints m Text, ShowErrorComponent m) => ReportDiagnostic (WParseErrorBundle TokenStream m) where
     reportDiagnostic (WParseErrorBundle e) = diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
@@ -59,7 +55,7 @@ instance (ErrorRegionSize m, HasHints m Text, ShowErrorComponent m, MP.VisualStr
 -}
 diagnosticFromBundle ::
     forall msg s e.
-    (IsString msg, HasHints e msg, MP.ShowErrorComponent e, MP.VisualStream s, MP.TraversableStream s, ErrorRegionSize e) =>
+    (MP.Token s ~ Lexeme, IsString msg, HasHints e msg, MP.ShowErrorComponent e, MP.VisualStream s, MP.TraversableStream s, Show (MP.Token s)) =>
     -- | How to decide whether this is an error or a warning diagnostic
     (MP.ParseError s e -> Bool) ->
     -- | An optional error code
@@ -77,8 +73,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
     toLabeledPosition :: MP.ParseError s e -> Report msg
     toLabeledPosition error =
         let (_, pos) = MP.reachOffset (MP.errorOffset error) bundlePosState
-            size = errorLength error
-            source = fromSourcePos size (MP.pstateSourcePos pos)
+            source = maybe (fromSourcePos (errorLength error) (MP.pstateSourcePos pos)) sourceRegionToDiagnosePosition (listToMaybe (errorRegion error))
             msgs = fromString <$> lines (MP.parseErrorTextPretty error)
          in flip
                 (if isError error then Err code msg else Warn code msg)
@@ -88,6 +83,11 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
                         | [m1, m2] <- msgs -> [(source, This m1), (source, Where m2)]
                         | otherwise -> [(source, This $ fromString "<<Unknown error>>")]
 
+    errorRegion :: MP.ParseError s e -> [SourceRegion]
+    errorRegion (MP.TrivialError _ (Just (Tokens ts)) _) = toList $ view sourceRegion <$> ts
+    errorRegion (MP.TrivialError{}) = []
+    errorRegion _ = []
+
     errorLength :: MP.ParseError s e -> Int
     errorLength MP.TrivialError{} = 1
     errorLength (MP.FancyError _ errs) = sum (errorLength' <$> Set.toList errs)
@@ -95,7 +95,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
     errorLength' :: MP.ErrorFancy e -> Int
     errorLength' (MP.ErrorFail _) = 1
     errorLength' (MP.ErrorIndentation{}) = 1
-    errorLength' (MP.ErrorCustom e) = errorRegion e
+    errorLength' (MP.ErrorCustom e) = 1
 
     fromSourcePos :: Int -> MP.SourcePos -> Position
     fromSourcePos size MP.SourcePos{..} =

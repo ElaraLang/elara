@@ -1,21 +1,18 @@
-module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, inParens, inBraces, inParens, commaSeparated, oneOrCommaSeparatedInParens, token, token', withPredicate, (<??>), IsParser (..), satisfyMap) where
+module Elara.Parse.Primitives (Parser, HParser, fmapLocated, located, inParens, inBraces, commaSeparated, oneOrCommaSeparatedInParens, token, token', withPredicate, (<??>), IsParser (..), satisfyMap) where
 
 import Text.Megaparsec hiding (Token, token)
 import Text.Megaparsec qualified as MP (token)
 
-import Control.Lens
 import Elara.AST.Region
 import Elara.Lexer.Lexer hiding (token)
 import Elara.Lexer.Token
 import Elara.Parse.Error
-import HeadedMegaparsec (endHead)
+import Elara.Parse.Stream (TokenStream)
 import HeadedMegaparsec qualified as H
-import Text.Megaparsec.Char qualified as MC
-import Text.Megaparsec.Char.Lexer qualified as L
 import Prelude hiding (many, some)
 
-type Parser = Parsec ElaraParseError [Lexeme]
-type HParser = H.HeadedParsec ElaraParseError [Lexeme]
+type Parser = Parsec ElaraParseError TokenStream
+type HParser = H.HeadedParsec ElaraParseError TokenStream
 
 (<??>) :: HParser a -> String -> HParser a
 (<??>) = flip H.label

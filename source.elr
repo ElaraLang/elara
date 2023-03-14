@@ -1,1 +1,1 @@
-def main : int -> { x : int } -> int
+def main : int -> { } -> int

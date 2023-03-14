@@ -8,7 +8,10 @@ import Control.Lens
 import Data.Data (Data)
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
-import Text.Megaparsec (SourcePos (sourceColumn, sourceLine, sourceName), unPos)
+import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
+
+generatedFileName :: String
+generatedFileName = "<generated>"
 
 data RealPosition = Position
     { line :: Int
@@ -30,7 +33,7 @@ data RealSourceRegion = SourceRegion
 
 data SourceRegion
     = RealSourceRegion !RealSourceRegion
-    | GeneratedRegion FilePath
+    | GeneratedRegion !FilePath
     deriving (Show, Eq, Ord, Data)
 
 makePrisms ''Position
@@ -47,7 +50,7 @@ instance HasPath SourceRegion where
         getter (RealSourceRegion (SourceRegion fp _ _)) = fp
         getter (GeneratedRegion fp) = Just fp
         setter (RealSourceRegion (SourceRegion _ start end)) fp = RealSourceRegion (SourceRegion fp start end)
-        setter (GeneratedRegion _) fp = GeneratedRegion (fromMaybe "<unknown file>" fp)
+        setter (GeneratedRegion _) fp = GeneratedRegion (fromMaybe generatedFileName fp)
 
 instance HasPath RealSourceRegion where
     path = lens getter setter
@@ -63,13 +66,27 @@ mkSourceRegion start end =
         , _endPos = spToPosition end
         }
 
-        
-
 spToPosition :: SourcePos -> RealPosition
 spToPosition sp =
     Position
         { line = unPos $ sourceLine sp
         , column = unPos $ sourceColumn sp
+        }
+
+positionToSp :: FilePath -> RealPosition -> SourcePos
+positionToSp fp (Position line column) =
+    SourcePos
+        { sourceName = fp
+        , sourceLine = mkPos line
+        , sourceColumn = mkPos column
+        }
+
+generatedSourcePos :: Maybe FilePath -> SourcePos
+generatedSourcePos fp =
+    SourcePos
+        { sourceName = fromMaybe generatedFileName fp
+        , sourceLine = mkPos 0
+        , sourceColumn = mkPos 0
         }
 
 sourceRegionToDiagnosePosition :: SourceRegion -> Diag.Position
@@ -83,7 +100,7 @@ sourceRegionToDiagnosePosition (RealSourceRegion (SourceRegion fp (Position star
     Diag.Position
         { Diag.begin = (startLine, startCol)
         , Diag.end = (endLine, endCol)
-        , Diag.file = fromMaybe "<unknown file>" fp
+        , Diag.file = fromMaybe generatedFileName fp
         }
 
 data Located a = Located SourceRegion a

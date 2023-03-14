@@ -29,6 +29,7 @@ import Polysemy.Reader
 import Polysemy.Writer (runWriter)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
+import Elara.Parse.Stream
 
 main :: IO ()
 main = do
@@ -86,13 +87,15 @@ loadModule path = do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
        in addReport errReport $> Nothing
     Right (contents :: Text) -> do
-      addFile path (toString contents) -- add every loaded file to the diagnostic
+      let contentsAsString = toString contents
+      addFile path contentsAsString -- add every loaded file to the diagnostic
       case lex path s of
         Left lexError -> do
           print lexError
           pure Nothing
         Right lexemes -> do
-          case parse path lexemes of
+          let tokenStream = TokenStream contentsAsString lexemes
+          case parse path tokenStream of
             Left parseError -> do
               addDiagnostic (reportDiagnostic parseError) $> Nothing
             Right m -> pure (Just m)
