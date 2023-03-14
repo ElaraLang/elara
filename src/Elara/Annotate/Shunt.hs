@@ -12,6 +12,7 @@ import Elara.AST.Name (Name (NOpName, NVarName), NameLike (fullNameText), Qualif
 import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Error (ReportableError (..))
 import Elara.Error.Codes qualified as Codes
+import Elara.Error.Effect (writeReport)
 import Error.Diagnose
 import Polysemy (Member, Sem)
 import Polysemy.Error (Error, throw)
@@ -49,11 +50,12 @@ instance ReportableError ShuntError where
     report (SamePrecedenceError (op1, a1) (op2, a2)) = do
         let op1Src = sourceRegionToDiagnosePosition $ op1 ^. sourceRegion
         let op2Src = sourceRegionToDiagnosePosition $ op2 ^. sourceRegion
-        Err
-            (Just Codes.samePrecedence)
-            ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. unlocated) <> " and " <> fullNameText (op2 ^. unlocated) <> " when both operators have different associativity.")
-            [(op1Src, This (show a1)), (op2Src, This (show a2))]
-            [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
+        writeReport $
+            Err
+                (Just Codes.samePrecedence)
+                ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. unlocated) <> " and " <> fullNameText (op2 ^. unlocated) <> " when both operators have different associativity.")
+                [(op1Src, This (show a1)), (op2Src, This (show a2))]
+                [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
 newtype ShuntWarning
     = UnknownPrecedence (Located (Qualified Name))
@@ -62,11 +64,12 @@ newtype ShuntWarning
 instance ReportableError ShuntWarning where
     report (UnknownPrecedence op) = do
         let opSrc = sourceRegionToDiagnosePosition $ op ^. sourceRegion
-        Warn
-            (Just Codes.unknownPrecedence)
-            ("Unknown precedence/associativity for operator " <> fullNameText (op ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
-            [(opSrc, This "operator")]
-            [Hint "Define the precedence and associativity of the operator explicitly"]
+        writeReport $
+            Warn
+                (Just Codes.unknownPrecedence)
+                ("Unknown precedence/associativity for operator " <> fullNameText (op ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                [(opSrc, This "operator")]
+                [Hint "Define the precedence and associativity of the operator explicitly"]
 
 opInfo :: OpTable -> Annotated.BinaryOperator -> Maybe OpInfo
 opInfo table op = case op ^. Annotated._MkBinaryOperator . unlocated of

@@ -10,13 +10,14 @@ import Data.Map qualified as M
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module (Declaration (..), Declaration' (Declaration'), DeclarationBody (..), DeclarationBody' (..), Exposing (..), Exposition (..), HasDeclarations (declarations), HasExposing (exposing), HasImports (imports), HasName (name), Import (..), Import' (Import'), Module (..), Module' (..), _Declaration, _DeclarationBody, _Import, _Module)
-import Elara.AST.Module.Inspection (ContextBuildingError, InspectionContext, InspectionError, buildContext, search)
+import Elara.AST.Module.Inspection (CleanedInspectionContext, ContextBuildingError, ContextCleaningError, DirtyInspectionContext, buildContext, search, verifyContext)
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, Qualified (Qualified), ToName (toName), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion (GeneratedRegion), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (Annotated, Frontend)
 import Elara.Error (ReportableError (report), addPosition)
 import Elara.Error.Codes qualified as Codes
-import Error.Diagnose
+import Elara.Error.Effect
+import Error.Diagnose hiding (addReport)
 import Polysemy (Member, Sem)
 import Polysemy.Error (Error, runError, throw)
 import Polysemy.Reader (Reader, ask, runReader)
@@ -25,39 +26,54 @@ import Prelude hiding (Reader, Type, ask, runReader)
 type Modules = M.Map ModuleName (Module Frontend)
 
 data AnnotationError
-    = AnnotationError (InspectionError Frontend) SourceRegion
+    = -- | The name is not defined in any known module
+      UnknownName (Located (MaybeQualified Name))
     | ContextBuildingError (ContextBuildingError Frontend)
+    | ContextCleaningError (NonEmpty (ContextCleaningError Frontend))
     | QualifiedWithWrongModule (Located (Qualified Name)) ModuleName
     deriving (Show)
 
 instance ReportableError AnnotationError where
-    report (AnnotationError e sr) = do
-        let r = report e
-        let pos = sourceRegionToDiagnosePosition sr
-        addPosition (pos, This "") r
+    report (UnknownName ln) = do
+        let pos = sourceRegionToDiagnosePosition $ ln ^. sourceRegion
+        writeReport $
+            Err
+                (Just Codes.unknownName)
+                ("Unknown name: " <> fullNameText (ln ^. unlocated))
+                [(pos, This "referenced here")]
+                []
     report (ContextBuildingError e) = report e
+    report (ContextCleaningError e) = traverse_ report e
     report (QualifiedWithWrongModule (Located sr (Qualified n qual)) modName) = do
         let pos = sourceRegionToDiagnosePosition sr
-        Err
-            (Just Codes.qualifiedWithWrongModule)
-            ("Qualification of name doesn't match module name: " <> fullNameText modName)
-            [(pos, This "")]
-            [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."
-            , Hint $ "Try changing " <> fullNameText qual <> " to " <> fullNameText modName
-            , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
-            , Hint $ "Try renaming your module to " <> fullNameText qual
-            ]
+        writeReport $
+            Err
+                (Just Codes.qualifiedWithWrongModule)
+                ("Qualification of name doesn't match module name: " <> fullNameText modName)
+                [(pos, This "")]
+                [ Note "If you choose to qualify your names, the qualification has to match the name of your module - you can't just pick any name."
+                , Hint $ "Try changing " <> fullNameText qual <> " to " <> fullNameText modName
+                , Hint $ "Try changing " <> fullNameText qual <> "." <> fullNameText n <> " to " <> fullNameText n
+                , Hint $ "Try renaming your module to " <> fullNameText qual
+                ]
 
-wrapError :: Member (Error AnnotationError) r => SourceRegion -> Sem (Error (InspectionError Frontend) : r) b -> Sem r b
-wrapError region sem = do
-    runError sem >>= \case
-        Left e -> throw (AnnotationError e region)
-        Right a -> pure a
+searchOrThrow :: (Member (Error AnnotationError) r, Member (Reader (CleanedInspectionContext Frontend)) r) => Located (MaybeQualified Name) -> Sem r ModuleName
+searchOrThrow l@(Located _ mq) = do
+    searched <- search mq
+    case searched of
+        Nothing -> throw (UnknownName l)
+        Just a -> pure a
 
 wrapCtxError :: Member (Error AnnotationError) r => Sem (Error (ContextBuildingError Frontend) : r) b -> Sem r b
 wrapCtxError sem = do
     runError sem >>= \case
         Left e -> throw (ContextBuildingError e)
+        Right a -> pure a
+
+wrapCtxCleanError :: Member (Error AnnotationError) r => Sem (Error (NonEmpty (ContextCleaningError Frontend)) : r) b -> Sem r b
+wrapCtxCleanError sem = do
+    runError sem >>= \case
+        Left e -> throw (ContextCleaningError e)
         Right a -> pure a
 
 annotateModule ::
@@ -71,35 +87,36 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
     annotate = do
         modules <- ask
         context <- wrapCtxError $ buildContext thisModule modules
-        exposing' <- runReader context $ annotateExposing (thisModule ^. exposing)
-        imports' <- runReader context (traverse annotateImport (thisModule ^. imports))
-        declarations' <- runReader context (traverse annotateDeclaration (thisModule ^. declarations))
+        cleanedContext <- wrapCtxCleanError $ runReader context (verifyContext @Frontend)
+        exposing' <- runReader cleanedContext $ annotateExposing (thisModule ^. exposing)
+        imports' <- runReader cleanedContext (traverse annotateImport (thisModule ^. imports))
+        declarations' <- runReader cleanedContext (traverse annotateDeclaration (thisModule ^. declarations))
         pure (Module' (thisModule ^. name) exposing' imports' declarations')
 
-    annotateExposing :: Exposing Frontend -> Sem (Reader InspectionContext : r) (Exposing Annotated)
+    annotateExposing :: Exposing Frontend -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Exposing Annotated)
     annotateExposing ExposingAll = pure ExposingAll
     annotateExposing (ExposingSome expos) = ExposingSome <$> traverse annotateExposition expos
 
-    annotateExposition :: Exposition Frontend -> Sem (Reader InspectionContext : r) (Exposition Annotated)
+    annotateExposition :: Exposition Frontend -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Exposition Annotated)
     annotateExposition (ExposedValue name') = ExposedValue <$> annotateVarName name'
     annotateExposition (ExposedOp name') = ExposedOp <$> annotateOpName name'
     annotateExposition (ExposedType name') = ExposedType <$> annotateTypeName name'
     annotateExposition (ExposedTypeAndAllConstructors name') = ExposedTypeAndAllConstructors <$> annotateTypeName name'
 
-    annotateGenericName ctor nv@(Located loc mq@(MaybeQualified name' mMod)) = case mMod of
+    annotateGenericName ctor nv@(Located _ (MaybeQualified name' mMod)) = case mMod of
         Just qual -> pure (nv $> Qualified name' qual)
         Nothing -> do
-            q <- wrapError loc $ search (ctor <$> mq)
+            q <- searchOrThrow (ctor <<$>> nv)
             pure (nv $> Qualified name' q)
 
-    annotateVarName :: Located (MaybeQualified VarName) -> Sem (Reader InspectionContext : r) (Located (Qualified VarName))
+    annotateVarName :: Located (MaybeQualified VarName) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified VarName))
     annotateVarName = annotateGenericName NVarName
-    annotateTypeName :: Located (MaybeQualified TypeName) -> Sem (Reader InspectionContext : r) (Located (Qualified TypeName))
+    annotateTypeName :: Located (MaybeQualified TypeName) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified TypeName))
     annotateTypeName = annotateGenericName NTypeName
-    annotateOpName :: Located (MaybeQualified OpName) -> Sem (Reader InspectionContext : r) (Located (Qualified OpName))
+    annotateOpName :: Located (MaybeQualified OpName) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified OpName))
     annotateOpName = annotateGenericName NOpName
 
-    qualifyInThisModule :: ToName n => Located (MaybeQualified n) -> Sem (Reader InspectionContext : r) (Located (Qualified n))
+    qualifyInThisModule :: ToName n => Located (MaybeQualified n) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified n))
     qualifyInThisModule nv@(Located _ (MaybeQualified name' Nothing)) = pure (Qualified name' (thisModule ^. name . unlocated) <$ nv)
     qualifyInThisModule nv@(Located _ (MaybeQualified name' (Just q))) = do
         let qualified = nv $> Qualified name' q
@@ -107,15 +124,15 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
                 then pure qualified
                 else throw (QualifiedWithWrongModule (toName <<$>> qualified) (thisModule ^. name . unlocated))
 
-    annotateName :: Located (MaybeQualified Name) -> Sem (Reader InspectionContext : r) (Located (Qualified Name))
+    annotateName :: Located (MaybeQualified Name) -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Located (Qualified Name))
     annotateName nv@(Located _ (MaybeQualified (NVarName name') _)) = NVarName <<<$>>> annotateVarName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NTypeName name') _)) = NTypeName <<<$>>> annotateTypeName (name' <<$ nv)
     annotateName nv@(Located _ (MaybeQualified (NOpName name') _)) = NOpName <<<$>>> annotateOpName (name' <<$ nv)
 
-    annotateImport :: Import Frontend -> Sem (Reader InspectionContext : r) (Import Annotated)
+    annotateImport :: Import Frontend -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Import Annotated)
     annotateImport = traverseOf (_Import . unlocated) (\(Import' name' as' qualified' exposing') -> Import' name' as' qualified' <$> annotateExposing exposing')
 
-    annotateDeclaration :: Declaration Frontend -> Sem (Reader InspectionContext : r) (Declaration Annotated)
+    annotateDeclaration :: Declaration Frontend -> Sem (Reader (CleanedInspectionContext Frontend) : r) (Declaration Annotated)
     annotateDeclaration =
         traverseOf
             (_Declaration . unlocated)
@@ -125,7 +142,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
                 pure (Declaration' module' annotatedName annotatedBody)
             )
 
-    annotateDeclarationBody :: DeclarationBody Frontend -> Sem (Reader InspectionContext : r) (DeclarationBody Annotated)
+    annotateDeclarationBody :: DeclarationBody Frontend -> Sem (Reader (CleanedInspectionContext Frontend) : r) (DeclarationBody Annotated)
     annotateDeclarationBody = traverseOf (_DeclarationBody . unlocated) annotateDeclarationBody'
 
     annotateDeclarationBody' (Value expr patterns typeAnnotation) = do
@@ -141,7 +158,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
         annotatedType <- annotateType' type'
         pure (TypeAlias annotatedType)
 
-    annotateExpr :: Frontend.Expr -> Sem (Reader InspectionContext : r) Annotated.Expr
+    annotateExpr :: Frontend.Expr -> Sem (Reader (CleanedInspectionContext Frontend) : r) Annotated.Expr
     annotateExpr (Frontend.Expr expr') = Annotated.Expr <$> traverse annotateExpr' expr'
 
     annotateExpr' (Frontend.Int i) = pure (Annotated.Int i)
@@ -192,7 +209,7 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
         pure (Annotated.Block annotatedExprs)
     annotateExpr' (Frontend.InParens expr) = Annotated.InParens <$> annotateExpr expr
 
-    annotatePattern :: Frontend.Pattern -> Sem (Reader InspectionContext : r) Annotated.Pattern
+    annotatePattern :: Frontend.Pattern -> Sem (Reader (CleanedInspectionContext Frontend) : r) Annotated.Pattern
     annotatePattern (Frontend.Pattern pattern') = Annotated.Pattern <$> traverse annotatePattern' pattern'
 
     annotatePattern' (Frontend.NamedPattern name') = do
@@ -208,15 +225,15 @@ annotateModule thisModule = traverseOf (_Module . unlocated) (const annotate) th
     annotatePattern' (Frontend.StringPattern s) = pure (Annotated.StringPattern s)
     annotatePattern' (Frontend.CharPattern c) = pure (Annotated.CharPattern c)
 
-    annotateOp :: Frontend.BinaryOperator -> Sem (Reader InspectionContext : r) Annotated.BinaryOperator
+    annotateOp :: Frontend.BinaryOperator -> Sem (Reader (CleanedInspectionContext Frontend) : r) Annotated.BinaryOperator
     annotateOp (Frontend.MkBinaryOperator o) = Annotated.MkBinaryOperator <$> traverse annotateOp' o
     annotateOp' (Frontend.Op o) = Annotated.Op <$> annotateOpName o
     annotateOp' (Frontend.Infixed o) = Annotated.Infixed <$> annotateVarName o
 
-    annotateType :: Frontend.TypeAnnotation -> Sem (Reader InspectionContext : r) Annotated.TypeAnnotation
+    annotateType :: Frontend.TypeAnnotation -> Sem (Reader (CleanedInspectionContext Frontend) : r) Annotated.TypeAnnotation
     annotateType (Frontend.TypeAnnotation annotationName type') = Annotated.TypeAnnotation <$> annotateName annotationName <*> annotateType' type'
 
-    annotateType' :: Frontend.Type -> Sem (Reader InspectionContext : r) Annotated.Type
+    annotateType' :: Frontend.Type -> Sem (Reader (CleanedInspectionContext Frontend) : r) Annotated.Type
     annotateType' (Frontend.TypeVar tv) = pure (Annotated.TypeVar tv)
     annotateType' (Frontend.FunctionType t1 t2) = Annotated.FunctionType <$> annotateType' t1 <*> annotateType' t2
     annotateType' Frontend.UnitType = pure Annotated.UnitType

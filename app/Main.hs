@@ -14,13 +14,14 @@ import Elara.Annotate.Shunt (fixOperators)
 import Elara.Error
 import Elara.Error.Effect (
   DiagnosticWriter,
-  addDiagnostic,
   addFile,
-  addReport,
   execDiagnosticWriter,
+  writeDiagnostic,
+  writeReport,
  )
 import Elara.Lexer.Lexer
 import Elara.Parse
+import Elara.Parse.Stream
 import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
 import Error.Diagnose.Diagnostic (hasReports)
 import Polysemy (Embed, Member, Sem, embed, run, runM)
@@ -29,7 +30,6 @@ import Polysemy.Reader
 import Polysemy.Writer (runWriter)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
-import Elara.Parse.Stream
 
 main :: IO ()
 main = do
@@ -48,7 +48,7 @@ runElara = runM $ execDiagnosticWriter $ do
     Just (source, prelude) ->
       let modules = fromList [(source ^. (name . unlocated), source), (prelude ^. (name . unlocated), prelude)]
        in case run $ runError $ runReader modules (annotateModule source) of
-            Left annotateError -> addDiagnostic (reportDiagnostic annotateError)
+            Left annotateError -> report annotateError
             Right m' -> do
               fixOperatorsInModule m' >>= embed . printColored
 
@@ -67,11 +67,9 @@ fixOperatorsInModule m = do
                 m
   case x of
     Left shuntErr -> do
-      addDiagnostic (reportDiagnostic shuntErr)
-      pure Nothing
+      report shuntErr $> Nothing
     Right (warnings, finalM) -> do
-      let warnings' = fmap report (toList warnings)
-      for_ warnings' addReport
+      traverse_ report (toList warnings)
       pure (Just finalM)
 
 lexFile :: (Member (Embed IO) r) => FilePath -> Sem r (Either String [Lexeme])
@@ -85,7 +83,7 @@ loadModule path = do
   case decodeUtf8Strict s of
     Left unicodeError -> do
       let errReport = Err Nothing ("Could not read file: " <> fromString path) [] [Note (show unicodeError)]
-       in addReport errReport $> Nothing
+       in writeReport errReport $> Nothing
     Right (contents :: Text) -> do
       let contentsAsString = toString contents
       addFile path contentsAsString -- add every loaded file to the diagnostic
@@ -97,7 +95,7 @@ loadModule path = do
           let tokenStream = TokenStream contentsAsString lexemes
           case parse path tokenStream of
             Left parseError -> do
-              addDiagnostic (reportDiagnostic parseError) $> Nothing
+              report parseError $> Nothing
             Right m -> pure (Just m)
 
 overExpressions ::

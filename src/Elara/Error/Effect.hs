@@ -14,8 +14,8 @@ import Prelude hiding (modify, modify', runState)
 | entire FileMap, so this effect is designed to prevent that, and also prevent the state / writer boilerplate as an added bonus :)
 -}
 data DiagnosticWriter t m a where
-    AddDiagnostic :: Diagnostic t -> DiagnosticWriter t m ()
-    AddReport :: Report t -> DiagnosticWriter t m ()
+    WriteDiagnostic :: Diagnostic t -> DiagnosticWriter t m ()
+    WriteReport :: Report t -> DiagnosticWriter t m ()
     AddFile :: FilePath -> String -> DiagnosticWriter t m ()
 
 makeSem ''DiagnosticWriter
@@ -28,9 +28,9 @@ runDiagnosticWriter =
     runState def
         . reinterpretH
             ( \case
-                AddDiagnostic d -> do
+                WriteDiagnostic d -> do
                     modify' (<> d) >>= pureT
-                AddReport r -> do
+                WriteReport r -> do
                     modify' (`Diagnostic.addReport` r) >>= pureT
                 AddFile fp s -> do
                     modify (\x -> Diagnostic.addFile x fp s) >>= pureT

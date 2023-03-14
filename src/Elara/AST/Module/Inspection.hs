@@ -1,19 +1,21 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Elara.AST.Module.Inspection where
 
-import Control.Lens ((^.))
+import Control.Lens (makePrisms, over, view, (^.))
 import Data.Map qualified as M
 import Data.Text (intercalate)
 import Elara.AST.Module (
-  Declaration,
+  Declaration (Declaration),
   Declaration' (..),
   Exposing (ExposingAll, ExposingSome),
   Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue),
@@ -35,21 +37,18 @@ import Elara.AST.Module (
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
 import Elara.AST.Region (sourceRegion, sourceRegionToDiagnosePosition, unlocated)
-import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, RUnlocate (..), rUnlocateVia')
+import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, GetLocation (getLocation'), RUnlocate (..), rUnlocateVia')
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
+import Elara.Error.Effect (writeReport)
 import Error.Diagnose
 import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.State
+import Polysemy.Writer (Writer, runWriterAssocR, tell)
+import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Reader, State, ask, intercalate, intersperse, modify, runState)
-
-data InspectionError ast
-  = -- | The name is not defined in any known module
-    UnknownName (MaybeQualified Name)
-  | -- | The name is defined in multiple modules
-    AmbiguousName (MaybeQualified Name) (NonEmpty ModuleName)
 
 data ContextBuildingError ast
   = -- | Importing an unknown module
@@ -59,43 +58,48 @@ data ContextBuildingError ast
   | -- | The exposition of an import is not exposed by the module
     ExpositionNotPublic (Import ast) (FullASTQual ast Name)
 
-instance ReportableError (InspectionError ast) where
-  report (UnknownName un) = Err (Just Codes.unknownName) ("Unknown name: " <> fullNameText un) [] []
-  report (AmbiguousName un modules) =
-    Err
-      (Just Codes.ambiguousName)
-      ("Ambiguous name: " <> fullNameText un)
-      []
-      [ Note $ "The name is defined in multiple modules: " <> intercalate ", " (fullNameText <$> toList modules)
-      , Hint $ "Try to qualify the name with the module name, e.g. " <> fullNameText (head modules) <> "." <> fullNameText un
-      ]
+data ContextCleaningError ast
+  = -- | The name is defined in multiple modules
+    AmbiguousName (MaybeQualified Name) (NonEmpty (ModuleName, ASTLocate ast (MaybeQualified Name)))
+
+type InspectionState ast = M.Map ModuleName (Module ast)
+newtype DirtyInspectionContext ast = DirtyInspectionContext (M.Map (MaybeQualified Name) (NonEmpty (ModuleName, ASTLocate ast (MaybeQualified Name))))
+makePrisms ''DirtyInspectionContext
+newtype CleanedInspectionContext ast = CleanedInspectionContext (M.Map (MaybeQualified Name) (ModuleName, ASTLocate ast (MaybeQualified Name)))
+makePrisms ''CleanedInspectionContext
+
+instance GetLocation ast => ReportableError (ContextCleaningError ast) where
+  report (AmbiguousName un modules) = do
+    let locatedMentions = traverse (bitraverse Just (getLocation' @ast @(MaybeQualified Name))) modules
+
+    let positions = case locatedMentions of
+          Nothing -> []
+          Just (x :| xs) ->
+            let toPos = sourceRegionToDiagnosePosition . snd
+             in (toPos x, This "defined here") : fmap ((,Where "also defined here") . toPos) xs
+
+    writeReport $
+      Err
+        (Just Codes.ambiguousName)
+        ("Ambiguous name: " <> fullNameText un)
+        positions
+        [ Note $ "The name is defined in multiple modules: " <> intercalate ", " (fullNameText . fst <$> toList modules)
+        , Hint $ "Try to qualify the name with the module name, e.g. " <> fullNameText (fst (head modules)) <> "." <> fullNameText un
+        ]
 
 instance (ast ~ Frontend, RUnlocate ast) => ReportableError (ContextBuildingError ast) where
   report (UnknownImportModule un) = do
     let position = sourceRegionToDiagnosePosition (un ^. (_Import . unlocated . importing . sourceRegion))
-    Err
-      (Just Codes.unknownModule)
-      ("Unknown module: " <> fullNameText (un ^. importing))
-      [(position, This "imported here")]
-      [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
+    writeReport $
+      Err
+        (Just Codes.unknownModule)
+        ("Unknown module: " <> fullNameText (un ^. importing))
+        [(position, This "imported here")]
+        [Hint "Did you type the module name incorrectly or forget to install a package?", Note "You might have trouble with the latter as packages don't exist yet hehe"]
   report _ = error "Not implemented"
 
 type AllNames :: (Type -> Constraint) -> Type -> Constraint
 type AllNames c ast = (c (ASTQual ast VarName), c (ASTQual ast TypeName), c (ASTQual ast OpName))
-
-deriving instance
-  ( Show (FullASTQual ast Name)
-  , Show (Import ast)
-  , AllNames Show ast
-  ) =>
-  Show (InspectionError ast)
-
-deriving instance
-  ( Eq (FullASTQual ast Name)
-  , Eq (Import ast)
-  , AllNames Eq ast
-  ) =>
-  Eq (InspectionError ast)
 
 deriving instance
   ( Show (FullASTQual ast Name)
@@ -110,6 +114,21 @@ deriving instance
   , AllNames Eq ast
   ) =>
   Eq (ContextBuildingError ast)
+
+deriving instance
+  ( Show (ASTLocate ast (MaybeQualified Name))
+  ) =>
+  Show (ContextCleaningError ast)
+
+deriving instance
+  ( Eq (ASTLocate ast (MaybeQualified Name))
+  ) =>
+  Eq (ContextCleaningError ast)
+
+deriving instance
+  ( Ord (ASTLocate ast (MaybeQualified Name))
+  ) =>
+  Ord (ContextCleaningError ast)
 
 -- | Returns whether or not a given name is declared in a given module
 isDeclaring ::
@@ -153,26 +172,47 @@ importFor this imported =
   isImporting' :: ModuleName -> Import' ast -> Bool
   isImporting' name' (Import' name'' _ _ _) = name' == rUnlocate' @ast name''
 
-type InspectionState ast = M.Map ModuleName (Module ast)
-
-type InspectionContext = M.Map (MaybeQualified Name) (NonEmpty ModuleName)
-
 -- | Hacky function that turns OpVarName into OpName in order to keep all operators in the context in the same form
 normalizeName :: MaybeQualified Name -> MaybeQualified Name
 normalizeName (MaybeQualified (NVarName (OperatorVarName opn)) q) = MaybeQualified (NOpName opn) q
 normalizeName other = other
 
+{- | Verifies that a given context is valid, i.e. that there are no ambiguous names
+| We could do this in the context building, but then we wouldn't be able to report all the errors at once, and couldn't report where all the locations of a name are
+-}
+verifyContext ::
+  forall ast r.
+  ( Members
+      [ Reader (DirtyInspectionContext ast)
+      , Error (NonEmpty (ContextCleaningError ast))
+      ]
+      r
+  , Ord (ASTLocate ast (MaybeQualified Name))
+  ) =>
+  Sem r (CleanedInspectionContext ast)
+verifyContext = do
+  context <- view _DirtyInspectionContext <$> ask
+  (errors, cleaned) <- runWriterAssocR $ do
+    M.traverseMaybeWithKey verifyName context
+  case toList errors of
+    [] -> pure (CleanedInspectionContext cleaned)
+    x : xs -> throw (x :| xs)
+ where
+  verifyName :: MaybeQualified Name -> NonEmpty (ModuleName, ASTLocate ast (MaybeQualified Name)) -> Sem (Writer (Set (ContextCleaningError ast)) ': r) (Maybe (ModuleName, ASTLocate ast (MaybeQualified Name)))
+  verifyName _ (x :| []) = pure $ Just x
+  verifyName mn l = do
+    tell [AmbiguousName mn l]
+    pure Nothing
+
 search ::
-  ( Members [Reader InspectionContext, Error (InspectionError ast)] r
+  forall ast r.
+  ( Member (Reader (CleanedInspectionContext ast)) r
   ) =>
   MaybeQualified Name ->
-  Sem r ModuleName
+  Sem r (Maybe ModuleName)
 search (normalizeName -> normalizedName) = do
-  context <- ask
-  case M.lookup normalizedName context of
-    Nothing -> throw (UnknownName normalizedName)
-    Just (x :| []) -> pure x
-    Just possibles -> throw (AmbiguousName normalizedName possibles)
+  context <- view _CleanedInspectionContext <$> ask
+  pure $ fst <$> M.lookup normalizedName context
 
 {- | There are a lot of cases to consider when looking for a module:
 
@@ -222,15 +262,15 @@ buildContext ::
   Module ast ->
   -- | All the known modules. The @thisModule@ does not need to be included, but can be (it will be ignored)
   InspectionState ast ->
-  Sem r InspectionContext
+  Sem r (DirtyInspectionContext ast)
 buildContext thisModule s = do
   verifyImports thisModule s
   buildContext' (M.insert (rUnlocate' @ast (thisModule ^. name)) thisModule s)
  where
-  buildContext' :: InspectionState ast -> Sem r InspectionContext
-  buildContext' inspectionState = fst <$> runState M.empty (traverse_ addDecls (M.elems inspectionState))
+  buildContext' :: InspectionState ast -> Sem r (DirtyInspectionContext ast)
+  buildContext' inspectionState = fst <$> runState (DirtyInspectionContext M.empty) (traverse_ addDecls (M.elems inspectionState))
 
-  addDecls :: Member (State InspectionContext) r0 => Module ast -> Sem r0 ()
+  addDecls :: Member (State (DirtyInspectionContext ast)) r0 => Module ast -> Sem r0 ()
   addDecls m
     | unlocateModule thisModule == unlocateModule m =
         traverse_ (add (rUnlocate' @ast (m ^. name)) False) (m ^. declarations)
@@ -241,12 +281,16 @@ buildContext thisModule s = do
      in whenJust mImport $ \import' -> do
           traverse_ (add (rUnlocate' @ast (importAliasFor import')) (import' ^. qualified)) (m ^. declarations)
 
-  add :: forall r0. Member (State InspectionContext) r0 => ModuleName -> Bool -> Declaration ast -> Sem r0 ()
+  add :: forall r0. Member (State (DirtyInspectionContext ast)) r0 => ModuleName -> Bool -> Declaration ast -> Sem r0 ()
   add moduleAlias onlyQualified declaration = do
     let actualModule :: ModuleName
         actualModule = rUnlocate' @ast (declaration ^. module')
-        declarationName = declaration ^. name
-
+        declarationName :: (ASTLocate ast (MaybeQualified Name))
+        declarationName =
+          let (Declaration decl) = declaration
+              unl = rUnlocate' @ast decl :: Declaration' ast
+              n = _declaration'Name unl :: FullASTQual ast Name
+           in unsafeCoerce n -- needed to coerce FullASTQual ast Name
         qualify :: MaybeQualified a -> MaybeQualified a
         qualify (MaybeQualified x _) = MaybeQualified x (Just moduleAlias)
 
@@ -254,15 +298,19 @@ buildContext thisModule s = do
         unqualify (MaybeQualified x _) = MaybeQualified x Nothing
 
         -- insert the qualified AND unqualified name into the context
-        addQualAndUnqual :: MaybeQualified Name -> Sem r0 ()
+        addQualAndUnqual :: ASTLocate ast (MaybeQualified Name) -> Sem r0 ()
         addQualAndUnqual qual = do
-          modify (M.insertWith (<>) (qualify qual) (pure actualModule))
+          let unlocatedName = rUnlocate' @ast qual :: MaybeQualified Name
+          let modNamePair = (actualModule, qual)
+          let modify' = modify . over _DirtyInspectionContext
+          modify' (M.insertWith (<>) (qualify unlocatedName) (pure modNamePair))
+
           unless
             onlyQualified
-            (modify (M.insertWith (<>) (unqualify qual) (pure actualModule)))
+            (modify' (M.insertWith (<>) (unqualify unlocatedName) (pure modNamePair)))
 
-        normalizedName :: MaybeQualified Name
-        normalizedName = normalizeName (rUnlocate @ast declarationName)
+        normalizedName :: ASTLocate ast (MaybeQualified Name)
+        normalizedName = fmapRUnlocate' @ast normalizeName declarationName
     addQualAndUnqual normalizedName
 
 -- | Verify that all the imports in a module are valid, i.e. that they are importing a module that exists, and that they are exposing the correct things

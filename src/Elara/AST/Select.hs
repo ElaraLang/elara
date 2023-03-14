@@ -7,7 +7,7 @@ import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
 import Elara.AST.Name (MaybeQualified, Qualified)
-import Elara.AST.Region (Located (Located))
+import Elara.AST.Region (Located (Located), SourceRegion)
 
 data Frontend
 
@@ -59,6 +59,10 @@ type family Unlocate g where
     Unlocate (Located a) = a
     Unlocate a = a
 
+class GetLocation ast where
+    getLocation :: forall a. FullASTQual ast a -> Maybe SourceRegion
+    getLocation' :: ASTLocate ast a -> Maybe SourceRegion
+
 class RUnlocate ast where
     rUnlocate :: FullASTQual ast a -> ASTQual ast a
     rUnlocate' :: ASTLocate ast a -> a
@@ -91,6 +95,10 @@ instance RUnlocate Frontend where
     sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
+instance GetLocation Frontend where
+    getLocation (Located r _) = Just r
+    getLocation' (Located r _) = Just r
+
 instance RUnlocate Annotated where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
@@ -99,9 +107,17 @@ instance RUnlocate Annotated where
     sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
+instance GetLocation Annotated where
+    getLocation (Located r _) = Just r
+    getLocation' (Located r _) = Just r
+
 instance RUnlocate UnlocatedFrontend where
     rUnlocate a = a
     rUnlocate' a = a
     fmapRUnlocate = fmap
     fmapRUnlocate' = id
     sequenceRUnlocate' = id
+
+instance GetLocation UnlocatedFrontend where
+    getLocation _ = Nothing
+    getLocation' _ = Nothing

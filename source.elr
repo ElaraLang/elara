@@ -1,2 +1,2 @@
-def main : int -> int -> int
-let main = println "Hello, World!"
+let main = 1
+let main = 2
