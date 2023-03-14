@@ -8,7 +8,7 @@ import Elara.AST.Region
 import Elara.Lexer.Lexer hiding (token)
 import Elara.Lexer.Token
 import Elara.Parse.Error
-import Elara.Parse.Stream (TokenStream)
+import Elara.Parse.Stream (TokenStream (tokenStreamTokens))
 import HeadedMegaparsec qualified as H
 import Print (debugColored)
 import Prelude hiding (many, some)
@@ -31,15 +31,22 @@ instance IsParser HParser where
     toParsec = H.toParsec
     fromParsec = H.parse
 
+{- | A parser that records the location information of the tokens it consumes.
+| TODO this is not going to perform very well as it's O(n) in the total number of input tokens
+| A future solution will be to store the number of tokens consumed in the @TokenStream@ and use that to calculate
+| the spanning region, but that's effort at the moment.
+-}
 located :: IsParser m => m a -> m (Located a)
 located p = do
-    start <- getPos
-    x <- p
-    end <- getPos
-    pure $ Located (RealSourceRegion $ mkSourceRegion start end) x
-  where
-    getPos :: IsParser m => m SourcePos
-    getPos = pstateSourcePos . statePosState <$> fromParsec getParserState
+    startTokens <- tokenStreamTokens . stateInput <$> fromParsec getParserState
+    val <- p
+    endStream <- tokenStreamTokens . stateInput <$> fromParsec getParserState
+    let diff = length startTokens - length endStream
+    let tokensDiff = take diff startTokens
+    let tokensRegion = case tokensDiff of
+            [] -> error "empty?"
+            x : xs -> spanningRegion' (view sourceRegion <$> x :| xs)
+    pure $ Located tokensRegion val
 
 fmapLocated :: IsParser f => (Located a -> b) -> f a -> f b
 fmapLocated f = (f <$>) . located

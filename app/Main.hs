@@ -33,7 +33,7 @@ import Elara.Parse.Stream
 
 main :: IO ()
 main = do
-  (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
+  -- (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
   s <- runElara
   when (hasReports s) $ do
     printDiagnostic stdout True True 4 defaultStyle s

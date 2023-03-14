@@ -1,1 +1,2 @@
-def main : int -> { } -> int
+def main : int -> int -> int
+let main = println "Hello, World!"
