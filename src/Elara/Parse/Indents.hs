@@ -11,19 +11,19 @@ import Elara.Parse.Primitives (HParser, token')
 
 block :: HParser Expr -> HParser Expr
 block exprParser = do
-  token' TokenLeftBrace
-  exprs <- sepBy1' exprParser (token' TokenSemicolon)
-  token' TokenRightBrace
-  pure $ merge exprs
- where
-  merge :: NonEmpty Expr -> Expr
-  merge expressions = case expressions of
-    single :| [] -> single
-    x :| xs -> do
-      let unwrap (Expr e) = e
-      let expressions' = unwrap <$> (x :| xs)
-      let region = Region.spanningRegion' (view sourceRegion <$> expressions')
-      let asBlock = \case
-            single :| [] -> Expr single
-            o -> Expr (Located region (Block $ Expr <$> o))
-      asBlock expressions'
+    token' TokenLeftBrace
+    exprs <- sepBy1' exprParser (token' TokenSemicolon)
+    token' TokenRightBrace
+    pure $ merge exprs
+  where
+    merge :: NonEmpty Expr -> Expr
+    merge expressions = case expressions of
+        single :| [] -> single
+        x :| xs -> do
+            let unwrap (Expr e) = e
+            let expressions' = unwrap <$> (x :| xs)
+            let region = Region.spanningRegion' (view sourceRegion <$> expressions')
+            let asBlock = \case
+                    single :| [] -> Expr single
+                    o -> Expr (Located region (Block $ Expr <$> o))
+            asBlock expressions'

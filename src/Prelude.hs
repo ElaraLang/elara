@@ -6,8 +6,8 @@ module Prelude (
     (<<<$>>>),
 ) where
 
-import Relude
 import Data.Type.Equality (type (~))
+import Relude
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f

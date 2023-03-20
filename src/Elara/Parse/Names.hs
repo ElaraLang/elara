@@ -27,36 +27,36 @@ unqualifiedOperatorVarName = (OperatorVarName <$> inParens opName) <??> "operato
 
 typeName :: HParser (MaybeQualified TypeName)
 typeName = do
-  ModuleName names <- moduleName
-  pure $ case names of
-    x :| [] -> MaybeQualified (TypeName x) Nothing
-    _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
+    ModuleName names <- moduleName
+    pure $ case names of
+        x :| [] -> MaybeQualified (TypeName x) Nothing
+        _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
 
 maybeQualified :: HParser name -> HParser (MaybeQualified name)
 maybeQualified name = unqualified <|> qualified
- where
-  unqualified = MaybeQualified <$> name <*> pure Nothing
-  qualified = do
-    qual <- moduleName
-    endHead
-    token' TokenDot
-    MaybeQualified <$> name <*> pure (Just qual)
+  where
+    unqualified = MaybeQualified <$> name <*> pure Nothing
+    qualified = do
+        qual <- moduleName
+        endHead
+        token' TokenDot
+        MaybeQualified <$> name <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
 moduleName = ModuleName <$> sepBy1' upperVarName (token' TokenDot)
 
 upperVarName :: HParser Text
 upperVarName = satisfyMap $
-  \case
-    TokenConstructorIdentifier i -> Just i
-    _ -> Nothing
+    \case
+        TokenConstructorIdentifier i -> Just i
+        _ -> Nothing
 alphaVarName :: HParser Text
 alphaVarName = satisfyMap $
-  \case
-    TokenVariableIdentifier i -> Just i
-    _ -> Nothing
+    \case
+        TokenVariableIdentifier i -> Just i
+        _ -> Nothing
 
 opName :: HParser OpName
 opName = satisfyMap $ \case
-  TokenOperatorIdentifier i -> Just (OpName i)
-  _ -> Nothing
+    TokenOperatorIdentifier i -> Just (OpName i)
+    _ -> Nothing

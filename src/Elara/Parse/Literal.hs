@@ -5,21 +5,20 @@ import Elara.Parse.Primitives (HParser, satisfyMap)
 
 charLiteral :: HParser Char
 charLiteral = satisfyMap $ \case
-  TokenChar i -> Just i
-  _ -> Nothing
+    TokenChar i -> Just i
+    _ -> Nothing
 
 stringLiteral :: HParser Text
 stringLiteral = satisfyMap $ \case
-  TokenString i -> Just i
-  _ -> Nothing
-
+    TokenString i -> Just i
+    _ -> Nothing
 
 integerLiteral :: HParser Integer
 integerLiteral = satisfyMap $ \case
-  TokenInt i -> Just i
-  _ -> Nothing
+    TokenInt i -> Just i
+    _ -> Nothing
 
 floatLiteral :: HParser Double
 floatLiteral = satisfyMap $ \case
-  TokenFloat i -> Just i
-  _ -> Nothing
+    TokenFloat i -> Just i
+    _ -> Nothing
