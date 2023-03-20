@@ -27,7 +27,6 @@ source-repository head
 
 library
   exposed-modules:
-      Elara.Annotate
       Elara.Annotate.Shunt
       Elara.AST.Annotated
       Elara.AST.Frontend
@@ -59,6 +58,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
+      Elara.Rename
       Prelude
       Print
       TODO
