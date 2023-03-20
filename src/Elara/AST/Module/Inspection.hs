@@ -288,17 +288,17 @@ buildContext thisModule s = do
         let actualModule :: ModuleName
             actualModule = view (unlocatedModuleName @(ASTDeclaration ast) @ast) declaration
 
-            qualify :: MaybeQualified a -> MaybeQualified a
-            qualify (MaybeQualified x _) = MaybeQualified x (Just moduleAlias)
+            qualify ::  a -> MaybeQualified a
+            qualify x = MaybeQualified x (Just moduleAlias)
 
-            unqualify :: MaybeQualified a -> MaybeQualified a
-            unqualify (MaybeQualified x _) = MaybeQualified x Nothing
+            unqualify ::  a -> MaybeQualified a
+            unqualify x = MaybeQualified x Nothing
 
             -- insert the qualified AND unqualified name into the context
-            addQualAndUnqual :: ASTLocate ast (MaybeQualified Name) -> Sem r0 ()
+            addQualAndUnqual :: ASTLocate ast Name -> Sem r0 ()
             addQualAndUnqual qual = do
-                let unlocatedName = rUnlocate' @ast qual :: MaybeQualified Name
-                let modNamePair = (actualModule, qual)
+                let unlocatedName = rUnlocate' @ast qual :: Name
+                let modNamePair = (actualModule, fmapRUnlocate' @ast qualify qual)
                 let modifyDE = modify . over _DirtyInspectionContext
                 modifyDE (M.insertWith (<>) (qualify unlocatedName) (pure modNamePair))
 
