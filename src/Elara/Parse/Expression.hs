@@ -206,7 +206,7 @@ letStatement = locatedExpr $ do
     (name, patterns, e) <- letPreamble
     pure (Frontend.Let name patterns e)
 
-letPreamble :: HParser (Located (Unqualified VarName), [Frontend.Pattern], Frontend.Expr)
+letPreamble :: HParser (Located VarName, [Frontend.Pattern], Frontend.Expr)
 letPreamble = do
     token' TokenLet
     endHead

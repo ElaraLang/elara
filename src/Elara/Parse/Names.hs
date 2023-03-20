@@ -10,20 +10,20 @@ import HeadedMegaparsec (endHead)
 varName :: HParser (MaybeQualified VarName)
 varName = operatorVarName <|> normalVarName
 
-unqualifiedVarName :: HParser (Unqualified VarName)
+unqualifiedVarName :: HParser VarName
 unqualifiedVarName = unqualifiedOperatorVarName <|> unqualifiedNormalVarName
 
 normalVarName :: HParser (MaybeQualified VarName)
-normalVarName = maybeQualified $ (^. name) <$> unqualifiedNormalVarName <??> "variable name"
+normalVarName = maybeQualified $ unqualifiedNormalVarName <??> "variable name"
 
-unqualifiedNormalVarName :: HParser (Unqualified VarName)
-unqualifiedNormalVarName = Unqualified . NormalVarName <$> alphaVarName <??> "variable name"
+unqualifiedNormalVarName :: HParser VarName
+unqualifiedNormalVarName = NormalVarName <$> alphaVarName <??> "variable name"
 
 operatorVarName :: HParser (MaybeQualified VarName)
 operatorVarName = (OperatorVarName <<$>> inParens (maybeQualified opName)) <??> "operator name in parens"
 
-unqualifiedOperatorVarName :: HParser (Unqualified VarName)
-unqualifiedOperatorVarName = (Unqualified . OperatorVarName <$> inParens opName) <??> "operator name in parens"
+unqualifiedOperatorVarName :: HParser VarName
+unqualifiedOperatorVarName = (OperatorVarName <$> inParens opName) <??> "operator name in parens"
 
 typeName :: HParser (MaybeQualified TypeName)
 typeName = do

@@ -4,11 +4,11 @@
 
 module Elara.AST.Select where
 
-import Control.Lens (Getting, Lens', over, view)
+import Control.Lens (Getting, Lens', from, mapped, mapping, over, traverseOf, view)
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified, Unqualified, _Unqualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 
 data Frontend
@@ -146,8 +146,8 @@ class HasName a b | a -> b where
     name :: Lens' a b
 
 class HasDeclarationName c ast where
-    declarationName :: Lens' c (FullASTQual ast Name)
-    unlocatedDeclarationName :: Lens' c (ASTQual ast Name)
+    declarationName :: Lens' c (ASTLocate ast Name)
+    unlocatedDeclarationName :: Lens' c Name
 
 instance HasDeclarationName Frontend.Declaration Frontend where
     declarationName = Frontend._Declaration . unlocated . Frontend.declaration'Name
@@ -157,8 +157,8 @@ instance HasModuleName Frontend.Declaration Frontend where
     moduleName = Frontend._Declaration . unlocated . Frontend.declaration'Module'
     unlocatedModuleName = moduleName @Frontend.Declaration @Frontend . unlocated
 
-instance HasName Frontend.Declaration (Located (MaybeQualified Name)) where
+instance HasName Frontend.Declaration (Located Name) where
     name = Frontend._Declaration . unlocated . Frontend.declaration'Name
 
-instance HasName Frontend.Declaration' (Located (MaybeQualified Name)) where
+instance HasName Frontend.Declaration' (Located Name) where
     name = Frontend.declaration'Name

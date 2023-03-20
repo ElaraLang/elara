@@ -23,8 +23,8 @@ data Expr'
   | BinaryOperator BinaryOperator Expr Expr
   | List [Expr]
   | Match Expr [(Pattern, Expr)]
-  | LetIn (Located (Unqualified VarName)) [Pattern] Expr Expr
-  | Let (Located (Unqualified VarName)) [Pattern] Expr
+  | LetIn (Located VarName) [Pattern] Expr Expr
+  | Let (Located VarName) [Pattern] Expr
   | Block (NonEmpty Expr)
   | InParens Expr
   deriving (Show, Eq)
@@ -54,7 +54,7 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
   deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located (MaybeQualified Name)) Type
+data TypeAnnotation = TypeAnnotation (Located Name) Type
   deriving (Show, Eq)
 
 data Type
@@ -63,7 +63,7 @@ data Type
   | UnitType
   | TypeConstructorApplication Type Type
   | UserDefinedType (Located (MaybeQualified TypeName))
-  | RecordType (NonEmpty (Located (Unqualified VarName), Type))
+  | RecordType (NonEmpty (Located VarName, Type))
   deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')
@@ -71,7 +71,7 @@ newtype Declaration = Declaration (Located Declaration')
 
 data Declaration' = Declaration'
   { _declaration'Module' :: Located ModuleName
-  , _declaration'Name :: Located (MaybeQualified Name)
+  , _declaration'Name :: Located Name
   , _declaration'Body :: DeclarationBody
   }
   deriving (Show, Eq)

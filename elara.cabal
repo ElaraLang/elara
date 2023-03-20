@@ -39,6 +39,7 @@ library
       Elara.AST.Name
       Elara.AST.Region
       Elara.AST.Select
+      Elara.Data.Unique
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect

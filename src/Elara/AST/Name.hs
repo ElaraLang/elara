@@ -10,7 +10,7 @@
 
 module Elara.AST.Name where
 
-import Control.Lens ( makeFields, makeLenses, makePrisms, view)
+import Control.Lens (makeFields, makeLenses, makePrisms, view)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
@@ -31,7 +31,6 @@ data VarName
 newtype TypeName = TypeName Text
     deriving (Ord, Show, Eq, Data)
 
--- | A
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data)
 
@@ -143,3 +142,4 @@ newtype Unqualified name = Unqualified
 makeFields ''MaybeQualified
 makeFields ''Qualified
 makeFields ''Unqualified
+makePrisms ''Unqualified

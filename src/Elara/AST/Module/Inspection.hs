@@ -167,8 +167,8 @@ importFor this imported =
   isImporting' name' (Import' name'' _ _ _) = name' == rUnlocate' @ast name''
 
 -- | Hacky function that turns OpVarName into OpName in order to keep all operators in the context in the same form
-normalizeName :: MaybeQualified Name -> MaybeQualified Name
-normalizeName (MaybeQualified (NVarName (OperatorVarName opn)) q) = MaybeQualified (NOpName opn) q
+normalizeName :: Name -> Name
+normalizeName ((NVarName (OperatorVarName opn))) = NOpName opn
 normalizeName other = other
 
 {- | Verifies that a given context is valid, i.e. that there are no ambiguous names
@@ -306,7 +306,7 @@ buildContext thisModule s = do
             onlyQualified
             (modifyDE (M.insertWith (<>) (unqualify unlocatedName) (pure modNamePair)))
 
-        normalizedName :: ASTLocate ast (MaybeQualified Name)
+        normalizedName :: ASTLocate ast Name
         normalizedName = fmapRUnlocate' @ast normalizeName $ view (declarationName @(ASTDeclaration ast) @ast) declaration
     addQualAndUnqual normalizedName
 

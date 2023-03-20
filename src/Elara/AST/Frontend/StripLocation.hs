@@ -7,6 +7,7 @@ module Elara.AST.Frontend.StripLocation where
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated as Unlocated
 import Elara.AST.Module
+import Elara.AST.Name (Name, VarName)
 import Elara.AST.Region
 import Elara.AST.Select
 import Prelude hiding (Op, Type)
@@ -94,7 +95,7 @@ instance StripLocation Frontend.Declaration Declaration where
     stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d :: Frontend.Declaration')
 
 instance StripLocation Frontend.Declaration' Declaration where
-    stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n) (stripLocation b)
+    stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n :: Name) (stripLocation b)
 
 instance StripLocation Frontend.DeclarationBody DeclarationBody where
     stripLocation (Frontend.DeclarationBody d) = stripLocation (stripLocation d :: Frontend.DeclarationBody')

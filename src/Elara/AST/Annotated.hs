@@ -99,6 +99,8 @@ data DeclarationBody'
       TypeAlias (Located Type)
     deriving (Show, Eq)
 
+
+
 makePrisms ''Declaration
 makeLenses ''Declaration'
 makePrisms ''DeclarationBody

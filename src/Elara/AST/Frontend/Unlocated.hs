@@ -1,6 +1,6 @@
 module Elara.AST.Frontend.Unlocated where
 
-import Elara.AST.Name (MaybeQualified, Name, OpName, TypeName, Unqualified, VarName, ModuleName)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Prelude hiding (Op, Type)
 
 {- | Frontend AST without location information.
@@ -21,8 +21,8 @@ data Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
     | Match Expr [(Pattern, Expr)]
-    | LetIn (Unqualified VarName) [Pattern] Expr Expr
-    | Let (Unqualified VarName) [Pattern] Expr
+    | LetIn VarName [Pattern] Expr Expr
+    | Let VarName [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -43,7 +43,7 @@ data BinaryOperator
     | Infixed (MaybeQualified VarName)
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (MaybeQualified Name) Type
+data TypeAnnotation = TypeAnnotation Name Type
     deriving (Show, Eq)
 
 data Type
@@ -52,12 +52,12 @@ data Type
     | UnitType
     | TypeConstructorApplication Type Type
     | UserDefinedType (MaybeQualified TypeName)
-    | RecordType (NonEmpty (Unqualified VarName, Type))
+    | RecordType (NonEmpty (VarName, Type))
     deriving (Show, Eq)
 
 data Declaration = Declaration
     { _declarationModule' :: ModuleName
-    , _declarationName :: MaybeQualified Name
+    , _declarationName :: Name
     , _declarationBody :: DeclarationBody
     }
 

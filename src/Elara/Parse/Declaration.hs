@@ -1,14 +1,14 @@
 module Elara.Parse.Declaration where
 
-import Control.Lens (view)
+import Control.Lens (from, view, (^.))
 import Elara.AST.Frontend (Declaration (..), Declaration' (..), DeclarationBody (..), Expr, Pattern, TypeAnnotation (TypeAnnotation), _Expr, _Pattern)
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Name (MaybeQualified, ModuleName, Name (..), VarName)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name (..), Unqualified, VarName, _Unqualified)
 import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Indents (block)
-import Elara.Parse.Names (varName)
+import Elara.Parse.Names (unqualifiedVarName, varName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token')
 import Elara.Parse.Type (type')
@@ -22,7 +22,7 @@ defDec modName = fmapLocated Declaration $ do
   name <- located $ do
     token' TokenDef
     endHead
-    NVarName <<$>> varName
+    NVarName <$> unqualifiedVarName
 
   ty <- located $ do
     token' TokenColon
@@ -38,13 +38,13 @@ letDec modName = fmapLocated Declaration $ do
   let
     valueLocation = spanningRegion' (view (_Expr . sourceRegion) e :| (view (_Pattern . sourceRegion) <$> patterns))
     value = DeclarationBody $ Located valueLocation (Frontend.Value e patterns)
-  pure (Declaration' modName (NVarName <<$>> name) value)
+  pure (Declaration' modName (NVarName <$> name) value)
 
-letRaw :: HParser (Located (MaybeQualified VarName), [Pattern], Expr)
+letRaw :: HParser (Located VarName, [Pattern], Expr)
 letRaw = do
   token' TokenLet
   endHead
-  name <- located varName
+  name <- located unqualifiedVarName
   patterns <- many pattern'
   token' TokenEquals
   e <- block exprParser

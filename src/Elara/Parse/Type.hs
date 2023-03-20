@@ -58,7 +58,7 @@ recordType = inBraces $ do
     fields <- sepBy1' recordField (token' TokenComma)
     pure $ RecordType fields
   where
-    recordField :: HParser (Located (Unqualified VarName), Type)
+    recordField :: HParser (Located VarName, Type)
     recordField = do
         name <- located unqualifiedVarName
         token' TokenColon
