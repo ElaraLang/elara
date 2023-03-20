@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -10,9 +11,10 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (makeFields, makeLenses, makePrisms)
+import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, to)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Select (ASTAnnotation, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, RUnlocate (..))
+import Elara.AST.Region (Located, unlocated)
+import Elara.AST.Select (ASTAnnotation, ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -22,29 +24,8 @@ data Module' ast = Module'
     { _module'Name :: ASTLocate ast ModuleName
     , _module'Exposing :: Exposing ast
     , _module'Imports :: [Import ast]
-    , _module'Declarations :: [Declaration ast]
+    , _module'Declarations :: [ASTDeclaration ast]
     }
-
-newtype Declaration ast = Declaration (ASTLocate ast (Declaration' ast))
-data Declaration' ast = Declaration'
-    { _declaration'Module' :: ASTLocate ast ModuleName
-    , _declaration'Name :: FullASTQual ast Name
-    , _declaration'Body :: DeclarationBody ast
-    }
-
-newtype DeclarationBody ast = DeclarationBody (ASTLocate ast (DeclarationBody' ast))
-data DeclarationBody' ast
-    = -- | let <p> = <e>
-      Value
-        { _expression :: ASTExpr ast
-        , _patterns :: [ASTPattern ast]
-        -- ^ The patterns used in things like let f x = ...
-        , _typeAnnotation :: ASTAnnotation ast
-        }
-    | -- | def <name> : <type>.
-      ValueTypeDef (ASTLocate ast (ASTAnnotation ast))
-    | -- | type <name> = <type>
-      TypeAlias (ASTType ast)
 
 newtype Import ast = Import (ASTLocate ast (Import' ast))
 
@@ -67,29 +48,19 @@ data Exposition ast
 
 -- Vile lens and deriving boilerplate
 
-makeLenses ''Exposing
-
-makeLenses ''DeclarationBody
-makeLenses ''DeclarationBody'
-
-makePrisms ''DeclarationBody
-makePrisms ''DeclarationBody'
-
-makeLenses ''Declaration'
-
 makeFields ''Module'
-makeFields ''Import'
-makeFields ''Declaration'
+makeLenses ''Module'
 makePrisms ''Module
 makePrisms ''Import
-makePrisms ''Declaration
+makeClassy ''Import'
+makeFields ''Import'
 
-instance (RUnlocate ast, a ~ [Import ast], HasImports (Module' ast) a) => HasImports (Module ast) a where
+instance {-# OVERLAPPING #-} (RUnlocate ast, a ~ [Import ast], HasImports (Module' ast) a) => HasImports (Module ast) a where
     imports f mo@(Module m) =
         let m' = rUnlocate' @ast m :: Module' ast
          in fmap (const mo) (f (m'._module'Imports :: [Import ast]))
 
-instance (RUnlocate ast, a ~ [Declaration ast], HasDeclarations (Module' ast) a) => HasDeclarations (Module ast) a where
+instance {-# OVERLAPPING #-} (RUnlocate ast, a ~ [ASTDeclaration ast], HasDeclarations (Module' ast) a) => HasDeclarations (Module ast) a where
     declarations f mo@(Module m) =
         let m' = rUnlocate' @ast m :: Module' ast
          in fmap (const mo) (f (m'._module'Declarations))
@@ -124,21 +95,6 @@ instance (RUnlocate ast, a ~ Exposing ast, HasExposing (Import' ast) a) => HasEx
         let i' = rUnlocate' @ast i :: Import' ast
          in fmap (const im) (f (i'._import'Exposing))
 
-instance (RUnlocate ast, a ~ ASTLocate ast ModuleName, HasModule' (Declaration' ast) a) => HasModule' (Declaration ast) a where
-    module' f d@(Declaration d') =
-        let d'' = rUnlocate' @ast d' :: Declaration' ast
-         in fmap (const d) (f (d''._declaration'Module'))
-
-instance (RUnlocate ast, a ~ FullASTQual ast Name, HasName (Declaration' ast) a) => HasName (Declaration ast) a where
-    name f d@(Declaration d') =
-        let d'' = rUnlocate' @ast d' :: Declaration' ast
-         in fmap (const d) (f (d''._declaration'Name))
-
-instance (RUnlocate ast, a ~ DeclarationBody ast, HasBody (Declaration' ast) a) => HasBody (Declaration ast) a where
-    body f d@(Declaration d') =
-        let d'' = rUnlocate' @ast d' :: Declaration' ast
-         in fmap (const d) (f (d''._declaration'Body))
-
 deriving instance (Show (FullASTQual ast VarName), Show (FullASTQual ast OpName), Show (FullASTQual ast TypeName)) => Show (Exposition ast)
 deriving instance (Eq (FullASTQual ast VarName), Eq (FullASTQual ast OpName), Eq (FullASTQual ast TypeName)) => Eq (Exposition ast)
 deriving instance (Ord (FullASTQual ast VarName), Ord (FullASTQual ast OpName), Ord (FullASTQual ast TypeName)) => Ord (Exposition ast)
@@ -157,16 +113,8 @@ deriving instance Ord (ASTLocate ast (Import' ast)) => Ord (Import ast)
 
 deriving instance (ModConstraints Show ast) => Show (Module ast)
 deriving instance ModConstraints Show ast => Show (Module' ast)
-deriving instance ModConstraints Show ast => Show (Declaration ast)
-deriving instance ModConstraints Show ast => Show (Declaration' ast)
-deriving instance ModConstraints Show ast => Show (DeclarationBody ast)
-deriving instance ModConstraints Show ast => Show (DeclarationBody' ast)
 deriving instance ModConstraints Eq ast => Eq (Module ast)
 deriving instance ModConstraints Eq ast => Eq (Module' ast)
-deriving instance ModConstraints Eq ast => Eq (Declaration ast)
-deriving instance ModConstraints Eq ast => Eq (Declaration' ast)
-deriving instance ModConstraints Eq ast => Eq (DeclarationBody ast)
-deriving instance ModConstraints Eq ast => Eq (DeclarationBody' ast)
 
 type NameConstraints :: (Kind.Type -> Constraint) -> (Kind.Type -> Kind.Type) -> Constraint
 type NameConstraints c qual = (c (qual VarName), c (qual TypeName), c (qual OpName))
@@ -178,6 +126,7 @@ type ModConstraints c ast =
     , c (ASTPattern ast)
     , c (ASTAnnotation ast)
     , c (ASTType ast)
+    , c (ASTDeclaration ast)
     , c (FullASTQual ast VarName)
     , c (FullASTQual ast TypeName)
     , c (FullASTQual ast OpName)
@@ -185,9 +134,14 @@ type ModConstraints c ast =
     , c (ASTLocate ast ModuleName)
     , c (ASTLocate ast (Module' ast))
     , c (ASTLocate ast (Import' ast))
-    , c (ASTLocate ast (Declaration' ast))
-    , c (ASTLocate ast (DeclarationBody' ast))
     , c (ASTLocate ast (ASTAnnotation ast))
     , c (ASTLocate ast (Exposition ast))
     , c (ASTLocate ast (Exposing ast))
     )
+
+-- instance HasName (Module Frontend) (Located ModuleName) where
+--     name = name @(Module Frontend) @Frontend
+
+instance (RUnlocate ast) => HasModuleName (Module ast) ast where
+    moduleName = _Module @ast @ast . (rUnlocated' @ast) . module'Name @ast
+    unlocatedModuleName = moduleName @(Module ast) @ast . rUnlocated' @ast

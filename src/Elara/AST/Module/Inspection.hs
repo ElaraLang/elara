@@ -15,29 +15,24 @@ import Control.Lens (makePrisms, over, view, (^.))
 import Data.Map qualified as M
 import Data.Text (intercalate)
 import Elara.AST.Module (
-  Declaration (Declaration),
-  Declaration' (..),
   Exposing (ExposingAll, ExposingSome),
   Exposition (ExposedOp, ExposedType, ExposedTypeAndAllConstructors, ExposedValue),
   HasAs (..),
   HasDeclarations (declarations),
   HasExposing (exposing),
   HasImports (imports),
-  HasModule' (module'),
-  HasName (..),
   Import,
   Import' (..),
   Module (..),
   Module',
   importing,
   qualified,
-  _Declaration,
   _Import,
   _Module,
  )
 import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (..), NameLike (fullNameText), OpName, TypeName, VarName (OperatorVarName))
 import Elara.AST.Region (sourceRegion, sourceRegionToDiagnosePosition, unlocated)
-import Elara.AST.Select (ASTLocate, ASTQual, Frontend, FullASTQual, GetLocation (getLocation'), RUnlocate (..), rUnlocateVia')
+import Elara.AST.Select (ASTDeclaration, ASTLocate, ASTQual, Frontend, FullASTQual, GetLocation (getLocation'), HasDeclarationName (..), HasModuleName (..), HasName (name), RUnlocate (..), rUnlocateVia')
 import Elara.Error (ReportableError (report))
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
@@ -47,7 +42,6 @@ import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriterAssocR, tell)
-import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Reader, State, ask, intercalate, intersperse, modify, runState)
 
 data ContextBuildingError ast
@@ -133,14 +127,14 @@ deriving instance
 -- | Returns whether or not a given name is declared in a given module
 isDeclaring ::
   forall ast.
-  (RUnlocate ast, Eq (ASTQual ast Name)) =>
+  (RUnlocate ast, Eq (ASTQual ast Name), HasDeclarationName (ASTDeclaration ast) ast) =>
   Module ast ->
   FullASTQual ast Name ->
   Bool
-isDeclaring m name' = isJust (find (declares (rUnlocate @ast name')) (m ^. declarations <&> rUnlocateVia' @ast _Declaration))
+isDeclaring m name' = isJust (find (declares (rUnlocate @ast name')) (m ^. declarations))
  where
-  declares :: ASTQual ast Name -> Declaration' ast -> Bool
-  declares name'' (Declaration' _ name''' _) = name'' == rUnlocate @ast name'''
+  declares :: ASTQual ast Name -> ASTDeclaration ast -> Bool
+  declares name'' decl = name'' == view (unlocatedDeclarationName @(ASTDeclaration ast) @ast) decl
 
 {- | Returns whether or not a given name is exposed by a given module.
  This does not consider whether or not the name is actually declared in the module.
@@ -257,6 +251,8 @@ buildContext ::
   , ASTQual ast ~ MaybeQualified
   , RUnlocate ast
   , Eq (Module' ast)
+  , HasModuleName (ASTDeclaration ast) ast
+  , HasDeclarationName (ASTDeclaration ast) ast
   ) =>
   -- | The module to build the context in relation to
   Module ast ->
@@ -281,16 +277,17 @@ buildContext thisModule s = do
      in whenJust mImport $ \import' -> do
           traverse_ (add (rUnlocate' @ast (importAliasFor import')) (import' ^. qualified)) (m ^. declarations)
 
-  add :: forall r0. Member (State (DirtyInspectionContext ast)) r0 => ModuleName -> Bool -> Declaration ast -> Sem r0 ()
+  add ::
+    forall r0.
+    (Member (State (DirtyInspectionContext ast)) r0) =>
+    ModuleName ->
+    Bool ->
+    ASTDeclaration ast ->
+    Sem r0 ()
   add moduleAlias onlyQualified declaration = do
     let actualModule :: ModuleName
-        actualModule = rUnlocate' @ast (declaration ^. module')
-        declarationName :: (ASTLocate ast (MaybeQualified Name))
-        declarationName =
-          let (Declaration decl) = declaration
-              unl = rUnlocate' @ast decl :: Declaration' ast
-              n = _declaration'Name unl :: FullASTQual ast Name
-           in unsafeCoerce n -- needed to coerce FullASTQual ast Name
+        actualModule = view (unlocatedModuleName @(ASTDeclaration ast) @ast) declaration
+
         qualify :: MaybeQualified a -> MaybeQualified a
         qualify (MaybeQualified x _) = MaybeQualified x (Just moduleAlias)
 
@@ -310,7 +307,7 @@ buildContext thisModule s = do
             (modifyDE (M.insertWith (<>) (unqualify unlocatedName) (pure modNamePair)))
 
         normalizedName :: ASTLocate ast (MaybeQualified Name)
-        normalizedName = fmapRUnlocate' @ast normalizeName declarationName
+        normalizedName = fmapRUnlocate' @ast normalizeName $ view (declarationName @(ASTDeclaration ast) @ast) declaration
     addQualAndUnqual normalizedName
 
 -- | Verify that all the imports in a module are valid, i.e. that they are importing a module that exists, and that they are exposing the correct things
@@ -319,6 +316,7 @@ verifyImports ::
   ( Member (Error (ContextBuildingError ast)) r
   , RUnlocate ast
   , ASTQual ast ~ MaybeQualified
+  , HasDeclarationName (ASTDeclaration ast) ast
   ) =>
   Module ast ->
   InspectionState ast ->
@@ -341,6 +339,7 @@ verifyExposition ::
   ( Member (Error (ContextBuildingError ast)) r
   , RUnlocate ast
   , ASTQual ast ~ MaybeQualified
+  , HasDeclarationName (ASTDeclaration ast) ast
   ) =>
   Import ast ->
   Module ast ->

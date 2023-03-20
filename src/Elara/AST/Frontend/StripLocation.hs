@@ -90,19 +90,19 @@ instance StripLocation (Import Frontend) (Import UnlocatedFrontend) where
 instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
     stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
 
-instance StripLocation (Declaration Frontend) (Declaration UnlocatedFrontend) where
-    stripLocation (Declaration d) = Declaration (stripLocation (stripLocation d :: Declaration' Frontend))
+instance StripLocation Frontend.Declaration Declaration where
+    stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d :: Frontend.Declaration')
 
-instance StripLocation (Declaration' Frontend) (Declaration' UnlocatedFrontend) where
-    stripLocation (Declaration' m n b) = Declaration' (stripLocation m) (stripLocation n) (stripLocation b)
+instance StripLocation Frontend.Declaration' Declaration where
+    stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n) (stripLocation b)
 
-instance StripLocation (DeclarationBody Frontend) (DeclarationBody UnlocatedFrontend) where
-    stripLocation (DeclarationBody d) = DeclarationBody (stripLocation (stripLocation d :: DeclarationBody' Frontend))
+instance StripLocation Frontend.DeclarationBody DeclarationBody where
+    stripLocation (Frontend.DeclarationBody d) = stripLocation (stripLocation d :: Frontend.DeclarationBody')
 
-instance StripLocation (DeclarationBody' Frontend) (DeclarationBody' UnlocatedFrontend) where
-    stripLocation (Value e p ann) = Value (stripLocation e) (stripLocation p) (stripLocation ann)
-    stripLocation (ValueTypeDef t) = ValueTypeDef (stripLocation (stripLocation t :: Maybe Frontend.TypeAnnotation))
-    stripLocation (TypeAlias t) = TypeAlias (stripLocation t)
+instance StripLocation Frontend.DeclarationBody' DeclarationBody where
+    stripLocation (Frontend.Value e p) = Value (stripLocation e) (stripLocation p)
+    stripLocation (Frontend.ValueTypeDef t) = ValueTypeDef (stripLocation (stripLocation t :: Frontend.TypeAnnotation))
+    stripLocation (Frontend.TypeAlias t) = TypeAlias (stripLocation (stripLocation t :: Frontend.Type))
 
 instance StripLocation Frontend.TypeAnnotation TypeAnnotation where
     stripLocation (Frontend.TypeAnnotation n t) = TypeAnnotation (stripLocation n) (stripLocation t)

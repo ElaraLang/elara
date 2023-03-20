@@ -2,8 +2,8 @@
 
 module Elara.AST.Annotated where
 
-import Control.Lens (makePrisms)
-import Elara.AST.Name (Name (NOpName, NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
+import Control.Lens (makeLenses, makePrisms)
+import Elara.AST.Name (ModuleName, Name (NOpName, NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
 import Elara.AST.Region (Located (Located))
 import Prelude hiding (Op, Type)
 
@@ -13,6 +13,7 @@ import Prelude hiding (Op, Type)
     * Everything is explicitly qualified with its module name (if applicable)
     * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
     * Let bindings have no patterns, they are desugared into lambdas
+    * Def and Let declarations are merged into a single entity
 -}
 data Expr'
     = Int Integer
@@ -75,6 +76,35 @@ data Type
     | RecordType (NonEmpty (Located (Unqualified VarName), Type))
     deriving (Show, Eq)
 
+newtype Declaration = Declaration (Located Declaration')
+    deriving (Show, Eq)
+
+data Declaration' = Declaration'
+    { _declaration'Module' :: Located ModuleName
+    , _declaration'Name :: Located (Qualified Name)
+    , _declaration'Body :: DeclarationBody
+    }
+    deriving (Show, Eq)
+
+newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
+    deriving (Show, Eq)
+data DeclarationBody'
+    = -- | def <name> : <type> and / or let <p> = <e>
+      Value
+        { _valueType :: Maybe (Located TypeAnnotation)
+        , _expression :: Expr
+        }
+    | NativeDef (Located TypeAnnotation)
+    | -- | type <name> = <type>
+      TypeAlias (Located Type)
+    deriving (Show, Eq)
+
+makePrisms ''Declaration
+makeLenses ''Declaration'
+makePrisms ''DeclarationBody
+makePrisms ''DeclarationBody'
+makeLenses ''DeclarationBody
+makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
 makePrisms ''BinaryOperator

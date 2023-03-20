@@ -1,13 +1,15 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Select where
 
-import Control.Lens (Getting, view)
+import Control.Lens (Getting, Lens', over, view)
 import Elara.AST.Annotated qualified as Annotated
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
-import Elara.AST.Name (MaybeQualified, Qualified)
-import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 
 data Frontend
 
@@ -45,15 +47,21 @@ type family ASTLocate' ast where
     ASTLocate' UnlocatedFrontend = Unlocated
     ASTLocate' Annotated = Located
 
+type family ASTDeclaration ast where
+    ASTDeclaration Frontend = Frontend.Declaration
+    ASTDeclaration UnlocatedFrontend = Frontend.Unlocated.Declaration
+    ASTDeclaration Annotated = Annotated.Declaration
+
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 
 newtype Unlocated a = Unlocated a
 
+-- | Unwraps a single layer of @Unlocated@ from a type.
 type family UnwrapUnlocated g where
     UnwrapUnlocated (Unlocated a) = a
     UnwrapUnlocated a = a
 
-type FullASTQual ast a = UnwrapUnlocated ((ASTLocate ast) (ASTQual ast a))
+type FullASTQual ast a = ((ASTLocate ast) (ASTQual ast a))
 
 type family Unlocate g where
     Unlocate (Located a) = a
@@ -66,6 +74,8 @@ class GetLocation ast where
 class RUnlocate ast where
     rUnlocate :: FullASTQual ast a -> ASTQual ast a
     rUnlocate' :: ASTLocate ast a -> a
+    rUnlocated :: Lens' (FullASTQual ast a) (ASTQual ast a)
+    rUnlocated' :: Lens' (ASTLocate ast a) a
     fmapRUnlocate :: (a -> b) -> FullASTQual ast a -> FullASTQual ast b
     fmapRUnlocate' :: (a -> b) -> ASTLocate ast a -> ASTLocate ast b
 
@@ -74,7 +84,7 @@ class RUnlocate ast where
 rUnlocateVia ::
     forall ast a s.
     RUnlocate ast =>
-    Getting (UnwrapUnlocated (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a)))) s (UnwrapUnlocated (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a)))) ->
+    Getting (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a))) s (UnwrapUnlocated (ASTLocate' ast (ASTQual ast a))) ->
     s ->
     ASTQual ast a
 rUnlocateVia f = rUnlocate @ast . view f
@@ -90,6 +100,8 @@ rUnlocateVia' f = rUnlocate' @ast . view f
 instance RUnlocate Frontend where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
+    rUnlocated = unlocated
+    rUnlocated' = unlocated
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
@@ -102,6 +114,8 @@ instance GetLocation Frontend where
 instance RUnlocate Annotated where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
+    rUnlocated = unlocated
+    rUnlocated' = unlocated
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
@@ -114,6 +128,8 @@ instance GetLocation Annotated where
 instance RUnlocate UnlocatedFrontend where
     rUnlocate a = a
     rUnlocate' a = a
+    rUnlocated = id
+    rUnlocated' = id
     fmapRUnlocate = fmap
     fmapRUnlocate' = id
     sequenceRUnlocate' = id
@@ -121,3 +137,28 @@ instance RUnlocate UnlocatedFrontend where
 instance GetLocation UnlocatedFrontend where
     getLocation _ = Nothing
     getLocation' _ = Nothing
+
+class HasModuleName c ast where
+    moduleName :: Lens' c (ASTLocate ast ModuleName)
+    unlocatedModuleName :: Lens' c ModuleName
+
+class HasName a b | a -> b where
+    name :: Lens' a b
+
+class HasDeclarationName c ast where
+    declarationName :: Lens' c (FullASTQual ast Name)
+    unlocatedDeclarationName :: Lens' c (ASTQual ast Name)
+
+instance HasDeclarationName Frontend.Declaration Frontend where
+    declarationName = Frontend._Declaration . unlocated . Frontend.declaration'Name
+    unlocatedDeclarationName = declarationName @Frontend.Declaration @Frontend . unlocated
+
+instance HasModuleName Frontend.Declaration Frontend where
+    moduleName = Frontend._Declaration . unlocated . Frontend.declaration'Module'
+    unlocatedModuleName = moduleName @Frontend.Declaration @Frontend . unlocated
+
+instance HasName Frontend.Declaration (Located (MaybeQualified Name)) where
+    name = Frontend._Declaration . unlocated . Frontend.declaration'Name
+
+instance HasName Frontend.Declaration' (Located (MaybeQualified Name)) where
+    name = Frontend.declaration'Name

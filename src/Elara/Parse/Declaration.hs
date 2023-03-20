@@ -1,11 +1,10 @@
 module Elara.Parse.Declaration where
 
 import Control.Lens (view)
-import Elara.AST.Frontend (Expr, Pattern, TypeAnnotation (TypeAnnotation), _Expr, _Pattern)
-import Elara.AST.Module (Declaration (..), Declaration' (..), DeclarationBody (..), DeclarationBody' (Value, ValueTypeDef))
+import Elara.AST.Frontend (Declaration (..), Declaration' (..), DeclarationBody (..), Expr, Pattern, TypeAnnotation (TypeAnnotation), _Expr, _Pattern)
+import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified, ModuleName, Name (..), VarName)
 import Elara.AST.Region
-import Elara.AST.Select (Frontend)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Indents (block)
@@ -15,10 +14,10 @@ import Elara.Parse.Primitives (HParser, fmapLocated, located, token')
 import Elara.Parse.Type (type')
 import HeadedMegaparsec (endHead)
 
-declaration :: Located ModuleName -> HParser (Declaration Frontend)
+declaration :: Located ModuleName -> HParser Frontend.Declaration
 declaration = liftA2 (<|>) defDec letDec
 
-defDec :: Located ModuleName -> HParser (Declaration Frontend)
+defDec :: Located ModuleName -> HParser Frontend.Declaration
 defDec modName = fmapLocated Declaration $ do
   name <- located $ do
     token' TokenDef
@@ -30,15 +29,15 @@ defDec modName = fmapLocated Declaration $ do
     TypeAnnotation name <$> type'
 
   let annotationLocation = spanningRegion' (view sourceRegion name :| [view sourceRegion ty])
-  let declBody = Located annotationLocation $ ValueTypeDef (Just <$> ty)
+  let declBody = Located annotationLocation $ Frontend.ValueTypeDef ty
   pure (Declaration' modName name (DeclarationBody declBody))
 
-letDec :: Located ModuleName -> HParser (Declaration Frontend)
+letDec :: Located ModuleName -> HParser Frontend.Declaration
 letDec modName = fmapLocated Declaration $ do
   (name, patterns, e) <- letRaw
   let
     valueLocation = spanningRegion' (view (_Expr . sourceRegion) e :| (view (_Pattern . sourceRegion) <$> patterns))
-    value = DeclarationBody $ Located valueLocation (Value e patterns Nothing)
+    value = DeclarationBody $ Located valueLocation (Frontend.Value e patterns)
   pure (Declaration' modName (NVarName <<$>> name) value)
 
 letRaw :: HParser (Located (MaybeQualified VarName), [Pattern], Expr)

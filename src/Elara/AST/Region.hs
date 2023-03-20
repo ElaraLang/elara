@@ -9,6 +9,7 @@ import Data.Data (Data)
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
+import Text.Show (Show (show))
 
 generatedFileName :: String
 generatedFileName = "<generated>"
@@ -105,6 +106,22 @@ sourceRegionToDiagnosePosition (RealSourceRegion (SourceRegion fp (Position star
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable)
+makePrisms ''Located
+
+-- | Newtype wrapper for @Located@ that ignores the location information for its instances
+newtype IgnoreLocation a = IgnoreLocation (Located a)
+    deriving (Functor, Foldable, Traversable)
+
+makePrisms ''IgnoreLocation
+
+instance Eq a => Eq (IgnoreLocation a) where
+    IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
+
+instance Ord a => Ord (IgnoreLocation a) where
+    IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
+
+instance Show a => Show (IgnoreLocation a) where
+    show (IgnoreLocation (Located _ a)) = Text.Show.show a
 
 sourceRegion :: Lens' (Located a) SourceRegion
 sourceRegion f (Located region x) = fmap (`Located` x) (f region)

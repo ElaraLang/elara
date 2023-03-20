@@ -7,6 +7,7 @@ module Main (
 
 import Control.Lens
 import Elara.AST.Module
+import Elara.AST.Annotated
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.Annotate (annotateModule)
@@ -97,15 +98,4 @@ loadModule path = do
               report parseError $> Nothing
             Right m -> pure (Just m)
 
-overExpressions ::
-  ( UnwrapUnlocated (ASTLocate' ast2 (DeclarationBody' ast2))
-      ~ Located (DeclarationBody' ast)
-  , HasDeclarations s (t a)
-  , Traversable t
-  , Applicative f
-  , HasBody a (DeclarationBody ast2)
-  ) =>
-  (ASTExpr ast -> f (ASTExpr ast)) ->
-  s ->
-  f s
-overExpressions = declarations . traverse . body . _DeclarationBody . unlocated . expression
+overExpressions = declarations . traverse . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . expression

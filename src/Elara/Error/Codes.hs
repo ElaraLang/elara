@@ -32,6 +32,12 @@ qualifiedWithWrongModule = "E1004"
 duplicateDefinition :: ErrorCode
 duplicateDefinition = "E1005"
 
+defWithoutLet :: ErrorCode
+defWithoutLet = "E1006"
+
+tooManyDeclarations :: ErrorCode
+tooManyDeclarations = "E1007"
+
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
 
