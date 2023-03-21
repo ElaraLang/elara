@@ -16,6 +16,7 @@ import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
+import Elara.Data.Unique
 
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data)
@@ -39,6 +40,8 @@ data Name
     | NTypeName TypeName
     | NOpName OpName
     deriving (Show, Eq, Ord)
+
+type UniqueName = Unique Name
 
 makeLenses ''Name
 makePrisms ''Name

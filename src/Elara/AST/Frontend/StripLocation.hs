@@ -47,7 +47,7 @@ instance StripLocation Frontend.Expr Expr where
 
 instance StripLocation Frontend.Pattern Pattern where
     stripLocation (Frontend.Pattern (Located _ pat)) = case pat of
-        Frontend.NamedPattern n -> NamedPattern n
+        Frontend.VarPattern n -> VarPattern (stripLocation n)
         Frontend.ConstructorPattern c p -> ConstructorPattern (stripLocation c) (stripLocation p)
         Frontend.ListPattern p -> ListPattern (stripLocation p)
         Frontend.WildcardPattern -> WildcardPattern

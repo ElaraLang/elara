@@ -14,7 +14,7 @@ module Elara.AST.Module where
 import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, to)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located, unlocated)
-import Elara.AST.Select (ASTAnnotation, ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
+import Elara.AST.Select (ASTAnnotation, ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 

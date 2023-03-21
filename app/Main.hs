@@ -10,8 +10,6 @@ import Elara.AST.Module
 import Elara.AST.Annotated
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
-import Elara.Annotate (annotateModule)
-import Elara.Annotate.Shunt (fixOperators)
 import Elara.Error
 import Elara.Error.Effect (
   DiagnosticWriter,
@@ -46,31 +44,31 @@ runElara = runM $ execDiagnosticWriter $ do
   case liftA2 (,) s p of
     Nothing -> pass
     Just (source, prelude) ->
-      let modules = fromList [(source ^. (name . unlocated), source), (prelude ^. (name . unlocated), prelude)]
-       in case run $ runError $ runReader modules (annotateModule source) of
-            Left annotateError -> report annotateError
-            Right m' -> do
-              fixOperatorsInModule m' >>= embed . printColored
+      embed (printColored source)
+        --  case run $ runError $ runReader modules (annotateModule source) of
+        --     Left annotateError -> report annotateError
+        --     Right m' -> do
+        --       fixOperatorsInModule m' >>= embed . printColored
 
-fixOperatorsInModule :: (Member (DiagnosticWriter Text) r) => Module Annotated -> Sem r (Maybe (Module Annotated))
-fixOperatorsInModule m = do
-  let x =
-        run $
-          runError $
-            runWriter $
-              overExpressions
-                ( fixOperators
-                    ( fromList
-                        []
-                    )
-                )
-                m
-  case x of
-    Left shuntErr -> do
-      report shuntErr $> Nothing
-    Right (warnings, finalM) -> do
-      traverse_ report (toList warnings)
-      pure (Just finalM)
+-- fixOperatorsInModule :: (Member (DiagnosticWriter Text) r) => Module Annotated -> Sem r (Maybe (Module Annotated))
+-- fixOperatorsInModule m = do
+--   let x =
+--         run $
+--           runError $
+--             runWriter $
+--               overExpressions
+--                 ( fixOperators
+--                     ( fromList
+--                         []
+--                     )
+--                 )
+--                 m
+--   case x of
+--     Left shuntErr -> do
+--       report shuntErr $> Nothing
+--     Right (warnings, finalM) -> do
+--       traverse_ report (toList warnings)
+--       pure (Just finalM)
 
 lexFile :: (Member (Embed IO) r) => FilePath -> Sem r (Either String [Lexeme])
 lexFile path = do
@@ -98,4 +96,4 @@ loadModule path = do
               report parseError $> Nothing
             Right m -> pure (Just m)
 
-overExpressions = declarations . traverse . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . expression
+-- overExpressions = declarations . traverse . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . expression

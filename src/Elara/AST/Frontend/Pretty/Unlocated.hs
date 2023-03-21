@@ -2,7 +2,7 @@ module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
 
 import Control.Lens ((^.))
 import Elara.AST.Frontend.Unlocated
-import Elara.AST.Name (HasName (name), MaybeQualified (..), ModuleName (ModuleName), OpName (OpName), TypeName (TypeName), Unqualified, VarName (..))
+import Elara.AST.Name (HasName (name), MaybeQualified (..), ModuleName (ModuleName), NameLike (nameText), OpName (OpName), TypeName (TypeName), Unqualified, VarName (..))
 import Text.PrettyPrint
 import Text.PrettyPrint qualified as PP
 import Prelude hiding (Op, length, (<>))
@@ -81,7 +81,7 @@ instance Pretty OpName where
     ppr _ (OpName n) = PP.text (toString n)
 
 instance Pretty Pattern where
-    ppr _ (NamedPattern n) = PP.text (toString n)
+    ppr _ (VarPattern n) = PP.text $ toString $ nameText n
     ppr p (ConstructorPattern c ps) = PP.parens (ppr p c <+> PP.hsep (fmap (ppr p) ps))
     ppr p (ListPattern ps) = PP.brackets (PP.hsep (PP.punctuate ", " (fmap (ppr p) ps)))
     ppr _ WildcardPattern = "_"

@@ -10,9 +10,10 @@ import Polysemy.State (State, get, put)
 import Prelude hiding (State, get, put)
 
 data Unique a = Unique
-    { _uniqueVal :: a
-    , _uniqueId :: Integer
+    { _uniqueVal :: !a
+    , _uniqueId :: !Integer
     }
+    deriving (Show)
 
 instance Eq (Unique a) where
     (==) = (==) `on` _uniqueId

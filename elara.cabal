@@ -34,9 +34,9 @@ library
       Elara.AST.Frontend.StripLocation
       Elara.AST.Frontend.Unlocated
       Elara.AST.Module
-      Elara.AST.Module.Inspection
       Elara.AST.Name
       Elara.AST.Region
+      Elara.AST.Renamed
       Elara.AST.Select
       Elara.Data.Unique
       Elara.Error

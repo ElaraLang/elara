@@ -1,30 +1,31 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Elara.AST.Frontend where
+module Elara.AST.Renamed where
 
 import Control.Lens.TH
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, Unqualified, VarName)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
+import Elara.Data.Unique (Unique)
 import Prelude hiding (Type)
 
--- | Frontend AST
+-- | Renamed AST. Identical to the frontend AST, except that all names are renamed to be unique
 data Expr'
     = Int Integer
     | Float Double
     | String Text
     | Char Char
     | Unit
-    | Var (Located (MaybeQualified VarName))
-    | Constructor (Located (MaybeQualified TypeName))
+    | Var (Located (Unique VarName))
+    | Constructor (Located (Unique TypeName))
     | Lambda [Pattern] Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
     | Match Expr [(Pattern, Expr)]
-    | LetIn (Located VarName) [Pattern] Expr Expr
-    | Let (Located VarName) [Pattern] Expr
+    | LetIn (Located (Unique VarName)) [Pattern] Expr Expr
+    | Let (Located (Unique VarName)) [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -33,8 +34,8 @@ newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
 data Pattern'
-    = VarPattern (Located VarName)
-    | ConstructorPattern (Located (MaybeQualified TypeName)) [Pattern]
+    = VarPattern (Located (Unique VarName))
+    | ConstructorPattern (Located (Unique TypeName)) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
     | IntegerPattern Integer
