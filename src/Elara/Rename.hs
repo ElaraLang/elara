@@ -13,9 +13,6 @@ import Polysemy (Member, Sem)
 renameName :: Member UniqueGen r => name -> Sem r (Unique name)
 renameName = makeUnique
 
-renameName' :: Member UniqueGen r => Located (MaybeQualified n) -> Sem r (Located (Unique name))
-renameName' = traverseOf unlocated renameName
-
 rename :: Member UniqueGen r => Module Frontend -> Sem r (Module Renamed)
 rename =
     traverseOf
@@ -39,7 +36,10 @@ renameExposing ExposingAll = pure ExposingAll
 renameExposing (ExposingSome xs) = ExposingSome <$> traverse renameExposition xs
 
 renameExposition :: Member UniqueGen r => Exposition Frontend -> Sem r (Exposition Renamed)
-renameExposition (ExposedValue x) = let y = renameName <<$>> x in undefined
+renameExposition (ExposedValue (x :: Located (MaybeQualified VarName))) = do
+    y <- traverse renameName x
+    undefined
+renameExposition _ = error "renameExposition: not implemented"
 
 renameImport :: Member UniqueGen r => Import Frontend -> Sem r (Import Renamed)
 renameImport = undefined

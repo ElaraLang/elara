@@ -16,16 +16,16 @@ data Expr'
     | String Text
     | Char Char
     | Unit
-    | Var (Located (Unique VarName))
-    | Constructor (Located (Unique TypeName))
+    | Var (Located (Unique (MaybeQualified VarName)))
+    | Constructor (Located (Unique (MaybeQualified TypeName)))
     | Lambda [Pattern] Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
     | Match Expr [(Pattern, Expr)]
-    | LetIn (Located (Unique VarName)) [Pattern] Expr Expr
-    | Let (Located (Unique VarName)) [Pattern] Expr
+    | LetIn (Located (Unique  (MaybeQualified VarName))) [Pattern] Expr Expr
+    | Let (Located (Unique (MaybeQualified VarName))) [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -35,7 +35,7 @@ newtype Expr = Expr (Located Expr')
 
 data Pattern'
     = VarPattern (Located (Unique VarName))
-    | ConstructorPattern (Located (Unique TypeName)) [Pattern]
+    | ConstructorPattern (Located (Unique (MaybeQualified TypeName))) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
     | IntegerPattern Integer
@@ -48,14 +48,14 @@ newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
 
 data BinaryOperator'
-    = Op (Located (MaybeQualified OpName))
-    | Infixed (Located (MaybeQualified VarName))
+    = Op (Located (Unique (MaybeQualified OpName)))
+    | Infixed (Located (Unique (MaybeQualified (VarName))))
     deriving (Show, Eq)
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located Name) Type
+data TypeAnnotation = TypeAnnotation (Located (Unique Name)) Type
     deriving (Show, Eq)
 
 data Type
@@ -63,7 +63,7 @@ data Type
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
-    | UserDefinedType (Located (MaybeQualified TypeName))
+    | UserDefinedType (Located (Unique (MaybeQualified TypeName)))
     | RecordType (NonEmpty (Located VarName, Type))
     deriving (Show, Eq)
 
@@ -72,7 +72,7 @@ newtype Declaration = Declaration (Located Declaration')
 
 data Declaration' = Declaration'
     { _declaration'Module' :: Located ModuleName
-    , _declaration'Name :: Located Name
+    , _declaration'Name :: Located (Unique Name)
     , _declaration'Body :: DeclarationBody
     }
     deriving (Show, Eq)
