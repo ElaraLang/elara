@@ -10,6 +10,7 @@ import Test.Hspec
 spec :: Spec
 spec = do
     literals
+    symbols
 
 literals :: Spec
 literals = describe "Lexes literals" $ do
@@ -87,6 +88,41 @@ literals = describe "Lexes literals" $ do
         lexUL [text| "a\fb" |] <=> [TokenString "a\fb"]
         lexUL [text| "a b" |] <=> [TokenString "a b"]
         lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
+
+symbols :: SpecWith ()
+symbols = it "Lexes symbols correctly" $ do
+    lexUL ";" <=> [TokenSemicolon]
+    lexUL "," <=> [TokenComma]
+    lexUL "." <=> [TokenDot]
+    lexUL ":" <=> [TokenColon]
+    lexUL "::" <=> [TokenDoubleColon]
+    lexUL "->" <=> [TokenRightArrow]
+    lexUL "<-" <=> [TokenLeftArrow]
+    lexUL "=>" <=> [TokenDoubleRightArrow]
+    lexUL "=" <=> [TokenEquals]
+    lexUL "\\" <=> [TokenBackslash]
+    lexUL "@" <=> [TokenAt]
+    lexUL "(" <=> [TokenLeftParen]
+    lexUL ")" <=> [TokenRightParen]
+    lexUL "{" <=> [TokenLeftBrace]
+    lexUL "}" <=> [TokenRightBrace]
+    lexUL "[" <=> [TokenLeftBracket]
+    lexUL "]" <=> [TokenRightBracket]
+
+keywords :: SpecWith ()
+keywords = it "Lexes keywords correctly" $ do
+    lexUL "def" <=> [TokenDef]
+    lexUL "let" <=> [TokenLet]
+    lexUL "in" <=> [TokenIn]
+    lexUL "if" <=> [TokenIf]
+    lexUL "then" <=> [TokenThen]
+    lexUL "else" <=> [TokenElse]
+    lexUL "class" <=> [TokenClass]
+    lexUL "data" <=> [TokenData]
+    lexUL "type" <=> [TokenType]
+    lexUL "module" <=> [TokenModule]
+    lexUL "match" <=> [TokenMatch]
+    lexUL "with" <=> [TokenWith]
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe

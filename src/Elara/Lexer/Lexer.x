@@ -95,22 +95,23 @@ Elara :-
         \" { enterString `andBegin` string }
 
         -- Symbols 
-        \; { emptyTok TokenSemicolon }
-        \, { emptyTok TokenComma }
-        \. { emptyTok TokenDot }
-        \: { emptyTok TokenColon }
-        \= { emptyTok TokenEquals }
-        \\ { emptyTok TokenBackslash }
+        \;   { emptyTok TokenSemicolon }
+        \,   { emptyTok TokenComma }
+        \.   { emptyTok TokenDot }
+        \:   { emptyTok TokenColon }
+        \:\: { emptyTok TokenDoubleColon }
+        \=   { emptyTok TokenEquals }
+        \\   { emptyTok TokenBackslash }
         \-\> { emptyTok TokenRightArrow }
         \<\- { emptyTok TokenLeftArrow }
         \=\> { emptyTok TokenDoubleRightArrow }
-        \@ { emptyTok TokenAt }
-        \( { emptyTok TokenLeftParen }
-        \) { emptyTok TokenRightParen }
-        \[ { emptyTok TokenLeftBracket }
-        \] { emptyTok TokenRightBracket }
-        \{ { emptyTok TokenLeftBrace }
-        \} { emptyTok TokenRightBrace }
+        \@   { emptyTok TokenAt }
+        \(   { emptyTok TokenLeftParen }
+        \)   { emptyTok TokenRightParen }
+        \[   { emptyTok TokenLeftBracket }
+        \]   { emptyTok TokenRightBracket }
+        \{   { emptyTok TokenLeftBrace }
+        \}   { emptyTok TokenRightBrace }
 
 
         -- Keywords
@@ -219,8 +220,6 @@ mkLConstPos toktype src alexStartPos alexEndPos = do
         endPos   = Position endLine endCol
         srcSpan  = SourceRegion (Just fname) startPos endPos
         token = toktype src
-    startNew <- startsNewLayout token <$> getLexState
-    when startNew (pushLexState layout)
     pure $ Located (RealSourceRegion srcSpan) token
 
 mkTokenPure :: AlexPosn -> Int -> (Text -> Token) -> Text -> Alex Lexeme
