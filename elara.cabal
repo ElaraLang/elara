@@ -136,6 +136,7 @@ test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AST.QuickCheck
       Lex
       Orphans
       Paths_elara

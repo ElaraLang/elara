@@ -1,16 +1,20 @@
 module Lex where
 
+import AST.QuickCheck
 import Control.Lens (view)
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import NeatInterpolation (text)
 import Test.Hspec
+import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do
     literals
     symbols
+    keywords
+    identifiers
 
 literals :: Spec
 literals = describe "Lexes literals" $ do
@@ -90,7 +94,7 @@ literals = describe "Lexes literals" $ do
         lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
 
 symbols :: SpecWith ()
-symbols = it "Lexes symbols correctly" $ do
+symbols = it "Lexes symbols" $ do
     lexUL ";" <=> [TokenSemicolon]
     lexUL "," <=> [TokenComma]
     lexUL "." <=> [TokenDot]
@@ -110,7 +114,7 @@ symbols = it "Lexes symbols correctly" $ do
     lexUL "]" <=> [TokenRightBracket]
 
 keywords :: SpecWith ()
-keywords = it "Lexes keywords correctly" $ do
+keywords = it "Lexes keywords" $ do
     lexUL "def" <=> [TokenDef]
     lexUL "let" <=> [TokenLet]
     lexUL "in" <=> [TokenIn]
@@ -123,6 +127,43 @@ keywords = it "Lexes keywords correctly" $ do
     lexUL "module" <=> [TokenModule]
     lexUL "match" <=> [TokenMatch]
     lexUL "with" <=> [TokenWith]
+
+identifiers :: Spec
+identifiers = describe "Lexes identifiers" $ do
+    it "Lexes var identifiers" $ do
+        lexUL "a" <=> [TokenVariableIdentifier "a"]
+        lexUL "abc" <=> [TokenVariableIdentifier "abc"]
+        lexUL "a1" <=> [TokenVariableIdentifier "a1"]
+        lexUL "a1b2c3" <=> [TokenVariableIdentifier "a1b2c3"]
+
+    it "Lexes con identifiers " $ do
+        lexUL "A" <=> [TokenConstructorIdentifier "A"]
+        lexUL "ABC" <=> [TokenConstructorIdentifier "ABC"]
+        lexUL "A1" <=> [TokenConstructorIdentifier "A1"]
+        lexUL "A1B2C3" <=> [TokenConstructorIdentifier "A1B2C3"]
+        lexUL "Maybe" <=> [TokenConstructorIdentifier "Maybe"]
+
+    it "Lexes operator identifiers " $ do
+        lexUL "+" <=> [TokenOperatorIdentifier "+"]
+        lexUL "++" <=> [TokenOperatorIdentifier "++"]
+        lexUL "+++" <=> [TokenOperatorIdentifier "+++"]
+        lexUL "==" <=> [TokenOperatorIdentifier "=="]
+        lexUL "<=>" <=> [TokenOperatorIdentifier "<=>"] -- hehe meta
+        lexUL ">>=" <=> [TokenOperatorIdentifier ">>="]
+        lexUL ">>>" <=> [TokenOperatorIdentifier ">>>"]
+        lexUL ">>" <=> [TokenOperatorIdentifier ">>"]
+        lexUL ">>-" <=> [TokenOperatorIdentifier ">>-"]
+        lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
+        lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
+
+    let prop_ArbOpLexes str = lexUL str <=> [TokenOperatorIdentifier str]
+     in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
+
+    let prop_ArbVarLexes str = lexUL str <=> [TokenVariableIdentifier str]
+     in prop "Lexes arbitrary variable identifier" (prop_ArbVarLexes . getAlphaText)
+
+    let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
+        in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe
