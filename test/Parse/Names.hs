@@ -6,6 +6,8 @@ import Elara.Parse.Primitives
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Megaparsec (shouldParse)
 import Text.Megaparsec (runParser)
+import Elara.Lexer.Lexer (lex)
+import Elara.Parse.Stream (TokenStream(..))
 
 spec :: Spec
 spec = describe "Test Names Parser" $ do
@@ -31,4 +33,5 @@ notQualified a = MaybeQualified a Nothing
 
 (<=>) :: (Show n, Eq n) => Text -> (n, HParser n) -> IO ()
 (<=>) source (expected, parser) = do
-    shouldParse (runParser (toParsec parser) "" source) expected
+    let tokens = fromRight (error "lex error") $ lex "" (encodeUtf8 source)
+    shouldParse (runParser (toParsec parser) "" (TokenStream (toString source) tokens)) expected

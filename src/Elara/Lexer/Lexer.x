@@ -50,7 +50,16 @@ $opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 @notNewline = .
 
 Elara :-
-    $white_no_nl       ;
+    -- Inside string literals
+    <string> {
+        \" { exitString `andBegin` 0 }
+        \\\\ { addStringChar '\\' }
+        \\\" { addStringChar '"' }
+        \\n  { addStringChar '\n' }
+        \\t  { addStringChar '\t' }
+        .    { addCurrentStringChar }
+    }
+
     -- Layout Rules
     <layout> {
         \n ;
@@ -60,6 +69,7 @@ Elara :-
 
 
     <0> {
+        $white_no_nl       ;
         \n { beginCode beginOfLines }
 
         -- Literals
@@ -70,6 +80,8 @@ Elara :-
 
         \-? @decimal . @decimal
         { parametrizedTok TokenFloat parseFloat }
+
+        \" { enterString `andBegin` string }
 
         -- Symbols 
         \; { emptyTok TokenSemicolon }
@@ -111,18 +123,6 @@ Elara :-
         $opChar+ { parametrizedTok TokenOperatorIdentifier id }
     }
 
-
-    
-    -- String literals
-    <0> \" { enterString `andBegin` string }
-    <string> {
-        \" { exitString `andBegin` 0 }
-        \\\\ { addStringChar '\\' }
-        \\\" { addStringChar '"' }
-        \\n  { addStringChar '\n' }
-        \\t  { addStringChar '\t' }
-        .    { addCurrentStringChar }
-    }
 
   
 
@@ -235,13 +235,13 @@ createLexeme alexStartPos len tok = do
 
 enterString :: AlexAction Lexeme 
 enterString inp@(pos, _, _, _) len = do
-  modifyA $ \s -> s{strStart = pos, strBuffer = '"' : strBuffer s}
+  modifyA $ \s -> s{strStart = pos, strBuffer = []}
   skip inp len
 
 exitString inp@(pos, _, _, _) len = do
   s <- getA
   putA s{strStart = AlexPn 0 0 0, strBuffer = []} -- reset
-  mkLConstPos TokenString (toText $ reverse $ '"' : strBuffer s) (strStart s) (alexMove pos '"')
+  mkLConstPos TokenString (toText $ reverse $ strBuffer s) (strStart s) (alexMove pos '"')
 
 addStringChar :: Char -> AlexAction Lexeme
 addStringChar c inp@(pos, _, _, _) len = do

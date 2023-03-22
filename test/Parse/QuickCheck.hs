@@ -40,6 +40,7 @@ newtype OpText = OpText {getOpText :: Text}
 
 instance Arbitrary OpText where
     arbitrary = OpText . toText <$> listOf1 (elements ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~'])
+        `suchThat` (`Set.notMember` ["="])
 
 instance Arbitrary ModuleName where
     arbitrary = ModuleName . fromList <$> listOf1 (getAlphaUpperText <$> arbitrary)
@@ -75,7 +76,7 @@ instance Arbitrary Unlocated.Pattern where
         pattern' n = if n <= 0 then nonRecursivePattern else oneof [nonRecursivePattern, recursivePattern (n `div` 2)]
         nonRecursivePattern =
             oneof
-                [ NamedPattern . getAlphaText <$> arbitrary
+                [ VarPattern <$> arbitrary
                 , pure WildcardPattern
                 ]
         recursivePattern n =

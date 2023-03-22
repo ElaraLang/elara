@@ -5,7 +5,7 @@ import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend (Expr (..), Pattern (..))
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Name (Unqualified, VarName, nameText)
+import Elara.AST.Name (VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error
@@ -75,9 +75,9 @@ expression :: HParser Frontend.Expr
 expression =
     unit
         <|> (parensExpr <??> "parenthesized expression")
-        -- <|> (ifElse <??> "if expression")
+        <|> (ifElse <??> "if expression")
         <|> (letInExpression <??> "let-in expression")
-        -- <|> (lambda <??> "lambda expression")
+        <|> (lambda <??> "lambda expression")
         <|> (match <??> "match expression")
         <|> (float <??> "float")
         <|> (int <??> "int")
@@ -160,36 +160,27 @@ match = locatedExpr $ do
         expr <- block element
         pure (case', expr)
 
--- lambda :: HParser Expr
--- lambda = locatedExpr $ do
---     token' TokenBackslash
---     endHead
---     start <- fromParsec indentLevel
---     args <- lexeme (sepBy (lexeme pattern') sc)
---     symbol "->"
---     (_, res) <- blockAt start element
---     pure (Frontend.Lambda args res)
+lambda :: HParser Expr
+lambda = locatedExpr $ do
+    token' TokenBackslash
+    endHead
+    args <- many pattern'
+    token' TokenRightArrow
+    res <- block element
+    pure (Frontend.Lambda args res)
 
--- ifElse :: HParser Expr
--- ifElse = locatedExpr $ do
---     start <- sub1 <$> fromParsec indentLevel
---     symbol "if"
---     endHead
---     (_, condition) <- blockAt start element
---     _ <- withIndentOrNormal start (symbol "then")
---     (_, thenBranch) <- blockAt start element
---     _ <- withIndentOrNormal start (symbol "else")
---     (_, elseBranch) <- blockAt start element
-
---     pure (Frontend.If condition thenBranch elseBranch)
-
--- -- letExpression :: HParser Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
--- -- letExpression = locatedExpr $ do
--- --     (_, name, patterns, e) <- letPreamble
-
--- --     -- let names = patterns >>= patternNames
--- --     -- let promote = fmap (transform (Name.promoteArguments names))
--- --     pure (Frontend.Let name patterns e)
+ifElse :: HParser Expr
+ifElse = locatedExpr $ do
+    token' TokenIf
+    endHead
+    condition <- exprParser
+    _ <- optional (token' TokenSemicolon)
+    token' TokenThen
+    thenBranch <- block element
+    _ <- optional (token' TokenSemicolon)
+    token' TokenElse
+    elseBranch <- block element
+    pure (Frontend.If condition thenBranch elseBranch)
 
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do

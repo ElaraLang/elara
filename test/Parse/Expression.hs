@@ -7,6 +7,8 @@ import Elara.AST.Frontend.StripLocation
 import Elara.AST.Frontend.Unlocated as Unlocated
 import Elara.AST.Name
 import Elara.Parse.Error
+import Elara.Lexer.Lexer (lex)
+import Elara.Parse.Stream
 import Elara.Parse.Expression (exprParser, operator)
 import Elara.Parse.Primitives (HParser, toParsec)
 import NeatInterpolation (text)
@@ -176,8 +178,10 @@ ppEq (removeInParens -> expr) =
    in
     counterexample (toString source) (parsed `shouldParseProp` expr)
 
-parse :: HParser a -> Text -> Either (ParseErrorBundle Text ElaraParseError) a
-parse p = runParser (toParsec p <* eof) ""
+parse :: HParser a -> Text -> Either (ParseErrorBundle TokenStream ElaraParseError) a
+parse p source = do
+  let tokens = either (error . show) id $ lex "" (encodeUtf8 source)
+  runParser (toParsec p <* eof) "" (TokenStream (toString source) tokens)
 
 (<=>) :: Text -> Unlocated.Expr -> IO ()
 (<=>) source expected = do

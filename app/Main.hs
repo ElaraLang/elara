@@ -7,7 +7,7 @@ module Main (
 
 import Control.Lens
 import Elara.AST.Module
-import Elara.AST.Annotated
+import Elara.AST.Renamed
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.Error
@@ -31,7 +31,7 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
-  -- (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
+  (runM $ lexFile "source.elr") <&> (fmap (fmap (view unlocated))) >>= printColored
   s <- runElara
   when (hasReports s) $ do
     printDiagnostic stdout True True 4 defaultStyle s

@@ -1,31 +1,37 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Elara.AST.Renamed where
 
-import Control.Lens.TH
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Region (Located)
-import Elara.Data.Unique (Unique)
-import Prelude hiding (Type)
+import Control.Lens (makeLenses, makePrisms)
+import Elara.AST.Name (ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
+import Elara.AST.Region (Located (Located))
+import Elara.Data.Unique
+import Prelude hiding (Op, Type)
 
--- | Renamed AST. Identical to the frontend AST, except that all names are renamed to be unique
+{- |
+  This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
+
+    * Everything is renamed or qualified to be unique
+    * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
+    * Let bindings have no patterns, they are desugared into lambdas
+    * Def and Let declarations are merged into a single entity
+-}
 data Expr'
     = Int Integer
     | Float Double
     | String Text
     | Char Char
     | Unit
-    | Var (Located (Unique (MaybeQualified VarName)))
-    | Constructor (Located (Unique (MaybeQualified TypeName)))
-    | Lambda [Pattern] Expr
+    | Var (Located (VarRef VarName))
+    | Constructor (Located (VarRef TypeName))
+    | Lambda Pattern Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
     | Match Expr [(Pattern, Expr)]
-    | LetIn (Located (Unique  (MaybeQualified VarName))) [Pattern] Expr Expr
-    | Let (Located (Unique (MaybeQualified VarName))) [Pattern] Expr
+    | LetIn (Located (Unique VarName)) Expr Expr
+    | Let (Located (Unique VarName)) Expr
     | Block (NonEmpty Expr)
     | InParens Expr
     deriving (Show, Eq)
@@ -33,9 +39,14 @@ data Expr'
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
+data VarRef n
+    = Global (Located (Qualified n))
+    | Local (Located (Unique n))
+    deriving (Show, Eq)
+
 data Pattern'
-    = VarPattern (Located (Unique VarName))
-    | ConstructorPattern (Located (Unique (MaybeQualified TypeName))) [Pattern]
+    = NamedPattern Text
+    | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
     | IntegerPattern Integer
@@ -48,14 +59,14 @@ newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
 
 data BinaryOperator'
-    = Op (Located (Unique (MaybeQualified OpName)))
-    | Infixed (Located (Unique (MaybeQualified (VarName))))
+    = Op (Located (VarRef OpName))
+    | Infixed (Located (VarRef VarName))
     deriving (Show, Eq)
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located (Unique Name)) Type
+data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
     deriving (Show, Eq)
 
 data Type
@@ -63,8 +74,8 @@ data Type
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
-    | UserDefinedType (Located (Unique (MaybeQualified TypeName)))
-    | RecordType (NonEmpty (Located VarName, Type))
+    | UserDefinedType (Located (Qualified TypeName))
+    | RecordType (NonEmpty (Located (Unqualified VarName), Type))
     deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')
@@ -72,7 +83,7 @@ newtype Declaration = Declaration (Located Declaration')
 
 data Declaration' = Declaration'
     { _declaration'Module' :: Located ModuleName
-    , _declaration'Name :: Located (Unique Name)
+    , _declaration'Name :: Located (Qualified Name)
     , _declaration'Body :: DeclarationBody
     }
     deriving (Show, Eq)
@@ -81,21 +92,22 @@ newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
     deriving (Show, Eq)
 
 data DeclarationBody'
-    = -- | let <p> = <e>
+    = -- | def <name> : <type> and / or let <p> = <e>
       Value
-        { _expression :: Expr
-        , _patterns :: [Pattern]
+        { _valueType :: Maybe (Located TypeAnnotation)
+        , _expression :: Expr
         }
-    | -- | def <name> : <type>.
-      ValueTypeDef (Located TypeAnnotation)
+    | NativeDef (Located TypeAnnotation)
     | -- | type <name> = <type>
       TypeAlias (Located Type)
     deriving (Show, Eq)
 
-makeLenses ''Declaration'
-makeClassy ''Declaration
-makeClassy ''DeclarationBody'
 makePrisms ''Declaration
+makeLenses ''Declaration'
 makePrisms ''DeclarationBody
+makePrisms ''DeclarationBody'
+makeLenses ''DeclarationBody
+makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
+makePrisms ''BinaryOperator

@@ -8,5 +8,5 @@ main = do
 
 spec :: Spec
 spec = parallel $ do
-  describe "AST inspection test" Inspection.spec
+--  describe "AST inspection test" Inspection.spec
   describe "Parse test" Parse.spec

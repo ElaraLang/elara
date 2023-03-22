@@ -1,1 +1,6 @@
-let double x = x * 2
+let g x =
+    if x then
+            x
+            x
+         else
+             3

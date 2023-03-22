@@ -61,6 +61,7 @@ data Declaration = Declaration
     , _declarationName :: Name
     , _declarationBody :: DeclarationBody
     }
+    deriving (Show, Eq)
 
 data DeclarationBody
     = -- | let <p> = <e>
@@ -72,3 +73,4 @@ data DeclarationBody
       ValueTypeDef TypeAnnotation
     | -- | type <name> = <type>
       TypeAlias Type
+    deriving (Show, Eq)

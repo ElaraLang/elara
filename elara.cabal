@@ -28,7 +28,6 @@ source-repository head
 library
   exposed-modules:
       Elara.Annotate.Shunt
-      Elara.AST.Annotated
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
       Elara.AST.Frontend.StripLocation
@@ -45,6 +44,7 @@ library
       Elara.Lexer.Lexer
       Elara.Lexer.Token
       Elara.Lexer.Utils
+      Elara.Lexer.Wrapper
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration

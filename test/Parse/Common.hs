@@ -2,20 +2,26 @@ module Parse.Common where
 
 import Control.Lens
 import Elara.AST.Frontend.StripLocation
-import Elara.AST.Module (Declaration (..), Declaration')
+
 import Elara.AST.Module qualified as Mod
+import Elara.Parse.Primitives (HParser)
+import Elara.Lexer.Lexer (lex)
 import Elara.AST.Name
+import Elara.AST.Frontend.Unlocated as UnlocatedFrontend
 import Elara.AST.Select
 import Elara.Parse (parse)
 import Elara.Parse.Error (unWParseErrorBundle)
 import Test.Hspec.Megaparsec (parseSatisfies)
 import Test.QuickCheck
 import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
+import Elara.Parse.Stream
 
-(<:) :: Text -> Declaration' UnlocatedFrontend -> IO ()
+
+(<:) :: Text -> UnlocatedFrontend.Declaration -> IO ()
 (<:) source decl = do
-    let parsed = stripLocation <$> parse "" source
-    let matches ast = Declaration decl `elem` toList (ast ^. Mod.declarations)
+    let tokens = either (error . show) id $ lex "" (encodeUtf8 source)
+    let parsed = stripLocation <$> parse "" (TokenStream (toString source) tokens)
+    let matches ast = decl `elem` toList (ast ^. Mod.declarations)
     parseSatisfies (first unWParseErrorBundle parsed) matches
 
 makeMQName :: (t -> name) -> t -> Maybe ModuleName -> MaybeQualified name

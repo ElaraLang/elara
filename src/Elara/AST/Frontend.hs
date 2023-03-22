@@ -4,7 +4,7 @@
 module Elara.AST.Frontend where
 
 import Control.Lens.TH
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, Unqualified, VarName)
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Prelude hiding (Type)
 
