@@ -24,7 +24,7 @@ $white_no_nl = $white # \n
 $special   = [\(\)\,\;\[\]\{\}]
 
 $digit = [0-9]
-$hexit = [0-9a-fA-F]
+$hexit = [0-9 a-f A-F]
 $octit = [0-7]
 
 
@@ -44,10 +44,9 @@ $opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 @decimal     = $digit+
 @octal       = $octit+
 @hexadecimal = $hexit+
-@exponent    = [eE] [\-\+] @decimal
+@exponent    = [eE] [\-\+]? @decimal
 
 @string = [^\"]
-@notNewline = .
 
 Elara :-
     -- Inside string literals
@@ -73,12 +72,16 @@ Elara :-
         \n { beginCode beginOfLines }
 
         -- Literals
-        \-? @decimal 
+        \-? (
+            @decimal 
             | 0[o0] @octal
             | 0[xX] @hexadecimal
+            )
         { parametrizedTok TokenInt (read . toString) }
 
-        \-? @decimal . @decimal
+        \-? (  @decimal \. @decimal @exponent?
+               | @decimal @exponent
+            )
         { parametrizedTok TokenFloat parseFloat }
 
         \" { enterString `andBegin` string }
@@ -292,6 +295,14 @@ popLayout = do
     lc : lcs' -> do
       putA s { layoutStack = lcs' }
       pure lc
+
+popLayoutIfPresent :: Alex ()
+popLayoutIfPresent = do
+  s@AlexUserState { layoutStack = lcs } <- getA
+  case lcs of
+    []        -> pure ()
+    _lc : lcs' -> do
+      putA s { layoutStack = lcs' }
 
 pushLayout :: LayoutType -> Alex ()
 pushLayout lc = do

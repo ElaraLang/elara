@@ -58,7 +58,6 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
-      Elara.Rename
       Prelude
       Print
       TODO
@@ -137,15 +136,8 @@ test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      AST.Module.Inspection
-      Data.List.Extra
+      Lex
       Orphans
-      Parse
-      Parse.Common
-      Parse.Expression
-      Parse.LetDec
-      Parse.Names
-      Parse.QuickCheck
       Paths_elara
   hs-source-dirs:
       test

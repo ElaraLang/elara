@@ -1,6 +1,6 @@
-import Parse qualified
+
+import Lex qualified
 import Test.Hspec
-import AST.Module.Inspection qualified as Inspection 
 
 main :: IO ()
 main = do
@@ -8,5 +8,4 @@ main = do
 
 spec :: Spec
 spec = parallel $ do
---  describe "AST inspection test" Inspection.spec
-  describe "Parse test" Parse.spec
+  describe "Lexing test" Lex.spec
