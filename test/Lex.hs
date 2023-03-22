@@ -4,6 +4,7 @@ import Control.Lens (view)
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
+import NeatInterpolation (text)
 import Test.Hspec
 
 spec :: Spec
@@ -59,6 +60,33 @@ literals = describe "Lexes literals" $ do
             lexUL "123.456e+3" <=> [TokenFloat 123.456e+3]
             lexUL "123.456e-1" <=> [TokenFloat 123.456e-1]
             lexUL "123.456e-2" <=> [TokenFloat 123.456e-2]
+
+    it "Lexes char literals" $ do
+        lexUL "'a'" <=> [TokenChar 'a']
+        lexUL [text| '\n' |] <=> [TokenChar '\n']
+        lexUL [text| '\'' |] <=> [TokenChar '\'']
+        lexUL [text| '\"' |] <=> [TokenChar '"']
+        lexUL [text| '\\' |] <=> [TokenChar '\\']
+        lexUL [text| '\t' |] <=> [TokenChar '\t']
+        lexUL [text| '\r' |] <=> [TokenChar '\r']
+        lexUL [text| '\b' |] <=> [TokenChar '\b']
+        lexUL [text| '\f' |] <=> [TokenChar '\f']
+        lexUL [text| ' ' |] <=> [TokenChar ' ']
+        lexUL [text| 'g' |] <=> [TokenChar 'g']
+
+    it "Lexes string literals" $ do
+        lexUL [text| "" |] <=> [TokenString ""]
+        lexUL [text| "a" |] <=> [TokenString "a"]
+        lexUL [text| "abc" |] <=> [TokenString "abc"]
+        lexUL [text| "a\nb" |] <=> [TokenString "a\nb"]
+        lexUL [text| "a\tb" |] <=> [TokenString "a\tb"]
+        lexUL [text| "a\"b" |] <=> [TokenString "a\"b"]
+        lexUL [text| "a\\b" |] <=> [TokenString "a\\b"]
+        lexUL [text| "a\rb" |] <=> [TokenString "a\rb"]
+        lexUL [text| "a\bb" |] <=> [TokenString "a\bb"]
+        lexUL [text| "a\fb" |] <=> [TokenString "a\fb"]
+        lexUL [text| "a b" |] <=> [TokenString "a b"]
+        lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe

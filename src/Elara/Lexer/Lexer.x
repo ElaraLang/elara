@@ -34,6 +34,8 @@ $identifierChar = [$lower $upper $digit]
 $opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 
 
+$charesc = [abfnrtv\\\"\'\&]
+
 @reservedid = match|class|data|default|type|if|else|then|let|in
 
 @reservedOp = ".." | ":" | "::" | "="
@@ -56,6 +58,11 @@ Elara :-
         \\\" { addStringChar '"' }
         \\n  { addStringChar '\n' }
         \\t  { addStringChar '\t' }
+        \\r  { addStringChar '\r' }
+        \\v  { addStringChar '\v' }
+        \\b  { addStringChar '\b' }
+        \\f  { addStringChar '\f' }
+        \\a  { addStringChar '\a' }
         .    { addCurrentStringChar }
     }
 
@@ -84,6 +91,7 @@ Elara :-
             )
         { parametrizedTok TokenFloat parseFloat }
 
+        \' (. # [\'\\] | " " | (\\$charesc)) \' { parametrizedTok TokenChar (read . toString) }
         \" { enterString `andBegin` string }
 
         -- Symbols 
