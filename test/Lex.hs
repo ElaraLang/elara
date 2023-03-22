@@ -1,11 +1,13 @@
 module Lex where
 
-import AST.QuickCheck
+import Arbitrary.Literals
+import Arbitrary.Names
 import Control.Lens (view)
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import NeatInterpolation (text)
+import Relude.Unsafe (read)
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
@@ -76,6 +78,7 @@ literals = describe "Lexes literals" $ do
         lexUL [text| '\r' |] <=> [TokenChar '\r']
         lexUL [text| '\b' |] <=> [TokenChar '\b']
         lexUL [text| '\f' |] <=> [TokenChar '\f']
+
         lexUL [text| ' ' |] <=> [TokenChar ' ']
         lexUL [text| 'g' |] <=> [TokenChar 'g']
 
@@ -83,15 +86,28 @@ literals = describe "Lexes literals" $ do
         lexUL [text| "" |] <=> [TokenString ""]
         lexUL [text| "a" |] <=> [TokenString "a"]
         lexUL [text| "abc" |] <=> [TokenString "abc"]
-        lexUL [text| "a\nb" |] <=> [TokenString "a\nb"]
+        lexUL [text| "a\ng" |] <=> [TokenString "a\ng"]
         lexUL [text| "a\tb" |] <=> [TokenString "a\tb"]
         lexUL [text| "a\"b" |] <=> [TokenString "a\"b"]
         lexUL [text| "a\\b" |] <=> [TokenString "a\\b"]
         lexUL [text| "a\rb" |] <=> [TokenString "a\rb"]
         lexUL [text| "a\bb" |] <=> [TokenString "a\bb"]
         lexUL [text| "a\fb" |] <=> [TokenString "a\fb"]
+        lexUL [text| "\&\&\&f" |] <=> [TokenString "f"]
         lexUL [text| "a b" |] <=> [TokenString "a b"]
         lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
+
+    let prop_ArbIntLexes str = lexUL str <=> [TokenInt (read $ toString str)]
+     in prop "Lexes arbitrary integers" (prop_ArbIntLexes . unIntLiteral)
+
+    let prop_ArbFloatLexes str = lexUL str <=> [TokenFloat (read $ toString str)]
+     in prop "Lexes arbitrary floats" (prop_ArbFloatLexes . unFloatLiteral)
+
+    let prop_ArbCharLexes str = lexUL str <=> [TokenChar (read $ toString str)]
+     in prop "Lexes arbitrary chars" (prop_ArbCharLexes . unCharLiteral)
+
+    let prop_ArbStringLexes str = lexUL str <=> [TokenString (read $ toString str)]
+     in prop "Lexes arbitrary strings" (prop_ArbStringLexes . unStringLiteral)
 
 symbols :: SpecWith ()
 symbols = it "Lexes symbols" $ do
@@ -163,7 +179,7 @@ identifiers = describe "Lexes identifiers" $ do
      in prop "Lexes arbitrary variable identifier" (prop_ArbVarLexes . getAlphaText)
 
     let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
-        in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
+     in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe

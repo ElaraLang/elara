@@ -15,6 +15,7 @@ import Prelude hiding (ByteString)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Relude.Unsafe (read)
+import Print
 }
 
 %wrapper "monadUserState-bytestring"
@@ -34,7 +35,7 @@ $identifierChar = [$lower $upper $digit]
 $opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 
 
-$charesc = [abfnrtv\\\"\'\&]
+$escapeCode = [abfnrtv \\ \" \']
 
 @reservedid = match|class|data|default|type|if|else|then|let|in
 
@@ -48,22 +49,22 @@ $charesc = [abfnrtv\\\"\'\&]
 @hexadecimal = $hexit+
 @exponent    = [eE] [\-\+]? @decimal
 
-@string = [^\"]
+$cntrl   = [$upper \@\[\\\]\^\_]
+@ascii   = \^ $cntrl | NUL | SOH | STX | ETX | EOT | ENQ | ACK
+         | BEL | BS | HT | LF | VT | FF | CR | SO | SI | DLE
+         | DC1 | DC2 | DC3 | DC4 | NAK | SYN | ETB | CAN | EM
+         | SUB | ESC | FS | GS | RS | US | SP | DEL
+
+@ampEscape  = (\\\&)+ -- I wish I knew why this has to be handled specially
+@escape      = \\ ($escapeCode | @ascii | @decimal | o @octal | x @hexadecimal)
 
 Elara :-
     -- Inside string literals
     <string> {
-        \" { exitString `andBegin` 0 }
-        \\\\ { addStringChar '\\' }
-        \\\" { addStringChar '"' }
-        \\n  { addStringChar '\n' }
-        \\t  { addStringChar '\t' }
-        \\r  { addStringChar '\r' }
-        \\v  { addStringChar '\v' }
-        \\b  { addStringChar '\b' }
-        \\f  { addStringChar '\f' }
-        \\a  { addStringChar '\a' }
-        .    { addCurrentStringChar }
+        \"           { exitString `andBegin` 0 }
+        @ampEscape . { addCurrentStringCharWith translateEscapedChar }
+        @escape      { addCurrentStringCharWith translateEscapedChar }
+        .            { addCurrentStringChar }
     }
 
     -- Layout Rules
@@ -91,7 +92,7 @@ Elara :-
             )
         { parametrizedTok TokenFloat parseFloat }
 
-        \' (. # [\'\\] | " " | (\\$charesc)) \' { parametrizedTok TokenChar (read . toString) }
+        \' (. # [\'\\] | " " | @escape) \' { parametrizedTok TokenChar (read . toString) }
         \" { enterString `andBegin` string }
 
         -- Symbols 
@@ -260,8 +261,11 @@ addStringChar c inp@(pos, _, _, _) len = do
   skip inp len
 
 addCurrentStringChar :: AlexAction Lexeme
-addCurrentStringChar inp@(_, _, str, _) len = do
-  modifyA $ \s -> s{strBuffer = BS.head str : strBuffer s}
+addCurrentStringChar = addCurrentStringCharWith BS.head
+
+addCurrentStringCharWith :: (ByteString -> Char) -> AlexAction Lexeme
+addCurrentStringCharWith f inp@(_, _, str, _) len = do
+  modifyA $ \s -> s{strBuffer = f (BS.take len str) : strBuffer s}
   skip inp len
 
 -- Indentation / Layout
@@ -346,10 +350,10 @@ doBeginOfLines (pn@(AlexPn _ _ col), _, _, _) size =
 
 -- Frontend
 
-lex :: FilePath -> ByteString -> Either String [Lexeme]
+lex ::  HasCallStack => FilePath -> ByteString -> Either String [Lexeme]
 lex fname input = runAlex input $ alexInitFilename fname >> init <$> alexLex
 
-alexLex :: Alex (NonEmpty Lexeme)
+alexLex :: HasCallStack => Alex (NonEmpty Lexeme)
 alexLex = do 
     lexeme <- alexMonadScan
     if lexeme ^. unlocated == TokenEOF
