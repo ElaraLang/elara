@@ -2,7 +2,6 @@
 
 module Elara.Lexer.Utils where
 
-import Relude.Unsafe ((!!))
 import Text.Read (read)
 
 parseFloat :: Text -> Double
@@ -24,6 +23,6 @@ translateEscapedChar (consumeAmp . decodeUtf8 -> s) = case s of
         Just c -> c
         Nothing -> error ("Invalid escape sequence: " <> show oth)
 
-
+consumeAmp :: String -> String
 consumeAmp ('\\' : '&' : t) = consumeAmp t -- why is this a thing? who designed these escape sequences man
 consumeAmp t = t

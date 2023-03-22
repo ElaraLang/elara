@@ -2,6 +2,7 @@ module Arbitrary.Literals where
 
 import Test.QuickCheck
 import Text.Show qualified as TS (Show(..)) 
+import Text.Printf
 
 newtype IntLiteral = IntLiteral {unIntLiteral :: Text}
   deriving (Show)
@@ -42,12 +43,13 @@ instance Arbitrary FloatLiteral where
             p1 <- arbitrarySizedIntegral
             p2 <- arbitrarySizedNatural
             p3 <- arbitrarySizedIntegral
-            pure (FloatLiteral (show p1 <> "." <> show p2 <> "e" <> show p3))
+            
+            pure (FloatLiteral (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3))
 
         scientificFloat = do
-            p1 <- arbitrary @Double
+            p1 <- arbitrarySizedIntegral
             p2 <- arbitrarySizedIntegral
-            pure (FloatLiteral (show p1 <> "e" <> show p2))
+            pure (FloatLiteral (safelyPrintInt p1 <> "e" <> show p2))
 
 instance Arbitrary StringLiteral where
     arbitrary = do
@@ -58,3 +60,6 @@ instance Arbitrary CharLiteral where
     arbitrary = do
         c <- show <$> arbitraryPrintableChar
         pure (CharLiteral c)
+
+safelyPrintInt :: Integer -> Text
+safelyPrintInt d = fromString (printf "%d" d)
