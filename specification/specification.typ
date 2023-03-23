@@ -44,7 +44,7 @@ let main =
 ```
 
 === Custom Data Types
-Elara has a very flexible type 
+Elara has a very flexible type system which allows for many different forms of data types to be defined. \
 ```ocaml
 type Name = String // Simple type alias
 
@@ -66,7 +66,8 @@ type Option a = // Polymorphic (generic) data types
 
 type Fix f = Fix (f (Fix f)) // Recursive, higher-kinded data types
 
-type JSONElement = // Combination of multiple type features
+// Combination of multiple type features
+type JSONElement = 
       JSONString String
     | JSONNumber Int
     | JSONNull
@@ -144,9 +145,9 @@ def sequenceActions_ list = match list with
 
 == Syntax
 === Multi-line Environments
-Some syntactic structures in Elara can create multi-line environments. Formally, this means that rather than a single expression, a semicolon-separated list of \emph{statement}s, surrounded by braces, can be used where a multi-line environment is permitted. \\
-Practically, this allows the imperative idea of 'blocks' of code to be used, rather than having a binding be a single long expression.\\
-Note that this feature is merely syntax-sugar and does not change the purely-functional semantics of Elara.\\
+Some syntactic structures in Elara can create multi-line environments. Formally, this means that rather than a single expression, a semicolon-separated list of _statement_\s, surrounded by braces, can be used where a multi-line environment is permitted. \
+Practically, this allows the imperative idea of "blocks" of code to be used, rather than having a binding be a single long expression.
+Note that this feature is merely syntax-sugar and does not change the purely-functional semantics of Elara.
 When in a multi-line environment, the syntax is extended to allow imperative statements:
 
 - Standalone let bindings: \
