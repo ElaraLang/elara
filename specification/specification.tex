@@ -1,6 +1,7 @@
-\documentclass{article}
+\documentclass{report}
 \usepackage[utf8]{inputenc}
 \usepackage{paracol}
+\usepackage[margin=0.5in]{geometry}
 
 \title{Elara Language Specification}
 \author{Alexander Wood}
@@ -151,8 +152,7 @@ def sequenceActions_ list = match list with
 
 
 \section{Syntax}
-\subsection{Multi-line Environments}
-\label{sec:multi-line-environments}
+\subsection{Multi-line Environments}\label{sec:multi-line-environments}
 Some syntactic structures in Elara can create multi-line environments. Formally, this means that rather than a single expression, a semicolon-separated list of \emph{statement}s, surrounded by braces, can be used where a multi-line environment is permitted. \\
 Practically, this allows the imperative idea of `blocks' of code to be used, rather than having a binding be a single long expression.\\
 Note that this feature is merely syntax-sugar and does not change the purely-functional semantics of Elara.\\
@@ -294,7 +294,7 @@ let x = 1         | marks offside column
   let y = 2       | considered part of x, error!
 let z = 3         | correctly indented
 \end{verbatim}
-This can produce some interesting, but correct results. All top-level declarations can be indented as long as it's consistent: 
+This can produce some interesting, but correct results. All top-level declarations can be indented as long as it's consistent:
 \begin{verbatim}
 module Main     | the module keyword triggers the offside rule
   let x = 1     | marks offside column
