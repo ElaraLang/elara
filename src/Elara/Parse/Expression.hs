@@ -90,7 +90,7 @@ expression =
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text
-reservedWords = Set.fromList ["if", "else", "then", "let", "in", "class"]
+reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
 parensExpr :: HParser Frontend.Expr
 parensExpr = do

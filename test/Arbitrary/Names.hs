@@ -36,7 +36,7 @@ newtype OpText = OpText {getOpText :: Text}
 
 instance Arbitrary OpText where
     arbitrary = OpText . toText <$> listOf1 (elements ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~'])
-        `suchThat` (`Set.notMember` ["@", "=", ".", "\\", "=>"])
+        `suchThat` (`Set.notMember` ["@", "=", ".", "\\", "=>", "->", "<-"])
 
 
 
@@ -57,7 +57,7 @@ instance Arbitrary name => Arbitrary (Unqualified name) where
 
 instance Arbitrary VarName where
     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
-      where
+      where 
         arbitraryNormalVarName = NormalVarName . getAlphaText <$> suchThat arbitrary isSafe
         isSafe (AlphaText name) = name `Set.notMember` reservedWords
         arbitraryOpVarName = OperatorVarName <$> arbitrary
