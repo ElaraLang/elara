@@ -19,9 +19,8 @@ programming and imperative programming.
 
 Elara's notable features include:
 - Structural pattern matching with exhaustiveness checking
-- A first-class effects system
 - Type classes for polymorphism
-- Complete sound type inference
+- Complete sound type inference with higher-kinded and higher-rank types
 
 == Code Examples
 While all the following examples are syntactically correct, they may assume the existence of functions not provided in the examples in order to compile.
@@ -144,7 +143,7 @@ def sequenceActions_ list = match list with
 ```
 
 == Syntax
-=== Multi-line Environments
+=== Multi-line Environments <multi-line-environments>
 Some syntactic structures in Elara can create multi-line environments. Formally, this means that rather than a single expression, a semicolon-separated list of _statement_\s, surrounded by braces, can be used where a multi-line environment is permitted. \
 Practically, this allows the imperative idea of "blocks" of code to be used, rather than having a binding be a single long expression.
 Note that this feature is merely syntax-sugar and does not change the purely-functional semantics of Elara.
@@ -175,14 +174,14 @@ The following describes the lightweight syntax rules in an informal, example-bas
 
 In normal syntax, semicolons are required to separate statements and must appear at the end of every declaration or statement. In lightweight mode, semicolons are optional and are inferred by the presence of a newline (`\n`) character.
 
-#columns(2)[
+#beforeAndAfter[
 *Normal Syntax*
 ```ocaml
     let x = 1;
     let y = 2;
     let main = println (x + y);
 ```
-#colbreak()
+][
 *Lightweight Syntax*  
 ```ocaml
     let x = 1
@@ -191,9 +190,9 @@ In normal syntax, semicolons are required to separate statements and must appear
 ```
 ]
 
-====== Optional Braces
+===== Optional Braces
 
-In normal syntax, braces are required when beginning a multi-line environment (see~§\ref{sec:multi-line-environments})
+In normal syntax, braces are required when beginning a multi-line environment (see @multi-line-environments)
 or in a few other cases (such as the body of a match expression)
 
 In lightweight syntax, braces are optional and can be inferred by newlines and indentation.
