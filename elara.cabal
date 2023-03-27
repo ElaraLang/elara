@@ -139,7 +139,10 @@ test-suite elara-test
       Arbitrary.AST
       Arbitrary.Literals
       Arbitrary.Names
+      Common
       Lex
+      Lex.Common
+      Lex.Indents
       Orphans
       Paths_elara
   hs-source-dirs:

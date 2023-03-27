@@ -2,10 +2,13 @@ module Lex where
 
 import Arbitrary.Literals
 import Arbitrary.Names
+import Common
 import Control.Lens (view)
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
+import Lex.Common
+import Lex.Indents qualified as Indents
 import NeatInterpolation (text)
 import Relude.Unsafe (read)
 import Test.Hspec
@@ -17,6 +20,7 @@ spec = do
     symbols
     keywords
     identifiers
+    Indents.spec
 
 literals :: Spec
 literals = describe "Lexes literals" $ do
@@ -180,15 +184,3 @@ identifiers = describe "Lexes identifiers" $ do
 
     let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
      in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
-
-(<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
-(<=>) = shouldBe
-
-lex' :: HasCallStack => Text -> [Lexeme]
-lex' contents =
-    case lex "" (encodeUtf8 contents) of
-        Left err -> error (show err)
-        Right lexemes -> lexemes
-
-lexUL :: HasCallStack => Text -> [Token]
-lexUL = fmap (view unlocated) . lex'
