@@ -197,6 +197,7 @@ or in a few other cases (such as the body of a match expression)
 
 In lightweight syntax, braces are optional and can be inferred by newlines and indentation.
 
+
 #beforeAndAfter[
 *Normal Syntax*
 ```ocaml
@@ -316,3 +317,104 @@ let main =                | = triggers the offside rule
      [] -> "empty list"   | bad! too indented
 ```
 
+== Code Structure
+
+=== Packages
+
+The basic unit of compilation in Elara is a _package_. A package is a collection of modules, which are typically compiled and distributed together.
+Packages are defined in a `elara.json` file located in the root directory of the package. This file provides metadata about the package such as name, author, version, etc.
+
+==== `elara.json` structure
+
+The `elara.json` file is a standard JSON file that must contain the following attributes at the top level:
+
+- `name: string` - The package's name. This may only contain alphanumeric characters, and the `-` symbol. Conventionally, package names are written in `lower-snake-case`
+- `version: string` - The package's version. This must be a valid semantic version string. Typically `1.0.0` is used for initial releases and should usually be the default value when generating `elara.json` files.
+
+=== Modules
+
+Inside packages, Elara code is organised into hierarchial _modules_. 
+Modules are single files containing a (possibly empty) list of declarations which define namespaces for these declarations. 
+Modules are named using the `module` keyword which must appear at the start of the file, and must be named as at least 1 `UpperCamelCase` section, separated by `.` characters. For example, the module names `Foo`, `Foo.Bar`, and `Foo.Bar.Baz` are all valid.
+Module names must be unique within a package, and must reflect the file structure of the package. For example, a module named `Foo.Bar` must be located at `src/Foo/Bar.elara`.
+
+Importantly, modules are hierarchial with respect to importing. Given modules `Foo` and `Foo.Bar`, the module `Foo.Bar` is a "child" of `Foo`. This has 2 important implications:
+- The module `Foo.Bar` can reference declarations in `Foo` without explicitly importing it
+- Modules importing `Foo` will also import `Foo.Bar`, and any other child modules of `Foo`
+
+The following code across multiple files demonstrates the above points:
+
+#columns(3)[
+*`src/Foo.elara`*
+```ocaml
+module Foo
+
+def x : Int
+let x = 1
+```
+#colbreak()
+
+*`src/Foo/Bar.elara`*
+```ocaml
+module Foo.Bar
+
+def y : Int
+let y = Foo.x + 1
+```
+
+#colbreak()
+
+*`src/Main.elara`*
+```ocaml
+
+module Main
+import Foo
+
+def main : IO ()
+let main = print Foo.Bar.y
+```
+]
+
+==== Imports
+
+Importing is the action of bringing a module's declarations into scope. 
+This is done using the `import` keyword, which must appear at the top of the file under the `module` declaration.
+
+By default, imports are *qualified* and expose *everything*. This means that when referencing a member imported from another module, the module name must be prefixed, e.g. `Foo.Bar.y` rather than `y`
+
+===== Qualification
+
+Qualified imports can be made unqualified by using the `unqualified` keyword after the module name, e.g. `import Foo.Bar unqualified`. 
+
+Unqualified imports should be used sparingly as they can lead to name clashes and scope pollution. Note that even with an unqualified import, explicit qualification is still permitted.
+
+===== Expositions
+
+By default, all declarations in a module are exposed (brought into scope) when imported. If this is not desired, a subset of the declarations can be imported using the `exposing` keyword after the module name, e.g. `import Foo.Bar exposing (x, y)`.
+
+This can be quite useful when combined with unqualified imports. For example, suppose a library provides a `HashMap` module whose members' names clash with the Prelude. We could write something like
+```ocaml
+import HashMap unqualified exposing (HashMap)
+import HashMap
+
+def testMap : HashMap String Int
+let testMap = HashMap.singleton "foo" 1
+```
+
+to allow the use of the `HashMap` type name without qualification, but everything else must be qualified.
+
+
+Modules may also control their exposed members in the module declaration with a very similar syntax: `module Foo exposing (x, y)`. This means that at most, the listed members can be imported. Any members not in the exposition list can be considered "private" to the module.
+
+===== Aliasing
+
+Finally, it can be convenient to rename a module when importing it. This can be done using the `as` keyword, e.g. `import Foo.Bar as Bar`. This allows us to refer to the module as `Bar` rather than `Foo.Bar` in the current file.
+
+Going back to the previous `HashMap` example, we might rename the unqualified `HashMap` module to `Map` to avoid confusion:
+```ocaml
+import HashMap unqualified exposing (HashMap)
+import HashMap as Map
+
+def testMap : HashMap String Int
+let testMap = Map.singleton "foo" 1
+```
