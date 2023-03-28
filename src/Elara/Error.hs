@@ -1,9 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ViewPatterns #-}
 
-module Elara.Error where
+module Elara.Error (ReportableError (..), addPosition, concatDiagnostics, module Elara.Error.Effect) where
 
-import Elara.Error.Effect (DiagnosticWriter)
+import Elara.Error.Effect
 import Error.Diagnose
 import Polysemy
 import Prelude hiding (Reader, asks, readFile)

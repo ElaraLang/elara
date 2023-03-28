@@ -5,7 +5,7 @@
 module Elara.AST.Select where
 
 import Control.Lens (Getting, Lens', view)
-import Elara.AST.Annotated qualified as Annotated
+import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
@@ -17,50 +17,48 @@ data Frontend
 
 data UnlocatedFrontend
 
-data Annotated
-
 data Renamed
 
 type family ASTExpr ast where
     ASTExpr Frontend = Frontend.Expr
     ASTExpr UnlocatedFrontend = Frontend.Unlocated.Expr
-    ASTExpr Annotated = Annotated.Expr
     ASTExpr Renamed = Renamed.Expr
+
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
     ASTType UnlocatedFrontend = Frontend.Unlocated.Type
-    ASTType Annotated = Annotated.Type
+    ASTType Renamed = Renamed.Type
     ASTType Renamed = Renamed.Type
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
     ASTPattern UnlocatedFrontend = Frontend.Unlocated.Pattern
-    ASTPattern Annotated = Annotated.Pattern
+    ASTPattern Renamed = Renamed.Pattern
     ASTPattern Renamed = Renamed.Pattern
 
 type family ASTAnnotation ast where
     ASTAnnotation Frontend = Maybe Frontend.TypeAnnotation
     ASTAnnotation UnlocatedFrontend = Maybe Frontend.Unlocated.TypeAnnotation
-    ASTAnnotation Annotated = Maybe Annotated.TypeAnnotation
+    ASTAnnotation Renamed = Maybe Renamed.TypeAnnotation
     ASTAnnotation Renamed = Maybe Renamed.TypeAnnotation
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
     ASTQual UnlocatedFrontend = MaybeQualified
-    ASTQual Annotated = Qualified
+    ASTQual Renamed = Qualified
     ASTQual Renamed = Unique
 
 type family ASTLocate' ast where
     ASTLocate' Frontend = Located
     ASTLocate' UnlocatedFrontend = Unlocated
-    ASTLocate' Annotated = Located
+    ASTLocate' Renamed = Located
     ASTLocate' Renamed = Located
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
     ASTDeclaration UnlocatedFrontend = Frontend.Unlocated.Declaration
-    ASTDeclaration Annotated = Annotated.Declaration
+    ASTDeclaration Renamed = Renamed.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
@@ -122,7 +120,7 @@ instance GetLocation Frontend where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r
 
-instance RUnlocate Annotated where
+instance RUnlocate Renamed where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
     rUnlocated = unlocated
@@ -132,7 +130,7 @@ instance RUnlocate Annotated where
     sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
-instance GetLocation Annotated where
+instance GetLocation Renamed where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r
 

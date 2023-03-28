@@ -20,6 +20,7 @@ dependencies:
   - lens
   - containers
   - bytestring
+  - utf8-string
   - array
   - megaparsec
   - headed-megaparsec
@@ -29,6 +30,7 @@ dependencies:
   - pretty
   - polysemy
   - polysemy-plugin
+  - mtl
 
 ghc-options:
 - -Wall

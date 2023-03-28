@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,7 +28,6 @@ source-repository head
 library
   exposed-modules:
       Elara.Annotate.Shunt
-      Elara.AST.Annotated
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
       Elara.AST.Frontend.StripLocation
@@ -42,7 +41,9 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Lexer.Char
       Elara.Lexer.Lexer
+      Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
       Elara.Parse
@@ -58,7 +59,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
-      Elara.Rename
+      Polysemy.MTL
       Prelude
       Print
       TODO
@@ -89,12 +90,14 @@ library
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
 
 executable elara
@@ -125,27 +128,28 @@ executable elara
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
 
 test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      AST.Module.Inspection
-      Data.List.Extra
+      Arbitrary.AST
+      Arbitrary.Literals
+      Arbitrary.Names
+      Common
+      Lex
+      Lex.Common
+      Lex.Indents
       Orphans
-      Parse
-      Parse.Common
-      Parse.Expression
-      Parse.LetDec
-      Parse.Names
-      Parse.QuickCheck
       Paths_elara
   hs-source-dirs:
       test
@@ -176,6 +180,7 @@ test-suite elara-test
     , hspec-megaparsec
     , lens
     , megaparsec
+    , mtl
     , neat-interpolation
     , parser-combinators
     , polysemy
@@ -183,5 +188,6 @@ test-suite elara-test
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
   build-tool-depends: hspec-discover:hspec-discover == 2.*
