@@ -504,4 +504,13 @@ Note that while `b` is instantiated to `a`, `a` is not instantiated.
 
 Note that the _type functions_ mentioned earlier are typically polytypes. `Int -> String` is a monotype, but `->` is a polytype with 2 type variables. 
 
+==== Record Types
 
+Elara supports first-class record types. A record type `{k1: t1, k2: t2, ...}` is a monotype that represents a record with keys `k1`, `k2`, etc. and types `t1`, `t2`, etc. respectively.
+
+
+==== Custom Data Types
+
+Elara supports user-defined data types, which are defined using the `type` keyword.
+
+Data types can be either _algebraic_ or _record_ types, or a combination of the two. 
