@@ -11,6 +11,7 @@ import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import Text.Megaparsec qualified as MP
 import Text.Megaparsec.Error
 import Prelude hiding (error, lines)
+import Elara.Lexer.Token (Lexeme)
 
 import Control.Lens (to, view)
 import Data.Foldable (Foldable (foldl))
@@ -18,7 +19,7 @@ import Data.List (lines)
 import Data.Set qualified as Set (toList)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Error
-import Elara.Lexer.Lexer (Lexeme)
+
 
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
 import Elara.Error.Effect (writeDiagnostic)

@@ -1,5 +1,11 @@
 module Elara.Lexer.Token where
 
+import Elara.AST.Region (Located, RealPosition)
+
+type Lexeme = Located Token
+
+type TokPosition = RealPosition
+
 data Token
   = -- | ;
     TokenSemicolon

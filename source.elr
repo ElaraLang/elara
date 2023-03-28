@@ -1,6 +1,4 @@
-let g x =
-    if x then
-            x
-            x
-         else
-             3
+match x with 
+    1 -> 1
+    2 -> 3
+        3 -> 3

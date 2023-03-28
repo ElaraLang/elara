@@ -20,6 +20,7 @@ dependencies:
   - lens
   - containers
   - bytestring
+  - utf8-string
   - array
   - megaparsec
   - headed-megaparsec
