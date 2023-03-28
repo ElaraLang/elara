@@ -1,4 +1,4 @@
-match x with 
-    1 -> 1
-    2 -> 3
-        3 -> 3
+let main = 
+    match getLine with
+        "" -> ()
+        "hello" -> print "Hello World!"

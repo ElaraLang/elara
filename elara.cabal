@@ -59,6 +59,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
+      Polysemy.Maybe
       Polysemy.MTL
       Prelude
       Print

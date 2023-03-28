@@ -14,11 +14,14 @@ module Elara.Error.Codes where
 -}
 type ErrorCode = Text
 
+fileReadError :: ErrorCode
+fileReadError = "E0001"
+
 tooMuchIndentation :: ErrorCode
-tooMuchIndentation = "E0001"
+tooMuchIndentation = "E0002"
 
 genericParseError :: ErrorCode
-genericParseError = "E0002"
+genericParseError = "E0003"
 
 unknownName :: ErrorCode
 unknownName = "E1001"

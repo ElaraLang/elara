@@ -8,13 +8,16 @@ import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1', sepEndBy1')
 import Elara.Parse.Primitives (HParser, token')
+import HeadedMegaparsec
 
 block :: HParser Expr -> HParser Expr
-block exprParser = do
-  token' TokenLeftBrace
-  exprs <- sepEndBy1' exprParser (token' TokenSemicolon)
-  token' TokenRightBrace
-  pure $ merge exprs
+block exprParser =
+  exprParser <|> do
+    token' TokenLeftBrace
+    endHead
+    exprs <- sepEndBy1' exprParser (token' TokenSemicolon)
+    token' TokenRightBrace
+    pure $ merge exprs
  where
   merge :: NonEmpty Expr -> Expr
   merge expressions = case expressions of

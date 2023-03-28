@@ -157,6 +157,7 @@ match = locatedExpr $ do
     matchCase = do
         case' <- pattern'
         token' TokenRightArrow
+        endHead
         expr <- block element
         pure (case', expr)
 
