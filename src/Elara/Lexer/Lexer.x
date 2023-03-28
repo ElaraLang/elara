@@ -120,7 +120,7 @@ tokens :-
 
 type NumberOfCharsMatched = Int
 type MatchedSequence = Text
-type LexAction = NumberOfCharsMatched -> MatchedSequence -> P (Maybe Lexeme)
+type LexAction = NumberOfCharsMatched -> MatchedSequence -> LexMonad (Maybe Lexeme)
 
 simpleTok :: Token -> LexAction
 simpleTok t len _ = do

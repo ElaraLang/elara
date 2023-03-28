@@ -59,6 +59,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
+      Polysemy.MTL
       Prelude
       Print
       TODO
@@ -89,6 +90,7 @@ library
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
@@ -126,6 +128,7 @@ executable elara
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
@@ -177,6 +180,7 @@ test-suite elara-test
     , hspec-megaparsec
     , lens
     , megaparsec
+    , mtl
     , neat-interpolation
     , parser-combinators
     , polysemy

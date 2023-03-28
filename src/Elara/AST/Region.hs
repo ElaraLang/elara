@@ -15,8 +15,8 @@ generatedFileName :: String
 generatedFileName = "<generated>"
 
 data RealPosition = Position
-    { line :: Int
-    , column :: Int
+    { _line :: Int
+    , _column :: Int
     }
     deriving (Show, Eq, Ord, Data)
 
@@ -70,16 +70,16 @@ mkSourceRegion start end =
 spToPosition :: SourcePos -> RealPosition
 spToPosition sp =
     Position
-        { line = unPos $ sourceLine sp
-        , column = unPos $ sourceColumn sp
+        { _line = unPos $ sourceLine sp
+        , _column = unPos $ sourceColumn sp
         }
 
 positionToSp :: FilePath -> RealPosition -> SourcePos
-positionToSp fp (Position line column) =
+positionToSp fp pos =
     SourcePos
         { sourceName = fp
-        , sourceLine = mkPos line
-        , sourceColumn = mkPos column
+        , sourceLine = mkPos (pos ^. line)
+        , sourceColumn = mkPos (pos ^. column)
         }
 
 generatedSourcePos :: Maybe FilePath -> SourcePos
@@ -102,6 +102,14 @@ sourceRegionToDiagnosePosition (RealSourceRegion (SourceRegion fp (Position star
         { Diag.begin = (startLine, startCol)
         , Diag.end = (endLine, endCol)
         , Diag.file = fromMaybe generatedFileName fp
+        }
+
+positionToDiagnosePosition :: FilePath -> RealPosition -> Diag.Position
+positionToDiagnosePosition fp (Position line col) =
+    Diag.Position
+        { Diag.begin = (line, col)
+        , Diag.end = (line, col + 1)
+        , Diag.file = fp
         }
 
 data Located a = Located SourceRegion a

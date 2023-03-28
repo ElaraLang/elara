@@ -19,8 +19,8 @@ import Elara.Error.Effect (
  )
 import Elara.Lexer.Lexer
 import Elara.Lexer.Reader
-import Elara.Lexer.Utils (evalP)
 import Elara.Lexer.Token (Lexeme)
+import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
 import Error.Diagnose (Diagnostic, Note (Note), Report (Err), defaultStyle, printDiagnostic)
@@ -34,11 +34,12 @@ import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
-  (runM $ lexFile "source.elr") <&> (fmap (view unlocated)) >>= printColored
+  s <- (runM $ execDiagnosticWriter $ lexFile "source.elr")
+
   -- s <- runElara
-  -- when (hasReports s) $ do
-  --   printDiagnostic stdout True True 4 defaultStyle s
-  --   exitFailure
+  when (hasReports s) $ do
+    printDiagnostic stdout True True 4 defaultStyle s
+    exitFailure
 
 -- runElara :: IO (Diagnostic Text)
 -- runElara = runM $ execDiagnosticWriter $ do
@@ -74,10 +75,13 @@ main = do
 --       traverse_ report (toList warnings)
 --       pure (Just finalM)
 
-lexFile :: (Member (Embed IO) r) => FilePath -> Sem r ([Lexeme])
+lexFile :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe [Lexeme])
 lexFile path = do
-  bs <- readFile path
-  pure (evalP readTokens path bs)
+  contents <- readFile path
+  addFile path contents
+  case evalLexMonad path contents readTokens of
+    Left err -> report err $> Nothing
+    Right lexemes -> pure (Just lexemes)
 
 -- loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r) => FilePath -> Sem r (Maybe (Module Frontend))
 -- loadModule path = do
