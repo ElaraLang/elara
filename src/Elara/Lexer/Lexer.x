@@ -61,7 +61,18 @@ simpleTok t len _ = do
   start <- getPosition len
   region <- createRegionStartingAt start 
   return $ Just (Located (RealSourceRegion region) t)
+simpleTok :: Token -> LexAction
+simpleTok t len _ = do
+  start <- getPosition len
+  region <- createRegionStartingAt start 
+  return $ Just (Located (RealSourceRegion region) t)
 
+parametrizedTok :: (a -> Token) -> (Text -> a) -> LexAction
+parametrizedTok tc read' tokenLen matched = do
+  start <- getPosition tokenLen 
+  region <- createRegionStartingAt start 
+  let token = tc (read' matched)
+  return $ Just (Located (RealSourceRegion region) token)
 parametrizedTok :: (a -> Token) -> (Text -> a) -> LexAction
 parametrizedTok tc read' tokenLen matched = do
   start <- getPosition tokenLen 
@@ -70,6 +81,12 @@ parametrizedTok tc read' tokenLen matched = do
   return $ Just (Located (RealSourceRegion region) token)
 
 
+beginString :: LexAction
+beginString len _ = do
+  s <- get
+  pos <- getPosition len
+  put s{ _lexSC = stringSC, _pendingPosition = pos }
+  pure Nothing
 beginString :: LexAction
 beginString len _ = do
   s <- get

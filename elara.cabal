@@ -41,6 +41,7 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Lexer.Char
       Elara.Lexer.Lexer
       Elara.Lexer.Reader
       Elara.Lexer.Token
@@ -58,7 +59,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
-      Elara.Rename
+      Polysemy.MTL
       Prelude
       Print
       TODO
@@ -89,6 +90,7 @@ library
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
@@ -126,6 +128,7 @@ executable elara
     , headed-megaparsec
     , lens
     , megaparsec
+    , mtl
     , parser-combinators
     , polysemy
     , polysemy-plugin
@@ -139,15 +142,14 @@ test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      AST.Module.Inspection
-      Data.List.Extra
+      Arbitrary.AST
+      Arbitrary.Literals
+      Arbitrary.Names
+      Common
+      Lex
+      Lex.Common
+      Lex.Indents
       Orphans
-      Parse
-      Parse.Common
-      Parse.Expression
-      Parse.LetDec
-      Parse.Names
-      Parse.QuickCheck
       Paths_elara
   hs-source-dirs:
       test
@@ -178,6 +180,7 @@ test-suite elara-test
     , hspec-megaparsec
     , lens
     , megaparsec
+    , mtl
     , neat-interpolation
     , parser-combinators
     , polysemy

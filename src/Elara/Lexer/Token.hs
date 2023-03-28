@@ -134,18 +134,6 @@ tokenRepr = \case
   TokenUnderscore -> "_"
   TokenEOF -> "<EOF>"
 
-startsNewLayout :: Token -> Int -> Bool
-startsNewLayout TokenEquals _ = True
-startsNewLayout TokenWhere _ = True
-startsNewLayout TokenOf _ = True
-startsNewLayout TokenIn _ = True
-startsNewLayout TokenMatch _ = True
-startsNewLayout TokenWith _ = True
-startsNewLayout TokenThen _ = True
-startsNewLayout TokenElse _ = True
-startsNewLayout TokenRightArrow _ = True
-startsNewLayout _ _ = False
-
 unsafeTokenText :: Token -> Text
 unsafeTokenText = \case
   TokenVariableIdentifier i -> i

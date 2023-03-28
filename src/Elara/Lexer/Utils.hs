@@ -4,40 +4,90 @@
 module Elara.Lexer.Utils where
 
 import Codec.Binary.UTF8.String (encodeChar)
-import Control.Lens (makeLenses, use, view)
+import Control.Lens (makeLenses, to, use, view, (^.))
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
-import Data.Word (Word8)
-import Debug.Trace (traceM, traceShowId, traceShowM)
-import Elara.AST.Region (Located (Located), Position (RealPosition), RealPosition (..), RealSourceRegion (SourceRegion), SourceRegion (GeneratedRegion, RealSourceRegion))
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenLeftBrace, TokenRightBrace, TokenRightParen, TokenSemicolon))
-import Print (debugColored)
-import Prelude hiding (span)
-
-type P a = State ParseState a
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion(..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
+import Elara.Error
+import Elara.Error.Codes qualified as Codes
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenLeftBrace, TokenRightBrace, TokenSemicolon))
+import Error.Diagnose (Marker (..), Note (..), Report (Err))
+import Polysemy
+import Polysemy.Error
+import Polysemy.State
+import Prelude hiding (State, evalState, get, modify, put, span)
 
 data AlexInput = AlexInput
     { _filePath :: FilePath
     , _prev :: Char
     , _bytes :: [Word8]
     , _rest :: String
-    , _lineNumber :: Int
-    , _columnNumber :: Int
+    , _position :: RealPosition
     }
     deriving (Show)
+
+data IndentInfo = IndentInfo
+    { _indent :: Int
+    , _indentPos :: RealPosition
+    }
 
 data ParseState = ParseState
     { _input :: AlexInput
     , _lexSC :: Int -- lexer start code
     , _stringBuf :: String -- temporary storage for strings
     , _pendingTokens :: [Lexeme] -- right now used when Parser consumes the lookeahead and decided to put it back
-    , _indentStack :: NonEmpty Int -- stack of indentation levels
+    , _indentStack :: NonEmpty IndentInfo -- stack of indentation levels
     , _pendingPosition :: TokPosition -- needed when parsing strings, chars, multi-line strings
     }
-    deriving (Show)
 
 makeLenses ''AlexInput
+makeLenses ''IndentInfo
 makeLenses ''ParseState
+
+type LexMonad :: Type -> Type
+type LexMonad a = Sem [State ParseState, Error LexerError] a
+
+mkIndentInfo :: Int -> LexMonad IndentInfo
+mkIndentInfo i = do
+    pos <- use (input . position)
+    pure (IndentInfo i pos)
+
+data LexerError
+    = -- | When an element is indented more than expected
+      TooMuchIndentation
+        IndentInfo
+        -- ^ The expected indentation
+        (Maybe IndentInfo)
+        -- ^ The potential further indentation
+        Int
+        -- ^ The actual indentation
+        ParseState
+        -- ^ The current state of the lexer
+
+instance ReportableError LexerError where
+    report (TooMuchIndentation expected further actual s) = do
+        let fp = view (input . filePath) s
+        let pos = view (input . position) s
+        let msg = "Unexpected change in indentation. Expected " <> show (expected ^. indent) <> " spaces, but got " <> show actual <> " spaces."
+        let hint = case further of
+                Nothing -> "Try removing the extra indentation."
+                Just f -> "Try removing the extra indentation or indenting the line by " <> show (f ^. indent - actual) <> " space(s)."
+
+        let baseHints =
+                [ (positionToDiagnosePosition fp pos, This "this line is indented incorrectly")
+                , (positionToDiagnosePosition fp (expected ^. indentPos), Maybe "If the decrease in indentation is intentional, the problematic line should line up with this line.")
+                ]
+        let furtherHints = case further of
+                Nothing -> baseHints
+                Just f -> (positionToDiagnosePosition fp (f ^. indentPos), Maybe ("an offside rule begins here (column " <> show (f ^. indent) <> "). If you think the problematic line is \"related\" to this line, make sure they line up.")) : baseHints
+        writeReport $
+            Err
+                (Just Codes.tooMuchIndentation)
+                msg
+                furtherHints
+                [ Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
+                , Hint hint
+                ]
 
 initialState :: FilePath -> String -> ParseState
 initialState fp s =
@@ -48,53 +98,58 @@ initialState fp s =
                 , _prev = '\n'
                 , _bytes = []
                 , _rest = s
-                , _lineNumber = 1
-                , _columnNumber = 1
+                , _position = Position 1 1
                 }
         , _lexSC = 0
         , _stringBuf = ""
         , _pendingTokens = []
-        , _indentStack = 0 :| []
+        , _indentStack = IndentInfo 0 (Position 1 1) :| []
         , _pendingPosition = Position 1 1
         }
 
-fake :: Token -> P Lexeme
+evalLexMonad :: FilePath -> String -> LexMonad a -> Either LexerError a
+evalLexMonad fp s = run . runError . evalState (initialState fp s)
+
+fake :: Token -> LexMonad Lexeme
 fake t = do
     fp <- use (input . filePath)
     pure (Located (GeneratedRegion fp) t)
 
-startWhite :: Int -> Text -> P (Maybe Lexeme)
+startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
     let indentation = T.length $ T.dropWhile (== '\n') str
     s <- get
-    let indents@(cur :| _) = _indentStack s
-    case indentation `compare` cur of
+    let indents@(cur :| _) = s ^. indentStack
+    case indentation `compare` (cur ^. indent) of
         GT -> do
             fakeLb <- fake TokenLeftBrace
-            put s{_indentStack = indentation <| indents, _pendingTokens = fakeLb : _pendingTokens s}
+            indentInfo <- mkIndentInfo indentation
+            put s{_indentStack = indentInfo <| indents, _pendingTokens = fakeLb : _pendingTokens s}
             pure Nothing
         LT -> do
-            case span (> indentation) indents of
+            -- If the indentation is less than the current indentation, we need to close the current block
+            case span (view (indent . to (> indentation))) indents of
                 (pre, top : xs) -> do
-                    fakeClosings <- sequenceA [fake TokenRightBrace]
-                    if top == indentation
+                    -- pre is all the levels that need to be closed, top is the level that we need to match
+                    fakeClosings <- sequenceA [fake TokenRightBrace, fake TokenSemicolon]
+                    if top ^. indent == indentation
                         then
                             put
                                 s
                                     { _indentStack = top :| xs
                                     , _pendingTokens = pre >>= const fakeClosings
                                     }
-                        else error $ "Indents don't match ( " <> show top <> " vs " <> show indentation <> ")" <> show s
-                (_, []) -> error $ "Indents don't match ( [] vs " <> show indentation <> ")" <> show s
+                        else throw (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
+                (_, []) -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
         EQ -> Just <$> fake TokenSemicolon
 
--- Insert } and ; tokens for any leftover unclosed indents
-cleanIndentation :: P [Lexeme]
+-- Insert }  for any leftover unclosed indents
+cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
     indentStack <- use indentStack
     fakeClosings <- sequenceA [fake TokenRightBrace]
-    modify $ \s -> s{_indentStack = 0 :| []}
+    modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
     pure $ init indentStack >>= const fakeClosings
 
 -- The functions that must be provided to Alex's basic interface
@@ -109,9 +164,8 @@ alexGetByte ai@AlexInput{..} =
             case _rest of
                 [] -> Nothing
                 (char : chars) ->
-                    let n = _lineNumber
+                    let (Position n c) = _position
                         n' = if char == '\n' then n + 1 else n
-                        c = _columnNumber
                         c' = if char == '\n' then 1 else c + 1
                         (b :| bs) = fromList $ encodeChar char
                      in Just
@@ -120,31 +174,27 @@ alexGetByte ai@AlexInput{..} =
                                 { _prev = char
                                 , _bytes = bs
                                 , _rest = chars
-                                , _lineNumber = n'
-                                , _columnNumber = c'
+                                , _position = Position n' c'
                                 }
                             )
 
-getLineNo :: P Int
-getLineNo = use (input . lineNumber)
+getLineNo :: LexMonad Int
+getLineNo = use (input . position . line)
 
-getColNo :: P Int
-getColNo = use (input . columnNumber)
+getColNo :: LexMonad Int
+getColNo = use (input . position . column)
 
-evalP :: P a -> FilePath -> String -> a
-evalP m fp s = evalState m (initialState fp s)
-
-getPosition :: Int -> P TokPosition
+getPosition :: Int -> LexMonad TokPosition
 getPosition tokenLength = do
-    ParseState{_input = AlexInput{_lineNumber = ln, _columnNumber = cn}} <- get
+    ParseState{_input = AlexInput{_position = (Position ln cn)}} <- get
     pure $ Position ln (cn - tokenLength)
 
-createRegion :: TokPosition -> TokPosition -> P RealSourceRegion
+createRegion :: TokPosition -> TokPosition -> LexMonad RealSourceRegion
 createRegion start end = do
     fp <- use (input . filePath)
     pure $ SourceRegion (Just fp) start end
 
-createRegionStartingAt :: TokPosition -> P RealSourceRegion
+createRegionStartingAt :: TokPosition -> LexMonad RealSourceRegion
 createRegionStartingAt start = do
     end <- getPosition 0
     createRegion start end

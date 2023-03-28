@@ -22,7 +22,7 @@ import Elara.Error
 
 
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
-import Elara.Error.Effect (writeDiagnostic)
+import Elara.Error
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (error, lines)
 
