@@ -342,25 +342,25 @@ let z = 3         | correctly indented
 As the `module` keyword triggers the offside rule, all top-level declarations must be indented to the same column.
 This can produce some interesting, but correct results. All top-level declarations can be indented as long as it's consistent:
 ```ocaml
-module Main     | module keyword triggers the offside rule
-  let x = 1     | marks offside column
-  let y = 2     | same column, fine 
-let z = 3       | bad! not considered part of the module, error!
+module Main               | module keyword triggers the offside rule
+  let x = 1               | marks offside column
+  let y = 2               | same column, fine 
+let z = 3                 | bad! not considered part of the module, error!
 ```
 
 ```ocaml
-let x =            | = triggers the offside rule
-    let y = 1      | correctly indented
-      let z = 2    | bad! indented too much
-    y + z          | correctly indented
+let x =                   | = triggers the offside rule
+    let y = 1             | correctly indented
+      let z = 2           | bad! indented too much
+    y + z                 | correctly indented
 ```
 
 ```ocaml
 let main =                | = triggers the offside rule
   match [1, 2, 3] with    | with triggers the offside rule
-    x :: [] ->  "one"     | marks offside column
+    x :: [] ->  "one"     | x's column marked as offside
    x :: xs -> "many"      | bad! not indented enough
-     [] -> "empty list"   | bad! too indented
+     [] -> "empty list"   | bad! too far indented
 ```
 
 == Code Structure
