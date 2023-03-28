@@ -11,7 +11,7 @@
   // Set the document's basic properties.
   set document(author: authors, title: title)
   set page(numbering: "1", number-align: center)
-  set text(font: "New Computer Modern", lang: "en")
+  set text(font: "New Computer Modern", lang: "en", ligatures: true)
   show math.equation: set text(weight: 400)
   set heading(numbering: "1.1")
 

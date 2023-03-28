@@ -1,7 +1,5 @@
 #import "template.typ": *
 #import "functions.typ": *
-// Take a look at the file `template.typ` in the file panel
-// to customize this template and discover how it works.
 #show: project.with(
   title: "Elara Language Specification",
   authors: (
@@ -9,6 +7,8 @@
   ),
   date: "March 23, 2023",
 )
+#show raw: set text(font: "JetBrains Mono") // Set monospace font to JB mono my beloved
+
 
 = Introduction
 Elara is a statically-typed multi-paradigm programming language targeting the JVM and based on the Hindley-Milner type system. It supports a succinct,
@@ -143,6 +143,52 @@ def sequenceActions_ list = match list with
 ```
 
 == Syntax
+=== Literals <literals>
+
+=== Identifiers
+
+==== Variable Identifiers <var-ids>
+
+=== Patterns
+
+A large part of Functional Programming is _pattern matching_, the process of matching a value against a pattern and extracting information from it. \
+
+Elara supports a large number of patterns and pattern combinators to try and make this as painless as possible:
+
+- *Var patterns*: \
+    `vn` where `vn` is any valid variable identifier (see @var-ids) matches any value and binds it to the name `vn`.
+- *Wildcard patterns*: \
+    `_` matches any value and discards it. This is useful when you only care about some of the arguments of a function or constructor.
+- *Literal patterns*: \
+    Any of the supported literals (see @literals) may be used as patterns. These match only if the value is equal to the literal.
+- *Constructor patterns*: \
+    `(C p1 p2 ... pn)` matches a value `v` if `v` is a constructor `C` applied to `n` arguments, and if `p1`, `p2`, ..., `pn` match the arguments of `v` respectively.
+- *Tuple patterns*: \
+    `(p1, p2, ..., pn)` matches a value `v` if `v` is a tuple of `n` elements, and if `p1`, `p2`, ..., `pn` match the elements of `v` respectively.
+- *List Patterns*: \
+    `[]` matches the empty list. \
+    `[p1, p2, ..., pn]` matches a list of `n` elements, and if `p1`, `p2`, ..., `pn` match the elements of the list respectively. \
+    `p1 :: p2` matches a list of `n` elements, and if `p1` matches the first element of the list and `p2` matches the rest of the list. (Note that this is technically a constructor pattern, just with special syntax)
+- *Named Record Patterns* \
+    `{f1: v1, f2: v2, ..., fn: vn}` matches a value `v` if `v` is a record with fields `f1`, `f2`, ..., `fn` and if `v1`, `v2`, ..., `vn` match the values of the fields respectively. As records are first-class types, this pattern 
+
+- *As patterns*: \
+    `p as vn` matches a value `v` if `p` matches `v` and binds the name `vn` to `v`. This is useful in more complex patterns. For example `([1, _, _] as l, _)` matches a 2-tuple whose first element is a list of exactly 3 elements, starting with `1`, and binds the name `l` to the _whole list_
+
+- *If patterns (guards)*: \
+    `p if e` matches a value `v` if `p` matches `v` and `e` evaluates to `True`. The expression `e` is evaluated in the same scope as the pattern, so it can refer to any variables bound by the pattern. \
+    A practical example of this is `n if isEven n` which only matches even numbers (assuming `isEven` works as the name suggests) \
+    Note that guards often break exhaustiveness checking. For example, this will not compile:
+    ```ocaml
+    def f : Int -> Int
+    let f n = match n with
+        n if isEven n -> n + 1
+        n if isOdd n -> n - 1
+    ```
+    This is because the compiler cannot prove that `isEven` and `isOdd` are mutually exclusive so cannot prove that the match covers all cases.
+
+
+
 === Multi-line Environments <multi-line-environments>
 Some syntactic structures in Elara can create multi-line environments. Formally, this means that rather than a single expression, a semicolon-separated list of _statement_\s, surrounded by braces, can be used where a multi-line environment is permitted. \
 Practically, this allows the imperative idea of "blocks" of code to be used, rather than having a binding be a single long expression.
@@ -418,3 +464,44 @@ import HashMap as Map
 def testMap : HashMap String Int
 let testMap = Map.singleton "foo" 1
 ```
+
+
+=== Types
+
+honestly man I'm not gonna pretend to know what all the theory actually works, so here's just a list of what Elara's type system can do (theoretically)
+
+==== Basic Types
+
+As Elara is based on the Hindley-Milner system, types are either *monotypes* or *polytypes*.
+
+Monotypes are simple, non-polymorphic types that can be either:
+- A _concrete type_ such as `Int` or `String`
+- An _application_ of a _type function_ such as `Int -> String`, which is the application of the type function `->` to the types `Int` and `String`, representing a function from `Int` to `String`
+
+Polytypes (often called _generic types_ in imperative languages) contain type variables which are bound by zero or more universal quantifiers. \
+The simplest example of a polytype is $#sym.forall a. a #sym.arrow a$, written in Elara as `forall a. a -> a` (the `forall a.` is optional and may be omitted, all type variables are universally quantified). This type represents a function that takes a value of any type and returns a value of the same type.
+
+Polytypes must be _instantiated_ before they can be used practically. This is the process of substituting the type variables with concrete types. This is generally done automatically based on context. \
+For example, the following code is valid:
+```ocaml
+def id : forall a. a -> a
+let id x = x
+
+def num : Int
+let num = id 1
+```
+
+The type of `id` is `forall a. a -> a`, which is a polytype. 
+In `num`, `id 1` is called. Since `1` is a monotype (an `Int`), the `a` is substituted with `Int` to give the specialised type `Int -> Int` for `id`. 
+This implies that the type of `id 1` is `Int` which matches the declared type of `num`.
+
+
+However, polytypes are not _required_ to be instantiated. Consider a higher-order function `map : forall a b. (a -> b) -> [a] -> [b]`.
+Calling `map id` is valid despite `id`'s type being a polytype. 
+In this example, the types `forall a b. (a -> b)` and `forall a. a -> a` are _unified_ to give the type `forall a. a -> a` (since `b` must "equal" `a` for the 2 types to be equivalent). 
+Therefore the type of the expression `map id` is `forall a. [a] -> [a]`.
+Note that while `b` is instantiated to `a`, `a` is not instantiated.
+
+Note that the _type functions_ mentioned earlier are typically polytypes. `Int -> String` is a monotype, but `->` is a polytype with 2 type variables. 
+
+
