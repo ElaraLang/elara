@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -41,10 +41,11 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Lexer.Char
       Elara.Lexer.Lexer
+      Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
-      Elara.Lexer.Wrapper
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
@@ -94,6 +95,7 @@ library
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
 
 executable elara
@@ -130,6 +132,7 @@ executable elara
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
 
 test-suite elara-test
@@ -181,5 +184,6 @@ test-suite elara-test
     , pretty
     , pretty-simple
     , relude
+    , utf8-string
   default-language: GHC2021
   build-tool-depends: hspec-discover:hspec-discover == 2.*

@@ -44,6 +44,7 @@ instance Arbitrary OpText where
         OpText . toText
             <$> listOf1 (elements ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~'])
                 `suchThat` (`Set.notMember` ["@", "=", ".", "\\", "=>", "->", "<-"])
+                `suchThat` (not . isPrefixOf "--")
 
 instance Arbitrary ModuleName where
     arbitrary = ModuleName . fromList <$> listOf1 (getAlphaUpperText <$> arbitrary)

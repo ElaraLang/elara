@@ -2,14 +2,17 @@ module Lex.Common where
 
 import Control.Lens (view)
 import Elara.AST.Region (unlocated)
-import Elara.Lexer.Lexer (Lexeme, lex)
+import Elara.Lexer.Reader
 import Elara.Lexer.Token
+import Elara.Lexer.Utils
+import Test.Hspec
 
 lex' :: HasCallStack => Text -> [Lexeme]
 lex' contents =
-    case lex "" (encodeUtf8 contents) of
-        Left err -> error (show err)
-        Right lexemes -> lexemes
+    evalP readTokens "" (toString contents)
 
 lexUL :: HasCallStack => Text -> [Token]
 lexUL = fmap (view unlocated) . lex'
+
+(<~>) :: HasCallStack => Text -> Text -> Expectation
+(<~>) = shouldBe `on` lexUL

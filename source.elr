@@ -1,6 +1,3 @@
-let g x =
-    if x then
-            x
-            x
-         else
-             3
+let x =  
+   1
+        2

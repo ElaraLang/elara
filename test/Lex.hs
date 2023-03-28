@@ -65,9 +65,9 @@ literals = describe "Lexes literals" $ do
             lexUL "1e-2" <=> [TokenFloat 1e-2]
 
         it "Lexes decimal and exponential float literals" $ do
-            lexUL "123.456e0" <=> [TokenFloat 123.456e0]
-            lexUL "123.456e1" <=> [TokenFloat 123.456e1]
-            lexUL "123.456e2" <=> [TokenFloat 123.456e2]
+            lexUL "123.456e0"  <=> [TokenFloat 123.456e0]
+            lexUL "123.456e1"  <=> [TokenFloat 123.456e1]
+            lexUL "123.456e2"  <=> [TokenFloat 123.456e2]
             lexUL "123.456e+3" <=> [TokenFloat 123.456e+3]
             lexUL "123.456e-1" <=> [TokenFloat 123.456e-1]
             lexUL "123.456e-2" <=> [TokenFloat 123.456e-2]
