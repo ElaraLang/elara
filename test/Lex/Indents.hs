@@ -16,7 +16,7 @@ spec = do
 
 letIndents :: Spec
 letIndents = describe "Lexes indented let declarations" $ do
-    it "Should succeed for valid indentations" $ do
+    it "Should lex indentation as expected" $ do
         lexUL [text|let x = 1 |] <=> [TokenLet, TokenVariableIdentifier "x", TokenEquals, TokenInt 1]
         [text|
         let x =
