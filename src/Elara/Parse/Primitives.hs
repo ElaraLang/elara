@@ -5,7 +5,6 @@ import Text.Megaparsec qualified as MP (token)
 
 import Control.Lens
 import Elara.AST.Region
-import Elara.Lexer.Lexer hiding (token)
 import Elara.Lexer.Token
 import Elara.Parse.Error
 import Elara.Parse.Stream (TokenStream (tokenStreamTokens))

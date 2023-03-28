@@ -5,7 +5,6 @@ import Elara.AST.Region (unlocated)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-import Polysemy
 import Test.Hspec
 
 lex' :: HasCallStack => Text -> [Lexeme]

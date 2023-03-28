@@ -2,8 +2,6 @@
 
 module Elara.Lexer.Char where
 
-import Text.Read (read)
-
 translateEscapedChar :: (HasCallStack, ToString s) => s -> Char
 translateEscapedChar (consumeAmp . toString -> s) = case s of
     "\\a" -> '\a'

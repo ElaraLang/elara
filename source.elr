@@ -1,3 +1,6 @@
+module Main
+
+def main : IO ()
 let main = 
     match getLine with
         "" -> ()

@@ -6,7 +6,7 @@ import Control.Lens (view)
 import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (sepBy1', sepEndBy1')
+import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (HParser, token')
 import HeadedMegaparsec
 

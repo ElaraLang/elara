@@ -105,10 +105,10 @@ sourceRegionToDiagnosePosition (RealSourceRegion (SourceRegion fp (Position star
         }
 
 positionToDiagnosePosition :: FilePath -> RealPosition -> Diag.Position
-positionToDiagnosePosition fp (Position line col) =
+positionToDiagnosePosition fp (Position ln cn) =
     Diag.Position
-        { Diag.begin = (line, col)
-        , Diag.end = (line, col + 1)
+        { Diag.begin = (ln, cn)
+        , Diag.end = (ln, cn + 1)
         , Diag.file = fp
         }
 

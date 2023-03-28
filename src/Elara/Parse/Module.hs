@@ -10,7 +10,7 @@ import Elara.Parse.Names (maybeQualified, opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
-import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState))
+import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
@@ -18,7 +18,8 @@ module' = fmapLocated Module $ do
     thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
     imports <- many import'
-    declarations <- many (declaration _name)
+    _ <- optional (token' TokenSemicolon)
+    declarations <- sepEndBy (declaration _name) (token' TokenSemicolon)
 
     pure $
         Module'
