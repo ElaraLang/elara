@@ -1,7 +1,7 @@
 module Elara.Lexer.Reader where
 
 import Control.Lens
-import Elara.AST.Region (unlocated)
+import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
@@ -11,7 +11,7 @@ import Elara.Lexer.Utils
 -- TODO2: I may actually not need to store position in the Token at all
 -- thanks to monadic parsing I have the state at every moment of parsing --> just need to find out
 -- how to use the state for better parse-error messages
-readToken :: P Lexeme
+readToken :: LexMonad Lexeme
 readToken = do
   s <- get
   case s ^. pendingTokens of
@@ -25,7 +25,7 @@ readToken = do
           closeIndents <- cleanIndentation
           modify (over pendingTokens (<> (closeIndents <> [eof])))
           readToken
-        AlexError token -> error $ "Lexical error on line " <> show (token ^. lineNumber)
+        AlexError token -> error $ "Lexical error on line " <> show (token ^. position . line)
         AlexSkip inp _ -> do
           put s{_input = inp}
           readToken
@@ -35,7 +35,7 @@ readToken = do
           res <- act n (toText (take n buf))
           maybe readToken pure res
 
-readTokens :: P [Lexeme]
+readTokens :: LexMonad [Lexeme]
 readTokens = do
   tok <- readToken
   case tok ^. unlocated of
@@ -44,7 +44,7 @@ readTokens = do
       next <- readTokens
       pure (tok : next)
 
-lexer :: (Lexeme -> P a) -> P a
+lexer :: (Lexeme -> LexMonad a) -> LexMonad a
 lexer cont = do
   tok <- readToken
   cont tok

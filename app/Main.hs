@@ -9,7 +9,6 @@ import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Renamed
-import Elara.AST.Renamed
 import Elara.AST.Select
 import Elara.Error
 import Elara.Error.Effect (
@@ -19,9 +18,6 @@ import Elara.Error.Effect (
   writeReport,
  )
 import Elara.Lexer.Lexer
-import Elara.Lexer.Reader
-import Elara.Lexer.Utils (evalP)
-import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
@@ -44,11 +40,6 @@ main = do
   when (hasReports s) $ do
     printDiagnostic stdout True True 4 defaultStyle s
     exitFailure
-  (runM $ lexFile "source.elr") <&> (fmap (view unlocated)) >>= printColored
-  -- s <- runElara
-  -- when (hasReports s) $ do
-  --   printDiagnostic stdout True True 4 defaultStyle s
-  --   exitFailure
 
 -- runElara :: IO (Diagnostic Text)
 -- runElara = runM $ execDiagnosticWriter $ do

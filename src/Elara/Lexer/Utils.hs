@@ -7,7 +7,7 @@ import Codec.Binary.UTF8.String (encodeChar)
 import Control.Lens (makeLenses, to, use, view, (^.))
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion(..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenLeftBrace, TokenRightBrace, TokenSemicolon))
