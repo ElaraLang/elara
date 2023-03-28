@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Compatibility instances for polysemy effects.
 Particularly useful with the lens functions that operate on Monad[Reader/State/Writer]

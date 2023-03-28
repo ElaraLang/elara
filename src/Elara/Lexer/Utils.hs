@@ -15,6 +15,7 @@ import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
 import Polysemy.State
+import Polysemy.MTL ()
 import Prelude hiding (State, evalState, get, modify, put, span)
 
 data AlexInput = AlexInput
