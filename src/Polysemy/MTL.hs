@@ -8,7 +8,7 @@ module Polysemy.MTL where
 
 import Control.Monad.State.Class as MTLS
 import Polysemy
-import Polysemy.State as P
+import Polysemy.State as P ( get, put, State )
 import Prelude hiding (State, get, put, state)
 
 instance MonadState s (Sem (State s ': r)) where

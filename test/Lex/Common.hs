@@ -10,8 +10,8 @@ import Test.Hspec
 
 lex' :: HasCallStack => Text -> [Lexeme]
 lex' contents =
-    case run $ evalLexMonad "" (toString contents) readTokens of
-        Left err -> error (show err)
+    case evalLexMonad "" (toString contents) readTokens of
+        Left _ -> error "lex fail aaa"
         Right tokens -> tokens
 
 lexUL :: HasCallStack => Text -> [Token]

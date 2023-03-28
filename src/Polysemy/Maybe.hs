@@ -5,6 +5,7 @@ module Polysemy.Maybe where
 import Polysemy
 import Polysemy.Error (runError, throw)
 
+-- | A 'Maybe' effect, which can be used to short-circuit computations without a dedicated error type.
 data MaybeE m a where
     JustE :: a -> MaybeE m a
     NothingE :: MaybeE m a
