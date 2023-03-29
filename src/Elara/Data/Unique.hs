@@ -4,15 +4,15 @@ module Elara.Data.Unique where
 
 import Control.Lens.TH (makeLenses)
 import GHC.IO (unsafePerformIO)
-import Polysemy (Member, Sem, embed, interpret, makeSem)
+import Polysemy (Member, Sem, embed, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
-import Polysemy.State (State, get, put)
+import Polysemy.State (State, evalState, get, put)
 
 data Unique a = Unique
     { _uniqueVal :: !a
     , _uniqueId :: !Integer
     }
-    deriving (Show)
+    deriving (Show, Functor)
 
 instance Eq (Unique a) where
     (==) = (==) `on` _uniqueId
@@ -34,8 +34,8 @@ globalUniqueSupply = unsafePerformIO (newIORef freshUniqueSupply)
 data UniqueGen m a where
     MakeUnique :: a -> UniqueGen m (Unique a)
 
-uniqueGenToState :: Member (State UniqueSupply) r => Sem (UniqueGen ': r) a -> Sem r a
-uniqueGenToState = interpret $ \case
+uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (State UniqueSupply : r) a
+uniqueGenToState = reinterpret $ \case
     MakeUnique a -> do
         (UniqueSupply us) <- get
         case us of
@@ -44,8 +44,8 @@ uniqueGenToState = interpret $ \case
                 put (UniqueSupply is)
                 pure (Unique a i)
 
-uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
-uniqueGenToIO = interpret $ \case
+uniqueGenToIO :: Sem (UniqueGen ': r) a -> Sem (Embed IO : r) a
+uniqueGenToIO = reinterpret $ \case
     MakeUnique a -> do
         us <- embed (readIORef globalUniqueSupply)
         case _uniqueSupplyUniques us of

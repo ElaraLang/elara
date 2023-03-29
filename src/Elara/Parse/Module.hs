@@ -14,10 +14,11 @@ import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos 
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
-    mHeader <- optional header
+    mHeader <- optional (header <* token' TokenSemicolon)
+    endHead
     thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
-    imports <- many import'
+    imports <- sepEndBy import' (token' TokenSemicolon)
     _ <- optional (token' TokenSemicolon)
     declarations <- sepEndBy (declaration _name) (token' TokenSemicolon)
 
@@ -29,9 +30,9 @@ module' = fmapLocated Module $ do
             , _module'Declarations = declarations
             }
 
+-- | module Name exposing (..)
 header :: HParser (Located ModuleName, Exposing Frontend)
 header = do
-    -- module Name exposing (..)
     token' TokenModule
     endHead
     moduleName' <- located Parse.moduleName

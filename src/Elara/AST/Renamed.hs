@@ -34,7 +34,7 @@ newtype Expr = Expr (Located Expr')
 data VarRef n
     = Global (Located (Qualified n))
     | Local (Located (Unique n))
-    deriving (Show, Eq)
+    deriving (Show, Eq, Functor)
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))
@@ -62,12 +62,12 @@ data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar Text
+    = TypeVar (Unique VarName)
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
     | UserDefinedType (Located (Qualified TypeName))
-    | RecordType (NonEmpty (Located (Unqualified VarName), Type))
+    | RecordType (NonEmpty (Located VarName, Type))
     deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')
@@ -86,8 +86,8 @@ newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
 data DeclarationBody'
     = -- | def <name> : <type> and / or let <p> = <e>
       Value
-        { _valueType :: Maybe (Located TypeAnnotation)
-        , _expression :: Expr
+        { _expression :: Expr
+        , _valueType :: Maybe (Located TypeAnnotation)
         }
     | NativeDef (Located TypeAnnotation)
     | -- | type <name> = <type>

@@ -115,6 +115,16 @@ instance GetLocation Frontend where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r
 
+instance RUnlocate Desugared where
+    rUnlocate (Located _ a) = a
+    rUnlocate' (Located _ a) = a
+    rUnlocated = unlocated
+    rUnlocated' = unlocated
+    fmapRUnlocate f (Located r a) = Located r (fmap f a)
+    fmapRUnlocate' f (Located r a) = Located r (f a)
+    sequenceRUnlocate' :: Functor f => Located (f a) -> f (Located a)
+    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
+
 instance RUnlocate Renamed where
     rUnlocate (Located _ a) = a
     rUnlocate' (Located _ a) = a
@@ -142,7 +152,7 @@ instance GetLocation UnlocatedFrontend where
     getLocation _ = Nothing
     getLocation' _ = Nothing
 
-class HasModuleName c ast where
+class HasModuleName c ast | c -> ast where
     moduleName :: Lens' c (ASTLocate ast ModuleName)
     unlocatedModuleName :: Lens' c ModuleName
 
@@ -166,3 +176,19 @@ instance HasName Frontend.Declaration (Located Name) where
 
 instance HasName Frontend.Declaration' (Located Name) where
     name = Frontend.declaration'Name
+
+instance HasModuleName Desugared.Declaration Desugared where
+    moduleName = Desugared._Declaration . unlocated . moduleName @Desugared.Declaration' @Desugared
+    unlocatedModuleName :: Lens' Desugared.Declaration ModuleName
+    unlocatedModuleName = moduleName @Desugared.Declaration @Desugared . unlocated
+
+instance HasModuleName Desugared.Declaration' Desugared where
+    moduleName = Desugared.declaration'Module'
+    unlocatedModuleName = moduleName @Desugared.Declaration' @Desugared . unlocated
+
+instance HasName Desugared.Declaration (Located Name) where
+    name = Desugared._Declaration . unlocated . Desugared.declaration'Name
+
+instance HasName Desugared.Declaration' (Located Name) where
+    name = Desugared.declaration'Name
+

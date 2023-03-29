@@ -72,6 +72,7 @@ tokens :-
       class                  { simpleTok TokenClass }
       type                   { simpleTok TokenType }
       module                 { simpleTok TokenModule } 
+      import                 { simpleTok TokenImport }
 
       -- Symbols
       \;                     { simpleTok TokenSemicolon }

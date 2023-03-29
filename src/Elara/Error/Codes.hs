@@ -32,7 +32,6 @@ unknownModule = "E1002"
 ambiguousName :: ErrorCode
 ambiguousName = "E1003"
 
-
 qualifiedWithWrongModule :: ErrorCode
 qualifiedWithWrongModule = "E1004"
 
@@ -44,6 +43,9 @@ defWithoutLet = "E1006"
 
 tooManyDeclarations :: ErrorCode
 tooManyDeclarations = "E1007"
+
+nonExistentModuleDeclaration :: ErrorCode
+nonExistentModuleDeclaration = "E1008"
 
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"

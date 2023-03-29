@@ -64,7 +64,7 @@ data TypeAnnotation = TypeAnnotation (Located Name) Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar Text
+    = TypeVar VarName
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
@@ -104,3 +104,4 @@ makePrisms ''Declaration
 makePrisms ''DeclarationBody
 makePrisms ''Expr
 makePrisms ''Pattern
+makePrisms ''BinaryOperator

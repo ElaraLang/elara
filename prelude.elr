@@ -1,1 +1,10 @@
 module Prelude
+
+def getLine : IO String
+let getLine = ()
+
+def print : String -> IO ()
+let print s = ()
+
+def (<>) : String -> String -> String
+let (<>) s1 s2 = ()

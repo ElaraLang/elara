@@ -5,8 +5,12 @@ module Main (
   main,
 ) where
 
+import Control.Lens (view, (^.))
 import Elara.AST.Module
+import Elara.AST.Region (unlocated)
 import Elara.AST.Select
+import Elara.Data.Unique (uniqueGenToIO)
+import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
@@ -14,29 +18,27 @@ import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
+import Elara.Rename (ModulePath, rename, runRenamer)
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
-import Polysemy (Embed, Member, Sem, embed, runM)
+import Polysemy (Embed, Member, Sem, embed, raise, raiseUnder, raise_, run, runM, subsume, subsume_)
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
-import Elara.Desugar (desugar, runDesugar)
 
 main :: IO ()
 main = do
   s <- runElara
-  whenJust s $ \s' -> do
-    printDiagnostic stdout True True 4 defaultStyle s'
+  printDiagnostic stdout True True 4 defaultStyle s
 
-runElara :: IO (Maybe (Diagnostic Text))
-runElara = runM $ runMaybe $ execDiagnosticWriter $ do
-  s <- loadModule "source.elr"
-  p <- loadModule "prelude.elr"
-  case liftA2 (,) s p of
-    Nothing -> pass
-    Just (source, prelude) -> do
-      case runDesugar (desugar source) of
-        Left err -> report err
-        Right desugared -> embed (printColored desugared)
+runElara :: IO (Diagnostic Text)
+runElara = runM $ execDiagnosticWriter $ runMaybe $ do
+  source <- loadModule "source.elr"
+  prelude <- loadModule "prelude.elr"
+  let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
+  source' <- renameModule path source
+  pass
+
+-- embed (printColored source')
 
 -- runElara :: IO (Diagnostic Text)
 -- runElara = runM $ execDiagnosticWriter $ do
@@ -91,16 +93,36 @@ lexFile path = do
   contents <- readFileString path
   case evalLexMonad path contents readTokens of
     Left err -> report err *> nothingE
-    Right lexemes ->
+    Right lexemes -> do
+      -- embed (printColored (fmap (view unlocated) lexemes)) -- DEBUG
       justE (contents, lexemes)
 
-loadModule :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> Sem r (Maybe (Module Frontend))
-loadModule path = do
-  (contents, lexemes) <- lexFile path
+parseModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
+parseModule path (contents, lexemes) = do
   let tokenStream = TokenStream contents lexemes
   case parse path tokenStream of
     Left parseError -> do
-      report parseError $> Nothing
-    Right m -> pure (Just m)
+      report parseError *> nothingE
+    Right m -> justE m
+
+desugarModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r) => Module Frontend -> Sem r (Module Desugared)
+desugarModule m = do
+  case runDesugar (desugar m) of
+    Left err -> report err *> nothingE
+    Right desugared -> justE desugared
+
+renameModule ::
+  (Member (DiagnosticWriter Text) r, Member MaybeE r, Member (Embed IO) r) =>
+  ModulePath ->
+  Module Desugared ->
+  Sem r (Module Renamed)
+renameModule mp m = do
+  y <- subsume_ $ runRenamer mp (rename m)
+  case y of
+    Left err -> report err *> nothingE
+    Right renamed -> justE renamed
+
+loadModule :: (Member (DiagnosticWriter Text) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
+loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
 
 -- overExpressions = declarations . traverse . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . expression

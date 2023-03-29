@@ -50,6 +50,7 @@ upperVarName = satisfyMap $
     \case
         TokenConstructorIdentifier i -> Just i
         _ -> Nothing
+        
 alphaVarName :: HParser Text
 alphaVarName = satisfyMap $
     \case

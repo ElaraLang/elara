@@ -1,7 +1,4 @@
-module Main
+import Prelude
 
-def main : IO ()
 let main = 
-    match getLine with
-        "" -> ()
-        "hello" -> let c = "hello" in print (c <> " world")
+    let a = Prelude.getLine

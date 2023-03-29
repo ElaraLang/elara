@@ -7,7 +7,7 @@ module Elara.AST.Frontend.StripLocation where
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated as Unlocated
 import Elara.AST.Module
-import Elara.AST.Name (Name, VarName)
+import Elara.AST.Name (Name)
 import Elara.AST.Region
 import Elara.AST.Select
 import Prelude hiding (Op, Type)

@@ -48,7 +48,7 @@ data TypeAnnotation = TypeAnnotation Name Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar Text
+    = TypeVar VarName
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
