@@ -11,10 +11,9 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, to)
+import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Region (Located, unlocated)
-import Elara.AST.Select (ASTAnnotation, ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
+import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -124,7 +123,6 @@ type ModConstraints c ast =
     ( c Name
     , c (ASTExpr ast)
     , c (ASTPattern ast)
-    , c (ASTAnnotation ast)
     , c (ASTType ast)
     , c (ASTDeclaration ast)
     , c (FullASTQual ast VarName)
@@ -134,13 +132,9 @@ type ModConstraints c ast =
     , c (ASTLocate ast ModuleName)
     , c (ASTLocate ast (Module' ast))
     , c (ASTLocate ast (Import' ast))
-    , c (ASTLocate ast (ASTAnnotation ast))
     , c (ASTLocate ast (Exposition ast))
     , c (ASTLocate ast (Exposing ast))
     )
-
--- instance HasName (Module Frontend) (Located ModuleName) where
---     name = name @(Module Frontend) @Frontend
 
 instance (RUnlocate ast) => HasModuleName (Module ast) ast where
     moduleName = _Module @ast @ast . (rUnlocated' @ast) . module'Name @ast

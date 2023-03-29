@@ -8,6 +8,7 @@ import Elara.AST.Region
 import Data.Text qualified as T
 import Elara.Lexer.Char
 import Print
+import Polysemy.State
 }
 
 

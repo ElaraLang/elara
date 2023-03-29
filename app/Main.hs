@@ -19,13 +19,13 @@ import Polysemy (Embed, Member, Sem, embed, runM)
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Print (printColored)
 import Prelude hiding (State, evalState, execState, modify, runReader, runState)
+import Elara.Desugar (desugar, runDesugar)
 
 main :: IO ()
 main = do
   s <- runElara
   whenJust s $ \s' -> do
     printDiagnostic stdout True True 4 defaultStyle s'
-    exitFailure
 
 runElara :: IO (Maybe (Diagnostic Text))
 runElara = runM $ runMaybe $ execDiagnosticWriter $ do
@@ -33,8 +33,10 @@ runElara = runM $ runMaybe $ execDiagnosticWriter $ do
   p <- loadModule "prelude.elr"
   case liftA2 (,) s p of
     Nothing -> pass
-    Just (source, prelude) ->
-      embed (printColored source)
+    Just (source, prelude) -> do
+      case runDesugar (desugar source) of
+        Left err -> report err
+        Right desugared -> embed (printColored desugared)
 
 -- runElara :: IO (Diagnostic Text)
 -- runElara = runM $ execDiagnosticWriter $ do

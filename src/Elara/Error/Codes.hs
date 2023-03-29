@@ -6,7 +6,7 @@ module Elara.Error.Codes where
 | The digits are used to identify the error or warning.
 | The first digit signals the stage in which the error was thrown:
 | @0@: Lexer / Parser
-| @1@: Inspection & Annotating Stage
+| @1@: Desugaring and Renaming stage
 | @2@: Operator Shunting Stage
 |
 | The remaining digits are arbitrary and should be incremented for each new error or warning.
@@ -31,6 +31,7 @@ unknownModule = "E1002"
 
 ambiguousName :: ErrorCode
 ambiguousName = "E1003"
+
 
 qualifiedWithWrongModule :: ErrorCode
 qualifiedWithWrongModule = "E1004"

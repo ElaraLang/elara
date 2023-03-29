@@ -14,9 +14,9 @@ import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenLeftBrace, TokenRight
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
-import Polysemy.State
 import Polysemy.MTL ()
-import Prelude hiding (State, evalState, get, modify, put, span)
+import Polysemy.State
+import Prelude hiding (span)
 
 data AlexInput = AlexInput
     { _filePath :: FilePath

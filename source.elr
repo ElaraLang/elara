@@ -4,4 +4,4 @@ def main : IO ()
 let main = 
     match getLine with
         "" -> ()
-        "hello" -> print "Hello World!"
+        "hello" -> let c = "hello" in print (c <> " world")

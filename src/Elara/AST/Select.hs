@@ -5,60 +5,55 @@
 module Elara.AST.Select where
 
 import Control.Lens (Getting, Lens', view)
-import Elara.AST.Renamed qualified as Renamed
+import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
-import Elara.Data.Unique (Unique)
 
 data Frontend
 
 data UnlocatedFrontend
+
+data Desugared
 
 data Renamed
 
 type family ASTExpr ast where
     ASTExpr Frontend = Frontend.Expr
     ASTExpr UnlocatedFrontend = Frontend.Unlocated.Expr
+    ASTExpr Desugared = Desugared.Expr
     ASTExpr Renamed = Renamed.Expr
-
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
     ASTType UnlocatedFrontend = Frontend.Unlocated.Type
-    ASTType Renamed = Renamed.Type
+    ASTType Desugared = Desugared.Type
     ASTType Renamed = Renamed.Type
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
     ASTPattern UnlocatedFrontend = Frontend.Unlocated.Pattern
+    ASTPattern Desugared = Desugared.Pattern
     ASTPattern Renamed = Renamed.Pattern
-    ASTPattern Renamed = Renamed.Pattern
-
-type family ASTAnnotation ast where
-    ASTAnnotation Frontend = Maybe Frontend.TypeAnnotation
-    ASTAnnotation UnlocatedFrontend = Maybe Frontend.Unlocated.TypeAnnotation
-    ASTAnnotation Renamed = Maybe Renamed.TypeAnnotation
-    ASTAnnotation Renamed = Maybe Renamed.TypeAnnotation
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
     ASTQual UnlocatedFrontend = MaybeQualified
+    ASTQual Desugared = MaybeQualified
     ASTQual Renamed = Qualified
-    ASTQual Renamed = Unique
 
 type family ASTLocate' ast where
     ASTLocate' Frontend = Located
     ASTLocate' UnlocatedFrontend = Unlocated
-    ASTLocate' Renamed = Located
+    ASTLocate' Desugared = Located
     ASTLocate' Renamed = Located
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
     ASTDeclaration UnlocatedFrontend = Frontend.Unlocated.Declaration
-    ASTDeclaration Renamed = Renamed.Declaration
+    ASTDeclaration Desugared = Desugared.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)

@@ -7,7 +7,6 @@ import GHC.IO (unsafePerformIO)
 import Polysemy (Member, Sem, embed, interpret, makeSem)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, get, put)
-import Prelude hiding (State, get, put)
 
 data Unique a = Unique
     { _uniqueVal :: !a

@@ -114,6 +114,7 @@ positionToDiagnosePosition fp (Position ln cn) =
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable)
+
 makePrisms ''Located
 
 -- | Newtype wrapper for @Located@ that ignores the location information for its instances
@@ -178,3 +179,7 @@ spanningRegion' regions = do
     case nonEmpty realRegions of
         Nothing -> GeneratedRegion file
         Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'
+
+instance Applicative Located where
+    pure = Located (GeneratedRegion generatedFileName)
+    Located region f <*> Located region' x = Located (spanningRegion' (region :| [region'])) (f x)
