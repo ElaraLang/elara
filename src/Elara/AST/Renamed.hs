@@ -9,7 +9,7 @@ import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 
 {- | Renamed AST Type
-This is very similar to @Elara.AST.Desugared.Expr'@ except everything is renamed to be unambiguous.
+This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
 -}
 data Expr'
     = Int Integer

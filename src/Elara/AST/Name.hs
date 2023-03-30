@@ -21,7 +21,7 @@ import Elara.Data.Unique
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data)
 
-{- | A valid Variable name. This includes anything that could appear in let [name] = ...
+{- | A valid Variable name. This includes anything that could appear in `let [name] = ...`
 | In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}
 data VarName

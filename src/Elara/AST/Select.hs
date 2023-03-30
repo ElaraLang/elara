@@ -69,7 +69,7 @@ type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 
 newtype Unlocated a = Unlocated a
 
--- | Unwraps a single layer of @Unlocated@ from a type.
+-- | Unwraps a single layer of 'Unlocated' from a type.
 type family UnwrapUnlocated g where
     UnwrapUnlocated (Unlocated a) = a
     UnwrapUnlocated a = a

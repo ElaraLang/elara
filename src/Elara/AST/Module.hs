@@ -47,8 +47,8 @@ data Exposition ast
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
 
-{- | Safe coercion between @Exposition@ types
- Since the ASTX type families aren't injective, we can't use @coerce@ :(
+{- | Safe coercion between 'Exposition' types
+ Since the ASTX type families aren't injective, we can't use 'coerce' :(
 -}
 coerceExposition ::
     ( FullASTQual ast1 VarName ~ FullASTQual ast2 VarName

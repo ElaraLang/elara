@@ -9,10 +9,10 @@ import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 
 {- | Shunted AST Type
-This is very similar to @Elara.AST.Renamed.Expr'@ except:
+This is very similar to 'Elara.AST.Renamed.Expr' except:
 - Operators are re-shunted to match their defined precedence and associativity
-- This means there's no need for an @InParens@ token anymore so that's also gone :D
-- The confusing VarName/OpName bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
+- This means there's no need for an 'InParens' token anymore so that's also gone :D
+- The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
 -}
 data Expr'
     = Int Integer

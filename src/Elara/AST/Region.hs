@@ -117,7 +117,7 @@ data Located a = Located SourceRegion a
 
 makePrisms ''Located
 
--- | Newtype wrapper for @Located@ that ignores the location information for its instances
+-- | Newtype wrapper for 'Located' that ignores the location information for its instances
 newtype IgnoreLocation a = IgnoreLocation (Located a)
     deriving (Functor, Foldable, Traversable)
 
@@ -156,7 +156,7 @@ enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion 
 
 {- | Get the region that contains both of the given regions.
 | This function will throw an error if the regions are in different files.
-| If either of the given @SourceRegion@s is a @GeneratedRegion@, then the result will be a @GeneratedRegion@.
+| If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
 enclosingRegion' :: SourceRegion -> SourceRegion -> SourceRegion
 enclosingRegion' a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
@@ -173,7 +173,7 @@ spanningRegion regions = do
 
 {- | Get the region that contains all of the given regions.
 | This function will throw an error if the regions are in different files.
-| If all the given @SourceRegion@s are @GeneratedRegion@s, then the result will be a @GeneratedRegion@. Otherwise, the @GeneratedRegion@s will be ignored.
+| If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
 -}
 spanningRegion' :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion' regions = do

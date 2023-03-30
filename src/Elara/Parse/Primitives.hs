@@ -31,7 +31,7 @@ instance IsParser HParser where
 
 {- | A parser that records the location information of the tokens it consumes.
 | TODO this is not going to perform very well as it's O(n) in the total number of input tokens
-| A future solution will be to store the number of tokens consumed in the @TokenStream@ and use that to calculate
+| A future solution will be to store the number of tokens consumed in the 'TokenStream' and use that to calculate
 | the spanning region, but that's effort at the moment.
 -}
 located :: IsParser m => m a -> m (Located a)
