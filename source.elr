@@ -1,6 +1,4 @@
 import Prelude
 
-let f x = x
-
 let main = 
-    1 + 2 <> 3 `f` 4
+    let a = Prelude.getLine

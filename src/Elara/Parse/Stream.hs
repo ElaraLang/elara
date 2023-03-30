@@ -6,7 +6,6 @@ module Elara.Parse.Stream where
 import Control.Lens
 import Data.Text qualified as T
 import Elara.AST.Region (HasPath (path), Located, RealPosition (Position), RealSourceRegion, generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
-import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Text.Megaparsec
 

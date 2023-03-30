@@ -19,10 +19,7 @@ import Data.List (lines)
 import Data.Set qualified as Set (toList)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Error
-
-
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
-import Elara.Error
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (error, lines)
 
