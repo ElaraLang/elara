@@ -3,7 +3,7 @@
 
 module Elara.Rename where
 
-import Control.Lens (Getter, filteredBy, folded, makeLenses, over, to, traverseOf, use, (%~), (^.), (^..), _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, use, (%~), (^.), (^..), _2)
 import Data.Map qualified as Map
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Module (
@@ -37,7 +37,6 @@ import Polysemy.Error (Error, note, runError, throw)
 import Polysemy.MTL ()
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
-import Prelude hiding (runReader)
 
 data RenameError
     = UnknownModule ModuleName
@@ -153,6 +152,7 @@ rename =
         (_Module @Desugared @Renamed . unlocated)
         ( \m' -> do
             addImportsToContext (m' ^. imports)
+            traverseOf_ (declarations . each) (addDeclarationToContext False) m' -- add our own declarations to the context
             exposing' <- renameExposing (m' ^. name . unlocated) (m' ^. exposing)
             imports' <- traverse renameImport (m' ^. imports)
             declarations' <- traverse renameDeclaration (m' ^. declarations)
@@ -189,14 +189,15 @@ addImportsToContext = traverse_ addImportToContext
                 ExposingAll -> imported ^. declarations
                 ExposingSome _ -> imported ^.. declarations . folded . filteredBy isExposingL
         traverse_ (addDeclarationToContext (imp ^. qualified)) exposed
-    addDeclarationToContext :: Bool -> Desugared.Declaration -> Renamer ()
-    addDeclarationToContext _ decl = do
-        let global :: name -> VarRef name
-            global vn = Global (Qualified vn (decl ^. moduleName . unlocated) <$ decl ^. Desugared._Declaration)
-        case decl ^. name . unlocated of
-            NVarName vn -> modify $ over varNames $ Map.insert vn (global vn)
-            NTypeName vn -> modify $ over typeNames $ Map.insert vn (global vn)
-            NOpName vn -> modify $ over varNames $ Map.insert (OperatorVarName vn) (global (OperatorVarName vn))
+
+addDeclarationToContext :: Bool -> Desugared.Declaration -> Renamer ()
+addDeclarationToContext _ decl = do
+    let global :: name -> VarRef name
+        global vn = Global (Qualified vn (decl ^. moduleName . unlocated) <$ decl ^. Desugared._Declaration)
+    case decl ^. name . unlocated of
+        NVarName vn -> modify $ over varNames $ Map.insert vn (global vn)
+        NTypeName vn -> modify $ over typeNames $ Map.insert vn (global vn)
+        NOpName vn -> modify $ over varNames $ Map.insert (OperatorVarName vn) (global (OperatorVarName vn))
 
 ensureExistsAndExposed :: ModuleName -> Located Name -> Renamer ()
 ensureExistsAndExposed mn n = do

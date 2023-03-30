@@ -8,8 +8,8 @@ module Elara.Shunt where
 import Control.Lens
 import Data.Map (lookup)
 import Elara.AST.Module
-import Elara.AST.Name (Name (NOpName, NVarName), VarName (OperatorVarName))
-import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, unlocated, withLocationOf)
+import Elara.AST.Name (Name (NOpName, NVarName), NameLike (nameText), VarName (OperatorVarName))
+import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
@@ -69,15 +69,16 @@ newtype ShuntWarning
     deriving (Show, Eq, Ord)
 
 instance ReportableError ShuntWarning where
-    report (UnknownPrecedence op) = do
-        -- let opSrc = sourceRegionToDiagnosePosition $ op ^. sourceRegion
+    report (UnknownPrecedence (Renamed.MkBinaryOperator lOperator)) = do
+        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
+        let operatorName o = case o of
+                Renamed.Op opName -> nameText $ Renamed.varRefVal (opName ^. unlocated)
+                Renamed.Infixed varName -> "`" <> nameText (Renamed.varRefVal (varName ^. unlocated)) <> "`"
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
-                ""
-                -- ("Unknown precedence/associativity for operator " <> fullNameText (op ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
-                -- [(opSrc, This "operator")]
-                []
+                ("Unknown precedence/associativity for operator " <> operatorName (lOperator ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                [(opSrc, This "operator")]
                 [Hint "Define the precedence and associativity of the operator explicitly"]
 
 opInfo :: OpTable -> Renamed.BinaryOperator -> Maybe OpInfo
@@ -132,12 +133,12 @@ fixOperators opTable = reassoc
             pure (Renamed.BinaryOperator o1 e1 r)
 
         getInfoOrWarn :: Renamed.BinaryOperator -> Sem r OpInfo
-        getInfoOrWarn op = case opInfo opTable op of
+        getInfoOrWarn operator = case opInfo opTable operator of
             Just info -> pure info
             Nothing -> do
-                tell (fromList [UnknownPrecedence (op)])
+                tell (fromList [UnknownPrecedence operator])
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
-    reassoc' _ op l r = pure (Renamed.BinaryOperator op l r)
+    reassoc' _ operator l r = pure (Renamed.BinaryOperator operator l r)
 
 shunt ::
     forall r.

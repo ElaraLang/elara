@@ -4,9 +4,9 @@ module Elara.Data.Unique where
 
 import Control.Lens.TH (makeLenses)
 import GHC.IO (unsafePerformIO)
-import Polysemy (Member, Sem, embed, interpret, makeSem, reinterpret)
+import Polysemy (Sem, embed, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
-import Polysemy.State (State, evalState, get, put)
+import Polysemy.State (State, get, put)
 
 data Unique a = Unique
     { _uniqueVal :: !a
@@ -56,3 +56,4 @@ uniqueGenToIO = reinterpret $ \case
 
 makeSem ''UniqueGen
 makeLenses ''UniqueSupply
+makeLenses ''Unique

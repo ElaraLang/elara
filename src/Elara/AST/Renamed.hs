@@ -2,8 +2,8 @@
 
 module Elara.AST.Renamed where
 
-import Control.Lens (makeLenses, makePrisms)
-import Elara.AST.Name (ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
+import Control.Lens (makeLenses, makePrisms, view)
+import Elara.AST.Name (HasName (name), ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
 import Elara.AST.Region (Located (Located))
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
@@ -38,6 +38,10 @@ data VarRef n
     = Global (Located (Qualified n))
     | Local (Located (Unique n))
     deriving (Show, Eq, Ord, Functor)
+
+varRefVal :: VarRef n -> Located n
+varRefVal (Global n) = fmap (view name) n
+varRefVal (Local n) = fmap (view uniqueVal) n
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))

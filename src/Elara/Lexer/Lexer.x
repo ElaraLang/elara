@@ -48,10 +48,10 @@ $cntrl   = [$upper \@\[\\\]\^\_]
 
 tokens :-
   <stringSC> {
-      \"              { endString }
-      @ampEscape .    { appendToStringWith translateEscapedChar }
-      @escape         { appendToStringWith translateEscapedChar }
-      .               { appendToString }
+      \"                     { endString }
+      @ampEscape .           { appendToStringWith translateEscapedChar }
+      @escape                { appendToStringWith translateEscapedChar }
+      .                      { appendToString }
   }
   <0> {
       \;                     { simpleTok TokenSemicolon }
@@ -81,17 +81,18 @@ tokens :-
       \:                     { simpleTok TokenColon }
       \:\:                   { simpleTok TokenDoubleColon }
       \=                     { simpleTok TokenEquals }
-      \\   { simpleTok TokenBackslash }
-      \-\> { simpleTok TokenRightArrow }
-      \<\- { simpleTok TokenLeftArrow }
-      \=\> { simpleTok TokenDoubleRightArrow }
-      \@   { simpleTok TokenAt }
-      \(   { simpleTok TokenLeftParen }
-      \)   { simpleTok TokenRightParen }
-      \[   { simpleTok TokenLeftBracket }
-      \]   { simpleTok TokenRightBracket }
-      \{   { simpleTok TokenLeftBrace }
-      \}   { simpleTok TokenRightBrace }
+      \\                     { simpleTok TokenBackslash }
+      \-\>                   { simpleTok TokenRightArrow }
+      \<\-                   { simpleTok TokenLeftArrow }
+      \=\>                   { simpleTok TokenDoubleRightArrow }
+      \@                     { simpleTok TokenAt }
+      \(                     { simpleTok TokenLeftParen }
+      \)                     { simpleTok TokenRightParen }
+      \[                     {  simpleTok TokenLeftBracket }
+      \]                     { simpleTok TokenRightBracket }
+      \{                     { simpleTok TokenLeftBrace }
+      \}                     { simpleTok TokenRightBrace }
+      \`                     { simpleTok TokenBacktick }
 
       -- Literals
       \-? (
