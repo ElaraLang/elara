@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Elara.AST.Renamed where
+module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
 import Elara.AST.Name (ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
@@ -8,8 +8,11 @@ import Elara.AST.Region (Located (Located))
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 
-{- | Renamed AST Type
-This is very similar to @Elara.AST.Desugared.Expr'@ except everything is renamed to be unambiguous.
+{- | Shunted AST Type
+This is very similar to @Elara.AST.Renamed.Expr'@ except:
+- Operators are re-shunted to match their defined precedence and associativity
+- This means there's no need for an @InParens@ token anymore so that's also gone :D
+- The confusing VarName/OpName bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
 -}
 data Expr'
     = Int Integer
@@ -22,13 +25,11 @@ data Expr'
     | Lambda Pattern Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
-    | BinaryOperator BinaryOperator Expr Expr
     | List [Expr]
     | Match Expr [(Pattern, Expr)]
     | LetIn (Located (Unique VarName)) Expr Expr
     | Let (Located (Unique VarName)) Expr
     | Block (NonEmpty Expr)
-    | InParens Expr
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')
@@ -37,7 +38,7 @@ newtype Expr = Expr (Located Expr')
 data VarRef n
     = Global (Located (Qualified n))
     | Local (Located (Unique n))
-    deriving (Show, Eq, Ord, Functor)
+    deriving (Show, Eq, Functor)
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))
@@ -52,14 +53,6 @@ data Pattern'
 
 newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
-
-data BinaryOperator'
-    = Op (Located (VarRef OpName))
-    | Infixed (Located (VarRef VarName))
-    deriving (Show, Eq, Ord)
-
-newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
-    deriving (Show, Eq, Ord)
 
 data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
     deriving (Show, Eq)
@@ -105,4 +98,3 @@ makeLenses ''DeclarationBody
 makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
-makePrisms ''BinaryOperator

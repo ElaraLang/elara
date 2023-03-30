@@ -138,6 +138,9 @@ sourceRegion f (Located region x) = fmap (`Located` x) (f region)
 unlocated :: Lens (Located a) (Located b) a b
 unlocated f (Located region x) = fmap (Located region) (f x)
 
+withLocationOf :: a -> Located b -> Located a
+withLocationOf a (Located region _) = Located region a
+
 merge :: (Located a -> Located b -> c) -> Located a -> Located b -> Located c
 merge fn l1 l2 =
     Located

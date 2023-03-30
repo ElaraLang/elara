@@ -14,6 +14,7 @@ module Elara.AST.Module where
 import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
+import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Type)
 import Prelude qualified as Kind (Type)
 
@@ -44,6 +45,34 @@ data Exposition ast
     | ExposedOp (FullASTQual ast OpName) -- exposing (+)
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
+
+coerceExposition ::
+    ( FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
+    , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName
+    , FullASTQual ast1 TypeName ~ FullASTQual ast2 TypeName
+    ) =>
+    Exposition ast1 ->
+    Exposition ast2
+coerceExposition = unsafeCoerce
+
+coerceExposing ::
+    ( FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
+    , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName
+    , FullASTQual ast1 TypeName ~ FullASTQual ast2 TypeName
+    ) =>
+    Exposing ast1 ->
+    Exposing ast2
+coerceExposing = unsafeCoerce
+
+coerceImport ::
+    ( ASTLocate ast1 ModuleName ~ ASTLocate ast2 ModuleName
+    , FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
+    , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName
+    , FullASTQual ast1 TypeName ~ FullASTQual ast2 TypeName
+    ) =>
+    Import ast1 ->
+    Import ast2
+coerceImport = unsafeCoerce
 
 -- Vile lens and deriving boilerplate
 

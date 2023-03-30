@@ -60,7 +60,7 @@ desugar =
             let decls = m' ^. module'Declarations :: [Frontend.Declaration]
             decls' <- desugarDeclarations decls
             -- TODO: get rid of unsafeCoerce
-            pure (Module' (m' ^. module'Name) (unsafeCoerce (m' ^. module'Exposing)) (unsafeCoerce $ m' ^. module'Imports) decls')
+            pure (Module' (m' ^. module'Name) (coerceExposing (m' ^. module'Exposing)) (coerceImport <$> m' ^. module'Imports) decls')
         )
 
 desugarDeclarations :: [Frontend.Declaration] -> Desugar [Desugared.Declaration]

@@ -5,11 +5,9 @@ module Main (
   main,
 ) where
 
-import Control.Lens (view, (^.))
+import Control.Lens ((^.))
 import Elara.AST.Module
-import Elara.AST.Region (unlocated)
 import Elara.AST.Select
-import Elara.Data.Unique (uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
@@ -19,11 +17,15 @@ import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (ModulePath, rename, runRenamer)
+import Elara.Shunt
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
-import Polysemy (Embed, Member, Sem, embed, raise, raiseUnder, raise_, run, runM, subsume, subsume_)
+import Polysemy (Embed, Member, Sem, run, runM, subsume_)
+import Polysemy.Embed (embed)
+import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
+import Polysemy.Reader
+import Polysemy.Writer (runWriter)
 import Print (printColored)
-import Prelude hiding (State, evalState, execState, modify, runReader, runState)
 
 main :: IO ()
 main = do
@@ -36,48 +38,9 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   prelude <- loadModule "prelude.elr"
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
   source' <- renameModule path source
+  source'' <- shuntModule source'
+  embed (printColored source'')
   pass
-
--- embed (printColored source')
-
--- runElara :: IO (Diagnostic Text)
--- runElara = runM $ execDiagnosticWriter $ do
---   s <- loadModule "source.elr"
---   p <- loadModule "prelude.elr"
---   case liftA2 (,) s p of
---     Nothing -> pass
---     Just (source, prelude) ->
---       embed (printColored source)
-
---  case run $ runError $ runReader modules (annotateModule source) of
---     Left annotateError -> report annotateError
---     Right m' -> do
---       fixOperatorsInModule m' >>= embed . printColored
---  case run $ runError $ runReader modules (annotateModule source) of
---     Left annotateError -> report annotateError
---     Right m' -> do
---       fixOperatorsInModule m' >>= embed . printColored
-
--- fixOperatorsInModule :: (Member (DiagnosticWriter Text) r) => Module Annotated -> Sem r (Maybe (Module Annotated))
--- fixOperatorsInModule m = do
---   let x =
---         run $
---           runError $
---             runWriter $
---               overExpressions
---                 ( fixOperators
---                     ( fromList
---                         []
---                     )
---                 )
---                 m
---   case x of
---     Left shuntErr -> do
---       report shuntErr $> Nothing
---     Right (warnings, finalM) -> do
---       traverse_ report (toList warnings)
---       pure (Just finalM)
-
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do
   contentsBS <- readFileBS path
@@ -122,7 +85,17 @@ renameModule mp m = do
     Left err -> report err *> nothingE
     Right renamed -> justE renamed
 
+shuntModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r) => Module Renamed -> Sem r (Module Shunted)
+shuntModule m = do
+  x <-
+    runError $
+      runWriter $
+        runReader (fromList []) (shunt m)
+  case x of
+    Left err -> report err *> nothingE
+    Right (warnings, shunted) -> do
+      traverse_ report warnings
+      justE shunted
+
 loadModule :: (Member (DiagnosticWriter Text) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
-
--- overExpressions = declarations . traverse . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . expression

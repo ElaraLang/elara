@@ -1,0 +1,271 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module Elara.Shunt where
+
+import Control.Lens
+import Data.Map (lookup)
+import Elara.AST.Module
+import Elara.AST.Name (Name (NOpName, NVarName), VarName (OperatorVarName))
+import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, unlocated, withLocationOf)
+import Elara.AST.Region qualified as Located
+import Elara.AST.Renamed qualified as Renamed
+import Elara.AST.Select
+import Elara.AST.Shunted qualified as Shunted
+import Elara.Error (ReportableError (..))
+import Elara.Error.Codes qualified as Codes
+import Elara.Error.Effect (writeReport)
+import Error.Diagnose
+import Polysemy (Member, Sem)
+import Polysemy.Error (Error, throw)
+import Polysemy.Reader
+import Polysemy.Writer
+import Prelude hiding (State, execState, gets, modify')
+
+type OpTable = Map (Renamed.VarRef Name) OpInfo
+
+newtype Precedence = Precedence Int
+    deriving (Show, Eq, Ord)
+
+mkPrecedence :: Int -> Precedence
+mkPrecedence i
+    | i < 0 = error "Precedence must be positive"
+    | i > 9 = error "Precedence must be less than 10"
+    | otherwise = Precedence i
+
+data OpInfo = OpInfo
+    { precedence :: Precedence
+    , associativity :: Associativity
+    }
+    deriving (Show, Eq)
+
+data Associativity
+    = LeftAssociative
+    | RightAssociative
+    | NonAssociative
+    deriving (Show, Eq)
+
+data ShuntError
+    = SamePrecedenceError (Renamed.BinaryOperator, Associativity) (Renamed.BinaryOperator, Associativity)
+    deriving (Show, Eq)
+
+instance ReportableError ShuntError where
+    report (SamePrecedenceError (op1, a1) (op2, a2)) = do
+        -- let op1Src = sourceRegionToDiagnosePosition $ op1 ^. sourceRegion
+        -- let op2Src = sourceRegionToDiagnosePosition $ op2 ^. sourceRegion
+        writeReport $
+            Err
+                (Just Codes.samePrecedence)
+                ""
+                []
+                -- ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. unlocated) <> " and " <> fullNameText (op2 ^. unlocated) <> " when both operators have different associativity.")
+                -- [(op1Src, This (show a1)), (op2Src, This (show a2))]
+                [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
+
+newtype ShuntWarning
+    = UnknownPrecedence Renamed.BinaryOperator
+    deriving (Show, Eq, Ord)
+
+instance ReportableError ShuntWarning where
+    report (UnknownPrecedence op) = do
+        -- let opSrc = sourceRegionToDiagnosePosition $ op ^. sourceRegion
+        writeReport $
+            Warn
+                (Just Codes.unknownPrecedence)
+                ""
+                -- ("Unknown precedence/associativity for operator " <> fullNameText (op ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                -- [(opSrc, This "operator")]
+                []
+                [Hint "Define the precedence and associativity of the operator explicitly"]
+
+opInfo :: OpTable -> Renamed.BinaryOperator -> Maybe OpInfo
+opInfo table op = case op ^. Renamed._MkBinaryOperator . unlocated of
+    Renamed.Op opName -> lookup (NOpName <$> opName ^. unlocated) table
+    Renamed.Infixed varName -> lookup (NVarName <$> varName ^. unlocated) table
+
+pattern InExpr :: Renamed.Expr' -> Renamed.Expr
+pattern InExpr y <- Renamed.Expr (Located _ y)
+
+pattern InExpr' :: SourceRegion -> Renamed.Expr' -> Renamed.Expr
+pattern InExpr' loc y <- Renamed.Expr (Located loc y)
+
+{-
+ | Fix the operators in an expression to the correct precedence
+ | For example given ((+) = 1l) and ((*) = 2r)
+ | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
+ | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
+-}
+fixOperators :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r) => OpTable -> Renamed.Expr -> Sem r Renamed.Expr
+fixOperators opTable = reassoc
+  where
+    withLocationOf :: Renamed.Expr -> Renamed.Expr' -> Renamed.Expr
+    withLocationOf s repl = over Renamed._Expr (repl <$) s
+
+    reassoc :: Renamed.Expr -> Sem r Renamed.Expr
+    reassoc e@(InExpr (Renamed.InParens e2)) = withLocationOf e . Renamed.InParens <$> reassoc e2
+    reassoc e@(InExpr' loc (Renamed.BinaryOperator op l r)) = do
+        l' <- reassoc l
+        r' <- reassoc r
+        withLocationOf e <$> reassoc' loc op l' r'
+    reassoc e = pure e
+
+    reassoc' :: SourceRegion -> Renamed.BinaryOperator -> Renamed.Expr -> Renamed.Expr -> Sem r Renamed.Expr'
+    reassoc' sr op l (InExpr (Renamed.InParens r)) = reassoc' sr op l r
+    reassoc' sr o1 e1 r@(InExpr (Renamed.BinaryOperator o2 e2 e3)) = do
+        info1 <- getInfoOrWarn o1
+        info2 <- getInfoOrWarn o2
+        case compare info1.precedence info2.precedence of
+            GT -> assocLeft
+            LT -> assocRight
+            EQ -> case (info1.associativity, info2.associativity) of
+                (LeftAssociative, LeftAssociative) -> assocLeft
+                (RightAssociative, RightAssociative) -> assocRight
+                (a1, a2) -> throw (SamePrecedenceError (o1, a1) (o2, a2))
+      where
+        assocLeft = do
+            reassociated <- Renamed.Expr . Located sr <$> reassoc' sr o1 e1 e2
+            pure (Renamed.BinaryOperator o2 (withLocationOf reassociated (Renamed.InParens reassociated)) e3)
+
+        assocRight = do
+            pure (Renamed.BinaryOperator o1 e1 r)
+
+        getInfoOrWarn :: Renamed.BinaryOperator -> Sem r OpInfo
+        getInfoOrWarn op = case opInfo opTable op of
+            Just info -> pure info
+            Nothing -> do
+                tell (fromList [UnknownPrecedence (op)])
+                pure (OpInfo (mkPrecedence 9) LeftAssociative)
+    reassoc' _ op l r = pure (Renamed.BinaryOperator op l r)
+
+shunt ::
+    forall r.
+    ( Member (Error ShuntError) r
+    , Member (Writer (Set ShuntWarning)) r
+    , Member (Reader OpTable) r
+    ) =>
+    Module Renamed ->
+    Sem r (Module Shunted)
+shunt =
+    traverseOf
+        (_Module @Renamed @Shunted . unlocated)
+        ( \m' -> do
+            let exposing' = coerceExposing @Renamed @Shunted (m' ^. exposing)
+            let imports' = coerceImport @Renamed @Shunted <$> (m' ^. imports)
+            declarations' <- traverse shuntDeclaration (m' ^. declarations)
+            pure (Module' (m' ^. name) exposing' imports' declarations')
+        )
+
+shuntDeclaration ::
+    forall r.
+    ( Member (Error ShuntError) r
+    , Member (Writer (Set ShuntWarning)) r
+    , Member (Reader OpTable) r
+    ) =>
+    Renamed.Declaration ->
+    Sem r Shunted.Declaration
+shuntDeclaration (Renamed.Declaration decl) =
+    Shunted.Declaration
+        <$> traverseOf
+            unlocated
+            ( \(decl' :: Renamed.Declaration') -> do
+                body' <- shuntDeclarationBody (decl' ^. Renamed.declaration'Body)
+                pure (Shunted.Declaration' (decl' ^. moduleName) (decl' ^. name) body')
+            )
+            decl
+
+shuntDeclarationBody ::
+    forall r.
+    ( Member (Error ShuntError) r
+    , Member (Writer (Set ShuntWarning)) r
+    , Member (Reader OpTable) r
+    ) =>
+    Renamed.DeclarationBody ->
+    Sem r Shunted.DeclarationBody
+shuntDeclarationBody (Renamed.DeclarationBody rdb) = Shunted.DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
+  where
+    shuntDeclarationBody' :: Renamed.DeclarationBody' -> Sem r Shunted.DeclarationBody'
+    shuntDeclarationBody' (Renamed.Value e ty) = do
+        opTable <- ask
+        fixed <- fixOperators opTable e
+        shunted <- shuntExpr fixed
+        ty' <- traverse (traverse shuntTypeAnnotation) ty
+        pure (Shunted.Value shunted ty')
+    shuntDeclarationBody' (Renamed.TypeAlias ty) = Shunted.TypeAlias <$> traverse shuntType ty
+    shuntDeclarationBody' (Renamed.NativeDef t) = Shunted.NativeDef <$> traverse shuntTypeAnnotation t
+
+shuntExpr ::
+    forall r.
+    ( Member (Error ShuntError) r
+    , Member (Writer (Set ShuntWarning)) r
+    , Member (Reader OpTable) r
+    ) =>
+    Renamed.Expr ->
+    Sem r Shunted.Expr
+shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' le
+  where
+    shuntExpr' :: Renamed.Expr' -> Sem r Shunted.Expr'
+    shuntExpr' (Renamed.Int l) = pure (Shunted.Int l)
+    shuntExpr' (Renamed.Float l) = pure (Shunted.Float l)
+    shuntExpr' (Renamed.String l) = pure (Shunted.String l)
+    shuntExpr' (Renamed.Char l) = pure (Shunted.Char l)
+    shuntExpr' Renamed.Unit = pure Shunted.Unit
+    shuntExpr' (Renamed.Var v) = Shunted.Var <$> traverse shuntVarRef v
+    shuntExpr' (Renamed.Constructor v) = Shunted.Constructor <$> traverse shuntVarRef v
+    shuntExpr' (Renamed.Lambda pat e) = Shunted.Lambda <$> shuntPattern pat <*> shuntExpr e
+    shuntExpr' (Renamed.FunctionCall f x) = Shunted.FunctionCall <$> shuntExpr f <*> shuntExpr x
+    shuntExpr' (Renamed.BinaryOperator operator l r) = do
+        -- turn the binary operator into a function call
+        -- (a `op` b) -> op a b
+        l' <- shuntExpr l
+        r' <- shuntExpr r
+        op' <- traverse shuntVarRef $ case operator ^. Renamed._MkBinaryOperator . unlocated of
+            Renamed.Op lopName -> OperatorVarName <<$>> lopName
+            Renamed.Infixed inName -> inName
+        let opVar = Shunted.Expr (Shunted.Var op' `withLocationOf` op')
+        let leftCall =
+                Shunted.Expr
+                    ( Located
+                        (Located.spanningRegion' (op' ^. sourceRegion :| [l' ^. Shunted._Expr . sourceRegion]))
+                        (Shunted.FunctionCall opVar l')
+                    )
+        pure (Shunted.FunctionCall leftCall r')
+    shuntExpr' (Renamed.List es) = Shunted.List <$> traverse shuntExpr es
+    shuntExpr' (Renamed.If cond then' else') = Shunted.If <$> shuntExpr cond <*> shuntExpr then' <*> shuntExpr else'
+    shuntExpr' (Renamed.Let vn e) = Shunted.Let vn <$> shuntExpr e
+    shuntExpr' (Renamed.LetIn vn e body) = (Shunted.LetIn vn <$> shuntExpr e) <*> shuntExpr body
+    shuntExpr' (Renamed.InParens e) = view unlocated <$> traverse shuntExpr' (e ^. Renamed._Expr)
+    shuntExpr' (Renamed.Block e) = Shunted.Block <$> traverse shuntExpr e
+    shuntExpr' (Renamed.Match e cases) = do
+        e' <- shuntExpr e
+        cases' <- traverse (bitraverse shuntPattern shuntExpr) cases
+        pure $ Shunted.Match e' cases'
+
+shuntVarRef :: Renamed.VarRef a -> Sem r (Shunted.VarRef a)
+shuntVarRef (Renamed.Global ln) = pure (Shunted.Global ln)
+shuntVarRef (Renamed.Local ln) = pure (Shunted.Local ln)
+
+shuntPattern :: Renamed.Pattern -> Sem r Shunted.Pattern
+shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shuntPattern' lp
+  where
+    shuntPattern' :: Renamed.Pattern' -> Sem r Shunted.Pattern'
+    shuntPattern' (Renamed.VarPattern v) = Shunted.VarPattern <$> traverse shuntVarRef v
+    shuntPattern' (Renamed.ConstructorPattern v p) = Shunted.ConstructorPattern v <$> traverse shuntPattern p
+    shuntPattern' Renamed.WildcardPattern = pure Shunted.WildcardPattern
+    shuntPattern' (Renamed.IntegerPattern l) = pure (Shunted.IntegerPattern l)
+    shuntPattern' (Renamed.FloatPattern l) = pure (Shunted.FloatPattern l)
+    shuntPattern' (Renamed.StringPattern l) = pure (Shunted.StringPattern l)
+    shuntPattern' (Renamed.CharPattern l) = pure (Shunted.CharPattern l)
+    shuntPattern' (Renamed.ListPattern ps) = Shunted.ListPattern <$> traverse shuntPattern ps
+
+shuntTypeAnnotation :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r, Member (Reader OpTable) r) => Renamed.TypeAnnotation -> Sem r Shunted.TypeAnnotation
+shuntTypeAnnotation (Renamed.TypeAnnotation n t) = Shunted.TypeAnnotation n <$> shuntType t
+
+shuntType :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r, Member (Reader OpTable) r) => Renamed.Type -> Sem r Shunted.Type
+shuntType (Renamed.TypeVar tv) = pure (Shunted.TypeVar tv)
+shuntType (Renamed.FunctionType l r) = Shunted.FunctionType <$> shuntType l <*> shuntType r
+shuntType Renamed.UnitType = pure Shunted.UnitType
+shuntType (Renamed.TypeConstructorApplication l r) = Shunted.TypeConstructorApplication <$> shuntType l <*> shuntType r
+shuntType (Renamed.UserDefinedType n) = pure (Shunted.UserDefinedType n)
+shuntType (Renamed.RecordType fields) = Shunted.RecordType <$> traverse (traverseOf _2 shuntType) fields

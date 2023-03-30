@@ -8,3 +8,6 @@ let print s = ()
 
 def (<>) : String -> String -> String
 let (<>) s1 s2 = ()
+
+def (+) : Int -> Int -> Int
+let (+) x y = ()

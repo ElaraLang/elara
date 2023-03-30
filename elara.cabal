@@ -27,7 +27,6 @@ source-repository head
 
 library
   exposed-modules:
-      Elara.Annotate.Shunt
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
@@ -38,6 +37,7 @@ library
       Elara.AST.Region
       Elara.AST.Renamed
       Elara.AST.Select
+      Elara.AST.Shunted
       Elara.Data.Unique
       Elara.Desugar
       Elara.Error
@@ -62,6 +62,7 @@ library
       Elara.Parse.Stream
       Elara.Parse.Type
       Elara.Rename
+      Elara.Shunt
       Polysemy.Maybe
       Polysemy.MTL
       Prelude

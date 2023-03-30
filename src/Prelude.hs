@@ -12,7 +12,7 @@ import Data.Map qualified as M
 import Data.Type.Equality (type (~))
 import Polysemy (Member, Sem)
 import Polysemy.State (State, get, put)
-import Relude hiding (Reader, State, ask, get, modify, put, evalState)
+import Relude hiding (Reader, State, ask, get, modify, put, evalState, runReader)
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f

@@ -1,4 +1,4 @@
 import Prelude
 
 let main = 
-    let a = Prelude.getLine
+    1 + 2 <> 3

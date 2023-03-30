@@ -11,6 +11,8 @@ import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
+import Elara.AST.Shunted qualified as Shunted
+import Unsafe.Coerce (unsafeCoerce)
 
 data Frontend
 
@@ -20,41 +22,49 @@ data Desugared
 
 data Renamed
 
+data Shunted
+
 type family ASTExpr ast where
     ASTExpr Frontend = Frontend.Expr
     ASTExpr UnlocatedFrontend = Frontend.Unlocated.Expr
     ASTExpr Desugared = Desugared.Expr
     ASTExpr Renamed = Renamed.Expr
+    ASTExpr Shunted = Shunted.Expr
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
     ASTType UnlocatedFrontend = Frontend.Unlocated.Type
     ASTType Desugared = Desugared.Type
     ASTType Renamed = Renamed.Type
+    ASTType Shunted = Shunted.Type
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
     ASTPattern UnlocatedFrontend = Frontend.Unlocated.Pattern
     ASTPattern Desugared = Desugared.Pattern
     ASTPattern Renamed = Renamed.Pattern
+    ASTPattern Shunted = Shunted.Pattern
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
     ASTQual UnlocatedFrontend = MaybeQualified
     ASTQual Desugared = MaybeQualified
     ASTQual Renamed = Qualified
+    ASTQual Shunted = Qualified
 
 type family ASTLocate' ast where
     ASTLocate' Frontend = Located
     ASTLocate' UnlocatedFrontend = Unlocated
     ASTLocate' Desugared = Located
     ASTLocate' Renamed = Located
+    ASTLocate' Shunted = Located
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
     ASTDeclaration UnlocatedFrontend = Frontend.Unlocated.Declaration
     ASTDeclaration Desugared = Desugared.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
+    ASTDeclaration Shunted = Shunted.Declaration
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 
@@ -192,3 +202,17 @@ instance HasName Desugared.Declaration (Located Name) where
 instance HasName Desugared.Declaration' (Located Name) where
     name = Desugared.declaration'Name
 
+instance HasModuleName Renamed.Declaration Renamed where
+    moduleName = Renamed._Declaration . unlocated . moduleName @Renamed.Declaration' @Renamed
+    unlocatedModuleName :: Lens' Renamed.Declaration ModuleName
+    unlocatedModuleName = moduleName @Renamed.Declaration @Renamed . unlocated
+
+instance HasModuleName Renamed.Declaration' Renamed where
+    moduleName = Renamed.declaration'Module'
+    unlocatedModuleName = moduleName @Renamed.Declaration' @Renamed . unlocated
+
+instance HasName Renamed.Declaration (Located (Qualified Name)) where
+    name = Renamed._Declaration . unlocated . name
+
+instance HasName Renamed.Declaration' (Located (Qualified Name)) where
+    name = Renamed.declaration'Name
