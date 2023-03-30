@@ -17,7 +17,6 @@ import Polysemy
 import Polysemy.Error (Error, runError, throw)
 import Polysemy.MTL ()
 import Polysemy.State (State, evalState)
-import Unsafe.Coerce (unsafeCoerce)
 
 newtype DesugarError
     = DefWithoutLet (Located Desugared.TypeAnnotation)

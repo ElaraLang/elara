@@ -12,7 +12,6 @@ import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Shunted qualified as Shunted
-import Unsafe.Coerce (unsafeCoerce)
 
 data Frontend
 

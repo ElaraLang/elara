@@ -5,7 +5,7 @@ module Elara.Error (ReportableError (..), addPosition, concatDiagnostics, module
 import Elara.Error.Effect
 import Error.Diagnose
 import Polysemy
-import Prelude hiding (Reader, asks, readFile)
+import Prelude hiding (asks, readFile)
 
 class ReportableError e where
     report :: (Member (DiagnosticWriter Text) r) => e -> Sem r ()

@@ -3,8 +3,8 @@
 module Elara.AST.Renamed where
 
 import Control.Lens (makeLenses, makePrisms, view)
-import Elara.AST.Name (HasName (name), ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
-import Elara.AST.Region (Located (Located))
+import Elara.AST.Name (HasName (name), ModuleName, Name, OpName, Qualified, TypeName, VarName)
+import Elara.AST.Region (Located)
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 

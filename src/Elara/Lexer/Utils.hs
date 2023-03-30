@@ -148,10 +148,10 @@ startWhite _ str = do
 -- Insert }  for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
-    indentStack <- use indentStack
+    indentStack' <- use indentStack
     fakeClosings <- sequenceA [fake TokenRightBrace]
     modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
-    pure $ init indentStack >>= const fakeClosings
+    pure $ init indentStack' >>= const fakeClosings
 
 -- The functions that must be provided to Alex's basic interface
 

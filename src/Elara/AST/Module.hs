@@ -8,6 +8,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Elara.AST.Module where
 
@@ -46,6 +47,9 @@ data Exposition ast
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
 
+{- | Safe coercion between @Exposition@ types
+ Since the ASTX type families aren't injective, we can't use @coerce@ :(
+-}
 coerceExposition ::
     ( FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
     , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName

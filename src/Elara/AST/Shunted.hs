@@ -3,8 +3,8 @@
 module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
-import Elara.AST.Name (ModuleName, Name (NVarName), OpName, Qualified, TypeName, Unqualified, VarName)
-import Elara.AST.Region (Located (Located))
+import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.Region (Located)
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 

@@ -19,7 +19,7 @@ import Elara.Parse.Stream
 import Elara.Rename (ModulePath, rename, runRenamer)
 import Elara.Shunt
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
-import Polysemy (Embed, Member, Sem, run, runM, subsume_)
+import Polysemy (Embed, Member, Sem, runM, subsume_)
 import Polysemy.Embed (embed)
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)

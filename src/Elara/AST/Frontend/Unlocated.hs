@@ -2,7 +2,6 @@ module Elara.AST.Frontend.Unlocated where
 
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Prelude hiding (Op, Type)
-import Elara.AST.Frontend (Pattern'(VarPattern))
 
 {- | Frontend AST without location information.
      Trees that grow was getting quite frustrating, so we're stuck with this for now.

@@ -1,7 +1,6 @@
 module Elara.Parse.Names where
 
-import Control.Lens ((^.))
-import Elara.AST.Name (HasName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), Unqualified (Unqualified), VarName (..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..),  VarName (..))
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token', (<??>))
@@ -33,14 +32,14 @@ typeName = do
         _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
 
 maybeQualified :: HParser name -> HParser (MaybeQualified name)
-maybeQualified name = unqualified <|> qualified
+maybeQualified nameParser = unqualified <|> qualified
   where
-    unqualified = MaybeQualified <$> name <*> pure Nothing
+    unqualified = MaybeQualified <$> nameParser <*> pure Nothing
     qualified = do
         qual <- moduleName
         endHead
         token' TokenDot
-        MaybeQualified <$> name <*> pure (Just qual)
+        MaybeQualified <$> nameParser <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
 moduleName = ModuleName <$> sepBy1' upperVarName (token' TokenDot)

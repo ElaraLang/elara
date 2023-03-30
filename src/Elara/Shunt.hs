@@ -22,7 +22,7 @@ import Polysemy (Member, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.Writer
-import Prelude hiding (State, execState, gets, modify')
+import Prelude hiding (execState, gets, modify')
 
 type OpTable = Map (Renamed.VarRef Name) OpInfo
 
@@ -106,14 +106,14 @@ fixOperators opTable = reassoc
 
     reassoc :: Renamed.Expr -> Sem r Renamed.Expr
     reassoc e@(InExpr (Renamed.InParens e2)) = withLocationOf e . Renamed.InParens <$> reassoc e2
-    reassoc e@(InExpr' loc (Renamed.BinaryOperator op l r)) = do
+    reassoc e@(InExpr' loc (Renamed.BinaryOperator operator l r)) = do
         l' <- reassoc l
         r' <- reassoc r
-        withLocationOf e <$> reassoc' loc op l' r'
+        withLocationOf e <$> reassoc' loc operator l' r'
     reassoc e = pure e
 
     reassoc' :: SourceRegion -> Renamed.BinaryOperator -> Renamed.Expr -> Renamed.Expr -> Sem r Renamed.Expr'
-    reassoc' sr op l (InExpr (Renamed.InParens r)) = reassoc' sr op l r
+    reassoc' sr operator l (InExpr (Renamed.InParens r)) = reassoc' sr operator l r
     reassoc' sr o1 e1 r@(InExpr (Renamed.BinaryOperator o2 e2 e3)) = do
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2

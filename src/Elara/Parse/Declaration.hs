@@ -6,7 +6,7 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (ModuleName, Name (..), VarName)
 import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Expression (element, exprParser)
+import Elara.Parse.Expression (element)
 import Elara.Parse.Indents (block)
 import Elara.Parse.Names (unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
