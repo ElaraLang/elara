@@ -148,15 +148,15 @@ merge fn l1 l2 =
         (fn l1 l2)
 
 {- | Get the region that contains both of the given regions.
-| This function will throw an error if the regions are in different files.
+This function will throw an error if the regions are in different files.
 -}
 enclosingRegion :: RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
 enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
 
 {- | Get the region that contains both of the given regions.
-| This function will throw an error if the regions are in different files.
-| If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
+This function will throw an error if the regions are in different files.
+If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
 enclosingRegion' :: SourceRegion -> SourceRegion -> SourceRegion
 enclosingRegion' a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
@@ -172,8 +172,8 @@ spanningRegion regions = do
     SourceRegion (Just file) start end
 
 {- | Get the region that contains all of the given regions.
-| This function will throw an error if the regions are in different files.
-| If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
+  This function will throw an error if the regions are in different files.
+  If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
 -}
 spanningRegion' :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion' regions = do

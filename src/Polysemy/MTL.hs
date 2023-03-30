@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Compatibility instances for polysemy effects.
-Particularly useful with the lens functions that operate on Monad[Reader/State/Writer]
+Particularly useful with the lens functions that operate on @Monad[Reader/State/Writer]@
 -}
 module Polysemy.MTL where
 

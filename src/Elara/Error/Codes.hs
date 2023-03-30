@@ -1,16 +1,20 @@
 module Elara.Error.Codes where
 
 {- | A type for error codes.
-| While not enforced, error codes should follow a standard format consisting of the following components
-| @[E|W]@, followed by 4 digits. The symbol @E@ indicates an error, while @W@ indicates a warning.
-| The digits are used to identify the error or warning.
-| The first digit signals the stage in which the error was thrown:
-| @0@: Lexer / Parser
-| @1@: Desugaring and Renaming stage
-| @2@: Operator Shunting Stage
-|
-| The remaining digits are arbitrary and should be incremented for each new error or warning.
-| They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
+While not enforced, error codes should follow a standard format consisting of the following components
+
+@[E|W]@, followed by 4 digits. The symbol @E@ indicates an error, while @W@ indicates a warning.
+
+The digits are used to identify the error or warning.
+
+The first digit signals the stage in which the error was thrown:
+
+- @0@: Lexer / Parser
+- @1@: Desugaring and Renaming stage
+- @2@: Operator Shunting Stage
+
+The remaining digits are arbitrary and should be incremented for each new error or warning.
+They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
 -}
 type ErrorCode = Text
 

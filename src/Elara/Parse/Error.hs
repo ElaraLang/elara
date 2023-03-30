@@ -55,7 +55,7 @@ instance ReportableError (WParseErrorBundle TokenStream ElaraParseError) where
             diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
-   | It adds the ability to highlight a region of the source code rather than a single point for error highlighting.
+It adds the ability to highlight a region of the source code rather than a single point for error highlighting.
 -}
 diagnosticFromBundle ::
     forall msg s e.

@@ -1,4 +1,4 @@
-module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint) where
+module Elara.AST.Frontend.Pretty.Unlocated (prettyPrint, Pretty (..)) where
 
 import Control.Lens ((^.))
 import Elara.AST.Frontend.Unlocated
