@@ -38,6 +38,7 @@ library
       Elara.AST.Renamed
       Elara.AST.Select
       Elara.AST.Shunted
+      Elara.AST.Typed
       Elara.Data.Unique
       Elara.Desugar
       Elara.Error
@@ -63,6 +64,9 @@ library
       Elara.Parse.Type
       Elara.Rename
       Elara.Shunt
+      Elara.TypeInfer.Env
+      Elara.TypeInfer.Expr
+      Polysemy.Lens
       Polysemy.Maybe
       Polysemy.MTL
       Prelude

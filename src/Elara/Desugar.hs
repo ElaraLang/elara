@@ -54,7 +54,7 @@ desugar ::
     Desugar (Module Desugared)
 desugar =
     traverseOf
-        (_Module @Frontend @Desugared . unlocated)
+        (_Module . unlocated)
         ( \(m' :: Module' Frontend) -> do
             let decls = m' ^. module'Declarations :: [Frontend.Declaration]
             decls' <- desugarDeclarations decls

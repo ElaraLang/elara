@@ -90,6 +90,9 @@ generatedSourcePos fp =
         , sourceColumn = mkPos 0
         }
 
+generatedSourceRegion :: Maybe FilePath -> SourceRegion
+generatedSourceRegion fp = GeneratedRegion (fromMaybe generatedFileName fp)
+
 sourceRegionToDiagnosePosition :: SourceRegion -> Diag.Position
 sourceRegionToDiagnosePosition (GeneratedRegion fp) =
     Diag.Position
