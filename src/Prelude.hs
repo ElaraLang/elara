@@ -5,14 +5,16 @@ module Prelude (
     ($>>),
     (<<<$>>>),
     insertWithM,
-    modifyM
+    modifyM,
+    identity,
 ) where
 
 import Data.Map qualified as M
 import Data.Type.Equality (type (~))
 import Polysemy (Member, Sem)
 import Polysemy.State (State, get, put)
-import Relude hiding (Reader, State, ask, get, modify, put, evalState, runReader)
+import Relude hiding (Reader, State, Type, ask, evalState, get, id, modify, put, runReader, identity)
+import Relude qualified (id)
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f
@@ -30,3 +32,6 @@ insertWithM f k v m = case M.lookup k m of
 
 modifyM :: (Member (State s) r) => (s -> Sem r s) -> Sem r ()
 modifyM f = get >>= (put <=< f)
+
+identity :: a -> a
+identity = Relude.id

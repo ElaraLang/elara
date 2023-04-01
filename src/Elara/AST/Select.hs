@@ -7,7 +7,7 @@ module Elara.AST.Select where
 import Control.Lens (Getting, Lens', view)
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Frontend.Unlocated qualified as Frontend.Unlocated
+import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
@@ -25,21 +25,21 @@ data Shunted
 
 type family ASTExpr ast where
     ASTExpr Frontend = Frontend.Expr
-    ASTExpr UnlocatedFrontend = Frontend.Unlocated.Expr
+    ASTExpr UnlocatedFrontend = Unlocated.Frontend.Expr
     ASTExpr Desugared = Desugared.Expr
     ASTExpr Renamed = Renamed.Expr
     ASTExpr Shunted = Shunted.Expr
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
-    ASTType UnlocatedFrontend = Frontend.Unlocated.Type
+    ASTType UnlocatedFrontend = Unlocated.Frontend.Type
     ASTType Desugared = Desugared.Type
     ASTType Renamed = Renamed.Type
     ASTType Shunted = Shunted.Type
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
-    ASTPattern UnlocatedFrontend = Frontend.Unlocated.Pattern
+    ASTPattern UnlocatedFrontend = Unlocated.Frontend.Pattern
     ASTPattern Desugared = Desugared.Pattern
     ASTPattern Renamed = Renamed.Pattern
     ASTPattern Shunted = Shunted.Pattern
@@ -60,7 +60,7 @@ type family ASTLocate' ast where
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
-    ASTDeclaration UnlocatedFrontend = Frontend.Unlocated.Declaration
+    ASTDeclaration UnlocatedFrontend = Unlocated.Frontend.Declaration
     ASTDeclaration Desugared = Desugared.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
     ASTDeclaration Shunted = Shunted.Declaration
@@ -151,11 +151,11 @@ instance GetLocation Renamed where
 instance RUnlocate UnlocatedFrontend where
     rUnlocate a = a
     rUnlocate' a = a
-    rUnlocated = id
-    rUnlocated' = id
+    rUnlocated = identity
+    rUnlocated' = identity
     fmapRUnlocate = fmap
-    fmapRUnlocate' = id
-    sequenceRUnlocate' = id
+    fmapRUnlocate' = identity
+    sequenceRUnlocate' = identity
 
 instance GetLocation UnlocatedFrontend where
     getLocation _ = Nothing

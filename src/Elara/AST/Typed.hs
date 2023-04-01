@@ -1,15 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Typed where
 
 import Control.Lens hiding (List)
 import Data.Data (Data)
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located, unlocated)
+import Elara.AST.Region (Located (Located), unlocated)
+import Elara.AST.StripLocation (StripLocation (stripLocation))
+import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.Data.Unique
-import Prelude hiding (Op, Type)
+import Prelude hiding (Op)
 
-data PartialType = Id (Unique ()) | Partial (Type' PartialType) | Final Type
+data PartialType = Id UniqueId | Partial (Type' PartialType) | Final Type
     deriving (Show, Eq, Ord)
 
 {- | Typed AST Type
@@ -67,7 +70,7 @@ data Type' t
     | TypeConstructorApplication t t
     | UserDefinedType (Located (Qualified TypeName))
     | RecordType (NonEmpty (Located VarName, t))
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 newtype Type = Type (Type' Type)
     deriving (Show, Eq, Ord)
@@ -108,11 +111,12 @@ makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Expr'
 makePrisms ''VarRef
+makePrisms ''PartialType
 makePrisms ''Pattern
 
 instance Plated (Expr t) where
     plate :: Traversal' (Expr t) (Expr t)
-    plate = id
+    plate = identity
 
 instance Plated (Expr' t) where
     plate :: Traversal' (Expr' t) (Expr' t)
@@ -150,3 +154,55 @@ instance Plated (Expr' t) where
       where
         traverseExpr' :: Functor f => (Expr' t -> f (Expr' t)) -> Expr t -> f (Expr t)
         traverseExpr' = traverseOf (_Expr . _1 . unlocated)
+
+instance StripLocation Type Unlocated.Type where
+    stripLocation (Type t) = Unlocated.Type (stripLocation t)
+
+instance StripLocation t t' => StripLocation (Type' t) (Unlocated.Type' t') where
+    stripLocation t = case t of
+        TypeVar (TyVar u) -> Unlocated.TypeVar (Unlocated.TyVar u)
+        FunctionType t1 t2 -> Unlocated.FunctionType (stripLocation t1) (stripLocation t2)
+        UnitType -> Unlocated.UnitType
+        TypeConstructorApplication t1 t2 -> Unlocated.TypeConstructorApplication (stripLocation t1) (stripLocation t2)
+        UserDefinedType (Located _ q) -> Unlocated.UserDefinedType q
+        RecordType fields -> Unlocated.RecordType (stripLocation fields)
+
+instance StripLocation t t' => StripLocation (Expr t) (Unlocated.Expr t') where
+    stripLocation (Expr (e, t)) = Unlocated.Expr (stripLocation $ stripLocation e, stripLocation t)
+
+instance StripLocation t t' => StripLocation (Expr' t) (Unlocated.Expr' t') where
+    stripLocation e = case e of
+        Int i -> Unlocated.Int i
+        Float f -> Unlocated.Float f
+        String s -> Unlocated.String s
+        Char c -> Unlocated.Char c
+        Unit -> Unlocated.Unit
+        Var lv -> Unlocated.Var (stripLocation $ stripLocation lv)
+        Constructor q -> Unlocated.Constructor (stripLocation $ stripLocation q)
+        Lambda (Located _ u) e' -> Unlocated.Lambda u (stripLocation e')
+        FunctionCall e1 e2 -> Unlocated.FunctionCall (stripLocation e1) (stripLocation e2)
+        If e1 e2 e3 -> Unlocated.If (stripLocation e1) (stripLocation e2) (stripLocation e3)
+        List es -> Unlocated.List (stripLocation es)
+        Match e' pes -> Unlocated.Match (stripLocation e') (stripLocation pes)
+        LetIn (Located _ u) e1 e2 -> Unlocated.LetIn u (stripLocation e1) (stripLocation e2)
+        Let (Located _ u) e' -> Unlocated.Let u (stripLocation e')
+        Block es -> Unlocated.Block (stripLocation es)
+
+instance StripLocation (VarRef a) (Unlocated.VarRef a) where
+    stripLocation v = case v of
+        Global (Located _ q) -> Unlocated.Global q
+        Local (Located _ u) -> Unlocated.Local u
+
+instance StripLocation t t' => StripLocation (Pattern t) (Unlocated.Pattern t') where
+    stripLocation (Pattern (p, t)) = Unlocated.Pattern (stripLocation $ stripLocation p, stripLocation t)
+
+instance StripLocation t t' => StripLocation (Pattern' t) (Unlocated.Pattern' t') where
+    stripLocation p = case p of
+        VarPattern v -> Unlocated.VarPattern (stripLocation $ stripLocation v)
+        ConstructorPattern q ps -> Unlocated.ConstructorPattern (stripLocation q) (stripLocation ps)
+        WildcardPattern -> Unlocated.WildcardPattern
+        IntegerPattern i -> Unlocated.IntegerPattern i
+        FloatPattern f -> Unlocated.FloatPattern f
+        StringPattern s -> Unlocated.StringPattern s
+        CharPattern c -> Unlocated.CharPattern c
+        ListPattern c -> Unlocated.ListPattern (stripLocation c)

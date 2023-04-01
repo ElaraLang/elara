@@ -5,13 +5,11 @@ import Control.Lens
 import Elara.AST.Name (ModuleName (ModuleName), Qualified (..), TypeName (TypeName), VarName)
 import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
 import Elara.AST.Typed
-import Elara.Data.Unique (Unique)
+import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId)
 import Elara.TypeInfer.Environment (TypeEnvironment, addToEnv)
 import Polysemy
 import Polysemy.State
 import Polysemy.Writer (Writer, tell)
-import Print (debugColored)
-import Prelude hiding (Type)
 
 newtype TypeEquation = TypeEquation (PartialType, PartialType)
     deriving (Show, Eq, Ord)
@@ -38,7 +36,7 @@ stringType = Final $ Type (UserDefinedType (Located (generatedSourceRegion Nothi
 unitType :: PartialType
 unitType = Final $ Type (UserDefinedType (Located (generatedSourceRegion Nothing) (Qualified (TypeName "Unit") preludeName)))
 
-generateEquations :: forall r. (Member (Writer (Set TypeEquation)) r, Member (State TypeEnvironment) r) => Expr PartialType -> Sem r ()
+generateEquations :: forall r. (Member (Writer (Set TypeEquation)) r, Member (State TypeEnvironment) r, Member UniqueGen r) => Expr PartialType -> Sem r ()
 generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
   where
     generateEquations' :: (Expr' PartialType, PartialType) -> Sem r ()
@@ -54,13 +52,23 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
     generateEquations' (Var vn, t) =
         modify (addToEnv (vn ^. unlocated) t)
     generateEquations' (Constructor _, _) = pass
-    generateEquations' (Lambda vn e@(Expr (_, bodyType)), t) = do
-        generateEquations e
-        let usages = findUsagesOf (vn ^. unlocated) e
-        debugColored usages
-        let functionType = Partial (FunctionType t bodyType) -- typeof (\a -> b) is typeof(a) -> typeof(b)
+    generateEquations' (Lambda arg body@(Expr (_, bodyType)), t) = do
+        generateEquations body
+        argType <- makeUniqueId
+
+        let usages = findUsagesOf (arg ^. unlocated) body
+        generateArgumentUsageEquations argType usages
+
+        let functionType = Partial (FunctionType (Id argType) bodyType) -- typeof (\a -> b) is typeof(a) -> typeof(b)
         tell $ one $ t =:= functionType
-    generateEquations' _ = pass
+    generateEquations' (Match expr@(Expr (_, testType)) cases, overallType) = do
+        generateEquations expr
+        for_ cases $ \(pat@(Pattern (_, patType)), body@(Expr (_, bodyType))) -> do
+            generatePatternEquations overallType pat
+            tell $ one $ testType =:= patType
+            generateEquations body
+            tell $ one $ overallType =:= bodyType
+    generateEquations' other = error ("Not sure how to generate equations for this expression yet: " <> show other)
 
 findUsagesOf :: Unique VarName -> Expr PartialType -> [Expr PartialType]
 findUsagesOf v e = e ^.. to children . folded . filteredBy (_Expr . _1 . unlocated . to isVar)
@@ -68,10 +76,15 @@ findUsagesOf v e = e ^.. to children . folded . filteredBy (_Expr . _1 . unlocat
     isVar :: Expr' PartialType -> Bool
     isVar expr = preview (_Var . unlocated . _Local . unlocated) expr == Just v
 
+generateArgumentUsageEquations :: forall r. (Member (Writer (Set TypeEquation)) r) => UniqueId -> [Expr PartialType] -> Sem r ()
+generateArgumentUsageEquations argId = traverseOf_ (each . _Expr . _2) generateArgumentUsageEquation
+  where
+    generateArgumentUsageEquation :: PartialType -> Sem r ()
+    generateArgumentUsageEquation t = tell $ one $ t =:= Id argId
+
 generatePatternEquations ::
     forall r.
     ( Member (Writer (Set TypeEquation)) r
-    , Member (State TypeEnvironment) r
     ) =>
     PartialType ->
     Pattern PartialType ->

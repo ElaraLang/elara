@@ -19,7 +19,7 @@ instance Stream TokenStream where
     type Tokens TokenStream = [Lexeme]
     tokenToChunk Proxy x = [x]
     tokensToChunk Proxy xs = xs
-    chunkToTokens Proxy = id
+    chunkToTokens Proxy = identity
     chunkLength Proxy = length
     chunkEmpty Proxy = null
     take1_ (TokenStream _ []) = Nothing

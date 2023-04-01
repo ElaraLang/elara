@@ -22,10 +22,12 @@ assignIds (In.Expr le) = bimap Out.Expr snd . dup . unwrap <$> traverseOf unloca
   assignIds' (In.Var v) = (Out.Var (transformVarRef <$> v),) <$> newId
   assignIds' (In.Constructor v) = (Out.Constructor (transformVarRef <$> v),) <$> newId
   assignIds' (In.Let v e1) = do
-    (e1', t1) <- assignIds e1
-    pure (Out.Let v e1', t1)
+    (e1', _) <- assignIds e1
+    t <- newId
+    pure (Out.Let v e1', t)
   assignIds' (In.Lambda v e) = do
-    (e', t) <- assignIds e
+    (e', _) <- assignIds e
+    t <- newId
     pure (Out.Lambda v e', t)
   assignIds' (In.FunctionCall e1 e2) = do
     (e1', _) <- assignIds e1
@@ -48,7 +50,6 @@ assignIds (In.Expr le) = bimap Out.Expr snd . dup . unwrap <$> traverseOf unloca
     pure (Out.LetIn n e' b', t)
   assignIds' (In.Match e ps) = do
     (e', _) <- assignIds e
-
     ps' <- fsts <<$>> traverse (bitraverse assignIdsToPattern assignIds) ps
     t <- newId
     pure (Out.Match e' ps', t)
@@ -87,4 +88,4 @@ unwrap :: Located (a, b) -> (Located a, b)
 unwrap l = (fst <$> l, view (unlocated . _2) l)
 
 newId :: Member UniqueGen r => Sem r PartialType
-newId = Id <$> makeUnique ()
+newId = Id <$> makeUniqueId

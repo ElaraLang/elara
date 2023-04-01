@@ -13,11 +13,11 @@
 module Elara.AST.Module where
 
 import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms)
+import Data.Kind qualified as Kind (Type)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..))
+import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), UnlocatedFrontend)
+import Elara.AST.StripLocation
 import Unsafe.Coerce (unsafeCoerce)
-import Prelude hiding (Type)
-import Prelude qualified as Kind (Type)
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
 
@@ -172,3 +172,25 @@ type ModConstraints c ast =
 instance (RUnlocate ast) => HasModuleName (Module ast) ast where
     moduleName = _Module @ast @ast . (rUnlocated' @ast) . module'Name @ast
     unlocatedModuleName = moduleName @(Module ast) @ast . rUnlocated' @ast
+
+instance StripLocation (Module Frontend) (Module UnlocatedFrontend) where
+    stripLocation (Module m) = Module (stripLocation (stripLocation m :: Module' Frontend))
+
+instance StripLocation (Module' Frontend) (Module' UnlocatedFrontend) where
+    stripLocation (Module' n e i d) = Module' (stripLocation n) (stripLocation e) (stripLocation i) (stripLocation d)
+
+instance StripLocation (Exposing Frontend) (Exposing UnlocatedFrontend) where
+    stripLocation ExposingAll = ExposingAll
+    stripLocation (ExposingSome e) = ExposingSome (stripLocation e)
+
+instance StripLocation (Exposition Frontend) (Exposition UnlocatedFrontend) where
+    stripLocation (ExposedValue n) = ExposedValue (stripLocation n)
+    stripLocation (ExposedType tn) = ExposedType (stripLocation tn)
+    stripLocation (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors (stripLocation tn)
+    stripLocation (ExposedOp o) = ExposedOp (stripLocation o)
+
+instance StripLocation (Import Frontend) (Import UnlocatedFrontend) where
+    stripLocation (Import m) = Import (stripLocation (stripLocation m :: Import' Frontend))
+
+instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
+    stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)

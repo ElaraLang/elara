@@ -5,6 +5,7 @@ module Elara.Lexer.Utils where
 
 import Codec.Binary.UTF8.String (encodeChar)
 import Control.Lens (makeLenses, to, use, view, (^.))
+import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
 import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)

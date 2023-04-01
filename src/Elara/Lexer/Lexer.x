@@ -113,9 +113,9 @@ tokens :-
       \"                     { beginString }
 
       -- Identifiers
-      @variableIdentifer     { parametrizedTok TokenVariableIdentifier id }
-      @typeIdentifier        { parametrizedTok TokenConstructorIdentifier id }
-      $opChar+               { parametrizedTok TokenOperatorIdentifier id }
+      @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
+      @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
+      $opChar+               { parametrizedTok TokenOperatorIdentifier identity}
 
   
   }

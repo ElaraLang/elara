@@ -10,10 +10,11 @@
 
 module Elara.AST.Name where
 
-import Control.Lens (makeFields, makeLenses, makePrisms, view)
+import Control.Lens (makeFields, makeLenses, makePrisms, view, (^.))
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
@@ -70,7 +71,7 @@ instance ToName OpName where
     toName = NOpName
 
 instance ToName Name where
-    toName = id
+    toName = identity
 
 instance NameLike VarName where
     nameText (NormalVarName name) = name
@@ -146,3 +147,31 @@ makeFields ''MaybeQualified
 makeFields ''Qualified
 makeFields ''Unqualified
 makePrisms ''Unqualified
+
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
+    pretty (MaybeQualified n (Just m)) = pretty m <> "." <> pretty n
+    pretty (MaybeQualified n Nothing) = pretty n
+
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Qualified x) where
+    pretty (Qualified n m) = pretty m <> "." <> pretty n
+
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
+    pretty uq = pretty (uq ^. name)
+
+instance Pretty ModuleName where
+    pretty (ModuleName m) = hcat (punctuate "." (fmap pretty (toList m)))
+
+instance Pretty VarName where
+    pretty (NormalVarName n) = pretty n
+    pretty (OperatorVarName n) = "(" <> pretty n <> ")"
+
+instance Pretty (MaybeQualified VarName) where
+    pretty (MaybeQualified (OperatorVarName n) (Just q)) = "(" <> pretty q <> "." <> pretty n <> ")"
+    pretty (MaybeQualified n (Just q)) = pretty q <> "." <> pretty n
+    pretty (MaybeQualified n Nothing) = pretty n
+
+instance Pretty TypeName where
+    pretty (TypeName n) = pretty n
+
+instance Pretty OpName where
+    pretty (OpName n) = pretty n

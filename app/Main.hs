@@ -5,9 +5,11 @@ module Main (
   main,
 ) where
 
-import Control.Lens ((^.))
+import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select
+import Elara.AST.Region
+import Elara.AST.Shunted
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
@@ -26,7 +28,8 @@ import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Polysemy.Reader
 import Polysemy.Writer (runWriter)
 import Print (printColored)
-
+import Elara.TypeInfer
+import Relude.Unsafe
 main :: IO ()
 main = do
   s <- runElara
@@ -39,7 +42,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
   source' <- renameModule path source
   source'' <- shuntModule source'
-  embed (printColored source'')
+  embed $ infer (source'' ^?! _Module . unlocated . declarations . to Relude.Unsafe.head . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . _Value . _1)
   pass
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do

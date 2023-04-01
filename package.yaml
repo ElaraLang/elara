@@ -27,7 +27,7 @@ dependencies:
   - parser-combinators
   - pretty-simple
   - diagnose
-  - pretty
+  - prettyprinter
   - polysemy
   - polysemy-plugin
   - mtl

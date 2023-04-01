@@ -1,29 +1,84 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE UndecidableInstances #-}
+module Elara.AST.Unlocated.Frontend where
 
-module Elara.AST.Frontend.StripLocation where
+import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
+import Prelude hiding (Op)
 
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Frontend.Unlocated as Unlocated
-import Elara.AST.Module
-import Elara.AST.Name (Name)
+
 import Elara.AST.Region
-import Elara.AST.Select
-import Prelude hiding (Op, Type)
+import Elara.AST.StripLocation
+import Prelude hiding (Op)
 
-class StripLocation a b | a -> b where
-    stripLocation :: a -> b
+{- | Frontend AST without location information.
+     Trees that grow was getting quite frustrating, so we're stuck with this for now.
+     I apologise to future me.
+-}
+data Expr
+    = Int Integer
+    | Float Double
+    | String Text
+    | Char Char
+    | Unit
+    | Var (MaybeQualified VarName)
+    | Constructor (MaybeQualified TypeName)
+    | Lambda [Pattern] Expr
+    | FunctionCall Expr Expr
+    | If Expr Expr Expr
+    | BinaryOperator BinaryOperator Expr Expr
+    | List [Expr]
+    | Match Expr [(Pattern, Expr)]
+    | LetIn VarName [Pattern] Expr Expr
+    | Let VarName [Pattern] Expr
+    | Block (NonEmpty Expr)
+    | InParens Expr
+    deriving (Show, Eq)
 
-instance StripLocation (Located a) a where
-    stripLocation :: Located a -> a
-    stripLocation (Located _ a) = a
+data Pattern
+    = VarPattern VarName
+    | ConstructorPattern (MaybeQualified TypeName) [Pattern]
+    | ListPattern [Pattern]
+    | WildcardPattern
+    | IntegerPattern Integer
+    | FloatPattern Double
+    | StringPattern Text
+    | CharPattern Char
+    deriving (Show, Eq)
 
-instance {-# OVERLAPPABLE #-} (Functor f, StripLocation a b) => StripLocation (f a) (f b) where
-    stripLocation = fmap stripLocation
+data BinaryOperator
+    = Op (MaybeQualified OpName)
+    | Infixed (MaybeQualified VarName)
+    deriving (Show, Eq)
 
-instance (StripLocation a a', StripLocation b b') => StripLocation (a, b) (a', b') where
-    stripLocation (a, b) = (stripLocation a, stripLocation b)
+data TypeAnnotation = TypeAnnotation Name Type
+    deriving (Show, Eq)
+
+data Type
+    = TypeVar VarName
+    | FunctionType Type Type
+    | UnitType
+    | TypeConstructorApplication Type Type
+    | UserDefinedType (MaybeQualified TypeName)
+    | RecordType (NonEmpty (VarName, Type))
+    deriving (Show, Eq)
+
+data Declaration = Declaration
+    { _declarationModule' :: ModuleName
+    , _declarationName :: Name
+    , _declarationBody :: DeclarationBody
+    }
+    deriving (Show, Eq)
+
+data DeclarationBody
+    = -- | let <p> = <e>
+      Value
+        { _expression :: Expr
+        , _patterns :: [Pattern]
+        }
+    | -- | def <name> : <type>.
+      ValueTypeDef TypeAnnotation
+    | -- | type <name> = <type>
+      TypeAlias Type
+    deriving (Show, Eq)
 
 instance StripLocation Frontend.Expr Expr where
     stripLocation (Frontend.Expr (Located _ expr)) = case expr of
@@ -68,28 +123,6 @@ instance StripLocation Frontend.Type Type where
     stripLocation (Frontend.TypeConstructorApplication t1 t2) = TypeConstructorApplication (stripLocation t1) (stripLocation t2)
     stripLocation (Frontend.UserDefinedType t) = UserDefinedType (stripLocation t)
     stripLocation (Frontend.RecordType r) = RecordType (stripLocation r)
-
-instance StripLocation (Module Frontend) (Module UnlocatedFrontend) where
-    stripLocation (Module m) = Module (stripLocation (stripLocation m :: Module' Frontend))
-
-instance StripLocation (Module' Frontend) (Module' UnlocatedFrontend) where
-    stripLocation (Module' n e i d) = Module' (stripLocation n) (stripLocation e) (stripLocation i) (stripLocation d)
-
-instance StripLocation (Exposing Frontend) (Exposing UnlocatedFrontend) where
-    stripLocation ExposingAll = ExposingAll
-    stripLocation (ExposingSome e) = ExposingSome (stripLocation e)
-
-instance StripLocation (Exposition Frontend) (Exposition UnlocatedFrontend) where
-    stripLocation (ExposedValue n) = ExposedValue (stripLocation n)
-    stripLocation (ExposedType tn) = ExposedType (stripLocation tn)
-    stripLocation (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors (stripLocation tn)
-    stripLocation (ExposedOp o) = ExposedOp (stripLocation o)
-
-instance StripLocation (Import Frontend) (Import UnlocatedFrontend) where
-    stripLocation (Import m) = Import (stripLocation (stripLocation m :: Import' Frontend))
-
-instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
-    stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
 
 instance StripLocation Frontend.Declaration Declaration where
     stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d :: Frontend.Declaration')

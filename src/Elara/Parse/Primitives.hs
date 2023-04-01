@@ -22,8 +22,8 @@ class Monad m => IsParser m where
     fromParsec :: Parser a -> m a
 
 instance IsParser Parser where
-    toParsec = id
-    fromParsec = id
+    toParsec = identity
+    fromParsec = identity
 
 instance IsParser HParser where
     toParsec = H.toParsec

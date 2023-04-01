@@ -30,15 +30,17 @@ library
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Frontend.Pretty.Unlocated
-      Elara.AST.Frontend.StripLocation
-      Elara.AST.Frontend.Unlocated
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Region
       Elara.AST.Renamed
       Elara.AST.Select
       Elara.AST.Shunted
+      Elara.AST.StripLocation
       Elara.AST.Typed
+      Elara.AST.Unlocated.Frontend
+      Elara.AST.Unlocated.Typed
+      Elara.Data.Pretty
       Elara.Data.Unique
       Elara.Desugar
       Elara.Error
@@ -64,11 +66,16 @@ library
       Elara.Parse.Type
       Elara.Rename
       Elara.Shunt
+      Elara.TypeInfer
       Elara.TypeInfer.AssignIds
       Elara.TypeInfer.Env
       Elara.TypeInfer.Environment
+      Elara.TypeInfer.Error
       Elara.TypeInfer.Expr
       Elara.TypeInfer.GenerateEquations
+      Elara.TypeInfer.SubstitutionMap
+      Elara.TypeInfer.TypeVariables
+      Elara.TypeInfer.Unify
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.MTL
@@ -107,8 +114,8 @@ library
     , parser-combinators
     , polysemy
     , polysemy-plugin
-    , pretty
     , pretty-simple
+    , prettyprinter
     , relude
     , utf8-string
   default-language: GHC2021
@@ -146,8 +153,8 @@ executable elara
     , parser-combinators
     , polysemy
     , polysemy-plugin
-    , pretty
     , pretty-simple
+    , prettyprinter
     , relude
     , utf8-string
   default-language: GHC2021
@@ -200,8 +207,8 @@ test-suite elara-test
     , parser-combinators
     , polysemy
     , polysemy-plugin
-    , pretty
     , pretty-simple
+    , prettyprinter
     , relude
     , utf8-string
   default-language: GHC2021
