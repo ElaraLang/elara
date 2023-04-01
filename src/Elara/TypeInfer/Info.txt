@@ -1,0 +1,2 @@
+Not really sure where to put this, but wanna give credit to https://github.com/elm-in-elm/compiler/tree/master/src/Stage/InferTypes 
+as a lot of the code here is heavily inspired by it.

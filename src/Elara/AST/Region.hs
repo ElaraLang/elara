@@ -116,7 +116,7 @@ positionToDiagnosePosition fp (Position ln cn) =
         }
 
 data Located a = Located SourceRegion a
-    deriving (Show, Eq, Ord, Functor, Traversable, Foldable)
+    deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data)
 
 makePrisms ''Located
 

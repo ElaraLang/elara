@@ -180,6 +180,20 @@ desugarPattern (Frontend.Pattern lp) = Desugared.Pattern <$> traverseOf unlocate
     desugarPattern' Frontend.WildcardPattern = pure Desugared.WildcardPattern
     desugarPattern' (Frontend.ListPattern pats) = Desugared.ListPattern <$> traverse desugarPattern pats
 
+{-
+
+\| Lambdas need quite a lot of desugaring - they need to be unfolded into a series of nested lambdas, and then each pattern needs to be converted into a match expression.
+
+For example, @\a (b, c) 1 -> e@ becomes
+@\a -> \b_1 -> \c_1 -> match b_1 with
+                            (b, c) -> match 1 with
+                                        1 -> e@
+
+However, converting the matches would require renaming, and we're not able to do that yet.
+Instead, we unfold the lambda, but keep the patterns, and the renamer handles the match conversion.
+
+-}
+
 foldLambda :: [Desugared.Pattern] -> Desugared.Expr -> Desugared.Expr
 foldLambda [] e = e
 foldLambda (p : ps) e =

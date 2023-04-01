@@ -23,7 +23,7 @@ data Expr'
     | Unit
     | Var (Located (VarRef VarName))
     | Constructor (Located (VarRef TypeName))
-    | Lambda Pattern Expr
+    | Lambda (Located (Unique VarName)) Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
     | List [Expr]

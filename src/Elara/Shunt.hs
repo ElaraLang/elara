@@ -214,7 +214,7 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
     shuntExpr' Renamed.Unit = pure Shunted.Unit
     shuntExpr' (Renamed.Var v) = Shunted.Var <$> traverse shuntVarRef v
     shuntExpr' (Renamed.Constructor v) = Shunted.Constructor <$> traverse shuntVarRef v
-    shuntExpr' (Renamed.Lambda pat e) = Shunted.Lambda <$> shuntPattern pat <*> shuntExpr e
+    shuntExpr' (Renamed.Lambda n e) = Shunted.Lambda n <$> shuntExpr e
     shuntExpr' (Renamed.FunctionCall f x) = Shunted.FunctionCall <$> shuntExpr f <*> shuntExpr x
     shuntExpr' (Renamed.BinaryOperator operator l r) = do
         -- turn the binary operator into a function call

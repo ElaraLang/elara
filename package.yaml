@@ -52,6 +52,8 @@ ghc-options:
 - -fplugin=Polysemy.Plugin
 - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
 - -feager-blackholing
+- -fdefer-typed-holes
+- -fno-show-valid-hole-fits
 
 
 default-extensions:
@@ -65,6 +67,7 @@ default-extensions:
 - DataKinds
 - DeriveFunctor
 - TypeApplications
+- PartialTypeSignatures
 
 library:
   source-dirs: src

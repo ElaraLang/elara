@@ -22,8 +22,8 @@ import Elara.AST.Module (
     _Import,
     _Module,
  )
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (OperatorVarName))
-import Elara.AST.Region (Located (Located), sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed (VarRef (..))
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select (Desugared, HasModuleName (..), HasName (..), Renamed)
@@ -271,9 +271,7 @@ renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExp
     renameExpr' (Desugared.Var i) = Renamed.Var <$> lookupVarName i
     renameExpr' (Desugared.Constructor i) = Renamed.Constructor <$> lookupTypeName i
     renameExpr' (Desugared.Lambda pat e) = do
-        pat' <- renamePattern pat
-        exp' <- renameExpr e
-        pure $ Renamed.Lambda pat' exp'
+        renameLambda pat e
     renameExpr' (Desugared.FunctionCall e1 e2) = do
         e1' <- renameExpr e1
         e2' <- renameExpr e2
@@ -340,3 +338,42 @@ renamePattern (Desugared.Pattern fp) = Renamed.Pattern <$> traverseOf unlocated 
         cn' <- qualifyTypeName cn
         ps' <- traverse renamePattern ps
         pure $ Renamed.ConstructorPattern cn' ps'
+
+{- | Estimates a var name from a pattern
+This isn't really necessary as names will be uniquified anyway, but it could make dumped code more readable
+-}
+patternToVarName :: Desugared.Pattern -> VarName
+patternToVarName (Desugared.Pattern (Located _ p)) = case p of
+    Desugared.WildcardPattern -> NormalVarName "wildcard"
+    Desugared.ListPattern _ -> NormalVarName "list"
+    Desugared.VarPattern vn -> vn ^. unlocated
+    Desugared.IntegerPattern _ -> NormalVarName "int"
+    Desugared.FloatPattern _ -> NormalVarName "float"
+    Desugared.StringPattern _ -> NormalVarName "string"
+    Desugared.CharPattern _ -> NormalVarName "char"
+    Desugared.ConstructorPattern _ _ -> NormalVarName "constructor"
+
+patternToMatch :: Desugared.Pattern -> Desugared.Expr -> Renamer (Located (Unique VarName), Renamed.Expr)
+patternToMatch pat body = do
+    let vn = patternToVarName pat
+    let patLocation = pat ^. Desugared._Pattern . sourceRegion
+    let bodyLocation = body ^. Desugared._Expr . sourceRegion
+    uniqueVn <- uniquify (Located patLocation vn)
+    let varRef = Local uniqueVn `withLocationOf` uniqueVn
+    pat' <- renamePattern pat
+    body' <- renameExpr body
+    let match =
+            Renamed.Match
+                (Renamed.Expr (Renamed.Var varRef `withLocationOf` uniqueVn))
+                [(pat', body')]
+
+    pure (uniqueVn, Renamed.Expr $ Located (enclosingRegion' patLocation bodyLocation) match)
+
+{- | Rename a lambda expression
+This is a little bit special because patterns have to be convered to match expressions
+For example, @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
+-}
+renameLambda :: Desugared.Pattern -> Desugared.Expr -> Renamer Renamed.Expr'
+renameLambda p e = do
+    (arg, match) <- patternToMatch p e
+    pure (Renamed.Lambda arg match)

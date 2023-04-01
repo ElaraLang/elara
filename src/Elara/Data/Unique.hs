@@ -3,6 +3,7 @@
 module Elara.Data.Unique where
 
 import Control.Lens.TH (makeLenses)
+import Data.Data (Data)
 import GHC.IO (unsafePerformIO)
 import Polysemy (Sem, embed, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
@@ -12,7 +13,7 @@ data Unique a = Unique
     { _uniqueVal :: !a
     , _uniqueId :: !Integer
     }
-    deriving (Show, Functor)
+    deriving (Show, Functor, Data)
 
 instance Eq (Unique a) where
     (==) = (==) `on` _uniqueId
