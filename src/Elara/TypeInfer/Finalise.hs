@@ -55,7 +55,7 @@ finaliseType (Partial t) = Type <$> finaliseType' t
 
 finaliseModule ::
   forall r.
-  (Member (State TVMap) r, Member UniqueGen r) =>
+  (Member (State TVMap) r) =>
   Module PartialTyped ->
   Sem r (Module Typed)
 finaliseModule = traverseModule finaliseDeclaration
@@ -64,11 +64,12 @@ finaliseModule = traverseModule finaliseDeclaration
   finaliseDeclaration = traverseOf (_Declaration . unlocated) finaliseDecl
 
   finaliseDecl :: Declaration' PartialType -> Sem r (Declaration' Type)
-  finaliseDecl (decl' :: Declaration' PartialType) = do
-    body' <- finaliseDeclarationBody (decl' ^. declaration'Body)
-    pure (Declaration' (decl' ^. moduleName) (decl' ^. name) body')
+  finaliseDecl (decl' :: Declaration' PartialType) = runFreshUniqueSupply $
+    do
+      body' <- subsume $ finaliseDeclarationBody (decl' ^. declaration'Body)
+      pure (Declaration' (decl' ^. moduleName) (decl' ^. name) body')
 
-  finaliseDeclarationBody :: DeclarationBody PartialType -> Sem r (DeclarationBody Type)
+  finaliseDeclarationBody :: (Member (State TVMap) r1, Member UniqueGen r1) => DeclarationBody PartialType -> Sem r1 (DeclarationBody Type)
   finaliseDeclarationBody =
     traverseOf
       (_DeclarationBody . unlocated)

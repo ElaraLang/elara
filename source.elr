@@ -1,2 +1,2 @@
-let id a = a
+let id x = x
 let main = 1

@@ -106,7 +106,7 @@ instance Pretty Type where
     pretty (Type t) = pretty t
 
 instance (Pretty t) => Pretty (Type' t) where
-    pretty (TypeVar (TyVar u)) = pretty u
+    pretty (TypeVar (TyVar u)) = pretty (u ^. uniqueVal)
     pretty (FunctionType a b) = pretty a <+> "->" <+> pretty b
     pretty UnitType = "()"
     pretty (TypeConstructorApplication a b) = parens (pretty a <+> pretty b)
