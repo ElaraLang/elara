@@ -7,11 +7,10 @@ import Elara.AST.Region (Located)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
-import Elara.Parse.Names (moduleName, typeName, unqualifiedNormalVarName, unqualifiedVarName)
+import Elara.Parse.Names (alphaVarName, moduleName, typeName, unqualifiedVarName)
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, located, locatedTokens', token')
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice, customFailure)
-import Prelude hiding (Type)
 
 type' :: HParser Type
 type' =
@@ -39,7 +38,7 @@ typeTerm =
         ]
 
 typeVar :: HParser Type
-typeVar = TypeVar <$> unqualifiedNormalVarName
+typeVar = TypeVar <$> alphaVarName
 
 unit :: HParser Type
 unit = UnitType <$ (token' TokenLeftParen *> token' TokenRightParen)

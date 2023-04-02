@@ -1,6 +1,6 @@
 module Elara.Parse.Names where
 
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..),  VarName (..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token', (<??>))
@@ -49,12 +49,15 @@ upperVarName = satisfyMap $
     \case
         TokenConstructorIdentifier i -> Just i
         _ -> Nothing
-        
-alphaVarName :: HParser Text
-alphaVarName = satisfyMap $
-    \case
-        TokenVariableIdentifier i -> Just i
-        _ -> Nothing
+
+alphaVarName :: HParser LowerAlphaName
+alphaVarName =
+    LowerAlphaName
+        <$> satisfyMap
+            ( \case
+                TokenVariableIdentifier i -> Just i
+                _ -> Nothing
+            )
 
 opName :: HParser OpName
 opName = satisfyMap $ \case

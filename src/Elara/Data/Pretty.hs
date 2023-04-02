@@ -9,22 +9,20 @@ module Elara.Data.Pretty (
 ) where
 
 import Data.Map qualified as Map (toList)
-import Data.Text.Prettyprint.Doc.Render.String
-import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Prettyprinter
 
 indentDepth :: Int
-indentDepth = 2
+indentDepth = 4
 
 parensIf :: Bool -> Doc ann -> Doc ann
 parensIf True = parens
 parensIf False = identity
 
-class Pretty a => PrettyPrec a where
+class (Pretty a) => PrettyPrec a where
     prettyPrec :: Int -> a -> Doc ann
     prettyPrec _ = pretty
 
-escapeChar :: IsString s => Char -> s
+escapeChar :: (IsString s) => Char -> s
 escapeChar c = case c of
     '\a' -> "\\a"
     '\b' -> "\\b"
@@ -41,5 +39,5 @@ escapeChar c = case c of
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = encloseSep "{" "}" line ((\(k, v) -> pretty k <+> "->" <+> parens (pretty v)) <$> Map.toList m)
 
-instance Pretty s => Pretty (Set s) where
+instance (Pretty s) => Pretty (Set s) where
     pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"

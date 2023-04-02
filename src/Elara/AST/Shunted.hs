@@ -3,10 +3,10 @@
 module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
-import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.Data.Unique
-import Prelude hiding (Op, Type)
+import Prelude hiding (Op)
 
 {- | Shunted AST Type
 This is very similar to 'Elara.AST.Renamed.Expr' except:
@@ -59,7 +59,7 @@ data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar (Unique VarName)
+    = TypeVar (Unique LowerAlphaName)
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
@@ -86,7 +86,6 @@ data DeclarationBody'
         { _expression :: Expr
         , _valueType :: Maybe (Located TypeAnnotation)
         }
-    | NativeDef (Located TypeAnnotation)
     | -- | type <name> = <type>
       TypeAlias (Located Type)
     deriving (Show, Eq)

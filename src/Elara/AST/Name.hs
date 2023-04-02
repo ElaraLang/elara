@@ -26,8 +26,14 @@ newtype ModuleName = ModuleName (NonEmpty Text)
 In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}
 data VarName
-    = NormalVarName Text
+    = NormalVarName LowerAlphaName
     | OperatorVarName OpName
+    deriving (Ord, Show, Eq, Data)
+
+{- | A lowercase alphanumeric name. Could be used for variables or type variables
+Since type variables can't be operators though, we don't use 'VarName' for them
+-}
+newtype LowerAlphaName = LowerAlphaName Text
     deriving (Ord, Show, Eq, Data)
 
 newtype TypeName = TypeName Text
@@ -74,8 +80,11 @@ instance ToName Name where
     toName = identity
 
 instance NameLike VarName where
-    nameText (NormalVarName name) = name
+    nameText (NormalVarName name) = nameText name
     nameText (OperatorVarName name) = nameText name
+
+instance NameLike LowerAlphaName where
+    nameText (LowerAlphaName name) = name
 
 instance NameLike TypeName where
     nameText (TypeName name) = name
@@ -86,7 +95,7 @@ instance NameLike OpName where
 instance NameLike ModuleName where
     nameText (ModuleName name) = T.intercalate "." (toList name)
 
-instance NameLike n => NameLike (MaybeQualified n) where
+instance (NameLike n) => NameLike (MaybeQualified n) where
     nameText (MaybeQualified name _) = nameText name
     fullNameText (MaybeQualified name modName) =
         maybe
@@ -96,14 +105,14 @@ instance NameLike n => NameLike (MaybeQualified n) where
 
     moduleName (MaybeQualified _ modName) = modName
 
-instance NameLike n => NameLike (Qualified n) where
+instance (NameLike n) => NameLike (Qualified n) where
     nameText (Qualified name _) = nameText name
     fullNameText (Qualified name modName) =
         nameText modName <> "." <> nameText name
 
     moduleName (Qualified _ modName) = Just modName
 
-instance NameLike n => NameLike (Unqualified n) where
+instance (NameLike n) => NameLike (Unqualified n) where
     nameText (Unqualified name) = nameText name
     fullNameText (Unqualified name) = nameText name
 
@@ -122,7 +131,7 @@ instance NameLike Name where
     moduleName (NTypeName name) = moduleName name
     moduleName (NOpName name) = moduleName name
 
-instance NameLike n => NameLike (Located n) where
+instance (NameLike n) => NameLike (Located n) where
     nameText = nameText . view unlocated
     fullNameText = fullNameText . view unlocated
     moduleName = moduleName . view unlocated
@@ -148,15 +157,20 @@ makeFields ''Qualified
 makeFields ''Unqualified
 makePrisms ''Unqualified
 
-instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
+instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (MaybeQualified x) where
     pretty (MaybeQualified n (Just m)) = pretty m <> "." <> pretty n
     pretty (MaybeQualified n Nothing) = pretty n
 
-instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Qualified x) where
+instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (Qualified x) where
     pretty (Qualified n m) = pretty m <> "." <> pretty n
 
-instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
+instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (Unqualified x) where
     pretty uq = pretty (uq ^. name)
+
+instance Pretty Name where
+    pretty (NVarName n) = pretty n
+    pretty (NTypeName n) = pretty n
+    pretty (NOpName n) = pretty n
 
 instance Pretty ModuleName where
     pretty (ModuleName m) = hcat (punctuate "." (fmap pretty (toList m)))
@@ -175,3 +189,6 @@ instance Pretty TypeName where
 
 instance Pretty OpName where
     pretty (OpName n) = pretty n
+
+instance Pretty LowerAlphaName where
+    pretty (LowerAlphaName n) = pretty n

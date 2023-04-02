@@ -12,11 +12,15 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms)
+import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, traverseOf, traverseOf_, (^.))
 import Data.Kind qualified as Kind (Type)
+import Data.Text.Prettyprint.Doc (Pretty)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
+import Elara.AST.Region (unlocated)
 import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), UnlocatedFrontend)
 import Elara.AST.StripLocation
+import Elara.Data.Pretty
+import Elara.Data.Pretty (Pretty (pretty))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
@@ -29,7 +33,6 @@ data Module' ast = Module'
     }
 
 newtype Import ast = Import (ASTLocate ast (Import' ast))
-
 data Import' ast = Import'
     { _import'Importing :: ASTLocate ast ModuleName
     , _import'As :: Maybe (ASTLocate ast ModuleName)
@@ -46,6 +49,22 @@ data Exposition ast
     | ExposedOp (FullASTQual ast OpName) -- exposing (+)
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
+
+-- traverseModule ::
+--     forall ast ast' f.
+--     ( Applicative f
+--     , ASTLocate ast ModuleName ~ ASTLocate ast' ModuleName
+--     , FullASTQual ast VarName ~ FullASTQual ast' VarName
+--     , FullASTQual ast OpName ~ FullASTQual ast' OpName
+--     , FullASTQual ast TypeName ~ FullASTQual ast' TypeName
+--     , ASTExpr ast ~ ASTExpr ast'
+--     , ASTType ast ~ ASTType ast'
+--     , ASTPattern ast ~ ASTPattern ast'
+--     , ASTDeclaration ast ~ ASTDeclaration ast'
+--     ) =>
+--     (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
+--     Module ast ->
+--     f (Module ast') = undefined
 
 {- | Safe coercion between 'Exposition' types
  Since the ASTX type families aren't injective, we can't use 'coerce' :(
@@ -139,14 +158,14 @@ deriving instance (Show (FullASTQual ast ModuleName), Show (ASTLocate ast Module
 deriving instance (Eq (FullASTQual ast ModuleName), Eq (ASTLocate ast ModuleName), Eq (Exposing ast)) => Eq (Import' ast)
 deriving instance (Ord (FullASTQual ast ModuleName), Ord (ASTLocate ast ModuleName), Ord (Exposing ast)) => Ord (Import' ast)
 
-deriving instance Show (ASTLocate ast (Import' ast)) => Show (Import ast)
-deriving instance Eq (ASTLocate ast (Import' ast)) => Eq (Import ast)
-deriving instance Ord (ASTLocate ast (Import' ast)) => Ord (Import ast)
+deriving instance (Show (ASTLocate ast (Import' ast))) => Show (Import ast)
+deriving instance (Eq (ASTLocate ast (Import' ast))) => Eq (Import ast)
+deriving instance (Ord (ASTLocate ast (Import' ast))) => Ord (Import ast)
 
 deriving instance (ModConstraints Show ast) => Show (Module ast)
-deriving instance ModConstraints Show ast => Show (Module' ast)
-deriving instance ModConstraints Eq ast => Eq (Module ast)
-deriving instance ModConstraints Eq ast => Eq (Module' ast)
+deriving instance (ModConstraints Show ast) => Show (Module' ast)
+deriving instance (ModConstraints Eq ast) => Eq (Module ast)
+deriving instance (ModConstraints Eq ast) => Eq (Module' ast)
 
 type NameConstraints :: (Kind.Type -> Constraint) -> (Kind.Type -> Kind.Type) -> Constraint
 type NameConstraints c qual = (c (qual VarName), c (qual TypeName), c (qual OpName))
@@ -194,3 +213,90 @@ instance StripLocation (Import Frontend) (Import UnlocatedFrontend) where
 
 instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
     stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
+
+-- Traversals
+traverseModule ::
+    forall ast ast' f.
+    (_) =>
+    (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
+    Module ast ->
+    f (Module ast')
+traverseModule traverseDecl =
+    traverseOf
+        (_Module @ast @ast' . unlocated)
+        ( \m' -> do
+            let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
+            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            declarations' <- traverse traverseDecl (m' ^. declarations)
+            pure (Module' (m' ^. name) exposing' imports' declarations')
+        )
+
+traverseModule_ ::
+    forall ast f.
+    (_) =>
+    (ASTDeclaration ast -> f ()) ->
+    Module ast ->
+    f ()
+traverseModule_ traverseDecl =
+    traverseOf_
+        (_Module . unlocated)
+        ( \m' -> do
+            traverse traverseDecl (m' ^. declarations)
+        )
+
+instance
+    ( Pretty (ASTLocate ast ModuleName)
+    , Pretty (ASTLocate ast (Import' ast))
+    , Pretty (ASTLocate ast (Exposing ast))
+    , Pretty (ASTLocate ast (Module' ast))
+    ) =>
+    Pretty (Module ast)
+    where
+    pretty (Module m) = pretty m
+
+instance
+    ( Pretty (ASTLocate ast ModuleName)
+    , Pretty (ASTLocate ast (Import' ast))
+    , Pretty (ASTLocate ast (Exposing ast))
+    , Pretty (Exposing ast)
+    , Pretty (Import ast)
+    , Pretty (ASTDeclaration ast)
+    ) =>
+    Pretty (Module' ast)
+    where
+    pretty (Module' n e i d) =
+        vsep
+            ["module" <+> pretty n <+> "exposing" <+> pretty e, vsep (pretty <$> i), vsep (pretty <$> d)]
+
+instance (Pretty (Exposition ast)) => Pretty (Exposing ast) where
+    pretty ExposingAll = "(..)"
+    pretty (ExposingSome e) = parens (hsep (punctuate comma (pretty <$> e)))
+
+instance
+    ( Pretty (FullASTQual ast VarName)
+    , Pretty (FullASTQual ast OpName)
+    , Pretty (FullASTQual ast TypeName)
+    ) =>
+    Pretty (Exposition ast)
+    where
+    pretty (ExposedValue n) = pretty n
+    pretty (ExposedType tn) = pretty tn
+    pretty (ExposedTypeAndAllConstructors tn) = pretty tn <> "(..)"
+    pretty (ExposedOp o) = pretty o
+
+instance (Pretty (Import' ast), RUnlocate ast) => Pretty (Import ast) where
+    pretty (Import i) = pretty @(Import' ast) (rUnlocate' @ast i)
+
+instance
+    ( Pretty (ASTLocate ast ModuleName)
+    , Pretty (Exposing ast)
+    ) =>
+    Pretty (Import' ast)
+    where
+    pretty (Import' i a q e) =
+        "import" <+> pretty i <> as' <> qual <+> "exposing" <+> pretty e
+      where
+        as' = case a of
+            Nothing -> ""
+            Just q' -> "as" <+> pretty q'
+        qual = if q then "qualified" else ""

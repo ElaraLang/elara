@@ -2,17 +2,17 @@
 module Elara.TypeInfer.GenerateEquations where
 
 import Control.Lens
+import Elara.AST.Module
 import Elara.AST.Name (ModuleName (ModuleName), Qualified (..), TypeName (TypeName), VarName)
 import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
+import Elara.AST.Select (PartialTyped)
 import Elara.AST.Typed
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId)
+import Elara.Data.Unique (Unique, UniqueGen, makeUniqueId)
 import Elara.TypeInfer.Environment (TypeEnvironment, addToEnv)
 import Polysemy
 import Polysemy.State
-import Polysemy.Writer (Writer, listen, tell)
-import Print (debugColored)
-import Prelude hiding (universe)
+import Polysemy.Writer (Writer, tell)
 
 newtype TypeEquation = TypeEquation (PartialType, PartialType)
     deriving (Show, Eq, Ord)
@@ -42,7 +42,43 @@ stringType = Final $ Type (UserDefinedType (Located (generatedSourceRegion Nothi
 unitType :: PartialType
 unitType = Final $ Type (UserDefinedType (Located (generatedSourceRegion Nothing) (Qualified (TypeName "Unit") preludeName)))
 
-generateEquations :: forall r. (Member (Writer (Set TypeEquation)) r, Member (State TypeEnvironment) r, Member UniqueGen r) => Expr PartialType -> Sem r ()
+generateEquationsForModule ::
+    forall r.
+    (Members [Writer (Set TypeEquation), State TypeEnvironment, UniqueGen] r) =>
+    Module PartialTyped ->
+    Sem r ()
+generateEquationsForModule = traverseModule_ generateEquationsForDeclaration
+
+generateEquationsForDeclaration ::
+    forall r.
+    (Members [Writer (Set TypeEquation), State TypeEnvironment, UniqueGen] r) =>
+    Declaration PartialType ->
+    Sem r ()
+generateEquationsForDeclaration =
+    traverseOf_
+        (_Declaration . unlocated)
+        ( \decl' -> do
+            generateEquationsForDeclarationBody (decl' ^. declaration'Body)
+        )
+  where
+    generateEquationsForDeclarationBody :: DeclarationBody PartialType -> Sem r ()
+    generateEquationsForDeclarationBody =
+        traverseOf_
+            (_DeclarationBody . unlocated)
+            ( \decl' -> do
+                case decl' of
+                    Value expr _ -> generateEquations @r expr -- TODO: unify with type annotation
+                    TypeAlias _ -> pass
+            )
+
+generateEquations ::
+    forall r.
+    ( Member (Writer (Set TypeEquation)) r
+    , Member (State TypeEnvironment) r
+    , Member UniqueGen r
+    ) =>
+    Expr PartialType ->
+    Sem r ()
 generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
   where
     generateEquations' :: (Expr' PartialType, PartialType) -> Sem r ()
@@ -75,6 +111,7 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
             tell $ one $ testType =:= patType
             generateEquations body
             tell $ one $ overallType =:= bodyType
+    generateEquations' (Block exprs, _) = traverse_ generateEquations exprs -- TODO: unify the last expression with the overall type
     generateEquations' other = error ("Not sure how to generate equations for this expression yet: " <> show other)
 
 findUsagesOf :: Unique VarName -> Expr PartialType -> [Expr PartialType]

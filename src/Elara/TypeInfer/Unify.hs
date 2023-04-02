@@ -10,22 +10,20 @@ import Elara.TypeInfer.SubstitutionMap (SubstitutionMap)
 import Elara.TypeInfer.SubstitutionMap qualified as SubstitutionMap
 import Polysemy
 import Polysemy.Error
-import Print (debugWithResult)
 import Relude.Extra (secondF)
-import Prelude hiding (Type)
 
 unifyAllEquations ::
-    Member (Error (TypeError, SubstitutionMap)) r =>
+    (Member (Error (TypeError, SubstitutionMap)) r) =>
     [TypeEquation] ->
     TypeEnvironment ->
     SubstitutionMap ->
     Sem r SubstitutionMap
 unifyAllEquations [] _ sub = pure sub
 unifyAllEquations (TypeEquation (t1, t2) : eqs) env sub =
-    unifyPartialTypes t1 t2 env sub >>= \sub' -> unifyAllEquations eqs env (traceShowId sub')
+    unifyPartialTypes t1 t2 env sub >>= \sub' -> unifyAllEquations eqs env sub'
 
 class TypeLike a where
-    unifyType :: Member (Error (TypeError, SubstitutionMap)) r => a -> a -> TypeEnvironment -> SubstitutionMap -> Sem r SubstitutionMap
+    unifyType :: (Member (Error (TypeError, SubstitutionMap)) r) => a -> a -> TypeEnvironment -> SubstitutionMap -> Sem r SubstitutionMap
     toPartial :: a -> PartialType
 
 instance TypeLike PartialType where
@@ -41,7 +39,7 @@ instance (Show t, TypeLike t) => TypeLike (Type' t) where
     toPartial = Partial . fmap toPartial
 
 unifyPartialTypes ::
-    Member (Error (TypeError, SubstitutionMap)) r =>
+    (Member (Error (TypeError, SubstitutionMap)) r) =>
     PartialType ->
     PartialType ->
     TypeEnvironment ->
@@ -70,7 +68,7 @@ concreteToPartial (Type t) = Partial (concreteToPartial' t)
     concreteToPartial' (RecordType fields) = RecordType (secondF concreteToPartial fields)
 
 unifyTypes ::
-    Member (Error (TypeError, SubstitutionMap)) r =>
+    (Member (Error (TypeError, SubstitutionMap)) r) =>
     (TypeLike a, Show a) =>
     Type' a ->
     Type' a ->
@@ -95,7 +93,7 @@ unifyVariable id otherTypeOrId aliases substitutionMap =
     case SubstitutionMap.lookup id substitutionMap of
         Just t -> unifyPartialTypes t otherTypeOrId aliases substitutionMap
         Nothing ->
-            case traceShowId (otherTypeOrId) ^? _Id
+            case otherTypeOrId ^? _Id
                 >>= (`SubstitutionMap.lookup` substitutionMap)
                 <&> (\typeOrId2 -> unifyVariable id typeOrId2 aliases substitutionMap) of
                 Just result -> result

@@ -148,15 +148,7 @@ shunt ::
     ) =>
     Module Renamed ->
     Sem r (Module Shunted)
-shunt =
-    traverseOf
-        (_Module @Renamed @Shunted . unlocated)
-        ( \m' -> do
-            let exposing' = coerceExposing @Renamed @Shunted (m' ^. exposing)
-            let imports' = coerceImport @Renamed @Shunted <$> (m' ^. imports)
-            declarations' <- traverse shuntDeclaration (m' ^. declarations)
-            pure (Module' (m' ^. name) exposing' imports' declarations')
-        )
+shunt = traverseModule shuntDeclaration
 
 shuntDeclaration ::
     forall r.
@@ -194,7 +186,6 @@ shuntDeclarationBody (Renamed.DeclarationBody rdb) = Shunted.DeclarationBody <$>
         ty' <- traverse (traverse shuntTypeAnnotation) ty
         pure (Shunted.Value shunted ty')
     shuntDeclarationBody' (Renamed.TypeAlias ty) = Shunted.TypeAlias <$> traverse shuntType ty
-    shuntDeclarationBody' (Renamed.NativeDef t) = Shunted.NativeDef <$> traverse shuntTypeAnnotation t
 
 shuntExpr ::
     forall r.

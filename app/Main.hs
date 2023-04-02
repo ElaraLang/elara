@@ -8,8 +8,8 @@ module Main (
 import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select
-import Elara.AST.Region
-import Elara.AST.Shunted
+import Elara.Data.Pretty
+import Elara.Data.Unique
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
@@ -20,16 +20,18 @@ import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (ModulePath, rename, runRenamer)
 import Elara.Shunt
+import Elara.TypeInfer qualified as Infer
+import Elara.TypeInfer.Error
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
-import Polysemy (Embed, Member, Sem, runM, subsume_)
+import Polysemy (Embed, Member, Sem, runM, subsume, subsume_)
 import Polysemy.Embed (embed)
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Polysemy.Reader
+import Polysemy.State
 import Polysemy.Writer (runWriter)
-import Print (printColored)
-import Elara.TypeInfer
-import Relude.Unsafe
+import Prettyprinter.Render.Text (putDoc)
+
 main :: IO ()
 main = do
   s <- runElara
@@ -42,7 +44,9 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
   source' <- renameModule path source
   source'' <- shuntModule source'
-  embed $ infer (source'' ^?! _Module . unlocated . declarations . to Relude.Unsafe.head . _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated . _Value . _1)
+  source''' <- inferModule source''
+  embed (putDoc (pretty source'''))
+  putStrLn ""
   pass
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do
@@ -100,5 +104,30 @@ shuntModule m = do
       traverse_ report warnings
       justE shunted
 
+inferModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r, Member (Embed IO) r) => Module Shunted -> Sem r (Module Typed)
+inferModule m = do
+  x <-
+    subsume $
+      uniqueGenToIO $
+        runError $
+          evalState mempty $
+            runErrorOrReport @TypeError
+              ( Infer.inferModule m
+              )
+  case x of
+    Left (err, _) -> report err *> nothingE
+    Right m' -> justE m'
+
 loadModule :: (Member (DiagnosticWriter Text) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
+
+runErrorOrReport ::
+  forall e r a.
+  (Member (DiagnosticWriter Text) r, Member MaybeE r, ReportableError e) =>
+  Sem (Error e ': r) a ->
+  Sem r a
+runErrorOrReport e = do
+  x <- subsume_ (runError e)
+  case x of
+    Left err -> report err *> nothingE
+    Right a -> justE a

@@ -127,13 +127,13 @@ newtype IgnoreLocation a = IgnoreLocation (Located a)
 
 makePrisms ''IgnoreLocation
 
-instance Eq a => Eq (IgnoreLocation a) where
+instance (Eq a) => Eq (IgnoreLocation a) where
     IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
 
-instance Ord a => Ord (IgnoreLocation a) where
+instance (Ord a) => Ord (IgnoreLocation a) where
     IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
 
-instance Show a => Show (IgnoreLocation a) where
+instance (Show a) => Show (IgnoreLocation a) where
     show (IgnoreLocation (Located _ a)) = Text.Show.show a
 
 sourceRegion :: Lens' (Located a) SourceRegion
@@ -191,7 +191,5 @@ instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
     Located region f <*> Located region' x = Located (spanningRegion' (region :| [region'])) (f x)
 
-instance Pretty a => Pretty (Located a) where
-    pretty (Located region x) = pretty x <> " " <> pretty region
-
-instance Pretty SourceRegion
+instance (Pretty a) => Pretty (Located a) where
+    pretty (Located _ x) = pretty x

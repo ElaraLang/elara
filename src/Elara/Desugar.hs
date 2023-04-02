@@ -7,7 +7,7 @@ import Data.Map qualified as M
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Module
-import Elara.AST.Name
+import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Error (ReportableError (report), writeReport)
@@ -116,7 +116,7 @@ desugarDeclaration (Frontend.Declaration ld) =
             unlocated
             ( \d -> do
                 partials <- use partialDeclarations
-                let declName = d ^. Frontend.declaration'Name . unlocated
+                let declName = d ^. name . unlocated
                 case M.lookup declName partials of
                     Nothing -> error ("no partial declarations for" <> show declName)
                     Just partial -> do

@@ -4,11 +4,49 @@ module Elara.TypeInfer.AssignIds where
 import Elara.Data.Unique
 
 import Control.Lens
+import Elara.AST.Module (Module, traverseModule)
 import Elara.AST.Region
+import Elara.AST.Select (HasModuleName (..), HasName (name), PartialTyped, Shunted)
 import Elara.AST.Shunted as In
 import Elara.AST.Typed as Out
 import Polysemy
 import Relude.Extra (dup)
+
+assignIdsToModule :: Member UniqueGen r => Module Shunted -> Sem r (Module PartialTyped)
+assignIdsToModule = traverseModule assignIdsToDecl
+
+assignIdsToDecl :: forall r. Member UniqueGen r => In.Declaration -> Sem r (Out.Declaration PartialType)
+assignIdsToDecl (In.Declaration ld) =
+  Out.Declaration
+    <$> traverseOf
+      unlocated
+      ( \decl' -> do
+          body' <- assignIdsToDeclarationBody (decl' ^. In.declaration'Body)
+          pure (Out.Declaration' (decl' ^. moduleName) (decl' ^. name) body')
+      )
+      ld
+ where
+  assignIdsToDeclarationBody :: In.DeclarationBody -> Sem r (Out.DeclarationBody PartialType)
+  assignIdsToDeclarationBody (In.DeclarationBody db) = Out.DeclarationBody <$> traverseOf unlocated assignIdsToDeclarationBody' db
+  assignIdsToDeclarationBody' :: In.DeclarationBody' -> Sem r (Out.DeclarationBody' PartialType)
+  assignIdsToDeclarationBody' (In.Value e ty) = do
+    (e', _) <- assignIds e
+    ty' <- traverse (traverse assignIdsToTypeAnnotation) ty
+    pure (Out.Value e' ty')
+  assignIdsToDeclarationBody' (In.TypeAlias ty) = Out.TypeAlias <$> traverse assignIdsToType ty
+
+assignIdsToTypeAnnotation :: Member UniqueGen r => In.TypeAnnotation -> Sem r (Out.TypeAnnotation PartialType)
+assignIdsToTypeAnnotation (In.TypeAnnotation n t) = Out.TypeAnnotation n <$> assignIdsToType t
+
+assignIdsToType :: Member UniqueGen r => In.Type -> Sem r Out.PartialType
+assignIdsToType t =
+  Out.Partial <$> case t of
+    In.TypeVar tv -> pure (Out.TypeVar $ Out.TyVar tv)
+    In.FunctionType a b -> Out.FunctionType <$> assignIdsToType a <*> assignIdsToType b
+    In.TypeConstructorApplication a b -> Out.TypeConstructorApplication <$> assignIdsToType a <*> assignIdsToType b
+    In.UserDefinedType n -> pure (Out.UserDefinedType n)
+    In.RecordType n -> Out.RecordType <$> traverseOf (traverse . _2) assignIdsToType n
+    In.UnitType -> pure Out.UnitType
 
 assignIds :: forall r. Member UniqueGen r => In.Expr -> Sem r (Out.Expr PartialType, PartialType)
 assignIds (In.Expr le) = bimap Out.Expr snd . dup . unwrap <$> traverseOf unlocated assignIds' le

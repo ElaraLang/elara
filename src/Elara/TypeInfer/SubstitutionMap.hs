@@ -5,6 +5,8 @@ module Elara.TypeInfer.SubstitutionMap where
 
 import Control.Lens
 import Data.Map qualified as Map
+import Elara.AST.Module (Module, traverseModule)
+import Elara.AST.Select (PartialTyped, Typed)
 import Elara.AST.Typed
 import Elara.Data.Pretty
 import Elara.Data.Unique
@@ -33,7 +35,12 @@ lookup :: UniqueId -> SubstitutionMap -> Maybe PartialType
 lookup uid (SubstitutionMap m) = Map.lookup uid m
 
 class Substitutable a b | a -> b where
-    substitute :: HasCallStack => (Member (Error TypeError) r, Member UniqueGen r) => SubstitutionMap -> a -> Sem r b
+    substitute ::
+        HasCallStack =>
+        (Member (Error TypeError) r, Member UniqueGen r) =>
+        SubstitutionMap ->
+        a ->
+        Sem r b
 
 instance {-# OVERLAPPABLE #-} (Traversable f, Substitutable a b) => Substitutable (f a) (f b) where
     substitute sub = traverse (substitute sub)
@@ -51,6 +58,9 @@ instance Substitutable PartialType PartialType where
 
 instance Substitutable (Expr PartialType) (Expr PartialType) where
     substitute m = traverseOf _Expr (bitraverse (substitute m) (substitute m))
+
+instance Substitutable (Module PartialTyped) (Module PartialTyped) where
+    substitute m = traverseModule (substitute m)
 
 instance Pretty SubstitutionMap where
     pretty (SubstitutionMap m) = pretty m

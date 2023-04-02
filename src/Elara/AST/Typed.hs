@@ -6,7 +6,7 @@ module Elara.AST.Typed where
 import Control.Lens hiding (List)
 import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
-import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (Located), unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
@@ -63,7 +63,7 @@ newtype Pattern t = Pattern (Located (Pattern' t), t)
     deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 data TypeAnnotation t = TypeAnnotation (Located (Qualified Name)) t
-    deriving (Show, Eq, Data)
+    deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 data Type' t
     = TypeVar TypeVar
@@ -77,21 +77,21 @@ data Type' t
 newtype Type = Type (Type' Type)
     deriving (Show, Eq, Ord, Data)
 
-newtype TypeVar = TyVar (Unique Text)
+newtype TypeVar = TyVar (Unique LowerAlphaName)
     deriving (Show, Eq, Ord, Data)
 
 newtype Declaration t = Declaration (Located (Declaration' t))
-    deriving (Show, Eq)
+    deriving (Show, Eq, Functor, Foldable, Traversable)
 
 data Declaration' t = Declaration'
     { _declaration'Module' :: Located ModuleName
     , _declaration'Name :: Located (Qualified Name)
     , _declaration'Body :: DeclarationBody t
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Functor, Foldable, Traversable)
 
 newtype DeclarationBody t = DeclarationBody (Located (DeclarationBody' t))
-    deriving (Show, Eq)
+    deriving (Show, Eq, Functor, Foldable, Traversable)
 
 data DeclarationBody' t
     = -- | def <name> : <type> and / or let <p> = <e>
@@ -99,10 +99,9 @@ data DeclarationBody' t
         { _expression :: Expr t
         , _valueType :: Maybe (Located (TypeAnnotation t))
         }
-    | NativeDef (Located (TypeAnnotation t))
     | -- | type <name> = <type>
-      TypeAlias (Located Type)
-    deriving (Show, Eq)
+      TypeAlias (Located t)
+    deriving (Show, Eq, Functor, Foldable, Traversable)
 
 makePrisms ''Declaration
 makeLenses ''Declaration'
@@ -116,16 +115,16 @@ makePrisms ''VarRef
 makePrisms ''PartialType
 makePrisms ''Pattern
 
-instance Data t => Plated (Expr t) where
+instance (Data t) => Plated (Expr t) where
     plate = uniplate
 
-instance Data t => Plated (Expr' t) where
+instance (Data t) => Plated (Expr' t) where
     plate = uniplate
 
 instance StripLocation Type Unlocated.Type where
     stripLocation (Type t) = Unlocated.Type (stripLocation t)
 
-instance StripLocation t t' => StripLocation (Type' t) (Unlocated.Type' t') where
+instance (StripLocation t t') => StripLocation (Type' t) (Unlocated.Type' t') where
     stripLocation t = case t of
         TypeVar (TyVar u) -> Unlocated.TypeVar (Unlocated.TyVar u)
         FunctionType t1 t2 -> Unlocated.FunctionType (stripLocation t1) (stripLocation t2)
@@ -134,10 +133,10 @@ instance StripLocation t t' => StripLocation (Type' t) (Unlocated.Type' t') wher
         UserDefinedType (Located _ q) -> Unlocated.UserDefinedType q
         RecordType fields -> Unlocated.RecordType (stripLocation fields)
 
-instance StripLocation t t' => StripLocation (Expr t) (Unlocated.Expr t') where
+instance (StripLocation t t') => StripLocation (Expr t) (Unlocated.Expr t') where
     stripLocation (Expr (e, t)) = Unlocated.Expr (stripLocation $ stripLocation e, stripLocation t)
 
-instance StripLocation t t' => StripLocation (Expr' t) (Unlocated.Expr' t') where
+instance (StripLocation t t') => StripLocation (Expr' t) (Unlocated.Expr' t') where
     stripLocation e = case e of
         Int i -> Unlocated.Int i
         Float f -> Unlocated.Float f
@@ -160,10 +159,10 @@ instance StripLocation (VarRef a) (Unlocated.VarRef a) where
         Global (Located _ q) -> Unlocated.Global q
         Local (Located _ u) -> Unlocated.Local u
 
-instance StripLocation t t' => StripLocation (Pattern t) (Unlocated.Pattern t') where
+instance (StripLocation t t') => StripLocation (Pattern t) (Unlocated.Pattern t') where
     stripLocation (Pattern (p, t)) = Unlocated.Pattern (stripLocation $ stripLocation p, stripLocation t)
 
-instance StripLocation t t' => StripLocation (Pattern' t) (Unlocated.Pattern' t') where
+instance (StripLocation t t') => StripLocation (Pattern' t) (Unlocated.Pattern' t') where
     stripLocation p = case p of
         VarPattern v -> Unlocated.VarPattern (stripLocation $ stripLocation v)
         ConstructorPattern q ps -> Unlocated.ConstructorPattern (stripLocation q) (stripLocation ps)
@@ -179,10 +178,36 @@ instance StripLocation PartialType Unlocated.PartialType where
     stripLocation (Final t) = Unlocated.Final (stripLocation t)
     stripLocation (Partial t) = Unlocated.Partial (stripLocation t)
 
+-- Pretty Printing :D
+
 instance Pretty PartialType where
     pretty (Id t) = pretty t
     pretty p = pretty (stripLocation p)
 
-instance Pretty n => Pretty (VarRef n) where
+instance (Pretty n) => Pretty (VarRef n) where
     pretty (Global q) = pretty q
     pretty (Local q) = pretty q
+
+instance (Pretty t', StripLocation t t', Pretty t) => Pretty (Declaration t) where
+    pretty (Declaration ldb) = pretty ldb
+
+instance (Pretty t', StripLocation t t', Pretty t) => Pretty (Declaration' t) where
+    pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. _DeclarationBody . unlocated)
+
+prettyDB :: (Pretty t', StripLocation t t', Pretty t) => Qualified Name -> DeclarationBody' t -> Doc ann
+prettyDB name (Value e Nothing) =
+    vsep
+        [ "let" <+> pretty name <+> "="
+        , indent indentDepth (pretty e)
+        ]
+prettyDB name (Value e (Just t)) = "def" <+> pretty name <+> ":" <+> pretty t <+> prettyDB name (Value e Nothing)
+prettyDB name (TypeAlias t) = "type" <+> pretty name <+> "=" <+> pretty t
+
+instance (Pretty t', StripLocation t t') => Pretty (Expr t) where
+    pretty e = pretty (stripLocation e)
+
+instance (Pretty t) => Pretty (TypeAnnotation t) where
+    pretty (TypeAnnotation _ t) = pretty t
+
+instance Pretty Type where
+    pretty (Type t) = pretty (stripLocation t)

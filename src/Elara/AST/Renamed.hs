@@ -3,7 +3,7 @@
 module Elara.AST.Renamed where
 
 import Control.Lens (makeLenses, makePrisms, view)
-import Elara.AST.Name (HasName (name), ModuleName, Name, OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (HasName (name), ModuleName, Name, OpName, Qualified, TypeName, VarName, LowerAlphaName)
 import Elara.AST.Region (Located)
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
@@ -69,7 +69,7 @@ data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar (Unique VarName)
+    = TypeVar (Unique LowerAlphaName)
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
@@ -96,7 +96,6 @@ data DeclarationBody'
         { _expression :: Expr
         , _valueType :: Maybe (Located TypeAnnotation)
         }
-    | NativeDef (Located TypeAnnotation)
     | -- | type <name> = <type>
       TypeAlias (Located Type)
     deriving (Show, Eq)

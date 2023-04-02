@@ -5,7 +5,7 @@ module Elara.AST.Unlocated.Typed where
 import Control.Lens hiding (List)
 import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
-import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified (..), TypeName, VarName)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Prelude hiding (Op)
@@ -34,6 +34,9 @@ data Expr' t
 
 newtype Expr t = Expr (Expr' t, t)
     deriving (Show, Eq, Data, Functor, Foldable, Traversable)
+
+withoutType :: Expr t -> Expr' t
+withoutType (Expr (e, _)) = e
 
 data VarRef n
     = Global (Qualified n)
@@ -69,7 +72,7 @@ data Type' t
 newtype Type = Type (Type' Type)
     deriving (Show, Eq, Ord, Data)
 
-newtype TypeVar = TyVar (Unique Text)
+newtype TypeVar = TyVar (Unique LowerAlphaName)
     deriving (Show, Eq, Ord, Data)
 
 data Declaration t = Declaration'
@@ -102,7 +105,7 @@ makePrisms ''Pattern
 instance Pretty Type where
     pretty (Type t) = pretty t
 
-instance Pretty t => Pretty (Type' t) where
+instance (Pretty t) => Pretty (Type' t) where
     pretty (TypeVar (TyVar u)) = pretty u
     pretty (FunctionType a b) = pretty a <+> "->" <+> pretty b
     pretty UnitType = "()"
@@ -112,10 +115,11 @@ instance Pretty t => Pretty (Type' t) where
       where
         pprField (name, t) = pretty name <+> ":" <+> pretty t
 
-instance Pretty t => Pretty (Expr t) where
+instance (Pretty t) => Pretty (Expr t) where
+    pretty (Expr (e@(Block _), _)) = pretty e -- we don't want to print the type of the block
     pretty (Expr (e, t)) = parens (pretty e <+> ":" <+> pretty t)
 
-instance Pretty t => Pretty (Expr' t) where
+instance (Pretty t) => Pretty (Expr' t) where
     pretty (Int i) = pretty i
     pretty (Float f) = pretty f
     pretty (String s) = pretty s
@@ -130,7 +134,7 @@ instance Pretty t => Pretty (Expr' t) where
     pretty (Match e cases) =
         vsep
             [ "match" <+> pretty e <+> "with" <+> "{"
-            , indent 4 (vsep (pprCase <$> cases))
+            , indent indentDepth (vsep (pprCase <$> cases))
             , "}"
             ]
       where
@@ -139,10 +143,10 @@ instance Pretty t => Pretty (Expr' t) where
     pretty (Let u e) = "let" <+> pretty u <+> "=" <+> pretty e
     pretty (Block es) = vsep (pretty <$> toList es)
 
-instance Pretty t => Pretty (Pattern t) where
+instance (Pretty t) => Pretty (Pattern t) where
     pretty (Pattern (p, t)) = parens (pretty p <+> ":" <+> pretty t)
 
-instance Pretty t => Pretty (Pattern' t) where
+instance (Pretty t) => Pretty (Pattern' t) where
     pretty (VarPattern v) = pretty v
     pretty (ConstructorPattern c ps) = pretty c <+> hsep (pretty <$> ps)
     pretty (ListPattern ps) = "[" <+> hsep (punctuate ", " (pretty <$> ps)) <+> "]"
@@ -161,8 +165,8 @@ instance Pretty PartialType where
     pretty (Partial t) = pretty t
     pretty (Final t) = pretty t
 
-instance Data t => Plated (Expr t) where
+instance (Data t) => Plated (Expr t) where
     plate = uniplate
 
-instance Data t => Plated (Expr' t) where
+instance (Data t) => Plated (Expr' t) where
     plate = uniplate

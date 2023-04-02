@@ -1,6 +1,6 @@
 module Elara.AST.Unlocated.Frontend where
 
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Prelude hiding (Op)
 
 import Elara.AST.Frontend qualified as Frontend
@@ -53,7 +53,7 @@ data TypeAnnotation = TypeAnnotation Name Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar VarName
+    = TypeVar LowerAlphaName
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type
@@ -140,4 +140,3 @@ instance StripLocation Frontend.DeclarationBody' DeclarationBody where
 
 instance StripLocation Frontend.TypeAnnotation TypeAnnotation where
     stripLocation (Frontend.TypeAnnotation n t) = TypeAnnotation (stripLocation n) (stripLocation t)
-

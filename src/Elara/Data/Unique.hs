@@ -76,13 +76,13 @@ makeSem ''UniqueGen
 makeLenses ''UniqueSupply
 makeLenses ''Unique
 
-makeUniqueId :: Member UniqueGen r => Sem r UniqueId
+makeUniqueId :: (Member UniqueGen r) => Sem r UniqueId
 makeUniqueId = UniqueId <$> makeUnique ()
 
-makeUnique :: Member UniqueGen r => a -> Sem r (Unique a)
+makeUnique :: (Member UniqueGen r) => a -> Sem r (Unique a)
 makeUnique a = Unique a <$> newUniqueNum
 
-instance Pretty a => Pretty (Unique a) where
+instance (Pretty a) => Pretty (Unique a) where
     pretty (Unique a i) = pretty a <> "_" <> pretty i
 
 instance Pretty UniqueId where

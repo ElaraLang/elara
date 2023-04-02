@@ -3,7 +3,7 @@
 module Elara.AST.Desugared where
 
 import Control.Lens.TH
-import Elara.AST.Name (MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Prelude hiding (Type)
 
@@ -64,7 +64,7 @@ data TypeAnnotation = TypeAnnotation (Located Name) Type
     deriving (Show, Eq)
 
 data Type
-    = TypeVar VarName
+    = TypeVar LowerAlphaName
     | FunctionType Type Type
     | UnitType
     | TypeConstructorApplication Type Type

@@ -22,7 +22,7 @@ import Elara.AST.Module (
     _Import,
     _Module,
  )
-import Elara.AST.Name (MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed (VarRef (..))
 import Elara.AST.Renamed qualified as Renamed
@@ -184,7 +184,7 @@ addImportsToContext = traverse_ addImportToContext
     addImportToContext imp = do
         modules <- ask
         imported <- note (UnknownModule (imp ^. importing . unlocated)) $ Map.lookup (imp ^. importing . unlocated) modules
-        let isExposingL = Desugared._Declaration . unlocated . Desugared.declaration'Name . unlocated . to (isExposingAndExists imported)
+        let isExposingL = Desugared._Declaration . unlocated . name . unlocated . to (isExposingAndExists imported)
         let exposed = case imported ^. exposing of
                 ExposingAll -> imported ^. declarations
                 ExposingSome _ -> imported ^.. declarations . folded . filteredBy isExposingL
@@ -343,15 +343,17 @@ renamePattern (Desugared.Pattern fp) = Renamed.Pattern <$> traverseOf unlocated 
 This isn't really necessary as names will be uniquified anyway, but it could make dumped code more readable
 -}
 patternToVarName :: Desugared.Pattern -> VarName
-patternToVarName (Desugared.Pattern (Located _ p)) = case p of
-    Desugared.WildcardPattern -> NormalVarName "wildcard"
-    Desugared.ListPattern _ -> NormalVarName "list"
-    Desugared.VarPattern vn -> vn ^. unlocated
-    Desugared.IntegerPattern _ -> NormalVarName "int"
-    Desugared.FloatPattern _ -> NormalVarName "float"
-    Desugared.StringPattern _ -> NormalVarName "string"
-    Desugared.CharPattern _ -> NormalVarName "char"
-    Desugared.ConstructorPattern _ _ -> NormalVarName "constructor"
+patternToVarName (Desugared.Pattern (Located _ p)) =
+    let mn = NormalVarName . LowerAlphaName
+     in case p of
+            Desugared.WildcardPattern -> mn "wildcard"
+            Desugared.ListPattern _ -> mn "list"
+            Desugared.VarPattern vn -> vn ^. unlocated
+            Desugared.IntegerPattern _ -> mn "int"
+            Desugared.FloatPattern _ -> mn "float"
+            Desugared.StringPattern _ -> mn "string"
+            Desugared.CharPattern _ -> mn "char"
+            Desugared.ConstructorPattern _ _ -> mn "constructor"
 
 patternToMatch :: Desugared.Pattern -> Desugared.Expr -> Renamer (Located (Unique VarName), Renamed.Expr)
 -- Special case, no match needed

@@ -2,3 +2,4 @@ import Prelude
 
 let main = 
     \a -> a
+    3
