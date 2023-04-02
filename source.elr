@@ -1,5 +1,2 @@
-import Prelude
-
-let main = 
-    \a -> a
-    3
+let id a = a
+let main = 1

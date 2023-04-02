@@ -7,7 +7,7 @@ import Control.Lens hiding (List)
 import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located (Located), unlocated)
+import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.Data.Pretty
@@ -195,15 +195,22 @@ instance (Pretty t', StripLocation t t', Pretty t) => Pretty (Declaration' t) wh
     pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. _DeclarationBody . unlocated)
 
 prettyDB :: (Pretty t', StripLocation t t', Pretty t) => Qualified Name -> DeclarationBody' t -> Doc ann
-prettyDB name (Value e Nothing) =
+prettyDB name (Value e@(Expr (_, t)) Nothing) =
+    prettyDB
+        name
+        (Value e (Just (Located (generatedSourceRegion Nothing) (TypeAnnotation (Located (generatedSourceRegion Nothing) name) t))))
+prettyDB name (Value e (Just t)) =
     vsep
-        [ "let" <+> pretty name <+> "="
-        , indent indentDepth (pretty e)
+        [ "def" <+> pretty name <+> ":" <+> pretty t
+        , "let" <+> pretty name <+> "="
+        , indent indentDepth (pretty (e ^. _Expr . _1))
+        , "" -- add a newline
         ]
-prettyDB name (Value e (Just t)) = "def" <+> pretty name <+> ":" <+> pretty t <+> prettyDB name (Value e Nothing)
 prettyDB name (TypeAlias t) = "type" <+> pretty name <+> "=" <+> pretty t
 
 instance (Pretty t', StripLocation t t') => Pretty (Expr t) where
+    pretty e = pretty (stripLocation e)
+instance (Pretty t', StripLocation t t') => Pretty (Expr' t) where
     pretty e = pretty (stripLocation e)
 
 instance (Pretty t) => Pretty (TypeAnnotation t) where
