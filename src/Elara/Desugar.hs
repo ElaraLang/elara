@@ -108,6 +108,7 @@ desugarType (Frontend.FunctionType a b) = Desugared.FunctionType <$> desugarType
 desugarType (Frontend.TypeConstructorApplication a b) = Desugared.TypeConstructorApplication <$> desugarType a <*> desugarType b
 desugarType (Frontend.UserDefinedType a) = pure (Desugared.UserDefinedType a)
 desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2) desugarType fields
+desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse desugarType fields
 
 desugarDeclaration :: Frontend.Declaration -> Desugar Desugared.Declaration
 desugarDeclaration (Frontend.Declaration ld) =

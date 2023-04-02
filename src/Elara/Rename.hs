@@ -258,6 +258,7 @@ renameType Desugared.UnitType = pure Renamed.UnitType
 renameType (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> renameType t1 <*> renameType t2
 renameType (Desugared.UserDefinedType ln) = Renamed.UserDefinedType <$> qualifyTypeName ln
 renameType (Desugared.RecordType ln) = Renamed.RecordType <$> traverse (traverseOf _2 renameType) ln
+renameType (Desugared.TupleType ts) = Renamed.TupleType <$> traverse renameType ts
 
 renameExpr :: Desugared.Expr -> Renamer Renamed.Expr
 renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExpr' le

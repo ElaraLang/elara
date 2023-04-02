@@ -70,6 +70,7 @@ data Type
     | TypeConstructorApplication Type Type
     | UserDefinedType (Located (MaybeQualified TypeName))
     | RecordType (NonEmpty (Located VarName, Type))
+    | TupleType (NonEmpty Type)
     deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')

@@ -262,3 +262,4 @@ shuntType Renamed.UnitType = pure Shunted.UnitType
 shuntType (Renamed.TypeConstructorApplication l r) = Shunted.TypeConstructorApplication <$> shuntType l <*> shuntType r
 shuntType (Renamed.UserDefinedType n) = pure (Shunted.UserDefinedType n)
 shuntType (Renamed.RecordType fields) = Shunted.RecordType <$> traverse (traverseOf _2 shuntType) fields
+shuntType (Renamed.TupleType ts) = Shunted.TupleType <$> traverse shuntType ts

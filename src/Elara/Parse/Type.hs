@@ -8,7 +8,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names (alphaVarName, moduleName, typeName, unqualifiedVarName)
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, located, locatedTokens', token')
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, inParens, inParens', located, locatedTokens', token')
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice, customFailure)
 
@@ -31,10 +31,10 @@ typeTerm =
     choice @[]
         [ typeVar
         , unit
+        , tupleType
         , namedType
         , emptyRecordError
         , recordType
-        , inBraces type'
         ]
 
 typeVar :: HParser Type
@@ -69,3 +69,8 @@ emptyRecordError = do
     sr <- locatedTokens' (TokenLeftBrace :| [TokenRightBrace])
     endHead
     fromParsec $ customFailure (EmptyRecord sr)
+
+tupleType :: HParser Type
+tupleType = inParens' $ do
+    types <- sepBy1' type' (token' TokenComma)
+    pure $ TupleType types

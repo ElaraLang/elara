@@ -35,7 +35,7 @@ lookup uid (SubstitutionMap m) = Map.lookup uid m
 
 class Substitutable a b | a -> b where
     substitute ::
-        HasCallStack =>
+        (HasCallStack) =>
         (Member (Error TypeError) r, Member UniqueGen r) =>
         SubstitutionMap ->
         a ->

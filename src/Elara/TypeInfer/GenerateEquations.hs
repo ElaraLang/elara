@@ -117,6 +117,7 @@ generateEquations =
 
         let functionType = Partial (FunctionType argType (typeOf body))
         tell $ one $ t =:= functionType -- typeof (\a -> b) is typeof(a) -> typeof(b)
+    
     generateEquations' (FunctionCall f arg, t) = do
         generateEquations f
         generateEquations arg

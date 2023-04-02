@@ -60,6 +60,7 @@ data Type
     | TypeConstructorApplication Type Type
     | UserDefinedType (MaybeQualified TypeName)
     | RecordType (NonEmpty (VarName, Type))
+    | TupleType (NonEmpty Type)
     deriving (Show, Eq)
 
 data Declaration = Declaration
@@ -125,6 +126,7 @@ instance StripLocation Frontend.Type Type where
     stripLocation (Frontend.TypeConstructorApplication t1 t2) = TypeConstructorApplication (stripLocation t1) (stripLocation t2)
     stripLocation (Frontend.UserDefinedType t) = UserDefinedType (stripLocation t)
     stripLocation (Frontend.RecordType r) = RecordType (stripLocation r)
+    stripLocation (Frontend.TupleType t) = TupleType (stripLocation t)
 
 instance StripLocation Frontend.Declaration Declaration where
     stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d :: Frontend.Declaration')

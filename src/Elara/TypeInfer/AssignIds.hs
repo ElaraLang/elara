@@ -47,6 +47,7 @@ assignIdsToType t =
     In.UserDefinedType n -> pure (Out.UserDefinedType n)
     In.RecordType n -> Out.RecordType <$> traverseOf (traverse . _2) assignIdsToType n
     In.UnitType -> pure Out.UnitType
+    In.TupleType n -> Out.TupleType <$> traverse assignIdsToType n
 
 assignIds :: forall r. (Member UniqueGen r) => In.Expr -> Sem r (Out.Expr PartialType, PartialType)
 assignIds (In.Expr le) = bimap Out.Expr snd . dup . unwrap <$> traverseOf unlocated assignIds' le
