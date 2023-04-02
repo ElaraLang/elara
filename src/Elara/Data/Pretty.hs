@@ -1,12 +1,16 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Elara.Data.Pretty (
     escapeChar,
     indentDepth,
     parensIf,
     PrettyPrec (..),
-    stack,
     module Prettyprinter,
 ) where
 
+import Data.Map qualified as Map (toList)
+import Data.Text.Prettyprint.Doc.Render.String
+import Data.Text.Prettyprint.Doc.Render.Text (renderStrict)
 import Prettyprinter
 
 indentDepth :: Int
@@ -34,6 +38,8 @@ escapeChar c = case c of
     '"' -> "\\\""
     _ -> fromString [c]
 
--- | Separate with line breaks
-stack :: [Doc a] -> Doc a
-stack = align . mconcat . punctuate line
+instance (Pretty k, Pretty v) => Pretty (Map k v) where
+    pretty m = encloseSep "{" "}" line ((\(k, v) -> pretty k <+> "->" <+> parens (pretty v)) <$> Map.toList m)
+
+instance Pretty s => Pretty (Set s) where
+    pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"

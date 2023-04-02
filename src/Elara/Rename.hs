@@ -354,6 +354,12 @@ patternToVarName (Desugared.Pattern (Located _ p)) = case p of
     Desugared.ConstructorPattern _ _ -> NormalVarName "constructor"
 
 patternToMatch :: Desugared.Pattern -> Desugared.Expr -> Renamer (Located (Unique VarName), Renamed.Expr)
+-- Special case, no match needed
+-- We can just turn \x -> x into \x -> x
+patternToMatch (Desugared.Pattern (Located _ (Desugared.VarPattern vn))) body = do
+    uniqueVn <- uniquify vn
+    body' <- inModifiedState (varNames %~ Map.insert (vn ^. unlocated) (Local uniqueVn)) $ renameExpr body
+    pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
     let patLocation = pat ^. Desugared._Pattern . sourceRegion

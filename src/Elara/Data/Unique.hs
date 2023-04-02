@@ -8,20 +8,23 @@ import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
 import Polysemy (Member, Sem, embed, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
-import Polysemy.State (State, get, put)
+import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
 
 data Unique a = Unique
     { _uniqueVal :: !a
-    , _uniqueId :: !Integer
+    , _uniqueId :: !Int
     }
     deriving (Show, Functor, Data)
 
-unsafeMkUnique :: a -> Integer -> Unique a
+unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique
 
 -- | A @Unique@ where the value is not important.
 newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data)
+
+uniqueIdVal :: UniqueId -> Int
+uniqueIdVal (UniqueId u) = _uniqueId u
 
 instance Show UniqueId where
     show (UniqueId u) = Text.Show.show (_uniqueId u)
@@ -33,7 +36,7 @@ instance Ord (Unique a) where
     compare = compare `on` _uniqueId
 
 newtype UniqueSupply = UniqueSupply
-    { _uniqueSupplyUniques :: [Integer]
+    { _uniqueSupplyUniques :: [Int]
     }
 
 freshUniqueSupply :: UniqueSupply
@@ -44,7 +47,10 @@ globalUniqueSupply = unsafePerformIO (newIORef freshUniqueSupply)
 {-# NOINLINE globalUniqueSupply #-}
 
 data UniqueGen m a where
-    NewUniqueNum :: UniqueGen m Integer
+    NewUniqueNum :: UniqueGen m Int
+
+runFreshUniqueSupply :: Sem (UniqueGen ': r) a -> Sem r a
+runFreshUniqueSupply = evalState freshUniqueSupply . uniqueGenToState
 
 uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (State UniqueSupply : r) a
 uniqueGenToState = reinterpret $ \case

@@ -6,6 +6,7 @@ module Elara.AST.Region where
 
 import Control.Lens
 import Data.Data (Data)
+import Elara.Data.Pretty (Pretty (..))
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
@@ -189,3 +190,8 @@ spanningRegion' regions = do
 instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
     Located region f <*> Located region' x = Located (spanningRegion' (region :| [region'])) (f x)
+
+instance Pretty a => Pretty (Located a) where
+    pretty (Located region x) = pretty x <> " " <> pretty region
+
+instance Pretty SourceRegion

@@ -1,21 +1,20 @@
 module Elara.TypeInfer where
 
-import Control.Lens
-import Data.Text.Prettyprint.Doc.Render.Text (putDoc)
 import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.StripLocation (StripLocation (stripLocation))
-import Elara.AST.Typed
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.AssignIds (assignIds)
 import Elara.TypeInfer.Environment
-import Elara.TypeInfer.GenerateEquations (TypeEquation, generateEquations)
+import Elara.TypeInfer.Finalise (finaliseExpr, runFinalise)
+import Elara.TypeInfer.GenerateEquations (generateEquations)
 import Elara.TypeInfer.SubstitutionMap
 import Elara.TypeInfer.Unify (unifyAllEquations)
 import Polysemy hiding (transform)
 import Polysemy.Error (runError)
 import Polysemy.State
 import Polysemy.Writer
+import Prettyprinter.Render.Text
 import Print (debugColored, printColored)
 import Prelude hiding (Type, runState)
 
@@ -30,7 +29,9 @@ infer e = runM $ do
     case y of
         Left e -> embed $ printColored e
         Right subst -> do
-            e'' <- uniqueGenToIO $ runError $ substitute subst e'
+            -- embed (printColored eqs)
+            -- embed (printColored env)
+            e'' <- uniqueGenToIO $ runError $ runFinalise $ (substitute subst >=> finaliseExpr) e'
             let stripped = pretty . stripLocation <$> e''
             case stripped of
                 Left e -> embed $ printColored e

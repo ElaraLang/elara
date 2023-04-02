@@ -1,4 +1,4 @@
 import Prelude
 
 let main = 
-    \a -> 1
+    \a -> a

@@ -3,6 +3,7 @@
 module Elara.AST.Unlocated.Typed where
 
 import Control.Lens hiding (List)
+import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
 import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName)
 import Elara.Data.Pretty
@@ -63,13 +64,13 @@ data Type' t
     | TypeConstructorApplication t t
     | UserDefinedType (Qualified TypeName)
     | RecordType (NonEmpty (VarName, t))
-    deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
+    deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Data)
 
 newtype Type = Type (Type' Type)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Data)
 
 newtype TypeVar = TyVar (Unique Text)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Data)
 
 data Declaration t = Declaration'
     { _declaration'Module' :: ModuleName
@@ -154,3 +155,14 @@ instance Pretty t => Pretty (Pattern' t) where
 instance (Pretty v) => Pretty (VarRef v) where
     pretty (Global q) = pretty q
     pretty (Local u) = pretty u
+
+instance Pretty PartialType where
+    pretty (Id u) = pretty u
+    pretty (Partial t) = pretty t
+    pretty (Final t) = pretty t
+
+instance Data t => Plated (Expr t) where
+    plate = uniplate
+
+instance Data t => Plated (Expr' t) where
+    plate = uniplate

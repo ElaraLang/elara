@@ -6,12 +6,12 @@ module Elara.TypeInfer.SubstitutionMap where
 import Control.Lens
 import Data.Map qualified as Map
 import Elara.AST.Typed
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Error
 import Elara.TypeInfer.TypeVariables
 import Polysemy
 import Polysemy.Error
-import Elara.Data.Unique
 
 newtype SubstitutionMap = SubstitutionMap (Map UniqueId PartialType)
     deriving (Show, Eq, Ord)
@@ -33,21 +33,24 @@ lookup :: UniqueId -> SubstitutionMap -> Maybe PartialType
 lookup uid (SubstitutionMap m) = Map.lookup uid m
 
 class Substitutable a b | a -> b where
-    substitute ::HasCallStack => (Member (Error TypeError) r, Member UniqueGen r)=> SubstitutionMap -> a -> Sem r b
+    substitute :: HasCallStack => (Member (Error TypeError) r, Member UniqueGen r) => SubstitutionMap -> a -> Sem r b
 
 instance {-# OVERLAPPABLE #-} (Traversable f, Substitutable a b) => Substitutable (f a) (f b) where
     substitute sub = traverse (substitute sub)
 
-instance Substitutable (Type' PartialType) (Type' Type) where
+instance Substitutable (Type' PartialType) (Type' PartialType) where
     substitute sub = traverse (substitute sub)
 
-instance Substitutable PartialType Type where
+instance Substitutable PartialType PartialType where
     substitute sub = \case
-        Id id -> case lookup id sub of
-            Nothing -> Type . TypeVar <$> newTypeVar
-            Just partial -> substitute sub partial
-        Final t -> pure t
-        Partial t -> Type <$> substitute sub t
+        Id id -> do
+            x <- traverse (substitute sub) (lookup id sub)
+            pure (fromMaybe (Id id) x)
+        Final t -> pure (Final t)
+        Partial t -> Partial <$> substitute sub t
 
-instance Substitutable (Expr PartialType) (Expr Type) where
+instance Substitutable (Expr PartialType) (Expr PartialType) where
     substitute m = traverseOf _Expr (bitraverse (substitute m) (substitute m))
+
+instance Pretty SubstitutionMap where
+    pretty (SubstitutionMap m) = pretty m

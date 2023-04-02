@@ -10,6 +10,7 @@ import Elara.TypeInfer.SubstitutionMap (SubstitutionMap)
 import Elara.TypeInfer.SubstitutionMap qualified as SubstitutionMap
 import Polysemy
 import Polysemy.Error
+import Print (debugWithResult)
 import Relude.Extra (secondF)
 import Prelude hiding (Type)
 
@@ -21,7 +22,7 @@ unifyAllEquations ::
     Sem r SubstitutionMap
 unifyAllEquations [] _ sub = pure sub
 unifyAllEquations (TypeEquation (t1, t2) : eqs) env sub =
-    unifyPartialTypes t1 t2 env sub >>= unifyAllEquations eqs env
+    unifyPartialTypes t1 t2 env sub >>= \sub' -> unifyAllEquations eqs env (traceShowId sub')
 
 class TypeLike a where
     unifyType :: Member (Error (TypeError, SubstitutionMap)) r => a -> a -> TypeEnvironment -> SubstitutionMap -> Sem r SubstitutionMap
@@ -94,7 +95,9 @@ unifyVariable id otherTypeOrId aliases substitutionMap =
     case SubstitutionMap.lookup id substitutionMap of
         Just t -> unifyPartialTypes t otherTypeOrId aliases substitutionMap
         Nothing ->
-            case otherTypeOrId ^? _Id >>= (`SubstitutionMap.lookup` substitutionMap) <&> (\typeOrId2 -> unifyVariable id typeOrId2 aliases substitutionMap) of
+            case traceShowId (otherTypeOrId) ^? _Id
+                >>= (`SubstitutionMap.lookup` substitutionMap)
+                <&> (\typeOrId2 -> unifyVariable id typeOrId2 aliases substitutionMap) of
                 Just result -> result
                 Nothing ->
                     if occurs id otherTypeOrId substitutionMap

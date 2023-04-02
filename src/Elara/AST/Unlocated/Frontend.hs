@@ -140,3 +140,4 @@ instance StripLocation Frontend.DeclarationBody' DeclarationBody where
 
 instance StripLocation Frontend.TypeAnnotation TypeAnnotation where
     stripLocation (Frontend.TypeAnnotation n t) = TypeAnnotation (stripLocation n) (stripLocation t)
+

@@ -4,16 +4,18 @@
 module Elara.AST.Typed where
 
 import Control.Lens hiding (List)
+import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (Located), unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Prelude hiding (Op)
 
 data PartialType = Id UniqueId | Partial (Type' PartialType) | Final Type
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Data)
 
 {- | Typed AST Type
 This is very similar to 'Elara.AST.Shunted.Expr' except:
@@ -70,13 +72,13 @@ data Type' t
     | TypeConstructorApplication t t
     | UserDefinedType (Located (Qualified TypeName))
     | RecordType (NonEmpty (Located VarName, t))
-    deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
+    deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Data)
 
 newtype Type = Type (Type' Type)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Data)
 
 newtype TypeVar = TyVar (Unique Text)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Data)
 
 newtype Declaration t = Declaration (Located (Declaration' t))
     deriving (Show, Eq)
@@ -114,46 +116,11 @@ makePrisms ''VarRef
 makePrisms ''PartialType
 makePrisms ''Pattern
 
-instance Plated (Expr t) where
-    plate :: Traversal' (Expr t) (Expr t)
-    plate = identity
+instance Data t => Plated (Expr t) where
+    plate = uniplate
 
-instance Plated (Expr' t) where
-    plate :: Traversal' (Expr' t) (Expr' t)
-    plate f = \case
-        Int i -> pure (Int i)
-        Float f' -> pure (Float f')
-        String s -> pure (String s)
-        Char c -> pure (Char c)
-        Unit -> pure Unit
-        Var v -> pure (Var v)
-        Constructor c -> pure (Constructor c)
-        Lambda p e -> Lambda p <$> traverseExpr' f e
-        FunctionCall e1 e2 ->
-            FunctionCall
-                <$> traverseExpr' f e1
-                <*> traverseExpr' f e2
-        If e1 e2 e3 ->
-            If
-                <$> traverseExpr' f e1
-                <*> traverseExpr' f e2
-                <*> traverseExpr' f e3
-        List es -> List <$> traverse (traverseExpr' f) es
-        Match e pes ->
-            Match
-                <$> traverseExpr' f e
-                <*> traverse
-                    (traverseOf (_2 . _Expr . _1 . unlocated) f)
-                    pes
-        LetIn v e1 e2 ->
-            LetIn v
-                <$> traverseExpr' f e1
-                <*> traverseExpr' f e2
-        Let v e -> Let v <$> traverseExpr' f e
-        Block es -> Block <$> traverse (traverseExpr' f) es
-      where
-        traverseExpr' :: Functor f => (Expr' t -> f (Expr' t)) -> Expr t -> f (Expr t)
-        traverseExpr' = traverseOf (_Expr . _1 . unlocated)
+instance Data t => Plated (Expr' t) where
+    plate = uniplate
 
 instance StripLocation Type Unlocated.Type where
     stripLocation (Type t) = Unlocated.Type (stripLocation t)
@@ -206,3 +173,16 @@ instance StripLocation t t' => StripLocation (Pattern' t) (Unlocated.Pattern' t'
         StringPattern s -> Unlocated.StringPattern s
         CharPattern c -> Unlocated.CharPattern c
         ListPattern c -> Unlocated.ListPattern (stripLocation c)
+
+instance StripLocation PartialType Unlocated.PartialType where
+    stripLocation (Id t) = Unlocated.Id t
+    stripLocation (Final t) = Unlocated.Final (stripLocation t)
+    stripLocation (Partial t) = Unlocated.Partial (stripLocation t)
+
+instance Pretty PartialType where
+    pretty (Id t) = pretty t
+    pretty p = pretty (stripLocation p)
+
+instance Pretty n => Pretty (VarRef n) where
+    pretty (Global q) = pretty q
+    pretty (Local q) = pretty q

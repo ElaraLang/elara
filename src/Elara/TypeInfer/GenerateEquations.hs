@@ -5,17 +5,23 @@ import Control.Lens
 import Elara.AST.Name (ModuleName (ModuleName), Qualified (..), TypeName (TypeName), VarName)
 import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
 import Elara.AST.Typed
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId)
 import Elara.TypeInfer.Environment (TypeEnvironment, addToEnv)
 import Polysemy
 import Polysemy.State
-import Polysemy.Writer (Writer, tell)
+import Polysemy.Writer (Writer, listen, tell)
+import Print (debugColored)
+import Prelude hiding (universe)
 
 newtype TypeEquation = TypeEquation (PartialType, PartialType)
     deriving (Show, Eq, Ord)
 
 (=:=) :: PartialType -> PartialType -> TypeEquation
 (=:=) = curry TypeEquation
+
+instance Pretty TypeEquation where
+    pretty (TypeEquation (a, b)) = pretty a <+> "=:=" <+> pretty b
 
 -- | Standard types
 preludeName :: ModuleName
@@ -50,17 +56,18 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
         tell $ one $ t =:= stringType
     generateEquations' (Unit, t) = tell $ one $ t =:= unitType
     generateEquations' (Var vn, t) =
-        modify (addToEnv (vn ^. unlocated) t)
+        whenJust (preview (unlocated . _Global) vn) $
+            \vn' -> modify (addToEnv (Global vn') t)
     generateEquations' (Constructor _, _) = pass
-    generateEquations' (Lambda arg body@(Expr (_, bodyType)), t) = do
-        generateEquations body
-        argType <- makeUniqueId
+    generateEquations' (Lambda arg body@(Expr (_, bodyType)), t) =
+        do
+            argType <- Id <$> makeUniqueId
+            generateEquations body
+            let usages = findUsagesOf (arg ^. unlocated) body
+            generateArgumentUsageEquations argType usages
 
-        let usages = findUsagesOf (arg ^. unlocated) body
-        generateArgumentUsageEquations argType usages
-
-        let functionType = Partial (FunctionType (Id argType) bodyType) -- typeof (\a -> b) is typeof(a) -> typeof(b)
-        tell $ one $ t =:= functionType
+            let functionType = Partial (FunctionType argType bodyType) -- typeof (\a -> b) is typeof(a) -> typeof(b)
+            tell $ one $ t =:= functionType
     generateEquations' (Match expr@(Expr (_, testType)) cases, overallType) = do
         generateEquations expr
         for_ cases $ \(pat@(Pattern (_, patType)), body@(Expr (_, bodyType))) -> do
@@ -71,16 +78,16 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
     generateEquations' other = error ("Not sure how to generate equations for this expression yet: " <> show other)
 
 findUsagesOf :: Unique VarName -> Expr PartialType -> [Expr PartialType]
-findUsagesOf v e = e ^.. to children . folded . filteredBy (_Expr . _1 . unlocated . to isVar)
+findUsagesOf v e = e ^.. cosmos . filtered (view (_Expr . _1 . unlocated . to isVar))
   where
     isVar :: Expr' PartialType -> Bool
     isVar expr = preview (_Var . unlocated . _Local . unlocated) expr == Just v
 
-generateArgumentUsageEquations :: forall r. (Member (Writer (Set TypeEquation)) r) => UniqueId -> [Expr PartialType] -> Sem r ()
+generateArgumentUsageEquations :: forall r. (Member (Writer (Set TypeEquation)) r) => PartialType -> [Expr PartialType] -> Sem r ()
 generateArgumentUsageEquations argId = traverseOf_ (each . _Expr . _2) generateArgumentUsageEquation
   where
     generateArgumentUsageEquation :: PartialType -> Sem r ()
-    generateArgumentUsageEquation t = tell $ one $ t =:= Id argId
+    generateArgumentUsageEquation t = tell $ one $ argId =:= t
 
 generatePatternEquations ::
     forall r.
@@ -106,7 +113,7 @@ generatePatternEquations ty = traverseOf_ (_Pattern . unlocateFirst) generatePat
     generatePatternEquations' _ = error "Not sure how to generate pattern equations for this pattern yet"
 
 -- I cannot figure out how to write this lens the "right" way. sorry
-unlocateFirst :: Lens (Located a, b) (Located a, b) (a, b) (a, b)
+unlocateFirst :: Lens (Located a1, b1) (Located b2, b1) (a1, b1) (b2, b)
 unlocateFirst = lens getter setter
   where
     getter (a, b) = (view unlocated a, b)
