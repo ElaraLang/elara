@@ -29,7 +29,6 @@ library
   exposed-modules:
       Elara.AST.Desugared
       Elara.AST.Frontend
-      Elara.AST.Frontend.Pretty.Unlocated
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Region
@@ -71,7 +70,6 @@ library
       Elara.TypeInfer.Env
       Elara.TypeInfer.Environment
       Elara.TypeInfer.Error
-      Elara.TypeInfer.Expr
       Elara.TypeInfer.Finalise
       Elara.TypeInfer.GenerateEquations
       Elara.TypeInfer.SubstitutionMap
@@ -80,6 +78,7 @@ library
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.MTL
+      Polysemy.Utils
       Prelude
       Print
       TODO

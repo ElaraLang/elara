@@ -37,7 +37,7 @@ escapeChar c = case c of
     _ -> fromString [c]
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
-    pretty m = encloseSep "{" "}" line ((\(k, v) -> pretty k <+> "->" <+> parens (pretty v)) <$> Map.toList m)
+    pretty m = pretty (Map.toList m)
 
 instance (Pretty s) => Pretty (Set s) where
     pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"

@@ -12,10 +12,10 @@ import Elara.AST.Typed as Out
 import Polysemy
 import Relude.Extra (dup)
 
-assignIdsToModule :: Member UniqueGen r => Module Shunted -> Sem r (Module PartialTyped)
+assignIdsToModule :: (Member UniqueGen r) => Module Shunted -> Sem r (Module PartialTyped)
 assignIdsToModule = traverseModule assignIdsToDecl
 
-assignIdsToDecl :: forall r. Member UniqueGen r => In.Declaration -> Sem r (Out.Declaration PartialType)
+assignIdsToDecl :: forall r. (Member UniqueGen r) => In.Declaration -> Sem r (Out.Declaration PartialType)
 assignIdsToDecl (In.Declaration ld) =
   Out.Declaration
     <$> traverseOf
@@ -35,10 +35,10 @@ assignIdsToDecl (In.Declaration ld) =
     pure (Out.Value e' ty')
   assignIdsToDeclarationBody' (In.TypeAlias ty) = Out.TypeAlias <$> traverse assignIdsToType ty
 
-assignIdsToTypeAnnotation :: Member UniqueGen r => In.TypeAnnotation -> Sem r (Out.TypeAnnotation PartialType)
+assignIdsToTypeAnnotation :: (Member UniqueGen r) => In.TypeAnnotation -> Sem r (Out.TypeAnnotation PartialType)
 assignIdsToTypeAnnotation (In.TypeAnnotation n t) = Out.TypeAnnotation n <$> assignIdsToType t
 
-assignIdsToType :: Member UniqueGen r => In.Type -> Sem r Out.PartialType
+assignIdsToType :: (Member UniqueGen r) => In.Type -> Sem r Out.PartialType
 assignIdsToType t =
   Out.Partial <$> case t of
     In.TypeVar tv -> pure (Out.TypeVar $ Out.TyVar tv)
@@ -48,55 +48,56 @@ assignIdsToType t =
     In.RecordType n -> Out.RecordType <$> traverseOf (traverse . _2) assignIdsToType n
     In.UnitType -> pure Out.UnitType
 
-assignIds :: forall r. Member UniqueGen r => In.Expr -> Sem r (Out.Expr PartialType, PartialType)
+assignIds :: forall r. (Member UniqueGen r) => In.Expr -> Sem r (Out.Expr PartialType, PartialType)
 assignIds (In.Expr le) = bimap Out.Expr snd . dup . unwrap <$> traverseOf unlocated assignIds' le
  where
   assignIds' :: In.Expr' -> Sem r (Out.Expr' PartialType, PartialType)
-  assignIds' (In.Int i) = (Out.Int i,) <$> newId
-  assignIds' (In.Float i) = (Out.Float i,) <$> newId
-  assignIds' (In.String i) = (Out.String i,) <$> newId
-  assignIds' (In.Char i) = (Out.Char i,) <$> newId
-  assignIds' In.Unit = (Out.Unit,) <$> newId
-  assignIds' (In.Var v) = (Out.Var (transformVarRef <$> v),) <$> newId
-  assignIds' (In.Constructor v) = (Out.Constructor (transformVarRef <$> v),) <$> newId
-  assignIds' (In.Let v e1) = do
+  assignIds' e = do
+    e' <- assignIds'' e
+    t <- newId
+    pure (e', t)
+
+  assignIds'' :: In.Expr' -> Sem r (Out.Expr' PartialType)
+  assignIds'' (In.Int i) = pure (Out.Int i)
+  assignIds'' (In.Float i) = pure (Out.Float i)
+  assignIds'' (In.String i) = pure (Out.String i)
+  assignIds'' (In.Char i) = pure (Out.Char i)
+  assignIds'' In.Unit = pure Out.Unit
+  assignIds'' (In.Var v) = pure (Out.Var (fmap transformVarRef v))
+  assignIds'' (In.Constructor v) = pure (Out.Constructor (fmap transformVarRef v))
+  assignIds'' (In.Let v e1) = do
     (e1', _) <- assignIds e1
-    t <- newId
-    pure (Out.Let v e1', t)
-  assignIds' (In.Lambda v e) = do
+    pure (Out.Let v e1')
+  assignIds'' (In.Lambda v e) = do
     (e', _) <- assignIds e
-    t <- newId
-    pure (Out.Lambda v e', t)
-  assignIds' (In.FunctionCall e1 e2) = do
+    pure (Out.Lambda v e')
+  assignIds'' (In.FunctionCall e1 e2) = do
     (e1', _) <- assignIds e1
     (e2', _) <- assignIds e2
-    t <- newId
-    pure (Out.FunctionCall e1' e2', t)
-  assignIds' (In.If e1 e2 e3) = do
+    pure (Out.FunctionCall e1' e2')
+  assignIds'' (In.If e1 e2 e3) = do
     (e1', _) <- assignIds e1
     (e2', _) <- assignIds e2
     (e3', _) <- assignIds e3
-    t <- newId
-    pure (Out.If e1' e2' e3', t)
-  assignIds' (In.List es) = do
+    pure (Out.If e1' e2' e3')
+  assignIds'' (In.List es) = do
     es' <- fst <<$>> traverse assignIds es
-    t <- newId
-    pure (Out.List es', t)
-  assignIds' (In.LetIn n e b) = do
+    pure (Out.List es')
+  assignIds'' (In.LetIn n e b) = do
     (e', _) <- assignIds e
-    (b', t) <- assignIds b
-    pure (Out.LetIn n e' b', t)
-  assignIds' (In.Match e ps) = do
+    (b', _) <- assignIds b
+    pure (Out.LetIn n e' b')
+  assignIds'' (In.Match e ps) = do
     (e', _) <- assignIds e
     ps' <- fsts <<$>> traverse (bitraverse assignIdsToPattern assignIds) ps
-    t <- newId
-    pure (Out.Match e' ps', t)
-  assignIds' (In.Block es) = do
+    pure (Out.Match e' ps')
+  assignIds'' (In.Block es) = do
     es' <- fst <<$>> traverse assignIds es
-    t <- newId
-    pure (Out.Block es', t)
-
-assignIdsToPattern :: forall r. Member UniqueGen r => In.Pattern -> Sem r (Out.Pattern PartialType, PartialType)
+    pure (Out.Block es')
+  assignIds'' (In.Tuple es) = do
+    es' <- fst <<$>> traverse assignIds es
+    pure (Out.Tuple es')
+assignIdsToPattern :: forall r. (Member UniqueGen r) => In.Pattern -> Sem r (Out.Pattern PartialType, PartialType)
 assignIdsToPattern (In.Pattern lp) = bimap Out.Pattern snd . dup . unwrap <$> traverseOf unlocated assignIdsToPattern' lp
  where
   assignIdsToPattern' :: In.Pattern' -> Sem r (Out.Pattern' PartialType, PartialType)
@@ -125,5 +126,5 @@ fsts ((a, _), (c, _)) = (a, c)
 unwrap :: Located (a, b) -> (Located a, b)
 unwrap l = (fst <$> l, view (unlocated . _2) l)
 
-newId :: Member UniqueGen r => Sem r PartialType
+newId :: (Member UniqueGen r) => Sem r PartialType
 newId = Id <$> makeUniqueId

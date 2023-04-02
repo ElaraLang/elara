@@ -2,6 +2,7 @@
 module Elara.TypeInfer.GenerateEquations where
 
 import Control.Lens
+import Data.Data (toConstr)
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName (ModuleName), Qualified (..), TypeName (TypeName), VarName)
 import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
@@ -9,10 +10,12 @@ import Elara.AST.Select (PartialTyped)
 import Elara.AST.Typed
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, makeUniqueId)
-import Elara.TypeInfer.Environment (TypeEnvironment, addToEnv)
+import Elara.TypeInfer.Environment (TypeEnvironment, addToEnv, lookupInEnv)
 import Polysemy
 import Polysemy.State
-import Polysemy.Writer (Writer, tell)
+import Polysemy.Utils
+import Polysemy.Writer (Writer, listen, tell)
+import Print (debugColored, debugColoredStr, debugPretty, prettyShow)
 
 newtype TypeEquation = TypeEquation (PartialType, PartialType)
     deriving (Show, Eq, Ord)
@@ -79,7 +82,10 @@ generateEquations ::
     ) =>
     Expr PartialType ->
     Sem r ()
-generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
+generateEquations =
+    traverseOf_
+        (_Expr . unlocateFirst)
+        generateEquations'
   where
     generateEquations' :: (Expr' PartialType, PartialType) -> Sem r ()
     generateEquations' (Int _, t) =
@@ -92,18 +98,47 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
         tell $ one $ t =:= stringType
     generateEquations' (Unit, t) = tell $ one $ t =:= unitType
     generateEquations' (Var vn, t) =
-        whenJust (preview (unlocated . _Global) vn) $
-            \vn' -> modify (addToEnv (Global vn') t)
+        case vn ^. unlocated of
+            Global vn' -> modify (addToEnv (unlocateVarRef $ Global vn') t)
+            Local vn' -> do
+                env <- get
+                case lookupInEnv (unlocateVarRef $ Local vn') env of
+                    Just pt -> tell $ one $ t =:= pt
+                    Nothing -> error ("Local variable not found in environment: " <> prettyShow vn')
     generateEquations' (Constructor _, _) = pass
-    generateEquations' (Lambda arg body@(Expr (_, bodyType)), t) =
-        do
-            argType <- Id <$> makeUniqueId
-            generateEquations body
-            let usages = findUsagesOf (arg ^. unlocated) body
-            generateArgumentUsageEquations argType usages
+    generateEquations' (Lambda arg body, t) = do
+        argType <- Id <$> makeUniqueId
 
-            let functionType = Partial (FunctionType argType bodyType) -- typeof (\a -> b) is typeof(a) -> typeof(b)
-            tell $ one $ t =:= functionType
+        withModified (addToEnv (unlocateVarRef (Local arg)) (argType)) $ do
+            generateEquations body
+
+        -- let usages = findUsagesOf (arg ^. unlocated) body
+        -- generateArgumentUsageEquations argType usages
+
+        let functionType = Partial (FunctionType argType (typeOf body))
+        tell $ one $ t =:= functionType -- typeof (\a -> b) is typeof(a) -> typeof(b)
+    generateEquations' (FunctionCall f arg, t) = do
+        generateEquations f
+        generateEquations arg
+
+        let fType = typeOf f
+        let argType = typeOf arg
+        tell $ one $ fType =:= Partial (FunctionType argType t) -- f x implies typeof(f) is typeof(x) -> typeof(f x)
+    generateEquations' (LetIn name val body, t) = do
+        -- let <name> = <val> in <body>
+
+        generateEquations val
+
+        withModified (addToEnv (unlocateVarRef (Local name)) (typeOf val)) $ do
+            generateEquations body
+
+        let bodyType = typeOf body
+        -- You may be tempted to do some usages searching here. Do not!!!
+        -- It breaks the polymorphism of the let binding.
+
+        tell
+            [ t =:= bodyType -- For let a = b in c, typeof(let...) is typeof(c)
+            ]
     generateEquations' (Match expr@(Expr (_, testType)) cases, overallType) = do
         generateEquations expr
         for_ cases $ \(pat@(Pattern (_, patType)), body@(Expr (_, bodyType))) -> do
@@ -112,6 +147,11 @@ generateEquations = traverseOf_ (_Expr . unlocateFirst) generateEquations'
             generateEquations body
             tell $ one $ overallType =:= bodyType
     generateEquations' (Block exprs, _) = traverse_ generateEquations exprs -- TODO: unify the last expression with the overall type
+    generateEquations' (Tuple exprs, t) = do
+        traverse_ generateEquations exprs
+        let exprTypes = typeOf <$> exprs
+        let tupleType = Partial (TupleType exprTypes)
+        tell $ one $ t =:= tupleType
     generateEquations' other = error ("Not sure how to generate equations for this expression yet: " <> show other)
 
 findUsagesOf :: Unique VarName -> Expr PartialType -> [Expr PartialType]

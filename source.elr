@@ -1,2 +1,2 @@
-let id x = x
-let main = 1
+let main = 
+    let id = \x -> x in (id 1, id "a")

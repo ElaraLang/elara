@@ -31,6 +31,7 @@ data Expr
     | Let VarName [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
+    | Tuple (NonEmpty Expr)
     deriving (Show, Eq)
 
 data Pattern
@@ -99,6 +100,7 @@ instance StripLocation Frontend.Expr Expr where
         Frontend.Let v p e -> Let (stripLocation v) (stripLocation p) (stripLocation e)
         Frontend.Block b -> Block (stripLocation b)
         Frontend.InParens e -> InParens (stripLocation e)
+        Frontend.Tuple l -> Tuple (stripLocation l)
 
 instance StripLocation Frontend.Pattern Pattern where
     stripLocation (Frontend.Pattern (Located _ pat)) = case pat of

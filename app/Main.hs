@@ -48,6 +48,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   embed (putDoc (pretty source'''))
   putStrLn ""
   pass
+
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter Text) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do
   contentsBS <- readFileBS path
@@ -104,7 +105,7 @@ shuntModule m = do
       traverse_ report warnings
       justE shunted
 
-inferModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r, Member (Embed IO) r) => Module Shunted -> Sem r (Module Typed)
+inferModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r, Member (Embed IO) r) => Module Shunted -> Sem r (Module _)
 inferModule m = do
   x <-
     subsume $

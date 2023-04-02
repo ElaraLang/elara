@@ -5,7 +5,6 @@ module Elara.AST.Desugared where
 import Control.Lens.TH
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
-import Prelude hiding (Type)
 
 {- |
   This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
@@ -33,6 +32,7 @@ data Expr'
     | Block (NonEmpty Expr)
     | -- | Required for operator shunting
       InParens Expr
+    | Tuple (NonEmpty Expr)
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')

@@ -6,12 +6,11 @@ module Elara.TypeInfer.SubstitutionMap where
 import Control.Lens
 import Data.Map qualified as Map
 import Elara.AST.Module (Module, traverseModule)
-import Elara.AST.Select (PartialTyped, Typed)
+import Elara.AST.Select (PartialTyped)
 import Elara.AST.Typed
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Error
-import Elara.TypeInfer.TypeVariables
 import Polysemy
 import Polysemy.Error
 
@@ -41,6 +40,11 @@ class Substitutable a b | a -> b where
         SubstitutionMap ->
         a ->
         Sem r b
+
+instance Substitutable SubstitutionMap SubstitutionMap where
+    substitute sub (SubstitutionMap m) = do
+        m' <- Map.traverseWithKey (const $ substitute sub) m
+        pure (SubstitutionMap m')
 
 instance {-# OVERLAPPABLE #-} (Traversable f, Substitutable a b) => Substitutable (f a) (f b) where
     substitute sub = traverse (substitute sub)

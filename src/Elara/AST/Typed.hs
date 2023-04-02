@@ -38,15 +38,32 @@ data Expr' t
     | LetIn (Located (Unique VarName)) (Expr t) (Expr t)
     | Let (Located (Unique VarName)) (Expr t)
     | Block (NonEmpty (Expr t))
+    | Tuple (NonEmpty (Expr t))
     deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 newtype Expr t = Expr (Located (Expr' t), t)
     deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
-data VarRef n
-    = Global (Located (Qualified n))
-    | Local (Located (Unique n))
-    deriving (Show, Eq, Ord, Functor, Data)
+typeOf :: Expr t -> t
+typeOf (Expr (_, t)) = t
+
+data VarRef' c n
+    = Global (c (Qualified n))
+    | Local (c (Unique n))
+    deriving (Functor)
+
+deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
+deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Unique n))) => Data (VarRef' c n)
+deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
+deriving instance (Ord (c (Qualified n)), Ord (c (Unique n))) => Ord (VarRef' c n)
+
+type VarRef n = VarRef' Located n
+
+type UnlocatedVarRef n = VarRef' Identity n
+
+unlocateVarRef :: VarRef n -> UnlocatedVarRef n
+unlocateVarRef (Global n) = Global (Identity (n ^. unlocated))
+unlocateVarRef (Local n) = Local (Identity (n ^. unlocated))
 
 data Pattern' t
     = VarPattern (Located (VarRef VarName))
@@ -72,6 +89,7 @@ data Type' t
     | TypeConstructorApplication t t
     | UserDefinedType (Located (Qualified TypeName))
     | RecordType (NonEmpty (Located VarName, t))
+    | TupleType (NonEmpty t)
     deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Data)
 
 newtype Type = Type (Type' Type)
@@ -111,7 +129,7 @@ makeLenses ''DeclarationBody
 makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Expr'
-makePrisms ''VarRef
+makePrisms ''VarRef'
 makePrisms ''PartialType
 makePrisms ''Pattern
 
@@ -132,6 +150,7 @@ instance (StripLocation t t') => StripLocation (Type' t) (Unlocated.Type' t') wh
         TypeConstructorApplication t1 t2 -> Unlocated.TypeConstructorApplication (stripLocation t1) (stripLocation t2)
         UserDefinedType (Located _ q) -> Unlocated.UserDefinedType q
         RecordType fields -> Unlocated.RecordType (stripLocation fields)
+        TupleType ts -> Unlocated.TupleType (stripLocation ts)
 
 instance (StripLocation t t') => StripLocation (Expr t) (Unlocated.Expr t') where
     stripLocation (Expr (e, t)) = Unlocated.Expr (stripLocation $ stripLocation e, stripLocation t)
@@ -153,6 +172,7 @@ instance (StripLocation t t') => StripLocation (Expr' t) (Unlocated.Expr' t') wh
         LetIn (Located _ u) e1 e2 -> Unlocated.LetIn u (stripLocation e1) (stripLocation e2)
         Let (Located _ u) e' -> Unlocated.Let u (stripLocation e')
         Block es -> Unlocated.Block (stripLocation es)
+        Tuple es -> Unlocated.Tuple (stripLocation es)
 
 instance StripLocation (VarRef a) (Unlocated.VarRef a) where
     stripLocation v = case v of
@@ -184,10 +204,6 @@ instance Pretty PartialType where
     pretty (Id t) = pretty t
     pretty p = pretty (stripLocation p)
 
-instance (Pretty n) => Pretty (VarRef n) where
-    pretty (Global q) = pretty q
-    pretty (Local q) = pretty q
-
 instance (Pretty t', StripLocation t t', Pretty t) => Pretty (Declaration t) where
     pretty (Declaration ldb) = pretty ldb
 
@@ -218,3 +234,12 @@ instance (Pretty t) => Pretty (TypeAnnotation t) where
 
 instance Pretty Type where
     pretty (Type t) = pretty (stripLocation t)
+
+instance
+    ( Pretty (c (Qualified a))
+    , Pretty (c (Unique a))
+    ) =>
+    Pretty (VarRef' c a)
+    where
+    pretty (Global q) = pretty q
+    pretty (Local q) = pretty q

@@ -233,6 +233,7 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
         e' <- shuntExpr e
         cases' <- traverse (bitraverse shuntPattern shuntExpr) cases
         pure $ Shunted.Match e' cases'
+    shuntExpr' (Renamed.Tuple es) = Shunted.Tuple <$> traverse shuntExpr es
 
 shuntVarRef :: Renamed.VarRef a -> Sem r (Shunted.VarRef a)
 shuntVarRef (Renamed.Global ln) = pure (Shunted.Global ln)

@@ -31,6 +31,7 @@ data Expr'
     | LetIn (Located (Unique VarName)) Expr Expr
     | Let (Located (Unique VarName)) Expr
     | Block (NonEmpty Expr)
+    | Tuple (NonEmpty Expr)
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')

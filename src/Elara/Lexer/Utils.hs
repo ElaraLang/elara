@@ -65,6 +65,7 @@ data LexerError
         -- ^ The actual indentation
         ParseState
         -- ^ The current state of the lexer
+    | UnterminatedStringLiteral ParseState
 
 instance ReportableError LexerError where
     report (TooMuchIndentation expected further actual s) = do
@@ -88,6 +89,19 @@ instance ReportableError LexerError where
                 msg
                 furtherHints
                 [ Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
+                , Hint hint
+                ]
+    report (UnterminatedStringLiteral s) = do
+        let fp = view (input . filePath) s
+        let pos = view (input . position) s
+        let msg = "Unterminated string literal."
+        let hint = "Make sure that the string literal is terminated with a double quote (\")."
+        writeReport $
+            Err
+                (Just Codes.unterminatedStringLiteral)
+                msg
+                [(positionToDiagnosePosition fp pos, This "this string literal is unterminated")]
+                [ Note "String literals are delimited by double quotes (\")."
                 , Hint hint
                 ]
 

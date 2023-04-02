@@ -5,6 +5,7 @@ import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
+import Polysemy.Error (throw)
 import Polysemy.State
 
 -- TODO: maybe also define empty Constructor for TokPosition
@@ -22,6 +23,7 @@ readToken = do
     [] ->
       case alexScan (s ^. input) (s ^. lexSC) of
         AlexEOF -> do
+          when (s ^. lexSC == stringSC) (throw $ UnterminatedStringLiteral s)
           eof <- fake TokenEOF
           closeIndents <- cleanIndentation
           modify (over pendingTokens (<> (closeIndents <> [eof])))

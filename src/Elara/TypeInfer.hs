@@ -13,6 +13,7 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
 import Polysemy.Writer
+import Print
 
 inferModule ::
     ( Member UniqueGen r
@@ -21,10 +22,13 @@ inferModule ::
     , Member (Error TypeError) r
     ) =>
     Module Shunted ->
-    Sem r (Module Typed)
+    Sem r (Module _)
 inferModule m = do
     ids <- assignIdsToModule m
     (env, (equations, _)) <- runState mempty $ runWriter $ generateEquationsForModule ids
     substitution <- unifyAllEquations (toList equations) env mempty
     substituted <- substitute substitution ids
-    finaliseModule substituted
+    debugColored (let (SubstitutionMap m) = substitution in length m)
+    debugPretty substitution
+
+    pure substituted

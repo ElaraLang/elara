@@ -6,10 +6,12 @@ import Elara.Data.Unique (UniqueId)
 import Elara.TypeInfer.Environment (TypeEnvironment)
 import Elara.TypeInfer.Error
 import Elara.TypeInfer.GenerateEquations (TypeEquation (TypeEquation))
-import Elara.TypeInfer.SubstitutionMap (SubstitutionMap)
+import Elara.TypeInfer.SubstitutionMap (Substitutable (substitute), SubstitutionMap)
 import Elara.TypeInfer.SubstitutionMap qualified as SubstitutionMap
 import Polysemy
 import Polysemy.Error
+import Polysemy.Reader
+import Print
 import Relude.Extra (secondF)
 
 unifyAllEquations ::
@@ -20,7 +22,21 @@ unifyAllEquations ::
     Sem r SubstitutionMap
 unifyAllEquations [] _ sub = pure sub
 unifyAllEquations (TypeEquation (t1, t2) : eqs) env sub =
-    unifyPartialTypes t1 t2 env sub >>= \sub' -> unifyAllEquations eqs env sub'
+    unifyPartialTypes t1 t2 env sub >>= \sub' -> do
+        -- debugPretty sub'
+        unifyAllEquations eqs env sub'
+
+{-
+newSubstitutionMap: SubstitutionMap
+    (Dict.fromList [
+        (0,Type (Function { from = Id 1, to = Id 2 }))
+        (1,Type Int),
+        (3,Type (Function { from = Id 4, to = Id 5 })),
+        (4,Type String),
+        (6,Id 8),
+        (8,Type (Tuple (Id 2) (Id 5)))])
+
+-}
 
 class TypeLike a where
     unifyType :: (Member (Error (TypeError, SubstitutionMap)) r) => a -> a -> TypeEnvironment -> SubstitutionMap -> Sem r SubstitutionMap
@@ -66,6 +82,7 @@ concreteToPartial (Type t) = Partial (concreteToPartial' t)
     concreteToPartial' (UserDefinedType ut) = UserDefinedType ut
     concreteToPartial' (TypeConstructorApplication ctor args) = TypeConstructorApplication (concreteToPartial ctor) (concreteToPartial args)
     concreteToPartial' (RecordType fields) = RecordType (secondF concreteToPartial fields)
+    concreteToPartial' (TupleType fields) = TupleType (fmap concreteToPartial fields)
 
 unifyTypes ::
     (Member (Error (TypeError, SubstitutionMap)) r) =>
@@ -88,7 +105,13 @@ unifyTypes t1 t2 env substitutionMap =
             (UserDefinedType _, _) -> err
             _ -> err
 
-unifyVariable :: (Member (Error (TypeError, SubstitutionMap)) r) => UniqueId -> PartialType -> TypeEnvironment -> SubstitutionMap -> Sem r SubstitutionMap
+unifyVariable ::
+    (Member (Error (TypeError, SubstitutionMap)) r) =>
+    UniqueId ->
+    PartialType ->
+    TypeEnvironment ->
+    SubstitutionMap ->
+    Sem r SubstitutionMap
 unifyVariable id otherTypeOrId aliases substitutionMap =
     case SubstitutionMap.lookup id substitutionMap of
         Just t -> unifyPartialTypes t otherTypeOrId aliases substitutionMap
@@ -98,12 +121,22 @@ unifyVariable id otherTypeOrId aliases substitutionMap =
                 <&> (\typeOrId2 -> unifyVariable id typeOrId2 aliases substitutionMap) of
                 Just result -> result
                 Nothing ->
-                    if occurs id otherTypeOrId substitutionMap
+                    if run $ runReader substitutionMap (occurs id otherTypeOrId)
                         then error "occurs check failed"
                         else pure (SubstitutionMap.insert id otherTypeOrId substitutionMap)
 
-occurs :: UniqueId -> PartialType -> SubstitutionMap -> Bool
-occurs id typeOrId substitutionMap =
+occurs :: forall r. (Member (Reader SubstitutionMap) r) => UniqueId -> PartialType -> Sem r Bool
+occurs id typeOrId =
     case typeOrId of
-        Id id' -> id == id'
-        _ -> False
+        Id id' -> pure (id == id')
+        Partial p -> occurs' p
+        Final t -> occurs id (toPartial t)
+  where
+    occurs' :: Type' PartialType -> Sem r Bool
+    occurs' (TypeVar _) = pure False
+    occurs' UnitType = pure False
+    occurs' (FunctionType l r) = liftA2 (||) (occurs id l) (occurs id r)
+    occurs' (UserDefinedType _) = pure False
+    occurs' (TypeConstructorApplication ctor args) = liftA2 (||) (occurs id ctor) (occurs id args)
+    occurs' (RecordType fields) = anyM (occurs id . snd) fields
+    occurs' (TupleType fields) = anyM (occurs id) fields

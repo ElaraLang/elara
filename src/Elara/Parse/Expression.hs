@@ -8,6 +8,7 @@ import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (VarName, nameText)
 import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
 import Elara.Lexer.Token (Token (..))
+import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
@@ -46,7 +47,7 @@ statement :: HParser Expr
 statement = letStatement <??> "statement"
 
 -- Lift a binary operator to work on `Expr` instead of `Frontend.Expr`. Probably not the best way to do this, but it works
-liftedBinary :: Monad m => m t -> (t -> Expr -> Expr -> Frontend.Expr') -> m (Expr -> Expr -> Expr)
+liftedBinary :: (Monad m) => m t -> (t -> Expr -> Expr -> Frontend.Expr') -> m (Expr -> Expr -> Expr)
 liftedBinary op f = do
     op' <- op
     let create l'@(Expr l) r'@(Expr r) =
@@ -75,6 +76,7 @@ expression :: HParser Frontend.Expr
 expression =
     unit
         <|> (parensExpr <??> "parenthesized expression")
+        <|> (tuple <??> "tuple expression")
         <|> (ifElse <??> "if expression")
         <|> (letInExpression <??> "let-in expression")
         <|> (lambda <??> "lambda expression")
@@ -86,7 +88,7 @@ expression =
         <|> (variable <??> "variable")
         <|> (constructor <??> "constructor")
         <|> (list <??> "list")
-        <??> "expression"
+            <??> "expression"
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text
@@ -187,6 +189,7 @@ letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDe
 letInExpression = locatedExpr $ do
     (name, patterns, e) <- letPreamble
     token' TokenIn
+    endHead
     body <- block element
 
     -- let names = patterns >>= patternNames
@@ -207,3 +210,11 @@ letPreamble = do
     token' TokenEquals
     e <- block element
     pure (name, patterns, e)
+
+tuple :: HParser Frontend.Expr
+tuple = locatedExpr $ do
+    token' TokenLeftParen
+    endHead
+    elements <- sepEndBy1' exprParser (token' TokenComma)
+    token' TokenRightParen
+    pure $ Frontend.Tuple elements

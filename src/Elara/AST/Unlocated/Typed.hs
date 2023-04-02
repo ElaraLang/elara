@@ -30,6 +30,7 @@ data Expr' t
     | LetIn (Unique VarName) (Expr t) (Expr t)
     | Let (Unique VarName) (Expr t)
     | Block (NonEmpty (Expr t))
+    | Tuple (NonEmpty (Expr t))
     deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 newtype Expr t = Expr (Expr' t, t)
@@ -67,6 +68,7 @@ data Type' t
     | TypeConstructorApplication t t
     | UserDefinedType (Qualified TypeName)
     | RecordType (NonEmpty (VarName, t))
+    | TupleType (NonEmpty t)
     deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Data)
 
 newtype Type = Type (Type' Type)
@@ -111,6 +113,7 @@ instance (Pretty t) => Pretty (Type' t) where
     pretty UnitType = "()"
     pretty (TypeConstructorApplication a b) = parens (pretty a <+> pretty b)
     pretty (UserDefinedType q) = pretty q
+    pretty (TupleType ts) = "(" <+> hsep (punctuate ", " (pretty <$> toList ts)) <+> ")"
     pretty (RecordType fields) = "{" <+> hsep (punctuate ", " (pprField <$> toList fields)) <+> "}"
       where
         pprField (name, t) = pretty name <+> ":" <+> pretty t
@@ -141,7 +144,8 @@ instance (Pretty t) => Pretty (Expr' t) where
         pprCase (p, e) = pretty p <+> "->" <+> pretty e
     pretty (LetIn u e1 e2) = "let" <+> pretty u <+> "=" <+> pretty e1 <+> "in" <+> pretty e2
     pretty (Let u e) = "let" <+> pretty u <+> "=" <+> pretty e
-    pretty (Block es) = vsep (pretty <$> toList es)
+    pretty (Block es) = "{" <+> sep (punctuate ";" (pretty <$> toList es)) <+> "}"
+    pretty (Tuple es) = "(" <+> hsep (punctuate ", " (pretty <$> toList es)) <+> ")"
 
 instance (Pretty t) => Pretty (Pattern t) where
     pretty (Pattern (p, t)) = parens (pretty p <+> ":" <+> pretty t)

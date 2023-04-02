@@ -159,6 +159,7 @@ desugarExpr (Frontend.Expr fe) = Desugared.Expr <$> traverseOf unlocated desugar
         pure (Desugared.LetIn n (foldLambda pats' e') body')
     desugarExpr' (Frontend.Block e) = Desugared.Block <$> traverse desugarExpr e
     desugarExpr' (Frontend.InParens e) = Desugared.InParens <$> desugarExpr e
+    desugarExpr' (Frontend.Tuple e) = Desugared.Tuple <$> traverse desugarExpr e
 
 desugarBinaryOperator :: Frontend.BinaryOperator -> Desugar Desugared.BinaryOperator
 desugarBinaryOperator (Frontend.MkBinaryOperator lop) = Desugared.MkBinaryOperator <$> traverseOf unlocated desugarBinaryOperator' lop

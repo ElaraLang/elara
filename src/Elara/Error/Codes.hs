@@ -27,6 +27,9 @@ tooMuchIndentation = "E0002"
 genericParseError :: ErrorCode
 genericParseError = "E0003"
 
+unterminatedStringLiteral :: ErrorCode
+unterminatedStringLiteral = "E0004"
+
 unknownName :: ErrorCode
 unknownName = "E1001"
 

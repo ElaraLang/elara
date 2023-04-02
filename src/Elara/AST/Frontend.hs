@@ -6,7 +6,6 @@ module Elara.AST.Frontend where
 import Control.Lens.TH
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
-import Prelude hiding (Type)
 
 -- | Frontend AST
 data Expr'
@@ -27,6 +26,7 @@ data Expr'
     | Let (Located VarName) [Pattern] Expr
     | Block (NonEmpty Expr)
     | InParens Expr
+    | Tuple (NonEmpty Expr)
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')

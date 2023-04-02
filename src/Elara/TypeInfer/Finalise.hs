@@ -52,10 +52,11 @@ finaliseType (Partial t) = Type <$> finaliseType' t
     FunctionType t1 t2 -> FunctionType <$> finaliseType t1 <*> finaliseType t2
     TypeConstructorApplication t1 t2 -> TypeConstructorApplication <$> finaliseType t1 <*> finaliseType t2
     RecordType fields -> RecordType <$> traverse (traverse finaliseType) fields
+    TupleType ts -> TupleType <$> traverse finaliseType ts
 
 finaliseModule ::
   forall r.
-  (Member (State TVMap) r) =>
+  (Member (State TVMap) r, Member UniqueGen r) =>
   Module PartialTyped ->
   Sem r (Module Typed)
 finaliseModule = traverseModule finaliseDeclaration
@@ -64,12 +65,12 @@ finaliseModule = traverseModule finaliseDeclaration
   finaliseDeclaration = traverseOf (_Declaration . unlocated) finaliseDecl
 
   finaliseDecl :: Declaration' PartialType -> Sem r (Declaration' Type)
-  finaliseDecl (decl' :: Declaration' PartialType) = runFreshUniqueSupply $
+  finaliseDecl (decl' :: Declaration' PartialType) =
     do
-      body' <- subsume $ finaliseDeclarationBody (decl' ^. declaration'Body)
+      body' <- finaliseDeclarationBody (decl' ^. declaration'Body)
       pure (Declaration' (decl' ^. moduleName) (decl' ^. name) body')
 
-  finaliseDeclarationBody :: (Member (State TVMap) r1, Member UniqueGen r1) => DeclarationBody PartialType -> Sem r1 (DeclarationBody Type)
+  finaliseDeclarationBody :: DeclarationBody PartialType -> Sem r (DeclarationBody Type)
   finaliseDeclarationBody =
     traverseOf
       (_DeclarationBody . unlocated)

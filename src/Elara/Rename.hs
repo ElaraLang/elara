@@ -304,6 +304,7 @@ renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExp
         pure $ Renamed.Match e' cases'
     renameExpr' (Desugared.Block es) = Renamed.Block <$> traverse renameExpr es
     renameExpr' (Desugared.InParens es) = Renamed.InParens <$> renameExpr es
+    renameExpr' (Desugared.Tuple es) = Renamed.Tuple <$> traverse renameExpr es
 
 renameBinaryOperator :: Desugared.BinaryOperator -> Renamer Renamed.BinaryOperator
 renameBinaryOperator (Desugared.MkBinaryOperator op) = Renamed.MkBinaryOperator <$> traverseOf unlocated renameBinaryOperator' op

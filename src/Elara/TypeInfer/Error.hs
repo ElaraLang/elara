@@ -13,7 +13,7 @@ data TypeError
 instance ReportableError TypeError where
     report (TypeMismatch expected actual) =
         writeReport $
-            Err Nothing "Type mismatch" [] []
+            Err Nothing ("Type mismatch. Expected: " <> show expected <> " but was: " <> show actual) [] []
     report (UnboundVariable var) =
         writeReport $
             Err Nothing "Unbound variable" [] []

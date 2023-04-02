@@ -3,7 +3,7 @@
 module Elara.AST.Renamed where
 
 import Control.Lens (makeLenses, makePrisms, view)
-import Elara.AST.Name (HasName (name), ModuleName, Name, OpName, Qualified, TypeName, VarName, LowerAlphaName)
+import Elara.AST.Name (HasName (name), LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
@@ -29,6 +29,7 @@ data Expr'
     | Let (Located (Unique VarName)) Expr
     | Block (NonEmpty Expr)
     | InParens Expr
+    | Tuple (NonEmpty Expr)
     deriving (Show, Eq)
 
 newtype Expr = Expr (Located Expr')

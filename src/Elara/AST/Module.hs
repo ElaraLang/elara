@@ -14,13 +14,11 @@ module Elara.AST.Module where
 
 import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, traverseOf, traverseOf_, (^.))
 import Data.Kind qualified as Kind (Type)
-import Data.Text.Prettyprint.Doc (Pretty)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), UnlocatedFrontend)
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
-import Elara.Data.Pretty (Pretty (pretty))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))

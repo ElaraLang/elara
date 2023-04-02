@@ -148,7 +148,6 @@ instance RUnlocate Desugared where
     rUnlocated' = unlocated
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
     fmapRUnlocate' f (Located r a) = Located r (f a)
-    sequenceRUnlocate' :: (Functor f) => Located (f a) -> f (Located a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
 instance RUnlocate Renamed where
@@ -158,7 +157,6 @@ instance RUnlocate Renamed where
     rUnlocated' = unlocated
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
     fmapRUnlocate' f (Located r a) = Located r (f a)
-    sequenceRUnlocate' :: (Functor f) => Located (f a) -> f (Located a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
 instance GetLocation Renamed where
@@ -185,7 +183,16 @@ instance RUnlocate Typed where
     rUnlocated' = unlocated
     fmapRUnlocate f (Located r a) = Located r (fmap f a)
     fmapRUnlocate' f (Located r a) = Located r (f a)
-    sequenceRUnlocate' :: (Functor f) => Located (f a) -> f (Located a)
+    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
+
+
+instance RUnlocate PartialTyped where
+    rUnlocate (Located _ a) = a
+    rUnlocate' (Located _ a) = a
+    rUnlocated = unlocated
+    rUnlocated' = unlocated
+    fmapRUnlocate f (Located r a) = Located r (fmap f a)
+    fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
 class HasModuleName c ast | c -> ast where
