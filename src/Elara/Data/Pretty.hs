@@ -6,10 +6,12 @@ module Elara.Data.Pretty (
     parensIf,
     PrettyPrec (..),
     module Prettyprinter,
+    module Prettyprinter.Render.Terminal,
 ) where
 
 import Data.Map qualified as Map (toList)
 import Prettyprinter
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 indentDepth :: Int
 indentDepth = 4
@@ -41,3 +43,6 @@ instance (Pretty k, Pretty v) => Pretty (Map k v) where
 
 instance (Pretty s) => Pretty (Set s) where
     pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"
+
+instance Pretty (Doc ann) where
+    pretty = unAnnotate -- TODO: make this good

@@ -7,7 +7,7 @@ import Error.Diagnose.Diagnostic as Diagnostic (Diagnostic, addFile, addReport)
 import Error.Diagnose.Report (Report)
 import Polysemy
 import Polysemy.State
-import Prelude hiding (modify', runState)
+import Prelude hiding (modify')
 
 {- | Essentially a very specialised Writer effect for Diagnostics, but safer
 | Because the Semigroup instance for Diagnostics is a little funky, there's a chance of accidentally overwriting the

@@ -10,6 +10,7 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
+import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose (Report (Err))

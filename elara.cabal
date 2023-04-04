@@ -41,6 +41,7 @@ library
       Elara.AST.Unlocated.Typed
       Elara.Data.Pretty
       Elara.Data.Unique
+      Elara.Data.Unwrap
       Elara.Desugar
       Elara.Error
       Elara.Error.Codes

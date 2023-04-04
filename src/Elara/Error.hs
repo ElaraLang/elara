@@ -5,10 +5,12 @@ module Elara.Error (ReportableError (..), addPosition, concatDiagnostics, module
 import Elara.Error.Effect
 import Error.Diagnose
 import Polysemy
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where
-    report :: (Member (DiagnosticWriter Text) r) => e -> Sem r ()
+    report :: (Member (DiagnosticWriter (Doc ann)) r) => e -> Sem r ()
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes

@@ -16,11 +16,8 @@ module Elara.TypeInfer.Monotype (
   RemainingAlternatives (..),
 ) where
 
-import Data.String (IsString (..))
-import Data.Text (Text)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.TypeInfer.Existential (Existential)
-import GHC.Generics (Generic)
 
 {- | A monomorphic type
 
@@ -123,3 +120,5 @@ data RemainingAlternatives
     --   alternatives variable an explicit name in the source code
     VariableAlternatives Text
   deriving stock (Eq, Generic, Show)
+
+instance Pretty Monotype

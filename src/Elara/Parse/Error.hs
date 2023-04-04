@@ -6,20 +6,21 @@
 
 module Elara.Parse.Error where
 
+import Elara.Lexer.Token (Lexeme)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
 import Text.Megaparsec qualified as MP
 import Text.Megaparsec.Error
 import Prelude hiding (error, lines)
-import Elara.Lexer.Token (Lexeme)
 
 import Control.Lens (to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
-import Elara.Error
 import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
+import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.Data.Pretty
+import Elara.Error
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (error, lines)
 
@@ -32,9 +33,9 @@ parseErrorSources :: ElaraParseError -> [SourceRegion]
 parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 
-instance HasHints ElaraParseError Text where
+instance HasHints ElaraParseError (Doc ann) where
     hints (KeywordUsedAsName kw) =
-        [ Note (view (unlocated . to nameText) kw <> " is a keyword which can only be used in certain contexts. However, it was used as a name here.")
+        [ Note (view (unlocated . to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
         , Hint "Try using a different name"
         ]
     hints (EmptyRecord _) =

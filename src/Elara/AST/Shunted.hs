@@ -5,8 +5,10 @@ module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
 import Elara.AST.Name
-import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion)
+import Elara.AST.Region (IgnoreLocation (..), Located (..))
+import Elara.Data.Pretty
 import Elara.Data.Unique
+import Elara.Data.Unwrap (Unwrap (unwrap))
 import Prelude hiding (Op)
 
 {- | Shunted AST Type
@@ -122,9 +124,14 @@ data DeclarationBody'
 
 makePrisms ''Declaration
 makeLenses ''Declaration'
+makePrisms ''Declaration'
 makePrisms ''DeclarationBody
 makePrisms ''DeclarationBody'
 makeLenses ''DeclarationBody
 makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
+
+instance (Unwrap c, Pretty n) => Pretty (VarRef' c n) where
+    pretty (Global n) = pretty (unwrap n)
+    pretty (Local n) = pretty (unwrap n)

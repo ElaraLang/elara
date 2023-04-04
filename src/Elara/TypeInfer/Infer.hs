@@ -21,8 +21,7 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Data.Maybe (fromJust)
-import Elara.AST.Shunted (Expr (..), mkGlobal', mkLocal', withName', _Expr)
+import Elara.AST.Shunted (Expr (..), mkLocal', _Expr)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
@@ -33,20 +32,17 @@ import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Elara.AST.Name
 import Elara.AST.Region
 import Elara.AST.Shunted qualified as Syntax
-import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
+import Elara.TypeInfer.Error (TypeInferenceError(..))
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
-import Error.Diagnose.Report (Report (Err))
 import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
-import Print
 
 -- | Type-checking state
 data Status = Status
@@ -1291,10 +1287,9 @@ infer (Expr (Located location e0)) cont = do
         -- Var
         Syntax.Var vn -> do
             _Γ <- get
-            l <-
-                pure $
-                    fromMaybe (error $ "couldn't find " <> show (vn ^. unlocated)) $
-                        Context.lookup (Syntax.withName' (vn ^. unlocated)) _Γ
+
+            let n = Syntax.withName' (vn ^. unlocated)
+            l <- Context.lookup n _Γ `orDie` UnboundVariable n
             c <- cont
             pure (l, c)
 
@@ -1302,7 +1297,8 @@ infer (Expr (Located location e0)) cont = do
         Syntax.Constructor ctorName -> do
             _Γ <- get
 
-            l <- Context.lookup (Syntax.withName' (ctorName ^. unlocated)) _Γ `orDie` UnboundConstructor ctorName
+            let n = Syntax.withName' (ctorName ^. unlocated)
+            l <- Context.lookup n _Γ `orDie` UnboundConstructor n
             c <- cont
             pure (l, c)
         -- →I⇒
@@ -1593,46 +1589,6 @@ typeWithCont syntax cont = do
     (_A, a) <- infer syntax cont
 
     pure (_A, a)
-
--- | A data type holding all errors related to type inference
-data TypeInferenceError
-    = IllFormedAlternatives SourceRegion (Existential Monotype.Union) (Context SourceRegion)
-    | IllFormedFields SourceRegion (Existential Monotype.Record) (Context SourceRegion)
-    | IllFormedType SourceRegion (Type SourceRegion) (Context SourceRegion)
-    | --
-      InvalidOperands SourceRegion (Type SourceRegion)
-    | --
-      MergeConcreteRecord SourceRegion (Type SourceRegion)
-    | MergeInvalidHandler SourceRegion (Type SourceRegion)
-    | MergeRecord SourceRegion (Type SourceRegion)
-    | --
-      MissingAllAlternatives (Existential Monotype.Union) (Context SourceRegion)
-    | MissingAllFields (Existential Monotype.Record) (Context SourceRegion)
-    | MissingOneOfAlternatives [SourceRegion] (Existential Monotype.Union) (Existential Monotype.Union) (Context SourceRegion)
-    | MissingOneOfFields [SourceRegion] (Existential Monotype.Record) (Existential Monotype.Record) (Context SourceRegion)
-    | MissingVariable (Existential Monotype) (Context SourceRegion)
-    | --
-      NotFunctionType SourceRegion (Type SourceRegion)
-    | NotNecessarilyFunctionType SourceRegion Text
-    | --
-      NotAlternativesSubtype SourceRegion (Existential Monotype.Union) (Type.Union SourceRegion)
-    | NotFieldsSubtype SourceRegion (Existential Monotype.Record) (Type.Record SourceRegion)
-    | NotRecordSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | NotUnionSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | NotSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | --
-      UnboundAlternatives SourceRegion Text
-    | UnboundFields SourceRegion Text
-    | UnboundTypeVariable SourceRegion Text
-    | UnboundVariable (Located (Syntax.IgnoreLocVarRef VarName))
-    | UnboundConstructor (Located (Syntax.VarRef TypeName))
-    | --
-      RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
-    | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
-    deriving (Eq, Show)
-
-instance ReportableError TypeInferenceError where
-    report e = writeReport $ Err Nothing (prettyShow e) [] []
 
 -- instance Exception TypeInferenceError where
 --     displayException (IllFormedAlternatives location a0 _Γ) =

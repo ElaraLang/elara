@@ -1,5 +1,7 @@
 module Elara.Error.Codes where
 
+import Elara.Data.Pretty
+
 {- | A type for error codes.
 While not enforced, error codes should follow a standard format consisting of the following components
 
@@ -16,7 +18,7 @@ The first digit signals the stage in which the error was thrown:
 The remaining digits are arbitrary and should be incremented for each new error or warning.
 They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
 -}
-type ErrorCode = Text
+type ErrorCode = forall ann. Doc ann
 
 fileReadError :: ErrorCode
 fileReadError = "E0001"

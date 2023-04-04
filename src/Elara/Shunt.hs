@@ -14,6 +14,7 @@ import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted qualified as Shunted
+import Elara.Data.Pretty
 import Elara.Error (ReportableError (..))
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
@@ -77,7 +78,7 @@ instance ReportableError ShuntWarning where
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
-                ("Unknown precedence/associativity for operator " <> operatorName (lOperator ^. unlocated) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                ("Unknown precedence/associativity for operator" <+> pretty (operatorName (lOperator ^. unlocated)) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
                 [(opSrc, This "operator")]
                 [Hint "Define the precedence and associativity of the operator explicitly"]
 

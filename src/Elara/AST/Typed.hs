@@ -6,8 +6,8 @@ module Elara.AST.Typed where
 import Control.Lens hiding (List)
 import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
-import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegion, unlocated)
+import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.Region (Located (Located), generatedSourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.Data.Pretty

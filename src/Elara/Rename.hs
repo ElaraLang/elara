@@ -27,6 +27,7 @@ import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sour
 import Elara.AST.Renamed (VarRef (..))
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select (Desugared, HasModuleName (..), HasName (..), Renamed)
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
@@ -57,7 +58,7 @@ instance ReportableError RenameError where
         writeReport $
             Err
                 Nothing
-                ("Qualified name in wrong module: " <> show m1 <> " in " <> show m2)
+                ("Qualified name in wrong module:" <+> show m1 <+> "in" <+> show m2)
                 []
                 []
     report (NonExistentModuleDeclaration m n) =
@@ -65,7 +66,7 @@ instance ReportableError RenameError where
          in writeReport $
                 Err
                     (Just Codes.nonExistentModuleDeclaration)
-                    ("Element " <> (n ^. unlocated . to nameText) <> " does not exist in in module " <> nameText m)
+                    ("Element" <+> (n ^. unlocated . to pretty) <+> "does not exist in in module" <+> pretty m)
                     [(nPos, This "referenced here")]
                     []
     report (UnknownName n) =

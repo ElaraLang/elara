@@ -1,34 +1,43 @@
 module Elara.TypeInfer where
 
-import Control.Lens (to, traverseOf, traverseOf_, (^.))
+import Control.Lens (traverseOf, traverseOf_, (^.), _2)
 import Elara.AST.Module
-import Elara.AST.Name (Name, NameLike (fullNameText), Qualified)
-import Elara.AST.Region (Located, SourceRegion, unlocated)
+import Elara.AST.Name (Name, Qualified)
+import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
 import Elara.AST.Typed as Typed
 import Elara.TypeInfer.Context
+import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type hiding (name)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
-import Print (debugColored)
 import TODO (todo)
 
 inferModule ::
+    forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Module Shunted ->
     Sem r (Module Typed)
-inferModule = traverseModule inferDeclaration
+inferModule m = do
+    traverseModule_ addStubsToModule m
+    traverseModule inferDeclaration m
+
+addStubsToModule :: (Member (Error TypeInferenceError) r, Member (State Status) r) => Shunted.Declaration -> Sem r ()
+addStubsToModule = traverseOf_ (Shunted._Declaration . unlocated . Shunted._Declaration') addStubsToDeclaration
+  where
+    addStubsToDeclaration (_, name, body) =
+        traverseOf_ (Shunted._DeclarationBody . unlocated . Shunted._Value . _2) (addValueDeclarationStub name) body
 
 inferDeclaration ::
     forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Shunted.Declaration ->
     Sem r (Typed.Declaration (Type SourceRegion))
-inferDeclaration (Shunted.Declaration ld) = do
+inferDeclaration (Shunted.Declaration ld) =
     Typed.Declaration
         <$> traverseOf
             unlocated
@@ -54,9 +63,20 @@ inferDeclaration (Shunted.Declaration ld) = do
         pure $ Typed.Value e' Nothing
     inferDeclarationBody' _ t@(Shunted.TypeAlias _) = todo
 
+addValueDeclarationStub ::
+    forall r.
+    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    Located (Qualified Name) ->
+    Maybe (Located Shunted.TypeAnnotation) ->
+    Sem r ()
+addValueDeclarationStub name ty = do
+    expectedType <- case ty of
+        Just x -> undefined
+        Nothing -> Elara.TypeInfer.Type.UnsolvedType (name ^. sourceRegion) <$> fresh
+    push (Annotation (mkGlobal' name) (expectedType :: Type SourceRegion))
+
 inferExpression ::
     forall r.
-    (HasCallStack) =>
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Shunted.Expr ->
     Sem r (Typed.Expr (Type SourceRegion))
@@ -68,16 +88,14 @@ inferExpression e@(Shunted.Expr le) = do
     ctx <- Infer.get
     pure $ Typed.Expr (e', complete ctx ty')
   where
-    inferExpression' :: (HasCallStack) => Shunted.Expr' -> Sem r (Typed.Expr' (Type SourceRegion))
+    inferExpression' :: Shunted.Expr' -> Sem r (Typed.Expr' (Type SourceRegion))
     inferExpression' (Shunted.Int l) = pure $ Typed.Int l
     inferExpression' (Shunted.Float l) = pure $ Typed.Float l
     inferExpression' (Shunted.String l) = pure $ Typed.String l
     inferExpression' (Shunted.Char l) = pure $ Typed.Char l
     inferExpression' Shunted.Unit = pure Typed.Unit
-    inferExpression' (Shunted.Var v) = do
-        pure $ Typed.Var (fmap convertVarRef v)
-    inferExpression' (Shunted.Constructor c) = do
-        pure $ Typed.Constructor (fmap convertVarRef c)
+    inferExpression' (Shunted.Var v) = pure $ Typed.Var (fmap convertVarRef v)
+    inferExpression' (Shunted.Constructor c) = pure $ Typed.Constructor (fmap convertVarRef c)
     inferExpression' (Shunted.Lambda v e) = do
         e' <- inferExpression e
         pure $ Typed.Lambda v e'
@@ -93,8 +111,7 @@ inferExpression e@(Shunted.Expr le) = do
     inferExpression' (Shunted.List es) = do
         es' <- traverse inferExpression es
         pure $ Typed.List es'
-    inferExpression' (Shunted.Match e ps) = do
-        todo
+    inferExpression' (Shunted.Match e ps) = todo
     inferExpression' (Shunted.LetIn n val body) = do
         val' <- inferExpression val
         body' <- inferExpression body
