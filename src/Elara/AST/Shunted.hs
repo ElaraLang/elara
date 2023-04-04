@@ -1,10 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
-import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located)
+import Elara.AST.Name
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion)
 import Elara.Data.Unique
 import Prelude hiding (Op)
 
@@ -37,10 +38,37 @@ data Expr'
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
-data VarRef n
-    = Global (Located (Qualified n))
-    | Local (Located (Unique n))
-    deriving (Show, Eq, Functor)
+data VarRef' c n
+    = Global (c (Qualified n))
+    | Local (c (Unique n))
+    deriving (Functor)
+
+deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
+deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
+
+type VarRef n = VarRef' Located n
+
+type IgnoreLocVarRef n = VarRef' IgnoreLocation n
+
+mkLocal :: (ToName n) => Located (Unique n) -> VarRef Name
+mkLocal n = Local (toName <<$>> n)
+
+mkLocal' :: (ToName n) => Located (Unique n) -> IgnoreLocVarRef Name
+mkLocal' n = Local (toName <<$>> IgnoreLocation n)
+
+mkGlobal :: (ToName n) => Located (Qualified n) -> VarRef Name
+mkGlobal n = Global (toName <<$>> n)
+
+mkGlobal' :: (ToName n) => Located (Qualified n) -> IgnoreLocVarRef Name
+mkGlobal' n = Global (toName <<$>> IgnoreLocation n)
+
+withName :: (ToName n) => VarRef n -> VarRef Name
+withName (Global n) = Global (toName <<$>> n)
+withName (Local n) = Local (toName <<$>> n)
+
+withName' :: (ToName n) => VarRef n -> IgnoreLocVarRef Name
+withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
+withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))

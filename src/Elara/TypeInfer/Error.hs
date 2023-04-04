@@ -5,15 +5,15 @@ import Elara.Data.Unique (UniqueId)
 import Elara.Error (ReportableError (report), writeReport)
 import Error.Diagnose (Report (Err))
 
-data TypeError
-    = TypeMismatch PartialType PartialType
-    | UnboundVariable UniqueId
-    deriving (Show)
+-- data TypeError
+--     = TypeMismatch PartialType PartialType
+--     | UnboundVariable UniqueId
+--     deriving (Show)
 
-instance ReportableError TypeError where
-    report (TypeMismatch expected actual) =
-        writeReport $
-            Err Nothing ("Type mismatch. Expected: " <> show expected <> " but was: " <> show actual) [] []
-    report (UnboundVariable var) =
-        writeReport $
-            Err Nothing "Unbound variable" [] []
+-- instance ReportableError TypeError where
+--     report (TypeMismatch expected actual) =
+--         writeReport $
+--             Err Nothing ("Type mismatch. Expected: " <> show expected <> " but was: " <> show actual) [] []
+--     report (UnboundVariable var) =
+--         writeReport $
+--             Err Nothing "Unbound variable" [] []

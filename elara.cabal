@@ -66,15 +66,13 @@ library
       Elara.Rename
       Elara.Shunt
       Elara.TypeInfer
-      Elara.TypeInfer.AssignIds
-      Elara.TypeInfer.Env
-      Elara.TypeInfer.Environment
+      Elara.TypeInfer.Context
+      Elara.TypeInfer.Domain
       Elara.TypeInfer.Error
-      Elara.TypeInfer.Finalise
-      Elara.TypeInfer.GenerateEquations
-      Elara.TypeInfer.SubstitutionMap
-      Elara.TypeInfer.TypeVariables
-      Elara.TypeInfer.Unify
+      Elara.TypeInfer.Existential
+      Elara.TypeInfer.Infer
+      Elara.TypeInfer.Monotype
+      Elara.TypeInfer.Type
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.MTL
@@ -107,6 +105,7 @@ library
     , bytestring
     , containers
     , diagnose
+    , generic-lens
     , headed-megaparsec
     , lens
     , megaparsec
@@ -116,6 +115,7 @@ library
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
+    , prettyprinter-ansi-terminal
     , relude
     , utf8-string
   default-language: GHC2021
@@ -146,6 +146,7 @@ executable elara
     , containers
     , diagnose
     , elara
+    , generic-lens
     , headed-megaparsec
     , lens
     , megaparsec
@@ -155,6 +156,7 @@ executable elara
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
+    , prettyprinter-ansi-terminal
     , relude
     , utf8-string
   default-language: GHC2021
@@ -197,6 +199,7 @@ test-suite elara-test
     , containers
     , diagnose
     , elara
+    , generic-lens
     , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec
@@ -209,6 +212,7 @@ test-suite elara-test
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
+    , prettyprinter-ansi-terminal
     , relude
     , utf8-string
   default-language: GHC2021

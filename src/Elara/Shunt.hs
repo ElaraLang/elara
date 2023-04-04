@@ -236,8 +236,8 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
     shuntExpr' (Renamed.Tuple es) = Shunted.Tuple <$> traverse shuntExpr es
 
 shuntVarRef :: Renamed.VarRef a -> Sem r (Shunted.VarRef a)
-shuntVarRef (Renamed.Global ln) = pure (Shunted.Global ln)
-shuntVarRef (Renamed.Local ln) = pure (Shunted.Local ln)
+shuntVarRef (Renamed.Global n) = pure (Shunted.Global n)
+shuntVarRef (Renamed.Local n) = pure (Shunted.Local n)
 
 shuntPattern :: Renamed.Pattern -> Sem r Shunted.Pattern
 shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shuntPattern' lp

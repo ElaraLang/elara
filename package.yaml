@@ -15,9 +15,10 @@ extra-source-files:
 
 
 dependencies:
-  - name: base-noprelude
-  - name: relude
+  - base-noprelude
+  - relude
   - lens
+  - generic-lens
   - containers
   - bytestring
   - utf8-string
@@ -28,6 +29,7 @@ dependencies:
   - pretty-simple
   - diagnose
   - prettyprinter
+  - prettyprinter-ansi-terminal
   - polysemy
   - polysemy-plugin
   - mtl

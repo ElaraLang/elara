@@ -8,8 +8,6 @@ module Main (
 import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select
-import Elara.Data.Pretty
-import Elara.Data.Unique
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
@@ -21,16 +19,17 @@ import Elara.Parse.Stream
 import Elara.Rename (ModulePath, rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
-import Elara.TypeInfer.Error
+import Elara.TypeInfer.Infer (initialStatus)
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
-import Polysemy (Embed, Member, Sem, runM, subsume, subsume_)
-import Polysemy.Embed (embed)
+import Polysemy (Embed, Member, Sem, runM, subsume_)
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
-import Prettyprinter.Render.Text (putDoc)
+import Prettyprinter.Render.Text
+import Elara.Data.Pretty
+import Polysemy.Embed
 
 main :: IO ()
 main = do
@@ -107,17 +106,7 @@ shuntModule m = do
 
 inferModule :: (Member (DiagnosticWriter Text) r, Member MaybeE r, Member (Embed IO) r) => Module Shunted -> Sem r (Module _)
 inferModule m = do
-  x <-
-    subsume $
-      uniqueGenToIO $
-        runError $
-          evalState mempty $
-            runErrorOrReport @TypeError
-              ( Infer.inferModule m
-              )
-  case x of
-    Left (err, _) -> report err *> nothingE
-    Right m' -> justE m'
+  runErrorOrReport (evalState initialStatus (Infer.inferModule m))
 
 loadModule :: (Member (DiagnosticWriter Text) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

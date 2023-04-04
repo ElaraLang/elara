@@ -95,3 +95,6 @@ extra-deps:
 - selective-0.5@sha256:dff7715af7cc652f2e695e17674e2b1016ea4f675357291dc78a1f7a3ee5a17f,3470
 - alex-3.2.7.1@sha256:ab26a38cefae59403f746370e5a0c943b8d5bda098eb83f37052b2429ee780ce,3911
 - utf8-string-1.0.2
+- generic-lens-2.2.1.0
+- generic-lens-core-2.2.1.0
+- indexed-profunctors-0.1.1

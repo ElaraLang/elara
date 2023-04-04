@@ -13,6 +13,7 @@ import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed qualified as Typed
 import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
+import Elara.TypeInfer.Type qualified as Typed
 
 data Frontend
 
@@ -24,8 +25,6 @@ data Renamed
 
 data Shunted
 
-data PartialTyped
-
 data Typed
 
 type family ASTExpr ast where
@@ -34,8 +33,7 @@ type family ASTExpr ast where
     ASTExpr Desugared = Desugared.Expr
     ASTExpr Renamed = Renamed.Expr
     ASTExpr Shunted = Shunted.Expr
-    ASTExpr PartialTyped = Typed.Expr Typed.PartialType
-    ASTExpr Typed = Typed.Expr Typed.Type
+    ASTExpr Typed = Typed.Expr (Typed.Type SourceRegion)
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
@@ -43,8 +41,7 @@ type family ASTType ast where
     ASTType Desugared = Desugared.Type
     ASTType Renamed = Renamed.Type
     ASTType Shunted = Shunted.Type
-    ASTType PartialTyped = Typed.PartialType
-    ASTType Typed = Typed.Type
+    ASTType Typed = Typed.Type SourceRegion
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
@@ -52,8 +49,7 @@ type family ASTPattern ast where
     ASTPattern Desugared = Desugared.Pattern
     ASTPattern Renamed = Renamed.Pattern
     ASTPattern Shunted = Shunted.Pattern
-    ASTPattern PartialTyped = Typed.Pattern Typed.PartialType
-    ASTPattern Typed = Typed.Pattern Typed.Type
+    ASTPattern Typed = Typed.Pattern (Typed.Type SourceRegion)
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
@@ -61,7 +57,6 @@ type family ASTQual ast where
     ASTQual Desugared = MaybeQualified
     ASTQual Renamed = Qualified
     ASTQual Shunted = Qualified
-    ASTQual PartialTyped = Qualified
     ASTQual Typed = Qualified
 
 type family ASTLocate' ast where
@@ -70,7 +65,6 @@ type family ASTLocate' ast where
     ASTLocate' Desugared = Located
     ASTLocate' Renamed = Located
     ASTLocate' Shunted = Located
-    ASTLocate' PartialTyped = Located
     ASTLocate' Typed = Located
 
 type family ASTDeclaration ast where
@@ -79,8 +73,7 @@ type family ASTDeclaration ast where
     ASTDeclaration Desugared = Desugared.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
     ASTDeclaration Shunted = Shunted.Declaration
-    ASTDeclaration PartialTyped = Typed.Declaration Typed.PartialType
-    ASTDeclaration Typed = Typed.Declaration Typed.Type
+    ASTDeclaration Typed = Typed.Declaration (Typed.Type SourceRegion)
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 
@@ -185,16 +178,6 @@ instance RUnlocate Typed where
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
-
-instance RUnlocate PartialTyped where
-    rUnlocate (Located _ a) = a
-    rUnlocate' (Located _ a) = a
-    rUnlocated = unlocated
-    rUnlocated' = unlocated
-    fmapRUnlocate f (Located r a) = Located r (fmap f a)
-    fmapRUnlocate' f (Located r a) = Located r (f a)
-    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
-
 class HasModuleName c ast | c -> ast where
     moduleName :: Lens' c (ASTLocate ast ModuleName)
     unlocatedModuleName :: Lens' c ModuleName
@@ -230,13 +213,9 @@ instance HasModuleName Renamed.Declaration Renamed where
     unlocatedModuleName :: Lens' Renamed.Declaration ModuleName
     unlocatedModuleName = moduleName @Renamed.Declaration @Renamed . unlocated
 
-instance HasModuleName (Typed.Declaration' Typed.PartialType) PartialTyped where
+instance HasModuleName (Typed.Declaration' t) Typed where
     moduleName = Typed.declaration'Module'
-    unlocatedModuleName = moduleName @(Typed.Declaration' Typed.PartialType) @PartialTyped . unlocated
-
-instance HasModuleName (Typed.Declaration' Typed.Type) Typed where
-    moduleName = Typed.declaration'Module'
-    unlocatedModuleName = moduleName @(Typed.Declaration' Typed.Type) @Typed . unlocated
+    unlocatedModuleName = moduleName @(Typed.Declaration' t) @Typed . unlocated
 
 class HasName a b | a -> b where
     name :: Lens' a b
@@ -273,14 +252,5 @@ instance HasName Shunted.Declaration (Located (Qualified Name)) where
 instance HasName Shunted.Declaration' (Located (Qualified Name)) where
     name = Shunted.declaration'Name
 
-instance HasName (Typed.Declaration' Typed.PartialType) (Located (Qualified Name)) where
+instance HasName (Typed.Declaration' t) (Located (Qualified Name)) where
     name = Typed.declaration'Name
-
-instance HasName (Typed.Declaration' Typed.Type) (Located (Qualified Name)) where
-    name = Typed.declaration'Name
-
-instance HasName (Typed.Declaration Typed.Type) (Located (Qualified Name)) where
-    name = Typed._Declaration . unlocated . name
-
-instance HasName (Typed.Declaration Typed.PartialType) (Located (Qualified Name)) where
-    name = Typed._Declaration . unlocated . name
