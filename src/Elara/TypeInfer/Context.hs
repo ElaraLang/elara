@@ -14,6 +14,7 @@ module Elara.TypeInfer.Context (
 
   -- * Utilities
   lookup,
+  tryFinaliseType,
   splitOnUnsolvedType,
   splitOnUnsolvedFields,
   splitOnUnsolvedAlternatives,
@@ -35,6 +36,7 @@ import Prelude hiding (group, lookup)
 
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
+import Data.Traversable (for)
 import Elara.AST.Shunted (IgnoreLocVarRef, VarRef (..))
 import Elara.Data.Pretty
 import Elara.TypeInfer.Domain qualified as Domain
@@ -42,6 +44,7 @@ import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
 import Prettyprinter.Render.Terminal
+import Print (debugColored)
 
 {- $setup
 
@@ -236,9 +239,9 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
     predicate (UnsolvedAlternatives _) = True
     predicate _ = False
 
-  snoc t (SolvedType a τ) = return (Type.solveType a τ t)
-  snoc t (SolvedFields a r) = return (Type.solveFields a r t)
-  snoc t (SolvedAlternatives a r) = return (Type.solveAlternatives a r t)
+  snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
+  snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
+  snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
   snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
     n <- State.get
 
@@ -287,7 +290,41 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
     let nameLocation = location
 
     pure Type.Forall{..}
-  snoc t _ = return t
+  snoc t _ = pure t
+
+-- | Checks if a type is complete, i.e. it has no unsolved variables.
+isComplete :: Type s -> Bool
+isComplete Type.UnsolvedType{} = False
+isComplete _ = True
+
+{- | Uses duplicate annotations to resolve any fixable-ambiguity a Type.
+For example, say we have 3 annotations:
+     @
+     id : ∀ a. (a -> a)
+     main: b?
+     id: b?
+     @
+The duplicate annotations for @b@ imply that @b? ~ ∀ a. (a -> a)@ from which we can derive
+that @main: ∀ a. (a -> a)@. That's what this function does.
+If we passed a second argument of @main@ we would first look for annotations with the value @b?@ and then
+use the duplicate annotations to resolve the ambiguity.
+-}
+tryFinaliseType :: (Eq s, Ord s) => Context s -> IgnoreLocVarRef Name -> _
+tryFinaliseType ctx name = do
+  let annotations = lookupAll name ctx
+  let y = do
+        ann <- annotations
+        case ann of
+          mono@(Type.UnsolvedType _ _) ->
+            concatMap
+              ( \case
+                  Annotation n m | n /= name && m == mono -> ordNub $ filter isComplete (lookupAll n ctx)
+                  _ -> []
+              )
+              ctx
+          _ -> []
+
+  viaNonEmpty head y
 
 {- | Split a `Context` into two `Context`s before and after the given
     `UnsolvedType` variable.  Neither `Context` contains the variable
@@ -305,8 +342,7 @@ splitOnUnsolvedType ::
   Existential Monotype ->
   Context s ->
   Maybe (Context s, Context s)
-splitOnUnsolvedType a0 (UnsolvedType a1 : entries)
-  | a0 == a1 = pure ([], entries)
+splitOnUnsolvedType a0 (UnsolvedType a1 : entries) | a0 == a1 = pure ([], entries)
 splitOnUnsolvedType a (entry : entries) = do
   (prefix, suffix) <- splitOnUnsolvedType a entries
   pure (entry : prefix, suffix)
@@ -369,12 +405,17 @@ lookup ::
   IgnoreLocVarRef Name ->
   Context s ->
   Maybe (Type s)
-lookup _ [] = Nothing
-lookup x0 (Annotation x1 _A : _Γ) =
-  if x0 == x1
-    then Just _A
-    else lookup x0 _Γ
-lookup x (_ : _Γ) = lookup x _Γ
+lookup x ctx = viaNonEmpty head (lookupAll x ctx)
+
+-- Finds all annotations for a given variable name
+lookupAll ::
+  -- | Variable label
+  IgnoreLocVarRef Name ->
+  Context s ->
+  [Type s]
+lookupAll _ [] = []
+lookupAll x0 (Annotation x1 _A : _Γ) | x0 == x1 = _A : lookupAll x0 _Γ
+lookupAll x0 (_ : _Γ) = lookupAll x0 _Γ
 
 {- | Discard all entries from a `Context` up to and including the given `Entry`
 

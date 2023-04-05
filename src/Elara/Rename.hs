@@ -147,6 +147,10 @@ inModifiedState f m = do
 uniquify :: Located name -> Renamer (Located (Unique name))
 uniquify (Located sr n) = Located sr <$> makeUnique n
 
+-- | Performs a topological sort of the declarations, so as many 
+sortDeclarations :: [Renamed.Declaration] -> Sem r [Renamed.Declaration]
+sortDeclarations = pure
+
 rename :: Module Desugared -> Renamer (Module Renamed)
 rename =
     traverseOf
@@ -157,7 +161,8 @@ rename =
             exposing' <- renameExposing (m' ^. name . unlocated) (m' ^. exposing)
             imports' <- traverse renameImport (m' ^. imports)
             declarations' <- traverse renameDeclaration (m' ^. declarations)
-            pure (Module' (m' ^. name) exposing' imports' declarations')
+            sorted <- sortDeclarations declarations'
+            pure (Module' (m' ^. name) exposing' imports' sorted)
         )
   where
     renameExposing :: ModuleName -> Exposing Desugared -> Renamer (Exposing Renamed)

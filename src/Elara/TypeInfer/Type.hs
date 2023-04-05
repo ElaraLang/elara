@@ -78,7 +78,7 @@ data Type s
       Union {location :: s, alternatives :: Union s}
     | Scalar {location :: s, scalar :: Scalar}
     | Tuple {location :: s, types :: NonEmpty (Type s)}
-    deriving (Eq, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show)
 
 instance IsString (Type ()) where
     fromString string = VariableType{name = fromString string, location = ()}
@@ -126,11 +126,11 @@ instance Plated (Type s) where
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields
-    deriving (Eq, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show)
 
 -- | A potentially polymorphic union type
 data Union s = Alternatives [(Text, Type s)] RemainingAlternatives
-    deriving (Eq, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show)
 
 {- | This function should not be exported or generally used because it does not
     handle the `location` field correctly.  It is only really safe to use within
@@ -415,4 +415,5 @@ instance (Show a) => Pretty (Type a) where
     pretty (Scalar _ scalar) = pretty scalar
     pretty (Function _ input output) = "(" <> pretty input <+> "->" <+> pretty output <> ")"
     pretty (Tuple _ (toList -> types)) = "(" <> hsep (punctuate "," (fmap pretty types)) <> ")"
+    pretty (UnsolvedType{..}) = pretty existential <> "?"
     pretty other = error ("pretty:" <> show other)

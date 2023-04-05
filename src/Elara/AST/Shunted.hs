@@ -102,12 +102,14 @@ data Type
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)
 
+
 data Declaration' = Declaration'
     { _declaration'Module' :: Located ModuleName
     , _declaration'Name :: Located (Qualified Name)
     , _declaration'Body :: DeclarationBody
     }
     deriving (Show, Eq)
+
 
 newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
     deriving (Show, Eq)

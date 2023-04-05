@@ -4,6 +4,7 @@ import Data.Map qualified as Map
 import Elara.AST.Name (Name)
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Shunted qualified as Syntax
+import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
 import Elara.TypeInfer.Existential
@@ -13,7 +14,6 @@ import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (Err))
 import Print (prettyShow)
-import Elara.Data.Pretty
 
 -- | A data type holding all errors related to type inference
 data TypeInferenceError
@@ -55,5 +55,15 @@ data TypeInferenceError
 instance ReportableError TypeInferenceError where
     report (MissingVariable a _Γ) =
         writeReport $
-            Err Nothing ("Internal error: Invalid context. The following unsolved variable: " <> show a <> " cannot be solved because the variable is missing from the context " <> pretty _Γ) [] []
+            Err
+                Nothing
+                ( vcat
+                    [ "Internal error: Invalid context. The following unsolved variable:"
+                    , pretty a
+                    , "cannot be solved because the variable is missing from the context"
+                    , listToText _Γ
+                    ]
+                )
+                []
+                []
     report e = writeReport $ Err Nothing (prettyShow e) [] []

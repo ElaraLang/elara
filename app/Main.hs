@@ -33,6 +33,7 @@ import Prettyprinter.Render.Text
 
 main :: IO ()
 main = do
+  hSetBuffering stdout NoBuffering
   s <- runElara
   putDoc (prettyDiagnostic True 4 s)
   putStrLn ""

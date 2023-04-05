@@ -1,12 +1,13 @@
 module Elara.TypeInfer where
 
-import Control.Lens (traverseOf, traverseOf_, (^.), _2)
+import Control.Lens (traverseOf, traverseOf_, (^.), _1, _2, _3)
 import Elara.AST.Module
 import Elara.AST.Name (Name, Qualified)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
 import Elara.AST.Typed as Typed
+import Elara.Data.Pretty
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer hiding (get)
@@ -15,6 +16,7 @@ import Elara.TypeInfer.Type hiding (name)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
+import Print (debugColored, debugPretty)
 import TODO (todo)
 
 inferModule ::
@@ -23,20 +25,27 @@ inferModule ::
     Module Shunted ->
     Sem r (Module Typed)
 inferModule m = do
-    traverseModule_ addStubsToModule m
-    traverseModule inferDeclaration m
+    traverseModule @Shunted @Typed inferDeclaration m
 
-addStubsToModule :: (Member (Error TypeInferenceError) r, Member (State Status) r) => Shunted.Declaration -> Sem r ()
+traverseExpr :: (Applicative f) => (Located (Qualified Name) -> Typed.Expr -> f Typed.Expr) -> Typed.Declaration -> f Typed.Declaration
+traverseExpr f =
+    traverseOf
+        (Typed._Declaration . unlocated . Typed._Declaration')
+        ( \decl@(_, name, _) -> do
+            traverseOf (_3 . Typed._DeclarationBody . unlocated . Typed._Value) (f name) decl
+        )
+
+addStubsToModule :: (Member (State Status) r) => Shunted.Declaration -> Sem r ()
 addStubsToModule = traverseOf_ (Shunted._Declaration . unlocated . Shunted._Declaration') addStubsToDeclaration
   where
-    addStubsToDeclaration (_, name, body) =
-        traverseOf_ (Shunted._DeclarationBody . unlocated . Shunted._Value . _2) (addValueDeclarationStub name) body
+    addStubsToDeclaration (_, n, body) =
+        traverseOf_ (Shunted._DeclarationBody . unlocated . Shunted._Value . _2) (addValueDeclarationStub n) body
 
 inferDeclaration ::
     forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Shunted.Declaration ->
-    Sem r (Typed.Declaration (Type SourceRegion))
+    Sem r Typed.Declaration
 inferDeclaration (Shunted.Declaration ld) =
     Typed.Declaration
         <$> traverseOf
@@ -56,39 +65,40 @@ inferDeclaration (Shunted.Declaration ld) =
     inferDeclarationBody' ::
         Located (Qualified Name) ->
         Shunted.DeclarationBody' ->
-        Sem r (Typed.DeclarationBody' (Type SourceRegion))
-    inferDeclarationBody' name (Shunted.Value e ty) = do
+        Sem r Typed.DeclarationBody'
+    inferDeclarationBody' name (Shunted.Value e _) = do
         e'@(Typed.Expr (_, ty)) <- inferExpression e
         push (Annotation (mkGlobal' name) ty)
-        pure $ Typed.Value e' Nothing
-    inferDeclarationBody' _ t@(Shunted.TypeAlias _) = todo
+        pure $ Typed.Value e'
+    inferDeclarationBody' _ (Shunted.TypeAlias _) = todo
 
 addValueDeclarationStub ::
     forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    (Member (State Status) r) =>
     Located (Qualified Name) ->
     Maybe (Located Shunted.TypeAnnotation) ->
-    Sem r ()
+    Sem r (Type SourceRegion)
 addValueDeclarationStub name ty = do
     expectedType <- case ty of
         Just x -> undefined
         Nothing -> Elara.TypeInfer.Type.UnsolvedType (name ^. sourceRegion) <$> fresh
-    push (Annotation (mkGlobal' name) (expectedType :: Type SourceRegion))
+    push (Annotation (mkGlobal' name) expectedType)
+    pure expectedType
 
 inferExpression ::
     forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Shunted.Expr ->
-    Sem r (Typed.Expr (Type SourceRegion))
+    Sem r Typed.Expr
 inferExpression e@(Shunted.Expr le) = do
     (ty', e') <-
-        typeWithCont
+        infer
             e
             (traverseOf unlocated (subsume_ . inferExpression') le)
     ctx <- Infer.get
     pure $ Typed.Expr (e', complete ctx ty')
   where
-    inferExpression' :: Shunted.Expr' -> Sem r (Typed.Expr' (Type SourceRegion))
+    inferExpression' :: Shunted.Expr' -> Sem r Typed.Expr'
     inferExpression' (Shunted.Int l) = pure $ Typed.Int l
     inferExpression' (Shunted.Float l) = pure $ Typed.Float l
     inferExpression' (Shunted.String l) = pure $ Typed.String l

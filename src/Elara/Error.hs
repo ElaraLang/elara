@@ -6,7 +6,6 @@ import Elara.Error.Effect
 import Error.Diagnose
 import Polysemy
 import Prettyprinter (Doc)
-import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where

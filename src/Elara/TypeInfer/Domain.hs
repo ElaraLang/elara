@@ -11,7 +11,7 @@ data Domain
     Fields
   | -- | @forall (a : Alternatives) . …@
     Alternatives
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Ord, Generic, Show)
 
 instance Pretty Domain where
   pretty Type = "Type"

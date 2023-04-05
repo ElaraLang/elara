@@ -7,6 +7,7 @@ module Elara.Data.Pretty (
     PrettyPrec (..),
     module Prettyprinter,
     module Prettyprinter.Render.Terminal,
+    listToText
 ) where
 
 import Data.Map qualified as Map (toList)
@@ -37,6 +38,12 @@ escapeChar c = case c of
     '\'' -> "\\'"
     '"' -> "\\\""
     _ -> fromString [c]
+
+listToText :: (Pretty a) => [a] -> Doc ann
+listToText elements =
+    vcat (fmap prettyEntry elements)
+  where
+    prettyEntry entry = pretty ("• " <> align (pretty entry))
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)

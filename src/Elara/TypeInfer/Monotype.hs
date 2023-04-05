@@ -76,7 +76,7 @@ data Scalar
     -- >>> pretty Unit
     -- ()
     Unit
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Ord, Generic, Show)
 
 instance Pretty Scalar where
   pretty Bool = "Bool"
@@ -102,7 +102,7 @@ data RemainingFields
   | -- | Same as `UnsolvedFields`, except that the user has given the fields
     --   variable an explicit name in the source code
     VariableFields Text
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Ord, Generic, Show)
 
 -- | A monomorphic union type
 data Union = Alternatives [(Text, Monotype)] RemainingAlternatives
@@ -119,6 +119,6 @@ data RemainingAlternatives
   | -- | Same as `UnsolvedAlternatives`, except that the user has given the
     --   alternatives variable an explicit name in the source code
     VariableAlternatives Text
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Ord, Generic, Show)
 
 instance Pretty Monotype

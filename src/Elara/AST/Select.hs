@@ -33,7 +33,7 @@ type family ASTExpr ast where
     ASTExpr Desugared = Desugared.Expr
     ASTExpr Renamed = Renamed.Expr
     ASTExpr Shunted = Shunted.Expr
-    ASTExpr Typed = Typed.Expr (Typed.Type SourceRegion)
+    ASTExpr Typed = Typed.Expr
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
@@ -49,7 +49,7 @@ type family ASTPattern ast where
     ASTPattern Desugared = Desugared.Pattern
     ASTPattern Renamed = Renamed.Pattern
     ASTPattern Shunted = Shunted.Pattern
-    ASTPattern Typed = Typed.Pattern (Typed.Type SourceRegion)
+    ASTPattern Typed = Typed.Pattern
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
@@ -73,7 +73,7 @@ type family ASTDeclaration ast where
     ASTDeclaration Desugared = Desugared.Declaration
     ASTDeclaration Renamed = Renamed.Declaration
     ASTDeclaration Shunted = Shunted.Declaration
-    ASTDeclaration Typed = Typed.Declaration (Typed.Type SourceRegion)
+    ASTDeclaration Typed = Typed.Declaration
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 
@@ -213,9 +213,9 @@ instance HasModuleName Renamed.Declaration Renamed where
     unlocatedModuleName :: Lens' Renamed.Declaration ModuleName
     unlocatedModuleName = moduleName @Renamed.Declaration @Renamed . unlocated
 
-instance HasModuleName (Typed.Declaration' t) Typed where
+instance HasModuleName Typed.Declaration' Typed where
     moduleName = Typed.declaration'Module'
-    unlocatedModuleName = moduleName @(Typed.Declaration' t) @Typed . unlocated
+    unlocatedModuleName = moduleName @Typed.Declaration' @Typed . unlocated
 
 class HasName a b | a -> b where
     name :: Lens' a b
@@ -252,5 +252,6 @@ instance HasName Shunted.Declaration (Located (Qualified Name)) where
 instance HasName Shunted.Declaration' (Located (Qualified Name)) where
     name = Shunted.declaration'Name
 
-instance HasName (Typed.Declaration' t) (Located (Qualified Name)) where
+instance HasName Typed.Declaration' (Located (Qualified Name)) where
     name = Typed.declaration'Name
+

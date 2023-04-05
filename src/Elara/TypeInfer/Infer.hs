@@ -36,13 +36,14 @@ import Elara.AST.Region
 import Elara.AST.Shunted qualified as Syntax
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
-import Elara.TypeInfer.Error (TypeInferenceError(..))
+import Elara.TypeInfer.Error (TypeInferenceError (..))
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
 import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
+import Print
 
 -- | Type-checking state
 data Status = Status
@@ -52,6 +53,7 @@ data Status = Status
     , context :: Context SourceRegion
     -- ^ The type-checking context (e.g. Γ, Δ, Θ)
     }
+    deriving (Show)
 
 initialStatus :: Status
 initialStatus = Status{count = 0, context = []}
@@ -1535,7 +1537,7 @@ inferApplication Type.Exists{..} e = do
 inferApplication Type.UnsolvedType{existential = a, ..} e = do
     _Γ <- get
 
-    (_ΓR, _ΓL) <- Context.splitOnUnsolvedType a _Γ `orDie` MissingVariable a _Γ
+    (_ΓR, _ΓL) <- pure (fromMaybe undefined (Context.splitOnUnsolvedType a _Γ))
 
     a1 <- fresh
     a2 <- fresh
@@ -1576,19 +1578,6 @@ typeWith syntax = do
     State.put (context status)
 
     pure _A
-
--- | Like `typeOf`, but accepts a custom type-checking `Context`
-typeWithCont ::
-    ( Member (Error TypeInferenceError) r
-    , Member (State Status) r
-    ) =>
-    Expr ->
-    Sem r a ->
-    Sem r (Type SourceRegion, a)
-typeWithCont syntax cont = do
-    (_A, a) <- infer syntax cont
-
-    pure (_A, a)
 
 -- instance Exception TypeInferenceError where
 --     displayException (IllFormedAlternatives location a0 _Γ) =

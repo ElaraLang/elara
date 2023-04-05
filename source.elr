@@ -1,5 +1,2 @@
-
-let main = 
-    (id 1, id "hello")
-
-let id = \x -> x
+let id x = x
+let main = id ""

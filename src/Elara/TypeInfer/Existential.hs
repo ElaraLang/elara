@@ -13,7 +13,7 @@ import Data.Text qualified as Text
       variable
 -}
 newtype Existential a = UnsafeExistential Int
-    deriving (Eq, Num, Show)
+    deriving (Eq, Num, Ord, Show)
 
 instance Pretty (Existential a) where
     pretty x = pretty (toVariable x)
