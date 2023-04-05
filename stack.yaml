@@ -1,5 +1,6 @@
 packages:
   - .
+  - ../h2jvm
 resolver:
   compiler: ghc-9.4.4
 

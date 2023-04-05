@@ -8,6 +8,7 @@ module Main (
 import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select
+import Elara.Compile qualified as Compile
 import Elara.Data.Pretty
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
@@ -38,8 +39,6 @@ main = do
   putDoc (prettyDiagnostic True 4 s)
   putStrLn ""
 
-
-
 runElara :: IO (Diagnostic (Doc ann))
 runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   source <- loadModule "source.elr"
@@ -50,6 +49,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   source''' <- inferModule source''
   embed (putDoc (pretty source'''))
   putStrLn ""
+  compileModule source'''
   pass
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
@@ -114,6 +114,10 @@ inferModule ::
   Sem r (Module Typed)
 inferModule m = do
   runErrorOrReport (evalState initialStatus (Infer.inferModule m))
+
+compileModule :: (Member MaybeE r, Member (Embed IO) r) => Module Typed -> Sem r ()
+compileModule m = do
+  Compile.compileModule m
 
 loadModule :: (Member (DiagnosticWriter (Doc ann)) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

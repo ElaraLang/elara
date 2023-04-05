@@ -39,7 +39,7 @@ library
       Elara.AST.Typed
       Elara.AST.Unlocated.Frontend
       Elara.AST.Unlocated.Typed
-      Elara.Core
+      Elara.Compile
       Elara.Data.Pretty
       Elara.Data.Unique
       Elara.Data.Unwrap
@@ -104,10 +104,12 @@ library
   build-depends:
       array
     , base-noprelude
+    , binary
     , bytestring
     , containers
     , diagnose
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , lens
     , megaparsec
@@ -144,11 +146,13 @@ executable elara
   build-depends:
       array
     , base-noprelude
+    , binary
     , bytestring
     , containers
     , diagnose
     , elara
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , lens
     , megaparsec
@@ -197,11 +201,13 @@ test-suite elara-test
     , QuickCheck
     , array
     , base-noprelude
+    , binary
     , bytestring
     , containers
     , diagnose
     , elara
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec

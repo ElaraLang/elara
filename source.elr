@@ -1,2 +1,2 @@
-let id x = x
-let main = (id "", id 5)
+let num = 1
+let x = "hello world!"
