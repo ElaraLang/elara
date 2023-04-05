@@ -1341,7 +1341,7 @@ infer (Expr (Located location e0)) cont = do
 
         --     pure annotation
         Syntax.LetIn name val body -> do
-            _A <- fst <$> infer val cont
+            _A <- infer' val
             push (Context.Annotation (mkLocal' name) _A)
             infer body cont
         Syntax.Let name val -> do

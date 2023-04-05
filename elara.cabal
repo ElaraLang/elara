@@ -39,6 +39,7 @@ library
       Elara.AST.Typed
       Elara.AST.Unlocated.Frontend
       Elara.AST.Unlocated.Typed
+      Elara.Core
       Elara.Data.Pretty
       Elara.Data.Unique
       Elara.Data.Unwrap

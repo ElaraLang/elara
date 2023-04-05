@@ -1,2 +1,2 @@
 let id x = x
-let main = id ""
+let main = (id "", id 5)
