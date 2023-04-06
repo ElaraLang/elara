@@ -6,6 +6,7 @@ module Main (
 ) where
 
 import Control.Lens
+import Data.Map qualified as M
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName)
 import Elara.AST.Select
@@ -34,7 +35,6 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
-import Data.Map qualified as M
 import Print (printColored)
 
 main :: IO ()
@@ -51,7 +51,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
   path'' <- traverse (renameModule path >=> shuntModule >=> inferModule) path
   corePath <- traverse (toCore path'') path''
-  embed (printColored (corePath))
+  embed (printColored corePath)
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do
@@ -115,10 +115,6 @@ inferModule ::
   Sem r (Module Typed)
 inferModule m = do
   runErrorOrReport (evalState initialStatus (Infer.inferModule m))
-
-compileModule :: (Member (Embed IO) r) => Module Typed -> Sem r ()
-compileModule m = do
-  Compile.compileModule m
 
 toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => Map ModuleName (Module Typed) -> Module Typed -> Sem r (Core.Module)
 toCore mp m = do
