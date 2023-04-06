@@ -255,3 +255,5 @@ instance HasName Shunted.Declaration' (Located (Qualified Name)) where
 instance HasName Typed.Declaration' (Located (Qualified Name)) where
     name = Typed.declaration'Name
 
+instance HasName Typed.Declaration (Located (Qualified Name)) where
+    name = Typed._Declaration . unlocated . name

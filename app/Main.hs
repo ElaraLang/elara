@@ -7,8 +7,11 @@ module Main (
 
 import Control.Lens
 import Elara.AST.Module
+import Elara.AST.Name (ModuleName)
 import Elara.AST.Select
+import Elara.ASTToCore qualified as ASTToCore (desugar)
 import Elara.Compile qualified as Compile
+import Elara.Core.Module qualified as Core
 import Elara.Data.Pretty
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
@@ -22,8 +25,8 @@ import Elara.Rename (ModulePath, rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, prettyDiagnostic)
-import Polysemy (Embed, Member, Sem, runM, subsume_)
+import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic)
+import Polysemy (Member, Sem, runM, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -31,6 +34,8 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
+import Data.Map qualified as M
+import Print (printColored)
 
 main :: IO ()
 main = do
@@ -44,13 +49,9 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   source <- loadModule "source.elr"
   prelude <- loadModule "prelude.elr"
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
-  source' <- renameModule path source
-  source'' <- shuntModule source'
-  source''' <- inferModule source''
-  embed (putDoc (pretty source'''))
-  putStrLn ""
-  compileModule source'''
-  pass
+  path'' <- traverse (renameModule path >=> shuntModule >=> inferModule) path
+  corePath <- traverse (toCore path'') path''
+  embed (printColored (corePath))
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do
@@ -115,9 +116,13 @@ inferModule ::
 inferModule m = do
   runErrorOrReport (evalState initialStatus (Infer.inferModule m))
 
-compileModule :: (Member MaybeE r, Member (Embed IO) r) => Module Typed -> Sem r ()
+compileModule :: (Member (Embed IO) r) => Module Typed -> Sem r ()
 compileModule m = do
   Compile.compileModule m
+
+toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => Map ModuleName (Module Typed) -> Module Typed -> Sem r (Core.Module)
+toCore mp m = do
+  runErrorOrReport (ASTToCore.desugar mp m)
 
 loadModule :: (Member (DiagnosticWriter (Doc ann)) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

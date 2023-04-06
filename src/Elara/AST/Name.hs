@@ -10,7 +10,7 @@
 
 module Elara.AST.Name where
 
-import Control.Lens (makeFields, makeLenses, makePrisms, view, (^.))
+import Control.Lens (Lens', lens, makeFields, makeLenses, makePrisms, view, (^.))
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
@@ -147,6 +147,13 @@ data Qualified name = Qualified
     , _qualifiedQualifier :: ModuleName
     }
     deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
+
+unqualified :: Lens' (Qualified name) name
+unqualified =
+    lens
+        _qualifiedName
+        (\q n -> q{_qualifiedName = n})
+
 newtype Unqualified name = Unqualified
     { _unqualifiedName :: name
     }

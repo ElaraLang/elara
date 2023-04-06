@@ -1,2 +1,5 @@
-let num = 1
-let x = "hello world!"
+let id x = x
+
+let y = id 1
+
+let main = "hello world"
