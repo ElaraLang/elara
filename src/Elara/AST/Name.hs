@@ -26,9 +26,15 @@ newtype ModuleName = ModuleName (NonEmpty Text)
 In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}
 data VarName
-    = NormalVarName LowerAlphaName
-    | OperatorVarName OpName
+    = -- | A normal alphanumeric name
+      NormalVarName LowerAlphaName
+    | -- | An operator var name. Note that while in the source code, the name must be surrounded in parentheses, this is not the case in the AST!
+      OperatorVarName OpName
     deriving (Ord, Show, Eq, Data)
+
+--
+-- Newtype wrappers over 'Data.Text'
+--
 
 {- | A lowercase alphanumeric name. Could be used for variables or type variables
 Since type variables can't be operators though, we don't use 'VarName' for them
@@ -41,6 +47,10 @@ newtype TypeName = TypeName Text
 
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data)
+
+makePrisms ''LowerAlphaName
+makePrisms ''TypeName
+makePrisms ''OpName
 
 data Name
     = NVarName VarName

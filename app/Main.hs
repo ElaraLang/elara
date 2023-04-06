@@ -50,8 +50,10 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   prelude <- loadModule "prelude.elr"
   let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
   path'' <- traverse (renameModule path >=> shuntModule >=> inferModule) path
+  embed (putDoc $ pretty path'')
   corePath <- traverse (toCore path'') path''
-  embed (printColored corePath)
+  -- embed (printColored corePath)
+  putStrLn ""
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do

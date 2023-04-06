@@ -5,6 +5,7 @@ module Elara.AST.Renamed where
 import Control.Lens (makeLenses, makePrisms, view)
 import Elara.AST.Name (HasName (name), LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
+import Elara.AST.VarRef
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
 
@@ -18,7 +19,7 @@ data Expr'
     | Char Char
     | Unit
     | Var (Located (VarRef VarName))
-    | Constructor (Located (VarRef TypeName))
+    | Constructor (Located (Qualified TypeName))
     | Lambda (Located (Unique VarName)) Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
@@ -34,15 +35,6 @@ data Expr'
 
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
-
-data VarRef n
-    = Global (Located (Qualified n))
-    | Local (Located (Unique n))
-    deriving (Show, Eq, Ord, Functor)
-
-varRefVal :: VarRef n -> Located n
-varRefVal (Global n) = fmap (view name) n
-varRefVal (Local n) = fmap (view uniqueVal) n
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))
@@ -65,9 +57,6 @@ data BinaryOperator'
 
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq, Ord)
-
-data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
-    deriving (Show, Eq)
 
 data Type
     = TypeVar (Unique LowerAlphaName)
@@ -96,10 +85,15 @@ data DeclarationBody'
     = -- | def <name> : <type> and / or let <p> = <e>
       Value
         { _expression :: Expr
-        , _valueType :: Maybe (Located TypeAnnotation)
+        , _valueType :: Maybe (Located Type)
         }
-    | -- | type <name> = <type>
-      TypeAlias (Located Type)
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [Located (Unique VarName)] (Located TypeDeclaration)
+    deriving (Show, Eq)
+
+data TypeDeclaration
+    = ADT (NonEmpty (Located (Qualified TypeName), [Located Type]))
+    | Alias Type
     deriving (Show, Eq)
 
 makePrisms ''Declaration

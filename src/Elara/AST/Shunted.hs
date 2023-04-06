@@ -5,9 +5,11 @@ module Elara.AST.Shunted where
 
 import Control.Lens (makeLenses, makePrisms)
 import Elara.AST.Name
-import Elara.AST.Region (IgnoreLocation (..), Located (..))
+import Elara.AST.Region (Located (..))
+import Elara.AST.Renamed qualified as Renamed
+import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique
+import Elara.Data.Unique ( Unique )
 import Elara.Data.Unwrap (Unwrap (unwrap))
 import Prelude hiding (Op)
 
@@ -25,7 +27,7 @@ data Expr'
     | Char Char
     | Unit
     | Var (Located (VarRef VarName))
-    | Constructor (Located (VarRef TypeName))
+    | Constructor (Located (Qualified TypeName))
     | Lambda (Located (Unique VarName)) Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
@@ -40,38 +42,6 @@ data Expr'
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
-data VarRef' c n
-    = Global (c (Qualified n))
-    | Local (c (Unique n))
-    deriving (Functor)
-
-deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
-deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
-
-type VarRef n = VarRef' Located n
-
-type IgnoreLocVarRef n = VarRef' IgnoreLocation n
-
-mkLocal :: (ToName n) => Located (Unique n) -> VarRef Name
-mkLocal n = Local (toName <<$>> n)
-
-mkLocal' :: (ToName n) => Located (Unique n) -> IgnoreLocVarRef Name
-mkLocal' n = Local (toName <<$>> IgnoreLocation n)
-
-mkGlobal :: (ToName n) => Located (Qualified n) -> VarRef Name
-mkGlobal n = Global (toName <<$>> n)
-
-mkGlobal' :: (ToName n) => Located (Qualified n) -> IgnoreLocVarRef Name
-mkGlobal' n = Global (toName <<$>> IgnoreLocation n)
-
-withName :: (ToName n) => VarRef n -> VarRef Name
-withName (Global n) = Global (toName <<$>> n)
-withName (Local n) = Local (toName <<$>> n)
-
-withName' :: (ToName n) => VarRef n -> IgnoreLocVarRef Name
-withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
-withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
-
 data Pattern'
     = VarPattern (Located (VarRef VarName))
     | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
@@ -85,10 +55,6 @@ data Pattern'
 
 newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
-
-data TypeAnnotation = TypeAnnotation (Located (Qualified Name)) Type
-    deriving (Show, Eq)
-
 data Type
     = TypeVar (Unique LowerAlphaName)
     | FunctionType Type Type
@@ -102,14 +68,12 @@ data Type
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)
 
-
 data Declaration' = Declaration'
     { _declaration'Module' :: Located ModuleName
     , _declaration'Name :: Located (Qualified Name)
     , _declaration'Body :: DeclarationBody
     }
     deriving (Show, Eq)
-
 
 newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
     deriving (Show, Eq)
@@ -118,10 +82,12 @@ data DeclarationBody'
     = -- | def <name> : <type> and / or let <p> = <e>
       Value
         { _expression :: Expr
-        , _valueType :: Maybe (Located TypeAnnotation)
+        -- ^ The expression
+        , _valueType :: Maybe (Located Type)
+        -- ^ An optional type annotation for the expression
         }
-    | -- | type <name> = <type>
-      TypeAlias (Located Type)
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [Located (Unique VarName)] (Located Renamed.TypeDeclaration) -- No difference to old AST
     deriving (Show, Eq)
 
 makePrisms ''Declaration
@@ -133,7 +99,3 @@ makeLenses ''DeclarationBody
 makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
-
-instance (Unwrap c, Pretty n) => Pretty (VarRef' c n) where
-    pretty (Global n) = pretty (unwrap n)
-    pretty (Local n) = pretty (unwrap n)

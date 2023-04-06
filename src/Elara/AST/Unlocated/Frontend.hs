@@ -7,6 +7,7 @@ import Elara.AST.Frontend qualified as Frontend
 
 import Elara.AST.Region
 import Elara.AST.StripLocation
+import TODO (todo)
 import Prelude hiding (Op)
 
 {- | Frontend AST without location information.
@@ -50,9 +51,6 @@ data BinaryOperator
     | Infixed (MaybeQualified VarName)
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation Name Type
-    deriving (Show, Eq)
-
 data Type
     = TypeVar LowerAlphaName
     | FunctionType Type Type
@@ -77,7 +75,7 @@ data DeclarationBody
         , _patterns :: [Pattern]
         }
     | -- | def <name> : <type>.
-      ValueTypeDef TypeAnnotation
+      ValueTypeDef Type
     | -- | type <name> = <type>
       TypeAlias Type
     deriving (Show, Eq)
@@ -129,18 +127,15 @@ instance StripLocation Frontend.Type Type where
     stripLocation (Frontend.TupleType t) = TupleType (stripLocation t)
 
 instance StripLocation Frontend.Declaration Declaration where
-    stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d :: Frontend.Declaration')
+    stripLocation (Frontend.Declaration d) = stripLocation (stripLocation d)
 
 instance StripLocation Frontend.Declaration' Declaration where
-    stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n :: Name) (stripLocation b)
+    stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n) (stripLocation b)
 
 instance StripLocation Frontend.DeclarationBody DeclarationBody where
-    stripLocation (Frontend.DeclarationBody d) = stripLocation (stripLocation d :: Frontend.DeclarationBody')
+    stripLocation (Frontend.DeclarationBody d) = stripLocation (stripLocation d)
 
 instance StripLocation Frontend.DeclarationBody' DeclarationBody where
     stripLocation (Frontend.Value e p) = Value (stripLocation e) (stripLocation p)
-    stripLocation (Frontend.ValueTypeDef t) = ValueTypeDef (stripLocation (stripLocation t :: Frontend.TypeAnnotation))
-    stripLocation (Frontend.TypeAlias t) = TypeAlias (stripLocation (stripLocation t :: Frontend.Type))
-
-instance StripLocation Frontend.TypeAnnotation TypeAnnotation where
-    stripLocation (Frontend.TypeAnnotation n t) = TypeAnnotation (stripLocation n) (stripLocation t)
+    stripLocation (Frontend.ValueTypeDef t) = ValueTypeDef (stripLocation (stripLocation t))
+    stripLocation (Frontend.TypeDeclaration args t) = todo

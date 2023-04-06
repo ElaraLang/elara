@@ -9,6 +9,7 @@ import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
+import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
@@ -26,7 +27,7 @@ data Expr'
     | Char Char
     | Unit
     | Var (Located (VarRef VarName))
-    | Constructor (Located (VarRef TypeName))
+    | Constructor (Located (Qualified TypeName))
     | Lambda (Located (Unique VarName)) Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
@@ -40,19 +41,6 @@ data Expr'
 
 newtype Expr = Expr (Located Expr', Type SourceRegion)
     deriving (Show, Eq)
-
-data VarRef' c n
-    = Global (c (Qualified n))
-    | Local (c (Unique n))
-    deriving (Functor)
-
-deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
-deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
-deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Unique n))) => Data (VarRef' c n)
-
-type VarRef n = VarRef' Located n
-
-type UnlocatedVarRef n = VarRef' Identity n
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))
@@ -116,7 +104,7 @@ instance StripLocation Expr' Unlocated.Expr' where
         Char c -> Unlocated.Char c
         Unit -> Unlocated.Unit
         Var lv -> Unlocated.Var (stripLocation $ stripLocation lv)
-        Constructor q -> Unlocated.Constructor (stripLocation $ stripLocation q)
+        Constructor q -> Unlocated.Constructor (stripLocation q)
         Lambda (Located _ u) e' -> Unlocated.Lambda u (stripLocation e')
         FunctionCall e1 e2 -> Unlocated.FunctionCall (stripLocation e1) (stripLocation e2)
         If e1 e2 e3 -> Unlocated.If (stripLocation e1) (stripLocation e2) (stripLocation e3)
@@ -126,11 +114,6 @@ instance StripLocation Expr' Unlocated.Expr' where
         Let (Located _ u) e' -> Unlocated.Let u (stripLocation e')
         Block es -> Unlocated.Block (stripLocation es)
         Tuple es -> Unlocated.Tuple (stripLocation es)
-
-instance StripLocation (VarRef a) (Unlocated.VarRef a) where
-    stripLocation v = case v of
-        Global q -> Unlocated.Global (stripLocation q)
-        Local u -> Unlocated.Local (stripLocation u)
 
 instance StripLocation Pattern Unlocated.Pattern where
     stripLocation (Pattern (p, t)) = Unlocated.Pattern (stripLocation $ stripLocation p, stripLocation t)
@@ -171,13 +154,3 @@ instance Pretty Expr' where
 
 instance (Pretty t) => Pretty (TypeAnnotation t) where
     pretty (TypeAnnotation _ t) = pretty t
-
-instance
-    ( Pretty (q (Qualified a))
-    , Pretty (q (Unique a))
-    , Pretty a
-    ) =>
-    Pretty (VarRef' q a)
-    where
-    pretty (Global q) = pretty q
-    pretty (Local q) = pretty q

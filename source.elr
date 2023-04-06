@@ -1,5 +1,3 @@
 let id x = x
 
-let y = id 1
-
-let main = "hello world"
+let main = id "hello world"

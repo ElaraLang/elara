@@ -60,8 +60,6 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located Name) Type
-    deriving (Show, Eq)
 
 data Type
     = TypeVar LowerAlphaName
@@ -90,12 +88,17 @@ data DeclarationBody'
     = -- | let <p> = <e> and / or def <name> : <type>
       Value
         { _expression :: Expr
-        , _valueType :: Maybe (Located TypeAnnotation)
+        , _valueType :: Maybe (Located Type)
         }
     | -- | Unused for now
-      NativeDef (Located TypeAnnotation)
-    | -- | type <name> = <type>
-      TypeAlias (Located Type)
+      NativeDef (Located Type)
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [Located VarName] (Located TypeDeclaration)
+    deriving (Show, Eq)
+
+data TypeDeclaration
+    = ADT (NonEmpty (Located TypeName, [Located Type]))
+    | Alias Type
     deriving (Show, Eq)
 
 makeLenses ''Declaration'
@@ -103,6 +106,7 @@ makeClassy ''Declaration
 makeClassy ''DeclarationBody'
 makePrisms ''Declaration
 makePrisms ''DeclarationBody
+makePrisms ''TypeDeclaration
 makePrisms ''Expr
 makePrisms ''Pattern
 makePrisms ''BinaryOperator

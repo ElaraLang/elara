@@ -10,7 +10,6 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
-import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose (Report (Err))
@@ -20,10 +19,10 @@ import Polysemy.MTL ()
 import Polysemy.State (State, evalState)
 
 newtype DesugarError
-    = DefWithoutLet (Located Desugared.TypeAnnotation)
+    = DefWithoutLet (Located Desugared.Type)
 
 instance ReportableError DesugarError where
-    report (DefWithoutLet (Located _ (Desugared.TypeAnnotation _ _))) =
+    report (DefWithoutLet (Located _ _)) =
         writeReport $ Err (Just Codes.defWithoutLet) "Def without let" [] []
 
 type Desugar a = Sem [State DesugarState, Error DesugarError] a
@@ -32,23 +31,41 @@ runDesugar :: Desugar a -> Either DesugarError a
 runDesugar = run . runError . evalState (DesugarState M.empty)
 
 newtype DesugarState = DesugarState
-    { _partialDeclarations :: Map Name PartialDeclaration
+    { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration
     }
 
+{- | A partial declaration stores a desugared part of a declaration
+This allows merging of declarations with the same name
+For example, the code
+@
+def a : Int
+...
+...
+let a = 5
+@
+is legal, and the 2 parts of the declaration need to be merged
+
+Firstly, we create a 'JustDef' after seeing the @def@ line, then we merge this with a 'JustLet' after seeing the @let@ line
+to create a 'Both' declaration, which is then resolved to a 'Desugared.Declaration'
+-}
 data PartialDeclaration
-    = JustDef (Located Desugared.TypeAnnotation)
-    | JustLet Desugared.Expr
-    | Both (Located Desugared.TypeAnnotation) Desugared.Expr
+    = -- | A partial declaration with just a def line
+      JustDef
+        SourceRegion
+        -- ^ The *overall* region of the declaration, not just the body!
+        (Located Desugared.Type)
+    | JustLet SourceRegion Desugared.Expr
+    | Both SourceRegion (Located Desugared.Type) Desugared.Expr
     | Immediate Desugared.DeclarationBody
     deriving (Show)
 
 makeLenses ''DesugarState
 
-resolvePartialDeclaration :: Located PartialDeclaration -> Desugar Desugared.DeclarationBody
-resolvePartialDeclaration (Located _ (Immediate a)) = pure a
-resolvePartialDeclaration l@(Located _ (JustLet e)) = pure (Desugared.DeclarationBody $ Desugared.Value e Nothing <$ l)
-resolvePartialDeclaration l@(Located _ (Both ty e)) = pure (Desugared.DeclarationBody $ Desugared.Value e (Just ty) <$ l)
-resolvePartialDeclaration (Located _ (JustDef ty)) = throw (DefWithoutLet ty)
+resolvePartialDeclaration :: PartialDeclaration -> Desugar Desugared.DeclarationBody
+resolvePartialDeclaration (Immediate a) = pure a
+resolvePartialDeclaration ((JustDef _ ty)) = throw (DefWithoutLet ty)
+resolvePartialDeclaration ((JustLet sr e)) = pure (Desugared.DeclarationBody (Located sr (Desugared.Value e Nothing)))
+resolvePartialDeclaration ((Both sr ty e)) = pure (Desugared.DeclarationBody (Located sr (Desugared.Value e (Just ty))))
 
 desugar ::
     Module Frontend ->
@@ -58,49 +75,50 @@ desugar =
         (_Module . unlocated)
         ( \(m' :: Module' Frontend) -> do
             let decls = m' ^. module'Declarations :: [Frontend.Declaration]
-            decls' <- desugarDeclarations decls
-            -- TODO: get rid of unsafeCoerce
+            decls' <- desugarDeclarations (m' ^. name) decls
             pure (Module' (m' ^. module'Name) (coerceExposing (m' ^. module'Exposing)) (coerceImport <$> m' ^. module'Imports) decls')
         )
 
-desugarDeclarations :: [Frontend.Declaration] -> Desugar [Desugared.Declaration]
-desugarDeclarations decls = do
+desugarDeclarations :: Located ModuleName -> [Frontend.Declaration] -> Desugar [Desugared.Declaration]
+desugarDeclarations mn decls = do
     genPartials decls
-    traverse desugarDeclaration decls
+    completePartials mn
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
-mergePartials (JustDef ty) (JustLet e) = pure (Both ty e)
-mergePartials (JustLet e) (JustDef ty) = pure (Both ty e)
+mergePartials (JustDef sr ty) (JustLet sr' e) = pure (Both (sr <> sr') ty e)
+mergePartials (JustLet sr e) (JustDef sr' ty) = pure (Both (sr <> sr') ty e)
 mergePartials _ _ = error "not possible?"
 
 genPartials :: [Frontend.Declaration] -> Desugar ()
-genPartials = traverseOf_ (each . Frontend._Declaration . unlocated) genPartial
+genPartials = traverseOf_ (each . Frontend._Declaration) genPartial
   where
-    genPartial :: Frontend.Declaration' -> Desugar ()
-    genPartial (Frontend.Declaration' _ n b) =
+    genPartial :: Located Frontend.Declaration' -> Desugar ()
+    genPartial (Located wholeDeclRegion (Frontend.Declaration' _ n b)) =
         traverseOf_ (Frontend._DeclarationBody . unlocated) genPartial' b
       where
         genPartial' :: Frontend.DeclarationBody' -> Desugar ()
         genPartial' db = do
             partial <- genPartial'' db
-            let f = insertWithM mergePartials (n ^. unlocated) partial
+            let f = insertWithM mergePartials (IgnoreLocation n) partial
             modifyM (traverseOf partialDeclarations f)
 
+        genPartial'' :: Frontend.DeclarationBody' -> Desugar PartialDeclaration
         genPartial'' (Frontend.Value e pats) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
-            pure (JustLet body)
+            pure (JustLet wholeDeclRegion body)
         genPartial'' (Frontend.ValueTypeDef ty) = do
-            ty' <- traverse desugarTypeAnnotation ty
-            pure (JustDef ty')
-        genPartial'' (Frontend.TypeAlias ty) = do
             ty' <- traverse desugarType ty
-            let decl = Desugared.DeclarationBody (Located (b ^. Frontend._DeclarationBody . sourceRegion) (Desugared.TypeAlias ty'))
-            pure (Immediate decl)
-
-desugarTypeAnnotation :: Frontend.TypeAnnotation -> Desugar Desugared.TypeAnnotation
-desugarTypeAnnotation (Frontend.TypeAnnotation ln ty) = Desugared.TypeAnnotation ln <$> desugarType ty
+            pure (JustDef wholeDeclRegion ty')
+        genPartial'' (Frontend.TypeDeclaration vars typeDecl) = do
+            let traverseDecl :: Frontend.TypeDeclaration -> Desugar Desugared.TypeDeclaration
+                traverseDecl (Frontend.Alias t) = Desugared.Alias <$> desugarType t
+                traverseDecl (Frontend.ADT constructors) = Desugared.ADT <$> traverseOf (each . _2 . each . unlocated) desugarType constructors
+            typeDecl' <- traverseOf unlocated traverseDecl typeDecl
+            let decl' = Desugared.TypeDeclaration vars typeDecl'
+            let bodyLoc = b ^. Frontend._DeclarationBody . sourceRegion
+            pure (Immediate (Desugared.DeclarationBody (Located bodyLoc decl')))
 
 desugarType :: Frontend.Type -> Desugar Desugared.Type
 desugarType (Frontend.TypeVar t) = pure (Desugared.TypeVar t)
@@ -111,21 +129,20 @@ desugarType (Frontend.UserDefinedType a) = pure (Desugared.UserDefinedType a)
 desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2) desugarType fields
 desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse desugarType fields
 
-desugarDeclaration :: Frontend.Declaration -> Desugar Desugared.Declaration
-desugarDeclaration (Frontend.Declaration ld) =
-    Desugared.Declaration
-        <$> traverseOf
-            unlocated
-            ( \d -> do
-                partials <- use partialDeclarations
-                let declName = d ^. name . unlocated
-                case M.lookup declName partials of
-                    Nothing -> error ("no partial declarations for" <> show declName)
-                    Just partial -> do
-                        body <- resolvePartialDeclaration (partial <$ ld)
-                        pure (Desugared.Declaration' (d ^. Frontend.declaration'Module') (d ^. Frontend.declaration'Name) body)
+completePartials :: Located ModuleName -> Desugar [Desugared.Declaration]
+completePartials mn = do
+    partials <- use partialDeclarations
+    decls <-
+        M.traverseWithKey
+            ( \declName partial -> do
+                body <- resolvePartialDeclaration partial
+                let locatedName = declName ^. _IgnoreLocation
+                let declaration' = Desugared.Declaration' mn locatedName body
+                let overallLocation = locatedName ^. sourceRegion <> body ^. Desugared._DeclarationBody . sourceRegion
+                pure (Desugared.Declaration (Located overallLocation declaration'))
             )
-            ld
+            partials
+    pure (M.elems decls)
 
 desugarExpr :: Frontend.Expr -> Desugar Desugared.Expr
 desugarExpr (Frontend.Expr fe) = Desugared.Expr <$> traverseOf unlocated desugarExpr' fe

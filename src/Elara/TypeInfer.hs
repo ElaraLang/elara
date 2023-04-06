@@ -1,18 +1,21 @@
 module Elara.TypeInfer where
 
-import Control.Lens (traverseOf, traverseOf_, (^.), _1, _2, _3)
+import Control.Lens (traverseOf, (^.), _3)
 import Elara.AST.Module
-import Elara.AST.Name (Name, Qualified)
-import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
+import Elara.AST.Name (Name, Qualified, _LowerAlphaName)
+import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, unlocated)
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
+import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Pretty
+import Elara.AST.VarRef (mkGlobal')
+import Elara.Data.Unique (uniqueVal)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
-import Elara.TypeInfer.Type hiding (name)
+import Elara.TypeInfer.Monotype qualified as Mono
+import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
@@ -31,15 +34,9 @@ traverseExpr :: (Applicative f) => (Located (Qualified Name) -> Typed.Expr -> f 
 traverseExpr f =
     traverseOf
         (Typed._Declaration . unlocated . Typed._Declaration')
-        ( \decl@(_, name, _) -> do
-            traverseOf (_3 . Typed._DeclarationBody . unlocated . Typed._Value) (f name) decl
+        ( \decl@(_, declName, _) -> do
+            traverseOf (_3 . Typed._DeclarationBody . unlocated . Typed._Value) (f declName) decl
         )
-
-addStubsToModule :: (Member (State Status) r) => Shunted.Declaration -> Sem r ()
-addStubsToModule = traverseOf_ (Shunted._Declaration . unlocated . Shunted._Declaration') addStubsToDeclaration
-  where
-    addStubsToDeclaration (_, n, body) =
-        traverseOf_ (Shunted._DeclarationBody . unlocated . Shunted._Value . _2) (addValueDeclarationStub n) body
 
 inferDeclaration ::
     forall r.
@@ -51,13 +48,13 @@ inferDeclaration (Shunted.Declaration ld) =
         <$> traverseOf
             unlocated
             ( \d' -> do
+                let (Shunted.DeclarationBody ldb) = d' ^. Shunted.declaration'Body
                 db' <-
-                    let (Shunted.DeclarationBody ldb) = d' ^. Shunted.declaration'Body
-                     in Typed.DeclarationBody
-                            <$> traverseOf
-                                unlocated
-                                (inferDeclarationBody' (d' ^. name))
-                                ldb
+                    Typed.DeclarationBody
+                        <$> traverseOf
+                            unlocated
+                            (inferDeclarationBody' (d' ^. name))
+                            ldb
                 pure (Typed.Declaration' (d' ^. moduleName) (d' ^. name) db')
             )
             ld
@@ -66,24 +63,27 @@ inferDeclaration (Shunted.Declaration ld) =
         Located (Qualified Name) ->
         Shunted.DeclarationBody' ->
         Sem r Typed.DeclarationBody'
-    inferDeclarationBody' name (Shunted.Value e _) = do
-        e'@(Typed.Expr (_, ty)) <- inferExpression e
-        push (Annotation (mkGlobal' name) ty)
-        pure $ Typed.Value e'
-    inferDeclarationBody' _ (Shunted.TypeAlias ty) = error (show ty)
+    inferDeclarationBody' declName (Shunted.Value e maybeExpected) = do
+        maybeExpected' <- traverse astTypeToInferType maybeExpected
 
-addValueDeclarationStub ::
-    forall r.
-    (Member (State Status) r) =>
-    Located (Qualified Name) ->
-    Maybe (Located Shunted.TypeAnnotation) ->
-    Sem r (Type SourceRegion)
-addValueDeclarationStub name ty = do
-    expectedType <- case ty of
-        Just x -> undefined
-        Nothing -> Elara.TypeInfer.Type.UnsolvedType (name ^. sourceRegion) <$> fresh
-    push (Annotation (mkGlobal' name) expectedType)
-    pure expectedType
+        -- add the expected type as an annotation
+        -- this makes recursive definitions work (although perhaps it shouldn't)
+        case maybeExpected' of
+            Just expectedType -> push (Annotation (mkGlobal' declName) expectedType)
+            Nothing -> fresh >>= push . Annotation (mkGlobal' declName) . Infer.UnsolvedType (generatedSourceRegionFrom declName)
+
+        e'@(Typed.Expr (_, ty)) <- inferExpression e
+
+        whenJust maybeExpected' $ \expected' -> do
+            subtype ty expected' -- make sure the inferred type is a subtype of the expected type
+        push (Annotation (mkGlobal' declName) ty)
+        pure $ Typed.Value e'
+    inferDeclarationBody' _ (Shunted.TypeDeclaration _ ty) = error (show ty)
+
+astTypeToInferType :: Located Shunted.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType (Located sr (Shunted.TypeVar l)) = pure (Infer.VariableType sr (l ^. uniqueVal . _LowerAlphaName))
+astTypeToInferType (Located sr Shunted.UnitType) = pure (Infer.Scalar sr Mono.Unit)
+astTypeToInferType _ = todo
 
 inferExpression ::
     forall r.
@@ -104,8 +104,8 @@ inferExpression e@(Shunted.Expr le) = do
     inferExpression' (Shunted.String l) = pure $ Typed.String l
     inferExpression' (Shunted.Char l) = pure $ Typed.Char l
     inferExpression' Shunted.Unit = pure Typed.Unit
-    inferExpression' (Shunted.Var v) = pure $ Typed.Var (fmap convertVarRef v)
-    inferExpression' (Shunted.Constructor c) = pure $ Typed.Constructor (fmap convertVarRef c)
+    inferExpression' (Shunted.Var v) = pure (Typed.Var v)
+    inferExpression' (Shunted.Constructor c) = pure (Typed.Constructor c)
     inferExpression' (Shunted.Lambda v e) = do
         e' <- inferExpression e
         pure $ Typed.Lambda v e'
@@ -135,7 +135,3 @@ inferExpression e@(Shunted.Expr le) = do
     inferExpression' (Shunted.Tuple ts) = do
         ts' <- traverse inferExpression ts
         pure $ Typed.Tuple ts'
-
-convertVarRef :: Shunted.VarRef n -> Typed.VarRef n
-convertVarRef (Shunted.Global c) = Typed.Global c
-convertVarRef (Shunted.Local c) = Typed.Local c

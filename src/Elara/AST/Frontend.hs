@@ -54,8 +54,6 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-data TypeAnnotation = TypeAnnotation (Located Name) Type
-    deriving (Show, Eq)
 
 data Type
     = TypeVar LowerAlphaName
@@ -87,9 +85,14 @@ data DeclarationBody'
         , _patterns :: [Pattern]
         }
     | -- | def <name> : <type>.
-      ValueTypeDef (Located TypeAnnotation)
-    | -- | type <name> = <type>
-      TypeAlias (Located Type)
+      ValueTypeDef (Located Type)
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [Located VarName] (Located TypeDeclaration)
+    deriving (Show, Eq)
+
+data TypeDeclaration
+    = ADT (NonEmpty (Located TypeName, [Located Type]))
+    | Alias Type
     deriving (Show, Eq)
 
 makeLenses ''Declaration'
@@ -97,5 +100,6 @@ makeClassy ''Declaration
 makeClassy ''DeclarationBody'
 makePrisms ''Declaration
 makePrisms ''DeclarationBody
+makePrisms ''TypeDeclaration
 makePrisms ''Expr
 makePrisms ''Pattern

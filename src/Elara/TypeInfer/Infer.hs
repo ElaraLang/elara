@@ -21,7 +21,7 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Elara.AST.Shunted (Expr (..), mkLocal', _Expr)
+import Elara.AST.Shunted (Expr (..), _Expr)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
@@ -34,6 +34,7 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Elara.AST.Region
 import Elara.AST.Shunted qualified as Syntax
+import Elara.AST.VarRef
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError (..))
@@ -1290,7 +1291,7 @@ infer (Expr (Located location e0)) cont = do
         Syntax.Var vn -> do
             _Γ <- get
 
-            let n = Syntax.withName' (vn ^. unlocated)
+            let n = withName' (vn ^. unlocated)
             l <- Context.lookup n _Γ `orDie` UnboundVariable n
             c <- cont
             pure (l, c)
@@ -1299,7 +1300,7 @@ infer (Expr (Located location e0)) cont = do
         Syntax.Constructor ctorName -> do
             _Γ <- get
 
-            let n = Syntax.withName' (ctorName ^. unlocated)
+            let n = mkGlobal' ctorName
             l <- Context.lookup n _Γ `orDie` UnboundConstructor n
             c <- cont
             pure (l, c)
@@ -1335,7 +1336,7 @@ infer (Expr (Located location e0)) cont = do
         -- Syntax.Annotation{..} -> do
         --     _Γ <- get
 
-        --     wellFormedType _Γ annotation
+            -- wellFormedType _Γ annotation
 
         --     check annotated annotation
 

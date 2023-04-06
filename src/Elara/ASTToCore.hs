@@ -13,6 +13,7 @@ import Elara.Core.Module qualified as Core
 
 import Control.Lens (findOf, folded, mapped, mapping, to, (^.), (^?!))
 import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.ASTToCore.Error (ASTToCoreError (..))
 import Polysemy
 import Polysemy.Error
@@ -84,6 +85,6 @@ desugarMatchCase :: (AST.Pattern, AST.Expr) -> Sem r Core.CoreCase
 desugarMatchCase (p, e) = do
     todo
 
-desugarVarRef :: AST.VarRef VarName -> Sem r Core.VarRef
-desugarVarRef (AST.Global lqn) = pure (Core.Global $ toName <$> (lqn ^. unlocated))
-desugarVarRef (AST.Local vn) = pure (Core.Local (vn ^. unlocated))
+desugarVarRef :: VarRef VarName -> Sem r Core.VarRef
+desugarVarRef (Global lqn) = pure (Core.Global $ toName <$> (lqn ^. unlocated))
+desugarVarRef (Local vn) = pure (Core.Local (vn ^. unlocated))

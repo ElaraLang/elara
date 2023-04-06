@@ -14,6 +14,7 @@ import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted qualified as Shunted
+import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (..))
 import Elara.Error.Codes qualified as Codes
@@ -23,9 +24,9 @@ import Polysemy (Member, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.Writer
-import Prelude hiding (execState, gets, modify')
+import Prelude hiding (modify')
 
-type OpTable = Map (Renamed.VarRef Name) OpInfo
+type OpTable = Map (VarRef Name) OpInfo
 
 newtype Precedence = Precedence Int
     deriving (Show, Eq, Ord)
@@ -73,8 +74,8 @@ instance ReportableError ShuntWarning where
     report (UnknownPrecedence (Renamed.MkBinaryOperator lOperator)) = do
         let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
         let operatorName o = case o of
-                Renamed.Op opName -> nameText $ Renamed.varRefVal (opName ^. unlocated)
-                Renamed.Infixed varName -> "`" <> nameText (Renamed.varRefVal (varName ^. unlocated)) <> "`"
+                Renamed.Op opName -> nameText $ varRefVal (opName ^. unlocated)
+                Renamed.Infixed varName -> "`" <> nameText (varRefVal (varName ^. unlocated)) <> "`"
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
@@ -184,9 +185,9 @@ shuntDeclarationBody (Renamed.DeclarationBody rdb) = Shunted.DeclarationBody <$>
         opTable <- ask
         fixed <- fixOperators opTable e
         shunted <- shuntExpr fixed
-        ty' <- traverse (traverse shuntTypeAnnotation) ty
+        ty' <- traverse (traverse shuntType) ty
         pure (Shunted.Value shunted ty')
-    shuntDeclarationBody' (Renamed.TypeAlias ty) = Shunted.TypeAlias <$> traverse shuntType ty
+    shuntDeclarationBody' (Renamed.TypeDeclaration vars ty) = pure (Shunted.TypeDeclaration vars ty)
 
 shuntExpr ::
     forall r.
@@ -204,8 +205,8 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
     shuntExpr' (Renamed.String l) = pure (Shunted.String l)
     shuntExpr' (Renamed.Char l) = pure (Shunted.Char l)
     shuntExpr' Renamed.Unit = pure Shunted.Unit
-    shuntExpr' (Renamed.Var v) = Shunted.Var <$> traverse shuntVarRef v
-    shuntExpr' (Renamed.Constructor v) = Shunted.Constructor <$> traverse shuntVarRef v
+    shuntExpr' (Renamed.Var v) = pure (Shunted.Var v)
+    shuntExpr' (Renamed.Constructor v) = pure (Shunted.Constructor v)
     shuntExpr' (Renamed.Lambda n e) = Shunted.Lambda n <$> shuntExpr e
     shuntExpr' (Renamed.FunctionCall f x) = Shunted.FunctionCall <$> shuntExpr f <*> shuntExpr x
     shuntExpr' (Renamed.BinaryOperator operator l r) = do
@@ -213,9 +214,9 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
         -- (a `op` b) -> op a b
         l' <- shuntExpr l
         r' <- shuntExpr r
-        op' <- traverse shuntVarRef $ case operator ^. Renamed._MkBinaryOperator . unlocated of
-            Renamed.Op lopName -> OperatorVarName <<$>> lopName
-            Renamed.Infixed inName -> inName
+        let op' = case operator ^. Renamed._MkBinaryOperator . unlocated of
+                Renamed.Op lopName -> OperatorVarName <<$>> lopName
+                Renamed.Infixed inName -> inName
         let opVar = Shunted.Expr (Shunted.Var op' `withLocationOf` op')
         let leftCall =
                 Shunted.Expr
@@ -236,15 +237,11 @@ shuntExpr (Renamed.Expr le) = Shunted.Expr <$> traverseOf unlocated shuntExpr' l
         pure $ Shunted.Match e' cases'
     shuntExpr' (Renamed.Tuple es) = Shunted.Tuple <$> traverse shuntExpr es
 
-shuntVarRef :: Renamed.VarRef a -> Sem r (Shunted.VarRef a)
-shuntVarRef (Renamed.Global n) = pure (Shunted.Global n)
-shuntVarRef (Renamed.Local n) = pure (Shunted.Local n)
-
 shuntPattern :: Renamed.Pattern -> Sem r Shunted.Pattern
 shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shuntPattern' lp
   where
     shuntPattern' :: Renamed.Pattern' -> Sem r Shunted.Pattern'
-    shuntPattern' (Renamed.VarPattern v) = Shunted.VarPattern <$> traverse shuntVarRef v
+    shuntPattern' (Renamed.VarPattern v) = pure (Shunted.VarPattern v)
     shuntPattern' (Renamed.ConstructorPattern v p) = Shunted.ConstructorPattern v <$> traverse shuntPattern p
     shuntPattern' Renamed.WildcardPattern = pure Shunted.WildcardPattern
     shuntPattern' (Renamed.IntegerPattern l) = pure (Shunted.IntegerPattern l)
@@ -253,8 +250,6 @@ shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shu
     shuntPattern' (Renamed.CharPattern l) = pure (Shunted.CharPattern l)
     shuntPattern' (Renamed.ListPattern ps) = Shunted.ListPattern <$> traverse shuntPattern ps
 
-shuntTypeAnnotation :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r, Member (Reader OpTable) r) => Renamed.TypeAnnotation -> Sem r Shunted.TypeAnnotation
-shuntTypeAnnotation (Renamed.TypeAnnotation n t) = Shunted.TypeAnnotation n <$> shuntType t
 
 shuntType :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r, Member (Reader OpTable) r) => Renamed.Type -> Sem r Shunted.Type
 shuntType (Renamed.TypeVar tv) = pure (Shunted.TypeVar tv)

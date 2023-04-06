@@ -127,14 +127,8 @@ newtype IgnoreLocation a = IgnoreLocation (Located a)
 
 makePrisms ''IgnoreLocation
 
-instance (Eq a) => Eq (IgnoreLocation a) where
-    IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
-
-instance (Ord a) => Ord (IgnoreLocation a) where
-    IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
-
-instance (Show a) => Show (IgnoreLocation a) where
-    show (IgnoreLocation (Located _ a)) = Text.Show.show a
+generatedSourceRegionFrom :: Located a -> SourceRegion
+generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion . path)
 
 sourceRegion :: Lens' (Located a) SourceRegion
 sourceRegion f (Located region x) = fmap (`Located` x) (f region)
@@ -187,9 +181,27 @@ spanningRegion' regions = do
         Nothing -> GeneratedRegion file
         Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'
 
+instance Semigroup SourceRegion where
+    (<>) = enclosingRegion'
+
+instance Semigroup RealSourceRegion where
+    (<>) = enclosingRegion
+
+instance Monoid SourceRegion where
+    mempty = GeneratedRegion generatedFileName
+
 instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
-    Located region f <*> Located region' x = Located (spanningRegion' (region :| [region'])) (f x)
+    Located region f <*> Located region' x = Located (region <> region') (f x)
 
 instance (Pretty a) => Pretty (Located a) where
     pretty (Located _ x) = pretty x
+
+instance (Eq a) => Eq (IgnoreLocation a) where
+    IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
+
+instance (Ord a) => Ord (IgnoreLocation a) where
+    IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
+
+instance (Show a) => Show (IgnoreLocation a) where
+    show (IgnoreLocation (Located _ a)) = Text.Show.show a

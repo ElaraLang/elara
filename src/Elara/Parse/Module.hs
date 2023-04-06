@@ -14,7 +14,7 @@ import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos 
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
-    mHeader <- optional (header <* token' TokenSemicolon)
+    mHeader <- optional (header <* optional (token' TokenSemicolon))
     endHead
     thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader

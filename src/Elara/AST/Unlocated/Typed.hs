@@ -6,6 +6,7 @@ import Control.Lens hiding (List)
 import Control.Lens.Extras (uniplate)
 import Data.Data (Data)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified (..), TypeName, VarName)
+import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
@@ -18,8 +19,8 @@ data Expr'
     | String Text
     | Char Char
     | Unit
-    | Var (VarRef VarName)
-    | Constructor (VarRef TypeName)
+    | Var (UnlocatedVarRef VarName)
+    | Constructor (Qualified TypeName)
     | Lambda (Unique VarName) Expr
     | FunctionCall Expr Expr
     | If Expr Expr Expr
@@ -34,13 +35,8 @@ data Expr'
 newtype Expr = Expr (Expr', Type ())
     deriving (Show, Eq)
 
-data VarRef n
-    = Global (Qualified n)
-    | Local (Unique n)
-    deriving (Show, Eq, Ord, Functor, Data)
-
 data Pattern'
-    = VarPattern (VarRef VarName)
+    = VarPattern (UnlocatedVarRef VarName)
     | ConstructorPattern (Qualified TypeName) [Pattern]
     | ListPattern [Pattern]
     | WildcardPattern
@@ -67,7 +63,7 @@ data DeclarationBody
       Value
         { _expression :: Expr
         }
-    | NativeDef (TypeAnnotation)
+    | NativeDef TypeAnnotation
     | -- | type <name> = <type>
       TypeAlias (Type ())
     deriving (Show, Eq)
@@ -77,7 +73,6 @@ makePrisms ''DeclarationBody
 makeLenses ''DeclarationBody
 makePrisms ''Expr
 makePrisms ''Expr'
-makePrisms ''VarRef
 makePrisms ''Pattern
 
 instance Pretty Expr

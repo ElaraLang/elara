@@ -25,26 +25,22 @@ module Elara.TypeInfer.Context (
   complete,
 ) where
 
-import Data.Text (Text)
 import Elara.AST.Name
-import Elara.Data.Unique
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type)
-import Prelude hiding (group, lookup)
+import Prelude hiding (group)
 
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
-import Data.Traversable (for)
-import Elara.AST.Shunted (IgnoreLocVarRef, VarRef (..))
+
+import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Pretty
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
-import Prettyprinter.Render.Terminal
-import Print (debugColored)
 
 {- $setup
 

@@ -24,9 +24,9 @@ import Elara.AST.Module (
  )
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
-import Elara.AST.Renamed (VarRef (..))
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select (Desugared, HasModuleName (..), HasName (..), Renamed)
+import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), writeReport)
@@ -133,8 +133,11 @@ lookupGenericName lens (Located sr (MaybeQualified n Nothing)) = do
 lookupVarName :: Located (MaybeQualified VarName) -> Renamer (Located (VarRef VarName))
 lookupVarName = lookupGenericName varNames
 
-lookupTypeName :: Located (MaybeQualified TypeName) -> Renamer (Located (VarRef TypeName))
-lookupTypeName = lookupGenericName typeNames
+lookupTypeName :: Located (MaybeQualified TypeName) -> Renamer (Located (Qualified TypeName))
+lookupTypeName n =
+    lookupGenericName typeNames n <<&>> \case
+        Local _ -> error "can't have local type names"
+        Global v -> v ^. unlocated
 
 inModifiedState :: (RenameState -> RenameState) -> Renamer a -> Renamer a
 inModifiedState f m = do
@@ -147,7 +150,7 @@ inModifiedState f m = do
 uniquify :: Located name -> Renamer (Located (Unique name))
 uniquify (Located sr n) = Located sr <$> makeUnique n
 
--- | Performs a topological sort of the declarations, so as many 
+-- | Performs a topological sort of the declarations, so as many
 sortDeclarations :: [Renamed.Declaration] -> Sem r [Renamed.Declaration]
 sortDeclarations = pure
 
@@ -246,16 +249,25 @@ renameDeclaration (Desugared.Declaration ld) = Renamed.Declaration <$> traverseO
     renameDeclarationBody' :: Desugared.DeclarationBody' -> Renamer Renamed.DeclarationBody'
     renameDeclarationBody' (Desugared.Value val ty) = do
         val' <- renameExpr val
-        let declModuleName = ld ^. unlocated . (unlocatedModuleName @Desugared.Declaration' @Desugared)
-        ty' <- traverse (traverse (renameTypeAnnotation declModuleName)) ty
+        ty' <- traverse (traverse renameType) ty
         pure $ Renamed.Value val' ty'
-    renameDeclarationBody' (Desugared.TypeAlias ty) = do
-        ty' <- traverse renameType ty
-        pure $ Renamed.TypeAlias ty'
+    renameDeclarationBody' (Desugared.TypeDeclaration vars ty) = do
+        vars' <- traverse uniquify vars
+        let declModuleName = ld ^. unlocated . unlocatedModuleName
+        ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
+        pure $ Renamed.TypeDeclaration vars' ty'
     renameDeclarationBody' (Desugared.NativeDef _) = throw (NativeDefUnsupported ld)
 
-renameTypeAnnotation :: ModuleName -> Desugared.TypeAnnotation -> Renamer Renamed.TypeAnnotation
-renameTypeAnnotation thisMod (Desugared.TypeAnnotation ln ty) = Renamed.TypeAnnotation ((`Qualified` thisMod) <$> ln) <$> renameType ty
+renameTypeDeclaration :: ModuleName -> Desugared.TypeDeclaration -> Renamer Renamed.TypeDeclaration
+renameTypeDeclaration _ (Desugared.Alias t) = do
+    t' <- renameType t
+    pure $ Renamed.Alias t'
+renameTypeDeclaration thisMod (Desugared.ADT constructors) = do
+    constructors' <-
+        traverse
+            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each . unlocated) renameType y)
+            constructors
+    pure $ Renamed.ADT constructors'
 
 renameType :: Desugared.Type -> Renamer Renamed.Type
 renameType (Desugared.TypeVar n) = Renamed.TypeVar <$> makeUnique n

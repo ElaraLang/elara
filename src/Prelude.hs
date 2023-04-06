@@ -3,6 +3,7 @@ module Prelude (
     type (~),
     (<<$),
     ($>>),
+    (<<&>>),
     (<<<$>>>),
     insertWithM,
     modifyM,
@@ -21,6 +22,9 @@ a <<$ f = fmap (a <$) f
 
 ($>>) :: (Functor f, Functor g) => f (g a) -> b -> f (g b)
 f $>> a = fmap ($> a) f
+
+(<<&>>) :: (Functor f, Functor g) => f (g a) -> (a -> b) -> f (g b)
+f <<&>> a = fmap (a <$>) f
 
 (<<<$>>>) :: (Functor f, Functor g, Functor h) => (a -> b) -> f (g (h a)) -> f (g (h b))
 (<<<$>>>) = fmap . fmap . fmap
