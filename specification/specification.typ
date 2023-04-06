@@ -466,11 +466,11 @@ let testMap = Map.singleton "foo" 1
 ```
 
 
-=== Types
+== Types
 
 honestly man I'm not gonna pretend to know what all the theory actually works, so here's just a list of what Elara's type system can do (theoretically)
 
-==== Basic Types
+=== Basic Types
 
 As Elara is based on the Hindley-Milner system, types are either *monotypes* or *polytypes*.
 
@@ -504,13 +504,182 @@ Note that while `b` is instantiated to `a`, `a` is not instantiated.
 
 Note that the _type functions_ mentioned earlier are typically polytypes. `Int -> String` is a monotype, but `->` is a polytype with 2 type variables. 
 
-==== Record Types
+=== Record Types
 
 Elara supports first-class record types. A record type `{k1: t1, k2: t2, ...}` is a monotype that represents a record with keys `k1`, `k2`, etc. and types `t1`, `t2`, etc. respectively.
 
+A record type is defined as a set of _fields_, each with an explicit name and type, written as `name: type`, separated by commas (`,`) and enclosed in curly braces (`{}`).
 
-==== Custom Data Types
+For example, the following defines a record type with 2 fields, `x` and `y`, both of which are `Int`s:
+```ocaml
+{ x: Int, y: Int }
+```
 
-Elara supports user-defined data types, which are defined using the `type` keyword.
+Record types are constructed using a similar syntax: 
+```ocaml
+def origin : { x: Int, y: Int }
+let origin = { x = 0, y = 0 }
+```
 
-Data types can be either _algebraic_ or _record_ types, or a combination of the two. 
+TODO: document row polymorphism
+
+=== Custom Data Types
+
+Elara supports user-defined data types, which are defined using the `type` keyword followed by a name and an optional set of type variables, separated by spaces.
+
+User-defined data types may be either _algebraic_ or _alias_ types, or a combination of the two. 
+
+==== Algebraic Data Types
+An algebraic data type (commonly called a _discriminated union_) is defined as a set of named _constructors_ that each take a nullable set of arguments, separated by the `|` character.
+
+A value of an algebraic data type may be any one of the type's constructors with the appropriate arguments.
+
+For example, the following defines an algebraic type `Option` with 2 constructors, `Some` and `None`:
+```ocaml
+type Option a
+    = Some a 
+    | None
+```
+
+with this definition, we can pattern match over the constructors:
+```ocaml
+def getOrDefault : forall a. Option a -> a -> a
+let getOrDefault opt default = match opt with
+    Some x -> x
+    None -> default
+```
+
+and we can construct values of the type using either of the constructors:
+```ocaml
+def some : Option Int
+let some = Some 1
+
+def none : Option Int
+let none = None
+```
+
+Algebraic data types may be recursive: 
+```ocaml
+data ConsList a
+    = Cons a (ConsList a)
+    | Nil
+```
+==== Alias Types
+
+An alias type defines a name for an already existing type.
+For example, the following defines a type `Tuple2` which represents tuples as records:
+```ocaml
+type Tuple2 a b = { _1: a, _2: b }
+```
+
+Importantly, alias types may be recursive: 
+```ocaml
+type Person = { name: String, children: [Person] }
+
+def child : Person
+let child = { name = "Bob", children = [] }
+
+def parent : Person
+let parent = { name = "Alice", children = [child] }
+```
+
+This means that an alias is not simply a synonym for an existing type,
+as this type would be impossible to express without an alias.
+
+==== Combinations of Algebraic and Alias Types
+
+Algebraic and alias types may be combined to create more complex types. For example, we can define a JSON AST as follows:
+```ocaml
+type JSON
+    = Number Float
+    | String String
+    | List [JSON]
+    | Object [{ key: String, value: JSON }]
+    | Null
+```
+
+The JSON text ```json
+{
+    "foo": 1,
+    "bar": [1, 2, 3],
+    "baz": {
+        "qux": "hello"
+    }
+}
+``` would be represented as the following value:
+```ocaml
+def jsonObj : JSON
+let jsonObj = 
+    Object
+        [ { key = "foo", value: Number 1.0}
+        , { key = "bar", value: List [Number 1.0, Number 2.0, Number 3.0]}
+        , { key = "baz", value: Object [ { key = "qux", value: String "hello" } ] }
+        ]
+```
+
+=== Formal Syntax
+The following BNF grammar defines the formal syntax of Elara types, where the term `<typeDecl>` is a user-defined type declaration.
+
+```bnf
+<recordField> ::= <fieldName> <spaces> ":" <spaces> <type>
+
+<recordType> ::= "{" <spaces> (<recordField> <spacesOrNewlines>) ("," <spaces> <recordField>)* <spaces> "}"
+
+<constructor> ::= <typeName> <spaces> (<type> <spaces>)*
+
+<algebraicDataType> ::= <constructor> <spaces> ("|" <constructor> <spaces>)*
+
+<type> 
+	::= <typeName>
+      | <recordType>
+      
+<topLevelType> 
+	::= <type>
+      | <algebraicDataType>
+      
+<typeDecl> ::= "type" " "+ <typeName> <fieldName>* <spaces> "=" <topLevelType>
+
+<fieldName> ::= [a-z] ([a-z] | [A-Z] | [0-9])*
+<typeName> ::= [A-Z] ([a-z] | [A-Z] | [0-9])*
+<spaces> ::= " "*
+<spacesOrNewlines> ::= (" " | "\n")*
+```
+
+=== Expanding User Defined Types
+
+Some user defined types can be simplified by expanding them to their underlying type. This can make compilation easier and potentially reduce the number of allocations needed.
+
+For example, when writing a simple alias such as `type Age = Int`, we would not expect usage of `Age` to behave any differently than `Int` or require any extra memory allocations, as they are isomorphic. Therefore, the compiler can simply substitute all uses of `Age` with `Int`.
+
+Similarly, algebraic data types with a single constructor can be expanded to their underlying type. For example, 
+`type Box a = Box a` should be expanded to `type Box a = a`. 
+This also requires eliminating usages of the `Box` constructor in expressions and patterns:
+
+#beforeAndAfter[
+    ```ocaml
+    type Box a = Box a
+
+    def box : Box Int
+    let box = Box 1
+
+    let main =
+        match box with
+            Box x -> print x
+    ```
+][
+    ```ocaml
+    type Box a = a
+
+    def box : Int
+    let box = 1
+
+    let main =
+        match box with
+            x -> print x
+    ```
+]
+
+_Single constructor ADTs are often very useful for making non-standard instances of a type class. Their use should not incur any performance or memory penalty at runtime._
+
+
+Compilers are expected to simplify non-recursive type aliases and single-constructor ADTs. While further simplification may be posible, it is not required.
