@@ -31,6 +31,9 @@ typeName = do
         x :| [] -> MaybeQualified (TypeName x) Nothing
         _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
 
+unqualifiedTypeName :: HParser TypeName
+unqualifiedTypeName = TypeName <$> upperVarName
+
 maybeQualified :: HParser name -> HParser (MaybeQualified name)
 maybeQualified nameParser = unqualified <|> qualified
   where

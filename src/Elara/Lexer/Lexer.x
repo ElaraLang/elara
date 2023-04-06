@@ -30,7 +30,8 @@ $lower = [a-z]
 $upper = [A-Z]
 $opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
 $identifier = [$lower $upper $digit]
-@variableIdentifer = $lower $identifier*
+$underscore = \_
+@variableIdentifer = [$lower $underscore] $identifier*
 @typeIdentifier = $upper $identifier*
 
 

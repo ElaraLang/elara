@@ -70,7 +70,7 @@ inferDeclaration (Shunted.Declaration ld) =
         e'@(Typed.Expr (_, ty)) <- inferExpression e
         push (Annotation (mkGlobal' name) ty)
         pure $ Typed.Value e'
-    inferDeclarationBody' _ (Shunted.TypeAlias _) = todo
+    inferDeclarationBody' _ (Shunted.TypeAlias ty) = error (show ty)
 
 addValueDeclarationStub ::
     forall r.
