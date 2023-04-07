@@ -95,6 +95,7 @@ tokens :-
       \{                     { simpleTok TokenLeftBrace }
       \}                     { simpleTok TokenRightBrace }
       \`                     { simpleTok TokenBacktick }
+      \|                     { simpleTok TokenPipe }
 
       -- Literals
       \-? (

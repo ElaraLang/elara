@@ -3,7 +3,7 @@
 
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, use, (%~), (^.), (^..), _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, use, (%~), (^.), (^..), _1, _2)
 import Data.Map qualified as Map
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Module (
@@ -207,6 +207,12 @@ addDeclarationToContext _ decl = do
         NVarName vn -> modify $ over varNames $ Map.insert vn (global vn)
         NTypeName vn -> modify $ over typeNames $ Map.insert vn (global vn)
         NOpName vn -> modify $ over varNames $ Map.insert (OperatorVarName vn) (global (OperatorVarName vn))
+
+    case decl ^. Desugared._Declaration . unlocated . Desugared.declaration'Body . Desugared._DeclarationBody . unlocated of
+        -- Add all the constructor names to the context
+        Desugared.TypeDeclaration _ (Located _ (Desugared.ADT constructors)) ->
+            traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over typeNames $ Map.insert tn (global tn)) constructors
+        _ -> pass
 
 ensureExistsAndExposed :: ModuleName -> Located Name -> Renamer ()
 ensureExistsAndExposed mn n = do

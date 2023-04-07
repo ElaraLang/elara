@@ -1,3 +1,4 @@
+import Prelude
 let id x = x
 
-let main = id "hello world"
+let main = Some 3

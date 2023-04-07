@@ -9,6 +9,7 @@ import Control.Lens
 import Data.Map qualified as M
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName)
+import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.ASTToCore qualified as ASTToCore (desugar)
 import Elara.Compile qualified as Compile
@@ -71,7 +72,6 @@ lexFile path = do
   case evalLexMonad path contents readTokens of
     Left err -> report err *> nothingE
     Right lexemes -> do
-      -- embed (printColored (fmap (view unlocated) lexemes)) -- DEBUG
       justE (contents, lexemes)
 
 parseModule :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
