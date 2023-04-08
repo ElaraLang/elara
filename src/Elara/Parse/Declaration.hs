@@ -9,7 +9,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (element)
 import Elara.Parse.Indents (block)
-import Elara.Parse.Names (unqualifiedNormalVarName, unqualifiedTypeName, unqualifiedVarName)
+import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token')
 import Elara.Parse.Type (type')
@@ -55,7 +55,7 @@ typeDeclaration modName = fmapLocated Declaration $ do
   token' TokenType
   endHead
   name <- located unqualifiedTypeName
-  args <- many (located unqualifiedNormalVarName)
+  args <- many (located alphaVarName)
   token' TokenEquals
   body <- located typeDeclaration'
   let

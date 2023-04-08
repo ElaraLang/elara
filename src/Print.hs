@@ -15,6 +15,12 @@ printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
 printPretty :: (Pretty a, MonadIO m) => a -> m ()
 printPretty = putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty
 
+showColored :: (Show a, IsString s) => a -> s
+showColored = fromString . toString . pShow
+
+showPretty :: (Pretty a, IsString s) => a -> s
+showPretty = fromString . renderString . layoutPretty defaultLayoutOptions . pretty
+
 {-# WARNING debugColored "Debug is still in code" #-}
 debugColored :: (Show a, Applicative f) => a -> f ()
 debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg
@@ -22,9 +28,6 @@ debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg
 {-# WARNING debugColoredStr "Debug is still in code" #-}
 debugColoredStr :: (Applicative f) => String -> f ()
 debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
-
-prettyShow :: (Show a, IsString s) => a -> s
-prettyShow = fromString . toString . pShow
 
 {-# WARNING debugPretty "debugPretty is still in code" #-}
 debugPretty :: (Applicative m, Pretty a) => a -> m ()

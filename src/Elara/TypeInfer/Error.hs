@@ -13,7 +13,7 @@ import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (Err))
-import Print (prettyShow)
+import Print
 
 -- | A data type holding all errors related to type inference
 data TypeInferenceError
@@ -57,7 +57,7 @@ instance ReportableError TypeInferenceError where
     writeReport $
       Err
         Nothing
-        ( vcat
+        ( vsep
             [ "Internal error: Invalid context. The following unsolved variable:"
             , pretty a
             , "cannot be solved because the variable is missing from the context"
@@ -66,4 +66,4 @@ instance ReportableError TypeInferenceError where
         )
         []
         []
-  report e = writeReport $ Err Nothing (prettyShow e) [] []
+  report e = writeReport $ Err Nothing (showColored e) [] []

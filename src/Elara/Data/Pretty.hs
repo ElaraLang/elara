@@ -41,7 +41,7 @@ escapeChar c = case c of
 
 listToText :: (Pretty a) => [a] -> Doc ann
 listToText elements =
-    vcat (fmap prettyEntry elements)
+    vsep (fmap prettyEntry elements)
   where
     prettyEntry entry = pretty ("• " <> align (pretty entry))
 

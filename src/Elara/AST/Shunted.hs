@@ -78,7 +78,7 @@ data DeclarationBody'
         -- ^ An optional type annotation for the expression
         }
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located (Unique VarName)] (Located Renamed.TypeDeclaration) -- No difference to old AST
+      TypeDeclaration [Located (Unique LowerAlphaName)] (Located Renamed.TypeDeclaration) -- No difference to old AST
     deriving (Show, Eq)
 
 makePrisms ''Declaration

@@ -54,7 +54,6 @@ data BinaryOperator'
 newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
-
 data Type
     = TypeVar LowerAlphaName
     | FunctionType Type Type
@@ -87,7 +86,7 @@ data DeclarationBody'
     | -- | def <name> : <type>.
       ValueTypeDef (Located Type)
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located VarName] (Located TypeDeclaration)
+      TypeDeclaration [Located LowerAlphaName] (Located TypeDeclaration)
     deriving (Show, Eq)
 
 data TypeDeclaration

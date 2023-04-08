@@ -51,7 +51,6 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   printPretty (allEntries typedGraph)
   corePath <- traverseGraph (toCore typedGraph) typedGraph
   printPretty (allEntries corePath)
-  putStrLn ""
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
 readFileString path = do

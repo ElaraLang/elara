@@ -6,9 +6,9 @@ import Control.Lens (makeLenses, makePrisms, view)
 import Elara.AST.Name (HasName (name), LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.AST.VarRef
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
-import Elara.Data.Pretty
 
 {- | Renamed AST Type
 This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
@@ -89,14 +89,13 @@ data DeclarationBody'
         , _valueType :: Maybe (Located Type)
         }
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located (Unique VarName)] (Located TypeDeclaration)
+      TypeDeclaration [Located (Unique LowerAlphaName)] (Located TypeDeclaration)
     deriving (Show, Eq)
 
 data TypeDeclaration
     = ADT (NonEmpty (Located (Qualified TypeName), [Located Type]))
     | Alias (Located Type)
     deriving (Show, Eq)
-
 
 makePrisms ''Declaration
 makeLenses ''Declaration'

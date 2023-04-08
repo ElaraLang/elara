@@ -39,6 +39,8 @@ import Polysemy.Error (Error, note, runError, throw)
 import Polysemy.MTL ()
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
+import Polysemy.Utils (withModified)
+import Print (debugColored)
 
 data RenameError
     = UnknownModule ModuleName
@@ -88,6 +90,8 @@ instance ReportableError RenameError where
 data RenameState = RenameState
     { _varNames :: Map VarName (VarRef VarName)
     , _typeNames :: Map TypeName (VarRef TypeName)
+    , _typeVars :: Map LowerAlphaName (Unique LowerAlphaName)
+    -- ^ All the type variables in scope
     }
     deriving (Show)
 
@@ -96,7 +100,7 @@ makeLenses ''RenameState
 type Renamer a = Sem '[State RenameState, Error RenameError, Reader (ModuleGraph (Module Desugared)), UniqueGen] a
 
 runRenamer :: i -> Sem (State RenameState : Error e : Reader i : UniqueGen : r) a -> Sem (Embed IO : r) (Either e a)
-runRenamer mp = uniqueGenToIO . runReader mp . runError . evalState (RenameState Map.empty Map.empty)
+runRenamer mp = uniqueGenToIO . runReader mp . runError . evalState (RenameState Map.empty Map.empty Map.empty)
 
 qualifyIn :: ModuleName -> MaybeQualified name -> Renamer (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
@@ -138,13 +142,10 @@ lookupTypeName n =
         Local _ -> error "can't have local type names"
         Global v -> v ^. unlocated
 
-inModifiedState :: (RenameState -> RenameState) -> Renamer a -> Renamer a
-inModifiedState f m = do
-    s <- get
-    put $ f s
-    a <- m
-    put s
-    pure a
+lookupTypeVar :: LowerAlphaName -> Renamer (Maybe (Unique LowerAlphaName))
+lookupTypeVar n = do
+    typeVars' <- use typeVars
+    pure $ Map.lookup n typeVars'
 
 uniquify :: Located name -> Renamer (Located (Unique name))
 uniquify (Located sr n) = Located sr <$> makeUnique n
@@ -258,9 +259,16 @@ renameDeclaration (Desugared.Declaration ld) = Renamed.Declaration <$> traverseO
         pure $ Renamed.Value val' ty'
     renameDeclarationBody' (Desugared.TypeDeclaration vars ty) = do
         vars' <- traverse uniquify vars
+        let varAliases = zip vars vars' :: [(Located LowerAlphaName, Located (Unique LowerAlphaName))]
+        let addAllVarAliases s =
+                foldl'
+                    (\s' (vn, uniqueVn) -> typeVars %~ Map.insert (vn ^. unlocated) (uniqueVn ^. unlocated) $ s')
+                    s
+                    varAliases
         let declModuleName = ld ^. unlocated . unlocatedModuleName
-        ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
-        pure $ Renamed.TypeDeclaration vars' ty'
+        withModified addAllVarAliases $ do
+            ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
+            pure $ Renamed.TypeDeclaration vars' ty'
     renameDeclarationBody' (Desugared.NativeDef _) = throw (NativeDefUnsupported ld)
 
 renameTypeDeclaration :: ModuleName -> Desugared.TypeDeclaration -> Renamer Renamed.TypeDeclaration
@@ -275,7 +283,9 @@ renameTypeDeclaration thisMod (Desugared.ADT constructors) = do
     pure $ Renamed.ADT constructors'
 
 renameType :: Desugared.Type -> Renamer Renamed.Type
-renameType (Desugared.TypeVar n) = Renamed.TypeVar <$> makeUnique n
+renameType (Desugared.TypeVar n) = do
+    inCtx <- lookupTypeVar n -- find the type variable in the context, if it exists
+    Renamed.TypeVar <$> maybe (makeUnique n) pure inCtx -- otherwise make it unique
 renameType (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> renameType t1 <*> renameType t2
 renameType Desugared.UnitType = pure Renamed.UnitType
 renameType (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> renameType t1 <*> renameType t2
@@ -318,7 +328,7 @@ renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExp
         pure $ Renamed.Let vn' exp'
     renameExpr' (Desugared.LetIn vn e body) = do
         vn' <- uniquify vn
-        inModifiedState (varNames %~ Map.insert (vn ^. unlocated) (Local vn')) $ do
+        withModified (varNames %~ Map.insert (vn ^. unlocated) (Local vn')) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
             pure $ Renamed.LetIn vn' exp' body'
@@ -348,7 +358,6 @@ renamePattern :: Desugared.Pattern -> Renamer Renamed.Pattern
 renamePattern (Desugared.Pattern fp) = Renamed.Pattern <$> traverseOf unlocated renamePattern' fp
   where
     renamePattern' :: Desugared.Pattern' -> Renamer Renamed.Pattern'
-
     renamePattern' (Desugared.IntegerPattern i) = pure $ Renamed.IntegerPattern i
     renamePattern' (Desugared.FloatPattern i) = pure $ Renamed.FloatPattern i
     renamePattern' (Desugared.StringPattern i) = pure $ Renamed.StringPattern i
@@ -385,7 +394,7 @@ patternToMatch :: Desugared.Pattern -> Desugared.Expr -> Renamer (Located (Uniqu
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Desugared.Pattern (Located _ (Desugared.VarPattern vn))) body = do
     uniqueVn <- uniquify vn
-    body' <- inModifiedState (varNames %~ Map.insert (vn ^. unlocated) (Local uniqueVn)) $ renameExpr body
+    body' <- withModified (varNames %~ Map.insert (vn ^. unlocated) (Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat

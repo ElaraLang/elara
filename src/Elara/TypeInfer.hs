@@ -7,7 +7,6 @@ import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionF
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
-import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Unique (uniqueVal)
@@ -20,7 +19,7 @@ import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
-import Print (prettyShow)
+import Print
 import TODO (todo)
 
 inferModule ::
@@ -93,7 +92,7 @@ inferDeclaration (Shunted.Declaration ld) =
         pure $ Typed.TypeDeclaration vs ty'
 
 astTypeToInferType :: Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
-astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (l ^. uniqueVal . _LowerAlphaName))
+astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow
 astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
 astTypeToInferType _ = todo
 

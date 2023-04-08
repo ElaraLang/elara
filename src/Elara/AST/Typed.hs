@@ -5,7 +5,7 @@ module Elara.AST.Typed where
 
 import Control.Lens hiding (List)
 import Data.Data (Data)
-import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
@@ -13,7 +13,7 @@ import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
-import Prelude hiding (Op)
+import Prelude hiding (Op, group)
 
 {- | Typed AST Type
 This is very similar to 'Elara.AST.Shunted.Expr' except:
@@ -78,7 +78,7 @@ data DeclarationBody'
         { _expression :: Expr
         }
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located (Unique VarName)] (Located TypeDeclaration) -- No difference to old AST
+      TypeDeclaration [Located (Unique LowerAlphaName)] (Located TypeDeclaration) -- No difference to old AST
     deriving (Show, Eq)
 
 data TypeDeclaration
@@ -150,13 +150,17 @@ prettyDB name (Value (Expr (e, t))) =
         , indent indentDepth (pretty e)
         , "" -- add a newline
         ]
-prettyDB name (TypeDeclaration vars t) = vsep ["type" <+> pretty name <+> hsep (pretty <$> vars), "=" <+> pretty t]
+prettyDB name (TypeDeclaration vars t) =
+    vsep
+        [ "type" <+> pretty name <+> hsep (pretty <$> vars)
+        , indent indentDepth (pretty t)
+        ]
 
 instance Pretty TypeDeclaration where
-    pretty (Alias t) = pretty t
-    pretty (ADT constructors) = vsep (prettyCtor <$> toList constructors)
+    pretty (Alias t) = "=" <+> pretty t
+    pretty (ADT constructors) = group $ encloseSep "= " "" (flatAlt "| " " | ") (prettyCtor <$> toList constructors)
       where
-        prettyCtor (name, args) = pretty name <+> hsep (pretty <$> args)
+        prettyCtor (name, args) = hsep (pretty name : (pretty <$> args))
 
 instance Pretty Expr where
     pretty e = pretty (stripLocation e)
