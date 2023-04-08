@@ -46,6 +46,7 @@ data RenameError
     = UnknownModule ModuleName
     | QualifiedInWrongModule ModuleName ModuleName
     | NonExistentModuleDeclaration ModuleName (Located Name)
+    | UnknownTypeVariable LowerAlphaName
     | UnknownName (Located Name)
     | NativeDefUnsupported (Located Desugared.Declaration')
 
@@ -72,6 +73,13 @@ instance ReportableError RenameError where
                     ("Element" <+> (n ^. unlocated . to pretty) <+> "does not exist in in module" <+> pretty m)
                     [(nPos, This "referenced here")]
                     []
+    report (UnknownTypeVariable n) =
+        writeReport $
+            Err
+                Nothing
+                ("Unknown type variable: " <> show n)
+                []
+                []
     report (UnknownName n) =
         writeReport $
             Err
@@ -255,7 +263,7 @@ renameDeclaration (Desugared.Declaration ld) = Renamed.Declaration <$> traverseO
     renameDeclarationBody' :: Desugared.DeclarationBody' -> Renamer Renamed.DeclarationBody'
     renameDeclarationBody' (Desugared.Value val ty) = do
         val' <- renameExpr val
-        ty' <- traverse (traverse renameType) ty
+        ty' <- traverse (traverse (renameType True)) ty
         pure $ Renamed.Value val' ty'
     renameDeclarationBody' (Desugared.TypeDeclaration vars ty) = do
         vars' <- traverse uniquify vars
@@ -273,25 +281,38 @@ renameDeclaration (Desugared.Declaration ld) = Renamed.Declaration <$> traverseO
 
 renameTypeDeclaration :: ModuleName -> Desugared.TypeDeclaration -> Renamer Renamed.TypeDeclaration
 renameTypeDeclaration _ (Desugared.Alias t) = do
-    t' <- traverseOf unlocated renameType t
+    t' <- traverseOf unlocated (renameType False) t
     pure $ Renamed.Alias t'
 renameTypeDeclaration thisMod (Desugared.ADT constructors) = do
     constructors' <-
         traverse
-            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each . unlocated) renameType y)
+            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each . unlocated) (renameType False) y)
             constructors
     pure $ Renamed.ADT constructors'
 
-renameType :: Desugared.Type -> Renamer Renamed.Type
-renameType (Desugared.TypeVar n) = do
+-- | Renames a type, qualifying type constructors and type variables where necessary
+renameType ::
+    -- | If new type variables are allowed - if False, this will throw an error if a type variable is not in scope
+    -- This is useful for type declarations, where something like @type Invalid a = b@ would clearly be invalid
+    -- But for local type annotations, we want to allow this, as it may be valid
+    Bool ->
+    Desugared.Type ->
+    Renamer Renamed.Type
+renameType allowNewTypeVars (Desugared.TypeVar n) = do
     inCtx <- lookupTypeVar n -- find the type variable in the context, if it exists
-    Renamed.TypeVar <$> maybe (makeUnique n) pure inCtx -- otherwise make it unique
-renameType (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> renameType t1 <*> renameType t2
-renameType Desugared.UnitType = pure Renamed.UnitType
-renameType (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> renameType t1 <*> renameType t2
-renameType (Desugared.UserDefinedType ln) = Renamed.UserDefinedType <$> qualifyTypeName ln
-renameType (Desugared.RecordType ln) = Renamed.RecordType <$> traverse (traverseOf _2 renameType) ln
-renameType (Desugared.TupleType ts) = Renamed.TupleType <$> traverse renameType ts
+    case inCtx of
+        Just inCtx' -> pure $ Renamed.TypeVar inCtx' -- if it exists, use the unique name
+        Nothing
+            | allowNewTypeVars ->
+                -- if it doesn't exist, and we're allowed to make new type variables
+                Renamed.TypeVar <$> makeUnique n
+            | otherwise -> throw $ UnknownTypeVariable n
+renameType antv (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> renameType antv t1 <*> renameType antv t2
+renameType _ Desugared.UnitType = pure Renamed.UnitType
+renameType antv (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> renameType antv t1 <*> renameType antv t2
+renameType _ (Desugared.UserDefinedType ln) = Renamed.UserDefinedType <$> qualifyTypeName ln
+renameType antv (Desugared.RecordType ln) = Renamed.RecordType <$> traverse (traverseOf _2 (renameType antv)) ln
+renameType antv (Desugared.TupleType ts) = Renamed.TupleType <$> traverse (renameType antv) ts
 
 renameExpr :: Desugared.Expr -> Renamer Renamed.Expr
 renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExpr' le
