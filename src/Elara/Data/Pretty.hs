@@ -31,8 +31,10 @@ class Pretty a where
 instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
     pretty p = (PP.pretty p)
 
-instance {-# OVERLAPPABLE #-} Pretty a => PP.Pretty a where
-    pretty = unAnnotate . pretty
+
+-- hack
+instance PP.Pretty (Doc AnsiStyle) where
+    pretty = unAnnotate
 
 
 escapeChar :: (IsString s) => Char -> s
@@ -55,6 +57,13 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
+
+
+instance Pretty i => Pretty [i] where
+    pretty =    align . list . map pretty
+
+instance (Pretty a, Pretty b) => Pretty (a, b) where
+    pretty (a, b) = tupled [pretty a, pretty b]
 
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
