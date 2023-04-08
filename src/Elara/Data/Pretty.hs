@@ -17,6 +17,7 @@ import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
 import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal (AnsiStyle)
+import Prelude hiding (group)
 
 indentDepth :: Int
 indentDepth = 4
@@ -69,4 +70,4 @@ instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)
 
 instance (Pretty s) => Pretty (Set s) where
-    pretty  = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", "
+    pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
