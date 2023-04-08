@@ -29,7 +29,7 @@ class Pretty a where
     pretty :: a -> Doc AnsiStyle
 
 instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
-    pretty p = (PP.pretty p)
+    pretty = PP.pretty
 
 
 -- hack
@@ -58,7 +58,6 @@ listToText elements =
     prettyEntry entry = "• " <> align (pretty entry)
 
 
-
 instance Pretty i => Pretty [i] where
     pretty =    align . list . map pretty
 
@@ -70,4 +69,4 @@ instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)
 
 instance (Pretty s) => Pretty (Set s) where
-    pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"
+    pretty  = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", "
