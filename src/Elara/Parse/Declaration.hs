@@ -1,7 +1,6 @@
 module Elara.Parse.Declaration where
 
 import Control.Lens (view, (^.))
-import Control.Monad (foldM)
 import Elara.AST.Frontend (Declaration (..), Declaration' (..), DeclarationBody (..), DeclarationBody' (..), Expr, Pattern, _Expr, _Pattern)
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (ModuleName, Name (..), VarName)
@@ -77,4 +76,4 @@ adt =
     pure (name, args)
 
 alias :: HParser Frontend.TypeDeclaration
-alias = Frontend.Alias <$> type'
+alias = Frontend.Alias <$> located type'

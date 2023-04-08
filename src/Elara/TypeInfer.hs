@@ -4,6 +4,7 @@ import Control.Lens (traverseOf, (^.), _3)
 import Elara.AST.Module
 import Elara.AST.Name (Name, Qualified, _LowerAlphaName)
 import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, unlocated)
+import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
 import Elara.AST.Shunted qualified as Shunted
@@ -78,11 +79,22 @@ inferDeclaration (Shunted.Declaration ld) =
             subtype ty expected' -- make sure the inferred type is a subtype of the expected type
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
-    inferDeclarationBody' _ (Shunted.TypeDeclaration _ ty) = error (prettyShow ty)
+    inferDeclarationBody' _ (Shunted.TypeDeclaration vs ty) = do
+        ty' <-
+            traverseOf
+                unlocated
+                ( \case
+                    Renamed.Alias l -> Typed.Alias <$> astTypeToInferType l
+                    Renamed.ADT constructors -> do
+                        constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
+                        pure $ Typed.ADT constructors'
+                )
+                ty
+        pure $ Typed.TypeDeclaration vs ty'
 
-astTypeToInferType :: Located Shunted.Type -> Sem r (Infer.Type SourceRegion)
-astTypeToInferType (Located sr (Shunted.TypeVar l)) = pure (Infer.VariableType sr (l ^. uniqueVal . _LowerAlphaName))
-astTypeToInferType (Located sr Shunted.UnitType) = pure (Infer.Scalar sr Mono.Unit)
+astTypeToInferType :: Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (l ^. uniqueVal . _LowerAlphaName))
+astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
 astTypeToInferType _ = todo
 
 inferExpression ::

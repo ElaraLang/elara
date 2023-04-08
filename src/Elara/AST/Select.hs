@@ -40,7 +40,7 @@ type family ASTType ast where
     ASTType UnlocatedFrontend = Unlocated.Frontend.Type
     ASTType Desugared = Desugared.Type
     ASTType Renamed = Renamed.Type
-    ASTType Shunted = Shunted.Type
+    ASTType Shunted = Renamed.Type
     ASTType Typed = Typed.Type SourceRegion
 
 type family ASTPattern ast where

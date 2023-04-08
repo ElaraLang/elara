@@ -5,7 +5,6 @@ module Main (
   main,
 ) where
 
-import Control.Lens
 import Elara.AST.Module
 import Elara.AST.Select hiding (moduleName)
 import Elara.ASTToCore qualified as ASTToCore (desugar)
@@ -17,7 +16,7 @@ import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
-import Elara.ModuleGraph (ModuleGraph, ModuleLike (moduleName), createGraph, traverseGraph, traverseGraphRevTopologically_, traverseGraphTopologically, traverseGraphTopologically_, traverseGraphRevTopologically)
+import Elara.ModuleGraph (ModuleGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically)
 import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (rename, runRenamer)
@@ -33,7 +32,7 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
-import Print (debugPretty, printColored, printPretty)
+import Print (printPretty)
 
 main :: IO ()
 main = do
@@ -48,10 +47,10 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   prelude <- loadModule "prelude.elr"
   let graph = createGraph [source, prelude]
   shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
-  typedGraph <- traverseGraphRevTopologically inferModule shuntedGraph
-  -- embed (putDoc $ pretty path'')
+  typedGraph <- inferModules shuntedGraph
+  printPretty (allEntries typedGraph)
   corePath <- traverseGraph (toCore typedGraph) typedGraph
-  (printPretty corePath)
+  printPretty (allEntries corePath)
   putStrLn ""
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
@@ -109,12 +108,9 @@ shuntModule m = do
       traverse_ report warnings
       justE shunted
 
-inferModule ::
-  (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) =>
-  Module Shunted ->
-  Sem r (Module Typed)
-inferModule m = do
-  runErrorOrReport (evalState initialStatus (Infer.inferModule m))
+inferModules :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => ModuleGraph (Module Shunted) -> Sem r (ModuleGraph (Module Typed))
+inferModules modules = do
+  runErrorOrReport (evalState initialStatus (traverseGraphRevTopologically Infer.inferModule modules))
 
 toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 toCore mp m = do

@@ -185,8 +185,7 @@ shuntDeclarationBody (Renamed.DeclarationBody rdb) = Shunted.DeclarationBody <$>
         opTable <- ask
         fixed <- fixOperators opTable e
         shunted <- shuntExpr fixed
-        ty' <- traverse (traverse shuntType) ty
-        pure (Shunted.Value shunted ty')
+        pure (Shunted.Value shunted ty)
     shuntDeclarationBody' (Renamed.TypeDeclaration vars ty) = pure (Shunted.TypeDeclaration vars ty)
 
 shuntExpr ::
@@ -249,13 +248,3 @@ shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shu
     shuntPattern' (Renamed.StringPattern l) = pure (Shunted.StringPattern l)
     shuntPattern' (Renamed.CharPattern l) = pure (Shunted.CharPattern l)
     shuntPattern' (Renamed.ListPattern ps) = Shunted.ListPattern <$> traverse shuntPattern ps
-
-
-shuntType :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r, Member (Reader OpTable) r) => Renamed.Type -> Sem r Shunted.Type
-shuntType (Renamed.TypeVar tv) = pure (Shunted.TypeVar tv)
-shuntType (Renamed.FunctionType l r) = Shunted.FunctionType <$> shuntType l <*> shuntType r
-shuntType Renamed.UnitType = pure Shunted.UnitType
-shuntType (Renamed.TypeConstructorApplication l r) = Shunted.TypeConstructorApplication <$> shuntType l <*> shuntType r
-shuntType (Renamed.UserDefinedType n) = pure (Shunted.UserDefinedType n)
-shuntType (Renamed.RecordType fields) = Shunted.RecordType <$> traverse (traverseOf _2 shuntType) fields
-shuntType (Renamed.TupleType ts) = Shunted.TupleType <$> traverse shuntType ts

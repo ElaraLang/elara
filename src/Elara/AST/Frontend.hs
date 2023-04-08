@@ -92,7 +92,7 @@ data DeclarationBody'
 
 data TypeDeclaration
     = ADT (NonEmpty (Located TypeName, [Located Type]))
-    | Alias Type
+    | Alias (Located Type)
     deriving (Show, Eq)
 
 makeLenses ''Declaration'

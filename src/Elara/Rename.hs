@@ -265,7 +265,7 @@ renameDeclaration (Desugared.Declaration ld) = Renamed.Declaration <$> traverseO
 
 renameTypeDeclaration :: ModuleName -> Desugared.TypeDeclaration -> Renamer Renamed.TypeDeclaration
 renameTypeDeclaration _ (Desugared.Alias t) = do
-    t' <- renameType t
+    t' <- traverseOf unlocated renameType t
     pure $ Renamed.Alias t'
 renameTypeDeclaration thisMod (Desugared.ADT constructors) = do
     constructors' <-

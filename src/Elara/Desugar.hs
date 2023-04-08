@@ -113,7 +113,7 @@ genPartials = traverseOf_ (each . Frontend._Declaration) genPartial
             pure (JustDef wholeDeclRegion ty')
         genPartial'' (Frontend.TypeDeclaration vars typeDecl) = do
             let traverseDecl :: Frontend.TypeDeclaration -> Desugar Desugared.TypeDeclaration
-                traverseDecl (Frontend.Alias t) = Desugared.Alias <$> desugarType t
+                traverseDecl (Frontend.Alias t) = Desugared.Alias <$> traverseOf unlocated desugarType t
                 traverseDecl (Frontend.ADT constructors) = Desugared.ADT <$> traverseOf (each . _2 . each . unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
             let decl' = Desugared.TypeDeclaration vars typeDecl'

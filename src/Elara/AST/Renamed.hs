@@ -8,6 +8,7 @@ import Elara.AST.Region (Located)
 import Elara.AST.VarRef
 import Elara.Data.Unique
 import Prelude hiding (Op, Type)
+import Elara.Data.Pretty
 
 {- | Renamed AST Type
 This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
@@ -93,8 +94,9 @@ data DeclarationBody'
 
 data TypeDeclaration
     = ADT (NonEmpty (Located (Qualified TypeName), [Located Type]))
-    | Alias Type
+    | Alias (Located Type)
     deriving (Show, Eq)
+
 
 makePrisms ''Declaration
 makeLenses ''Declaration'

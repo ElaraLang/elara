@@ -9,7 +9,7 @@ import Elara.AST.Region (Located (..))
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique ( Unique )
+import Elara.Data.Unique (Unique)
 import Elara.Data.Unwrap (Unwrap (unwrap))
 import Prelude hiding (Op)
 
@@ -55,15 +55,6 @@ data Pattern'
 
 newtype Pattern = Pattern (Located Pattern')
     deriving (Show, Eq)
-data Type
-    = TypeVar (Unique LowerAlphaName)
-    | FunctionType Type Type
-    | UnitType
-    | TypeConstructorApplication Type Type
-    | UserDefinedType (Located (Qualified TypeName))
-    | RecordType (NonEmpty (Located VarName, Type))
-    | TupleType (NonEmpty Type)
-    deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)
@@ -83,7 +74,7 @@ data DeclarationBody'
       Value
         { _expression :: Expr
         -- ^ The expression
-        , _valueType :: Maybe (Located Type)
+        , _valueType :: Maybe (Located Renamed.Type)
         -- ^ An optional type annotation for the expression
         }
     | -- | type <name> <vars> = <type>

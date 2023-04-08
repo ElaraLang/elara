@@ -77,8 +77,13 @@ data DeclarationBody'
       Value
         { _expression :: Expr
         }
-    | -- | type <name> = <type>
-      TypeAlias (Located (Type SourceRegion))
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [Located (Unique VarName)] (Located TypeDeclaration) -- No difference to old AST
+    deriving (Show, Eq)
+
+data TypeDeclaration
+    = ADT (NonEmpty (Located (Qualified TypeName), [Type SourceRegion]))
+    | Alias (Type SourceRegion)
     deriving (Show, Eq)
 
 makePrisms ''Declaration
@@ -145,7 +150,13 @@ prettyDB name (Value (Expr (e, t))) =
         , indent indentDepth (pretty e)
         , "" -- add a newline
         ]
-prettyDB name (TypeAlias t) = "type" <+> pretty name <+> "=" <+> pretty t
+prettyDB name (TypeDeclaration vars t) = vsep ["type" <+> pretty name <+> hsep (pretty <$> vars), "=" <+> pretty t]
+
+instance Pretty TypeDeclaration where
+    pretty (Alias t) = pretty t
+    pretty (ADT constructors) = vsep (prettyCtor <$> toList constructors)
+      where
+        prettyCtor (name, args) = pretty name <+> hsep (pretty <$> args)
 
 instance Pretty Expr where
     pretty e = pretty (stripLocation e)

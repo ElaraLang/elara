@@ -1,5 +1,3 @@
 module Prelude
 
-type Option a = Some a | None
-
 let id x = x
