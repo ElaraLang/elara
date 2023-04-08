@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 module Elara.Parse.Primitives (
     Parser,
     HParser,

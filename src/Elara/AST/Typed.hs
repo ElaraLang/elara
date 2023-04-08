@@ -11,6 +11,7 @@ import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.AST.VarRef
 import Elara.Data.Pretty
+import Prettyprinter hiding (Pretty(..))
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
 import Prelude hiding (Op, group)
@@ -142,17 +143,17 @@ instance Pretty Declaration where
 instance Pretty Declaration' where
     pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. _DeclarationBody . unlocated)
 
-prettyDB :: Qualified Name -> DeclarationBody' -> Doc ann
+prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
 prettyDB name (Value (Expr (e, t))) =
     vsep
-        [ "type of" <+> pretty name <+> ":" <+> pretty t
+        [ (pretty name) <+> ":" <+> pretty t
         , -- , "let" <+> pretty name <+> "="
           -- , indent indentDepth (pretty e)
           "" -- add a newline
         ]
 prettyDB name (TypeDeclaration vars t) =
     vsep
-        [ "type" <+> pretty name <+> hsep (pretty <$> vars)
+        [ keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
         , indent indentDepth (pretty t)
         ]
 
@@ -160,7 +161,7 @@ instance Pretty TypeDeclaration where
     pretty (Alias t) = "=" <+> pretty t
     pretty (ADT constructors) = group $ encloseSep "= " "" (flatAlt "| " " | ") (prettyCtor <$> toList constructors)
       where
-        prettyCtor (name, args) = hsep (pretty name : (pretty <$> args))
+        prettyCtor (name, args) = hsep (typeName (pretty name) : (pretty <$> args))
 
 instance Pretty Expr where
     pretty e = pretty (stripLocation e)

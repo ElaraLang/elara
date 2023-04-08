@@ -68,32 +68,32 @@ data Literal
   | FloatLit Double
   deriving (Show)
 
-instance (Pretty v) => Pretty (Expr v) where
-  pretty (Var v) = pretty v
-  pretty (Lit l) = pretty l
-  pretty (App f x) = pretty f <> " " <> pretty x
-  pretty (Lam v e) = "\\" <> pretty v <> " -> " <> pretty e
-  pretty (Let v e1 e2) = "let " <> pretty v <> " = " <> pretty e1 <> " in " <> pretty e2
-  pretty (Match e cs) = "match " <> pretty e <> " with " <> pretty cs
-  pretty (Type t) = pretty t
+-- instance (Pretty v) => Pretty (Expr v) where
+--   pretty (Var v) = pretty v
+--   pretty (Lit l) = pretty l
+--   pretty (App f x) = pretty f <> " " <> pretty x
+--   pretty (Lam v e) = "\\" <> pretty v <> " -> " <> pretty e
+--   pretty (Let v e1 e2) = "let " <> pretty v <> " = " <> pretty e1 <> " in " <> pretty e2
+--   pretty (Match e cs) = "match " <> pretty e <> " with " <> pretty cs
+--   pretty (Type t) = pretty t
 
-instance Pretty Literal where
-  pretty (CharLit c) = "'" <> pretty c <> "'"
-  pretty (StringLit s) = "\"" <> pretty s <> "\""
-  pretty (IntLit i) = pretty i
-  pretty (FloatLit f) = pretty f
+-- instance Pretty Literal where
+--   pretty (CharLit c) = "'" <> pretty c <> "'"
+--   pretty (StringLit s) = "\"" <> pretty s <> "\""
+--   pretty (IntLit i) = pretty i
+--   pretty (FloatLit f) = pretty f
 
-instance (Pretty v) => Pretty (Case v) where
-  pretty (Case p vs e) = pretty p <> " -> " <> pretty e
+-- instance (Pretty v) => Pretty (Case v) where
+--   pretty (Case p vs e) = pretty p <> " -> " <> pretty e
 
-instance Pretty Pattern where
-  pretty (LitPattern l) = pretty l
-  pretty (VarPattern v) = pretty v
-  pretty IgnorePattern = "_"
+-- instance Pretty Pattern where
+--   pretty (LitPattern l) = pretty l
+--   pretty (VarPattern v) = pretty v
+--   pretty IgnorePattern = "_"
 
-instance Pretty Type where
-  pretty (TypeVar v) = pretty v
+-- instance Pretty Type where
+--   pretty (TypeVar v) = pretty v
 
-instance Pretty VarRef where
-  pretty (Local v) = pretty v
-  pretty (Global v) = pretty v
+-- instance Pretty VarRef where
+--   pretty (Local v) = pretty v
+--   pretty (Global v) = pretty v

@@ -24,7 +24,7 @@ import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (initialStatus)
 import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic)
-import Polysemy (Member, Sem, runM, subsume_)
+import Polysemy (Member, Members, Sem, runM, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -41,19 +41,21 @@ main = do
   putDoc (prettyDiagnostic True 4 s)
   putStrLn ""
 
-runElara :: IO (Diagnostic (Doc ann))
+runElara :: IO (Diagnostic (Doc AnsiStyle))
 runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   source <- loadModule "source.elr"
   prelude <- loadModule "prelude.elr"
   let graph = createGraph [source, prelude]
   shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
   typedGraph <- inferModules shuntedGraph
-  traverseGraphRevTopologically_ printPretty typedGraph
+  traverseGraphRevTopologically_ (\t -> printPretty t *> embed (putStrLn "")) typedGraph
+
+type MainMembers = '[ DiagnosticWriter (Doc AnsiStyle), MaybeE]
 
 -- corePath <- traverseGraph (toCore typedGraph) typedGraph
 -- printPretty (allEntries corePath)
 
-readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
+readFileString :: (Member (Embed IO) r,Members MainMembers r) => FilePath -> Sem r String
 readFileString path = do
   contentsBS <- readFileBS path
   case decodeUtf8Strict contentsBS of
@@ -63,7 +65,7 @@ readFileString path = do
       addFile path contents
       justE contents
 
-lexFile :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r (String, [Lexeme])
+lexFile :: (Member (Embed IO) r,Members MainMembers r) => FilePath -> Sem r (String, [Lexeme])
 lexFile path = do
   contents <- readFileString path
   case evalLexMonad path contents readTokens of
@@ -71,7 +73,7 @@ lexFile path = do
     Right lexemes -> do
       justE (contents, lexemes)
 
-parseModule :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
+parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
 parseModule path (contents, lexemes) = do
   let tokenStream = TokenStream contents lexemes
   case parse path tokenStream of
@@ -79,14 +81,14 @@ parseModule path (contents, lexemes) = do
       report parseError *> nothingE
     Right m -> justE m
 
-desugarModule :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => Module Frontend -> Sem r (Module Desugared)
+desugarModule :: (Members MainMembers r) => Module Frontend -> Sem r (Module Desugared)
 desugarModule m = do
   case runDesugar (desugar m) of
     Left err -> report err *> nothingE
     Right desugared -> justE desugared
 
 renameModule ::
-  (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r, Member (Embed IO) r) =>
+  (Members MainMembers r, Member (Embed IO) r) =>
   ModuleGraph (Module Desugared) ->
   Module Desugared ->
   Sem r (Module Renamed)
@@ -96,7 +98,7 @@ renameModule mp m = do
     Left err -> report err *> nothingE
     Right renamed -> justE renamed
 
-shuntModule :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => Module Renamed -> Sem r (Module Shunted)
+shuntModule :: (Members MainMembers r) => Module Renamed -> Sem r (Module Shunted)
 shuntModule m = do
   x <-
     runError $
@@ -108,19 +110,19 @@ shuntModule m = do
       traverse_ report warnings
       justE shunted
 
-inferModules :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => ModuleGraph (Module Shunted) -> Sem r (ModuleGraph (Module Typed))
+inferModules :: (Members MainMembers r) => ModuleGraph (Module Shunted) -> Sem r (ModuleGraph (Module Typed))
 inferModules modules = do
   runErrorOrReport (evalState initialStatus (traverseGraphRevTopologically Infer.inferModule modules))
 
-toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
+toCore :: (Members MainMembers r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 toCore mp m = do
   runErrorOrReport (ASTToCore.desugar mp m)
 
-loadModule :: (Member (DiagnosticWriter (Doc ann)) r, Member (Embed IO) r, Member MaybeE r) => FilePath -> Sem r (Module Desugared)
+loadModule :: (Members MainMembers r,Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
 
 runErrorOrReport ::
-  (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r, ReportableError e) =>
+  (Members MainMembers r, ReportableError e) =>
   Sem (Error e ': r) a ->
   Sem r a
 runErrorOrReport e = do

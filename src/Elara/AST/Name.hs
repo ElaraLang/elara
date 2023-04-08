@@ -190,10 +190,10 @@ instance Pretty Name where
     pretty (NOpName n) = pretty n
 
 instance Pretty ModuleName where
-    pretty (ModuleName m) = hcat (punctuate "." (fmap pretty (toList m)))
+    pretty (ModuleName m) = moduleNameStyle (hcat (punctuate "." (fmap pretty (toList m))))
 
 instance Pretty VarName where
-    pretty (NormalVarName n) = pretty n
+    pretty (NormalVarName n) = varName (pretty n)
     pretty (OperatorVarName n) = "(" <> pretty n <> ")"
 
 instance Pretty (MaybeQualified VarName) where

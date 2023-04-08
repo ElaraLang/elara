@@ -32,9 +32,9 @@ data Declaration
 makePrisms ''Module
 makePrisms ''Declaration
 
-instance Pretty Module where
-  pretty (MainModule n d) = pretty n <> " (Main)" <> pretty d
-  pretty (Module n d) = pretty n <> pretty d
+-- instance Pretty Module where
+--   pretty (MainModule n d) = pretty n <> " (Main)" <> pretty d
+--   pretty (Module n d) = pretty n <> pretty d
 
-instance Pretty Declaration where
-  pretty (Value n e) = pretty n <> " = " <> pretty e
+-- instance Pretty Declaration where
+--   pretty (Value n e) = pretty n <> " = " <> pretty e

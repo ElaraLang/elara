@@ -4,22 +4,22 @@
 
 module Print where
 
-import Data.Text.Prettyprint.Doc.Render.String
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
+import Prettyprinter.Render.Terminal
 import Text.Pretty.Simple
 
 printColored :: (Show a, MonadIO m) => a -> m ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
 
 printPretty :: (Pretty a, MonadIO m) => a -> m ()
-printPretty = putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty
+printPretty p = liftIO (putDoc (pretty p) *> putStrLn "")
 
 showColored :: (Show a, IsString s) => a -> s
 showColored = fromString . toString . pShow
 
-showPretty :: (Pretty a, IsString s) => a -> s
-showPretty = fromString . renderString . layoutPretty defaultLayoutOptions . pretty
+showPretty :: (Pretty a) => a -> Text
+showPretty = renderStrict . layoutPretty defaultLayoutOptions . pretty
 
 {-# WARNING debugColored "Debug is still in code" #-}
 debugColored :: (Show a, Applicative f) => a -> f ()
@@ -31,7 +31,7 @@ debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
 
 {-# WARNING debugPretty "debugPretty is still in code" #-}
 debugPretty :: (Applicative m, Pretty a) => a -> m ()
-debugPretty = traceM . renderString . layoutPretty defaultLayoutOptions . pretty
+debugPretty = traceM . toString . renderStrict . layoutPretty defaultLayoutOptions . pretty
 
 debugWithResult :: (Show a1, Show a2) => a1 -> a2 -> a2
 debugWithResult name res = trace (show name <> " -> " <> show res) res

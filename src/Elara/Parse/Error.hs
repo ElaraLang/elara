@@ -33,7 +33,7 @@ parseErrorSources :: ElaraParseError -> [SourceRegion]
 parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 
-instance HasHints ElaraParseError (Doc ann) where
+instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
         [ Note (view (unlocated . to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
         , Hint "Try using a different name"

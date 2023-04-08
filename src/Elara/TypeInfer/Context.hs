@@ -427,7 +427,7 @@ discardUpTo _ [] = []
 instance (Show s) => Pretty (Entry s) where
   pretty = prettyEntry
 
-prettyEntry :: (Show s) => Entry s -> Doc ann
+prettyEntry :: (Show s) => Entry s -> Doc AnsiStyle
 prettyEntry (Variable domain a) =
   pretty a <> ":" <> " " <> pretty domain
 prettyEntry (UnsolvedType a) =
@@ -507,10 +507,10 @@ prettyEntry (MarkerFields a) =
 prettyEntry (MarkerAlternatives a) =
   "➤ " <> pretty a <> ": Alternatives"
 
-prettyFieldType :: (Text, Monotype) -> Doc ann
+prettyFieldType :: (Text, Monotype) -> Doc AnsiStyle
 prettyFieldType (k, τ) =
   "," <> " " <> pretty k <> ":" <> " " <> pretty τ
 
-prettyAlternativeType :: (Text, Monotype) -> Doc ann
+prettyAlternativeType :: (Text, Monotype) -> Doc AnsiStyle
 prettyAlternativeType (k, τ) =
   pretty k <> ":" <> " " <> pretty τ

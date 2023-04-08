@@ -1,17 +1,21 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Elara.Data.Pretty (
     escapeChar,
     indentDepth,
     parensIf,
-    PrettyPrec (..),
-    module Prettyprinter,
+    Pretty (..),
+    module Pretty,
+    module Elara.Data.Pretty.Styles,
     module Prettyprinter.Render.Terminal,
-    listToText
+    listToText,
 ) where
 
 import Data.Map qualified as Map (toList)
-import Prettyprinter
+import Prettyprinter as Pretty hiding (Pretty (..), pretty)
+import Prettyprinter qualified as PP
+import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal (AnsiStyle)
 
 indentDepth :: Int
@@ -21,9 +25,15 @@ parensIf :: Bool -> Doc ann -> Doc ann
 parensIf True = parens
 parensIf False = identity
 
-class (Pretty a) => PrettyPrec a where
-    prettyPrec :: Int -> a -> Doc ann
-    prettyPrec _ = pretty
+class Pretty a where
+    pretty :: a -> Doc AnsiStyle
+
+instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
+    pretty p = (PP.pretty p)
+
+instance {-# OVERLAPPABLE #-} Pretty a => PP.Pretty a where
+    pretty = unAnnotate . pretty
+
 
 escapeChar :: (IsString s) => Char -> s
 escapeChar c = case c of
@@ -39,17 +49,16 @@ escapeChar c = case c of
     '"' -> "\\\""
     _ -> fromString [c]
 
-listToText :: (Pretty a) => [a] -> Doc ann
+listToText :: (Pretty a) => [a] -> Doc AnsiStyle
 listToText elements =
     vsep (fmap prettyEntry elements)
   where
-    prettyEntry entry = pretty ("• " <> align (pretty entry))
+    prettyEntry entry = "• " <> align (pretty entry)
+
+
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)
 
 instance (Pretty s) => Pretty (Set s) where
     pretty s = "{" <> hsep (punctuate "," (pretty <$> toList s)) <> "}"
-
-instance Pretty (Doc ann) where
-    pretty = unAnnotate -- TODO: make this good

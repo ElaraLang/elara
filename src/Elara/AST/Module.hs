@@ -264,7 +264,7 @@ instance
     where
     pretty (Module' n e i d) =
         vsep
-            ["module" <+> pretty n <+> "exposing" <+> pretty e, vsep (pretty <$> i), vsep (pretty <$> d)]
+            [keyword "module" <+> moduleNameStyle (pretty n) <+> keyword "exposing" <+> pretty e, vsep (pretty <$> i), vsep (pretty <$> d)]
 
 instance (Pretty (Exposition ast)) => Pretty (Exposing ast) where
     pretty ExposingAll = "(..)"
@@ -292,9 +292,9 @@ instance
     Pretty (Import' ast)
     where
     pretty (Import' i a q e) =
-        "import" <+> pretty i <> as' <> qual <+> "exposing" <+> pretty e
+        keyword "import" <+> moduleNameStyle  (pretty i) <> as' <> qual <+> keyword "exposing" <+> pretty e
       where
         as' = case a of
             Nothing -> ""
-            Just q' -> "as" <+> pretty q'
-        qual = if q then "qualified" else ""
+            Just q' -> keyword "as" <+> moduleNameStyle (pretty q')
+        qual = if q then keyword "qualified" else ""

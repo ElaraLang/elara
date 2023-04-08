@@ -22,6 +22,7 @@ import Elara.TypeInfer.Monotype (
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
+import Prettyprinter hiding (Pretty(..))
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Monotype
 
@@ -419,12 +420,12 @@ instance StripLocation (Type SourceRegion) (Type ()) where
     stripLocation = void
 
 instance (Show a) => Pretty (Type a) where
-    pretty (Forall _ _ name domain type_) = "∀" <+> pretty name <+> "." <+> pretty type_
+    pretty (Forall _ _ name domain type_) = keyword "∀" <+> varName (pretty name) <> "." <+> pretty type_
     pretty (Exists _ _ name domain type_) = "∃" <> pretty name <> "." <> pretty domain <> "." <> pretty type_
-    pretty (VariableType _ name) = pretty name
-    pretty (Scalar _ scalar) = pretty scalar
+    pretty (VariableType _ name) = varName (pretty name)
+    pretty (Scalar _ scalar) = typeName (pretty scalar)
     pretty (Function _ input output) = "(" <> pretty input <+> "->" <+> pretty output <> ")"
     pretty (Tuple _ (toList -> types)) = "(" <> hsep (punctuate "," (fmap pretty types)) <> ")"
     pretty (UnsolvedType{..}) = pretty existential <> "?"
-    pretty Custom{..} = pretty name <> " " <> hsep (fmap pretty typeArguments)
+    pretty Custom{..} = typeName (pretty name) <> " " <> hsep (fmap pretty typeArguments)
     pretty o = show o

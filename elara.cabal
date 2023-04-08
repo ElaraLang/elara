@@ -46,6 +46,7 @@ library
       Elara.Core
       Elara.Core.Module
       Elara.Data.Pretty
+      Elara.Data.Pretty.Styles
       Elara.Data.Unique
       Elara.Data.Unwrap
       Elara.Desugar
@@ -95,7 +96,6 @@ library
       src
   default-extensions:
       OverloadedStrings
-      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase
@@ -116,7 +116,6 @@ library
     , containers
     , diagnose
     , generic-lens
-    , h2jvm
     , headed-megaparsec
     , lens
     , megaparsec
@@ -139,7 +138,6 @@ executable elara
       app
   default-extensions:
       OverloadedStrings
-      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase
@@ -159,7 +157,6 @@ executable elara
     , diagnose
     , elara
     , generic-lens
-    , h2jvm
     , headed-megaparsec
     , lens
     , megaparsec
@@ -191,7 +188,6 @@ test-suite elara-test
       test
   default-extensions:
       OverloadedStrings
-      OverloadedLists
       OverloadedRecordDot
       TypeFamilies
       LambdaCase
@@ -214,7 +210,6 @@ test-suite elara-test
     , diagnose
     , elara
     , generic-lens
-    , h2jvm
     , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec
