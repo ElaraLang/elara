@@ -22,8 +22,8 @@ import Elara.AST.Module (
     _Import,
     _Module,
  )
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), NameLike (nameText), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select (Desugared, HasModuleName (..), HasName (..), Renamed)
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
@@ -31,6 +31,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
+import Elara.ModuleGraph (ModuleGraph, moduleFromName)
 import Error.Diagnose (Marker (This), Report (Err))
 import Polysemy (Sem)
 import Polysemy.Embed
@@ -92,9 +93,7 @@ data RenameState = RenameState
 
 makeLenses ''RenameState
 
-type ModulePath = Map ModuleName (Module Desugared)
-
-type Renamer a = Sem '[State RenameState, Error RenameError, Reader ModulePath, UniqueGen] a
+type Renamer a = Sem '[State RenameState, Error RenameError, Reader (ModuleGraph (Module Desugared)), UniqueGen] a
 
 runRenamer :: i -> Sem (State RenameState : Error e : Reader i : UniqueGen : r) a -> Sem (Embed IO : r) (Either e a)
 runRenamer mp = uniqueGenToIO . runReader mp . runError . evalState (RenameState Map.empty Map.empty)
@@ -192,7 +191,7 @@ addImportsToContext = traverse_ addImportToContext
     addImportToContext :: Import Desugared -> Renamer ()
     addImportToContext imp = do
         modules <- ask
-        imported <- note (UnknownModule (imp ^. importing . unlocated)) $ Map.lookup (imp ^. importing . unlocated) modules
+        imported <- note (UnknownModule (imp ^. importing . unlocated)) $ moduleFromName (imp ^. importing . unlocated) modules
         let isExposingL = Desugared._Declaration . unlocated . name . unlocated . to (isExposingAndExists imported)
         let exposed = case imported ^. exposing of
                 ExposingAll -> imported ^. declarations
@@ -217,7 +216,7 @@ addDeclarationToContext _ decl = do
 ensureExistsAndExposed :: ModuleName -> Located Name -> Renamer ()
 ensureExistsAndExposed mn n = do
     modules <- ask
-    case Map.lookup mn modules of
+    case moduleFromName mn modules of
         Nothing -> throw $ UnknownModule mn
         Just m -> do
             unless (elementExistsInModule m (n ^. unlocated)) $ throw $ NonExistentModuleDeclaration mn n

@@ -1,4 +1,4 @@
 import Prelude
-let id x = x
 
-let main = Some 3
+
+let main = id 3

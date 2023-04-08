@@ -6,13 +6,9 @@ module Main (
 ) where
 
 import Control.Lens
-import Data.Map qualified as M
 import Elara.AST.Module
-import Elara.AST.Name (ModuleName)
-import Elara.AST.Region (unlocated)
-import Elara.AST.Select
+import Elara.AST.Select hiding (moduleName)
 import Elara.ASTToCore qualified as ASTToCore (desugar)
-import Elara.Compile qualified as Compile
 import Elara.Core.Module qualified as Core
 import Elara.Data.Pretty
 import Elara.Desugar (desugar, runDesugar)
@@ -21,9 +17,10 @@ import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
+import Elara.ModuleGraph (ModuleGraph, ModuleLike (moduleName), createGraph, traverseGraph, traverseGraphRevTopologically_, traverseGraphTopologically, traverseGraphTopologically_, traverseGraphRevTopologically)
 import Elara.Parse
 import Elara.Parse.Stream
-import Elara.Rename (ModulePath, rename, runRenamer)
+import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (initialStatus)
@@ -36,7 +33,7 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
-import Print (printColored)
+import Print (debugPretty, printColored, printPretty)
 
 main :: IO ()
 main = do
@@ -49,11 +46,12 @@ runElara :: IO (Diagnostic (Doc ann))
 runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   source <- loadModule "source.elr"
   prelude <- loadModule "prelude.elr"
-  let path = fromList [(source ^. unlocatedModuleName, source), (prelude ^. unlocatedModuleName, prelude)]
-  path'' <- traverse (renameModule path >=> shuntModule >=> inferModule) path
-  embed (putDoc $ pretty path'')
-  corePath <- traverse (toCore path'') path''
-  -- embed (printColored corePath)
+  let graph = createGraph [source, prelude]
+  shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
+  typedGraph <- traverseGraphRevTopologically inferModule shuntedGraph
+  -- embed (putDoc $ pretty path'')
+  corePath <- traverseGraph (toCore typedGraph) typedGraph
+  (printPretty corePath)
   putStrLn ""
 
 readFileString :: (Member (Embed IO) r, Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => FilePath -> Sem r String
@@ -90,7 +88,7 @@ desugarModule m = do
 
 renameModule ::
   (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r, Member (Embed IO) r) =>
-  ModulePath ->
+  ModuleGraph (Module Desugared) ->
   Module Desugared ->
   Sem r (Module Renamed)
 renameModule mp m = do
@@ -118,7 +116,7 @@ inferModule ::
 inferModule m = do
   runErrorOrReport (evalState initialStatus (Infer.inferModule m))
 
-toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => Map ModuleName (Module Typed) -> Module Typed -> Sem r (Core.Module)
+toCore :: (Member (DiagnosticWriter (Doc ann)) r, Member MaybeE r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 toCore mp m = do
   runErrorOrReport (ASTToCore.desugar mp m)
 

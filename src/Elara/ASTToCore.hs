@@ -15,14 +15,13 @@ import Control.Lens (findOf, folded, mapped, mapping, to, (^.), (^?!))
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.ASTToCore.Error (ASTToCoreError (..))
+import Elara.ModuleGraph (ModuleGraph)
 import Polysemy
 import Polysemy.Error
 import TODO (todo)
 
-type ModulePath = Map ModuleName (Module Typed)
-
 -- | Desugar the AST into Core.
-desugar :: (Member (Error ASTToCoreError) r) => ModulePath -> Module Typed -> Sem r Core.Module
+desugar :: (Member (Error ASTToCoreError) r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 desugar path m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
     let mainFunction =
             findOf
@@ -31,7 +30,7 @@ desugar path m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
                 m
     whenNothing_ mainFunction (throw (MainModuleMissingMainFunction m))
     decls <- traverse desugarDeclaration (m ^. _Module . unlocated . declarations)
-    pure (Core.MainModule decls)
+    pure (Core.MainModule (m ^. moduleName . unlocated) decls)
 desugar path m = do
     decls <- traverse desugarDeclaration (m ^. _Module . unlocated . declarations)
     pure (Core.Module (m ^. moduleName . unlocated) decls)

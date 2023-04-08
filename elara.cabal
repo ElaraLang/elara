@@ -57,6 +57,7 @@ library
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
+      Elara.ModuleGraph
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
@@ -80,6 +81,7 @@ library
       Elara.TypeInfer.Infer
       Elara.TypeInfer.Monotype
       Elara.TypeInfer.Type
+      Elara.Utils
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.MTL

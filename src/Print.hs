@@ -9,8 +9,11 @@ import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
 import Text.Pretty.Simple
 
-printColored :: (Show a) => a -> IO ()
+printColored :: (Show a, MonadIO m) => a -> m ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
+
+printPretty :: (Pretty a, MonadIO m) => a -> m ()
+printPretty = putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty
 
 {-# WARNING debugColored "Debug is still in code" #-}
 debugColored :: (Show a, Applicative f) => a -> f ()

@@ -152,6 +152,15 @@ instance RUnlocate Renamed where
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
+instance RUnlocate Shunted where
+    rUnlocate (Located _ a) = a
+    rUnlocate' (Located _ a) = a
+    rUnlocated = unlocated
+    rUnlocated' = unlocated
+    fmapRUnlocate f (Located r a) = Located r (fmap f a)
+    fmapRUnlocate' f (Located r a) = Located r (f a)
+    sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
+
 instance GetLocation Renamed where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r

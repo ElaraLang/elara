@@ -19,7 +19,7 @@ import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error)
 import Polysemy.State
-import Print (debugColored, debugPretty)
+import Print (prettyShow)
 import TODO (todo)
 
 inferModule ::
@@ -78,7 +78,7 @@ inferDeclaration (Shunted.Declaration ld) =
             subtype ty expected' -- make sure the inferred type is a subtype of the expected type
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
-    inferDeclarationBody' _ (Shunted.TypeDeclaration _ ty) = error (show ty)
+    inferDeclarationBody' _ (Shunted.TypeDeclaration _ ty) = error (prettyShow ty)
 
 astTypeToInferType :: Located Shunted.Type -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType (Located sr (Shunted.TypeVar l)) = pure (Infer.VariableType sr (l ^. uniqueVal . _LowerAlphaName))
