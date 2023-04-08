@@ -16,7 +16,7 @@ import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
-import Elara.ModuleGraph (ModuleGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically)
+import Elara.ModuleGraph (ModuleGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
 import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (rename, runRenamer)
@@ -48,7 +48,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
   let graph = createGraph [source, prelude]
   shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
   typedGraph <- inferModules shuntedGraph
-  printPretty (allEntries typedGraph)
+  traverseGraphRevTopologically_ printPretty typedGraph
 
 -- corePath <- traverseGraph (toCore typedGraph) typedGraph
 -- printPretty (allEntries corePath)

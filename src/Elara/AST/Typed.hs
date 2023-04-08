@@ -145,10 +145,10 @@ instance Pretty Declaration' where
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc ann
 prettyDB name (Value (Expr (e, t))) =
     vsep
-        [ "def" <+> pretty name <+> ":" <+> pretty t
-        , "let" <+> pretty name <+> "="
-        , indent indentDepth (pretty e)
-        , "" -- add a newline
+        [ "type of" <+> pretty name <+> ":" <+> pretty t
+        , -- , "let" <+> pretty name <+> "="
+          -- , indent indentDepth (pretty e)
+          "" -- add a newline
         ]
 prettyDB name (TypeDeclaration vars t) =
     vsep

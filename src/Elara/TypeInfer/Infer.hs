@@ -143,8 +143,7 @@ wellFormedType _Γ type0 =
     case type0 of
         -- UvarWF
         Type.VariableType{..}
-            | Context.Variable Domain.Type name `elem` _Γ -> do
-                pure ()
+            | Context.Variable Domain.Type name `elem` _Γ -> pass
             | otherwise -> throw (UnboundTypeVariable location name)
         -- ArrowWF
         Type.Function{..} -> do
@@ -207,8 +206,9 @@ wellFormedType _Γ type0 =
                 traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
             | otherwise -> do
                 throw (UnboundAlternatives location a)
-        Type.Scalar{} -> do
-            pure ()
+        Type.Scalar{} -> pass -- Scalars are always well-formed
+        Type.Custom{..} -> do
+            traverse_ (wellFormedType _Γ) typeArguments
 
 {- | This corresponds to the judgment:
 
@@ -864,6 +864,8 @@ instantiateTypeL a _A0 = do
 
             let fields = NE.zipWith (\i type_ -> ("_" <> show i, type_)) [1 ..] types
             instantiateFieldsL p (Type.location _A0) (Type.Fields (toList fields) Monotype.EmptyFields)
+        Type.Custom{..} -> do
+            pass -- TODO: Implement
 
         -- This is still the same one-layer-at-a-time principle, with a small
         -- twist.  In order to solve:
@@ -1008,6 +1010,8 @@ instantiateTypeR _A0 a = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesR (Type.location _A0) alternatives p
+        Type.Custom{..} -> do
+            pass
 
 {- The following `equateFields` / `instantiateFieldsL` / `instantiateFieldsR`,
    `equateAlternatives` / `instantiateAlternativesL` /
@@ -1336,7 +1340,7 @@ infer (Expr (Located location e0)) cont = do
         -- Syntax.Annotation{..} -> do
         --     _Γ <- get
 
-            -- wellFormedType _Γ annotation
+        -- wellFormedType _Γ annotation
 
         --     check annotated annotation
 

@@ -78,6 +78,7 @@ data Type s
       Union {location :: s, alternatives :: Union s}
     | Scalar {location :: s, scalar :: Scalar}
     | Tuple {location :: s, types :: NonEmpty (Type s)}
+    | Custom {location :: s, name :: Text, typeArguments :: [Type s]}
     deriving (Eq, Ord, Functor, Generic, Show)
 
 instance IsString (Type ()) where
@@ -123,6 +124,9 @@ instance Plated (Type s) where
                 return Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
             Scalar{..} -> do
                 pure Scalar{..}
+            Custom{typeArguments = oldTypeArguments, ..} -> do
+                newTypeArguments <- traverse onType oldTypeArguments
+                return Custom{typeArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields
@@ -208,7 +212,7 @@ solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternati
             alternativeTypes <> map transformPair alternativeMonotypes
 
         transformPair (alternative, monotype) =
-            (alternative, fmap (\_ -> location) (fromMonotype monotype))
+            (alternative, fmap (const location) (fromMonotype monotype))
     transformType type_ =
         type_
 
@@ -257,6 +261,8 @@ substituteType a n _A type_ =
             Union{alternatives = Alternatives (map (second (substituteType a n _A)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
+        Custom{typeArguments = oldTypeArguments, ..} ->
+            Custom{typeArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's  and index
@@ -302,11 +308,13 @@ substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
             | otherwise ->
                 Record{fields = Fields (map (second (substituteFields ρ0 n r)) kAs0) ρ, ..}
           where
-            kAs1 = kAs0 <> map (second (fmap (\_ -> location))) kτs
+            kAs1 = kAs0 <> map (second (fmap (const location))) kτs
         Union{alternatives = Alternatives kAs ρ, ..} ->
             Union{alternatives = Alternatives (map (second (substituteFields ρ0 n r)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
+        Custom{typeArguments = oldTypeArguments, ..} ->
+            Custom{typeArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's  and index
@@ -358,6 +366,8 @@ substituteAlternatives ρ0 n r@(Alternatives kτs ρ1) type_ =
             kAs1 = kAs0 <> map (second (fmap (\_ -> location))) kτs
         Scalar{..} ->
             Scalar{..}
+        Custom{typeArguments = oldTypeArguments, ..} ->
+            Custom{typeArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
 
 {- | Count how many times the given `Existential` `Type` variable appears within
     a `Type`
@@ -416,4 +426,5 @@ instance (Show a) => Pretty (Type a) where
     pretty (Function _ input output) = "(" <> pretty input <+> "->" <+> pretty output <> ")"
     pretty (Tuple _ (toList -> types)) = "(" <> hsep (punctuate "," (fmap pretty types)) <> ")"
     pretty (UnsolvedType{..}) = pretty existential <> "?"
-    pretty other = error ("pretty:" <> show other)
+    pretty Custom{..} = pretty name <> " " <> hsep (fmap pretty typeArguments)
+    pretty o = show o

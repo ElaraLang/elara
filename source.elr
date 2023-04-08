@@ -1,4 +1,6 @@
 import Prelude
 
+let some = Some 3
+let none = None
 
-let main = id 3
+let main = id 1

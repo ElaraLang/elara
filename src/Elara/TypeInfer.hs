@@ -1,16 +1,17 @@
 module Elara.TypeInfer where
 
-import Control.Lens (traverseOf, (^.), _3)
+import Control.Lens (to, traverseOf, (^.), _3)
 import Elara.AST.Module
-import Elara.AST.Name (Name, Qualified, _LowerAlphaName)
-import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, unlocated)
+import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName)
+import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, sourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted hiding (Type)
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
-import Elara.Data.Unique (uniqueVal)
+import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Context
+import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
@@ -78,7 +79,7 @@ inferDeclaration (Shunted.Declaration ld) =
             subtype ty expected' -- make sure the inferred type is a subtype of the expected type
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
-    inferDeclarationBody' _ (Shunted.TypeDeclaration vs ty) = do
+    inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
         ty' <-
             traverseOf
                 unlocated
@@ -86,10 +87,37 @@ inferDeclaration (Shunted.Declaration ld) =
                     Renamed.Alias l -> Typed.Alias <$> astTypeToInferType l
                     Renamed.ADT constructors -> do
                         constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
+                        let adtType = Infer.Custom (n ^. sourceRegion) (n ^. unlocated . to nameText) (createTypeVar <$> tvs)
+                        traverse_ (\(c, b) -> addConstructorToContext tvs c b adtType) constructors'
                         pure $ Typed.ADT constructors'
                 )
                 ty
-        pure $ Typed.TypeDeclaration vs ty'
+        pure $ Typed.TypeDeclaration tvs ty'
+
+addConstructorToContext :: (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
+addConstructorToContext typeVars ctorName ctorArgs adtType = do
+    let ctorType = foldr (\res acc -> Infer.Function (Infer.location acc) res acc) adtType ctorArgs
+    -- type Option a = Some a | None
+    -- Some : a -> Option a
+    -- None : Option a
+
+    -- universally quantify the type over the type variables
+    let forall =
+            foldr
+                ( \(Located sr u) acc ->
+                    Infer.Forall
+                        (ctorName ^. sourceRegion <> mconcat (Infer.location <$> ctorArgs))
+                        sr
+                        (showPretty u)
+                        Domain.Type
+                        acc
+                )
+                ctorType
+                typeVars
+    push (Annotation (mkGlobal' ctorName) forall)
+
+createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
+createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
 astTypeToInferType :: Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow

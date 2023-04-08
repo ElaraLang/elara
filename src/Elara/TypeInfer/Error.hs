@@ -66,4 +66,17 @@ instance ReportableError TypeInferenceError where
         )
         []
         []
+  report (NotSubtype _ t1 _ t2) =
+    writeReport $
+      Err
+        Nothing
+        ( vsep
+            [ "Type error: The following types are not subtypes:"
+            , pretty t1
+            , "is not a subtype of"
+            , pretty t2
+            ]
+        )
+        []
+        []
   report e = writeReport $ Err Nothing (showColored e) [] []
