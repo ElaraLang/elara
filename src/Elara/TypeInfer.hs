@@ -35,6 +35,7 @@ inferModule ::
     Module Shunted ->
     Sem r (Module Typed)
 inferModule m = do
+    -- TODO: sort the declarations topologically
     traverseModule @Shunted @Typed inferDeclaration m
 
 traverseExpr :: (Applicative f) => (Located (Qualified Name) -> Typed.Expr -> f Typed.Expr) -> Typed.Declaration -> f Typed.Declaration
