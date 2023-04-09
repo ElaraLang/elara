@@ -3,3 +3,7 @@ import Prelude
 def x : Box () ()
 let x = ()
 
+
+type Option a = Some a | None
+
+let y = Some

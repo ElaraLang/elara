@@ -110,20 +110,20 @@ inferDeclaration (Shunted.Declaration ld) =
         kind <- mapError KindInferError (inferKind (fmap (^?! _NTypeName) (n ^. unlocated)) tvs (ty ^. unlocated))
         pure $ Typed.TypeDeclaration tvs ty' kind
 
-addConstructorToContext :: (HasCallStack) => (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
+addConstructorToContext :: (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
 addConstructorToContext typeVars ctorName ctorArgs adtType = do
     let ctorType = foldr (\res acc -> Infer.Function (Infer.location acc) res acc) adtType ctorArgs
     -- type Option a = Some a | None
     -- Some : a -> Option a
     -- None : Option a
-    let argsLoc = mconcat (Infer.location <$> ctorArgs)
+    let argsLoc = Infer.location <$> ctorArgs
 
     -- universally quantify the type over the type variables
     let forall =
             foldr
                 ( \(Located sr u) acc ->
                     Infer.Forall
-                        (ctorName ^. sourceRegion <> argsLoc)
+                        (sconcat (ctorName ^. sourceRegion :| argsLoc))
                         sr
                         (showPretty u)
                         Domain.Type
@@ -131,6 +131,7 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
                 )
                 ctorType
                 typeVars
+    -- debugColored ("adding constructor", ctorName)
     push (Annotation (mkGlobal' ctorName) forall)
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion

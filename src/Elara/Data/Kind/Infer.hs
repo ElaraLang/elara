@@ -19,7 +19,7 @@ TODO: this is extremely basic and needs some nicer error messages, no support fo
 -}
 module Elara.Data.Kind.Infer where
 
-import Control.Lens (view, (^.))
+import Control.Lens (Each (each), traverseOf_, view, (^.), _2)
 import Data.Map qualified as Map
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Region (Located, unlocated)
@@ -69,7 +69,9 @@ inferKind tName args t = do
     let args' = fmap (getUniqueId . view unlocated) args
     t' <- case t of
         AST.Alias a -> inferTypeKind (a ^. unlocated)
-        AST.ADT _ -> todo
+        AST.ADT constructors -> do
+            traverseOf_ (each . _2 . each . unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
+            pure TypeKind
 
     let funcKind = foldr FunctionKind t' (VarKind <$> args')
     InferState{..} <- get
@@ -102,6 +104,6 @@ inferTypeKind (AST.TupleType fields) = do
 
 unifyKinds :: (Member (Error KindInferError) r) => ElaraKind -> ElaraKind -> Sem r ()
 unifyKinds (VarKind _) (VarKind _) = pass
-unifyKinds TypeKind (VarKind _)  = pass  -- type vars are always kind * atm
+unifyKinds TypeKind (VarKind _) = pass -- type vars are always kind * atm
 unifyKinds (VarKind v) v' = unifyKinds v' (VarKind v)
 unifyKinds v v' = when (v /= v') (throw (CannotUnify v v'))
