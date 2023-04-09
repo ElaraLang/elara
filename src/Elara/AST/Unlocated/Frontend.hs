@@ -76,8 +76,13 @@ data DeclarationBody
         }
     | -- | def <name> : <type>.
       ValueTypeDef Type
-    | -- | type <name> = <type>
-      TypeAlias Type
+    | -- | type <name> <args> = <type>
+      TypeDeclaration [LowerAlphaName] TypeDeclaration
+    deriving (Show, Eq)
+
+data TypeDeclaration
+    = ADT (NonEmpty (TypeName, [Type]))
+    | Alias (Type)
     deriving (Show, Eq)
 
 instance StripLocation Frontend.Expr Expr where
@@ -138,4 +143,9 @@ instance StripLocation Frontend.DeclarationBody DeclarationBody where
 instance StripLocation Frontend.DeclarationBody' DeclarationBody where
     stripLocation (Frontend.Value e p) = Value (stripLocation e) (stripLocation p)
     stripLocation (Frontend.ValueTypeDef t) = ValueTypeDef (stripLocation t)
-    stripLocation (Frontend.TypeDeclaration args t) = todo
+    stripLocation (Frontend.TypeDeclaration args t) = TypeDeclaration (stripLocation args) (stripLocation t)
+
+
+instance StripLocation Frontend.TypeDeclaration TypeDeclaration where
+    stripLocation (Frontend.ADT t) = ADT (stripLocation t)
+    stripLocation (Frontend.Alias t) = Alias (stripLocation t)

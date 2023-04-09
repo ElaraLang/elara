@@ -1,7 +1,7 @@
 module Elara.Parse.Type where
 
 import Control.Lens (view)
-import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
+import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
 import Data.List.NonEmpty ((<|))
 import Elara.AST.Frontend (Type (..))
 import Elara.AST.Name (ModuleName, VarName)
@@ -18,7 +18,7 @@ type' :: HParser (Located Type)
 type' =
     makeExprParser
         typeTerm
-        [ [InfixR constructorApplication]
+        [ [InfixL constructorApplication]
         , [InfixR functionType]
         ]
 

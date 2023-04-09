@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}

@@ -45,6 +45,8 @@ library
       Elara.Compile
       Elara.Core
       Elara.Core.Module
+      Elara.Data.Kind
+      Elara.Data.Kind.Infer
       Elara.Data.Pretty
       Elara.Data.Pretty.Styles
       Elara.Data.Unique

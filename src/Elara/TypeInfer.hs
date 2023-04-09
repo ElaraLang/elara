@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Elara.TypeInfer where
 
 import Control.Lens (to, traverseOf, view, (^.), _3)
@@ -9,6 +11,7 @@ import Elara.AST.Select
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
+import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
@@ -67,6 +70,7 @@ inferDeclaration (Shunted.Declaration ld) =
         Sem r Typed.DeclarationBody'
     inferDeclarationBody' declName (Shunted.Value e maybeExpected) = do
         maybeExpected' <- traverse astTypeToInferType maybeExpected
+        debugColored maybeExpected'
 
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
@@ -78,7 +82,6 @@ inferDeclaration (Shunted.Declaration ld) =
 
         whenJust maybeExpected' $ \expected' -> do
             subtype ty expected' -- make sure the inferred type is a subtype of the expected type
-            
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
     inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
@@ -88,7 +91,8 @@ inferDeclaration (Shunted.Declaration ld) =
                 ( \case
                     Renamed.Alias l -> do
                         inferType <- astTypeToInferType l
-                        push (Annotation (mkGlobal' n) (Infer.Alias (generatedSourceRegionFrom n) (showPretty n) inferType))
+                        let vars' = createTypeVar <$> tvs
+                        push (Annotation (mkGlobal' n) (Infer.Alias (generatedSourceRegionFrom n) (showPretty n) vars' inferType))
                         pure (Typed.Alias inferType)
                     Renamed.ADT constructors -> do
                         constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
@@ -124,6 +128,13 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
+inferKind ::
+    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    [Located (Unique LowerAlphaName)] ->
+    (Located Renamed.TypeDeclaration) ->
+    Sem r ElaraKind
+inferKind [] = undefined
+
 astTypeToInferType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow
 astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
@@ -134,6 +145,13 @@ astTypeToInferType (Located sr t@(Renamed.UserDefinedType n)) = do
         Nothing -> throw (UserDefinedTypeNotInContext sr t ctx)
 astTypeToInferType (Located sr (Renamed.FunctionType a b)) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
 astTypeToInferType (Located sr (Renamed.TupleType ts)) = Infer.Tuple sr <$> traverse astTypeToInferType ts
+astTypeToInferType (Located sr (Renamed.TypeConstructorApplication ctor arg)) = do
+    ctor' <- astTypeToInferType ctor
+    arg' <- astTypeToInferType arg
+    case ctor' of
+        Infer.Custom{..} -> pure $ Infer.Custom (location <> sr) name (typeArguments ++ [arg'])
+        Infer.Alias{..} -> pure $ Infer.Alias (location <> sr) name (typeArguments ++ [arg']) value
+        other -> error (showColored other)
 astTypeToInferType other = error (showColored other)
 
 inferExpression ::

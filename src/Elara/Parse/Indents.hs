@@ -10,6 +10,7 @@ import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (HParser, token_)
 import HeadedMegaparsec
 
+
 block :: HParser Expr -> HParser Expr
 block exprParser =
   exprParser <|> do

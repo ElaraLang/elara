@@ -24,7 +24,6 @@ import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Monotype
-import Prettyprinter hiding (Pretty (..))
 
 -- | A potentially polymorphic type
 data Type s
@@ -78,9 +77,21 @@ data Type s
       -- < X: X | Y: Y | a? >
       Union {location :: s, alternatives :: Union s}
     | Scalar {location :: s, scalar :: Scalar}
-    | Tuple {location :: s, types :: NonEmpty (Type s)}
-    | Custom {location :: s, name :: Text, typeArguments :: [Type s]}
-    | Alias {location :: s, name :: Text, value :: Type s}
+    | -- | Tuple Type
+      --
+      -- >>> pretty @(Type ()) (Tuple () (NonEmpty.fromList ["a", "b"]))
+      -- (a, b)
+      Tuple {location :: s, types :: NonEmpty (Type s)}
+    | -- | A custom data type
+      --
+      -- >>> pretty @(Type ()) (Custom () "Maybe" ["a"])
+      -- Maybe a
+      Custom {location :: s, name :: Text, typeArguments :: [Type s]}
+    | -- | A type alias
+      --
+      -- >>> pretty @(Type ()) (Alias () "Tuple2" ["a", "b"] (Tuple () (NonEmpty.fromList ["a", "b"])))
+      -- type Tuple2 a b = (a, b)
+      Alias {location :: s, name :: Text, typeArguments :: [Type s], value :: Type s}
     deriving (Eq, Ord, Functor, Generic, Show)
 
 instance IsString (Type ()) where
@@ -126,9 +137,10 @@ instance Plated (Type s) where
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
                 pure Custom{typeArguments = newTypeArguments, ..}
-            Alias{value = oldValue, ..} -> do
+            Alias{typeArguments = oldTypeArguments, value = oldValue, ..} -> do
+                newTypeArguments <- traverse onType oldTypeArguments
                 newValue <- onType oldValue
-                pure Alias{value = newValue, ..}
+                pure Alias{value = newValue, typeArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields

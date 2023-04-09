@@ -32,7 +32,8 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
-import Print (printPretty)
+import Print
+import Elara.AST.StripLocation
 
 main :: IO ()
 main = do
@@ -79,7 +80,9 @@ parseModule path (contents, lexemes) = do
   case parse path tokenStream of
     Left parseError -> do
       report parseError *> nothingE
-    Right m -> justE m
+    Right m -> do
+      -- debugColored (stripLocation m)
+      justE m
 
 desugarModule :: (Members MainMembers r) => Module Frontend -> Sem r (Module Desugared)
 desugarModule m = do

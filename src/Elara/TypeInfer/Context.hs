@@ -46,7 +46,7 @@ import Elara.TypeInfer.Type qualified as Type
 
    >>> :set -XOverloadedStrings
    >>> :set -XTypeApplications
-   >>> import Grace.Type (Record, Union)
+   >>> import Elara.TypeInfer.Type (Record, Union)
 -}
 
 -- | An element of the `Context` list

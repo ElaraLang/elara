@@ -1,5 +1,5 @@
 import Prelude
 
-def x : Box
+def x : Box () ()
 let x = ()
 
