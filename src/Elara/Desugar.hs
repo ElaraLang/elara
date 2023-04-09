@@ -123,11 +123,11 @@ genPartials = traverseOf_ (each . Frontend._Declaration) genPartial
 desugarType :: Frontend.Type -> Desugar Desugared.Type
 desugarType (Frontend.TypeVar t) = pure (Desugared.TypeVar t)
 desugarType Frontend.UnitType = pure Desugared.UnitType
-desugarType (Frontend.FunctionType a b) = Desugared.FunctionType <$> desugarType a <*> desugarType b
-desugarType (Frontend.TypeConstructorApplication a b) = Desugared.TypeConstructorApplication <$> desugarType a <*> desugarType b
+desugarType (Frontend.FunctionType a b) = Desugared.FunctionType <$> traverseOf unlocated desugarType a <*> traverseOf unlocated desugarType b
+desugarType (Frontend.TypeConstructorApplication a b) = Desugared.TypeConstructorApplication <$> traverseOf unlocated desugarType a <*> traverseOf unlocated desugarType b
 desugarType (Frontend.UserDefinedType a) = pure (Desugared.UserDefinedType a)
-desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2) desugarType fields
-desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse desugarType fields
+desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2 . unlocated) desugarType fields
+desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse (traverseOf unlocated desugarType) fields
 
 completePartials :: Located ModuleName -> Desugar [Desugared.Declaration]
 completePartials mn = do

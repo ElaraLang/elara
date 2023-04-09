@@ -40,7 +40,6 @@ import Polysemy.MTL ()
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.Utils (withModified)
-import Print (debugColored)
 
 data RenameError
     = UnknownModule ModuleName
@@ -307,12 +306,12 @@ renameType allowNewTypeVars (Desugared.TypeVar n) = do
                 -- if it doesn't exist, and we're allowed to make new type variables
                 Renamed.TypeVar <$> makeUnique n
             | otherwise -> throw $ UnknownTypeVariable n
-renameType antv (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> renameType antv t1 <*> renameType antv t2
+renameType antv (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> traverseOf unlocated (renameType antv) t1 <*> traverseOf unlocated (renameType antv) t2
 renameType _ Desugared.UnitType = pure Renamed.UnitType
-renameType antv (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> renameType antv t1 <*> renameType antv t2
+renameType antv (Desugared.TypeConstructorApplication t1 t2) = Renamed.TypeConstructorApplication <$> traverseOf unlocated (renameType antv) t1 <*> traverseOf unlocated (renameType antv) t2
 renameType _ (Desugared.UserDefinedType ln) = Renamed.UserDefinedType <$> qualifyTypeName ln
-renameType antv (Desugared.RecordType ln) = Renamed.RecordType <$> traverse (traverseOf _2 (renameType antv)) ln
-renameType antv (Desugared.TupleType ts) = Renamed.TupleType <$> traverse (renameType antv) ts
+renameType antv (Desugared.RecordType ln) = Renamed.RecordType <$> traverse (traverseOf (_2 . unlocated) (renameType antv)) ln
+renameType antv (Desugared.TupleType ts) = Renamed.TupleType <$> traverse (traverseOf unlocated (renameType antv)) ts
 
 renameExpr :: Desugared.Expr -> Renamer Renamed.Expr
 renameExpr (Desugared.Expr le) = Renamed.Expr <$> traverseOf unlocated renameExpr' le

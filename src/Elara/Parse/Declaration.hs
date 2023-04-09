@@ -11,7 +11,7 @@ import Elara.Parse.Expression (element)
 import Elara.Parse.Indents (block)
 import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
-import Elara.Parse.Primitives (HParser, fmapLocated, located, token')
+import Elara.Parse.Primitives (HParser, fmapLocated, located, token_)
 import Elara.Parse.Type (type', typeNotApplication)
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice)
@@ -21,12 +21,12 @@ declaration n = choice @[] [defDec n, letDec n, typeDeclaration n]
 
 defDec :: Located ModuleName -> HParser Frontend.Declaration
 defDec modName = fmapLocated Declaration $ do
-  token' TokenDef
+  token_ TokenDef
   endHead
   name <- located (NVarName <$> unqualifiedVarName)
 
-  token' TokenColon
-  typeAnnotation <- located type'
+  token_ TokenColon
+  typeAnnotation <- type'
 
   let annotationLocation = view sourceRegion name <> view sourceRegion typeAnnotation
   let declBody = Located annotationLocation $ Frontend.ValueTypeDef typeAnnotation
@@ -42,38 +42,37 @@ letDec modName = fmapLocated Declaration $ do
 
 letRaw :: HParser (Located VarName, [Pattern], Expr)
 letRaw = do
-  token' TokenLet
+  token_ TokenLet
   endHead
   name <- located unqualifiedVarName
   patterns <- many pattern'
-  token' TokenEquals
+  token_ TokenEquals
   e <- block element
   pure (name, patterns, e)
 
 typeDeclaration :: Located ModuleName -> HParser Frontend.Declaration
 typeDeclaration modName = fmapLocated Declaration $ do
-  token' TokenType
+  token_ TokenType
   endHead
+  isAlias <- isJust <$> optional (token_ TokenAlias)
   name <- located unqualifiedTypeName
   args <- many (located alphaVarName)
-  token' TokenEquals
-  body <- located typeDeclaration'
+  token_ TokenEquals
+  body <- located (if isAlias then alias else adt)
   let
     valueLocation = name ^. sourceRegion <> body ^. sourceRegion
     value = DeclarationBody $ Located valueLocation (TypeDeclaration args body)
   pure (Declaration' modName (NTypeName <$> name) value)
 
-typeDeclaration' :: HParser Frontend.TypeDeclaration
-typeDeclaration' = adt <|> alias
-
+-- | ADT declarations
 adt :: HParser Frontend.TypeDeclaration
 adt =
-  Frontend.ADT <$> (constructor `sepBy1'` token' TokenPipe)
+  Frontend.ADT <$> (constructor `sepBy1'` token_ TokenPipe)
  where
   constructor = do
     name <- located unqualifiedTypeName
-    args <- many (located typeNotApplication)
+    args <- many typeNotApplication
     pure (name, args)
 
 alias :: HParser Frontend.TypeDeclaration
-alias = Frontend.Alias <$> located type'
+alias = Frontend.Alias <$> type'

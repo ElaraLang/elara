@@ -22,9 +22,9 @@ import Elara.TypeInfer.Monotype (
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
-import Prettyprinter hiding (Pretty(..))
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Monotype
+import Prettyprinter hiding (Pretty (..))
 
 -- | A potentially polymorphic type
 data Type s
@@ -80,6 +80,7 @@ data Type s
     | Scalar {location :: s, scalar :: Scalar}
     | Tuple {location :: s, types :: NonEmpty (Type s)}
     | Custom {location :: s, name :: Text, typeArguments :: [Type s]}
+    | Alias {location :: s, name :: Text, value :: Type s}
     deriving (Eq, Ord, Functor, Generic, Show)
 
 instance IsString (Type ()) where
@@ -88,46 +89,46 @@ instance IsString (Type ()) where
 instance Plated (Type s) where
     plate onType type_ =
         case type_ of
-            VariableType{..} -> do
-                pure VariableType{..}
-            UnsolvedType{..} -> do
-                pure UnsolvedType{..}
+            VariableType{..} -> pure VariableType{..}
+            UnsolvedType{..} -> pure UnsolvedType{..}
             Exists{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Exists{type_ = newType, ..}
+                pure Exists{type_ = newType, ..}
             Forall{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Forall{type_ = newType, ..}
+                pure Forall{type_ = newType, ..}
             Function{input = oldInput, output = oldOutput, ..} -> do
                 newInput <- onType oldInput
                 newOutput <- onType oldOutput
-                return Function{input = newInput, output = newOutput, ..}
+                pure Function{input = newInput, output = newOutput, ..}
             Optional{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Optional{type_ = newType, ..}
+                pure Optional{type_ = newType, ..}
             List{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return List{type_ = newType, ..}
+                pure List{type_ = newType, ..}
             Tuple{types = oldTypes, ..} -> do
                 newTypes <- traverse onType oldTypes
-                return Tuple{types = newTypes, ..}
+                pure Tuple{types = newTypes, ..}
             Record{fields = Fields oldFieldTypes remainingFields, ..} -> do
                 let onPair (field, oldType) = do
                         newType <- onType oldType
-                        return (field, newType)
+                        pure (field, newType)
                 newFieldTypes <- traverse onPair oldFieldTypes
-                return Record{fields = Fields newFieldTypes remainingFields, ..}
+                pure Record{fields = Fields newFieldTypes remainingFields, ..}
             Union{alternatives = Alternatives oldAlternativeTypes remainingAlternatives, ..} -> do
                 let onPair (alternative, oldType) = do
                         newType <- onType oldType
-                        return (alternative, newType)
+                        pure (alternative, newType)
                 newAlternativeTypes <- traverse onPair oldAlternativeTypes
-                return Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
-            Scalar{..} -> do
-                pure Scalar{..}
+                pure Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
+            Scalar{..} -> pure Scalar{..}
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
-                return Custom{typeArguments = newTypeArguments, ..}
+                pure Custom{typeArguments = newTypeArguments, ..}
+            Alias{value = oldValue, ..} -> do
+                newValue <- onType oldValue
+                pure Alias{value = newValue, ..}
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields
@@ -173,7 +174,7 @@ solveType unsolved monotype = Lens.transform transformType
   where
     transformType UnsolvedType{..}
         | unsolved == existential =
-            fmap (\_ -> location) (fromMonotype monotype)
+            fmap (const location) (fromMonotype monotype)
     transformType type_ =
         type_
 
@@ -193,7 +194,7 @@ solveFields unsolved (Monotype.Fields fieldMonotypes fields) =
             fieldTypes <> map transformPair fieldMonotypes
 
         transformPair (field, monotype) =
-            (field, fmap (\_ -> location) (fromMonotype monotype))
+            (field, fmap (const location) (fromMonotype monotype))
     transformType type_ =
         type_
 
@@ -264,6 +265,8 @@ substituteType a n _A type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
+        Alias{value = oldValue, ..} ->
+            Alias{value = substituteType a n _A oldValue, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's  and index
@@ -316,6 +319,9 @@ substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
+        Alias{value = oldType, ..} -> Alias{value = newType, ..}
+          where
+            newType = substituteFields ρ0 n r oldType
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's  and index
@@ -364,11 +370,14 @@ substituteAlternatives ρ0 n r@(Alternatives kτs ρ1) type_ =
             | otherwise ->
                 Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 n r)) kAs0) ρ, ..}
           where
-            kAs1 = kAs0 <> map (second (fmap (\_ -> location))) kτs
+            kAs1 = kAs0 <> map (second (fmap (const location))) kτs
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
+        Alias{value = oldType, ..} -> Alias{value = newType, ..}
+          where
+            newType = substituteAlternatives ρ0 n r oldType
 
 {- | Count how many times the given `Existential` `Type` variable appears within
     a `Type`
@@ -427,5 +436,6 @@ instance (Show a) => Pretty (Type a) where
     pretty (Function _ input output) = "(" <> pretty input <+> "->" <+> pretty output <> ")"
     pretty (Tuple _ (toList -> types)) = "(" <> hsep (punctuate "," (fmap pretty types)) <> ")"
     pretty (UnsolvedType{..}) = pretty existential <> "?"
-    pretty Custom{..} = typeName (pretty name) <> " " <> hsep (fmap pretty typeArguments)
+    pretty Custom{..} = typeName (pretty name) <+> hsep (fmap pretty typeArguments)
+    pretty Alias{..} = typeName (pretty name) <+> parens (pretty value)
     pretty o = show o

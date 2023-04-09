@@ -3,7 +3,7 @@ module Elara.Parse.Names where
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token', (<??>))
+import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token_, (<??>))
 import HeadedMegaparsec (endHead)
 
 varName :: HParser (MaybeQualified VarName)
@@ -41,11 +41,11 @@ maybeQualified nameParser = unqualified <|> qualified
     qualified = do
         qual <- moduleName
         endHead
-        token' TokenDot
+        token_ TokenDot
         MaybeQualified <$> nameParser <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
-moduleName = ModuleName <$> sepBy1' upperVarName (token' TokenDot)
+moduleName = ModuleName <$> sepBy1' upperVarName (token_ TokenDot)
 
 upperVarName :: HParser Text
 upperVarName = satisfyMap $

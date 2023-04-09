@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedLists #-}
 
 {- | This module is based on the bidirectional type-checking algorithm from:
 
@@ -210,6 +210,7 @@ wellFormedType _Γ type0 =
         Type.Scalar{} -> pass -- Scalars are always well-formed
         Type.Custom{..} -> do
             traverse_ (wellFormedType _Γ) typeArguments
+        Type.Alias{..} -> wellFormedType _Γ value
 
 {- | This corresponds to the judgment:
 
@@ -563,6 +564,7 @@ subtype _A0 _B0 = do
         -- exact same as the logic for checking if a record is a subtype of
         -- another record.
         (_A@Type.Union{alternatives = Type.Alternatives kAs0 alternatives0}, _B@Type.Union{alternatives = Type.Alternatives kBs0 alternatives1}) -> do
+        
             let mapA = Map.fromList kAs0
             let mapB = Map.fromList kBs0
 
@@ -703,7 +705,9 @@ subtype _A0 _B0 = do
                         p1
                 (_, _) -> do
                     throw (NotUnionSubtype (Type.location _A0) _A (Type.location _B0) _B)
-
+       
+        (Type.Alias{value}, _B) -> subtype value _B
+        (_A, Type.Alias{value}) -> subtype _A value
         -- Unfortunately, we need to have this wildcard match at the end,
         -- otherwise we'd have to specify a number of cases that is quadratic
         -- in the number of `Type` constructors.  That in turn means that you
@@ -720,8 +724,8 @@ subtype _A0 _B0 = do
         -- (like `List`), and then one of the occurrences will be here in this
         -- `subtype` function and then I'll remember to add a case for my new
         -- complex type here.
+
         (_A, _B) -> do
-            -- error "not subtype"
             throw (NotSubtype (Type.location _A0) _A (Type.location _B0) _B)
 
 {- | This corresponds to the judgment:
@@ -896,6 +900,7 @@ instantiateTypeL a _A0 = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesL p (Type.location _A0) alternatives
+        Type.Alias{..} -> instantiateTypeL a value
 
 {- | This corresponds to the judgment:
 
@@ -1013,6 +1018,8 @@ instantiateTypeR _A0 a = do
             instantiateAlternativesR (Type.location _A0) alternatives p
         Type.Custom{..} -> do
             pass
+        Type.Alias{..} ->
+            instantiateTypeR (Type.substituteType name 0 value value) a
 
 {- The following `equateFields` / `instantiateFieldsL` / `instantiateFieldsR`,
    `equateAlternatives` / `instantiateAlternativesL` /

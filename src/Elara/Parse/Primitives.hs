@@ -10,7 +10,7 @@ module Elara.Parse.Primitives (
     commaSeparated,
     oneOrCommaSeparatedInParens,
     token,
-    token',
+    token_,
     withPredicate,
     (<??>),
     IsParser (..),
@@ -87,8 +87,8 @@ satisfyMap f = fromParsec $ MP.token test []
     test :: Lexeme -> Maybe a
     test (Located _ t) = f t
 
-token' :: (IsParser m) => Token -> m ()
-token' = void . token
+token_ :: (IsParser m) => Token -> m ()
+token_ = void . token
 
 locatedTokens' :: (IsParser m) => NonEmpty Token -> m SourceRegion
 locatedTokens' tokenList = do
@@ -96,13 +96,13 @@ locatedTokens' tokenList = do
     pure $ spanningRegion' (view sourceRegion <$> ts)
 
 inParens :: HParser a -> HParser a
-inParens = surroundedBy (token' TokenLeftParen) (token' TokenRightParen)
+inParens = surroundedBy (token_ TokenLeftParen) (token_ TokenRightParen)
 
 inParens' :: HParser a -> HParser a
-inParens' = surroundedBy' (token' TokenLeftParen) (token' TokenRightParen)
+inParens' = surroundedBy' (token_ TokenLeftParen) (token_ TokenRightParen)
 
 inBraces :: HParser a -> HParser a
-inBraces = surroundedBy (token' TokenLeftBrace) (token' TokenRightBrace)
+inBraces = surroundedBy (token_ TokenLeftBrace) (token_ TokenRightBrace)
 
 surroundedBy :: (Monad m) => m () -> m () -> m b -> m b
 surroundedBy before after p = do
@@ -120,10 +120,10 @@ surroundedBy' before after p = do
     pure x
 
 commaSeparated :: HParser a -> HParser [a]
-commaSeparated p = p `sepBy` token' TokenComma
+commaSeparated p = p `sepBy` token_ TokenComma
 
 oneOrCommaSeparatedInParens :: HParser a -> HParser [a]
-oneOrCommaSeparatedInParens p = inParens (p `sepBy` token' TokenComma) <|> one <$> p
+oneOrCommaSeparatedInParens p = inParens (p `sepBy` token_ TokenComma) <|> one <$> p
 
 withPredicate :: (IsParser m) => (t -> Bool) -> (t -> ElaraParseError) -> m t -> m t
 withPredicate f msg p = do

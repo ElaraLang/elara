@@ -13,9 +13,9 @@ module Elara.Data.Pretty (
 ) where
 
 import Data.Map qualified as Map (toList)
+import Elara.Data.Pretty.Styles
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
-import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
 
@@ -32,11 +32,9 @@ class Pretty a where
 instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
     pretty = PP.pretty
 
-
 -- hack
 instance PP.Pretty (Doc AnsiStyle) where
     pretty = unAnnotate
-
 
 escapeChar :: (IsString s) => Char -> s
 escapeChar c = case c of
@@ -58,13 +56,14 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
+instance (Pretty i) => Pretty [i] where
+    pretty = align . list . map pretty
 
-instance Pretty i => Pretty [i] where
-    pretty =    align . list . map pretty
+instance (Pretty i) => Pretty (NonEmpty i) where
+    pretty = pretty . toList
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
     pretty (a, b) = tupled [pretty a, pretty b]
-
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)

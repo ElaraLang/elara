@@ -73,6 +73,7 @@ tokens :-
       data                   { simpleTok TokenData }
       class                  { simpleTok TokenClass }
       type                   { simpleTok TokenType }
+      alias                  { simpleTok TokenAlias }
       module                 { simpleTok TokenModule } 
       import                 { simpleTok TokenImport }
 

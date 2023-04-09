@@ -13,6 +13,7 @@ import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (Err))
+import Elara.AST.Renamed qualified as AST
 import Print
 
 -- | A data type holding all errors related to type inference
@@ -50,6 +51,9 @@ data TypeInferenceError
   | --
     RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
   | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
+
+  | --
+    UserDefinedTypeNotInContext SourceRegion (AST.Type) (Context SourceRegion)
   deriving (Eq, Show)
 
 instance ReportableError TypeInferenceError where

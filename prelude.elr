@@ -1,6 +1,6 @@
 module Prelude
 
-type Option a = Some a | None
+type alias Box a b = ()
 
 let id x = x
 

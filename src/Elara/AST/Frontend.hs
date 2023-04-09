@@ -56,12 +56,12 @@ newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
 
 data Type
     = TypeVar LowerAlphaName
-    | FunctionType Type Type
+    | FunctionType (Located Type) (Located Type)
     | UnitType
-    | TypeConstructorApplication Type Type
+    | TypeConstructorApplication (Located Type) (Located Type)
     | UserDefinedType (Located (MaybeQualified TypeName))
-    | RecordType (NonEmpty (Located VarName, Type))
-    | TupleType (NonEmpty Type)
+    | RecordType (NonEmpty (Located VarName, Located Type))
+    | TupleType (NonEmpty (Located Type))
     deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')

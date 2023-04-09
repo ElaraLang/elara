@@ -60,6 +60,7 @@ data Token
   | TokenOf
   | TokenData
   | TokenType
+  | TokenAlias
   | TokenModule
   | TokenImport
   | TokenAs
@@ -116,6 +117,7 @@ tokenRepr = \case
   TokenOf -> "of"
   TokenData -> "data"
   TokenType -> "type"
+  TokenAlias -> "alias"
   TokenModule -> "module"
   TokenImport -> "import"
   TokenAs -> "as"

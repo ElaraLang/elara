@@ -14,13 +14,13 @@ import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos 
 
 module' :: HParser (Module Frontend)
 module' = fmapLocated Module $ do
-    mHeader <- optional (header <* optional (token' TokenSemicolon))
+    mHeader <- optional (header <* optional (token_ TokenSemicolon))
     endHead
     thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
-    imports <- sepEndBy import' (token' TokenSemicolon)
-    _ <- optional (token' TokenSemicolon)
-    declarations <- sepEndBy (declaration _name) (token' TokenSemicolon)
+    imports <- sepEndBy import' (token_ TokenSemicolon)
+    _ <- optional (token_ TokenSemicolon)
+    declarations <- sepEndBy (declaration _name) (token_ TokenSemicolon)
 
     pure $
         Module'
@@ -33,7 +33,7 @@ module' = fmapLocated Module $ do
 -- | module Name exposing (..)
 header :: HParser (Located ModuleName, Exposing Frontend)
 header = do
-    token' TokenModule
+    token_ TokenModule
     endHead
     moduleName' <- located Parse.moduleName
     exposing' <- exposing
@@ -44,7 +44,7 @@ exposing =
     fromMaybe ExposingAll
         <$> optional
             ( do
-                token' TokenExposing
+                token_ TokenExposing
                 ExposingSome <$> oneOrCommaSeparatedInParens exposition
             )
 
@@ -57,11 +57,11 @@ exposition = exposedValue <|> exposedOp
 
 import' :: HParser (Import Frontend)
 import' = fmapLocated Import $ do
-    token' TokenImport
+    token_ TokenImport
     endHead
     moduleName' <- located Parse.moduleName
-    isQualified <- isJust <$> optional (token' TokenQualified)
+    isQualified <- isJust <$> optional (token_ TokenQualified)
     as <- optional . located $ do
-        token' TokenAs
+        token_ TokenAs
         Parse.moduleName
     Import' moduleName' as isQualified <$> exposing
