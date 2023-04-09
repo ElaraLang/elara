@@ -1,6 +1,7 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixR), makeExprParser)
+import Data.List.NonEmpty ((<|))
 import Elara.AST.Frontend (Type (..))
 import Elara.AST.Name (ModuleName, VarName)
 import Elara.AST.Region (Located)
@@ -20,6 +21,13 @@ type' =
         , [InfixR functionType]
         ]
 
+typeNotApplication :: HParser Type
+typeNotApplication =
+    makeExprParser
+        typeTerm
+        [ [InfixR functionType]
+        ]
+
 constructorApplication :: HParser (Type -> Type -> Type)
 constructorApplication = TypeConstructorApplication <$ pass
 
@@ -31,6 +39,7 @@ typeTerm =
     choice @[]
         [ typeVar
         , unit
+        , inParens type'
         , tupleType
         , namedType
         , emptyRecordError
@@ -72,5 +81,8 @@ emptyRecordError = do
 
 tupleType :: HParser Type
 tupleType = inParens' $ do
-    types <- sepBy1' type' (token' TokenComma)
-    pure $ TupleType types
+    t <- type'
+    token' TokenComma
+    endHead
+    ts <- sepBy1' type' (token' TokenComma)
+    pure $ TupleType (t <| ts)

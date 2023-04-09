@@ -3,6 +3,6 @@ import Prelude
 let some = Some 3
 let none = None
 
-def main : Option Integer
+def main : Option ()
 let main = id 1
 

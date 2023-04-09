@@ -12,7 +12,7 @@ import Elara.Parse.Indents (block)
 import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token')
-import Elara.Parse.Type (type')
+import Elara.Parse.Type (type', typeNotApplication)
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice)
 
@@ -72,7 +72,7 @@ adt =
  where
   constructor = do
     name <- located unqualifiedTypeName
-    args <- many (located type')
+    args <- many (located typeNotApplication)
     pure (name, args)
 
 alias :: HParser Frontend.TypeDeclaration
