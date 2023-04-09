@@ -14,6 +14,7 @@ import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
+import Elara.Data.Kind.Infer
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
 import Elara.ModuleGraph (ModuleGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
@@ -22,7 +23,7 @@ import Elara.Parse.Stream
 import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
-import Elara.TypeInfer.Infer (initialStatus)
+import Elara.TypeInfer.Infer (initialStatus, Status)
 import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic)
 import Polysemy (Member, Members, Sem, runM, subsume_)
 import Polysemy.Embed
@@ -115,7 +116,7 @@ shuntModule m = do
 
 inferModules :: (Members MainMembers r) => ModuleGraph (Module Shunted) -> Sem r (ModuleGraph (Module Typed))
 inferModules modules = do
-  runErrorOrReport (evalState initialStatus (traverseGraphRevTopologically Infer.inferModule modules))
+  runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
 toCore :: (Members MainMembers r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 toCore mp m = do

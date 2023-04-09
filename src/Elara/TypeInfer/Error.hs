@@ -3,7 +3,9 @@ module Elara.TypeInfer.Error where
 import Data.Map qualified as Map
 import Elara.AST.Name (Name)
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Renamed qualified as AST
 import Elara.AST.VarRef (IgnoreLocVarRef)
+import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
@@ -13,7 +15,6 @@ import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (Err))
-import Elara.AST.Renamed qualified as AST
 import Print
 
 -- | A data type holding all errors related to type inference
@@ -51,9 +52,9 @@ data TypeInferenceError
   | --
     RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
   | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
-
   | --
     UserDefinedTypeNotInContext SourceRegion (AST.Type) (Context SourceRegion)
+  | KindInferError KindInferError
   deriving (Eq, Show)
 
 instance ReportableError TypeInferenceError where

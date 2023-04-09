@@ -56,7 +56,10 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
-instance (Pretty i) => Pretty [i] where
+instance Pretty String where
+    pretty = pretty . toText
+
+instance {-# OVERLAPPABLE #-} (Pretty i) => Pretty [i] where
     pretty = align . list . map pretty
 
 instance (Pretty i) => Pretty (NonEmpty i) where

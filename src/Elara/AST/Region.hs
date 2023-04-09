@@ -9,6 +9,7 @@ import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
+import Print (showPretty)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
 import Text.Show (Show (show))
 
@@ -148,7 +149,7 @@ merge fn l1 l2 =
 {- | Get the region that contains both of the given regions.
 This function will throw an error if the regions are in different files.
 -}
-enclosingRegion :: RealSourceRegion -> RealSourceRegion -> RealSourceRegion
+enclosingRegion :: (HasCallStack) => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
 enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
 
@@ -156,8 +157,8 @@ enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion 
 This function will throw an error if the regions are in different files.
 If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
-enclosingRegion' :: SourceRegion -> SourceRegion -> SourceRegion
-enclosingRegion' a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
+enclosingRegion' :: (HasCallStack) => SourceRegion -> SourceRegion -> SourceRegion
+enclosingRegion' a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
 enclosingRegion' (GeneratedRegion fp) _ = GeneratedRegion fp
 enclosingRegion' _ (GeneratedRegion fp) = GeneratedRegion fp
 enclosingRegion' (RealSourceRegion a) (RealSourceRegion b) = RealSourceRegion $ enclosingRegion a b
@@ -205,3 +206,11 @@ instance (Ord a) => Ord (IgnoreLocation a) where
 
 instance (Show a) => Show (IgnoreLocation a) where
     show (IgnoreLocation (Located _ a)) = Text.Show.show a
+
+instance Pretty SourceRegion where
+    pretty (GeneratedRegion fp) = "<generated:" <> pretty fp <> ">"
+    pretty (RealSourceRegion (SourceRegion fp start end)) =
+        "<" <> pretty fp <> ":" <> pretty start <> "-" <> pretty end <> ">"
+
+instance Pretty RealPosition where
+    pretty (Position ln cn) = pretty ln <> ":" <> pretty cn

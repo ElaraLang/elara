@@ -24,6 +24,7 @@ cabal.project.local
 .hie/
 # Stack
 .stack-work/
+.stack-work-profile/
 stack.yaml.lock
 
 ### IDE/support

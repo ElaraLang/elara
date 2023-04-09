@@ -1,7 +1,5 @@
 module Prelude
 
-type Box : k -> k1 -> Type
 type alias Box a b = ()
 
 let id x = x
-

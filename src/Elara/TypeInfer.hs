@@ -2,34 +2,36 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (to, traverseOf, view, (^.), _3)
+import Control.Lens (mapped, mapping, over, to, traverseOf, view, (^.), (^?!), _3)
+import Data.Traversable (for)
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName)
+import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName, _NTypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, sourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
-import Elara.Data.Kind (ElaraKind)
+import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, unifyKinds)
 import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
-import Elara.TypeInfer.Error (TypeInferenceError (UserDefinedTypeNotInContext))
+import Elara.TypeInfer.Error (TypeInferenceError (KindInferError, UserDefinedTypeNotInContext))
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
-import Polysemy.Error (Error, throw)
+import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
 import TODO (todo)
 
 inferModule ::
     forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     Module Shunted ->
     Sem r (Module Typed)
 inferModule m = do
@@ -45,7 +47,7 @@ traverseExpr f =
 
 inferDeclaration ::
     forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     Shunted.Declaration ->
     Sem r Typed.Declaration
 inferDeclaration (Shunted.Declaration ld) =
@@ -69,14 +71,18 @@ inferDeclaration (Shunted.Declaration ld) =
         Shunted.DeclarationBody' ->
         Sem r Typed.DeclarationBody'
     inferDeclarationBody' declName (Shunted.Value e maybeExpected) = do
-        maybeExpected' <- traverse astTypeToInferType maybeExpected
-        debugColored maybeExpected'
+        maybeExpected' <- for maybeExpected $
+            \expected' -> do
+                kind <- mapError KindInferError (inferTypeKind (expected' ^. unlocated))
+                mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
+                astTypeToInferType expected'
 
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
         case maybeExpected' of
-            Just expectedType -> push (Annotation (mkGlobal' declName) expectedType)
-            Nothing -> fresh >>= push . Annotation (mkGlobal' declName) . Infer.UnsolvedType (generatedSourceRegionFrom declName)
+            Just expectedType -> do
+                push (Annotation (mkGlobal' declName) expectedType)
+            Nothing -> pass
 
         e'@(Typed.Expr (_, ty)) <- inferExpression e
 
@@ -101,21 +107,23 @@ inferDeclaration (Shunted.Declaration ld) =
                         pure $ Typed.ADT constructors'
                 )
                 ty
-        pure $ Typed.TypeDeclaration tvs ty'
+        kind <- mapError KindInferError (inferKind (fmap (^?! _NTypeName) (n ^. unlocated)) tvs (ty ^. unlocated))
+        pure $ Typed.TypeDeclaration tvs ty' kind
 
-addConstructorToContext :: (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
+addConstructorToContext :: (HasCallStack) => (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
 addConstructorToContext typeVars ctorName ctorArgs adtType = do
     let ctorType = foldr (\res acc -> Infer.Function (Infer.location acc) res acc) adtType ctorArgs
     -- type Option a = Some a | None
     -- Some : a -> Option a
     -- None : Option a
+    let argsLoc = mconcat (Infer.location <$> ctorArgs)
 
     -- universally quantify the type over the type variables
     let forall =
             foldr
                 ( \(Located sr u) acc ->
                     Infer.Forall
-                        (ctorName ^. sourceRegion <> mconcat (Infer.location <$> ctorArgs))
+                        (ctorName ^. sourceRegion <> argsLoc)
                         sr
                         (showPretty u)
                         Domain.Type
@@ -128,14 +136,14 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
-inferKind ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
-    [Located (Unique LowerAlphaName)] ->
-    (Located Renamed.TypeDeclaration) ->
-    Sem r ElaraKind
-inferKind [] = undefined
+-- inferKind ::
+--     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+--     [Located (Unique LowerAlphaName)] ->
+--     (Located Renamed.TypeDeclaration) ->
+--     Sem r ElaraKind
+-- inferKind [] = undefined
 
-astTypeToInferType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType :: (HasCallStack) => (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow
 astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
 astTypeToInferType (Located sr t@(Renamed.UserDefinedType n)) = do
@@ -148,9 +156,10 @@ astTypeToInferType (Located sr (Renamed.TupleType ts)) = Infer.Tuple sr <$> trav
 astTypeToInferType (Located sr (Renamed.TypeConstructorApplication ctor arg)) = do
     ctor' <- astTypeToInferType ctor
     arg' <- astTypeToInferType arg
+
     case ctor' of
-        Infer.Custom{..} -> pure $ Infer.Custom (location <> sr) name (typeArguments ++ [arg'])
-        Infer.Alias{..} -> pure $ Infer.Alias (location <> sr) name (typeArguments ++ [arg']) value
+        Infer.Custom{..} -> pure $ Infer.Custom (location) name (typeArguments ++ [arg'])
+        Infer.Alias{..} -> pure $ Infer.Alias (location) name (typeArguments ++ [arg']) value
         other -> error (showColored other)
 astTypeToInferType other = error (showColored other)
 

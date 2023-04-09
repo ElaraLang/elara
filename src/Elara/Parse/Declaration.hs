@@ -36,7 +36,7 @@ letDec :: Located ModuleName -> HParser Frontend.Declaration
 letDec modName = fmapLocated Declaration $ do
   (name, patterns, e) <- letRaw
   let
-    valueLocation = mconcat (e ^. _Expr . sourceRegion : (view (_Pattern . sourceRegion) <$> patterns))
+    valueLocation = sconcat (e ^. _Expr . sourceRegion :| (view (_Pattern . sourceRegion) <$> patterns))
     value = DeclarationBody $ Located valueLocation (Frontend.Value e patterns)
   pure (Declaration' modName (NVarName <$> name) value)
 

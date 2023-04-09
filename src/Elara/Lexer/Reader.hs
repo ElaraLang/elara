@@ -23,7 +23,7 @@ readToken = do
     [] ->
       case alexScan (s ^. input) (s ^. lexSC) of
         AlexEOF -> do
-          when (s ^. lexSC == stringSC) (throw $ UnterminatedStringLiteral s)
+          when (s ^. lexSC == stringSC) (throw (UnterminatedStringLiteral s))
           eof <- fake TokenEOF
           closeIndents <- cleanIndentation
           modify (over pendingTokens (<> (closeIndents <> [eof])))

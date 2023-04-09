@@ -10,10 +10,11 @@ import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.AST.VarRef
+import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty
-import Prettyprinter hiding (Pretty(..))
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
+import Prettyprinter hiding (Pretty (..))
 import Prelude hiding (Op, group)
 
 {- | Typed AST Type
@@ -79,7 +80,7 @@ data DeclarationBody'
         { _expression :: Expr
         }
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located (Unique LowerAlphaName)] (Located TypeDeclaration) -- No difference to old AST
+      TypeDeclaration [Located (Unique LowerAlphaName)] (Located TypeDeclaration) ElaraKind -- No difference to old AST
     deriving (Show, Eq)
 
 data TypeDeclaration
@@ -151,9 +152,10 @@ prettyDB name (Value (Expr (e, t))) =
           -- , indent indentDepth (pretty e)
           "" -- add a newline
         ]
-prettyDB name (TypeDeclaration vars t) =
+prettyDB name (TypeDeclaration vars t kind) =
     vsep
-        [ keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
+        [ keyword "type" <+> typeName (pretty name) <+> ":" <+> pretty kind
+        , keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
         , indent indentDepth (pretty t)
         ]
 

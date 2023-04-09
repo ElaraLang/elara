@@ -43,7 +43,7 @@ desugarDeclaration d =
                 v' <- desugarExpr v
                 let valName = (^?! _NVarName) <<$>> d ^. name
                 pure (Core.Value (valName ^. unlocated) v')
-            AST.TypeDeclaration _ _ -> todo
+            AST.TypeDeclaration _ _ _ -> todo
 
 pattern TypedExpr :: AST.Expr' -> AST.Expr
 pattern TypedExpr x <- AST.Expr (Located loc x, _)

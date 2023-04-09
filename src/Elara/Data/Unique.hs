@@ -76,6 +76,9 @@ makeSem ''UniqueGen
 makeLenses ''UniqueSupply
 makeLenses ''Unique
 
+getUniqueId :: Unique a -> UniqueId
+getUniqueId = UniqueId . void
+
 makeUniqueId :: (Member UniqueGen r) => Sem r UniqueId
 makeUniqueId = UniqueId <$> makeUnique ()
 
