@@ -75,7 +75,7 @@ instance ReportableError ShuntWarning where
         let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
         let operatorName o = case o of
                 Renamed.Op opName -> nameText $ varRefVal (opName ^. unlocated)
-                Renamed.Infixed varName -> "`" <> nameText (varRefVal (varName ^. unlocated)) <> "`"
+                Renamed.Infixed vn -> "`" <> nameText (varRefVal (vn ^. unlocated)) <> "`"
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
@@ -84,9 +84,9 @@ instance ReportableError ShuntWarning where
                 [Hint "Define the precedence and associativity of the operator explicitly"]
 
 opInfo :: OpTable -> Renamed.BinaryOperator -> Maybe OpInfo
-opInfo table op = case op ^. Renamed._MkBinaryOperator . unlocated of
+opInfo table operator = case operator ^. Renamed._MkBinaryOperator . unlocated of
     Renamed.Op opName -> lookup (NOpName <$> opName ^. unlocated) table
-    Renamed.Infixed varName -> lookup (NVarName <$> varName ^. unlocated) table
+    Renamed.Infixed vn -> lookup (NVarName <$> vn ^. unlocated) table
 
 pattern InExpr :: Renamed.Expr' -> Renamed.Expr
 pattern InExpr y <- Renamed.Expr (Located _ y)
@@ -103,15 +103,15 @@ pattern InExpr' loc y <- Renamed.Expr (Located loc y)
 fixOperators :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r) => OpTable -> Renamed.Expr -> Sem r Renamed.Expr
 fixOperators opTable = reassoc
   where
-    withLocationOf :: Renamed.Expr -> Renamed.Expr' -> Renamed.Expr
-    withLocationOf s repl = over Renamed._Expr (repl <$) s
+    withLocationOf' :: Renamed.Expr -> Renamed.Expr' -> Renamed.Expr
+    withLocationOf' s repl = over Renamed._Expr (repl <$) s
 
     reassoc :: Renamed.Expr -> Sem r Renamed.Expr
-    reassoc e@(InExpr (Renamed.InParens e2)) = withLocationOf e . Renamed.InParens <$> reassoc e2
+    reassoc e@(InExpr (Renamed.InParens e2)) = withLocationOf' e . Renamed.InParens <$> reassoc e2
     reassoc e@(InExpr' loc (Renamed.BinaryOperator operator l r)) = do
         l' <- reassoc l
         r' <- reassoc r
-        withLocationOf e <$> reassoc' loc operator l' r'
+        withLocationOf' e <$> reassoc' loc operator l' r'
     reassoc e = pure e
 
     reassoc' :: SourceRegion -> Renamed.BinaryOperator -> Renamed.Expr -> Renamed.Expr -> Sem r Renamed.Expr'
@@ -129,7 +129,7 @@ fixOperators opTable = reassoc
       where
         assocLeft = do
             reassociated <- Renamed.Expr . Located sr <$> reassoc' sr o1 e1 e2
-            pure (Renamed.BinaryOperator o2 (withLocationOf reassociated (Renamed.InParens reassociated)) e3)
+            pure (Renamed.BinaryOperator o2 (withLocationOf' reassociated (Renamed.InParens reassociated)) e3)
 
         assocRight = do
             pure (Renamed.BinaryOperator o1 e1 r)

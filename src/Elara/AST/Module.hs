@@ -8,6 +8,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+-- The generic module functions require some god awful constraints that would be hellish to write out
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+-- Similarly, the coercing functions require constraints to be safe but GHC doesn't know that
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Elara.AST.Module where
@@ -223,7 +226,7 @@ instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
 -- | Traverses a module over its declarations, keeping the name, exposing, and imports the same.
 traverseModule ::
     forall ast ast' f.
-    (_) =>
+    _ =>
     (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
     Module ast ->
     f (Module ast')

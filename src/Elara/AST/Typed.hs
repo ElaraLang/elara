@@ -144,7 +144,7 @@ instance Pretty Declaration' where
     pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. _DeclarationBody . unlocated)
 
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
-prettyDB name (Value (Expr (e, t))) =
+prettyDB name (Value (Expr (_, t))) =
     vsep
         [ pretty name <+> ":" <+> pretty t
         , -- , "let" <+> pretty name <+> "="

@@ -2,13 +2,12 @@
 
 module Elara.AST.Renamed where
 
-import Control.Lens (makeLenses, makePrisms, view)
-import Elara.AST.Name (HasName (name), LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
+import Control.Lens (makeLenses, makePrisms)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.AST.VarRef
-import Elara.Data.Pretty
 import Elara.Data.Unique
-import Prelude hiding (Op, Type)
+import Prelude hiding (Op)
 
 {- | Renamed AST Type
 This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.

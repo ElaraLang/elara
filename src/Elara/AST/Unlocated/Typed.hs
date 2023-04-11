@@ -3,9 +3,7 @@
 module Elara.AST.Unlocated.Typed where
 
 import Control.Lens hiding (List)
-import Control.Lens.Extras (uniplate)
-import Data.Data (Data)
-import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified (..), TypeName, VarName)
+import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Pretty
 import Elara.Data.Unique
