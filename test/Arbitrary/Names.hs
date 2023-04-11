@@ -4,7 +4,7 @@
 module Arbitrary.Names where
 
 import Data.Set qualified as Set
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..), nameText, LowerAlphaName(..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..), LowerAlphaName(..))
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 
@@ -15,8 +15,8 @@ instance Arbitrary AlphaText where
     arbitrary =
         ( AlphaText . toText <$> do
             c <- arbitraryLower
-            tail <- listOf (oneof [arbitraryLower, arbitraryLower])
-            pure (c : tail)
+            cs <- listOf (oneof [arbitraryLower, arbitraryLower])
+            pure (c : cs)
         )
             `suchThat` isSafe
       where
@@ -29,8 +29,8 @@ instance Arbitrary AlphaUpperText where
     arbitrary =
         AlphaUpperText . toText <$> do
             c <- arbitraryUpper
-            tail <- listOf (oneof [arbitraryLower, arbitraryLower])
-            pure (c : tail)
+            cs <- listOf (oneof [arbitraryLower, arbitraryLower])
+            pure (c : cs)
 arbitraryLower :: Gen Char
 arbitraryLower = elements ['a' .. 'z']
 
