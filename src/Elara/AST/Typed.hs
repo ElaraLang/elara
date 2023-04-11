@@ -156,6 +156,7 @@ prettyDB name (TypeDeclaration vars t kind) =
         [ keyword "type" <+> typeName (pretty name) <+> ":" <+> pretty kind
         , keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
         , indent indentDepth (pretty t)
+        , "" -- add a newline
         ]
 
 instance Pretty TypeDeclaration where

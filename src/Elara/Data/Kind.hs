@@ -1,7 +1,6 @@
 -- | Stores the kind of a type.
 module Elara.Data.Kind where
 
-import Elara.AST.Name (LowerAlphaName)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 
@@ -15,6 +14,6 @@ data ElaraKind
   deriving (Show, Eq)
 
 instance Pretty ElaraKind where
-  pretty TypeKind = "Type"
+  pretty TypeKind = typeName "Type"
   pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
-  pretty (VarKind v) = "k" <> pretty v
+  pretty (VarKind v) = varName ("k" <> pretty v)

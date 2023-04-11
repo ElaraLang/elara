@@ -250,7 +250,7 @@ traverseModuleTopologically traverseDecl =
             let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
             let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
             let declGraph = createGraph (m' ^. declarations)
-            declarations' <- traverse traverseDecl (allEntriesTopologically declGraph) 
+            declarations' <- traverse traverseDecl (allEntriesTopologically declGraph)
             pure (Module' (m' ^. name) exposing' imports' declarations')
         )
 
@@ -289,7 +289,12 @@ instance
     where
     pretty (Module' n e i d) =
         vsep
-            [keyword "module" <+> moduleNameStyle (pretty n) <+> keyword "exposing" <+> pretty e, vsep (pretty <$> i), vsep (pretty <$> d)]
+            [ keyword "module" <+> moduleNameStyle (pretty n) <+> keyword "exposing" <+> pretty e
+            , ""
+            , vsep (pretty <$> i)
+            , ""
+            , vsep (pretty <$> d)
+            ]
 
 instance (Pretty (Exposition ast)) => Pretty (Exposing ast) where
     pretty ExposingAll = "(..)"
