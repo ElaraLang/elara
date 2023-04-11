@@ -17,7 +17,7 @@ import Elara.Lexer.Reader
 import Elara.Data.Kind.Infer
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
-import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
 import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (rename, runRenamer)
@@ -73,6 +73,7 @@ lexFile path = do
   case evalLexMonad path contents readTokens of
     Left err -> report err *> nothingE
     Right lexemes -> do
+      debugColored (stripLocation <$> lexemes)
       justE (contents, lexemes)
 
 parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)

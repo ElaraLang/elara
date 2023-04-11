@@ -185,6 +185,8 @@ test-suite elara-test
       Lex.Common
       Lex.Indents
       Orphans
+      Parse
+      Parse.Common
       Paths_elara
   hs-source-dirs:
       test

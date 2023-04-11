@@ -7,14 +7,14 @@ import Elara.Lexer.Token
 import Elara.Lexer.Utils
 import Test.Hspec
 
-lex' :: HasCallStack => Text -> [Lexeme]
+lex' :: Text -> [Lexeme]
 lex' contents =
     case evalLexMonad "" (toString contents) readTokens of
         Left _ -> error "lex fail aaa"
         Right tokens -> tokens
 
-lexUL :: HasCallStack => Text -> [Token]
+lexUL :: Text -> [Token]
 lexUL = fmap (view unlocated) . lex'
 
-(<~>) :: HasCallStack => Text -> Text -> Expectation
+(<~>) :: Text -> Text -> Expectation
 (<~>) = shouldBe `on` lexUL

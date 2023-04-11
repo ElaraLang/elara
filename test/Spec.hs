@@ -1,5 +1,6 @@
 
 import Lex qualified
+import Parse qualified
 import Test.Hspec
 
 main :: IO ()
@@ -9,3 +10,4 @@ main = do
 spec :: Spec
 spec = parallel $ do
   describe "Lexing test" Lex.spec
+  describe "Parsing Test" Parse.spec

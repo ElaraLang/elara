@@ -7,6 +7,7 @@ import Elara.AST.Frontend qualified as Frontend
 
 import Elara.AST.Region
 import Elara.AST.StripLocation
+import Elara.Data.Pretty
 import TODO (todo)
 import Prelude hiding (Op)
 
@@ -145,7 +146,40 @@ instance StripLocation Frontend.DeclarationBody' DeclarationBody where
     stripLocation (Frontend.ValueTypeDef t) = ValueTypeDef (stripLocation t)
     stripLocation (Frontend.TypeDeclaration args t) = TypeDeclaration (stripLocation args) (stripLocation t)
 
-
 instance StripLocation Frontend.TypeDeclaration TypeDeclaration where
     stripLocation (Frontend.ADT t) = ADT (stripLocation t)
     stripLocation (Frontend.Alias t) = Alias (stripLocation t)
+
+instance Pretty Expr where
+    pretty (Int i) = pretty i
+    pretty (Float f) = pretty f
+    pretty (String s) = pretty '\"' <> pretty s <> pretty '\"'
+    pretty (Char c) = "'" <> escapeChar c <> "'"
+    pretty Unit = "()"
+    pretty (Var v) = pretty v
+    pretty (Constructor c) = pretty c
+    pretty (Lambda p e) = parens ("\\" <> pretty p <+> "->" <+> pretty e)
+    pretty (FunctionCall e1 e2) = parens (pretty e1 <+> pretty e2)
+    pretty (If e1 e2 e3) = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)
+    pretty (BinaryOperator o e1 e2) = parens (pretty e1 <+> pretty o <+> pretty e2)
+    pretty (List l) = list (pretty <$> l)
+    pretty (Match e m) = parens ("match" <+> pretty e <+> "with" <+> pretty m)
+    pretty (LetIn v ps e1 e2) = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e1 <+> "in" <+> pretty e2)
+    pretty (Let v ps e) = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e)
+    pretty (Block b) = "{" <+> vsep (punctuate ";" (pretty <$> toList b)) <+> "}"
+    pretty (InParens e) = parens (pretty e)
+    pretty (Tuple t) = parens (hsep (punctuate "," (pretty <$> toList t)))
+
+instance Pretty Pattern where
+    pretty (VarPattern v) = pretty v
+    pretty (ConstructorPattern c p) = parens (pretty c <+> pretty p)
+    pretty (ListPattern p) = list (pretty <$> p)
+    pretty WildcardPattern = "_"
+    pretty (IntegerPattern i) = pretty i
+    pretty (FloatPattern f) = pretty f
+    pretty (StringPattern s) = pretty s
+    pretty (CharPattern c) = pretty c
+
+instance Pretty BinaryOperator where
+    pretty (Op o) = pretty o
+    pretty (Infixed i) = pretty i

@@ -13,8 +13,7 @@ instance StripLocation (Located a) a where
     stripLocation :: Located a -> a
     stripLocation (Located _ a) = a
 
-instance {-# OVERLAPPABLE #-}(StripLocation a1 b, StripLocation a2 a1) => StripLocation a2 b where
-    stripLocation :: a2 -> b
+instance {-# OVERLAPPABLE #-} (StripLocation a1 b1, StripLocation b1 b2) => StripLocation a1 b2 where
     stripLocation b = stripLocation (stripLocation b)
 
 -- We could provide a general Functor instance but the overlapping tends to cause problems

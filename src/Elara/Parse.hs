@@ -5,7 +5,7 @@ import Elara.AST.Select
 import Elara.Parse.Error
 import Elara.Parse.Module (module')
 import Elara.Parse.Primitives (toParsec)
-import Elara.Parse.Stream ( TokenStream )
+import Elara.Parse.Stream (TokenStream)
 import Text.Megaparsec (MonadParsec (eof), runParser)
 
 parse :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
