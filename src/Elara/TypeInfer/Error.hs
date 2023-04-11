@@ -47,8 +47,8 @@ data TypeInferenceError
     UnboundAlternatives SourceRegion Text
   | UnboundFields SourceRegion Text
   | UnboundTypeVariable SourceRegion Text
-  | UnboundVariable (IgnoreLocVarRef Name)
-  | UnboundConstructor (IgnoreLocVarRef Name)
+  | UnboundVariable (IgnoreLocVarRef Name) (Context SourceRegion)
+  | UnboundConstructor (IgnoreLocVarRef Name) (Context SourceRegion)
   | --
     RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
   | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
@@ -71,6 +71,32 @@ instance ReportableError TypeInferenceError where
         )
         []
         []
+  report (UnboundVariable v _Γ) =
+    writeReport $
+      Err
+        Nothing
+        ( vsep
+            [ "Type error: The following variable is unbound:"
+            , pretty v
+            , "The following variables are bound in the current context:"
+            , listToText _Γ
+            ]
+        )
+        []
+        []
+  report (UnboundConstructor v _Γ) =
+    writeReport $
+      Err
+        Nothing
+        ( vsep
+            [ "Type error: The following constructor is unbound:"
+            , pretty v
+            , "The following constructors are bound in the current context:"
+            , listToText _Γ
+            ]
+        )
+        []
+        []  
   report (NotSubtype _ t1 _ t2) =
     writeReport $
       Err

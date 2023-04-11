@@ -12,13 +12,14 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (makeClassy, makeFields, makeLenses, makePrisms, traverseOf, traverseOf_, (^.))
+import Control.Lens
 import Data.Kind qualified as Kind (Type)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), UnlocatedFrontend)
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
+import Elara.Data.TopologicalGraph
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
@@ -103,6 +104,11 @@ makePrisms ''Module
 makePrisms ''Import
 makeClassy ''Import'
 makeFields ''Import'
+
+instance (RUnlocate ast) => HasDependencies (Module ast) where
+    type Key (Module ast) = ModuleName
+    key m = m ^. name . rUnlocated' @ast
+    dependencies = toListOf (imports . each . importing . rUnlocated' @ast)
 
 instance {-# OVERLAPPING #-} (RUnlocate ast, a ~ [Import ast], HasImports (Module' ast) a) => HasImports (Module ast) a where
     imports f mo@(Module m) =
@@ -213,6 +219,8 @@ instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
     stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
 
 -- Traversals
+
+-- | Traverses a module over its declarations, keeping the name, exposing, and imports the same.
 traverseModule ::
     forall ast ast' f.
     (_) =>
@@ -226,6 +234,23 @@ traverseModule traverseDecl =
             let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
             let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
             declarations' <- traverse traverseDecl (m' ^. declarations)
+            pure (Module' (m' ^. name) exposing' imports' declarations')
+        )
+
+traverseModuleTopologically ::
+    forall ast ast' f.
+    (_) =>
+    (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
+    Module ast ->
+    f (Module ast')
+traverseModuleTopologically traverseDecl =
+    traverseOf
+        (_Module @ast @ast' . unlocated)
+        ( \m' -> do
+            let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
+            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            let declGraph = createGraph (m' ^. declarations)
+            declarations' <- traverse traverseDecl (allEntriesTopologically declGraph) 
             pure (Module' (m' ^. name) exposing' imports' declarations')
         )
 
@@ -292,7 +317,7 @@ instance
     Pretty (Import' ast)
     where
     pretty (Import' i a q e) =
-        keyword "import" <+> moduleNameStyle  (pretty i) <> as' <> qual <+> keyword "exposing" <+> pretty e
+        keyword "import" <+> moduleNameStyle (pretty i) <> as' <> qual <+> keyword "exposing" <+> pretty e
       where
         as' = case a of
             Nothing -> ""

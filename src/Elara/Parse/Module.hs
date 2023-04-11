@@ -1,5 +1,7 @@
 module Elara.Parse.Module where
 
+import Control.Lens
+import Elara.AST.Frontend (_Declaration)
 import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import' (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Region
@@ -10,6 +12,7 @@ import Elara.Parse.Names (maybeQualified, opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
+import Print (debugColored, debugPretty)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
 module' :: HParser (Module Frontend)

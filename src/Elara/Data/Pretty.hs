@@ -1,3 +1,4 @@
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -28,6 +29,8 @@ parensIf False = identity
 
 class Pretty a where
     pretty :: a -> Doc AnsiStyle
+    default pretty :: (Show a) => a -> Doc AnsiStyle
+    pretty = pretty @Text . show
 
 instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
     pretty = PP.pretty
@@ -56,7 +59,7 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
-instance Pretty String where
+instance {-# INCOHERENT #-} Pretty String where
     pretty = pretty . toText
 
 instance {-# OVERLAPPABLE #-} (Pretty i) => Pretty [i] where

@@ -17,7 +17,7 @@ import Elara.Lexer.Reader
 import Elara.Data.Kind.Infer
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
-import Elara.ModuleGraph (ModuleGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
 import Elara.Parse
 import Elara.Parse.Stream
 import Elara.Rename (rename, runRenamer)
@@ -93,7 +93,7 @@ desugarModule m = do
 
 renameModule ::
   (Members MainMembers r, Member (Embed IO) r) =>
-  ModuleGraph (Module Desugared) ->
+  TopologicalGraph (Module Desugared) ->
   Module Desugared ->
   Sem r (Module Renamed)
 renameModule mp m = do
@@ -114,11 +114,11 @@ shuntModule m = do
       traverse_ report warnings
       justE shunted
 
-inferModules :: (Members MainMembers r) => ModuleGraph (Module Shunted) -> Sem r (ModuleGraph (Module Typed))
+inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (TopologicalGraph (Module Typed))
 inferModules modules = do
   runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
-toCore :: (Members MainMembers r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
+toCore :: (Members MainMembers r) => TopologicalGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 toCore mp m = do
   runErrorOrReport (ASTToCore.desugar mp m)
 

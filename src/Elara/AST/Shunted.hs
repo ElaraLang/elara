@@ -3,14 +3,14 @@
 
 module Elara.AST.Shunted where
 
-import Control.Lens (makeLenses, makePrisms)
+import Control.Lens (Plated, concatMapOf, cosmosOn, makeLenses, makePrisms, view, (^.))
+import Data.Data (Data)
 import Elara.AST.Name
-import Elara.AST.Region (Located (..))
+import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.VarRef
-import Elara.Data.Pretty
+import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Data.Unique (Unique)
-import Elara.Data.Unwrap (Unwrap (unwrap))
 import Prelude hiding (Op)
 
 {- | Shunted AST Type
@@ -37,10 +37,12 @@ data Expr'
     | Let (Located (Unique VarName)) Expr
     | Block (NonEmpty Expr)
     | Tuple (NonEmpty Expr)
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
+
+instance Plated Expr'
 
 newtype Expr = Expr (Located Expr')
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
 
 data Pattern'
     = VarPattern (Located (VarRef VarName))
@@ -51,10 +53,10 @@ data Pattern'
     | FloatPattern Double
     | StringPattern Text
     | CharPattern Char
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
 
 newtype Pattern = Pattern (Located Pattern')
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
 
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)
@@ -90,3 +92,19 @@ makeLenses ''DeclarationBody
 makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
+
+instance HasDependencies Declaration where
+    type Key Declaration = Qualified Name
+    key = view (_Declaration . unlocated . declaration'Name . unlocated)
+    dependencies decl = case decl ^. _Declaration . unlocated . declaration'Body . _DeclarationBody . unlocated of
+        Value e _ -> valueDependencies e
+        TypeDeclaration _ _ -> []
+
+valueDependencies :: Expr -> [Qualified Name]
+valueDependencies =
+    concatMapOf (cosmosOn (_Expr . unlocated)) names
+  where
+    names :: Expr' -> [Qualified Name]
+    names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
+    names (Constructor (Located _ e)) = [NTypeName <$> e]
+    names _ = []

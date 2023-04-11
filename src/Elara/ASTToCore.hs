@@ -11,17 +11,17 @@ import Elara.AST.Typed qualified as AST
 import Elara.Core qualified as Core
 import Elara.Core.Module qualified as Core
 
-import Control.Lens (findOf, folded, mapped, mapping, to, (^.), (^?!))
+import Control.Lens (findOf, folded, (^.), (^?!))
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.ASTToCore.Error (ASTToCoreError (..))
-import Elara.ModuleGraph (ModuleGraph)
+import Elara.Data.TopologicalGraph (TopologicalGraph)
 import Polysemy
 import Polysemy.Error
 import TODO (todo)
 
 -- | Desugar the AST into Core.
-desugar :: (Member (Error ASTToCoreError) r) => ModuleGraph (Module Typed) -> Module Typed -> Sem r Core.Module
+desugar :: (Member (Error ASTToCoreError) r) => TopologicalGraph (Module Typed) -> Module Typed -> Sem r Core.Module
 desugar path m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
     let mainFunction =
             findOf

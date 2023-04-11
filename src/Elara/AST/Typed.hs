@@ -14,7 +14,6 @@ import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
-import Prettyprinter hiding (Pretty (..))
 import Prelude hiding (Op, group)
 
 {- | Typed AST Type
@@ -147,7 +146,7 @@ instance Pretty Declaration' where
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
 prettyDB name (Value (Expr (e, t))) =
     vsep
-        [ (pretty name) <+> ":" <+> pretty t
+        [ pretty name <+> ":" <+> pretty t
         , -- , "let" <+> pretty name <+> "="
           -- , indent indentDepth (pretty e)
           "" -- add a newline

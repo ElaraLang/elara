@@ -31,7 +31,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
-import Elara.ModuleGraph (ModuleGraph, moduleFromName)
+import Elara.Data.TopologicalGraph
 import Error.Diagnose (Marker (This), Report (Err))
 import Polysemy (Sem)
 import Polysemy.Embed
@@ -104,7 +104,7 @@ data RenameState = RenameState
 
 makeLenses ''RenameState
 
-type Renamer a = Sem '[State RenameState, Error RenameError, Reader (ModuleGraph (Module Desugared)), UniqueGen] a
+type Renamer a = Sem '[State RenameState, Error RenameError, Reader (TopologicalGraph (Module Desugared)), UniqueGen] a
 
 runRenamer :: i -> Sem (State RenameState : Error e : Reader i : UniqueGen : r) a -> Sem (Embed IO : r) (Either e a)
 runRenamer mp = uniqueGenToIO . runReader mp . runError . evalState (RenameState Map.empty Map.empty Map.empty)

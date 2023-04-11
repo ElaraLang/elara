@@ -1,4 +1,3 @@
-
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -16,7 +15,7 @@ module Elara.TypeInfer.Monotype (
   RemainingAlternatives (..),
 ) where
 
-import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Pretty (Pretty (..), tupled)
 import Elara.TypeInfer.Existential (Existential)
 
 {- | A monomorphic type
@@ -121,4 +120,35 @@ data RemainingAlternatives
     VariableAlternatives Text
   deriving stock (Eq, Ord, Generic, Show)
 
-instance Pretty Monotype
+instance Pretty Monotype where
+  pretty (VariableType name) = pretty name
+  pretty (UnsolvedType existential) = pretty existential
+  pretty (Function a b) = pretty a <> " -> " <> pretty b
+  pretty (Optional a) = pretty a <> "?"
+  pretty (List a) = "[" <> pretty a <> "]"
+  pretty (Record record) = pretty record
+  pretty (Union union) = pretty union
+  pretty (Scalar scalar) = pretty scalar
+  pretty (Tuple types) = tupled (pretty <$> toList types)
+
+instance Pretty Record where
+  pretty (Fields fields remainingFields) =
+    let fields' = pretty <$> fields
+        remainingFields' = pretty remainingFields
+     in "{" <> mconcat (intersperse ", " (fields' <> [remainingFields'])) <> "}"
+
+instance Pretty RemainingFields where
+  pretty EmptyFields = ""
+  pretty (UnsolvedFields existential) = ".." <> pretty existential
+  pretty (VariableFields name) = ".." <> pretty name
+
+instance Pretty Union where
+  pretty (Alternatives alternatives remainingAlternatives) =
+    let alternatives' = pretty <$> alternatives
+        remainingAlternatives' = pretty remainingAlternatives
+     in "{" <> mconcat (intersperse ", " (alternatives' <> [remainingAlternatives'])) <> "}"
+
+instance Pretty RemainingAlternatives where
+  pretty EmptyAlternatives = ""
+  pretty (UnsolvedAlternatives existential) = ".." <> pretty existential
+  pretty (VariableAlternatives name) = ".." <> pretty name

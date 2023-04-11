@@ -49,6 +49,7 @@ library
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
       Elara.Data.Pretty.Styles
+      Elara.Data.TopologicalGraph
       Elara.Data.Unique
       Elara.Data.Unwrap
       Elara.Desugar
@@ -60,7 +61,6 @@ library
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
-      Elara.ModuleGraph
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration

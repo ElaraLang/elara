@@ -564,7 +564,6 @@ subtype _A0 _B0 = do
         -- exact same as the logic for checking if a record is a subtype of
         -- another record.
         (_A@Type.Union{alternatives = Type.Alternatives kAs0 alternatives0}, _B@Type.Union{alternatives = Type.Alternatives kBs0 alternatives1}) -> do
-        
             let mapA = Map.fromList kAs0
             let mapB = Map.fromList kBs0
 
@@ -705,7 +704,6 @@ subtype _A0 _B0 = do
                         p1
                 (_, _) -> do
                     throw (NotUnionSubtype (Type.location _A0) _A (Type.location _B0) _B)
-       
         (Type.Alias{value}, _B) -> subtype value _B
         (_A, Type.Alias{value}) -> subtype _A value
         -- Unfortunately, we need to have this wildcard match at the end,
@@ -1304,7 +1302,7 @@ infer (Expr (Located location e0)) cont = do
             _Γ <- get
 
             let n = withName' (vn ^. unlocated)
-            l <- Context.lookup n _Γ `orDie` UnboundVariable n
+            l <- Context.lookup n _Γ `orDie` UnboundVariable n _Γ
             c <- cont
             pure (l, c)
 
@@ -1313,7 +1311,7 @@ infer (Expr (Located location e0)) cont = do
             _Γ <- get
 
             let n = mkGlobal' ctorName
-            l <- Context.lookup n _Γ `orDie` UnboundConstructor n
+            l <- Context.lookup n _Γ `orDie` UnboundConstructor n _Γ
             c <- cont
             pure (l, c)
         -- →I⇒

@@ -24,13 +24,11 @@ import Data.Map qualified as Map
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Renamed qualified as AST
-import Elara.AST.Shunted qualified as AST
 import Elara.Data.Kind
 import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId, uniqueId)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
-import Print (debugColored)
 import TODO (todo)
 
 newtype InferState = InferState
@@ -82,7 +80,7 @@ inferKind tName args t = do
     pure funcKind
 
 inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => AST.Type -> Sem r ElaraKind
-inferTypeKind (AST.UnitType) = pure TypeKind
+inferTypeKind AST.UnitType = pure TypeKind
 inferTypeKind (AST.TypeVar v) = pure (VarKind (getUniqueId v)) -- no higher kinded types yet
 inferTypeKind (AST.UserDefinedType name) = lookupKind (name ^. unlocated)
 inferTypeKind (AST.FunctionType a b) = do
