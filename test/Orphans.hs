@@ -12,11 +12,6 @@ import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTyp
 instance IsString VarName where
     fromString = NormalVarName . fromString
 
-instance IsString TypeName where
-    fromString = TypeName . fromString
-
-instance IsString OpName where
-    fromString = OpName . fromString
 
 instance IsString Name where
     fromString s = case s of

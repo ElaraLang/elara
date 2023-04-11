@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module Arbitrary.Names where
 
 import Data.Set qualified as Set
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..), nameText)
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..), nameText, LowerAlphaName(..))
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 
@@ -43,7 +44,7 @@ instance Arbitrary OpText where
     arbitrary =
         OpText . toText
             <$> listOf1 (elements ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~'])
-                `suchThat` (`Set.notMember` ["@", "=", ".", "\\", "=>", "->", "<-"])
+                `suchThat` (`Set.notMember` ["@", "=", ".", "\\", "=>", "->", "<-", "|"])
                 `suchThat` (not . isPrefixOf "--")
 
 instance Arbitrary ModuleName where
@@ -64,7 +65,7 @@ instance Arbitrary name => Arbitrary (Unqualified name) where
 instance Arbitrary VarName where
     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
       where
-        arbitraryNormalVarName = NormalVarName . getAlphaText <$> arbitrary
+        arbitraryNormalVarName = NormalVarName . LowerAlphaName . getAlphaText <$> arbitrary
         arbitraryOpVarName = OperatorVarName <$> arbitrary
 
 instance Arbitrary TypeName where

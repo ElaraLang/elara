@@ -40,13 +40,13 @@ data VarName
 Since type variables can't be operators though, we don't use 'VarName' for them
 -}
 newtype LowerAlphaName = LowerAlphaName Text
-    deriving (Ord, Show, Eq, Data)
+    deriving (Ord, Show, Eq, Data, IsString)
 
 newtype TypeName = TypeName Text
-    deriving (Ord, Show, Eq, Data)
+    deriving (Ord, Show, Eq, Data, IsString)
 
 newtype OpName = OpName Text
-    deriving (Ord, Show, Eq, Data)
+    deriving (Ord, Show, Eq, Data, IsString)
 
 makePrisms ''LowerAlphaName
 makePrisms ''TypeName

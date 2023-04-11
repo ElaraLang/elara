@@ -4,7 +4,7 @@ module Arbitrary.AST where
 
 import Data.List.NonEmpty (appendList)
 import Data.Set qualified as Set
-import Elara.AST.Frontend.Unlocated as Unlocated
+import Elara.AST.Unlocated.Frontend as Unlocated
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 import Prelude hiding (Op)
