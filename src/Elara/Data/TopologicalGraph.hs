@@ -107,7 +107,7 @@ instance (Show a, Show (Key a)) => Show (TopologicalGraph a) where
             assocs' = assocs nodes
          in Show.show (firstF mnFromVertex assocs')
 
-instance (Pretty a, Pretty (Key a)) => Pretty (TopologicalGraph a) where
+instance (Pretty (Key a)) => Pretty (TopologicalGraph a) where
     pretty g =
         let gArr = g ^. moduleGraph
             nodeFromVertex' = g ^. nodeFromVertex

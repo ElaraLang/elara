@@ -120,7 +120,7 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
     let argsLoc = Infer.location <$> ctorArgs
 
     -- universally quantify the type over the type variables
-    let forall =
+    let forall' =
             foldr
                 ( \(Located sr u) acc ->
                     Infer.Forall
@@ -133,7 +133,7 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
                 ctorType
                 typeVars
     -- debugColored ("adding constructor", ctorName)
-    push (Annotation (mkGlobal' ctorName) forall)
+    push (Annotation (mkGlobal' ctorName) forall')
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)

@@ -38,6 +38,7 @@ dependencies:
 
 ghc-options:
 - -Wall
+- -W
 - -Wcompat
 # - -Weverything
 - -Werror=incomplete-patterns
@@ -52,12 +53,13 @@ ghc-options:
 - -Werror=missing-home-modules
 - -Widentities
 # - -Wmissing-export-lists
-- -Wmonomorphism-restriction
 - -fplugin=Polysemy.Plugin
 - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
 - -feager-blackholing
 - -fdefer-typed-holes
 - -fno-show-valid-hole-fits
+- -Wunused-packages
+
 
 
 default-extensions:

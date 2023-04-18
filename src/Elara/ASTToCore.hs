@@ -22,7 +22,7 @@ import TODO (todo)
 
 -- | Desugar the AST into Core.
 desugar :: (Member (Error ASTToCoreError) r) => TopologicalGraph (Module Typed) -> Module Typed -> Sem r Core.Module
-desugar path m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
+desugar _ m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
     let mainFunction =
             findOf
                 (_Module . unlocated . declarations . folded)
@@ -31,7 +31,7 @@ desugar path m | m ^. moduleName . unlocated == ModuleName ("Main" :| []) = do
     whenNothing_ mainFunction (throw (MainModuleMissingMainFunction m))
     decls <- traverse desugarDeclaration (m ^. _Module . unlocated . declarations)
     pure (Core.MainModule (m ^. moduleName . unlocated) decls)
-desugar path m = do
+desugar _ m = do
     decls <- traverse desugarDeclaration (m ^. _Module . unlocated . declarations)
     pure (Core.Module (m ^. moduleName . unlocated) decls)
 
