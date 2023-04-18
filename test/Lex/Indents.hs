@@ -18,30 +18,30 @@ letIndents = describe "Lexes indented let declarations" $ do
         [text|
         let x =
                 1|]
-            <~> "let x = { 1 }"
+            <~!~> "let x = { 1 }"
 
         [text|
         let x =
                 1
                 2|]
-            <~> "let x = { 1; 2 }"
+            <~!~> "let x = { 1; 2 }"
 
         [text|
         let x =
                 1
                 2
                 3|]
-            <~> "let x = { 1; 2; 3 }"
+            <~!~> "let x = { 1; 2; 3 }"
 
         [text|
         let x = 
             1
                     2
             3|]
-            <~> "let x = { 1 { 2 }; 3}"
+            <~!~> "let x = { 1 { 2 }; 3}"
         [text|
         let x = 
             1
             2
                 3|]
-            <~> "let x = { 1 ; 2 { 3 } }"
+            <~!~> "let x = { 1 ; 2 { 3 } }"

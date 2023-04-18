@@ -41,7 +41,7 @@ ppEq (removeInParens -> expr) =
     let
         source = showPretty $ pretty expr
         lexed = lex' source
-        parsed = parse exprParser (TokenStream (toString source) lexed)
+        parsed = parse exprParser (TokenStream (toString source) lexed 0)
         cleaned = removeInParens . (stripLocation @Frontend.Expr @Unlocated.Expr) <$> parsed
      in
         counterexample (toString source) (cleaned `shouldParseProp` expr)

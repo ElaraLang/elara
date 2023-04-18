@@ -64,9 +64,12 @@ instance Arbitrary name => Arbitrary (Unqualified name) where
 
 instance Arbitrary VarName where
     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
-      where
-        arbitraryNormalVarName = NormalVarName . LowerAlphaName . getAlphaText <$> arbitrary
-        arbitraryOpVarName = OperatorVarName <$> arbitrary
+
+arbitraryNormalVarName = NormalVarName . LowerAlphaName . getAlphaText <$> arbitrary
+
+arbitraryOpVarName = OperatorVarName <$> arbitrary
+
+
 
 instance Arbitrary TypeName where
     arbitrary = TypeName . getAlphaUpperText <$> arbitrary

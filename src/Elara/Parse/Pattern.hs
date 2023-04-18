@@ -2,12 +2,13 @@ module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
+import Elara.Parse.Indents (ignoreFollowingIndents)
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
-import Elara.Parse.Primitives (HParser, inParens, located, token_, inParens')
+import Elara.Parse.Primitives (HParser, inParens, inParens', located, token_)
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
-import HeadedMegaparsec (endHead)
 
 pattern' :: HParser Pattern
 pattern' =
@@ -33,6 +34,7 @@ listPattern :: HParser Pattern
 listPattern = locatedPattern $ do
     token_ TokenLeftBracket
     endHead
+    ignoreFollowingIndents 1
     elements <- sepEndBy pattern' (token_ TokenComma)
     token_ TokenRightBracket
     pure $ ListPattern elements

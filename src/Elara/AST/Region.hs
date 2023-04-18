@@ -88,8 +88,8 @@ generatedSourcePos :: Maybe FilePath -> SourcePos
 generatedSourcePos fp =
     SourcePos
         { sourceName = fromMaybe generatedFileName fp
-        , sourceLine = mkPos 0
-        , sourceColumn = mkPos 0
+        , sourceLine = mkPos 1
+        , sourceColumn = mkPos 1
         }
 
 generatedSourceRegion :: Maybe FilePath -> SourceRegion

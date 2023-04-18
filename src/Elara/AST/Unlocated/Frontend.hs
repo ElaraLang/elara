@@ -165,8 +165,8 @@ instance Pretty Expr where
     pretty (List l) = list (pretty <$> l)
     pretty (Match e m) = parens ("match" <+> pretty e <+> "with" <+> pretty m)
     pretty (LetIn v ps e1 e2) = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e1 <+> "in" <+> pretty e2)
-    pretty (Let v ps e) = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e)
-    pretty (Block b) = "{" <+> vsep (punctuate ";" (pretty <$> toList b)) <+> "}"
+    pretty (Let v ps e) = "let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e
+    pretty (Block b) = "{" <+> hsep (punctuate ";" (pretty <$> toList b)) <+> "}"
     pretty (InParens e) = parens (pretty e)
     pretty (Tuple t) = parens (hsep (punctuate "," (pretty <$> toList t)))
 

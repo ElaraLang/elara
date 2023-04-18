@@ -17,7 +17,7 @@ instance Arbitrary Unlocated.Pattern where
         pattern' n = if n <= 0 then nonRecursivePattern else oneof [nonRecursivePattern, recursivePattern (n `div` 2)]
         nonRecursivePattern =
             oneof
-                [ VarPattern <$> arbitrary
+                [ VarPattern <$> arbitraryNormalVarName
                 , pure WildcardPattern
                 ]
         recursivePattern n =

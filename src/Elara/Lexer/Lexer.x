@@ -105,6 +105,7 @@ tokens :-
       \}                     { simpleTok TokenRightBrace }
       \`                     { simpleTok TokenBacktick }
       \|                     { simpleTok TokenPipe }
+      $underscore            { simpleTok TokenUnderscore }
 
       -- Literals
       \-? (
