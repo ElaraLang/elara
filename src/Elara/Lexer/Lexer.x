@@ -28,11 +28,19 @@ $octit = [0-7]
 -- Identifiers
 $lower = [a-z]
 $upper = [A-Z]
-$opChar = [\! \# \$ \% \& \* \+ \. \/ \\ \< \> \= \? \@ \^ \| \- \~]
+$opCharNotDot = [\! \# \$ \% \& \* \+ \/ \\ \< \> \= \? \@ \^ \| \- \~]
+$opChar = [$opCharNotDot \.]
 $identifier = [$lower $upper $digit]
 $underscore = \_
+
 @variableIdentifer = [$lower $underscore] $identifier*
 @typeIdentifier = $upper $identifier*
+
+@opIdentifier = $opCharNotDot $opChar*  
+-- Operators are a little tricky because if we allow them to start with dots, we end up with `a Prelude.+ b`
+-- ending up being lexed as `(a Prelude) .+ b` instead of `a (Prelude.+ b)`
+-- So we have to disallow dots at the start and fix the discrepancy in the parser
+
 
 
 
@@ -91,7 +99,7 @@ tokens :-
       \@                     { simpleTok TokenAt }
       \(                     { simpleTok TokenLeftParen }
       \)                     { simpleTok TokenRightParen }
-      \[                     {  simpleTok TokenLeftBracket }
+      \[                     { simpleTok TokenLeftBracket }
       \]                     { simpleTok TokenRightBracket }
       \{                     { simpleTok TokenLeftBrace }
       \}                     { simpleTok TokenRightBrace }
@@ -118,7 +126,7 @@ tokens :-
       -- Identifiers
       @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
-      $opChar+               { parametrizedTok TokenOperatorIdentifier identity}
+      @opIdentifier         { parametrizedTok TokenOperatorIdentifier identity}
 
   
   }

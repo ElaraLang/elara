@@ -4,9 +4,10 @@ import Elara.AST.Frontend (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
-import Elara.Parse.Primitives (HParser, inParens, located, token_)
+import Elara.Parse.Primitives (HParser, inParens, located, token_, inParens')
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
+import HeadedMegaparsec (endHead)
 
 pattern' :: HParser Pattern
 pattern' =
@@ -15,7 +16,7 @@ pattern' =
         , wildcardPattern
         , listPattern
         , constructorPattern
-        , inParens pattern'
+        , inParens' pattern'
         , literalPattern
         ]
 
@@ -31,6 +32,7 @@ wildcardPattern = locatedPattern (WildcardPattern <$ token_ TokenUnderscore)
 listPattern :: HParser Pattern
 listPattern = locatedPattern $ do
     token_ TokenLeftBracket
+    endHead
     elements <- sepEndBy pattern' (token_ TokenComma)
     token_ TokenRightBracket
     pure $ ListPattern elements

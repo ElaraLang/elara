@@ -79,6 +79,8 @@ data Token
   | -- | Other
     TokenOperatorIdentifier Text
   | TokenUnderscore
+  | TokenIndent
+  | TokenDedent
   | TokenEOF
   deriving (Show, Eq, Ord)
 
@@ -134,6 +136,8 @@ tokenRepr = \case
   TokenConstructorIdentifier i -> i
   TokenOperatorIdentifier i -> i
   TokenUnderscore -> "_"
+  TokenIndent -> "<INDENT>"
+  TokenDedent -> "<DEDENT>"
   TokenEOF -> "<EOF>"
 
 unsafeTokenText :: Token -> Text

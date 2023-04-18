@@ -1,7 +1,4 @@
 import Prelude
 
-type Option a = Some a | None
-def x : Box () ()
-let x = ()
-
-let y = Some
+let a = [ 1 
+        , 2 ]

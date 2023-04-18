@@ -11,7 +11,7 @@ import Data.Text qualified as T
 import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenLeftBrace, TokenRightBrace, TokenSemicolon))
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenDedent, TokenIndent, TokenSemicolon))
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
@@ -138,7 +138,7 @@ startWhite _ str = do
     let indents@(cur :| _) = s ^. indentStack
     case indentation `compare` (cur ^. indent) of
         GT -> do
-            fakeLb <- fake TokenLeftBrace
+            fakeLb <- fake TokenIndent
             indentInfo <- mkIndentInfo indentation
             put s{_indentStack = indentInfo <| indents, _pendingTokens = fakeLb : _pendingTokens s}
             pure Nothing
@@ -147,7 +147,7 @@ startWhite _ str = do
             case span (view (indent . to (> indentation))) indents of
                 (pre, top : xs) -> do
                     -- pre is all the levels that need to be closed, top is the level that we need to match
-                    fakeClosings <- sequenceA [fake TokenRightBrace, fake TokenSemicolon]
+                    fakeClosings <- sequenceA [fake TokenDedent, fake TokenSemicolon]
                     if top ^. indent == indentation
                         then
                             put
@@ -160,11 +160,11 @@ startWhite _ str = do
             pure Nothing
         EQ -> Just <$> fake TokenSemicolon
 
--- Insert }  for any leftover unclosed indents
+-- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
     indentStack' <- use indentStack
-    fakeClosings <- sequenceA [fake TokenRightBrace]
+    fakeClosings <- sequenceA [fake TokenDedent]
     modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
     pure $ init indentStack' >>= const fakeClosings
 

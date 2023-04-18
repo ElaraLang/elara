@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
+
 module Elara.Parse.Primitives (
     Parser,
     HParser,
@@ -98,6 +99,7 @@ locatedTokens' tokenList = do
 inParens :: HParser a -> HParser a
 inParens = surroundedBy (token_ TokenLeftParen) (token_ TokenRightParen)
 
+-- | Greedy version of 'inParens', commits as soon as it sees the opening paren
 inParens' :: HParser a -> HParser a
 inParens' = surroundedBy' (token_ TokenLeftParen) (token_ TokenRightParen)
 

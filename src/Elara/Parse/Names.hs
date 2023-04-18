@@ -1,5 +1,6 @@
 module Elara.Parse.Names where
 
+import Data.Text qualified as Text
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
@@ -35,13 +36,13 @@ unqualifiedTypeName :: HParser TypeName
 unqualifiedTypeName = TypeName <$> upperVarName
 
 maybeQualified :: HParser name -> HParser (MaybeQualified name)
-maybeQualified nameParser = unqualified <|> qualified
+maybeQualified nameParser = qualified <|> unqualified
   where
     unqualified = MaybeQualified <$> nameParser <*> pure Nothing
     qualified = do
         qual <- moduleName
-        endHead
         token_ TokenDot
+        endHead
         MaybeQualified <$> nameParser <*> pure (Just qual)
 
 moduleName :: HParser ModuleName
@@ -63,6 +64,17 @@ alphaVarName =
             )
 
 opName :: HParser OpName
-opName = satisfyMap $ \case
-    TokenOperatorIdentifier i -> Just (OpName i)
-    _ -> Nothing
+opName =
+    normal <|> dots
+  where
+    normal :: HParser OpName
+    normal =
+        satisfyMap $ \case
+            TokenOperatorIdentifier i -> Just (OpName i)
+            _ -> Nothing
+
+    dots :: HParser OpName
+    -- Parses a sequence of dots as an operator name. Necessary because of how the lexer handles dots in operator names.
+    dots = do
+        ds <- some (token_ TokenDot)
+        pure $ OpName (Text.replicate (length ds) ".")

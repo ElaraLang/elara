@@ -78,7 +78,7 @@ lexFile path = do
 
 parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
 parseModule path (contents, lexemes) = do
-  let tokenStream = TokenStream contents lexemes
+  let tokenStream = TokenStream contents lexemes 0
   case parse path tokenStream of
     Left parseError -> do
       report parseError *> nothingE

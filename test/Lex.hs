@@ -13,6 +13,7 @@ import NeatInterpolation (text)
 import Relude.Unsafe (read)
 import Test.Hspec
 import Test.Hspec.QuickCheck
+import Data.Text qualified as Text
 
 spec :: Spec
 spec = do
@@ -176,7 +177,11 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
 
-    let prop_ArbOpLexes str = lexUL str <=> [TokenOperatorIdentifier str]
+    -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
+    let tokenOpRes "" = []
+        tokenOpRes str = if Text.head str == '.' then TokenDot : tokenOpRes (Text.tail str) else [TokenOperatorIdentifier str]
+    
+    let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
      in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
 
     let prop_ArbVarLexes str = lexUL str <=> [TokenVariableIdentifier str]

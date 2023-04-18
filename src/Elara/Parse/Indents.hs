@@ -7,17 +7,24 @@ import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
-import Elara.Parse.Primitives (HParser, token_)
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), token_, withPredicate)
+import Elara.Parse.Stream (TokenStream (..))
 import HeadedMegaparsec
+import Text.Megaparsec (MonadParsec (updateParserState), State (stateInput))
 
+indentToken :: HParser ()
+indentToken = token_ TokenIndent <|> token_ TokenLeftBrace
+
+dedentToken :: HParser ()
+dedentToken = token_ TokenDedent <|> token_ TokenRightBrace
 
 block :: HParser Expr -> HParser Expr
 block exprParser =
   exprParser <|> do
-    token_ TokenLeftBrace
+    indentToken
     endHead
     exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
-    token_ TokenRightBrace
+    dedentToken
     pure $ merge exprs
  where
   merge :: NonEmpty Expr -> Expr
@@ -31,3 +38,23 @@ block exprParser =
             single :| [] -> Expr single
             o -> Expr (Located region (Block $ Expr <$> o))
       asBlock expressions'
+
+ignoreFollowingIndents :: (IsParser m) => Int -> m ()
+ignoreFollowingIndents n =
+  fromParsec
+    ( updateParserState
+        ( \s ->
+            s
+              { stateInput =
+                  (stateInput s)
+                    { tokenStreamIgnoringIndents = tokenStreamIgnoringIndents (stateInput s) + n
+                    }
+              }
+        )
+    )
+
+-- | Ignores a certain number of indents
+ignoringIndent :: (IsParser m) => Int -> m b -> m b
+ignoringIndent n p = do
+  ignoreFollowingIndents n
+  p

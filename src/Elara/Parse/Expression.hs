@@ -141,6 +141,7 @@ list :: HParser Frontend.Expr
 list = locatedExpr $ do
     token_ TokenLeftBracket
     endHead
+    ignoreFollowingIndents 1
     elements <- sepEndBy exprParser (token_ TokenComma)
     token_ TokenRightBracket
     pure $ Frontend.List elements

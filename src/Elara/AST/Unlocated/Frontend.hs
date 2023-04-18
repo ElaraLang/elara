@@ -158,7 +158,7 @@ instance Pretty Expr where
     pretty Unit = "()"
     pretty (Var v) = pretty v
     pretty (Constructor c) = pretty c
-    pretty (Lambda p e) = parens ("\\" <> pretty p <+> "->" <+> pretty e)
+    pretty (Lambda ps e) = parens ("\\" <> hsep (pretty <$> ps) <+> "->" <+> pretty e)
     pretty (FunctionCall e1 e2) = parens (pretty e1 <+> pretty e2)
     pretty (If e1 e2 e3) = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)
     pretty (BinaryOperator o e1 e2) = parens (pretty e1 <+> pretty o <+> pretty e2)
@@ -182,4 +182,4 @@ instance Pretty Pattern where
 
 instance Pretty BinaryOperator where
     pretty (Op o) = pretty o
-    pretty (Infixed i) = pretty i
+    pretty (Infixed i) = "`" <> pretty i <> "`"
