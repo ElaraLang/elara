@@ -58,3 +58,4 @@ TAGS
 
 # Nix 
 .direnv
+result/
