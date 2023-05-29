@@ -30,7 +30,7 @@ $lower = [a-z]
 $upper = [A-Z]
 $opCharNotDot = [\! \# \$ \% \& \* \+ \/ \\ \< \> \= \? \@ \^ \| \- \~]
 $opChar = [$opCharNotDot \.]
-$identifier = [$lower $upper $digit]
+$identifier = [$lower $upper $digit $underscore]
 $underscore = \_
 
 @variableIdentifer = [$lower $underscore] $identifier*
