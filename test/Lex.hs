@@ -4,6 +4,7 @@ import Arbitrary.Literals
 import Arbitrary.Names
 import Common
 import Control.Lens (view)
+import Data.Text qualified as Text
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
@@ -13,7 +14,6 @@ import NeatInterpolation (text)
 import Relude.Unsafe (read)
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Data.Text qualified as Text
 
 spec :: Spec
 spec = do
@@ -66,9 +66,9 @@ literals = describe "Lexes literals" $ do
             lexUL "1e-2" <=> [TokenFloat 1e-2]
 
         it "Lexes decimal and exponential float literals" $ do
-            lexUL "123.456e0"  <=> [TokenFloat 123.456e0]
-            lexUL "123.456e1"  <=> [TokenFloat 123.456e1]
-            lexUL "123.456e2"  <=> [TokenFloat 123.456e2]
+            lexUL "123.456e0" <=> [TokenFloat 123.456e0]
+            lexUL "123.456e1" <=> [TokenFloat 123.456e1]
+            lexUL "123.456e2" <=> [TokenFloat 123.456e2]
             lexUL "123.456e+3" <=> [TokenFloat 123.456e+3]
             lexUL "123.456e-1" <=> [TokenFloat 123.456e-1]
             lexUL "123.456e-2" <=> [TokenFloat 123.456e-2]
@@ -180,7 +180,7 @@ identifiers = describe "Lexes identifiers" $ do
     -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
     let tokenOpRes "" = []
         tokenOpRes str = if Text.head str == '.' then TokenDot : tokenOpRes (Text.tail str) else [TokenOperatorIdentifier str]
-    
+
     let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
      in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
 

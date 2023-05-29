@@ -83,7 +83,7 @@ data DeclarationBody
 
 data TypeDeclaration
     = ADT (NonEmpty (TypeName, [Type]))
-    | Alias (Type)
+    | Alias Type
     deriving (Show, Eq)
 
 instance StripLocation Frontend.Expr Expr where
@@ -125,12 +125,12 @@ instance StripLocation Frontend.BinaryOperator BinaryOperator where
 
 instance StripLocation Frontend.Type Type where
     stripLocation (Frontend.TypeVar t) = TypeVar t
-    stripLocation (Frontend.FunctionType t1 t2) = FunctionType ((stripLocation t1)) ((stripLocation t2))
+    stripLocation (Frontend.FunctionType t1 t2) = FunctionType (stripLocation t1) (stripLocation t2)
     stripLocation Frontend.UnitType = UnitType
     stripLocation (Frontend.TypeConstructorApplication t1 t2) = TypeConstructorApplication (stripLocation t1) (stripLocation t2)
     stripLocation (Frontend.UserDefinedType t) = UserDefinedType (stripLocation t)
     stripLocation (Frontend.RecordType r) = RecordType (stripLocation r)
-    stripLocation (Frontend.TupleType t) = TupleType ((stripLocation t))
+    stripLocation (Frontend.TupleType t) = TupleType (stripLocation t)
 
 instance StripLocation Frontend.Declaration Declaration where
     stripLocation (Frontend.Declaration d) = stripLocation d
@@ -139,7 +139,7 @@ instance StripLocation Frontend.Declaration' Declaration where
     stripLocation (Frontend.Declaration' m n b) = Declaration (stripLocation m) (stripLocation n) (stripLocation b)
 
 instance StripLocation Frontend.DeclarationBody DeclarationBody where
-    stripLocation (Frontend.DeclarationBody d) = (stripLocation d)
+    stripLocation (Frontend.DeclarationBody d) = stripLocation d
 
 instance StripLocation Frontend.DeclarationBody' DeclarationBody where
     stripLocation (Frontend.Value e p) = Value (stripLocation e) (stripLocation p)
@@ -172,7 +172,7 @@ instance Pretty Expr where
 
 instance Pretty Pattern where
     pretty (VarPattern v) = pretty v
-    pretty (ConstructorPattern c p) = parens (pretty c <+> pretty p)
+    pretty (ConstructorPattern c p) = parens (pretty c <+> (hsep $ pretty <$> p))
     pretty (ListPattern p) = list (pretty <$> p)
     pretty WildcardPattern = "_"
     pretty (IntegerPattern i) = pretty i

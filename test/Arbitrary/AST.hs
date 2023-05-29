@@ -2,14 +2,13 @@
 
 module Arbitrary.AST where
 
+import Arbitrary.Names
 import Data.List.NonEmpty (appendList)
 import Data.Set qualified as Set
 import Elara.AST.Unlocated.Frontend as Unlocated
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 import Prelude hiding (Op)
-import Arbitrary.Names
-
 
 instance Arbitrary Unlocated.Pattern where
     arbitrary = sized pattern'

@@ -1,1 +1,1 @@
-stack build --fast --ghc-options="-fbyte-code" --exec elara
+stack build --file-watch --fast --ghc-options="-fbyte-code" --exec elara

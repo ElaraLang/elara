@@ -1,22 +1,22 @@
 module Arbitrary.Literals where
 
 import Test.QuickCheck
-import Text.Show qualified as TS (Show(..)) 
 import Text.Printf
+import Text.Show qualified as TS (Show (..))
 
 newtype IntLiteral = IntLiteral {unIntLiteral :: Text}
-  deriving (Show)
+    deriving (Show)
 
 newtype FloatLiteral = FloatLiteral {unFloatLiteral :: Text}
-  deriving (Show)
+    deriving (Show)
 
 newtype StringLiteral = StringLiteral {unStringLiteral :: Text}
 
 instance Show StringLiteral where
-  show = toString . unStringLiteral
+    show = toString . unStringLiteral
 
 newtype CharLiteral = CharLiteral {unCharLiteral :: Text}
-  deriving (Show)
+    deriving (Show)
 
 instance Arbitrary IntLiteral where
     arbitrary = oneof [intLiteral, hexLiteral, octLiteral]
@@ -43,7 +43,7 @@ instance Arbitrary FloatLiteral where
             p1 <- arbitrarySizedIntegral
             p2 <- arbitrarySizedNatural
             p3 <- arbitrarySizedIntegral
-            
+
             pure (FloatLiteral (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3))
 
         scientificFloat = do

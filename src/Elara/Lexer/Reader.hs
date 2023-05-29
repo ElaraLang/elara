@@ -15,39 +15,39 @@ import Polysemy.State
 -- how to use the state for better parse-error messages
 readToken :: LexMonad Lexeme
 readToken = do
-  s <- get
-  case s ^. pendingTokens of
-    (token : tokens) -> do
-      modify (pendingTokens .~ tokens)
-      pure token
-    [] ->
-      case alexScan (s ^. input) (s ^. lexSC) of
-        AlexEOF -> do
-          when (s ^. lexSC == stringSC) (throw (UnterminatedStringLiteral s))
-          eof <- fake TokenEOF
-          closeIndents <- cleanIndentation
-          modify (over pendingTokens (<> (closeIndents <> [eof])))
-          readToken
-        AlexError token -> error $ "Lexical error on line " <> show (token ^. position . line)
-        AlexSkip inp _ -> do
-          put s{_input = inp}
-          readToken
-        AlexToken inp n act -> do
-          let buf = s ^. input . rest
-          put s{_input = inp}
-          res <- act n (toText (take n buf))
-          maybe readToken pure res
+    s <- get
+    case s ^. pendingTokens of
+        (token : tokens) -> do
+            modify (pendingTokens .~ tokens)
+            pure token
+        [] ->
+            case alexScan (s ^. input) (s ^. lexSC) of
+                AlexEOF -> do
+                    when (s ^. lexSC == stringSC) (throw (UnterminatedStringLiteral s))
+                    eof <- fake TokenEOF
+                    closeIndents <- cleanIndentation
+                    modify (over pendingTokens (<> (closeIndents <> [eof])))
+                    readToken
+                AlexError token -> error $ "Lexical error on line " <> show (token ^. position . line)
+                AlexSkip inp _ -> do
+                    put s{_input = inp}
+                    readToken
+                AlexToken inp n act -> do
+                    let buf = s ^. input . rest
+                    put s{_input = inp}
+                    res <- act n (toText (take n buf))
+                    maybe readToken pure res
 
 readTokens :: LexMonad [Lexeme]
 readTokens = do
-  tok <- readToken
-  case tok ^. unlocated of
-    TokenEOF -> pure []
-    _ -> do
-      next <- readTokens
-      pure (tok : next)
+    tok <- readToken
+    case tok ^. unlocated of
+        TokenEOF -> pure []
+        _ -> do
+            next <- readTokens
+            pure (tok : next)
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a
 lexer cont = do
-  tok <- readToken
-  cont tok
+    tok <- readToken
+    cont tok

@@ -12,22 +12,22 @@ import Elara.Core qualified as Core
 import Elara.Data.Pretty (Pretty (pretty))
 
 data Module
-  = -- | The main module. This is guaranteed to contain a 'main' function.
-    MainModule ModuleName [Declaration]
-  | Module ModuleName [Declaration]
-  deriving (Show)
+    = -- | The main module. This is guaranteed to contain a 'main' function.
+      MainModule ModuleName [Declaration]
+    | Module ModuleName [Declaration]
+    deriving (Show)
 
 moduleName :: Lens' Module ModuleName
 moduleName = lens getter setter
- where
-  getter (MainModule n _) = n
-  getter (Module n _) = n
-  setter (MainModule _ d) n = MainModule n d
-  setter (Module _ d) n = Module n d
+  where
+    getter (MainModule n _) = n
+    getter (Module n _) = n
+    setter (MainModule _ d) n = MainModule n d
+    setter (Module _ d) n = Module n d
 
 data Declaration
-  = Value (Qualified VarName) Core.CoreExpr
-  deriving (Show)
+    = Value (Qualified VarName) Core.CoreExpr
+    deriving (Show)
 
 makePrisms ''Module
 makePrisms ''Declaration

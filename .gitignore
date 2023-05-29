@@ -54,3 +54,7 @@ TAGS
 
 # other
 .DS_Store
+
+
+# Nix 
+.direnv

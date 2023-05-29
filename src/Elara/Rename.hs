@@ -28,10 +28,10 @@ import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select (Desugared, HasModuleName (..), HasName (..), Renamed)
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.Pretty
+import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
-import Elara.Data.TopologicalGraph
 import Error.Diagnose (Marker (This), Report (Err))
 import Polysemy (Sem)
 import Polysemy.Embed

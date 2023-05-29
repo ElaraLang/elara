@@ -20,41 +20,41 @@ dedentToken = token_ TokenDedent <|> token_ TokenRightBrace
 
 block :: HParser Expr -> HParser Expr
 block exprParser =
-  exprParser <|> do
-    indentToken
-    endHead
-    exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
-    dedentToken
-    pure $ merge exprs
- where
-  merge :: NonEmpty Expr -> Expr
-  merge expressions = case expressions of
-    single :| [] -> single
-    x :| xs -> do
-      let unwrap (Expr e) = e
-      let expressions' = unwrap <$> (x :| xs)
-      let region = Region.spanningRegion' (view sourceRegion <$> expressions')
-      let asBlock = \case
-            single :| [] -> Expr single
-            o -> Expr (Located region (Block $ Expr <$> o))
-      asBlock expressions'
+    exprParser <|> do
+        indentToken
+        endHead
+        exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
+        dedentToken
+        pure $ merge exprs
+  where
+    merge :: NonEmpty Expr -> Expr
+    merge expressions = case expressions of
+        single :| [] -> single
+        x :| xs -> do
+            let unwrap (Expr e) = e
+            let expressions' = unwrap <$> (x :| xs)
+            let region = Region.spanningRegion' (view sourceRegion <$> expressions')
+            let asBlock = \case
+                    single :| [] -> Expr single
+                    o -> Expr (Located region (Block $ Expr <$> o))
+            asBlock expressions'
 
 ignoreFollowingIndents :: (IsParser m) => Int -> m ()
 ignoreFollowingIndents n =
-  fromParsec
-    ( updateParserState
-        ( \s ->
-            s
-              { stateInput =
-                  (stateInput s)
-                    { tokenStreamIgnoringIndents = tokenStreamIgnoringIndents (stateInput s) + n
+    fromParsec
+        ( updateParserState
+            ( \s ->
+                s
+                    { stateInput =
+                        (stateInput s)
+                            { tokenStreamIgnoringIndents = tokenStreamIgnoringIndents (stateInput s) + n
+                            }
                     }
-              }
+            )
         )
-    )
 
 -- | Ignores a certain number of indents
 ignoringIndent :: (IsParser m) => Int -> m b -> m b
 ignoringIndent n p = do
-  ignoreFollowingIndents n
-  p
+    ignoreFollowingIndents n
+    p

@@ -43,7 +43,7 @@ desugarDeclaration d =
                 v' <- desugarExpr v
                 let valName = (^?! _NVarName) <<$>> d ^. name
                 pure (Core.Value (valName ^. unlocated) v')
-            AST.TypeDeclaration _ _ _ -> todo
+            AST.TypeDeclaration {} -> todo
 
 pattern TypedExpr :: AST.Expr' -> AST.Expr
 pattern TypedExpr x <- AST.Expr (Located loc x, _)
@@ -51,7 +51,8 @@ pattern TypedExpr x <- AST.Expr (Located loc x, _)
 desugarExpr :: AST.Expr -> Sem r Core.CoreExpr
 desugarExpr (AST.Expr (le, ty)) = case le ^. unlocated of
     AST.Int i -> pure (Core.Lit (Core.IntLit i))
-    AST.Float i -> pure (Core.Lit (Core.FloatLit i))
+    AST.Float i ->
+        pure (Core.Lit (Core.FloatLit i))
     AST.String i -> pure (Core.Lit (Core.StringLit i))
     AST.Char i -> pure (Core.Lit (Core.CharLit i))
     AST.Unit -> error "TODO: Unit"

@@ -7,4 +7,3 @@ import Prelude hiding (gets)
 
 use' :: (Member (State s) r) => Getting a s a -> Sem r a
 use' l = gets (view l)
-

@@ -2,7 +2,7 @@ packages:
   - .
   # - ../h2jvm
 resolver:
-  compiler: ghc-9.4.4
+  compiler: ghc-9.2-7
 
 flags:
   diagnose:

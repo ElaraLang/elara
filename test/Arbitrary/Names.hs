@@ -1,10 +1,10 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Arbitrary.Names where
 
 import Data.Set qualified as Set
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..), LowerAlphaName(..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), Qualified (Qualified), TypeName (..), Unqualified (..), VarName (..))
 import Elara.Parse.Expression (reservedWords)
 import Test.QuickCheck
 
@@ -68,8 +68,6 @@ instance Arbitrary VarName where
 arbitraryNormalVarName = NormalVarName . LowerAlphaName . getAlphaText <$> arbitrary
 
 arbitraryOpVarName = OperatorVarName <$> arbitrary
-
-
 
 instance Arbitrary TypeName where
     arbitrary = TypeName . getAlphaUpperText <$> arbitrary

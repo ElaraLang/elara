@@ -19,7 +19,6 @@ lexUL = fmap (view unlocated) . lex'
 (<~>) :: Text -> Text -> Expectation
 (<~>) = shouldBe `on` lexUL
 
-
 -- | Like '<~>', but converts Indent/Dedents to LeftBrace/RightBrace
 (<~!~>) :: Text -> Text -> Expectation
 (<~!~>) = shouldBe `on` (fmap convert . lexUL)
@@ -27,4 +26,3 @@ lexUL = fmap (view unlocated) . lex'
     convert TokenIndent = TokenLeftBrace
     convert TokenDedent = TokenRightBrace
     convert t = t
- 

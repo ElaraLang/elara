@@ -1,4 +1,3 @@
 import Prelude
 
-let a = [ 1 
-        , 2 ]
+let main = println "Hello world!"

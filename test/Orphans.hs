@@ -12,7 +12,6 @@ import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTyp
 instance IsString VarName where
     fromString = NormalVarName . fromString
 
-
 instance IsString Name where
     fromString s = case s of
         "" -> error "Empty string is not a valid name"

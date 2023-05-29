@@ -2,10 +2,10 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (mapped, mapping, over, to, traverseOf, view, (^.), (^?!), _3)
+import Control.Lens (to, traverseOf, (^.), (^?!), _3)
 import Data.Traversable (for)
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName, _NTypeName)
+import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _NTypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, sourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
@@ -14,7 +14,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, unifyKinds)
-import Elara.Data.Unique (Unique, uniqueVal)
+import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -138,14 +138,7 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
--- inferKind ::
---     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
---     [Located (Unique LowerAlphaName)] ->
---     (Located Renamed.TypeDeclaration) ->
---     Sem r ElaraKind
--- inferKind [] = undefined
-
-astTypeToInferType :: (HasCallStack) => (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow
 astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
 astTypeToInferType (Located sr t@(Renamed.UserDefinedType n)) = do

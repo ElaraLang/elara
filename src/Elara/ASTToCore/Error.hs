@@ -7,10 +7,10 @@ import Elara.Error (ReportableError (report), writeReport)
 import Error.Diagnose (Report (Err))
 
 data ASTToCoreError
-  = -- | The main module is missing a main function.
-    MainModuleMissingMainFunction (Module Typed)
+    = -- | The main module is missing a main function.
+      MainModuleMissingMainFunction (Module Typed)
 
 instance ReportableError ASTToCoreError where
-  report (MainModuleMissingMainFunction mod) =
-    writeReport $
-      Err Nothing "The main module is missing a main function. The main module must contain a function called 'main' with no arguments." [] []
+    report (MainModuleMissingMainFunction mod) =
+        writeReport $
+            Err Nothing "The main module is missing a main function. The main module must contain a function called 'main' with no arguments." [] []

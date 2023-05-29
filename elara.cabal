@@ -17,7 +17,7 @@ license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    ghc ==9.4.2
+    ghc ==9.4.4
 extra-source-files:
     src/Elara/Lexer/Lexer.x
 
@@ -116,11 +116,11 @@ library
     , binary
     , bytestring
     , containers
-    , diagnose
+    , diagnose >=2.4.0
     , generic-lens
     , headed-megaparsec
     , lens
-    , megaparsec
+    , megaparsec >=9.0.0
     , mtl
     , parser-combinators
     , polysemy
@@ -156,12 +156,12 @@ executable elara
     , binary
     , bytestring
     , containers
-    , diagnose
+    , diagnose >=2.4.0
     , elara
     , generic-lens
     , headed-megaparsec
     , lens
-    , megaparsec
+    , megaparsec >=9.0.0
     , mtl
     , parser-combinators
     , polysemy
@@ -212,14 +212,14 @@ test-suite elara-test
     , binary
     , bytestring
     , containers
-    , diagnose
+    , diagnose >=2.4.0
     , elara
     , generic-lens
     , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec
     , lens
-    , megaparsec
+    , megaparsec >=9.0.0
     , mtl
     , neat-interpolation
     , parser-combinators

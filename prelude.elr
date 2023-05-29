@@ -3,3 +3,6 @@ module Prelude
 type alias Box a b = ()
 
 let id x = x
+
+
+let println x = ()

@@ -1,6 +1,6 @@
 module Prelude (
     module Relude,
-    type (~),
+    (:~:),
     (<<$),
     ($>>),
     (<<&>>),
@@ -11,7 +11,7 @@ module Prelude (
 ) where
 
 import Data.Map qualified as M
-import Data.Type.Equality (type (~))
+import Data.Type.Equality ((:~:))
 import Polysemy (Member, Sem)
 import Polysemy.State (State, get, put)
 import Relude hiding (Reader, State, Type, ask, evalState, execState, get, gets, id, identity, modify, put, runReader, runState)
