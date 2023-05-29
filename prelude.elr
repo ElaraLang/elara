@@ -5,4 +5,9 @@ type alias Box a b = ()
 let id x = x
 
 
-let println x = ()
+
+let println = elara_prim_println
+
+
+let elara_prim_println x = ()
+

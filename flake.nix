@@ -89,7 +89,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "cabal repl exe:elara" --warnings -T :main
+              ghcid -c "stack ghci" --warnings -T :main --restart=source.elr
             '';
             category = "Primary";
           };

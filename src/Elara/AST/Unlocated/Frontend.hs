@@ -172,7 +172,7 @@ instance Pretty Expr where
 
 instance Pretty Pattern where
     pretty (VarPattern v) = pretty v
-    pretty (ConstructorPattern c p) = parens (pretty c <+> (hsep $ pretty <$> p))
+    pretty (ConstructorPattern c p) = parens (pretty c <+> hsep (pretty <$> p))
     pretty (ListPattern p) = list (pretty <$> p)
     pretty WildcardPattern = "_"
     pretty (IntegerPattern i) = pretty i

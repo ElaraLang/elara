@@ -242,7 +242,7 @@ traverseModule traverseDecl =
 
 traverseModuleTopologically ::
     forall ast ast' f.
-    (_) =>
+    _ =>
     (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
     Module ast ->
     f (Module ast')
@@ -254,6 +254,23 @@ traverseModuleTopologically traverseDecl =
             let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
             let declGraph = createGraph (m' ^. declarations)
             declarations' <- traverse traverseDecl (allEntriesTopologically declGraph)
+            pure (Module' (m' ^. name) exposing' imports' declarations')
+        )
+
+traverseModuleRevTopologically ::
+    forall ast ast' f.
+    _ =>
+    (ASTDeclaration ast -> f (ASTDeclaration ast')) ->
+    Module ast ->
+    f (Module ast')
+traverseModuleRevTopologically traverseDecl =
+    traverseOf
+        (_Module @ast @ast' . unlocated)
+        ( \m' -> do
+            let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
+            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            let declGraph = createGraph (m' ^. declarations)
+            declarations' <- traverse traverseDecl (allEntriesRevTopologically declGraph)
             pure (Module' (m' ^. name) exposing' imports' declarations')
         )
 

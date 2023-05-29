@@ -74,6 +74,7 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
+      Elara.Prim
       Elara.Rename
       Elara.Shunt
       Elara.TypeInfer
