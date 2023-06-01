@@ -1,6 +1,10 @@
 cradle:
-  stack:
-    - path: "./test"
-      component: "elara:test"
-    - path: "./src"
-      component: "elara:lib"
+  cabal:
+    - path: "src"
+      component: "lib:elara"
+
+    - path: "app"
+      component: "elara:exe:elara"
+
+    - path: "test"
+      component: "elara:test:elara-test"

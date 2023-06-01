@@ -88,7 +88,7 @@ library
       Elara.Utils
       Polysemy.Lens
       Polysemy.Maybe
-      Polysemy.MTL
+      Polysemy.State.Extra
       Polysemy.Utils
       Prelude
       Print

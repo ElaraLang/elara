@@ -1,13 +1,3 @@
 module Prelude
 
-type alias Box a b = ()
-
-let id x = x
-
-
-
-let println = elara_prim_println
-
-
-let elara_prim_println x = ()
-
+let println = elaraPrimitive "println"

@@ -4,16 +4,14 @@
 {- | Compatibility instances for polysemy effects.
 Particularly useful with the lens functions that operate on @Monad[Reader/State/Writer]@
 -}
-module Polysemy.MTL where
+module Polysemy.State.Extra where
 
-import Control.Lens (Lens', set, view)
-import Control.Monad.State.Class
+import Control.Lens (Getting, Lens', set, view)
 import Polysemy
-import Polysemy.State as P (State (Get, Put), get, gets, modify', put)
+import Polysemy.State as P (State (Get, Put), get, gets, modify')
 
-instance MonadState s (Sem (State s ': r)) where
-    get = P.get
-    put = P.put
+use' :: Member (State s) r => Getting a s a -> Sem r a
+use' lens = view lens <$> P.get
 
 stateToStateViaLens ::
     Member (State bigSt) r =>

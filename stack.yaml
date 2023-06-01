@@ -99,3 +99,6 @@ extra-deps:
 - generic-lens-2.2.1.0
 - generic-lens-core-2.2.1.0
 - indexed-profunctors-0.1.1
+- colorize-haskell-1.0.1@sha256:8fc622d7dacd251269ff48610b28185c10c4e540e51a95262b631b5ed0df0c81,754
+- pcre-light-0.4.1.0@sha256:4902ef06b037fd79448c7a63a65c1a4a1bf0bbc15ea7e67e71d52ec995e18460,1868
+- data-array-byte-0.1.0.1@sha256:2ef1bd3511e82ba56f7f23cd793dd2da84338a1e7c2cbea5b151417afe3baada,1989

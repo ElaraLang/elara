@@ -95,6 +95,9 @@ generatedSourcePos fp =
 generatedSourceRegion :: Maybe FilePath -> SourceRegion
 generatedSourceRegion fp = GeneratedRegion (fromMaybe generatedFileName fp)
 
+generatedLocated :: Maybe FilePath -> a -> Located a
+generatedLocated fp = Located (generatedSourceRegion fp)
+
 sourceRegionToDiagnosePosition :: SourceRegion -> Diag.Position
 sourceRegionToDiagnosePosition (GeneratedRegion fp) =
     Diag.Position

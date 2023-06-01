@@ -7,12 +7,11 @@ module Main (
 
 import Elara.AST.Module
 import Elara.AST.Select hiding (moduleName)
-import Elara.AST.StripLocation
 import Elara.ASTToCore qualified as ASTToCore (desugar)
 import Elara.Core.Module qualified as Core
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
@@ -25,8 +24,8 @@ import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic)
-import Polysemy (Member, Members, Sem, runM, subsume_)
+import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic, printDiagnostic, defaultStyle)
+import Polysemy (Member, Members, Sem, runM, subsume_, subsume)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -34,13 +33,14 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
+import Elara.Prim (primitiveRenameState)
 import Print
 
 main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
     s <- runElara
-    putDoc (prettyDiagnostic True 4 s)
+    printDiagnostic stdout True True 4 defaultStyle s
     putStrLn ""
 
 runElara :: IO (Diagnostic (Doc AnsiStyle))
@@ -51,11 +51,10 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
     shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
     typedGraph <- inferModules shuntedGraph
     traverseGraphRevTopologically_ (\t -> printPretty t *> embed (putStrLn "")) typedGraph
+    corePath <- traverseGraph (toCore typedGraph) typedGraph
+    printPretty (allEntries corePath)
 
 type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
-
--- corePath <- traverseGraph (toCore typedGraph) typedGraph
--- printPretty (allEntries corePath)
 
 readFileString :: (Member (Embed IO) r, Members MainMembers r) => FilePath -> Sem r String
 readFileString path = do
@@ -98,7 +97,7 @@ renameModule ::
     Module Desugared ->
     Sem r (Module Renamed)
 renameModule mp m = do
-    y <- subsume_ $ runRenamer mp (rename m)
+    y <- subsume $ runRenamer primitiveRenameState mp (rename m)
     case y of
         Left err -> report err *> nothingE
         Right renamed -> justE renamed

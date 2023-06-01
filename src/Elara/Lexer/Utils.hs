@@ -4,7 +4,7 @@
 module Elara.Lexer.Utils where
 
 import Codec.Binary.UTF8.String (encodeChar)
-import Control.Lens (makeLenses, to, use, view, (^.))
+import Control.Lens (makeLenses, to, view, (^.))
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
@@ -15,8 +15,8 @@ import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenDedent, TokenIndent, 
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
-import Polysemy.MTL ()
 import Polysemy.State
+import Polysemy.State.Extra
 import Prelude hiding (span)
 
 data AlexInput = AlexInput
@@ -51,7 +51,7 @@ type LexMonad a = Sem [State ParseState, Error LexerError] a
 
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
-    pos <- use (input . position)
+    pos <- use' (input . position)
     pure (IndentInfo i pos)
 
 data LexerError
@@ -128,7 +128,7 @@ evalLexMonad fp s = run . runError . evalState (initialState fp s)
 
 fake :: Token -> LexMonad Lexeme
 fake t = do
-    fp <- use (input . filePath)
+    fp <- use' (input . filePath)
     pure (Located (GeneratedRegion fp) t)
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
@@ -163,7 +163,7 @@ startWhite _ str = do
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
-    indentStack' <- use indentStack
+    indentStack' <- use' indentStack
     fakeClosings <- sequenceA [fake TokenDedent]
     modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
     pure $ init indentStack' >>= const fakeClosings
@@ -195,10 +195,10 @@ alexGetByte ai@AlexInput{..} =
                             )
 
 getLineNo :: LexMonad Int
-getLineNo = use (input . position . line)
+getLineNo = use' (input . position . line)
 
 getColNo :: LexMonad Int
-getColNo = use (input . position . column)
+getColNo = use' (input . position . column)
 
 getPosition :: Int -> LexMonad TokPosition
 getPosition tokenLength = do
@@ -207,7 +207,7 @@ getPosition tokenLength = do
 
 createRegion :: TokPosition -> TokPosition -> LexMonad RealSourceRegion
 createRegion start end = do
-    fp <- use (input . filePath)
+    fp <- use' (input . filePath)
     pure $ SourceRegion (Just fp) start end
 
 createRegionStartingAt :: TokPosition -> LexMonad RealSourceRegion

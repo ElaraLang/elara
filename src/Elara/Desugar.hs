@@ -15,7 +15,7 @@ import Elara.Error.Codes qualified as Codes
 import Error.Diagnose (Report (Err))
 import Polysemy
 import Polysemy.Error (Error, runError, throw)
-import Polysemy.MTL ()
+import Polysemy.State.Extra
 import Polysemy.State (State, evalState)
 
 newtype DesugarError
@@ -131,7 +131,7 @@ desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse (trav
 
 completePartials :: Located ModuleName -> Desugar [Desugared.Declaration]
 completePartials mn = do
-    partials <- use partialDeclarations
+    partials <- use' partialDeclarations
     decls <-
         M.traverseWithKey
             ( \declName partial -> do
