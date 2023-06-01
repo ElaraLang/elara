@@ -166,7 +166,7 @@ inferExpression e@(Shunted.Expr le) = do
     (ty', e') <-
         infer
             e
-            (traverseOf unlocated (subsume_ . inferExpression') le)
+            (traverseOf unlocated inferExpression' le)
     ctx <- Infer.get
     pure $ Typed.Expr (e', complete ctx ty')
   where

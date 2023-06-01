@@ -36,6 +36,7 @@ import Data.Map qualified as Map
 import Elara.AST.Region
 import Elara.AST.Shunted qualified as Syntax
 import Elara.AST.VarRef
+import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError (..))
@@ -45,7 +46,6 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
-import Print
 
 -- | Type-checking state
 data Status = Status
@@ -58,7 +58,7 @@ data Status = Status
     deriving (Show)
 
 initialStatus :: Status
-initialStatus = Status{count = 0, context = []}
+initialStatus = Status{count = 0, context = primitiveTCContext}
 
 orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
@@ -1276,7 +1276,7 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
     traverse_ instantiate kAbs
 
 infer' ::
-    (HasCallStack) =>
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Sem r (Type SourceRegion)
