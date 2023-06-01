@@ -15,8 +15,8 @@ import Elara.Error.Codes qualified as Codes
 import Error.Diagnose (Report (Err))
 import Polysemy
 import Polysemy.Error (Error, runError, throw)
-import Polysemy.State.Extra
 import Polysemy.State (State, evalState)
+import Polysemy.State.Extra
 
 newtype DesugarError
     = DefWithoutLet (Located Desugared.Type)

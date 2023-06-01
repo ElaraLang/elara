@@ -112,7 +112,6 @@ instance Monoid RenameState where
 
 type Rename r = Members '[State RenameState, Error RenameError, Reader (TopologicalGraph (Module Desugared)), UniqueGen] r
 
-
 runRenamer :: RenameState -> i -> Sem (State RenameState : Error e : Reader i : UniqueGen : r) a -> Sem (Embed IO : r) (Either e a)
 runRenamer st mp = uniqueGenToIO . runReader mp . runError . evalState st
 

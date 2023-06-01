@@ -20,12 +20,13 @@ import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
+import Elara.Prim (primitiveRenameState)
 import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), prettyDiagnostic, printDiagnostic, defaultStyle)
-import Polysemy (Member, Members, Sem, runM, subsume_, subsume)
+import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, prettyDiagnostic, printDiagnostic)
+import Polysemy (Member, Members, Sem, runM, subsume, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -33,7 +34,6 @@ import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
-import Elara.Prim (primitiveRenameState)
 import Print
 
 main :: IO ()
@@ -51,8 +51,8 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
     shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
     typedGraph <- inferModules shuntedGraph
     traverseGraphRevTopologically_ (\t -> printPretty t *> embed (putStrLn "")) typedGraph
-    corePath <- traverseGraph (toCore typedGraph) typedGraph
-    printPretty (allEntries corePath)
+    -- corePath <- traverseGraph (toCore typedGraph) typedGraph
+    -- printPretty (allEntries corePath)
 
 type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
 

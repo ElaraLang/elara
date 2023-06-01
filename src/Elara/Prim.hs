@@ -11,6 +11,7 @@ import Elara.AST.VarRef (VarRef (..), VarRef' (Global))
 import Elara.Rename (RenameState (RenameState))
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
+import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
 
 fetchPrimitiveName :: VarName
@@ -38,5 +39,5 @@ primitiveTCContext :: Context SourceRegion
 primitiveTCContext =
     [ Annotation
         (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-        (Forall primRegion primRegion "a" Type (VariableType primRegion "a")) -- elaraPrimitive :: forall a. a
+        (Forall primRegion primRegion "a" Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion "a"))) -- elaraPrimitive :: forall a. String -> a
     ]

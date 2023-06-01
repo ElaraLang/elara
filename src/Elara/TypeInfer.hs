@@ -34,15 +34,13 @@ inferModule ::
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     Module Shunted ->
     Sem r (Module Typed)
-inferModule m = do
-    traverseModuleRevTopologically @Shunted @Typed inferDeclaration m
+inferModule = traverseModuleRevTopologically @Shunted @Typed inferDeclaration
 
 traverseExpr :: (Applicative f) => (Located (Qualified Name) -> Typed.Expr -> f Typed.Expr) -> Typed.Declaration -> f Typed.Declaration
 traverseExpr f =
     traverseOf
         (Typed._Declaration . unlocated . Typed._Declaration')
-        ( \decl@(_, declName, _) -> do
-            traverseOf (_3 . Typed._DeclarationBody . unlocated . Typed._Value) (f declName) decl
+        ( \decl@(_, declName, _) -> traverseOf (_3 . Typed._DeclarationBody . unlocated . Typed._Value) (f declName) decl
         )
 
 inferDeclaration ::
@@ -80,14 +78,12 @@ inferDeclaration (Shunted.Declaration ld) =
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
         case maybeExpected' of
-            Just expectedType -> do
-                push (Annotation (mkGlobal' declName) expectedType)
+            Just expectedType -> push (Annotation (mkGlobal' declName) expectedType)
             Nothing -> pass
 
         e'@(Typed.Expr (_, ty)) <- inferExpression e
 
-        whenJust maybeExpected' $ \expected' -> do
-            subtype ty expected' -- make sure the inferred type is a subtype of the expected type
+        whenJust maybeExpected' $ \expected' -> subtype ty expected' -- make sure the inferred type is a subtype of the expected type
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
     inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
@@ -152,8 +148,8 @@ astTypeToInferType (Located sr (Renamed.TypeConstructorApplication ctor arg)) = 
     arg' <- astTypeToInferType arg
 
     case ctor' of
-        Infer.Custom{..} -> pure $ Infer.Custom (location) name (typeArguments ++ [arg'])
-        Infer.Alias{..} -> pure $ Infer.Alias (location) name (typeArguments ++ [arg']) value
+        Infer.Custom{..} -> pure $ Infer.Custom location name (typeArguments ++ [arg'])
+        Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
         other -> error (showColored other)
 astTypeToInferType other = error (showColored other)
 

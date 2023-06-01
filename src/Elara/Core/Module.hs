@@ -13,34 +13,34 @@ import Elara.Data.Pretty (Pretty (pretty), (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 
 data Module
-  = -- | The main module. This is guaranteed to contain a 'main' function.
-    MainModule ModuleName [Declaration]
-  | Module ModuleName [Declaration]
-  deriving (Show)
+    = -- | The main module. This is guaranteed to contain a 'main' function.
+      MainModule ModuleName [Declaration]
+    | Module ModuleName [Declaration]
+    deriving (Show)
 
 instance HasDependencies Module where
-  type Key Module = ModuleName
-  key (MainModule n _) = n
-  key (Module n _) = n
+    type Key Module = ModuleName
+    key (MainModule n _) = n
+    key (Module n _) = n
 
 moduleName :: Lens' Module ModuleName
 moduleName = lens getter setter
- where
-  getter (MainModule n _) = n
-  getter (Module n _) = n
-  setter (MainModule _ d) n = MainModule n d
-  setter (Module _ d) n = Module n d
+  where
+    getter (MainModule n _) = n
+    getter (Module n _) = n
+    setter (MainModule _ d) n = MainModule n d
+    setter (Module _ d) n = Module n d
 
 data Declaration
-  = Value (Qualified VarName) Core.CoreExpr
-  deriving (Show)
+    = Value (Qualified VarName) Core.CoreExpr
+    deriving (Show)
 
 makePrisms ''Module
 makePrisms ''Declaration
 
 instance Pretty Module where
-  pretty (MainModule n d) = pretty n <+> "(Main)" <+> pretty d
-  pretty (Module n d) = pretty n <+> pretty d
+    pretty (MainModule n d) = pretty n <+> "(Main)" <+> pretty d
+    pretty (Module n d) = pretty n <+> pretty d
 
 instance Pretty Declaration where
-  pretty (Value n e) = pretty n <+> "=" <+> pretty e
+    pretty (Value n e) = pretty n <+> "=" <+> pretty e

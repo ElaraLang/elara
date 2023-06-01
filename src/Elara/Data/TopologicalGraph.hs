@@ -12,7 +12,6 @@ import Elara.Utils (uncurry3)
 import Relude.Extra (firstF)
 import Text.Show qualified as Show
 
-
 class (Ord (Key a)) => HasDependencies a where
     type Key a
     key :: a -> Key a

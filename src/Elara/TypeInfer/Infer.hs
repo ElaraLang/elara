@@ -220,7 +220,7 @@ wellFormedType _Γ type0 =
     type A is a subtype of type B.
 -}
 subtype ::
-    (HasCallStack) =>
+
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Type SourceRegion ->
@@ -467,7 +467,7 @@ subtype _A0 _B0 = do
                     let p0First = do
                             (_ΓR, _ΓL) <- Context.splitOnUnsolvedFields p0 _Γ0
 
-                            Monad.guard (Context.UnsolvedFields p1 `elem` _ΓR)
+                            guard (Context.UnsolvedFields p1 `elem` _ΓR)
 
                             let command =
                                     set
@@ -483,7 +483,7 @@ subtype _A0 _B0 = do
                     let p1First = do
                             (_ΓR, _ΓL) <- Context.splitOnUnsolvedFields p1 _Γ0
 
-                            Monad.guard (Context.UnsolvedFields p0 `elem` _ΓR)
+                            guard (Context.UnsolvedFields p0 `elem` _ΓR)
 
                             let command =
                                     set
@@ -1050,14 +1050,14 @@ equateFields p0 p1 = do
     let p0First = do
             (_ΓR, _ΓL) <- Context.splitOnUnsolvedFields p1 _Γ0
 
-            Monad.guard (Context.UnsolvedFields p0 `elem` _ΓL)
+            guard (Context.UnsolvedFields p0 `elem` _ΓL)
 
             pure (set (_ΓR <> (Context.SolvedFields p1 (Monotype.Fields [] (Monotype.UnsolvedFields p0)) : _ΓL)))
 
     let p1First = do
             (_ΓR, _ΓL) <- Context.splitOnUnsolvedFields p0 _Γ0
 
-            Monad.guard (Context.UnsolvedFields p1 `elem` _ΓL)
+            guard (Context.UnsolvedFields p1 `elem` _ΓL)
 
             pure (set (_ΓR <> (Context.SolvedFields p0 (Monotype.Fields [] (Monotype.UnsolvedFields p1)) : _ΓL)))
 
@@ -1168,7 +1168,7 @@ equateAlternatives p0 p1 = do
     let p0First = do
             (_ΓR, _ΓL) <- Context.splitOnUnsolvedAlternatives p1 _Γ0
 
-            Monad.guard (Context.UnsolvedAlternatives p0 `elem` _ΓL)
+            guard (Context.UnsolvedAlternatives p0 `elem` _ΓL)
 
             pure (set (_ΓR <> (Context.SolvedAlternatives p1 (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p0)) : _ΓL)))
 
@@ -1276,7 +1276,6 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
     traverse_ instantiate kAbs
 
 infer' ::
-    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Sem r (Type SourceRegion)
@@ -1290,7 +1289,7 @@ infer' e = fst <$> infer e pass
     type of A and an updated context Δ.
 -}
 infer ::
-    (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     -- | An inner computation that can use any locally scoped context (eg lambda parameters)
     Sem r a ->
@@ -1419,7 +1418,7 @@ infer (Expr (Located location e0)) cont = do
     context Δ.
 -}
 check ::
-    (HasCallStack) =>
+
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Type SourceRegion ->
@@ -1508,7 +1507,6 @@ check expr t = Lens.traverseOf_ (_Expr . unlocated) (`check'` t) expr
     input argument e, under input context Γ, producing an updated context Δ.
 -}
 inferApplication ::
-    (HasCallStack) =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Expr ->

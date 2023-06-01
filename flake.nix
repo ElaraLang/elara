@@ -89,7 +89,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "stack ghci" --warnings -T :main --restart=source.elr
+              ghcid -c "stack ghci" --warnings -T :main --restart='source.elr prelude.elr'
             '';
             category = "Primary";
           };

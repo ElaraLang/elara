@@ -86,7 +86,9 @@ inferTypeKind (AST.UserDefinedType name) = lookupKind (name ^. unlocated)
 inferTypeKind (AST.FunctionType a b) = do
     a' <- inferTypeKind (a ^. unlocated)
     b' <- inferTypeKind (b ^. unlocated)
-    pure (FunctionKind a' b')
+    unifyKinds a' TypeKind
+    unifyKinds b' TypeKind
+    pure TypeKind
 inferTypeKind (AST.TypeConstructorApplication ctor a) = do
     ctor' <- inferTypeKind (ctor ^. unlocated)
     a' <- inferTypeKind (a ^. unlocated)
