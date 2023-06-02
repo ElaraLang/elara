@@ -116,9 +116,9 @@ library
     , containers
     , diagnose >=2.4.0
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , lens
-    , h2jvm
     , megaparsec >=9.0.0
     , mtl
     , parser-combinators
@@ -158,6 +158,7 @@ executable elara
     , diagnose >=2.4.0
     , elara
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , lens
     , megaparsec >=9.0.0
@@ -214,6 +215,7 @@ test-suite elara-test
     , diagnose >=2.4.0
     , elara
     , generic-lens
+    , h2jvm
     , headed-megaparsec
     , hspec ==2.*
     , hspec-megaparsec
