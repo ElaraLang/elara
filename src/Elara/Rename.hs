@@ -3,7 +3,7 @@
 
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, (%~), (^.), (^..), _1, _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, (%=), (%~), (^.), (^..), _1, _2)
 import Data.Map qualified as Map
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Module (
@@ -305,14 +305,16 @@ renameType ::
     Bool ->
     Desugared.Type ->
     Sem r Renamed.Type
-renameType allowNewTypeVars (Desugared.TypeVar n) = do
+renameType allowNewTypeVars (Desugared.TypeVar (Located sr n)) = do
     inCtx <- lookupTypeVar n -- find the type variable in the context, if it exists
     case inCtx of
-        Just inCtx' -> pure $ Renamed.TypeVar inCtx' -- if it exists, use the unique name
+        Just inCtx' -> pure $ Renamed.TypeVar (Located sr inCtx') -- if it exists, use the unique name
         Nothing
-            | allowNewTypeVars ->
+            | allowNewTypeVars -> do
                 -- if it doesn't exist, and we're allowed to make new type variables
-                Renamed.TypeVar <$> makeUnique n
+                uniqueN <- makeUnique n -- make a new unique name
+                modify $ over typeVars $ Map.insert n uniqueN -- add it to the context
+                pure (Renamed.TypeVar $ Located sr uniqueN)
             | otherwise -> throw $ UnknownTypeVariable n
 renameType antv (Desugared.FunctionType t1 t2) = Renamed.FunctionType <$> traverseOf unlocated (renameType antv) t1 <*> traverseOf unlocated (renameType antv) t2
 renameType _ Desugared.UnitType = pure Renamed.UnitType
