@@ -7,8 +7,6 @@ module Main (
 
 import Elara.AST.Module
 import Elara.AST.Select hiding (moduleName)
-import Elara.ASTToCore qualified as ASTToCore (desugar)
-import Elara.Core.Module qualified as Core
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
@@ -51,8 +49,9 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
     shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
     typedGraph <- inferModules shuntedGraph
     traverseGraphRevTopologically_ (\t -> printPretty t *> embed (putStrLn "")) typedGraph
-    -- corePath <- traverseGraph (toCore typedGraph) typedGraph
-    -- printPretty (allEntries corePath)
+
+-- corePath <- traverseGraph (toCore typedGraph) typedGraph
+-- printPretty (allEntries corePath)
 
 type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
 
@@ -117,10 +116,6 @@ shuntModule m = do
 inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (TopologicalGraph (Module Typed))
 inferModules modules = do
     runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
-
-toCore :: (Members MainMembers r) => TopologicalGraph (Module Typed) -> Module Typed -> Sem r Core.Module
-toCore mp m = do
-    runErrorOrReport (ASTToCore.desugar mp m)
 
 loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

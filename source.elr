@@ -1,4 +1,3 @@
 import Prelude
 
-def x : a -> a
-let x y = y
+let main = println "hello world!"

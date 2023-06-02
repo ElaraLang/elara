@@ -40,11 +40,7 @@ library
       Elara.AST.Unlocated.Frontend
       Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
-      Elara.ASTToCore
-      Elara.ASTToCore.Error
       Elara.Compile
-      Elara.Core
-      Elara.Core.Module
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
