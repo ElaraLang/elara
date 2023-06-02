@@ -60,8 +60,8 @@ instance Pretty Char where
 instance Pretty a => Pretty (Maybe a) where
     pretty = maybe mempty pretty
 
--- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
---     pretty = PP.pretty
+instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
+    pretty = PP.pretty
 
 -- hack
 instance PP.Pretty (Doc AnsiStyle) where

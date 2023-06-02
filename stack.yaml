@@ -1,6 +1,10 @@
 packages:
   - .
-  # - ../h2jvm
+  
+# extra-deps:
+#   - git: git@github.com:ElaraLang/h2jvm.git
+#     commit: MASTER
+
 resolver:
   compiler: ghc-9.2-7
 

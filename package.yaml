@@ -33,7 +33,7 @@ dependencies:
   - polysemy
   - polysemy-plugin
   - mtl
-  # - h2jvm
+  - h2jvm
   - binary
 
 ghc-options:

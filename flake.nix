@@ -8,11 +8,18 @@
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     flake-root.url = "github:srid/flake-root";
     mission-control.url = "github:Platonic-Systems/mission-control";
+
+    h2jvm.url = "github:ElaraLang/h2jvm";
+
+    diagnose.url = "github:knightzmc/diagnose";
+    diagnose.flake = false;
   };
+
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
 
       systems = import inputs.systems;
+
       imports = [
         inputs.haskell-flake.flakeModule
         inputs.treefmt-nix.flakeModule
@@ -20,30 +27,22 @@
         inputs.mission-control.flakeModule
       ];
 
-      perSystem = { self', config, pkgs, ... }: {
+      perSystem = { self', system, config, pkgs, ... }: {
 
         haskellProjects.default = {
-          # basePackages = pkgs.haskell.packages.ghc94; # Use GHC 9.4.4
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          overrides = self: super: with pkgs.haskell.lib; {
-            megaparsec = self.callHackage "megaparsec" "9.3.0" { };
+          packages = {
+            h2jvm.source = inputs.h2jvm;
+            diagnose.source = inputs.diagnose;
+          };
 
-            diagnose = (dontCheck (self.callCabal2nix "diagnose"
-              (
-                pkgs.fetchgit {
-                  url = "https://github.com/knightzmc/diagnose";
-                  sha256 = "sha256-RqwnKus+Xga5nnV1g0lCQfqRg8zbN/IcDBZ+Sb1Bocs=";
-                  rev = "7e8a1fe2bc3a60fdec43e96aab2a27fa1e3eb4d5";
-                })
-              { })).overrideAttrs
-              (old: {
-                buildInputs = old.buildInputs ++ [
-                  self.megaparsec
-                ];
-                configureFlags = [ "-f megaparsec-compat" ]; # the flag configuration in stack.yaml seems to be ignoed
-              });
+          settings = {
+            diagnose = {
+              extraBuildDepends = [ pkgs.haskellPackages.megaparsec ];
+              extraConfigureFlags = [ "-f megaparsec-compat" ];
+            };
           };
 
           devShell = {
@@ -64,7 +63,7 @@
           programs.ormolu.enable = true;
           programs.nixpkgs-fmt.enable = true;
           programs.cabal-fmt.enable = false;
-          programs.hlint.enable = true;
+          programs.hlint.enable = false;
 
           programs.ormolu.package = pkgs.haskellPackages.fourmolu;
 
@@ -97,7 +96,7 @@
 
 
         packages.default = self'.packages.elara;
-        apps.default = self'.apps.elara;
+
 
         devShells.default = pkgs.mkShell {
           inputsFrom = [

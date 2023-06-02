@@ -49,6 +49,7 @@ library
       Elara.Data.Unique
       Elara.Data.Unwrap
       Elara.Desugar
+      Elara.Emit
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
@@ -117,6 +118,7 @@ library
     , generic-lens
     , headed-megaparsec
     , lens
+    , h2jvm
     , megaparsec >=9.0.0
     , mtl
     , parser-combinators
