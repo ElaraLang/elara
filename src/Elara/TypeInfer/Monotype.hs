@@ -60,11 +60,11 @@ data Scalar
       -- >>> pretty Natural
       -- Natural
       Natural
-    | -- | Text type
+    | -- | String type
       --
-      -- >>> pretty Text
-      -- Text
-      Text
+      -- >>> pretty String
+      -- String
+      String
     | -- | Char type
       --
       -- >>> pretty Char
@@ -82,7 +82,7 @@ instance Pretty Scalar where
     pretty Real = "Real"
     pretty Natural = "Natural"
     pretty Integer = "Integer"
-    pretty Text = "Text"
+    pretty String = "String"
     pretty Char = "Char"
     pretty Unit = "()"
 

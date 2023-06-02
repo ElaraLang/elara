@@ -54,8 +54,8 @@ primitiveTCContext :: Context SourceRegion
 primitiveTCContext =
     [ Annotation
         (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-        (Forall primRegion primRegion "a" Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion "a"))) -- elaraPrimitive :: forall a. String -> a
+        (Forall primRegion primRegion "a" Type (Function primRegion (Scalar primRegion String) (VariableType primRegion "a"))) -- elaraPrimitive :: forall a. String -> a
     , Annotation
         (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
-        (Scalar primRegion Text)
+        (Scalar primRegion String)
     ]

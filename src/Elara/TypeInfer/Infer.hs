@@ -1397,7 +1397,7 @@ infer (Expr (Located location e0)) cont = do
         Syntax.Int _ -> do
             (Type.Scalar{scalar = Monotype.Integer, ..},) <$> cont
         Syntax.String _ -> do
-            (Type.Scalar{scalar = Monotype.Text, ..},) <$> cont
+            (Type.Scalar{scalar = Monotype.String, ..},) <$> cont
         Syntax.Char _ -> do
             (Type.Scalar{scalar = Monotype.Char, ..},) <$> cont
         Syntax.Unit -> do
