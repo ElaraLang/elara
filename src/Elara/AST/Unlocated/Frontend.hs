@@ -124,7 +124,7 @@ instance StripLocation Frontend.BinaryOperator BinaryOperator where
         Frontend.Infixed i -> Infixed (stripLocation i)
 
 instance StripLocation Frontend.Type Type where
-    stripLocation (Frontend.TypeVar t) = TypeVar t
+    stripLocation (Frontend.TypeVar t) = TypeVar (stripLocation t)
     stripLocation (Frontend.FunctionType t1 t2) = FunctionType (stripLocation t1) (stripLocation t2)
     stripLocation Frontend.UnitType = UnitType
     stripLocation (Frontend.TypeConstructorApplication t1 t2) = TypeConstructorApplication (stripLocation t1) (stripLocation t2)

@@ -25,7 +25,7 @@ import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Renamed qualified as AST
 import Elara.Data.Kind
-import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId, uniqueId)
+import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
@@ -81,7 +81,7 @@ inferKind tName args t = do
 
 inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => AST.Type -> Sem r ElaraKind
 inferTypeKind AST.UnitType = pure TypeKind
-inferTypeKind (AST.TypeVar v) = pure (VarKind (getUniqueId v)) -- no higher kinded types yet
+inferTypeKind (AST.TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet
 inferTypeKind (AST.UserDefinedType name) = lookupKind (name ^. unlocated)
 inferTypeKind (AST.FunctionType a b) = do
     a' <- inferTypeKind (a ^. unlocated)

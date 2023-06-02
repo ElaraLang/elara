@@ -27,13 +27,41 @@ parensIf :: Bool -> Doc ann -> Doc ann
 parensIf True = parens
 parensIf False = identity
 
+listToText :: (Pretty a) => [a] -> Doc AnsiStyle
+listToText elements =
+    vsep (fmap prettyEntry elements)
+  where
+    prettyEntry entry = "• " <> align (pretty entry)
+
 class Pretty a where
     pretty :: a -> Doc AnsiStyle
     default pretty :: (Show a) => a -> Doc AnsiStyle
     pretty = pretty @Text . show
 
-instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
+instance Pretty Text where
     pretty = PP.pretty
+
+instance Pretty Int where
+    pretty = PP.pretty
+
+instance Pretty Integer where
+    pretty = PP.pretty
+
+instance Pretty Double where
+    pretty = PP.pretty
+
+instance Pretty Float where
+    pretty = PP.pretty
+
+instance Pretty Char where
+    pretty = PP.pretty
+
+
+instance Pretty a => Pretty (Maybe a) where
+    pretty = maybe mempty pretty
+
+-- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
+--     pretty = PP.pretty
 
 -- hack
 instance PP.Pretty (Doc AnsiStyle) where
@@ -53,11 +81,6 @@ escapeChar c = case c of
     '"' -> "\\\""
     _ -> fromString [c]
 
-listToText :: (Pretty a) => [a] -> Doc AnsiStyle
-listToText elements =
-    vsep (fmap prettyEntry elements)
-  where
-    prettyEntry entry = "• " <> align (pretty entry)
 
 instance {-# INCOHERENT #-} Pretty String where
     pretty = pretty . toText

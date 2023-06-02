@@ -55,7 +55,7 @@ newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq)
 
 data Type
-    = TypeVar LowerAlphaName
+    = TypeVar (Located LowerAlphaName)
     | FunctionType (Located Type) (Located Type)
     | UnitType
     | TypeConstructorApplication (Located Type) (Located Type)

@@ -61,7 +61,7 @@ typeTerm =
         ]
 
 typeVar :: HParser Type
-typeVar = TypeVar <$> alphaVarName
+typeVar = TypeVar <$> located alphaVarName
 
 unit :: HParser Type
 unit = UnitType <$ (token_ TokenLeftParen *> token_ TokenRightParen)

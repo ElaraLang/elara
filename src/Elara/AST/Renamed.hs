@@ -2,7 +2,8 @@
 
 module Elara.AST.Renamed where
 
-import Control.Lens (makeLenses, makePrisms)
+import Control.Lens (Plated, makeLenses, makePrisms)
+import Data.Data (Data)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located)
 import Elara.AST.VarRef
@@ -59,14 +60,16 @@ newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
     deriving (Show, Eq, Ord)
 
 data Type
-    = TypeVar (Unique LowerAlphaName)
+    = TypeVar (Located (Unique LowerAlphaName))
     | FunctionType (Located Type) (Located Type)
     | UnitType
     | TypeConstructorApplication (Located Type) (Located Type)
     | UserDefinedType (Located (Qualified TypeName))
     | RecordType (NonEmpty (Located VarName, Located Type))
     | TupleType (NonEmpty (Located Type))
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
+
+instance Plated Type
 
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)

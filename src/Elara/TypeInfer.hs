@@ -2,10 +2,11 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (to, traverseOf, (^.), (^?!), _3)
+import Control.Lens (concatMapOf, cosmosOn, to, traverseOf, view, (^.), (^?!), _3)
+import Data.Containers.ListUtils (nubOrdOn)
 import Data.Traversable (for)
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _NTypeName)
+import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName, _NTypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, generatedSourceRegionFrom, sourceRegion, unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
@@ -14,7 +15,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, unifyKinds)
-import Elara.Data.Unique (Unique)
+import Elara.Data.Unique (Unique, uniqueToText, uniqueVal)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -22,6 +23,7 @@ import Elara.TypeInfer.Error (TypeInferenceError (KindInferError, UserDefinedTyp
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
+import Elara.TypeInfer.Type ()
 import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
@@ -73,7 +75,7 @@ inferDeclaration (Shunted.Declaration ld) =
             \expected' -> do
                 kind <- mapError KindInferError (inferTypeKind (expected' ^. unlocated))
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
-                astTypeToInferType expected'
+                astTypeToInferPolyType expected'
 
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
@@ -81,9 +83,8 @@ inferDeclaration (Shunted.Declaration ld) =
             Just expectedType -> push (Annotation (mkGlobal' declName) expectedType)
             Nothing -> pass
 
-        e'@(Typed.Expr (_, ty)) <- inferExpression e
+        e'@(Typed.Expr (_, ty)) <- inferExpression e maybeExpected'
 
-        whenJust maybeExpected' $ \expected' -> subtype ty expected' -- make sure the inferred type is a subtype of the expected type
         push (Annotation (mkGlobal' declName) ty)
         pure $ Typed.Value e'
     inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
@@ -133,37 +134,63 @@ addConstructorToContext typeVars ctorName ctorArgs adtType = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
-astTypeToInferType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
-astTypeToInferType (Located sr (Renamed.TypeVar l)) = pure (Infer.VariableType sr (showPretty l)) -- todo: make this not rely on prettyShow
-astTypeToInferType (Located sr Renamed.UnitType) = pure (Infer.Scalar sr Mono.Unit)
-astTypeToInferType (Located sr t@(Renamed.UserDefinedType n)) = do
-    ctx <- Infer.get
-    case Context.lookup (mkGlobal' n) ctx of
-        Just ty -> pure ty
-        Nothing -> throw (UserDefinedTypeNotInContext sr t ctx)
-astTypeToInferType (Located sr (Renamed.FunctionType a b)) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
-astTypeToInferType (Located sr (Renamed.TupleType ts)) = Infer.Tuple sr <$> traverse astTypeToInferType ts
-astTypeToInferType (Located sr (Renamed.TypeConstructorApplication ctor arg)) = do
-    ctor' <- astTypeToInferType ctor
-    arg' <- astTypeToInferType arg
+freeTypeVars :: Located Renamed.Type -> [Located (Unique LowerAlphaName)]
+freeTypeVars =
+    nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
+        . concatMapOf (cosmosOn unlocated) names
+  where
+    names :: Renamed.Type -> [Located (Unique LowerAlphaName)]
+    names = \case
+        Renamed.TypeVar l -> [l]
+        _ -> [] -- cosmos takes care of the recursion :D
 
-    case ctor' of
-        Infer.Custom{..} -> pure $ Infer.Custom location name (typeArguments ++ [arg'])
-        Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
-        other -> error (showColored other)
-astTypeToInferType other = error (showColored other)
+-- | Like 'astTypeToInferType' but universally quantifies over the free type variables
+astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
+  where
+    universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
+    universallyQuantify [] x = x
+    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fullTypeVarName u) Domain.Type (universallyQuantify us t)
+
+fullTypeVarName :: Unique LowerAlphaName -> Text
+fullTypeVarName = uniqueToText (^. _LowerAlphaName)
+
+astTypeToInferType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType (Located sr ut) = astTypeToInferType' ut
+  where
+    astTypeToInferType' ((Renamed.TypeVar l)) = pure (Infer.VariableType sr (l ^. unlocated . to fullTypeVarName)) -- todo: make this not rely on prettyShow
+    astTypeToInferType' Renamed.UnitType = pure (Infer.Scalar sr Mono.Unit)
+    astTypeToInferType' t@(Renamed.UserDefinedType n) = do
+        ctx <- Infer.get
+        case Context.lookup (mkGlobal' n) ctx of
+            Just ty -> pure ty
+            Nothing -> throw (UserDefinedTypeNotInContext sr t ctx)
+    astTypeToInferType' ((Renamed.FunctionType a b)) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
+    astTypeToInferType' ((Renamed.TupleType ts)) = Infer.Tuple sr <$> traverse astTypeToInferType ts
+    astTypeToInferType' ((Renamed.TypeConstructorApplication ctor arg)) = do
+        ctor' <- astTypeToInferType ctor
+        arg' <- astTypeToInferType arg
+
+        case ctor' of
+            Infer.Custom{..} -> pure $ Infer.Custom location name (typeArguments ++ [arg'])
+            Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
+            other -> error (showColored other)
+    astTypeToInferType' other = error (showColored other)
 
 inferExpression ::
     forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
     Shunted.Expr ->
+    Maybe (Infer.Type SourceRegion) ->
     Sem r Typed.Expr
-inferExpression e@(Shunted.Expr le) = do
+inferExpression e@(Shunted.Expr le) expected = do
     (ty', e') <-
         infer
             e
             (traverseOf unlocated inferExpression' le)
     ctx <- Infer.get
+    whenJust expected (check e) -- check that the inferred type is a subtype of the expected type
+    -- TODO: this is pretty bad for performance, every expression has to be checked twice. However just doing `subtype expected ty'` does not seem to work
     pure $ Typed.Expr (e', complete ctx ty')
   where
     inferExpression' :: Shunted.Expr' -> Sem r Typed.Expr'
@@ -175,31 +202,31 @@ inferExpression e@(Shunted.Expr le) = do
     inferExpression' (Shunted.Var v) = pure (Typed.Var v)
     inferExpression' (Shunted.Constructor c) = pure (Typed.Constructor c)
     inferExpression' (Shunted.Lambda v e) = do
-        e' <- inferExpression e
+        e' <- inferExpression e Nothing
         pure $ Typed.Lambda v e'
     inferExpression' (Shunted.FunctionCall e1 e2) = do
-        e1' <- inferExpression e1
-        e2' <- inferExpression e2
+        e1' <- inferExpression e1 Nothing
+        e2' <- inferExpression e2 Nothing
         pure $ Typed.FunctionCall e1' e2'
     inferExpression' (Shunted.If e1 e2 e3) = do
-        e1' <- inferExpression e1
-        e2' <- inferExpression e2
-        e3' <- inferExpression e3
+        e1' <- inferExpression e1 Nothing
+        e2' <- inferExpression e2 Nothing
+        e3' <- inferExpression e3 Nothing
         pure $ Typed.If e1' e2' e3'
     inferExpression' (Shunted.List es) = do
-        es' <- traverse inferExpression es
+        es' <- traverse (`inferExpression` Nothing) es
         pure $ Typed.List es'
     inferExpression' (Shunted.Match e ps) = todo
     inferExpression' (Shunted.LetIn n val body) = do
-        val' <- inferExpression val
-        body' <- inferExpression body
+        val' <- inferExpression val Nothing
+        body' <- inferExpression body Nothing
         pure $ Typed.LetIn n val' body'
     inferExpression' (Shunted.Let n val) = do
-        val' <- inferExpression val
+        val' <- inferExpression val Nothing
         pure $ Typed.Let n val'
     inferExpression' (Shunted.Block es) = do
-        es' <- traverse inferExpression es
+        es' <- traverse (`inferExpression` Nothing) es
         pure $ Typed.Block es'
     inferExpression' (Shunted.Tuple ts) = do
-        ts' <- traverse inferExpression ts
+        ts' <- traverse (`inferExpression` Nothing) ts
         pure $ Typed.Tuple ts'

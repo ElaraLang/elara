@@ -58,7 +58,7 @@ data Status = Status
     deriving (Show)
 
 initialStatus :: Status
-initialStatus = Status{count = 0, context = primitiveTCContext}
+initialStatus = Status{count = 0, context = []}
 
 orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
@@ -145,7 +145,7 @@ wellFormedType _Γ type0 =
         -- UvarWF
         Type.VariableType{..}
             | Context.Variable Domain.Type name `elem` _Γ -> pass
-            | otherwise -> throw (UnboundTypeVariable location name)
+            | otherwise -> throw (UnboundTypeVariable location name _Γ)
         -- ArrowWF
         Type.Function{..} -> do
             wellFormedType _Γ input
@@ -220,7 +220,6 @@ wellFormedType _Γ type0 =
     type A is a subtype of type B.
 -}
 subtype ::
-
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Type SourceRegion ->
@@ -1418,7 +1417,6 @@ infer (Expr (Located location e0)) cont = do
     context Δ.
 -}
 check ::
-
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Type SourceRegion ->
