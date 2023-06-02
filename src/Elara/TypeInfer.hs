@@ -191,7 +191,11 @@ inferExpression e@(Shunted.Expr le) expected = do
     ctx <- Infer.get
     whenJust expected (check e) -- check that the inferred type is a subtype of the expected type
     -- TODO: this is pretty bad for performance, every expression has to be checked twice. However just doing `subtype expected ty'` does not seem to work
-    pure $ Typed.Expr (e', complete ctx ty')
+    let completedType = complete ctx (fromMaybe ty' expected)
+    {- We set the type of the expression to the expected type if it was given, otherwise we use the inferred type
+    This avoids weird behaviour of a value's inferred type being more general than the actually specified one -}
+
+    pure $ Typed.Expr (e', completedType)
   where
     inferExpression' :: Shunted.Expr' -> Sem r Typed.Expr'
     inferExpression' (Shunted.Int l) = pure $ Typed.Int l

@@ -58,7 +58,7 @@ data Status = Status
     deriving (Show)
 
 initialStatus :: Status
-initialStatus = Status{count = 0, context = []}
+initialStatus = Status{count = 0, context = primitiveTCContext}
 
 orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x

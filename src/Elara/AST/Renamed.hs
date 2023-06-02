@@ -5,8 +5,9 @@ module Elara.AST.Renamed where
 import Control.Lens (Plated, makeLenses, makePrisms)
 import Data.Data (Data)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name, OpName, Qualified, TypeName, VarName)
-import Elara.AST.Region (Located)
+import Elara.AST.Region (Located (Located))
 import Elara.AST.VarRef
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Prelude hiding (Op)
 
@@ -70,6 +71,18 @@ data Type
     deriving (Show, Eq, Data)
 
 instance Plated Type
+
+instance Pretty Type where
+    pretty = \case
+        TypeVar (Located _ name) -> pretty name
+        FunctionType a b -> pretty a <+> "->" <+> pretty b
+        UnitType -> "()"
+        TypeConstructorApplication a b -> pretty a <+> pretty b
+        UserDefinedType (Located _ name) -> pretty name
+        RecordType fields -> "{" <+> prettyFields fields <+> "}"
+        TupleType fields -> tupled (map pretty (toList fields))
+      where
+        prettyFields = hsep . punctuate "," . map (\(Located _ name, Located _ value) -> pretty name <+> ":" <+> pretty value) . toList
 
 newtype Declaration = Declaration (Located Declaration')
     deriving (Show, Eq)

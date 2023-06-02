@@ -1,4 +1,5 @@
 module Prelude
 
 
+def println : String -> ()
 let println = elaraPrimitive "println"

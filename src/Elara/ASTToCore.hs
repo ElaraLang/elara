@@ -5,7 +5,7 @@ module Elara.ASTToCore where
 
 import Elara.AST.Module
 
-import Elara.AST.Name (LowerAlphaName (..), ModuleName (..), Name (NVarName), ToName (toName), VarName (..), unqualified, _NVarName)
+import Elara.AST.Name (LowerAlphaName (..), ModuleName (..), Name (NVarName), VarName (..), unqualified, _NVarName)
 import Elara.AST.Select (Typed, moduleName, name)
 import Elara.AST.Typed qualified as AST
 import Elara.TypeInfer.Type qualified as ASTTy
@@ -20,7 +20,7 @@ import Elara.ASTToCore.Error (ASTToCoreError (..))
 import Elara.Data.TopologicalGraph (TopologicalGraph)
 import Polysemy
 import Polysemy.Error
-import Print (debugColored, showPretty)
+import Print (showPretty)
 import TODO (todo)
 
 -- | Desugar the AST into Core.

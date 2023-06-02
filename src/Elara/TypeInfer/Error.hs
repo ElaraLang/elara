@@ -53,7 +53,7 @@ data TypeInferenceError
     RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
   | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
   | --
-    UserDefinedTypeNotInContext SourceRegion (AST.Type) (Context SourceRegion)
+    UserDefinedTypeNotInContext SourceRegion AST.Type (Context SourceRegion)
   | KindInferError KindInferError
   deriving (Eq, Show)
 
@@ -121,6 +121,19 @@ instance ReportableError TypeInferenceError where
             , listToText _Γ
             ]
         )
-        [(sourceRegionToDiagnosePosition location, Where "Bound here")]
+        [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
+        []
+  report (UserDefinedTypeNotInContext location a _Γ) =
+    writeReport $
+      Err
+        Nothing
+        ( vsep
+            [ "Type error: The following type is not in the current context:"
+            , pretty a
+            , "The following types are bound in the current context:"
+            , listToText _Γ
+            ]
+        )
+        [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
         []
   report e = writeReport $ Err Nothing (showColored e) [] []

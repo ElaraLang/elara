@@ -26,6 +26,7 @@ import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Renamed qualified as AST
 import Elara.Data.Kind
 import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId)
+import Elara.Prim (primKindCheckContext)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
@@ -38,7 +39,7 @@ newtype InferState = InferState
 initialInferState :: InferState
 initialInferState =
     InferState
-        { kinds = Map.empty
+        { kinds = primKindCheckContext
         }
 
 data KindInferError
