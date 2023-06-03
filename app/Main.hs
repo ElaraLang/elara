@@ -33,6 +33,8 @@ import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
 import Print
+import Elara.Emit
+import JVM.Data.JVMVersion
 
 main :: IO ()
 main = do
@@ -49,6 +51,8 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
     shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
     typedGraph <- inferModules shuntedGraph
     traverseGraphRevTopologically_ (\t -> printPretty t *> embed (putStrLn "")) typedGraph
+    classes <- (runReader java8 (emitGraph typedGraph))
+    printColored classes
 
 -- corePath <- traverseGraph (toCore typedGraph) typedGraph
 -- printPretty (allEntries corePath)
