@@ -1,5 +1,5 @@
 name: elara
-version: '0.0.0.0'
+version: "0.0.0.0"
 synopsis: See README for more info
 description: See README for more info
 author: Alexander Wood
@@ -11,8 +11,7 @@ tested-with: ghc ==9.4.4
 language: GHC2021
 
 extra-source-files:
-- src/Elara/Lexer/Lexer.x
-
+  - src/Elara/Lexer/Lexer.x
 
 dependencies:
   - base-noprelude
@@ -35,60 +34,58 @@ dependencies:
   - mtl
   - h2jvm
   - binary
+  - directory
+  - filepath
 
 ghc-options:
-- -Wall
-- -W
-- -Wcompat
-# - -Weverything
-- -Werror=incomplete-patterns
-- -Werror=incomplete-uni-patterns
-- -Wredundant-constraints
-- -Wunused-imports
-- -Wunused-foralls
-- -Wmissing-fields
-- -Winaccessible-code
-- -Wincomplete-record-updates
-- -Wpartial-fields
-- -Werror=missing-home-modules
-- -Widentities
-# - -Wmissing-export-lists
-- -fplugin=Polysemy.Plugin
-- -optP-Wno-nonportable-include-path # Fix annoying error on macOS
-- -feager-blackholing
-- -fdefer-typed-holes
-- -fno-show-valid-hole-fits
-- -Wunused-packages
-
-
+  - -Wall
+  - -W
+  - -Wcompat
+  # - -Weverything
+  - -Werror=incomplete-patterns
+  - -Werror=incomplete-uni-patterns
+  - -Wredundant-constraints
+  - -Wunused-imports
+  - -Wunused-foralls
+  - -Wmissing-fields
+  - -Winaccessible-code
+  - -Wincomplete-record-updates
+  - -Wpartial-fields
+  - -Werror=missing-home-modules
+  - -Widentities
+  # - -Wmissing-export-lists
+  - -fplugin=Polysemy.Plugin
+  - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
+  - -feager-blackholing
+  - -fdefer-typed-holes
+  # - -fno-show-valid-hole-fits
+  - -Wunused-packages
 
 default-extensions:
-- OverloadedStrings
-- OverloadedRecordDot
-- TypeFamilies
-- LambdaCase
-- ImportQualifiedPost
-- DeriveDataTypeable
-- DataKinds
-- DeriveFunctor
-- TypeApplications
-- PartialTypeSignatures
+  - OverloadedStrings
+  - OverloadedRecordDot
+  - TypeFamilies
+  - LambdaCase
+  - ImportQualifiedPost
+  - DeriveDataTypeable
+  - DataKinds
+  - DeriveFunctor
+  - TypeApplications
+  - PartialTypeSignatures
 
 library:
   source-dirs: src
   build-tools:
-  - alex
-
+    - alex
 
 executables:
   elara:
     main: Main.hs
     source-dirs: app
     ghc-options:
-    - -threaded
+      - -threaded
     dependencies:
-    - elara
-
+      - elara
 
 tests:
   elara-test:
@@ -96,10 +93,10 @@ tests:
     main: Spec.hs
     source-dirs: test
     default-extensions:
-    - QuasiQuotes
-    ghc-options: 
-    - -threaded
-    - -O0
+      - QuasiQuotes
+    ghc-options:
+      - -threaded
+      - -O0
     dependencies:
       - elara
       - neat-interpolation

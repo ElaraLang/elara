@@ -74,7 +74,7 @@
             description = "Start Hoogle server for project dependencies";
             exec = ''
               echo http://127.0.0.1:8888
-              hoogle serve -p 8888 --local
+              stack hoogle -- serve -p 8888 --local
             '';
             category = "Dev Tools";
           };

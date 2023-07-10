@@ -1,5 +1,4 @@
 module Prelude
 
-
-def println : String -> ()
+def println : String -> IO ()
 let println = elaraPrimitive "println"

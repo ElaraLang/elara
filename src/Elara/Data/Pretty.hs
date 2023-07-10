@@ -56,7 +56,6 @@ instance Pretty Float where
 instance Pretty Char where
     pretty = PP.pretty
 
-
 instance Pretty a => Pretty (Maybe a) where
     pretty = maybe mempty pretty
 
@@ -80,7 +79,6 @@ escapeChar c = case c of
     '\'' -> "\\'"
     '"' -> "\\\""
     _ -> fromString [c]
-
 
 instance {-# INCOHERENT #-} Pretty String where
     pretty = pretty . toText

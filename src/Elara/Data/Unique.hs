@@ -88,7 +88,6 @@ makeUnique a = Unique a <$> newUniqueNum
 uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i
 
-
 instance (Pretty a) => Pretty (Unique a) where
     pretty (Unique a i) = pretty a <> pretty i
 

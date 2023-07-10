@@ -29,6 +29,7 @@ library
   exposed-modules:
       Elara.AST.Desugared
       Elara.AST.Frontend
+      Elara.AST.Lenses
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Region
@@ -105,7 +106,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -Wunused-packages
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages
   build-tools:
       alex
   build-depends:
@@ -115,6 +116,8 @@ library
     , bytestring
     , containers
     , diagnose >=2.4.0
+    , directory
+    , filepath
     , generic-lens
     , h2jvm
     , headed-megaparsec
@@ -148,7 +151,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -Wunused-packages -threaded
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -threaded
   build-depends:
       array
     , base-noprelude
@@ -156,7 +159,9 @@ executable elara
     , bytestring
     , containers
     , diagnose >=2.4.0
+    , directory
     , elara
+    , filepath
     , generic-lens
     , h2jvm
     , headed-megaparsec
@@ -203,7 +208,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -Wunused-packages -threaded -O0
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -threaded -O0
   build-depends:
       HUnit
     , QuickCheck
@@ -213,7 +218,9 @@ test-suite elara-test
     , bytestring
     , containers
     , diagnose >=2.4.0
+    , directory
     , elara
+    , filepath
     , generic-lens
     , h2jvm
     , headed-megaparsec
