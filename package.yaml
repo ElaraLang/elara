@@ -60,6 +60,7 @@ ghc-options:
   - -fdefer-typed-holes
   # - -fno-show-valid-hole-fits
   - -Wunused-packages
+  - -O2
 
 default-extensions:
   - OverloadedStrings
