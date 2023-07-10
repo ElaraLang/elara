@@ -8,12 +8,11 @@ where
 
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (writeBinary))
-import Data.ByteString.Lazy qualified as BS
 import Elara.AST.Module
 import Elara.AST.Select hiding (moduleName)
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically)
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Emit
 import Elara.Error
@@ -28,7 +27,7 @@ import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, prettyDiagnostic, printDiagnostic)
+import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
 import JVM.Data.Abstract.ClassFile as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
@@ -40,10 +39,8 @@ import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (runWriter)
-import Prettyprinter.Render.Text
 import Print
 import System.Directory (createDirectoryIfMissing)
-import System.FilePath.Posix (takeDirectory)
 
 main :: IO ()
 main = do
@@ -65,9 +62,9 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
 
   for_ classes $ \(mn, class') -> do
     putTextLn ("Compiling " <> showPretty mn <> "...")
-    let conv = convert class'
-    let bs = runPut (writeBinary conv)
-    liftIO $ BS.writeFile ("out/" <> suitableFilePath (ClassFile.name class')) bs
+    let converted = convert class'
+    let bs = runPut (writeBinary converted)
+    liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
     putTextLn ("Compiled " <> showPretty mn <> "!")
 
   putTextLn ("Successfully compiled " <> show (length classes) <> " classes!")
