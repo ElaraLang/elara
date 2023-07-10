@@ -1,3 +1,5 @@
 import Prelude
 
 let main = println "hello world"
+
+let y = 5

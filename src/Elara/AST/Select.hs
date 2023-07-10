@@ -222,6 +222,11 @@ instance HasModuleName Typed.Declaration' Typed where
   moduleName = Typed.declaration'Module'
   unlocatedModuleName = moduleName @Typed.Declaration' @Typed . unlocated
 
+instance HasModuleName Typed.Declaration Typed where
+  moduleName = Typed._Declaration . unlocated . moduleName @Typed.Declaration' @Typed
+  unlocatedModuleName :: Lens' Typed.Declaration ModuleName
+  unlocatedModuleName = moduleName @Typed.Declaration @Typed . unlocated
+
 class HasName a b | a -> b where
   name :: Lens' a b
 
