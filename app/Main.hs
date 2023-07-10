@@ -73,7 +73,7 @@ runElara = runM $ execDiagnosticWriter $ runMaybe $ do
     let
         t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in" <> fromString (printf "%6.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
 
