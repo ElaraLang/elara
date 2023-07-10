@@ -2,11 +2,11 @@
 module Elara.Emit where
 
 import Control.Lens
-import Elara.AST.Lenses (HasDeclarationBody (unlocatedDeclarationBody), HasDeclarationBody' (unlocatedDeclarationBody'))
+import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
 import Elara.AST.Module (HasDeclarations (declarations), Module)
-import Elara.AST.Name (ModuleName (..), Name (..), NameLike (nameText), Qualified (Qualified), VarName (NormalVarName))
-import Elara.AST.Region (Located (Located), unlocated)
-import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (moduleName, unlocatedModuleName), Typed)
+import Elara.AST.Name (ModuleName (..), NameLike (nameText), Qualified (Qualified))
+import Elara.AST.Region (Located (Located))
+import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
 import Elara.AST.Typed as AST (Declaration, DeclarationBody' (..), Expr (..), Expr' (FunctionCall, Int, String, Var), _Expr)
 import Elara.AST.VarRef (VarRef' (Global))
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
@@ -56,9 +56,9 @@ emitModule m = do
     createMethodOrField :: Declaration -> Either ClassFileField ClassFileMethod
     createMethodOrField d =
         case d ^. unlocatedDeclarationBody' of
-            TypeDeclaration{} -> Left undefined
+            TypeDeclaration{} -> error "Type declarations are not supported yet"
             Value v ->
-                let (expr, type') = v ^. _Expr
+                let (_, type') = v ^. _Expr
                  in if typeIsValue type'
                         then Left $ ClassFileField [FPublic, FStatic] (d ^. unlocatedDeclarationName . to nameText) (generateFieldType type') []
                         else
@@ -120,14 +120,12 @@ createFieldInitialisers decls =
     generateFieldInitialiser :: Declaration -> [Instruction]
     generateFieldInitialiser d =
         case d ^. unlocatedDeclarationBody' of
-            Value v ->
-                if typeIsValue (v ^. _Expr . _2)
-                    then
-                        let fieldClassName = createModuleName (d ^. unlocatedModuleName)
-                            fieldName = d ^. unlocatedDeclarationName . to nameText
-                            fieldDescriptor = generateFieldType (v ^. _Expr . _2)
-                         in (generateCode v <> [PutStatic (ClassInfoType fieldClassName) fieldName fieldDescriptor])
-                    else []
+            Value v
+                | typeIsValue (v ^. _Expr . _2) ->
+                    let fieldClassName = createModuleName (d ^. unlocatedModuleName)
+                        fieldName = d ^. unlocatedDeclarationName . to nameText
+                        fieldDescriptor = generateFieldType (v ^. _Expr . _2)
+                     in generateCode v <> [PutStatic (ClassInfoType fieldClassName) fieldName fieldDescriptor]
             _ -> []
 
 createModuleName :: ModuleName -> QualifiedClassName

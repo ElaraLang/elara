@@ -1,5 +1,5 @@
 import Prelude
 
-let main = println x
-
 let x = "hello world!"
+
+let main = println x
