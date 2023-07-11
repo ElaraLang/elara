@@ -25,7 +25,7 @@ import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (showPretty, debugPretty)
+import Print (debugPretty, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -39,7 +39,6 @@ emitModule m = do
     let name = createModuleName (m ^. unlocatedModuleName)
     version <- ask
 
-    debugPretty (m ^. declarations)
     let (fields, methods) = partitionEithers $ createMethodOrField <$> m ^. declarations
     let methods' = methods ++ [generateMainMethod m | isMainModule m]
     pure
@@ -55,7 +54,7 @@ emitModule m = do
             []
         )
   where
-    createMethodOrField ::HasCallStack =>   Declaration -> Either ClassFileField ClassFileMethod
+    createMethodOrField :: HasCallStack => Declaration -> Either ClassFileField ClassFileMethod
     createMethodOrField d =
         case d ^. unlocatedDeclarationBody' of
             TypeDeclaration{} -> error "Type declarations are not supported yet"
@@ -182,8 +181,7 @@ generateFieldType (Custom _ "IO" _) = ObjectFieldType "elara.IO"
 generateFieldType (VariableType _ _) = ObjectFieldType "java.lang.Object"
 generateFieldType o = error $ "generateFieldType: " <> show o
 
-generateMethodDescriptor :: HasCallStack =>  Show a => Type a -> MethodDescriptor
-generateMethodDescriptor o | trace (toString $ showPretty o) False = undefined
+generateMethodDescriptor :: HasCallStack => Show a => Type a -> MethodDescriptor
 generateMethodDescriptor (Forall _ _ _ _ t) = generateMethodDescriptor t
 generateMethodDescriptor (Function _ i o) = MethodDescriptor (generateFieldType <$> collapseFunctions i) (generateReturnDescriptor o)
   where
@@ -193,6 +191,5 @@ generateMethodDescriptor (Function _ i o) = MethodDescriptor (generateFieldType 
 generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
 
 generateReturnDescriptor :: HasCallStack => Show a => Type a -> ReturnDescriptor
-generateReturnDescriptor o | trace (toString $ showPretty o) False = undefined
 generateReturnDescriptor (Scalar _ Unit) = VoidReturn
 generateReturnDescriptor other = TypeReturn (generateFieldType other)

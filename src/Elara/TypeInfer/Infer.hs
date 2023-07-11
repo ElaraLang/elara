@@ -24,12 +24,10 @@ module Elara.TypeInfer.Infer where
 
 import Control.Lens ((^.))
 import Control.Lens qualified as Lens
-import Control.Monad qualified as Monad
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Elara.AST.Name (Name (NVarName))
 import Elara.AST.Region
-import Elara.AST.Shunted (Expr (..), Pattern (Pattern), _Expr)
+import Elara.AST.Shunted (Expr (..), Pattern (Pattern), _Expr, _Pattern)
 import Elara.AST.Shunted qualified as Syntax
 import Elara.AST.VarRef
 import Elara.Prim (primitiveTCContext)
@@ -46,7 +44,6 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
-import Print (debugColored, debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -168,7 +165,6 @@ wellFormedType _Γ type0 =
             | otherwise ->
                 throw (IllFormedType location _A _Γ)
           where
-            -- predicate other | trace (toString $ showPretty ("predicate" :: Text, other, existential)) False = undefined
             predicate (Context.UnsolvedType a) = existential == a
             predicate (Context.SolvedType a _) = existential == a
             predicate _ = False
@@ -1309,6 +1305,7 @@ infer (Expr (Located location e0)) cont =
             _Γ <- get
 
             let n = withName' (vn ^. unlocated)
+
             l <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
             c <- cont
             pure (l, c)
@@ -1365,7 +1362,7 @@ infer (Expr (Located location e0)) cont =
                     c <- cont
                     pure (Type.List{type_ = Type.UnsolvedType{..}, ..}, c)
                 y : ys -> do
-                    type_ <- fst <$> infer y cont
+                    type_ <- fst <$> infer y cont -- the first element in the list determines the type
 
                     let process element = do
                             _Γ <- get
@@ -1412,24 +1409,27 @@ infer (Expr (Located location e0)) cont =
             push (Context.UnsolvedType existential)
             c <- cont
             pure (Type.UnsolvedType{existential, ..}, c)
-        Syntax.Match against cases -> do
-            _A <- infer' against
+        Syntax.Match against (principle:others) -> do
+            _A <- infer' against -- the type that all the patterns must match
+            (principleType, c) <- infer (snd principle) cont -- the first branch determines the type of the whole match expression
 
-            let process (pattern, body) = do
-                    (_L0, c) <- inferPattern pattern cont
-                    _Γ <- get
 
-                    pure _L0
-            types <- traverse process cases
+            let process (pat, branch) = do
+                    checkPattern pat _A -- check that the pattern can match the type of the match expression
+                    ctx <- get
+                    check branch (Context.solveType ctx principleType) -- check that the branch matches the type of the first branch
+    
 
-            c <- cont
-            -- todo: check that all the branch types are the same
+            traverse_ process (principle : others)
 
-            pure (_A, c)
+            pure (principleType, c)
         Syntax.Tuple fields -> do
             types <- fst <<$>> traverse (`infer` cont) fields
             c <- cont
             pure (Type.Tuple{types, ..}, c)
+
+inferPattern' :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Pattern -> Sem r (Type SourceRegion)
+inferPattern' x = fst <$> inferPattern x pass
 
 -- | Infers the type of a pattern, returning a type that the pattern *can* match. For example the pattern (x::xs) can match any list type
 inferPattern ::
@@ -1445,7 +1445,9 @@ inferPattern (Pattern (Located location pat)) cont =
             -- A variable pattern can't be bound to any specific type without further context
             existential <- fresh
 
-            push (Context.Annotation (mkLocal' name) Type.UnsolvedType{existential, ..})
+            let x = Type.UnsolvedType{existential, ..}
+            push (Context.UnsolvedType existential)
+            push (Context.Annotation (mkLocal' name) x)
 
             c <- cont
             pure (Type.UnsolvedType{existential, ..}, c)
@@ -1472,7 +1474,6 @@ inferPattern (Pattern (Located location pat)) cont =
             (tailType, c2) <- inferPattern t cont
 
             _Γ <- get
-            -- debugPretty  _Γ
 
             pure (Type.List{type_ = headType, ..}, c1)
         other -> error $ show ("Dunno about", show other)
@@ -1489,29 +1490,31 @@ checkPattern ::
     Pattern ->
     Type SourceRegion ->
     Sem r ()
-checkPattern (Pattern (Located location pat)) t = case pat of
-    Syntax.VarPattern vn -> do
-        _Γ <- get
+checkPattern pat expected = Lens.traverseOf_ (_Pattern . unlocated) (`check'` expected) pat
+  where
+    check' (Syntax.ListPattern elements) Type.List{..} = do
+        let process element = do
+                _Γ <- get
 
-        let n = Local $ IgnoreLocation (NVarName <<$>> vn)
-        l <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
-        subtype (Context.solveType _Γ t) l 
+                checkPattern element (Context.solveType _Γ type_)
 
-    Syntax.ListPattern [] -> do
-        existential <- fresh
-        push (Context.UnsolvedType existential)
-        subtype t (Type.List{type_ = Type.UnsolvedType{existential, ..}, ..})
+        traverse_ process elements
+    check' (Syntax.ConsPattern h t) Type.List{..} = do
+        -- a cons pattern x::xs means that x is the head of the list, and xs is the tail
+        checkPattern h type_
 
-    Syntax.ConsPattern x xs -> do
-        type_ <- fst <$> inferPattern x  pass
-        ctx <- get
-        let restOfListType = Context.solveType ctx Type.List{type_ = (Context.solveType ctx type_), ..}
-    
-        debugPretty (type_, restOfListType)
-        checkPattern xs restOfListType
-        subtype (Context.solveType ctx t) restOfListType 
-    
-    other -> error (show other)
+        checkPattern t Type.List{type_ = type_, ..}
+    check' e Type.Forall{..} = do
+        scoped (Context.Variable domain name) do
+            check' e type_
+
+    -- Sub
+    check' _ _B = do
+        _A <- inferPattern' pat
+
+        _Θ <- get
+
+        subtype (Context.solveType _Θ _A) (Context.solveType _Θ _B)
 
 {- | This corresponds to the judgment:
 
