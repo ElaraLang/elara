@@ -1,0 +1,5 @@
+module Prelude exposing (..)
+
+
+
+Prelude.(::) : ∀ a6. (a6 -> ([a6] -> [a6]))

@@ -1,0 +1,5 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+Main.map : ∀ a4. ∀ b5. ((a4 -> b5) -> ([a4] -> [b5]))

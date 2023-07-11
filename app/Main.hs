@@ -7,7 +7,7 @@ module Main
 where
 
 import Control.Exception as E
-import Control.Lens (to, (^.))
+import Control.Lens (to, view, (^.))
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Elara.AST.Module
@@ -60,12 +60,24 @@ main = run `finally` cleanup
         hSetBuffering stdout NoBuffering
         args <- getArgs
         let dumpShunted = "--dump-shunted" `elem` args
-        s <- runElara dumpShunted
+        let dumpTyped = "--dump-typed" `elem` args
+        s <- runElara dumpShunted dumpTyped
         printDiagnostic stdout True True 4 defaultStyle s
         pass
 
-runElara :: Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpShunted = runM $ execDiagnosticWriter $ runMaybe $ do
+dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph graph nameFunc suffix = do
+  let dump mod = do
+        let contents = pretty mod
+        let fileName = toString ("out/" <> nameFunc mod <> suffix)
+        handle <- openFile fileName WriteMode
+        renderIO handle (layoutPretty defaultLayoutOptions {layoutPageWidth = AvailablePerLine 60 1} contents)
+        hFlush handle
+
+  traverseGraph_ dump graph
+
+runElara :: Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
+runElara dumpShunted dumpTyped = runM $ execDiagnosticWriter $ runMaybe $ do
   start <- liftIO getCPUTime
   liftIO (createDirectoryIfMissing True "out")
 
@@ -74,16 +86,13 @@ runElara dumpShunted = runM $ execDiagnosticWriter $ runMaybe $ do
   let graph = createGraph [source, prelude]
   shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
   when dumpShunted $ do
-    let dump mod = liftIO $ do
-          let contents = pretty mod
-          let fileName = toString ("out/" <> (mod ^. name . to nameText) <> "-shunted.elr")
-          handle <- openFile fileName WriteMode
-          renderIO handle (layoutPretty defaultLayoutOptions {layoutPageWidth = AvailablePerLine 60 1} contents)
-          hFlush handle
-
-    liftIO (traverseGraph_ dump shuntedGraph)
+    liftIO $ dumpGraph shuntedGraph (view (name . to nameText)) "-shunted.elr"
 
   typedGraph <- inferModules shuntedGraph
+
+  when dumpTyped $ do
+    liftIO $ dumpGraph typedGraph (view (name . to nameText)) "-typed.elr"
+
   classes <- runReader java8 (emitGraph typedGraph)
 
   for_ classes $ \(mn, class') -> do
