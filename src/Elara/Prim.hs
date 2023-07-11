@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedLists #-}
 
--- | Stores information about the primitive functions of Elara. These are still written in the source code, with a special name and value.
--- The compiler will then replace these with the actual primitive functions.
+{- | Stores information about the primitive functions of Elara. These are still written in the source code, with a special name and value.
+ The compiler will then replace these with the actual primitive functions.
+-}
 module Elara.Prim where
 
 import Elara.AST.Name (ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (NormalVarName))
@@ -43,27 +44,27 @@ primitiveTypes = [stringName]
 
 primitiveRenameState :: RenameState
 primitiveRenameState =
-  let vars =
-        fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveVars)
-      types =
-        fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveTypes) <> fromList [(ioName, Global (mkPrimVarRef ioName))]
-   in RenameState vars types mempty
+    let vars =
+            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveVars)
+        types =
+            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveTypes) <> fromList [(ioName, Global (mkPrimVarRef ioName))]
+     in RenameState vars types mempty
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
-  -- assume all primitive types are kind Type
-  fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
-    <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
+    -- assume all primitive types are kind Type
+    fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
+        <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
 
 primitiveTCContext :: Context SourceRegion
 primitiveTCContext =
-  [ Annotation
-      (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-      (Forall primRegion primRegion "a" Type (Function primRegion (Scalar primRegion String) (VariableType primRegion "a"))), -- elaraPrimitive :: forall a. String -> a
-    Annotation
-      (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
-      (Scalar primRegion String),
-    Annotation
-      (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-      (Custom primRegion "IO" [VariableType primRegion "a"])
-  ]
+    [ Annotation
+        (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
+        (Forall primRegion primRegion "a" Type (Function primRegion (Scalar primRegion String) (VariableType primRegion "a"))) -- elaraPrimitive :: forall a. String -> a
+    , Annotation
+        (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
+        (Scalar primRegion String)
+    , Annotation
+        (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
+        (Custom primRegion "IO" [VariableType primRegion "a"])
+    ]

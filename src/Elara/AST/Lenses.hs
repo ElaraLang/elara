@@ -13,77 +13,77 @@ import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Typed qualified as Typed
 
 class HasDeclarationBody h db | h -> db where
-  declarationBody :: Lens' h db
-  unlocatedDeclarationBody :: Lens' h (Unlocate db)
+    declarationBody :: Lens' h db
+    unlocatedDeclarationBody :: Lens' h (Unlocate db)
 
 instance HasDeclarationBody Frontend.Declaration (Located Frontend.DeclarationBody) where
-  declarationBody = Frontend._Declaration . unlocated . declarationBody
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Frontend._Declaration . unlocated . declarationBody
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Frontend.Declaration' (Located Frontend.DeclarationBody) where
-  declarationBody = Frontend.declaration'Body
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Frontend.declaration'Body
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Desugared.Declaration (Located Desugared.DeclarationBody) where
-  declarationBody = Desugared._Declaration . unlocated . declarationBody
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Desugared._Declaration . unlocated . declarationBody
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Desugared.Declaration' (Located Desugared.DeclarationBody) where
-  declarationBody = Desugared.declaration'Body
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Desugared.declaration'Body
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Renamed.Declaration (Located Renamed.DeclarationBody) where
-  declarationBody = Renamed._Declaration . unlocated . declarationBody
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Renamed._Declaration . unlocated . declarationBody
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Renamed.Declaration' (Located Renamed.DeclarationBody) where
-  declarationBody = Renamed.declaration'Body
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Renamed.declaration'Body
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Typed.Declaration (Located Typed.DeclarationBody) where
-  declarationBody = Typed._Declaration . unlocated . declarationBody
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Typed._Declaration . unlocated . declarationBody
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 instance HasDeclarationBody Typed.Declaration' (Located Typed.DeclarationBody) where
-  declarationBody = Typed.declaration'Body
-  unlocatedDeclarationBody = declarationBody . unlocated
+    declarationBody = Typed.declaration'Body
+    unlocatedDeclarationBody = declarationBody . unlocated
 
 class HasDeclarationBody' h db | h -> db where
-  declarationBody' :: Lens' h db
-  unlocatedDeclarationBody' :: Lens' h (Unlocate db)
+    declarationBody' :: Lens' h db
+    unlocatedDeclarationBody' :: Lens' h (Unlocate db)
 
 instance HasDeclarationBody' h db => HasDeclarationBody' (Located h) db where
-  declarationBody' = unlocated . declarationBody' @h @db
-  unlocatedDeclarationBody' = unlocated . unlocatedDeclarationBody' @h @db
+    declarationBody' = unlocated . declarationBody' @h @db
+    unlocatedDeclarationBody' = unlocated . unlocatedDeclarationBody' @h @db
 
 instance HasDeclarationBody' Frontend.Declaration (Located Frontend.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Frontend._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Frontend._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Frontend.Declaration' (Located Frontend.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Frontend._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Frontend._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Desugared.Declaration (Located Desugared.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Desugared._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Desugared._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Desugared.Declaration' (Located Desugared.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Desugared._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Desugared._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Renamed.Declaration (Located Renamed.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Renamed._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Renamed._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Renamed.Declaration' (Located Renamed.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Renamed._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Renamed._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Typed.Declaration (Located Typed.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Typed._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Typed._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
 
 instance HasDeclarationBody' Typed.Declaration' (Located Typed.DeclarationBody') where
-  declarationBody' = declarationBody . unlocated . Typed._DeclarationBody
-  unlocatedDeclarationBody' = declarationBody' . unlocated
+    declarationBody' = declarationBody . unlocated . Typed._DeclarationBody
+    unlocatedDeclarationBody' = declarationBody' . unlocated
