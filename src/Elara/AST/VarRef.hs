@@ -23,7 +23,7 @@ type IgnoreLocVarRef n = VarRef' IgnoreLocation n
 
 type UnlocatedVarRef n = VarRef' Identity n
 
-varRefVal :: VarRef n -> Located n
+varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
 

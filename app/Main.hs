@@ -71,7 +71,7 @@ dumpGraph graph nameFunc suffix = do
         let contents = pretty mod
         let fileName = toString ("out/" <> nameFunc mod <> suffix)
         handle <- openFile fileName WriteMode
-        renderIO handle (layoutPretty defaultLayoutOptions {layoutPageWidth = AvailablePerLine 60 1} contents)
+        hPutDoc handle contents
         hFlush handle
 
   traverseGraph_ dump graph

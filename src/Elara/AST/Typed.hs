@@ -15,6 +15,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
 import Prelude hiding (Op, group)
+import Elara.AST.Pretty (prettyValueDeclaration, prettyTypeDeclaration)
 
 {- | Typed AST Type
  This is very similar to 'Elara.AST.Shunted.Expr' except:
@@ -146,20 +147,9 @@ instance Pretty Declaration' where
     pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. unlocated . _DeclarationBody . unlocated)
 
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
-prettyDB name (Value (Expr (_, t))) =
-    vsep
-        [ pretty name <+> ":" <+> pretty t
-        , -- , "let" <+> pretty name <+> "="
-          -- , indent indentDepth (pretty e)
-          "" -- add a newline
-        ]
-prettyDB name (TypeDeclaration vars t kind) =
-    vsep
-        [ keyword "type" <+> typeName (pretty name) <+> ":" <+> pretty kind
-        , keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
-        , indent indentDepth (pretty t)
-        , "" -- add a newline
-        ]
+prettyDB name (Value (Expr (e, t))) = prettyValueDeclaration name e (Just t)
+
+prettyDB name (TypeDeclaration vars t kind) = prettyTypeDeclaration name vars t
 
 instance Pretty TypeDeclaration where
     pretty (Alias t) = "=" <+> pretty t

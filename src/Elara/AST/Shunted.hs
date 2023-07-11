@@ -139,21 +139,8 @@ instance Pretty Declaration' where
   pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. unlocated . _DeclarationBody . unlocated)
 
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
-prettyDB name (Value e t) =
-  let defLine = fmap (\t' -> "def" <+> pretty name <+> ":" <+> pretty t') t
-      rest =
-        [ "let" <+> pretty name <+> "=",
-          indent indentDepth (pretty e),
-          "" -- add a newline
-        ]
-   in vsep (maybeToList defLine <> rest)
-prettyDB name (TypeDeclaration vars t) =
-  vsep
-    [ keyword "type" <+> typeName (pretty name),
-      keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars),
-      indent indentDepth (pretty t),
-      "" -- add a newline
-    ]
+prettyDB n (Value e t) = prettyValueDeclaration n e t
+prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
 
 instance Pretty Expr where
   pretty (Expr e) = pretty (stripLocation e)
