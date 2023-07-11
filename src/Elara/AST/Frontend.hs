@@ -36,6 +36,7 @@ data Pattern'
     = VarPattern (Located VarName)
     | ConstructorPattern (Located (MaybeQualified TypeName)) [Pattern]
     | ListPattern [Pattern]
+    | ConsPattern Pattern Pattern
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double
@@ -62,6 +63,7 @@ data Type
     | UserDefinedType (Located (MaybeQualified TypeName))
     | RecordType (NonEmpty (Located VarName, Located Type))
     | TupleType (NonEmpty (Located Type))
+    | ListType (Located Type)
     deriving (Show, Eq)
 
 newtype Declaration = Declaration (Located Declaration')

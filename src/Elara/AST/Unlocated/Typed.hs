@@ -34,9 +34,10 @@ newtype Expr = Expr (Expr', Type ())
     deriving (Show, Eq)
 
 data Pattern'
-    = VarPattern (UnlocatedVarRef VarName)
+    = VarPattern (Unique VarName)
     | ConstructorPattern (Qualified TypeName) [Pattern]
     | ListPattern [Pattern]
+    | ConsPattern Pattern Pattern
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double

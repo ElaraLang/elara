@@ -25,6 +25,7 @@ import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
+import Print (showPretty, debugPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -38,6 +39,7 @@ emitModule m = do
     let name = createModuleName (m ^. unlocatedModuleName)
     version <- ask
 
+    debugPretty (m ^. declarations)
     let (fields, methods) = partitionEithers $ createMethodOrField <$> m ^. declarations
     let methods' = methods ++ [generateMainMethod m | isMainModule m]
     pure
@@ -53,7 +55,7 @@ emitModule m = do
             []
         )
   where
-    createMethodOrField :: Declaration -> Either ClassFileField ClassFileMethod
+    createMethodOrField ::HasCallStack =>   Declaration -> Either ClassFileField ClassFileMethod
     createMethodOrField d =
         case d ^. unlocatedDeclarationBody' of
             TypeDeclaration{} -> error "Type declarations are not supported yet"
@@ -169,7 +171,7 @@ typeIsValue (Tuple _ _) = True
 typeIsValue ((Custom _ "IO" _)) = True
 typeIsValue _ = False
 
-generateFieldType :: Show a => Type a -> FieldType
+generateFieldType :: HasCallStack => Show a => Type a -> FieldType
 generateFieldType (Scalar _ Bool) = PrimitiveFieldType Boolean
 generateFieldType (Scalar _ Integer) = PrimitiveFieldType JVM.Int
 generateFieldType (Scalar _ Natural) = PrimitiveFieldType JVM.Int
@@ -177,9 +179,12 @@ generateFieldType (Scalar _ Real) = PrimitiveFieldType Double
 generateFieldType (Scalar _ Monotype.String) = ObjectFieldType "java.lang.String"
 generateFieldType (Scalar _ Monotype.Char) = PrimitiveFieldType JVM.Char
 generateFieldType (Custom _ "IO" _) = ObjectFieldType "elara.IO"
+generateFieldType (VariableType _ _) = ObjectFieldType "java.lang.Object"
 generateFieldType o = error $ "generateFieldType: " <> show o
 
-generateMethodDescriptor :: Show a => Type a -> MethodDescriptor
+generateMethodDescriptor :: HasCallStack =>  Show a => Type a -> MethodDescriptor
+generateMethodDescriptor o | trace (toString $ showPretty o) False = undefined
+generateMethodDescriptor (Forall _ _ _ _ t) = generateMethodDescriptor t
 generateMethodDescriptor (Function _ i o) = MethodDescriptor (generateFieldType <$> collapseFunctions i) (generateReturnDescriptor o)
   where
     collapseFunctions :: Type a -> [Type a]
@@ -187,6 +192,7 @@ generateMethodDescriptor (Function _ i o) = MethodDescriptor (generateFieldType 
     collapseFunctions other = [other]
 generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
 
-generateReturnDescriptor :: Show a => Type a -> ReturnDescriptor
+generateReturnDescriptor :: HasCallStack => Show a => Type a -> ReturnDescriptor
+generateReturnDescriptor o | trace (toString $ showPretty o) False = undefined
 generateReturnDescriptor (Scalar _ Unit) = VoidReturn
 generateReturnDescriptor other = TypeReturn (generateFieldType other)

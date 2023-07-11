@@ -8,12 +8,12 @@ import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (element)
-import Elara.Parse.Indents (block)
+import Elara.Parse.Indents (block, exprBlock)
 import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token_)
 import Elara.Parse.Type (type', typeNotApplication)
-import HeadedMegaparsec (endHead)
+import HeadedMegaparsec (endHead, wrapToHead)
 import Text.Megaparsec (choice)
 
 declaration :: Located ModuleName -> HParser Frontend.Declaration
@@ -40,13 +40,13 @@ letDec modName = fmapLocated Declaration $ do
     pure (Declaration' modName (NVarName <$> name) (Located valueLocation value))
 
 letRaw :: HParser (Located VarName, [Pattern], Expr)
-letRaw = do
+letRaw = wrapToHead $ do
     token_ TokenLet
     endHead
     name <- located unqualifiedVarName
     patterns <- many pattern'
     token_ TokenEquals
-    e <- block element
+    e <- exprBlock element
     pure (name, patterns, e)
 
 typeDeclaration :: Located ModuleName -> HParser Frontend.Declaration

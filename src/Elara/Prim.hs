@@ -19,10 +19,14 @@ fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"
 
 fetchPrimitive :: (VarRef VarName)
-fetchPrimitive = (Global (mkPrimVarRef fetchPrimitiveName))
+fetchPrimitive = Global (mkPrimVarRef fetchPrimitiveName)
 
 stringName :: TypeName
 stringName = TypeName "String"
+
+intName :: TypeName
+intName = TypeName "Int"
+
 
 ioName :: TypeName
 ioName = TypeName "IO"
@@ -40,7 +44,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName]
+primitiveTypes = [stringName, intName]
 
 primitiveRenameState :: RenameState
 primitiveRenameState =
@@ -65,6 +69,10 @@ primitiveTCContext =
         (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
         (Scalar primRegion String)
     , Annotation
+        (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
+        (Scalar primRegion Integer)
+    
+    , Annotation
         (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-        (Custom primRegion "IO" [VariableType primRegion "a"])
+        (Custom primRegion "IO" [])
     ]

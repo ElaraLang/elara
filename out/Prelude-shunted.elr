@@ -1,0 +1,7 @@
+module Prelude exposing (..)
+
+
+
+def Prelude.(::) : (a6 -> ([ a6 ] -> [ a6 ]))
+let Prelude.(::) =
+    (Elara.Prim.elaraPrimitive "::")

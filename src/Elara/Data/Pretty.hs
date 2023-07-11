@@ -11,7 +11,8 @@ module Elara.Data.Pretty (
     module Elara.Data.Pretty.Styles,
     module Prettyprinter.Render.Terminal,
     listToText,
-) where
+)
+where
 
 import Data.Map qualified as Map (toList)
 import Elara.Data.Pretty.Styles
@@ -38,6 +39,12 @@ class Pretty a where
     default pretty :: (Show a) => a -> Doc AnsiStyle
     pretty = pretty @Text . show
 
+instance Pretty (Doc AnsiStyle) where
+    pretty = identity -- careful with this one
+
+instance Pretty () where
+    pretty = mempty
+
 instance Pretty Text where
     pretty = PP.pretty
 
@@ -58,6 +65,12 @@ instance Pretty Char where
 
 instance Pretty a => Pretty (Maybe a) where
     pretty = maybe mempty pretty
+
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+    pretty = either pretty pretty
+
+instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
+    pretty (a, b, c) = tupled [pretty a, pretty b, pretty c]
 
 -- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
 --     pretty = PP.pretty

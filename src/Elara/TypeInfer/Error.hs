@@ -47,7 +47,11 @@ data TypeInferenceError
       UnboundAlternatives SourceRegion Text
     | UnboundFields SourceRegion Text
     | UnboundTypeVariable SourceRegion Text (Context SourceRegion)
-    | UnboundVariable (IgnoreLocVarRef Name) (Context SourceRegion)
+    | UnboundVariable
+        SourceRegion
+        -- ^ Location of the variable that caused the error
+        (IgnoreLocVarRef Name)
+        (Context SourceRegion)
     | UnboundConstructor (IgnoreLocVarRef Name) (Context SourceRegion)
     | --
       RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
@@ -71,7 +75,7 @@ instance ReportableError TypeInferenceError where
                 )
                 []
                 []
-    report (UnboundVariable v _Γ) =
+    report (UnboundVariable loc v _Γ) =
         writeReport $
             Err
                 Nothing
@@ -82,7 +86,8 @@ instance ReportableError TypeInferenceError where
                     , listToText _Γ
                     ]
                 )
-                []
+                [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
+                
                 []
     report (UnboundConstructor v _Γ) =
         writeReport $
@@ -136,4 +141,18 @@ instance ReportableError TypeInferenceError where
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
                 []
+    report (IllFormedType location _A _Γ) =
+        writeReport $
+            Err
+                Nothing
+                ( vsep
+                    [ "Type error: The following type is ill-formed:"
+                    , pretty _A
+                    , "within the current context:"
+                    , listToText _Γ
+                    ]
+                )
+                [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
+                []
+
     report e = writeReport $ Err Nothing (showColored e) [] []

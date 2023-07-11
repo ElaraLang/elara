@@ -32,6 +32,7 @@ library
       Elara.AST.Lenses
       Elara.AST.Module
       Elara.AST.Name
+      Elara.AST.Pretty
       Elara.AST.Region
       Elara.AST.Renamed
       Elara.AST.Select

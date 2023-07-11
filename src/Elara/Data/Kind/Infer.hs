@@ -103,6 +103,10 @@ inferTypeKind (AST.RecordType _) = todo
 inferTypeKind (AST.TupleType fields) = do
     traverse_ (unifyKinds TypeKind <=< inferTypeKind) (fmap (view unlocated) fields)
     pure TypeKind
+inferTypeKind (AST.ListType a) = do
+    a' <- inferTypeKind (a ^. unlocated)
+    unifyKinds a' TypeKind
+    pure TypeKind
 
 unifyKinds :: (Member (Error KindInferError) r) => ElaraKind -> ElaraKind -> Sem r ()
 unifyKinds (VarKind _) (VarKind _) = pass

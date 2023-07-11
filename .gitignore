@@ -59,4 +59,5 @@ TAGS
 # Nix 
 .direnv
 result/
-out/
+
+# out/

@@ -14,10 +14,10 @@ import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern
-import Elara.Parse.Primitives (HParser, inBraces, inParens, located, token_, withPredicate, (<??>))
-import HeadedMegaparsec (endHead)
+import Elara.Parse.Primitives (HParser, inParens, located, token_, withPredicate, (<??>))
+import HeadedMegaparsec (endHead, wrapToHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
-import Text.Megaparsec (sepEndBy, sepEndBy1)
+import Text.Megaparsec (sepEndBy)
 
 locatedExpr :: HParser Frontend.Expr' -> HParser Expr
 locatedExpr = (Expr <$>) . (H.parse . located . H.toParsec)
@@ -76,6 +76,7 @@ expression :: HParser Frontend.Expr
 expression =
     unit
         <|> (parensExpr <??> "parenthesized expression")
+        <|> (list <??> "list")
         <|> (tuple <??> "tuple expression")
         <|> (ifElse <??> "if expression")
         <|> (letInExpression <??> "let-in expression")
@@ -87,7 +88,6 @@ expression =
         <|> (string <??> "string")
         <|> (variable <??> "variable")
         <|> (constructor <??> "constructor")
-        <|> (list <??> "list")
         <??> "expression"
 
 -- | Reserved words, used to backtrack accordingly
@@ -137,23 +137,16 @@ string = locatedExpr (Frontend.String <$> stringLiteral) <??> "string"
 charL :: HParser Frontend.Expr
 charL = locatedExpr (Frontend.Char <$> charLiteral) <??> "char"
 
-list :: HParser Frontend.Expr
-list = locatedExpr $ do
-    token_ TokenLeftBracket
-    endHead
-    ignoreFollowingIndents 1
-    elements <- sepEndBy exprParser (token_ TokenComma)
-    token_ TokenRightBracket
-    pure $ Frontend.List elements
-
 match :: HParser Frontend.Expr
-match = locatedExpr $ do
+match =  wrapToHead $ locatedExpr $ do
     token_ TokenMatch
     endHead
-    expr <- block element
+    expr <- exprBlock element
     token_ TokenWith
 
-    cases <- inBraces $ sepEndBy1 matchCase (token_ TokenSemicolon)
+    cases <-
+        (toList <$> block identity pure matchCase)
+            <|> ([] <$ pass) -- allow empty match blocks
     pure $ Frontend.Match expr cases
   where
     matchCase :: HParser (Pattern, Frontend.Expr)
@@ -161,7 +154,7 @@ match = locatedExpr $ do
         case' <- pattern'
         token_ TokenRightArrow
         endHead
-        expr <- block element
+        expr <- exprBlock element
         pure (case', expr)
 
 lambda :: HParser Expr
@@ -170,7 +163,7 @@ lambda = locatedExpr $ do
     endHead
     args <- many pattern'
     token_ TokenRightArrow
-    res <- block element
+    res <- exprBlock element
     pure (Frontend.Lambda args res)
 
 ifElse :: HParser Expr
@@ -180,10 +173,10 @@ ifElse = locatedExpr $ do
     condition <- exprParser
     _ <- optional (token_ TokenSemicolon)
     token_ TokenThen
-    thenBranch <- block element
+    thenBranch <- exprBlock element
     _ <- optional (token_ TokenSemicolon)
     token_ TokenElse
-    elseBranch <- block element
+    elseBranch <- exprBlock element
     pure (Frontend.If condition thenBranch elseBranch)
 
 letInExpression :: HParser Frontend.Expr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
@@ -191,7 +184,7 @@ letInExpression = locatedExpr $ do
     (name, patterns, e) <- letPreamble
     token_ TokenIn
     endHead
-    body <- block element
+    body <- exprBlock element
 
     -- let names = patterns >>= patternNames
     -- let promote = fmap (transform (Name.promoteArguments names))
@@ -209,7 +202,7 @@ letPreamble = do
     name <- located unqualifiedVarName
     patterns <- many pattern'
     token_ TokenEquals
-    e <- block element
+    e <- exprBlock element
     pure (name, patterns, e)
 
 tuple :: HParser Frontend.Expr
@@ -219,3 +212,11 @@ tuple = locatedExpr $ do
     elements <- sepEndBy1' exprParser (token_ TokenComma)
     token_ TokenRightParen
     pure $ Frontend.Tuple elements
+
+list :: HParser Frontend.Expr
+list = locatedExpr $ do
+    token_ TokenLeftBracket
+    endHead
+    elements <- sepEndBy exprParser (token_ TokenComma)
+    token_ TokenRightBracket
+    pure $ Frontend.List elements

@@ -450,4 +450,5 @@ instance (Show a) => Pretty (Type a) where
     pretty (UnsolvedType{..}) = pretty existential <> "?"
     pretty Custom{..} = typeName (pretty name) <+> hsep (fmap pretty typeArguments)
     pretty Alias{..} = typeName (pretty name) <+> parens (pretty value)
+    pretty (List _ type_) = "[" <> pretty type_ <> "]"
     pretty o = show o

@@ -39,9 +39,10 @@ newtype Expr = Expr (Located Expr')
     deriving (Show, Eq)
 
 data Pattern'
-    = VarPattern (Located (VarRef VarName))
+    = VarPattern (Located (Unique VarName))
     | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
+    | ConsPattern Pattern Pattern
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double
@@ -68,6 +69,7 @@ data Type
     | UserDefinedType (Located (Qualified TypeName))
     | RecordType (NonEmpty (Located VarName, Located Type))
     | TupleType (NonEmpty (Located Type))
+    | ListType (Located Type)
     deriving (Show, Eq, Data)
 
 instance Plated Type
@@ -75,12 +77,13 @@ instance Plated Type
 instance Pretty Type where
     pretty = \case
         TypeVar (Located _ name) -> pretty name
-        FunctionType a b -> pretty a <+> "->" <+> pretty b
+        FunctionType a b -> parens (pretty a <+> "->" <+> pretty b)
         UnitType -> "()"
         TypeConstructorApplication a b -> pretty a <+> pretty b
         UserDefinedType (Located _ name) -> pretty name
         RecordType fields -> "{" <+> prettyFields fields <+> "}"
         TupleType fields -> tupled (map pretty (toList fields))
+        ListType a -> "[" <+> pretty a <+> "]"
       where
         prettyFields = hsep . punctuate "," . map (\(Located _ name, Located _ value) -> pretty name <+> ":" <+> pretty value) . toList
 
@@ -121,3 +124,5 @@ makeLenses ''DeclarationBody'
 makePrisms ''Expr
 makePrisms ''Pattern
 makePrisms ''BinaryOperator
+
+instance  Pretty TypeDeclaration where

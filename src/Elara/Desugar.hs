@@ -167,6 +167,7 @@ desugarType (Frontend.TypeConstructorApplication a b) = Desugared.TypeConstructo
 desugarType (Frontend.UserDefinedType a) = pure (Desugared.UserDefinedType a)
 desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2 . unlocated) desugarType fields
 desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse (traverseOf unlocated desugarType) fields
+desugarType (Frontend.ListType t) = Desugared.ListType <$> traverseOf unlocated desugarType t
 
 completePartials :: Located ModuleName -> Desugar [Desugared.Declaration]
 completePartials mn = do
@@ -238,6 +239,7 @@ desugarPattern (Frontend.Pattern lp) = Desugared.Pattern <$> traverseOf unlocate
     desugarPattern' (Frontend.ConstructorPattern c pats) = Desugared.ConstructorPattern c <$> traverse desugarPattern pats
     desugarPattern' Frontend.WildcardPattern = pure Desugared.WildcardPattern
     desugarPattern' (Frontend.ListPattern pats) = Desugared.ListPattern <$> traverse desugarPattern pats
+    desugarPattern' (Frontend.ConsPattern a b) = liftA2 Desugared.ConsPattern (desugarPattern a) (desugarPattern b)
 
 {-
 

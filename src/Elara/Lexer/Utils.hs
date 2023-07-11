@@ -32,6 +32,7 @@ data IndentInfo = IndentInfo
     { _indent :: Int
     , _indentPos :: RealPosition
     }
+    deriving (Show)
 
 data ParseState = ParseState
     { _input :: AlexInput
@@ -41,6 +42,7 @@ data ParseState = ParseState
     , _indentStack :: NonEmpty IndentInfo -- stack of indentation levels
     , _pendingPosition :: TokPosition -- needed when parsing strings, chars, multi-line strings
     }
+    deriving (Show)
 
 makeLenses ''AlexInput
 makeLenses ''IndentInfo
@@ -66,6 +68,7 @@ data LexerError
         ParseState
         -- ^ The current state of the lexer
     | UnterminatedStringLiteral ParseState
+    deriving (Show)
 
 instance ReportableError LexerError where
     report (TooMuchIndentation expected further actual s) = do

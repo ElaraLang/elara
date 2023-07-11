@@ -1,5 +1,7 @@
-import Prelude
+import Prelude 
 
-let msg = "hello world from a variable!"
-
-let main = println msg
+def map : (a -> b) -> [a] -> [b]
+let map f list =
+    match list with
+        [] -> []
+        (x::xs) -> (f x) :: (map f xs)

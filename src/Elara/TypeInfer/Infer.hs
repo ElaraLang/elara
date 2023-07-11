@@ -22,30 +22,31 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Elara.AST.Shunted (Expr (..), _Expr)
-import Elara.TypeInfer.Context (Context, Entry)
-import Elara.TypeInfer.Existential (Existential)
-import Elara.TypeInfer.Monotype (Monotype)
-import Elara.TypeInfer.Type (Type (..))
-
 import Control.Lens ((^.))
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
+import Elara.AST.Name (Name (NVarName))
 import Elara.AST.Region
+import Elara.AST.Shunted (Expr (..), Pattern (Pattern), _Expr)
 import Elara.AST.Shunted qualified as Syntax
 import Elara.AST.VarRef
 import Elara.Prim (primitiveTCContext)
+import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError (..))
+import Elara.TypeInfer.Existential (Existential)
+import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Monotype qualified as Monotype
+import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Type qualified as Type
 import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
+import Print (debugColored, debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -136,6 +137,7 @@ scopedUnsolvedAlternatives k = do
     … which checks that under context Γ, the type A is well-formed
 -}
 wellFormedType ::
+    HasCallStack =>
     (Member (Error TypeInferenceError) r) =>
     Context SourceRegion ->
     Type SourceRegion ->
@@ -163,9 +165,10 @@ wellFormedType _Γ type0 =
         _A@Type.UnsolvedType{..}
             | any predicate _Γ -> do
                 pass
-            | otherwise -> do
+            | otherwise ->
                 throw (IllFormedType location _A _Γ)
           where
+            -- predicate other | trace (toString $ showPretty ("predicate" :: Text, other, existential)) False = undefined
             predicate (Context.UnsolvedType a) = existential == a
             predicate (Context.SolvedType a _) = existential == a
             predicate _ = False
@@ -220,6 +223,7 @@ wellFormedType _Γ type0 =
     type A is a subtype of type B.
 -}
 subtype ::
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Type SourceRegion ->
@@ -236,7 +240,7 @@ subtype _A0 _B0 = do
         -- <:Exvar
         (Type.UnsolvedType{existential = a0}, Type.UnsolvedType{existential = a1})
             | a0 == a1 && Context.UnsolvedType a0 `elem` _Γ -> do
-                pure ()
+                pass
 
         -- InstantiateL
         (Type.UnsolvedType{existential = a}, _)
@@ -903,10 +907,12 @@ instantiateTypeL a _A0 = do
 
     > Γ ⊢ A ≦: α̂ ⊣ Δ
 
-    … which updates the context Γ to produce the new context Δ, by instantiating
+    ... which updates the context Γ to produce the new context Δ, by instantiating
     α̂ such that A :< α̂.
 -}
 instantiateTypeR ::
+    forall r.
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Existential Monotype ->
@@ -916,7 +922,8 @@ instantiateTypeR _A0 a = do
 
     (_Γ', _Γ) <- Context.splitOnUnsolvedType a _Γ0 `orDie` MissingVariable a _Γ0
 
-    let instRSolve τ = do
+    let instRSolve :: HasCallStack => Monotype -> Sem r ()
+        instRSolve τ = do
             wellFormedType _Γ _A0
 
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
@@ -1275,6 +1282,7 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
     traverse_ instantiate kAbs
 
 infer' ::
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Sem r (Type SourceRegion)
@@ -1288,19 +1296,20 @@ infer' e = fst <$> infer e pass
     type of A and an updated context Δ.
 -}
 infer ::
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     -- | An inner computation that can use any locally scoped context (eg lambda parameters)
     Sem r a ->
     Sem r (Type SourceRegion, a)
-infer (Expr (Located location e0)) cont = do
+infer (Expr (Located location e0)) cont =
     case e0 of
         -- Var
         Syntax.Var vn -> do
             _Γ <- get
 
             let n = withName' (vn ^. unlocated)
-            l <- Context.lookup n _Γ `orDie` UnboundVariable n _Γ
+            l <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
             c <- cont
             pure (l, c)
 
@@ -1339,16 +1348,6 @@ infer (Expr (Located location e0)) cont = do
             i <- inferApplication (Context.solveType _Θ _A) argument
             c <- cont
             pure (i, c)
-
-        -- Anno
-        -- Syntax.Annotation{..} -> do
-        --     _Γ <- get
-
-        -- wellFormedType _Γ annotation
-
-        --     check annotated annotation
-
-        --     pure annotation
         Syntax.LetIn name val body -> do
             _A <- infer' val
             push (Context.Annotation (mkLocal' name) _A)
@@ -1370,7 +1369,6 @@ infer (Expr (Located location e0)) cont = do
 
                     let process element = do
                             _Γ <- get
-
                             check element (Context.solveType _Γ type_)
 
                     traverse_ process ys
@@ -1402,12 +1400,118 @@ infer (Expr (Located location e0)) cont = do
             (Type.Scalar{scalar = Monotype.Char, ..},) <$> cont
         Syntax.Unit -> do
             (Type.Scalar{scalar = Monotype.Unit, ..},) <$> cont
-        Syntax.Block exprs -> error "TODO: block"
-        Syntax.Match _ _ -> error "TODO: Implement match"
+        Syntax.Block exprs -> do
+            -- for a block, we just infer the type of the last expression. but still check the others to make sure they're well-formed
+            for_ (init exprs) \expr -> do
+                infer expr cont
+
+            infer (last exprs) cont
+        Syntax.Match _ [] -> do
+            existential <- fresh
+
+            push (Context.UnsolvedType existential)
+            c <- cont
+            pure (Type.UnsolvedType{existential, ..}, c)
+        Syntax.Match against cases -> do
+            _A <- infer' against
+
+            let process (pattern, body) = do
+                    (_L0, c) <- inferPattern pattern cont
+                    _Γ <- get
+
+                    pure _L0
+            types <- traverse process cases
+
+            c <- cont
+            -- todo: check that all the branch types are the same
+
+            pure (_A, c)
         Syntax.Tuple fields -> do
             types <- fst <<$>> traverse (`infer` cont) fields
             c <- cont
             pure (Type.Tuple{types, ..}, c)
+
+-- | Infers the type of a pattern, returning a type that the pattern *can* match. For example the pattern (x::xs) can match any list type
+inferPattern ::
+    HasCallStack =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    Pattern ->
+    -- | An inner computation that can use any locally scoped context (eg lambda parameters)
+    Sem r a ->
+    Sem r (Type SourceRegion, a)
+inferPattern (Pattern (Located location pat)) cont =
+    case pat of
+        Syntax.VarPattern name -> do
+            -- A variable pattern can't be bound to any specific type without further context
+            existential <- fresh
+
+            push (Context.Annotation (mkLocal' name) Type.UnsolvedType{existential, ..})
+
+            c <- cont
+            pure (Type.UnsolvedType{existential, ..}, c)
+        Syntax.ListPattern [] -> do
+            existential <- fresh
+
+            push (Context.UnsolvedType existential)
+            c <- cont
+            pure (Type.List{type_ = Type.UnsolvedType{existential, ..}, ..}, c)
+        Syntax.ListPattern (x : xs) -> do
+            (type_, c) <- inferPattern x cont
+
+            let process element = do
+                    _Γ <- get
+
+                    checkPattern element (Context.solveType _Γ type_)
+
+            traverse_ process xs
+            pure (Type.List{..}, c)
+        Syntax.ConsPattern h t -> do
+            -- a cons pattern x::xs means that x is the head of the list, and xs is the tail
+            (headType, c1) <- inferPattern h cont
+
+            (tailType, c2) <- inferPattern t cont
+
+            _Γ <- get
+            -- debugPretty  _Γ
+
+            pure (Type.List{type_ = headType, ..}, c1)
+        other -> error $ show ("Dunno about", show other)
+
+{- | This corresponds to the judgment:
+
+    > Γ ⊢ e ⇐ A ⊣ Δ
+
+    … which checks that e has type A under input context Γ, producing an updated
+    context Δ.
+-}
+checkPattern ::
+    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    Pattern ->
+    Type SourceRegion ->
+    Sem r ()
+checkPattern (Pattern (Located location pat)) t = case pat of
+    Syntax.VarPattern vn -> do
+        _Γ <- get
+
+        let n = Local $ IgnoreLocation (NVarName <<$>> vn)
+        l <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
+        subtype (Context.solveType _Γ t) l 
+
+    Syntax.ListPattern [] -> do
+        existential <- fresh
+        push (Context.UnsolvedType existential)
+        subtype t (Type.List{type_ = Type.UnsolvedType{existential, ..}, ..})
+
+    Syntax.ConsPattern x xs -> do
+        type_ <- fst <$> inferPattern x  pass
+        ctx <- get
+        let restOfListType = Context.solveType ctx Type.List{type_ = (Context.solveType ctx type_), ..}
+    
+        debugPretty (type_, restOfListType)
+        checkPattern xs restOfListType
+        subtype (Context.solveType ctx t) restOfListType 
+    
+    other -> error (show other)
 
 {- | This corresponds to the judgment:
 
@@ -1417,6 +1521,7 @@ infer (Expr (Located location e0)) cont = do
     context Δ.
 -}
 check ::
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Type SourceRegion ->
@@ -1490,7 +1595,7 @@ check expr t = Lens.traverseOf_ (_Expr . unlocated) (`check'` t) expr
         traverse_ process (NE.zip elements types)
 
     -- Sub
-    check' e _B = do
+    check' _ _B = do
         _A <- infer' expr
 
         _Θ <- get
@@ -1505,6 +1610,7 @@ check expr t = Lens.traverseOf_ (_Expr . unlocated) (`check'` t) expr
     input argument e, under input context Γ, producing an updated context Δ.
 -}
 inferApplication ::
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
     Expr ->
@@ -1544,7 +1650,7 @@ inferApplication Type.Exists{..} e = do
 inferApplication Type.UnsolvedType{existential = a, ..} e = do
     _Γ <- get
 
-    (_ΓR, _ΓL) <- pure (fromMaybe undefined (Context.splitOnUnsolvedType a _Γ))
+    (_ΓR, _ΓL) <- Context.splitOnUnsolvedType a _Γ `orDie` MissingVariable a _Γ
 
     a1 <- fresh
     a2 <- fresh

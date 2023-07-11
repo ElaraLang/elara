@@ -70,6 +70,7 @@ opName =
     normal :: HParser OpName
     normal =
         satisfyMap $ \case
+            TokenDoubleColon -> Just "::"
             TokenOperatorIdentifier i -> Just (OpName i)
             _ -> Nothing
 

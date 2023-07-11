@@ -249,3 +249,4 @@ shuntPattern (Renamed.Pattern lp) = Shunted.Pattern <$> traverseOf unlocated shu
     shuntPattern' (Renamed.StringPattern l) = pure (Shunted.StringPattern l)
     shuntPattern' (Renamed.CharPattern l) = pure (Shunted.CharPattern l)
     shuntPattern' (Renamed.ListPattern ps) = Shunted.ListPattern <$> traverse shuntPattern ps
+    shuntPattern' (Renamed.ConsPattern p1 p2) = Shunted.ConsPattern <$> shuntPattern p1 <*> shuntPattern p2

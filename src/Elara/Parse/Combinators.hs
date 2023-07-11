@@ -17,4 +17,6 @@ sepEndBy1' :: HParser a -> HParser sep -> HParser (NonEmpty a)
 sepEndBy1' p sep = do
     x <- p
     endHead
-    (x :|) <$> many (sep *> p) <* optional sep
+    (x :|) -- at least one
+        <$> many (sep *> p) -- many
+        <* optional sep -- optional ending

@@ -16,6 +16,7 @@ data VarRef' c n
     | Local (c (Unique n))
     deriving (Functor, Typeable)
 
+
 type VarRef n = VarRef' Located n
 
 type IgnoreLocVarRef n = VarRef' IgnoreLocation n

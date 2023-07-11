@@ -46,6 +46,9 @@ globalUniqueSupply :: IORef UniqueSupply
 globalUniqueSupply = unsafePerformIO (newIORef freshUniqueSupply)
 {-# NOINLINE globalUniqueSupply #-}
 
+resetGlobalUniqueSupply :: IO ()
+resetGlobalUniqueSupply = writeIORef globalUniqueSupply freshUniqueSupply
+
 data UniqueGen m a where
     NewUniqueNum :: UniqueGen m Int
 
@@ -71,6 +74,8 @@ uniqueGenToIO = reinterpret $ \case
             (i : is) -> do
                 embed (writeIORef globalUniqueSupply (UniqueSupply is))
                 pure i
+    
+
 
 makeSem ''UniqueGen
 makeLenses ''UniqueSupply

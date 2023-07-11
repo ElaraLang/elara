@@ -44,9 +44,10 @@ newtype Expr = Expr (Located Expr', Type SourceRegion)
     deriving (Show, Eq)
 
 data Pattern'
-    = VarPattern (Located (VarRef VarName))
+    = VarPattern (Located (Unique VarName))
     | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
     | ListPattern [Pattern]
+    | ConsPattern Pattern Pattern
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double
@@ -126,7 +127,7 @@ instance StripLocation Pattern Unlocated.Pattern where
 
 instance StripLocation Pattern' Unlocated.Pattern' where
     stripLocation p = case p of
-        VarPattern v -> Unlocated.VarPattern (stripLocation $ stripLocation v)
+        VarPattern v -> Unlocated.VarPattern (stripLocation v)
         ConstructorPattern q ps -> Unlocated.ConstructorPattern (stripLocation q) (stripLocation ps)
         WildcardPattern -> Unlocated.WildcardPattern
         IntegerPattern i -> Unlocated.IntegerPattern i
@@ -134,6 +135,7 @@ instance StripLocation Pattern' Unlocated.Pattern' where
         StringPattern s -> Unlocated.StringPattern s
         CharPattern c -> Unlocated.CharPattern c
         ListPattern c -> Unlocated.ListPattern (stripLocation c)
+        ConsPattern p1 p2 -> Unlocated.ConsPattern (stripLocation p1) (stripLocation p2)
 
 -- Pretty Printing :D
 

@@ -58,6 +58,7 @@ typeTerm =
         , located namedType
         , located emptyRecordError
         , located recordType
+        , located listType
         ]
 
 typeVar :: HParser Type
@@ -100,3 +101,11 @@ tupleType = inParens' $ do
     endHead
     ts <- sepBy1' type' (token_ TokenComma)
     pure $ TupleType (t <| ts)
+
+
+listType :: HParser Type
+listType = do
+    token_ TokenLeftBracket
+    t <- type'
+    token_ TokenRightBracket
+    pure $ ListType t
