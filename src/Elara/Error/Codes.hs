@@ -3,7 +3,7 @@ module Elara.Error.Codes where
 import Elara.Data.Pretty
 
 {- | A type for error codes.
-While not enforced, error codes should follow a standard format consisting of the following components
+Error codes should follow a standard format consisting of the following components:
 
 @[E|W]@, followed by 4 digits. The symbol @E@ indicates an error, while @W@ indicates a warning.
 
@@ -16,7 +16,10 @@ The first digit signals the stage in which the error was thrown:
 - @2@: Operator Shunting Stage
 
 The remaining digits are arbitrary and should be incremented for each new error or warning.
-They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
+    They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
+
+Some errors are internal, rather than user-facing (i.e. something internal has gone wrong if they are thrown).
+    These errors' codes should be prefixed with @[Internal]@.
 -}
 type ErrorCode = forall ann. Doc ann
 
@@ -50,11 +53,14 @@ duplicateDefinition = "E1005"
 defWithoutLet :: ErrorCode
 defWithoutLet = "E1006"
 
+partialNamesNotEqual :: ErrorCode
+partialNamesNotEqual = "[Internal] E1007"
+
 tooManyDeclarations :: ErrorCode
-tooManyDeclarations = "E1007"
+tooManyDeclarations = "E1008"
 
 nonExistentModuleDeclaration :: ErrorCode
-nonExistentModuleDeclaration = "E1008"
+nonExistentModuleDeclaration = "E1009"
 
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"

@@ -1,5 +1,5 @@
 import Prelude
 
-let x = "hello world!"
+let msg = "hello world from a variable!"
 
-let main = println x
+let main = println msg
