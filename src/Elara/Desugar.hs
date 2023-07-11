@@ -34,8 +34,10 @@ instance ReportableError DesugarError where
         writeReport $
             Err
                 (Just Codes.duplicateDefinition)
-                ("Duplicate declaration names:" <+> pretty a <+> "and" <+> pretty b)
-                [(sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion a, This "Second declaration"), (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion b, This "First declaration")]
+                ("Duplicate declaration names:" <+> pretty a)
+                [ (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion b, This "Name is used here")
+                , (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion a, This "And also here")
+                ]
                 [ Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
                 , Hint "Rename one of the declarations"
                 ]
