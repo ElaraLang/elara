@@ -1,7 +1,0 @@
-module Main exposing (..)
-
-import Prelude exposing (..)
-
-def Main.add1 : (Integer -> Integer)
-let Main.add1 =
-    \x0 ->  ((x0 Prelude.(+) 1))
