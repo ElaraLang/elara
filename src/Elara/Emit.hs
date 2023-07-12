@@ -1,19 +1,25 @@
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE ViewPatterns #-}
+
 -- | Emits JVM bytecode from Elara AST.
 module Elara.Emit where
 
-import Control.Lens
+import Control.Lens hiding (List)
+import Data.List.NonEmpty qualified as NE
 import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
 import Elara.AST.Module (HasDeclarations (declarations), Module)
-import Elara.AST.Name (ModuleName (..), NameLike (nameText), Qualified (Qualified))
+import Elara.AST.Name (ModuleName (..), Name, NameLike (nameText), Qualified (Qualified))
 import Elara.AST.Region (Located (Located))
 import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
-import Elara.AST.Typed as AST (Declaration, DeclarationBody' (..), Expr (..), Expr' (FunctionCall, Int, String, Var), _Expr)
+import Elara.AST.Typed as AST (Declaration, DeclarationBody' (..), Expr (..), Expr' (FunctionCall, Int, Lambda, String, Var), _Expr)
 import Elara.AST.VarRef (VarRef' (Global))
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
+import Elara.Emit.Operator (translateOperatorName)
 import Elara.Prim (fetchPrimitive)
 import Elara.TypeInfer.Monotype as Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
 import JVM.Data.Abstract.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
+import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Field (ClassFileField (ClassFileField))
@@ -21,11 +27,12 @@ import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCInt, LDCStr
 import JVM.Data.Abstract.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
 import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType, PrimitiveFieldType), PrimitiveType (..))
+import JVM.Data.Convert.Descriptor (convertMethodDescriptor)
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (debugPretty, showPretty)
+import Print (debugColored, debugPretty, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -39,48 +46,42 @@ emitModule m = do
     let name = createModuleName (m ^. unlocatedModuleName)
     version <- ask
 
-    let (fields, methods) = partitionEithers $ createMethodOrField <$> m ^. declarations
-    let methods' = methods ++ [generateMainMethod m | isMainModule m]
+    (_, clazz) <- runClassBuilderT name version $ do
+        traverse_ addDeclaration (m ^. declarations)
+        when (isMainModule m) (addMethod (generateMainMethod m))
+
     pure
         ( m ^. unlocatedModuleName
-        , ClassFile
-            name
-            version
-            []
-            Nothing
-            []
-            fields
-            (createFieldInitialisers (m ^. declarations) : methods')
-            []
+        , clazz
         )
-  where
-    createMethodOrField :: HasCallStack => Declaration -> Either ClassFileField ClassFileMethod
-    createMethodOrField d =
-        case d ^. unlocatedDeclarationBody' of
-            TypeDeclaration{} -> error "Type declarations are not supported yet"
-            Value v ->
-                let (_, type') = v ^. _Expr
-                 in if typeIsValue type'
-                        then Left $ ClassFileField [FPublic, FStatic] (d ^. unlocatedDeclarationName . to nameText) (generateFieldType type') []
-                        else
-                            let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
-                             in Right $
-                                    ClassFileMethod
-                                        [MPublic, MStatic]
-                                        (d ^. unlocatedDeclarationName . to nameText)
-                                        descriptor
-                                        [generateCodeAttribute v (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))]
 
-    generateCodeAttribute :: Expr -> ([Instruction] -> [Instruction]) -> MethodAttribute
-    generateCodeAttribute e codeMod =
-        Code $
-            CodeAttributeData
-                { maxStack = 2 -- TODO: calculate this
-                , maxLocals = 2 -- TODO: calculate this too
-                , code = codeMod (generateCode e)
-                , exceptionTable = []
-                , codeAttributes = []
-                }
+generateCodeAttribute :: Expr -> ([Instruction] -> [Instruction]) -> MethodAttribute
+generateCodeAttribute e codeMod =
+    Code $
+        CodeAttributeData
+            { maxStack = 2 -- TODO: calculate this
+            , maxLocals = 2 -- TODO: calculate this too
+            , code = codeMod (generateCode e)
+            , exceptionTable = []
+            , codeAttributes = []
+            }
+
+addDeclaration :: (Emit r) => Declaration -> ClassBuilderT (Sem r) ()
+addDeclaration decl@(view unlocatedDeclarationBody' -> declBody) = case declBody of
+    TypeDeclaration{} -> error "Type declarations are not supported yet"
+    Value v -> do
+        let (_, type') = v ^. _Expr
+            declName = translateOperatorName $ decl ^. unlocatedDeclarationName . to nameText
+        if typeIsValue type'
+            then addField (ClassFileField [FPublic, FStatic] declName (generateFieldType type') [])
+            else do
+                let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
+                addMethod $
+                    ClassFileMethod
+                        [MPublic, MStatic]
+                        (declName)
+                        descriptor
+                        [generateCodeAttribute v (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))]
 
 isMainModule :: Module Typed -> Bool
 isMainModule m = m ^. unlocatedModuleName == ModuleName ("Main" :| [])
@@ -139,9 +140,9 @@ invokeStaticVars (Expr (Located _ e, exprType)) =
             if typeIsValue exprType
                 then error "dunno about global vars"
                 else (ClassInfoType $ createModuleName mn, nameText vn, generateMethodDescriptor exprType)
-        other -> error (show other)
+        other -> error (showPretty other)
 
-generateCode :: Expr -> [Instruction]
+generateCode ::Expr -> [Instruction]
 generateCode (Expr (Located _ e, exprType)) =
     case e of
         FunctionCall
@@ -158,7 +159,8 @@ generateCode (Expr (Located _ e, exprType)) =
             let (a, b, c) = invokeStaticVars f
             let outs = generateCode x
             outs ++ [InvokeStatic a b c]
-        e -> error (show e)
+        Lambda _ x -> generateCode x
+        e -> error (showPretty e)
 
 {- | Determines if a type is a value type.
  That is, a type that can be compiled to a field rather than a method.
@@ -179,15 +181,25 @@ generateFieldType (Scalar _ Monotype.String) = ObjectFieldType "java.lang.String
 generateFieldType (Scalar _ Monotype.Char) = PrimitiveFieldType JVM.Char
 generateFieldType (Custom _ "IO" _) = ObjectFieldType "elara.IO"
 generateFieldType (VariableType _ _) = ObjectFieldType "java.lang.Object"
-generateFieldType o = error $ "generateFieldType: " <> show o
+generateFieldType (Function{}) = ObjectFieldType "elara.Func"
+generateFieldType (List _ t) = ObjectFieldType "elara.EList"
+generateFieldType o = error $ "generateFieldType: " <> showPretty o
 
 generateMethodDescriptor :: HasCallStack => Show a => Type a -> MethodDescriptor
 generateMethodDescriptor (Forall _ _ _ _ t) = generateMethodDescriptor t
-generateMethodDescriptor (Function _ i o) = MethodDescriptor (generateFieldType <$> collapseFunctions i) (generateReturnDescriptor o)
-  where
-    collapseFunctions :: Type a -> [Type a]
-    collapseFunctions (Function _ i o) = i : collapseFunctions o
-    collapseFunctions other = [other]
+generateMethodDescriptor f@(Function{}) = do
+    -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)
+    let
+        splitUpFunction :: Type a -> NonEmpty (Type a)
+        splitUpFunction (Function _ i o) = i `NE.cons` splitUpFunction o
+        splitUpFunction other = pure other
+
+        allParts = splitUpFunction f
+
+        inputs = init allParts
+        output = last allParts
+
+    MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
 generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
 
 generateReturnDescriptor :: HasCallStack => Show a => Type a -> ReturnDescriptor

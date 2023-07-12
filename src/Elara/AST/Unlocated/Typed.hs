@@ -82,12 +82,10 @@ instance Pretty Expr where
         needsParens = case e of
             FunctionCall _ _ -> True
             If {} -> True
-            List _ -> True
             Match _ _ -> True
             LetIn {} -> True
             Let _ _ -> True
             Block _ -> True
-            Tuple _ -> True
             _ -> False
         long = pretty e
         short = align (pretty e )

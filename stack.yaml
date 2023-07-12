@@ -10,7 +10,7 @@ flags:
 
 extra-deps:
   - git: git@github.com:ElaraLang/h2jvm.git
-    commit: 67ba3f28764b96a5487bb28e09e9e36a1c2ea570
+    commit: 9ba960c96d1bb4e2c92db60c47552f4cab24f7be
   - diagnose-2.4.0@sha256:c594a0b512a8d3aa58b240070467d6f337ef0769e367a0e74f2081307b1b13d7,5941
   - async-2.2.4@sha256:2b9409023536823233ce3134558565d01b3382e651fa54ac8cb8a99967e023c9,3095
   - base-noprelude-4.13.0.0@sha256:3cccbfda38e1422ca5cc436d58858ba51ff9114d2ed87915a6569be11e4e5a90,6842

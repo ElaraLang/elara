@@ -2,10 +2,6 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.map : ∀ a4. ∀ b5. ((a4 -> b5) -> ([a4] -> [b5]))
-let Main.map =
-    \f0 ->
-    \list1 ->
-    ((match list1 with [] -> ([])
-                       (x2 :: xs3) -> (((f0 x2) Prelude.(::) ((Main.map f0)
-                       xs3)))))
+def Main.add1 : (Integer -> Integer)
+let Main.add1 =
+    \x0 ->  ((x0 Prelude.(+) 1))
