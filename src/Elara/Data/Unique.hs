@@ -74,8 +74,6 @@ uniqueGenToIO = reinterpret $ \case
             (i : is) -> do
                 embed (writeIORef globalUniqueSupply (UniqueSupply is))
                 pure i
-    
-
 
 makeSem ''UniqueGen
 makeLenses ''UniqueSupply
@@ -94,7 +92,7 @@ uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i
 
 instance (Pretty a) => Pretty (Unique a) where
-    pretty (Unique a i) = pretty a <> pretty i
+    pretty (Unique a i) = pretty a <> "_" <> pretty i
 
 instance Pretty UniqueId where
     pretty (UniqueId (Unique _ i)) = pretty i
