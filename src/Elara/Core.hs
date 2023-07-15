@@ -2,11 +2,22 @@ module Elara.Core where
 
 import Elara.AST.Name (Qualified)
 import Elara.AST.Pretty (none, prettyBlockExpr, prettyFunctionCallExpr, prettyLambdaExpr, prettyLetInExpr, prettyStringExpr)
-import Elara.AST.VarRef (UnlocatedVarRef)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), hardline, indentDepth, nest, softline, (<+>))
+import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef)
+import Elara.Data.Kind (ElaraKind)
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), hardline, indentDepth, nest, softline, (<+>), parens)
+import Elara.Data.Unique (Unique)
 import Prelude hiding (Alt)
 
-type Var = UnlocatedVarRef Text
+data Var
+  = TyVar
+      { tvVarName :: Unique Text,
+        tvVarType :: ElaraKind
+      }
+  | Id
+      { idVarName :: IgnoreLocVarRef Text,
+        idVarType :: Type
+      }
+  deriving (Show)
 
 data Expr b
   = Var Var
@@ -80,7 +91,7 @@ instance Pretty Literal where
   pretty :: Literal -> Doc AnsiStyle
   pretty = \case
     Int i -> pretty i
-    String s -> prettyStringExpr s 
+    String s -> prettyStringExpr s
     Char c -> pretty c
     Double d -> pretty d
     Unit -> "()"
@@ -101,3 +112,9 @@ instance Pretty DataCon where
   pretty :: DataCon -> Doc AnsiStyle
   pretty = \case
     DataCon name -> pretty name
+
+instance Pretty Var where
+  pretty :: Var -> Doc AnsiStyle
+  pretty = \case
+    TyVar name k -> parens (pretty name <+> ":" <+> pretty k) 
+    Id name t -> parens (pretty name <+> ":" <+> pretty t)

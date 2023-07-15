@@ -71,6 +71,8 @@ moduleToCore (Module (Located _ m)) = do
     pure (CoreDeclaration (decl ^. declarationName . to fullNameText) body')
   pure $ CoreModule name decls
 
+
+
 toCore :: (ToCoreC r) => AST.Expr -> Sem r CoreExpr
 toCore le@(AST.Expr (Located _ e, t)) = toCore' e
   where
