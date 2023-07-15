@@ -1,0 +1,15 @@
+module Prelude exposing (..)
+
+
+
+def Prelude.println : ∀ a6. (a6 -> IO ())
+let Prelude.println =
+    Elara.Prim.elaraPrimitive "println"
+
+def Prelude.(+) : (Integer -> (Integer -> Integer))
+let Prelude.(+) =
+    Elara.Prim.elaraPrimitive "+"
+
+def Prelude.(::) : ∀ a6. (a6 -> ([a6] -> [a6]))
+let Prelude.(::) =
+    Elara.Prim.elaraPrimitive "::"

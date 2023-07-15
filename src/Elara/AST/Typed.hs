@@ -54,6 +54,7 @@ data Pattern'
     | FloatPattern Double
     | StringPattern Text
     | CharPattern Char
+    | UnitPattern
     deriving (Show, Eq)
 
 newtype Pattern = Pattern (Located Pattern', Type SourceRegion)
@@ -137,6 +138,7 @@ instance StripLocation Pattern' Unlocated.Pattern' where
         CharPattern c -> Unlocated.CharPattern c
         ListPattern c -> Unlocated.ListPattern (stripLocation c)
         ConsPattern p1 p2 -> Unlocated.ConsPattern (stripLocation p1) (stripLocation p2)
+        UnitPattern -> Unlocated.UnitPattern
 
 -- Pretty Printing :D
 

@@ -43,6 +43,8 @@ library
       Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
       Elara.Compile
+      Elara.Core
+      Elara.Core.Module
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
@@ -77,6 +79,7 @@ library
       Elara.Prim
       Elara.Rename
       Elara.Shunt
+      Elara.ToCore
       Elara.TypeInfer
       Elara.TypeInfer.Context
       Elara.TypeInfer.Domain

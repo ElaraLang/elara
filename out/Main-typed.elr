@@ -1,0 +1,12 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+def Main.map : ∀ a4. ∀ b5. ((a4 -> b5) -> ([a4] -> [b5]))
+let Main.map =
+    \f_0 ->
+    \list_1 ->
+    ((match list_1 with [] -> []
+                        (x_2 :: xs_3) -> (((f_0 x_2) Prelude.(::) ((Main.map
+                        f_0)
+                        xs_3)))))

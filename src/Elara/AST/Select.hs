@@ -187,6 +187,8 @@ class HasModuleName c ast | c -> ast where
     moduleName :: Lens' c (ASTLocate ast ModuleName)
     unlocatedModuleName :: Lens' c ModuleName
 
+
+
 instance HasModuleName Desugared.Declaration Desugared where
     moduleName = Desugared._Declaration . unlocated . moduleName @Desugared.Declaration' @Desugared
     unlocatedModuleName :: Lens' Desugared.Declaration ModuleName

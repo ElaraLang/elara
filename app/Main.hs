@@ -7,19 +7,23 @@ module Main
 where
 
 import Control.Exception as E
-import Control.Lens (to, view, (^.))
+import Control.Lens (Each (each), folded, to, traverseOf_, view, (^.))
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
+import Data.ByteString.Char8 (putStrLn)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
+import Elara.AST.Region (unlocated)
 import Elara.AST.Select hiding (moduleName)
+import Elara.AST.Typed qualified as Typed
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
-import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
+import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Emit
 import Elara.Error
+import Elara.Error (ReportableError)
 import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme)
@@ -29,6 +33,7 @@ import Elara.Parse.Stream
 import Elara.Prim (primitiveRenameState)
 import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
+import Elara.ToCore (moduleToCore, runToCoreC, toCore)
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
 import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
@@ -37,7 +42,7 @@ import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Member, Members, Sem, runM, subsume, subsume_)
+import Polysemy (Member, Members, Sem, raise, runM, subsume, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -46,6 +51,7 @@ import Polysemy.State
 import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
 import Print
+import Print (printPretty)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
@@ -55,15 +61,15 @@ main :: IO ()
 main = run `finally` cleanup
   where
     run :: IO ()
-    run =
-      do
-        hSetBuffering stdout NoBuffering
-        args <- getArgs
-        let dumpShunted = "--dump-shunted" `elem` args
-        let dumpTyped = "--dump-typed" `elem` args
-        s <- runElara dumpShunted dumpTyped
-        printDiagnostic stdout True True 4 defaultStyle s
-        pass
+    run = do
+      hSetBuffering stdout NoBuffering
+      putTextLn "\n"
+      args <- getArgs
+      let dumpShunted = "--dump-shunted" `elem` args
+      let dumpTyped = "--dump-typed" `elem` args
+      s <- runElara dumpShunted dumpTyped
+      printDiagnostic stdout True True 4 defaultStyle s
+      pass
 
 dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
@@ -93,19 +99,23 @@ runElara dumpShunted dumpTyped = runM $ execDiagnosticWriter $ runMaybe $ do
   when dumpTyped $ do
     liftIO $ dumpGraph typedGraph (view (name . to nameText)) "-typed.elr"
 
-  classes <- runReader java8 (emitGraph typedGraph)
+  coreGraph <- reportAndHalt $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
-  for_ classes $ \(mn, class') -> do
-    putTextLn ("Compiling " <> showPretty mn <> "...")
-    let converted = convert class'
-    let bs = runPut (writeBinary converted)
-    liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
-    putTextLn ("Compiled " <> showPretty mn <> "!")
+  traverse (liftIO . printPretty) (allEntries coreGraph)
 
-  end <- liftIO getCPUTime
-  let t :: Double
-      t = fromIntegral (end - start) * 1e-9
-  putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+-- classes <- runReader java8 (emitGraph typedGraph)
+
+-- for_ classes $ \(mn, class') -> do
+--   putTextLn ("Compiling " <> showPretty mn <> "...")
+--   let converted = convert class'
+--   let bs = runPut (writeBinary converted)
+--   liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
+--   putTextLn ("Compiled " <> showPretty mn <> "!")
+
+-- end <- liftIO getCPUTime
+-- let t :: Double
+--     t = fromIntegral (end - start) * 1e-9
+-- putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
@@ -184,5 +194,12 @@ runErrorOrReport ::
 runErrorOrReport e = do
   x <- subsume_ (runError e)
   case x of
+    Left err -> report err *> nothingE
+    Right a -> justE a
+
+reportAndHalt :: Member MaybeE r => Member (DiagnosticWriter (Doc AnsiStyle)) r => (ReportableError e) => Sem r (Either e a) -> Sem r a
+reportAndHalt x = do
+  x' <- x
+  case x' of
     Left err -> report err *> nothingE
     Right a -> justE a

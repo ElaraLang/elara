@@ -45,6 +45,7 @@ data Pattern'
     | FloatPattern Double
     | StringPattern Text
     | CharPattern Char
+    | UnitPattern
     deriving (Show, Eq)
 
 newtype Pattern = Pattern (Pattern', Type ())

@@ -2,7 +2,6 @@
 module Elara.AST.Pretty where
 
 import Elara.Data.Pretty
-import Text.Megaparsec.Char.Lexer (indentBlock)
 import Prelude hiding (group)
 
 none :: [()]
