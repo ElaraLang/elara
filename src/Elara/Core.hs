@@ -4,17 +4,20 @@ import Elara.AST.Name (Qualified)
 import Elara.AST.Pretty (none, prettyBlockExpr, prettyFunctionCallExpr, prettyLambdaExpr, prettyLetInExpr, prettyStringExpr)
 import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), hardline, indentDepth, nest, softline, (<+>), parens)
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), hardline, indentDepth, nest, parens, softline, (<+>))
 import Elara.Data.Unique (Unique)
 import Prelude hiding (Alt)
 
+data TypeVariable = TypeVariable
+  { tvName :: Unique Text,
+    tvKind :: ElaraKind
+  }
+  deriving (Show)
+
 data Var
-  = TyVar
-      { tvVarName :: Unique Text,
-        tvVarType :: ElaraKind
-      }
+  = TyVar TypeVariable
   | Id
-      { idVarName :: IgnoreLocVarRef Text,
+      { idVarName :: UnlocatedVarRef Text,
         idVarType :: Type
       }
   deriving (Show)
@@ -52,6 +55,7 @@ data DataCon = DataCon
   deriving (Show)
 
 data Type
+  = TyVarTy TypeVariable
   deriving (Show)
 
 data Literal
@@ -116,5 +120,10 @@ instance Pretty DataCon where
 instance Pretty Var where
   pretty :: Var -> Doc AnsiStyle
   pretty = \case
-    TyVar name k -> parens (pretty name <+> ":" <+> pretty k) 
+    TyVar tv -> pretty tv
     Id name t -> parens (pretty name <+> ":" <+> pretty t)
+
+instance Pretty TypeVariable where
+  pretty :: TypeVariable -> Doc AnsiStyle
+  pretty = \case
+    TypeVariable name kind -> parens (pretty name <+> ":" <+> pretty kind)

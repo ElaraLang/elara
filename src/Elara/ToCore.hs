@@ -15,11 +15,11 @@ import Elara.AST.VarRef (VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (CoreDeclaration), CoreDeclarationBody (CoreValue), CoreModule (..))
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique)
+import Elara.Error (ReportableError)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
 import TODO (todo)
-import Elara.Error (ReportableError)
 
 data ToCoreError
   = LetInTopLevel AST.Expr
@@ -27,8 +27,7 @@ data ToCoreError
   | UnknownPrimConstructor (Qualified Text)
   deriving (Show, Eq)
 
-instance ReportableError ToCoreError where
-    
+instance ReportableError ToCoreError
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
@@ -83,8 +82,9 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
       AST.String s -> pure $ Lit (Core.String s)
       AST.Char c -> pure $ Lit (Core.Char c)
       AST.Unit -> pure $ Lit Core.Unit
-      AST.Var (Located _ v) -> pure $ Core.Var (nameText <$> stripLocation v)
-      AST.Constructor (Located _ v) -> pure $ Core.Var (let y = nameText <$> v in Global (Identity y))
+      AST.Var (Located _ v) -> do
+        t <- 
+      AST.Constructor (Located _ v) -> pure $ Core.Var (Global (Identity . nameText <$> v))
       AST.Lambda (Located _ vn) body -> Core.Lam (Local $ Identity (nameText <$> vn)) <$> toCore body
       AST.FunctionCall e1 e2 -> Core.App <$> toCore e1 <*> toCore e2
       AST.If cond ifTrue ifFalse -> do
