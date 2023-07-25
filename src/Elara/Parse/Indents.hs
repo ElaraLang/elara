@@ -3,7 +3,7 @@ module Elara.Parse.Indents where
 import Elara.AST.Frontend (Expr (..), Expr' (Block), _Expr)
 
 import Control.Lens (view)
-import Elara.AST.Region (Located (..), merge, sourceRegion)
+import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')

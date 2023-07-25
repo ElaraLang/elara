@@ -8,7 +8,7 @@ import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (element)
-import Elara.Parse.Indents (block, exprBlock)
+import Elara.Parse.Indents (exprBlock)
 import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
 import Elara.Parse.Pattern (pattern')
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token_)

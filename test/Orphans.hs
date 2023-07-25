@@ -7,7 +7,7 @@ module Orphans where
 import Data.Char (isLower, isUpper)
 import Data.Text (splitOn)
 
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), OpName (..), TypeName (..), Unqualified (..), VarName (..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), Unqualified (..), VarName (..))
 
 instance IsString VarName where
     fromString = NormalVarName . fromString

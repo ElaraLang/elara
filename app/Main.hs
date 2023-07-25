@@ -99,7 +99,7 @@ runElara dumpShunted dumpTyped = runM $ execDiagnosticWriter $ runMaybe $ do
   when dumpTyped $ do
     liftIO $ dumpGraph typedGraph (view (name . to nameText)) "-typed.elr"
 
-  coreGraph <- reportAndHalt $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
+  coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
   traverse (liftIO . printPretty) (allEntries coreGraph)
 
@@ -197,8 +197,8 @@ runErrorOrReport e = do
     Left err -> report err *> nothingE
     Right a -> justE a
 
-reportAndHalt :: Member MaybeE r => Member (DiagnosticWriter (Doc AnsiStyle)) r => (ReportableError e) => Sem r (Either e a) -> Sem r a
-reportAndHalt x = do
+reportMaybe :: Member MaybeE r => Member (DiagnosticWriter (Doc AnsiStyle)) r => (ReportableError e) => Sem r (Either e a) -> Sem r a
+reportMaybe x = do
   x' <- x
   case x' of
     Left err -> report err *> nothingE

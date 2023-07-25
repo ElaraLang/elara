@@ -35,6 +35,10 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
+-- | A haskell-style braced block, which can split over multiple lines.
+-- >>> bracedBlock ["foo", "bar"]
+-- { foo; bar }
+
 bracedBlock :: (Pretty a) => [a] -> Doc AnsiStyle
 bracedBlock [] = "{}"
 bracedBlock b = do
@@ -42,6 +46,8 @@ bracedBlock b = do
       close = " }"
       separator = "; "
   group (align (encloseSep open close separator (pretty <$> b)))
+
+
 
 class Pretty a where
   pretty :: a -> Doc AnsiStyle

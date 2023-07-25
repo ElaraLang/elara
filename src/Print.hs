@@ -26,6 +26,9 @@ showColored = fromString . toString . pShow
 showPretty :: (Pretty a) => a -> Text
 showPretty = renderStrict . layoutPretty defaultLayoutOptions . pretty
 
+showPrettyUnannotated :: (Pretty a) => a -> Text
+showPrettyUnannotated = renderStrict . layoutPretty defaultLayoutOptions . unAnnotate . pretty
+
 {-# WARNING debugColored "Debug is still in code" #-}
 debugColored :: (Show a, Applicative f) => a -> f ()
 debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg

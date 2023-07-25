@@ -16,6 +16,7 @@ import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Marker (Where), Note (Hint), Report (Err))
 import Print
+import Elara.Data.Unique (Unique)
 
 -- | A data type holding all errors related to type inference
 data TypeInferenceError
@@ -46,7 +47,7 @@ data TypeInferenceError
     | --
       UnboundAlternatives SourceRegion Text
     | UnboundFields SourceRegion Text
-    | UnboundTypeVariable SourceRegion Text (Context SourceRegion)
+    | UnboundTypeVariable SourceRegion (Text) (Context SourceRegion)
     | UnboundVariable
         SourceRegion
         -- ^ Location of the variable that caused the error

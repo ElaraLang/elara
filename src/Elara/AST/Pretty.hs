@@ -31,7 +31,7 @@ prettyFunctionCallExpr :: (Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
 prettyFunctionCallExpr e1 e2 = group (flatAlt long short)
     where
         short = pretty e1 <+> pretty e2
-        long = pretty e1 <> hardline <> nest indentDepth (pretty e2)
+        long = pretty e1 <> hardline <> indent indentDepth (pretty e2)
 
 prettyIfExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
 prettyIfExpr e1 e2 e3 = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)

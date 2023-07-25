@@ -2,7 +2,7 @@ module Elara.AST.Unlocated.Frontend where
 
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Pretty 
+import Elara.AST.Pretty
 import Elara.AST.Region
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
@@ -31,7 +31,7 @@ data Expr
   | Block (NonEmpty Expr)
   | InParens Expr
   | Tuple (NonEmpty Expr)
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 data Pattern
   = VarPattern VarName
@@ -162,12 +162,12 @@ instance Pretty Expr where
   pretty (Lambda ps e) = prettyLambdaExpr ps e
   pretty (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2
   pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
-  pretty (BinaryOperator o e1 e2) = prettyBinaryOperatorExpr o e1 e2
+  pretty (BinaryOperator o e1 e2) = prettyBinaryOperatorExpr e1 o e2
   pretty (List l) = prettyListExpr l
   pretty (Match e m) = prettyMatchExpr e m
   pretty (LetIn v ps e1 e2) = prettyLetInExpr v ps e1 e2
   pretty (Let v ps e) = prettyLetExpr v ps e
-  pretty (Block b) = prettyBlockExpr b
+  pretty (Block b) = bracedBlock (toList b)
   pretty (InParens e) = parens (pretty e)
   pretty (Tuple t) = parens (hsep (punctuate "," (pretty <$> toList t)))
 

@@ -41,6 +41,7 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Elara.Data.Unique (Unique)
 
 {- $setup
 
@@ -55,7 +56,7 @@ data Entry s
       --
       -- >>> pretty @(Entry ()) (Variable Domain.Type "a")
       -- a: Type
-      Variable Domain Text
+      Variable Domain (Text)
     | -- | A bound variable whose type is known
       --
       -- >>> pretty @(Entry ()) (Annotation "x" "a")

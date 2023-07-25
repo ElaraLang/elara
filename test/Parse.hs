@@ -2,24 +2,22 @@
 
 module Parse where
 
-import Elara.AST.Frontend qualified as Frontend
+import Arbitrary.AST ()
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated.Frontend as Unlocated
 import Elara.Data.Pretty
-
-import Arbitrary.AST
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Stream
 import Lex.Common
 import Parse.Common
-import Print
+import Print (showPretty, showPrettyUnannotated)
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 spec :: Spec
 spec = do
-    -- quickCheckSpec
+    quickCheckSpec
     pass
 
 quickCheckSpec :: Spec
@@ -39,10 +37,8 @@ removeInParens e = e
 
 ppEq :: Unlocated.Expr -> Property
 ppEq (removeInParens -> expr) =
-    let
-        source = showPretty $ pretty expr
+    let source = showPrettyUnannotated $ pretty expr
         lexed = lex' source
         parsed = parse exprParser (TokenStream (toString source) lexed 0)
-        cleaned = removeInParens . (stripLocation @Frontend.Expr @Unlocated.Expr) <$> parsed
-     in
-        counterexample (toString source) (cleaned `shouldParseProp` expr)
+        cleaned = removeInParens . stripLocation <$> parsed
+     in counterexample (toString $ showPretty $ pretty source) (cleaned `shouldParseProp` expr)

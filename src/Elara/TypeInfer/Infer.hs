@@ -55,6 +55,7 @@ data Status = Status
     }
     deriving (Show)
 
+
 initialStatus :: Status
 initialStatus = Status{count = 0, context = primitiveTCContext}
 
@@ -1363,7 +1364,6 @@ infer (Expr (Located location e0)) cont =
                     pure (Type.List{type_ = Type.UnsolvedType{..}, ..}, c)
                 y : ys -> do
                     type_ <- fst <$> infer y cont -- the first element in the list determines the type
-
                     let process element = do
                             _Γ <- get
                             check element (Context.solveType _Γ type_)
@@ -1409,17 +1409,13 @@ infer (Expr (Located location e0)) cont =
             push (Context.UnsolvedType existential)
             c <- cont
             pure (Type.UnsolvedType{existential, ..}, c)
-        Syntax.Match against (principle:others) -> do
+        Syntax.Match against (principle : others) -> do
             _A <- infer' against -- the type that all the patterns must match
             (principleType, c) <- infer (snd principle) cont -- the first branch determines the type of the whole match expression
-
-
             let process (pat, branch) = do
                     checkPattern pat _A -- check that the pattern can match the type of the match expression
                     ctx <- get
                     check branch (Context.solveType ctx principleType) -- check that the branch matches the type of the first branch
-    
-
             traverse_ process (principle : others)
 
             pure (principleType, c)
