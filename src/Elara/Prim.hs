@@ -10,7 +10,7 @@ import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion,
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Unique (UniqueGen, makeUnique)
-import Elara.Rename (RenameState (RenameState))
+
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
@@ -50,13 +50,7 @@ primitiveVars = [fetchPrimitiveName]
 primitiveTypes :: [TypeName]
 primitiveTypes = [stringName, intName]
 
-primitiveRenameState :: RenameState
-primitiveRenameState =
-    let vars =
-            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveVars)
-        types =
-            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveTypes) <> fromList [(ioName, Global (mkPrimVarRef ioName))]
-     in RenameState vars types mempty
+
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =

@@ -1,4 +1,0 @@
-module Prelude
-{ Prelude.println = (Elara.Prim.elaraPrimitive "println")
-; Prelude.+ = (Elara.Prim.elaraPrimitive "+")
-; Prelude.:: = (Elara.Prim.elaraPrimitive "::") }

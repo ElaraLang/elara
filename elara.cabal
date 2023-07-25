@@ -45,6 +45,7 @@ library
       Elara.Compile
       Elara.Core
       Elara.Core.Module
+      Elara.Core.Pretty
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
@@ -77,6 +78,8 @@ library
       Elara.Parse.Stream
       Elara.Parse.Type
       Elara.Prim
+      Elara.Prim.Core
+      Elara.Prim.Rename
       Elara.Rename
       Elara.Shunt
       Elara.ToCore

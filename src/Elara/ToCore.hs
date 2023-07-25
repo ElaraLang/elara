@@ -3,31 +3,32 @@
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
-import Control.Lens (to, view, (^.))
+import Control.Lens (to, view, (^.), _2)
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
 import Elara.AST.Module (Module (Module), module'Declarations, module'Name)
 import Elara.AST.Name (ModuleName (ModuleName), NameLike (..), Qualified (..), TypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Select (HasDeclarationName (declarationName), Typed)
+import Elara.AST.Select (HasDeclarationName (declarationName, unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
 import Elara.AST.StripLocation
 import Elara.AST.Typed as AST
 import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
-import Elara.Core.Module (CoreDeclaration (CoreDeclaration), CoreDeclarationBody (CoreValue), CoreModule (..))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (UniqueGen, makeUnique)
 import Elara.Error (ReportableError (..), writeReport)
 import Elara.Prim (mkPrimQual)
-import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Monotype qualified as Scalar
+import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (..))
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
 
 import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Prim.Core
 
 data ToCoreError
     = LetInTopLevel AST.Expr
@@ -76,12 +77,16 @@ runToCoreC = runError . evalState primCtorSymbolTable
 
 moduleToCore :: (ToCoreC r) => Module Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
-    let name = nameText (m ^. module'Name)
+    let name = m ^. unlocatedModuleName
     decls <- for (m ^. module'Declarations) $ \decl -> do
-        body' <- case decl ^. unlocatedDeclarationBody' of
-            Value v -> CoreValue <$> toCore v
+        (body', var) <- case decl ^. unlocatedDeclarationBody' of
+            Value v -> do
+                v' <- toCore v
+                ty <- typeToCore (v ^. _Expr . _2)
+                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. unlocatedDeclarationName))) ty
+                pure (v', var)
             other -> error "TODO: other declaration types"
-        pure (CoreDeclaration (decl ^. declarationName . to fullNameText) body')
+        pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
 typeToCore :: (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
@@ -92,6 +97,12 @@ typeToCore (Type.Function{input, output}) = Core.FuncTy <$> typeToCore input <*>
 typeToCore (Type.Forall _ _ _ _ t) = typeToCore t
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.String) = pure (Core.ConTy (mkPrimQual "String"))
+typeToCore (Type.Scalar _ Scalar.Integer) = pure (Core.ConTy (mkPrimQual "Int"))
+typeToCore (Type.Scalar _ Scalar.Unit) = pure (Core.ConTy (mkPrimQual "()"))
+typeToCore (Type.Custom _ n args) = do
+    args' <- traverse typeToCore args
+    let con = Core.ConTy (mkPrimQual n)
+    pure (foldl' Core.AppTy con args')
 typeToCore other = error ("TODO: typeToCore " <> show other)
 
 conToVar :: DataCon -> Core.Var
@@ -219,30 +230,3 @@ mkBindName (AST.Expr (_, t)) = do
 desugarBlock :: ToCoreC r => NonEmpty AST.Expr -> Sem r CoreExpr
 desugarBlock (one :| []) = toCore one
 desugarBlock _ = error "todo"
-
-trueCtorName :: Qualified Text
-trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
-
-falseCtorName :: Qualified Text
-falseCtorName = Qualified "False" (ModuleName ("Elara" :| ["Prim"]))
-
-emptyListCtorName :: Qualified Text
-emptyListCtorName = Qualified "[]" (ModuleName ("Elara" :| ["Prim"]))
-
-consCtorName :: Qualified Text
-consCtorName = Qualified "::" (ModuleName ("Elara" :| ["Prim"]))
-
-tuple2CtorName :: Qualified Text
-tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
-
-boolCon = ConTy (mkPrimQual "Bool")
-
-listCon = ConTy (mkPrimQual "[]")
-
-trueCtor = DataCon trueCtorName boolCon
-
-falseCtor = DataCon falseCtorName boolCon
-
-tuple2Con = ConTy (mkPrimQual "(,)")
-
-tuple2Ctor = DataCon tuple2CtorName tuple2Con

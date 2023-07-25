@@ -15,6 +15,7 @@ import Elara.AST.Typed qualified as Typed
 import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
 import Elara.TypeInfer.Type qualified as Typed
 import qualified Elara.Core.Module as Core
+import Elara.Core.Module (CoreModule)
 
 data Frontend
 
@@ -27,6 +28,8 @@ data Renamed
 data Shunted
 
 data Typed
+
+data Core
 
 type family ASTExpr ast where
     ASTExpr Frontend = Frontend.Expr
@@ -67,6 +70,7 @@ type family ASTLocate' ast where
     ASTLocate' Renamed = Located
     ASTLocate' Shunted = Located
     ASTLocate' Typed = Located
+    ASTLocate' Core = Unlocated
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
@@ -158,6 +162,8 @@ instance RUnlocate Shunted where
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
+
+
 instance GetLocation Renamed where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r
@@ -230,6 +236,11 @@ instance HasModuleName Typed.Declaration Typed where
     unlocatedModuleName :: Lens' Typed.Declaration ModuleName
     unlocatedModuleName = moduleName @Typed.Declaration @Typed . unlocated
 
+
+instance HasModuleName CoreModule Core where
+    moduleName = Core.name
+    unlocatedModuleName = Core.name
+
 class HasName a b | a -> b where
     name :: Lens' a b
 
@@ -300,5 +311,5 @@ instance HasName Typed.Declaration' (Located (Qualified Name)) where
 instance HasName Typed.Declaration (Located (Qualified Name)) where
     name = Typed._Declaration . unlocated . name
 
-instance HasName Core.CoreModule Text where
-    name = lens Core.coreModuleName (\m n -> m {Core.coreModuleName = n})
+instance HasName CoreModule ModuleName where
+    name = Core.name

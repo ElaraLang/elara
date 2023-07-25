@@ -7,7 +7,7 @@ module Elara.Emit where
 import Control.Lens hiding (List)
 import Data.List.NonEmpty qualified as NE
 import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
-import Elara.AST.Module (HasDeclarations (declarations), Module)
+
 import Elara.AST.Name (ModuleName (..), Name, NameLike (nameText), Qualified (Qualified))
 import Elara.AST.Region (Located (Located))
 import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
@@ -33,15 +33,17 @@ import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
 import Print (debugColored, debugPretty, showPretty)
+import Elara.Core.Module (CoreModule (CoreModule), declarations, CoreDeclaration(..))
+import TODO
 
 type Emit r = Members '[Reader JVMVersion] r
 
-emitGraph :: forall r. Emit r => TopologicalGraph (Module Typed) -> Sem r [(ModuleName, ClassFile)]
+emitGraph :: forall r. Emit r => TopologicalGraph (CoreModule) -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
-    let tellMod = emitModule >=> tell . one :: Module Typed -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
+    let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-emitModule :: Emit r => Module Typed -> Sem r (ModuleName, ClassFile)
+emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
     let name = createModuleName (m ^. unlocatedModuleName)
     version <- ask
@@ -66,28 +68,28 @@ generateCodeAttribute e codeMod =
             , codeAttributes = []
             }
 
-addDeclaration :: (Emit r) => Declaration -> ClassBuilderT (Sem r) ()
-addDeclaration decl@(view unlocatedDeclarationBody' -> declBody) = case declBody of
-    TypeDeclaration{} -> error "Type declarations are not supported yet"
-    Value v -> do
-        let (_, type') = v ^. _Expr
-            declName = translateOperatorName $ decl ^. unlocatedDeclarationName . to nameText
-        if typeIsValue type'
-            then addField (ClassFileField [FPublic, FStatic] declName (generateFieldType type') [])
-            else do
-                let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
-                addMethod $
-                    ClassFileMethod
-                        [MPublic, MStatic]
-                        (declName)
-                        descriptor
-                        [generateCodeAttribute v (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))]
+addDeclaration :: (Emit r) => CoreDeclaration -> ClassBuilderT (Sem r) ()
+addDeclaration declBody = case declBody of
+    CoreValue v -> do
+        todo
+        -- let (_, type') = v ^. _Expr
+        --     declName = translateOperatorName $ decl ^. unlocatedDeclarationName . to nameText
+        -- if typeIsValue type'
+        --     then addField (ClassFileField [FPublic, FStatic] declName (generateFieldType type') [])
+        --     else do
+        --         let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
+        --         addMethod $
+        --             ClassFileMethod
+        --                 [MPublic, MStatic]
+        --                 (declName)
+        --                 descriptor
+        --                 [generateCodeAttribute v (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))]
 
-isMainModule :: Module Typed -> Bool
+isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. unlocatedModuleName == ModuleName ("Main" :| [])
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
-generateMainMethod :: Module Typed -> ClassFileMethod
+generateMainMethod :: CoreModule -> ClassFileMethod
 generateMainMethod m =
     ClassFileMethod
         [MPublic, MStatic]

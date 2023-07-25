@@ -196,8 +196,12 @@ type ModConstraints c ast =
     )
 
 instance (RUnlocate ast) => HasModuleName (Module ast) ast where
-    moduleName = _Module @ast @ast . (rUnlocated' @ast) . module'Name @ast
+    moduleName = _Module @ast @ast . (rUnlocated' @ast) . moduleName @(Module' ast)
     unlocatedModuleName = moduleName @(Module ast) @ast . rUnlocated' @ast
+
+instance (RUnlocate ast) => HasModuleName (Module' ast) ast where
+    moduleName = module'Name @ast
+    unlocatedModuleName = moduleName @(Module' ast) @ast . rUnlocated' @ast
 
 instance StripLocation (Module Frontend) (Module UnlocatedFrontend) where
     stripLocation (Module m) = Module (stripLocation (stripLocation m :: Module' Frontend))

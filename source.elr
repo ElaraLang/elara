@@ -1,7 +1,3 @@
 import Prelude 
 
-def map : (a -> b) -> [a] -> [b]
-let map f list =
-    match list with
-        [] -> []
-        (x::xs) -> (f x) :: (map f xs)
+let add1 x = x + 1

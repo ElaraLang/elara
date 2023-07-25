@@ -1,28 +1,28 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Elara.Core.Module where
 
-import Elara.AST.Pretty (prettyBlockExpr)
-import Elara.Core (CoreExpr, Expr)
+import Control.Lens (makeFields)
+import Elara.AST.Name (ModuleName)
+import Elara.Core (CoreBind, CoreExpr)
 import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
+import Elara.Core.Pretty ()
 
 data CoreModule = CoreModule
-    { coreModuleName :: Text
+    { coreModuleName :: ModuleName
     , coreModuleDeclarations :: [CoreDeclaration]
     }
 
 instance HasDependencies CoreModule where
-    type Key CoreModule = Text
+    type Key CoreModule = ModuleName
     key = coreModuleName
 
     dependencies = const [] -- TODO
 
-data CoreDeclaration = CoreDeclaration
-    { coreDeclarationName :: Text
-    , coreDeclarationBody :: CoreDeclarationBody
-    }
-
-newtype CoreDeclarationBody
-    = CoreValue CoreExpr
+data CoreDeclaration
+    = CoreValue (CoreBind)
 
 instance Pretty CoreModule where
     pretty (CoreModule name decls) =
@@ -32,10 +32,6 @@ instance Pretty CoreModule where
                 <> nest indentDepth (bracedBlock decls)
 
 instance Pretty CoreDeclaration where
-    pretty (CoreDeclaration name body) =
-        pretty name
-            <> " = "
-            <> pretty body
+    pretty (CoreValue v) = pretty v
 
-instance Pretty CoreDeclarationBody where
-    pretty (CoreValue e) = pretty e
+makeFields ''CoreModule

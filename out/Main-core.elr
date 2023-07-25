@@ -1,7 +1,0 @@
-module Main
-{ Main.map = \(f_0 : (a4_7 -> b5_8)) ->
-             \(list_1 : (Elara.Prim.[] e_9)) ->
-             match list_1 as list_12 with 
-                 Elara.Prim.[] -> Elara.Prim.[]
-                 Elara.Prim.:: -> ((Prelude.:: (f_0 x_2))
-                     ((Main.map f_0) xs_3)) }

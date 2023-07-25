@@ -14,6 +14,7 @@ import Data.ByteString.Char8 (putStrLn)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
+import Elara.AST.Select (Core)
 import Elara.AST.Select hiding (moduleName)
 import Elara.AST.Typed qualified as Typed
 import Elara.Data.Kind.Infer
@@ -30,7 +31,7 @@ import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
-import Elara.Prim (primitiveRenameState)
+import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCoreC, toCore)
@@ -103,7 +104,7 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
     when dumpCore $ do
-        liftIO $ dumpGraph coreGraph (view name) ".core.elr"
+        liftIO $ dumpGraph coreGraph (view (name . to nameText)) ".core.elr"
 
 -- classes <- runReader java8 (emitGraph typedGraph)
 

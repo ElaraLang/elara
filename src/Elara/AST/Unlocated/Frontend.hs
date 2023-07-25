@@ -165,7 +165,7 @@ instance Pretty Expr where
   pretty (BinaryOperator o e1 e2) = prettyBinaryOperatorExpr e1 o e2
   pretty (List l) = prettyListExpr l
   pretty (Match e m) = prettyMatchExpr e m
-  pretty (LetIn v ps e1 e2) = prettyLetInExpr v ps e1 e2
+  pretty (LetIn v ps e1 e2) = prettyLetInExpr v ps e1 (Just e2)
   pretty (Let v ps e) = prettyLetExpr v ps e
   pretty (Block b) = bracedBlock (toList b)
   pretty (InParens e) = parens (pretty e)

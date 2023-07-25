@@ -163,7 +163,7 @@ instance Pretty Expr' where
   pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
   pretty (List l) = prettyListExpr l
   pretty (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
-  pretty (LetIn v e1 e2) = prettyLetInExpr v none e1 e2
+  pretty (LetIn v e1 e2) = prettyLetInExpr v none e1 (Just e2)
   pretty (Let v e) = prettyLetExpr v none e
   pretty (Block b) = prettyBlockExpr b
   pretty other = show other
