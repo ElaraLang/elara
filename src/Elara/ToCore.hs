@@ -243,6 +243,6 @@ trueCtor = DataCon trueCtorName boolCon
 
 falseCtor = DataCon falseCtorName boolCon
 
-tuple2Con = ConTy (mkPrimQual "Tuple2")
+tuple2Con = ConTy (mkPrimQual "(,)")
 
 tuple2Ctor = DataCon tuple2CtorName tuple2Con
