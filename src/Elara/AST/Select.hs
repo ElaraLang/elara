@@ -14,6 +14,7 @@ import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed qualified as Typed
 import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
 import Elara.TypeInfer.Type qualified as Typed
+import qualified Elara.Core.Module as Core
 
 data Frontend
 
@@ -298,3 +299,6 @@ instance HasName Typed.Declaration' (Located (Qualified Name)) where
 
 instance HasName Typed.Declaration (Located (Qualified Name)) where
     name = Typed._Declaration . unlocated . name
+
+instance HasName Core.CoreModule Text where
+    name = lens Core.coreModuleName (\m n -> m {Core.coreModuleName = n})

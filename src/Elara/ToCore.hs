@@ -237,7 +237,7 @@ tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
 
 boolCon = ConTy (mkPrimQual "Bool")
 
-listCon = ConTy (mkPrimQual "List")
+listCon = ConTy (mkPrimQual "[]")
 
 trueCtor = DataCon trueCtorName boolCon
 

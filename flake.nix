@@ -33,7 +33,7 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-        
+
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
@@ -89,7 +89,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-typed' --colour=always --restart=source.elr
+              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-core' --colour=always --restart=source.elr
             '';
             category = "Primary";
           };
