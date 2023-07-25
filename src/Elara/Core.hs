@@ -2,9 +2,9 @@ module Elara.Core where
 
 import Elara.AST.Name (Qualified)
 import Elara.AST.Pretty (none, prettyBlockExpr, prettyFunctionCallExpr, prettyLambdaExpr, prettyLetInExpr, prettyMatchBranch, prettyStringExpr)
-import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef)
+import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), align, hang, hardline, indentDepth, nest, parens, softline, vsep, (<+>))
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), align, hardline, indentDepth, nest, parens, vsep, (<+>))
 import Elara.Data.Unique (Unique)
 import Prelude hiding (Alt)
 
@@ -96,8 +96,7 @@ instance Pretty CoreExpr where
                     <+> pretty (prettyVar False <$> b)
                     <+> "with"
                     <+> hardline
-                    <> nest indentDepth (align (vsep prettyAlts))
-                    
+                        <> nest indentDepth (align (vsep prettyAlts))
         Type t -> "@" <> pretty t
 
 instance Pretty Literal where
