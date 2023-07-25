@@ -3,6 +3,7 @@ module Elara.TypeInfer.Existential where
 import Elara.Data.Pretty (Pretty (..))
 
 import Data.Text qualified as Text
+import Data.Data (Data)
 
 {- | An existential variable
     The type variable is used to track what type of existential variable we're
@@ -13,7 +14,7 @@ import Data.Text qualified as Text
       variable
 -}
 newtype Existential a = UnsafeExistential Int
-    deriving (Eq, Num, Ord, Show)
+    deriving (Eq, Num, Ord, Show, Data)
 
 instance Pretty (Existential a) where
     pretty x = pretty (toVariable x)

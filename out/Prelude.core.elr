@@ -1,6 +1,2 @@
 module Prelude
-{ let Prelude.println : (a1_3 -> (IO ()))  = (Elara.Prim.elaraPrimitive
-    "println")
-; let Prelude.+ : (Int -> (Int -> Int))  = (Elara.Prim.elaraPrimitive "+")
-; let Prelude.:: : (a1_6 -> ([a1_7] -> [a1_8]))  = (Elara.Prim.elaraPrimitive
-    "::") }
+{}

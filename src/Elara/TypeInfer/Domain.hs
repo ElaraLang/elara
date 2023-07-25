@@ -2,6 +2,7 @@ module Elara.TypeInfer.Domain (Domain (..))
 where
 
 import Elara.Data.Pretty (Pretty (..))
+import Data.Data (Data)
 
 -- | The domain over which a @forall@ is quantified
 data Domain
@@ -11,7 +12,7 @@ data Domain
       Fields
     | -- | @forall (a : Alternatives) . …@
       Alternatives
-    deriving (Eq, Ord, Generic, Show)
+    deriving (Eq, Ord, Generic, Show, Data)
 
 instance Pretty Domain where
     pretty Type = "Type"

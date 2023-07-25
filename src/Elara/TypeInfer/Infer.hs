@@ -44,6 +44,7 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State hiding (get)
 import Polysemy.State qualified as State
+import Print (debugPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -54,7 +55,6 @@ data Status = Status
     -- ^ The type-checking context (e.g. Γ, Δ, Θ)
     }
     deriving (Show)
-
 
 initialStatus :: Status
 initialStatus = Status{count = 0, context = primitiveTCContext}
@@ -1299,7 +1299,7 @@ infer ::
     -- | An inner computation that can use any locally scoped context (eg lambda parameters)
     Sem r a ->
     Sem r (Type SourceRegion, a)
-infer (Expr (Located location e0)) cont =
+infer (Expr (Located location e0)) cont = do
     case e0 of
         -- Var
         Syntax.Var vn -> do
@@ -1330,6 +1330,7 @@ infer (Expr (Located location e0)) cont =
 
             push (Context.UnsolvedType a)
             push (Context.UnsolvedType b)
+
 
             c' <- scoped (Context.Annotation (mkLocal' binding) input) do
                 check body output
@@ -1686,10 +1687,26 @@ typeWith syntax = do
     context' <- State.get
     let initialStatus = Status{count = 0, context = context'}
 
-    (status, _A) <- runState initialStatus (infer' syntax)
-    State.put (context status)
+    (Status{context = _Δ}, _A) <- runState initialStatus (infer' syntax)
+    State.put _Δ
 
-    pure _A
+    pure (Context.complete _Δ _A)
+
+typeWithStatus ::
+    HasCallStack => 
+    ( Member (Error TypeInferenceError) r
+    , Member (State Status) r
+    ) =>
+    Expr ->
+    Sem r (Type SourceRegion)
+typeWithStatus syntax = do
+    cur <- State.get
+    (status@Status{context = _Δ}, _A) <- runState cur (infer' syntax)
+    State.put status
+
+
+    pure (Context.complete _Δ _A)
+
 
 -- instance Exception TypeInferenceError where
 --     displayException (IllFormedAlternatives location a0 _Γ) =

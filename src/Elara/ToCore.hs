@@ -17,7 +17,7 @@ import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (UniqueGen, makeUnique)
+import Elara.Data.Unique (UniqueGen, makeUnique, makeUniqueId)
 import Elara.Error (ReportableError (..), writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
@@ -29,6 +29,8 @@ import Polysemy.State
 
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Prim.Core
+import Polysemy.State.Extra (scoped)
+import Print (debugColored, debugPretty, showPretty)
 
 data ToCoreError
     = LetInTopLevel AST.Expr
@@ -44,6 +46,8 @@ instance ReportableError ToCoreError where
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
+
+type TyVarTable = Map Text TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -70,35 +74,56 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-type ToCoreC r = (Member (Error ToCoreError) r, Member (State CtorSymbolTable) r, Member UniqueGen r)
+lookupTyVar :: HasCallStack => ToCoreC r => Text -> Sem r TypeVariable
+lookupTyVar n = do
+    table <- get @TyVarTable
+    case M.lookup n table of
+        Just v -> pure v
+        Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
 
-runToCoreC :: Sem (State CtorSymbolTable : Error ToCoreError : r) a -> Sem r (Either ToCoreError a)
-runToCoreC = runError . evalState primCtorSymbolTable
+addTyVar :: ToCoreC r => Text -> TypeVariable -> Sem r ()
+addTyVar n v = modify @TyVarTable (M.insert n v)
 
-moduleToCore :: (ToCoreC r) => Module Typed -> Sem r CoreModule
+type ToCoreC r = (Member (Error ToCoreError) r, Member (State CtorSymbolTable) r, Member (State TyVarTable) r, Member UniqueGen r)
+
+runToCoreC :: Sem (State TyVarTable : State CtorSymbolTable : Error ToCoreError : r) a -> Sem r (Either ToCoreError a)
+runToCoreC =
+    runError
+        . evalState primCtorSymbolTable
+        . evalState @TyVarTable mempty
+
+moduleToCore :: HasCallStack => (ToCoreC r) => Module Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
     let name = m ^. unlocatedModuleName
     decls <- for (m ^. module'Declarations) $ \decl -> do
         (body', var) <- case decl ^. unlocatedDeclarationBody' of
             Value v -> do
-                v' <- toCore v
-                ty <- typeToCore (v ^. _Expr . _2)
+                (ty, v') <- scoped @TyVarTable $ do
+                    -- clear the tyvar table for each value
+                    ty <- typeToCore (v ^. _Expr . _2)
+                    v' <- toCore v
+                    pure (ty, v')
                 let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. unlocatedDeclarationName))) ty
                 pure (v', var)
             other -> error "TODO: other declaration types"
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
-typeToCore :: (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
+typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
+typeToCore (Type.Forall _ _ tv _ t) = do
+
+    tv' <- makeUnique tv
+    addTyVar tv (TypeVariable tv' TypeKind)
+
+    typeToCore t
 typeToCore (Type.VariableType{name}) = do
-    name' <- makeUnique name
-    pure (Core.TyVarTy (Core.TypeVariable name' TypeKind))
+    tv <- lookupTyVar name
+    pure (Core.TyVarTy tv)
 typeToCore (Type.Function{input, output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
-typeToCore (Type.Forall _ _ _ _ t) = typeToCore t
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
-typeToCore (Type.Scalar _ Scalar.String) = pure (Core.ConTy (mkPrimQual "String"))
-typeToCore (Type.Scalar _ Scalar.Integer) = pure (Core.ConTy (mkPrimQual "Int"))
-typeToCore (Type.Scalar _ Scalar.Unit) = pure (Core.ConTy (mkPrimQual "()"))
+typeToCore (Type.Scalar _ Scalar.String) = pure stringCon
+typeToCore (Type.Scalar _ Scalar.Integer) = pure intCon
+typeToCore (Type.Scalar _ Scalar.Unit) = pure unitCon
 typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
     let con = Core.ConTy (mkPrimQual n)
@@ -112,7 +137,7 @@ mkLocalRef = Local . Identity
 
 mkGlobalRef = Global . Identity
 
-toCore :: (ToCoreC r) => AST.Expr -> Sem r CoreExpr
+toCore :: HasCallStack => (ToCoreC r) => AST.Expr -> Sem r CoreExpr
 toCore le@(AST.Expr (Located _ e, t)) = toCore' e
   where
     toCore' :: (ToCoreC r) => AST.Expr' -> Sem r CoreExpr

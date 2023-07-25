@@ -2,7 +2,8 @@
 
 module Elara.Core where
 
-import Control.Lens ((^.))
+import Control.Lens (Plated, (^.))
+import Data.Data
 import Elara.AST.Name (Qualified (Qualified), unqualified)
 import Elara.AST.Pretty (none, nothing, prettyBlockExpr, prettyFunctionCallExpr, prettyLambdaExpr, prettyLetInExpr, prettyMatchBranch, prettyStringExpr)
 import Elara.AST.VarRef (UnlocatedVarRef)
@@ -15,7 +16,7 @@ data TypeVariable = TypeVariable
     { tvName :: Unique Text
     , tvKind :: ElaraKind
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
 
 data Var
     = TyVar TypeVariable
@@ -23,17 +24,19 @@ data Var
         { idVarName :: UnlocatedVarRef Text
         , idVarType :: Type
         }
-    deriving (Show)
+    deriving (Show, Data, Eq)
 
 data Expr b
-    = Var Var
+    = Var b
     | Lit Literal
     | App (Expr b) (Expr b)
     | Lam b (Expr b)
     | Let (Bind b) (Expr b)
     | Match (Expr b) (Maybe b) [Alt b]
     | Type Type
-    deriving (Show)
+    deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
+
+instance Data b => Plated (Expr b)
 
 type CoreExpr = Expr Var
 
@@ -44,7 +47,7 @@ type CoreBind = Bind Var
 data Bind b
     = Recursive [(b, Expr b)]
     | NonRecursive (b, Expr b)
-    deriving (Show)
+    deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 binds :: Bind b -> [(b, Expr b)]
 binds = \case
@@ -57,14 +60,14 @@ data AltCon
     = DataAlt DataCon
     | LitAlt Literal
     | DEFAULT
-    deriving (Show)
+    deriving (Show, Eq, Data)
 
 -- | A data constructor.
 data DataCon = DataCon
     { name :: Qualified Text
     , dataConType :: Type
     }
-    deriving (Show)
+    deriving (Show, Eq, Data)
 
 data Type
     = TyVarTy TypeVariable
@@ -73,7 +76,7 @@ data Type
     | -- | A type constructor
       ConTy (Qualified Text)
     | ForAllTy TypeVariable Type
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data)
 
 data Literal
     = Int Integer
@@ -81,4 +84,4 @@ data Literal
     | Char Char
     | Double Double
     | Unit
-    deriving (Show)
+    deriving (Show, Eq, Data)

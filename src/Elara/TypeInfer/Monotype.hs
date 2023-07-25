@@ -17,6 +17,7 @@ module Elara.TypeInfer.Monotype (
 
 import Elara.Data.Pretty (Pretty (..), tupled)
 import Elara.TypeInfer.Existential (Existential)
+import Data.Data (Data)
 
 {- | A monomorphic type
 
@@ -75,7 +76,7 @@ data Scalar
       -- >>> pretty Unit
       -- ()
       Unit
-    deriving stock (Eq, Ord, Generic, Show)
+    deriving stock (Eq, Ord, Generic, Show, Data)
 
 instance Pretty Scalar where
     pretty Bool = "Bool"
@@ -101,7 +102,7 @@ data RemainingFields
     | -- | Same as `UnsolvedFields`, except that the user has given the fields
       --   variable an explicit name in the source code
       VariableFields Text
-    deriving stock (Eq, Ord, Generic, Show)
+    deriving stock (Eq, Ord, Generic, Show, Data)
 
 -- | A monomorphic union type
 data Union = Alternatives [(Text, Monotype)] RemainingAlternatives
@@ -118,7 +119,7 @@ data RemainingAlternatives
     | -- | Same as `UnsolvedAlternatives`, except that the user has given the
       --   alternatives variable an explicit name in the source code
       VariableAlternatives Text
-    deriving stock (Eq, Ord, Generic, Show)
+    deriving stock (Eq, Ord, Generic, Show, Data)
 
 instance Pretty Monotype where
     pretty (VariableType name) = pretty name

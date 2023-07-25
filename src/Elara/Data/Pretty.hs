@@ -60,6 +60,10 @@ instance Pretty (Doc AnsiStyle) where
 instance Pretty () where
   pretty = mempty
 
+
+instance Pretty Bool where
+  pretty = PP.pretty
+
 instance Pretty Text where
   pretty = PP.pretty
 

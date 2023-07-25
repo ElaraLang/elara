@@ -1,2 +1,2 @@
 module Main
-{ let Main.add1 : (Int -> Int)  = \(x_0 : Int) ->  ((Prelude.+ x_0) 1) }
+{ let Main.add1 : (a_1 -> a_1)  = \(x_0 : a_1) ->  x_0 }

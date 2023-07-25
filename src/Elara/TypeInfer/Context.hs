@@ -37,11 +37,11 @@ import Control.Monad.State.Strict qualified as State
 
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Pretty
+import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
-import Elara.Data.Unique (Unique)
 
 {- $setup
 
@@ -219,12 +219,12 @@ solveUnion context oldAlternatives = newAlternatives
 
     * Adding universal quantifiers for all unsolved entries in the `Context`
 
-    >>> original = Type.Function () (Type.UnsolvedType () 1) (Type.UnsolvedType () 0)
-    >>> pretty @(Type ()) original
-    b? -> a?
+>>> original = Type.Function () (Type.UnsolvedType () 1) (Type.UnsolvedType () 0)
+>>> pretty @(Type ()) original
+(b? -> a?)
 
-    >>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
-    forall (a : Type) . a -> Bool
+>>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
+∀ a. (a -> Bool)
 -}
 complete :: Context s -> Type s -> Type s
 complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
@@ -306,7 +306,7 @@ that @main: ∀ a. (a -> a)@. That's what this function does.
 If we passed a second argument of @main@ we would first look for annotations with the value @b?@ and then
 use the duplicate annotations to resolve the ambiguity.
 -}
-tryFinaliseType :: (Eq s, Ord s) => Context s -> IgnoreLocVarRef Name -> _
+tryFinaliseType :: (Ord s) => Context s -> IgnoreLocVarRef Name -> Maybe (Type s)
 tryFinaliseType ctx name = do
     let annotations = lookupAll name ctx
     let y = do

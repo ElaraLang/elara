@@ -88,8 +88,8 @@ instance Pretty Expr where
             Let _ _ -> True
             Block _ -> True
             _ -> False
-        long = pretty e
-        short = align (pretty e )
+        long = pretty e <+> ":" <+> pretty t
+        short = align (pretty e <+> ":" <+> pretty t)
 
 instance Pretty Expr' where
     pretty (Int i) = pretty i

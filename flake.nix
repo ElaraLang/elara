@@ -89,7 +89,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-core' --colour=always --restart=source.elr
+              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-typed --dump-core' --colour=always --restart=source.elr
             '';
             category = "Primary";
           };

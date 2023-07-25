@@ -3,6 +3,7 @@ module Elara.Data.Kind where
 
 import Elara.Data.Pretty
 import Elara.Data.Unique
+import Data.Data (Data)
 
 data ElaraKind
   = -- | The kind of monotypes (@Type@ or @*@ in Haskell)
@@ -11,7 +12,7 @@ data ElaraKind
     FunctionKind ElaraKind ElaraKind
   | -- | A kind variable for poly-kinds (probably not supported yet)
     VarKind UniqueId
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 instance Pretty ElaraKind where
   pretty TypeKind = typeName "Type"

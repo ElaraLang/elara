@@ -26,6 +26,18 @@ boolCon = ConTy (mkPrimQual "Bool")
 listCon :: Type
 listCon = ConTy (mkPrimQual "[]")
 
+intCon :: Type
+intCon = ConTy (mkPrimQual "Int")
+
+stringCon :: Type
+stringCon = ConTy (mkPrimQual "String")
+
+unitCon :: Type
+unitCon = ConTy (mkPrimQual "()")
+
+ioCon :: Type
+ioCon = ConTy (mkPrimQual "IO")
+
 trueCtor :: DataCon
 trueCtor = DataCon trueCtorName boolCon
 

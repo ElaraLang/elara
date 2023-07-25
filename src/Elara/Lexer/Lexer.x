@@ -1,5 +1,6 @@
 {
 {-# OPTIONS_GHC -w #-}
+{-# LANGUAGE NoStrict #-}
 module Elara.Lexer.Lexer where
 import Elara.Lexer.Token
 import Elara.Lexer.Utils

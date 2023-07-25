@@ -24,6 +24,7 @@ import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Monotype
+import Data.Data (Data)
 
 -- | A potentially polymorphic type
 data Type s
@@ -92,7 +93,7 @@ data Type s
       -- >>> pretty @(Type ()) (Alias () "Tuple2" ["a", "b"] (Tuple () (NonEmpty.fromList ["a", "b"])))
       -- type Tuple2 a b = (a, b)
       Alias {location :: s, name :: Text, typeArguments :: [Type s], value :: Type s}
-    deriving (Eq, Ord, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show, Data)
 
 instance IsString (Type ()) where
     fromString string = VariableType{name = fromString string, location = ()}
@@ -144,11 +145,11 @@ instance Plated (Type s) where
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields
-    deriving (Eq, Ord, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show, Data)
 
 -- | A potentially polymorphic union type
 data Union s = Alternatives [(Text, Type s)] RemainingAlternatives
-    deriving (Eq, Ord, Functor, Generic, Show)
+    deriving (Eq, Ord, Functor, Generic, Show, Data)
 
 {- | This function should not be exported or generally used because it does not
     handle the `location` field correctly.  It is only really safe to use within

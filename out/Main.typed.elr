@@ -1,0 +1,7 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+def Main.add1 : ∀ a. (a -> a)
+let Main.add1 =
+    \x_0 ->  x_0 : ∀ b. b

@@ -1,10 +1,1 @@
 module Prelude
-
-def println : a -> IO ()
-let println = elaraPrimitive "println"
-
-def (+) : Int -> Int -> Int
-let (+) = elaraPrimitive "+"
-
-def (::) : a -> [a] -> [a]
-let (::) = elaraPrimitive "::"
