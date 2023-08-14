@@ -16,8 +16,14 @@ module Elara.TypeInfer.Monotype (
 ) where
 
 import Data.Data (Data)
-import Elara.Data.Pretty (Pretty (..), tupled)
+import Elara.Data.Pretty (Pretty (..))
 import Elara.TypeInfer.Existential (Existential)
+
+{- $setup
+   >>> import qualified Elara.TypeInfer.Monotype as Monotype
+   >>> import Elara.Data.Pretty
+   >>> import qualified Elara.TypeInfer.Domain as Domain
+-}
 
 {- | A monomorphic type
 
@@ -33,8 +39,7 @@ data Monotype
     | Record Record
     | Union Union
     | Scalar Scalar
-    | Tuple (NonEmpty Monotype)
-    deriving (Eq, Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance IsString Monotype where
     fromString string = VariableType (fromString string)
@@ -56,36 +61,30 @@ data Scalar
       -- >>> pretty Integer
       -- Integer
       Integer
+    | -- | JSON type
+      --
+      -- >>> pretty JSON
+      -- JSON
+      JSON
     | -- | Natural number type
       --
       -- >>> pretty Natural
       -- Natural
       Natural
-    | -- | String type
+    | -- | Text type
       --
-      -- >>> pretty String
-      -- String
-      String
-    | -- | Char type
-      --
-      -- >>> pretty Char
-      -- Char
-      Char
-    | -- | Unit type
-      --
-      -- >>> pretty Unit
-      -- ()
-      Unit
-    deriving stock (Eq, Ord, Generic, Show, Data)
+      -- >>> pretty Text
+      -- Text
+      Text
+    deriving stock (Eq, Generic, Show, Data)
 
 instance Pretty Scalar where
     pretty Bool = "Bool"
     pretty Real = "Real"
+    pretty JSON = "JSON"
     pretty Natural = "Natural"
     pretty Integer = "Integer"
-    pretty String = "String"
-    pretty Char = "Char"
-    pretty Unit = "()"
+    pretty Text = "Text"
 
 -- | A monomorphic record type
 data Record = Fields [(Text, Monotype)] RemainingFields
@@ -102,7 +101,7 @@ data RemainingFields
     | -- | Same as `UnsolvedFields`, except that the user has given the fields
       --   variable an explicit name in the source code
       VariableFields Text
-    deriving stock (Eq, Ord, Generic, Show, Data)
+    deriving stock (Eq, Generic, Show, Data)
 
 -- | A monomorphic union type
 data Union = Alternatives [(Text, Monotype)] RemainingAlternatives
@@ -119,37 +118,4 @@ data RemainingAlternatives
     | -- | Same as `UnsolvedAlternatives`, except that the user has given the
       --   alternatives variable an explicit name in the source code
       VariableAlternatives Text
-    deriving stock (Eq, Ord, Generic, Show, Data)
-
-instance Pretty Monotype where
-    pretty (VariableType name) = pretty name
-    pretty (UnsolvedType existential) = pretty existential
-    pretty (Function a b) = pretty a <> " -> " <> pretty b
-    pretty (Optional a) = pretty a <> "?"
-    pretty (List a) = "[" <> pretty a <> "]"
-    pretty (Record record) = pretty record
-    pretty (Union union) = pretty union
-    pretty (Scalar scalar) = pretty scalar
-    pretty (Tuple types) = tupled (pretty <$> toList types)
-
-instance Pretty Record where
-    pretty (Fields fields remainingFields) =
-        let fields' = pretty <$> fields
-            remainingFields' = pretty remainingFields
-         in "{" <> mconcat (intersperse ", " (fields' <> [remainingFields'])) <> "}"
-
-instance Pretty RemainingFields where
-    pretty EmptyFields = ""
-    pretty (UnsolvedFields existential) = ".." <> pretty existential
-    pretty (VariableFields name) = ".." <> pretty name
-
-instance Pretty Union where
-    pretty (Alternatives alternatives remainingAlternatives) =
-        let alternatives' = pretty <$> alternatives
-            remainingAlternatives' = pretty remainingAlternatives
-         in "{" <> mconcat (intersperse ", " (alternatives' <> [remainingAlternatives'])) <> "}"
-
-instance Pretty RemainingAlternatives where
-    pretty EmptyAlternatives = ""
-    pretty (UnsolvedAlternatives existential) = ".." <> pretty existential
-    pretty (VariableAlternatives name) = ".." <> pretty name
+    deriving stock (Eq, Generic, Show, Data)

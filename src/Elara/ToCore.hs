@@ -119,13 +119,13 @@ typeToCore (Type.VariableType{name}) = do
     pure (Core.TyVarTy tv)
 typeToCore (Type.Function{input, output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
-typeToCore (Type.Scalar _ Scalar.String) = pure stringCon
+typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
 typeToCore (Type.Scalar _ Scalar.Integer) = pure intCon
-typeToCore (Type.Scalar _ Scalar.Unit) = pure unitCon
-typeToCore (Type.Custom _ n args) = do
-    args' <- traverse typeToCore args
-    let con = Core.ConTy (mkPrimQual n)
-    pure (foldl' Core.AppTy con args')
+-- typeToCore (Type.Scalar _ Scalar.Unit) = pure unitCon
+-- typeToCore (Type.Custom _ n args) = do
+--     args' <- traverse typeToCore args
+--     let con = Core.ConTy (mkPrimQual n)
+--     pure (foldl' Core.AppTy con args')
 typeToCore other = error ("TODO: typeToCore " <> show other)
 
 conToVar :: DataCon -> Core.Var

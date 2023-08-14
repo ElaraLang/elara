@@ -58,6 +58,7 @@ import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
 import Text.Printf
 
+
 main :: IO ()
 main = run `finally` cleanup
   where
@@ -98,8 +99,9 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
 
     typedGraph <- inferModules shuntedGraph
 
-    when dumpTyped $ do
-        liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
+    printColored typedGraph 
+    -- when dumpTyped $ do
+    --     liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
 
     -- coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
@@ -183,9 +185,9 @@ shuntModule m = do
             traverse_ report warnings
             justE shunted
 
-inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (TopologicalGraph (Module Typed))
+inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (Either _ (TopologicalGraph (Module Typed)))
 inferModules modules = do
-    runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
+     runError $ (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
 loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

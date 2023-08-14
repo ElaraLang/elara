@@ -58,22 +58,24 @@ primKindCheckContext =
 
 primitiveTCContext :: (Context SourceRegion)
 primitiveTCContext = do
-    let easies =
-            [ Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
-                (Scalar primRegion String)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
-                (Scalar primRegion Integer)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-                (Custom primRegion "IO" [])
-            ]
+    -- let easies =
+    --         [ 
+    --         --     Annotation
+    --         --     (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
+    --         --     (Scalar primRegion Text)
+    --         -- , Annotation
+    --         --     (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
+    --         --     (Scalar primRegion Integer)
+    --         -- , Annotation
+    --         --     (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
+    --         --     (Custom primRegion "IO" [])
+    --         ]
 
     let primTyVarName = "a"
-    let elaraPrimitive =
-            Annotation -- elaraPrimitive :: forall a. String -> a
-                (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-                (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion String) (VariableType primRegion primTyVarName)))
+    -- let elaraPrimitive =
+    --         Annotation -- elaraPrimitive :: forall a. String -> a
+    --             (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
+    --             (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion primTyVarName)))
 
-    (elaraPrimitive : easies)
+    -- elaraPrimitive : easies
+    []

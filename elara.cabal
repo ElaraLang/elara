@@ -93,6 +93,7 @@ library
       Elara.TypeInfer.Monotype
       Elara.TypeInfer.Type
       Elara.Utils
+      Elara.Width
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.State.Extra
@@ -115,8 +116,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-      Strict
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -j4 +RTS -A32m -RTS
   build-tools:
       alex
   build-depends:
@@ -141,6 +141,8 @@ library
     , prettyprinter
     , prettyprinter-ansi-terminal
     , relude
+    , safe-exceptions
+    , terminal-size
     , utf8-string
   default-language: GHC2021
 
@@ -161,8 +163,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-      Strict
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2 -threaded
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -j4 +RTS -A32m -RTS -threaded
   build-depends:
       array
     , base-noprelude
@@ -186,6 +187,57 @@ executable elara
     , prettyprinter
     , prettyprinter-ansi-terminal
     , relude
+    , safe-exceptions
+    , terminal-size
+    , utf8-string
+  default-language: GHC2021
+
+test-suite doctest
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_elara
+  hs-source-dirs:
+      doctest
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      DataKinds
+      DeriveFunctor
+      TypeApplications
+      PartialTypeSignatures
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -j4 +RTS -A32m -RTS -threaded -O0
+  build-depends:
+      Glob
+    , array
+    , base-noprelude
+    , binary
+    , bytestring
+    , containers
+    , diagnose >=2.4.0
+    , directory
+    , doctest-parallel
+    , elara
+    , filepath
+    , generic-lens
+    , h2jvm
+    , headed-megaparsec
+    , lens
+    , megaparsec >=9.0.0
+    , mtl
+    , parser-combinators
+    , polysemy
+    , polysemy-plugin
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , relude
+    , safe-exceptions
+    , terminal-size
     , utf8-string
   default-language: GHC2021
 
@@ -218,9 +270,8 @@ test-suite elara-test
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-      Strict
       QuasiQuotes
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2 -threaded -O0
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -j4 +RTS -A32m -RTS -threaded -O0
   build-depends:
       HUnit
     , QuickCheck
@@ -249,6 +300,8 @@ test-suite elara-test
     , prettyprinter
     , prettyprinter-ansi-terminal
     , relude
+    , safe-exceptions
+    , terminal-size
     , utf8-string
   default-language: GHC2021
   build-tool-depends: hspec-discover:hspec-discover == 2.*

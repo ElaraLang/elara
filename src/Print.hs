@@ -6,7 +6,8 @@ module Print where
 
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
-import Prettyprinter.Render.Terminal
+import qualified Prettyprinter.Render.Text as Pretty.Text
+import Prettyprinter.Render.Terminal (putDoc)
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
     defaultOutputOptionsDarkBg,
@@ -24,10 +25,10 @@ showColored :: (Show a, IsString s) => a -> s
 showColored = fromString . toString . pShow
 
 showPretty :: (Pretty a) => a -> Text
-showPretty = renderStrict . layoutPretty defaultLayoutOptions . pretty
+showPretty = prettyToText
 
 showPrettyUnannotated :: (Pretty a) => a -> Text
-showPrettyUnannotated = renderStrict . layoutPretty defaultLayoutOptions . unAnnotate . pretty
+showPrettyUnannotated = prettyToUnannotatedText
 
 {-# WARNING debugColored "Debug is still in code" #-}
 debugColored :: (Show a, Applicative f) => a -> f ()
@@ -39,7 +40,7 @@ debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
 
 {-# WARNING debugPretty "debugPretty is still in code" #-}
 debugPretty :: (Applicative m, Pretty a) => a -> m ()
-debugPretty = traceM . toString . renderStrict . layoutPretty defaultLayoutOptions . pretty
+debugPretty = traceM . toString . prettyToText
 
 debugWithResult :: (Show a1, Show a2) => a1 -> a2 -> a2
 debugWithResult name res = trace (show name <> " -> " <> show res) res

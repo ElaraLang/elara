@@ -12,6 +12,9 @@ module Elara.Data.Pretty (
     module Prettyprinter.Render.Terminal,
     listToText,
     bracedBlock,
+    renderStrict,
+    prettyToText,
+    prettyToUnannotatedText
 )
 where
 
@@ -20,7 +23,10 @@ import Elara.Data.Pretty.Styles
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal (AnsiStyle)
+import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
+import qualified Prettyprinter.Render.Text as Pretty.Text
 import Prelude hiding (group)
+import qualified Elara.Width as Width
 
 indentDepth :: Int
 indentDepth = 4
@@ -34,6 +40,45 @@ listToText elements =
     vsep (fmap prettyEntry elements)
   where
     prettyEntry entry = "• " <> align (pretty entry)
+
+prettyToText :: Pretty a => a -> Text
+prettyToText = renderStrict False Width.defaultWidth
+
+prettyToUnannotatedText :: Pretty a => a -> Text
+prettyToUnannotatedText = renderStrictUnannotated Width.defaultWidth
+
+renderStrict
+    :: Pretty a
+    => Bool
+    -- ^ `True` enable syntax highlighting
+    -> Int
+    -- ^ Available columns
+    -> a
+    -> Text
+renderStrict highlight columns =
+    render . Pretty.layoutSmart (layoutOptions columns) . pretty
+  where
+    render =
+        if highlight
+        then Pretty.Terminal.renderStrict
+        else Pretty.Text.renderStrict
+
+renderStrictUnannotated
+    :: Pretty a
+    => Int
+    -- ^ Available columns
+    -> a
+    -> Text
+renderStrictUnannotated =
+    renderStrict False
+
+layoutOptions
+    :: Int
+    -- ^ Available columns
+    -> LayoutOptions
+layoutOptions columns =
+    LayoutOptions { layoutPageWidth = AvailablePerLine columns 1 }
+
 
 {- | A haskell-style braced block, which can split over multiple lines.
  >>> bracedBlock ["foo", "bar"]

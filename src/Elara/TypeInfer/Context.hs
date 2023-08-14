@@ -24,30 +24,32 @@ module Elara.TypeInfer.Context (
     complete,
 ) where
 
-import Elara.AST.Name
+import Data.List (foldl)
+import Elara.Data.Pretty (Pretty (..), label, operator, punctuation, Doc, AnsiStyle)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type)
-import Prelude hiding (group)
+
 
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
-
-import Elara.AST.VarRef (IgnoreLocVarRef)
-import Elara.Data.Pretty
-import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
-import Print (debugPretty)
+import Prettyprinter qualified as Pretty
 
 {- $setup
 
    >>> :set -XOverloadedStrings
    >>> :set -XTypeApplications
    >>> import Elara.TypeInfer.Type (Record, Union)
+   >>> import Elara.TypeInfer.Type qualified as Type
+   >>> import Elara.TypeInfer.Monotype qualified as Monotype
+   >>> import Elara.TypeInfer.Type (Type)
+   >>> import Elara.Data.Pretty (Pretty (..), label, operator, punctuation, Doc, AnsiStyle)
+   >>> import Elara.TypeInfer.Domain qualified as Domain
 -}
 
 -- | An element of the `Context` list
@@ -56,12 +58,12 @@ data Entry s
       --
       -- >>> pretty @(Entry ()) (Variable Domain.Type "a")
       -- a: Type
-      Variable Domain (Text)
+      Variable Domain Text
     | -- | A bound variable whose type is known
       --
       -- >>> pretty @(Entry ()) (Annotation "x" "a")
       -- x: a
-      Annotation (IgnoreLocVarRef Name) (Type s)
+      Annotation Text (Type s)
     | -- | A placeholder type variable whose type has not yet been inferred
       --
       -- >>> pretty @(Entry ()) (UnsolvedType 0)
@@ -119,6 +121,9 @@ data Entry s
       MarkerAlternatives (Existential Monotype.Union)
     deriving stock (Eq, Show)
 
+instance Pretty (Entry s) where
+    pretty = prettyEntry
+
 {- | A `Context` is an ordered list of `Entry`s
 
     Note that this representation stores the `Context` entries in reverse
@@ -148,6 +153,94 @@ data Entry s
 -}
 type Context s = [Entry s]
 
+prettyEntry :: Entry s -> Doc AnsiStyle
+prettyEntry (Variable domain a) =
+    label (pretty a) <> operator ":" <> " " <> pretty domain
+prettyEntry (UnsolvedType a) =
+    pretty a <> "?"
+prettyEntry (UnsolvedFields p) =
+    pretty p <> "?"
+prettyEntry (UnsolvedAlternatives p) =
+    pretty p <> "?"
+prettyEntry (SolvedType a τ) =
+    pretty a <> " " <> punctuation "=" <> " " <> pretty τ
+prettyEntry (SolvedFields p (Monotype.Fields [] Monotype.EmptyFields)) =
+    pretty p <> " " <> punctuation "=" <> " " <> punctuation "•"
+prettyEntry (SolvedFields p0 (Monotype.Fields [] (Monotype.UnsolvedFields p1))) =
+    pretty p0
+        <> " "
+        <> punctuation "="
+        <> " "
+        <> pretty p1
+        <> "?"
+prettyEntry (SolvedFields p0 (Monotype.Fields [] (Monotype.VariableFields p1))) =
+    pretty p0
+        <> " "
+        <> punctuation "="
+        <> " "
+        <> label (pretty p1)
+prettyEntry (SolvedFields p (Monotype.Fields ((k0, τ0) : kτs) fields)) =
+    pretty p
+        <> " = "
+        <> label (pretty k0)
+        <> operator ":"
+        <> " "
+        <> pretty τ0
+        <> foldMap prettyFieldType kτs
+        <> case fields of
+            Monotype.EmptyFields ->
+                ""
+            Monotype.UnsolvedFields p1 ->
+                punctuation "," <> " " <> pretty p1 <> "?"
+            Monotype.VariableFields p1 ->
+                punctuation "," <> " " <> pretty p1
+prettyEntry (SolvedAlternatives p (Monotype.Alternatives [] Monotype.EmptyAlternatives)) =
+    pretty p <> " " <> punctuation "=" <> " " <> punctuation "•"
+prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p1))) =
+    pretty p0 <> " " <> punctuation "=" <> " " <> pretty p1 <> "?"
+prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives [] (Monotype.VariableAlternatives p1))) =
+    pretty p0 <> " " <> punctuation "=" <> " " <> label (pretty p1)
+prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives ((k0, τ0) : kτs) fields)) =
+    pretty p0
+        <> " "
+        <> punctuation "="
+        <> " "
+        <> prettyAlternativeType (k0, τ0)
+        <> foldMap (\kt -> " " <> punctuation "|" <> " " <> prettyAlternativeType kt) kτs
+        <> case fields of
+            Monotype.EmptyAlternatives ->
+                ""
+            Monotype.UnsolvedAlternatives p1 ->
+                " " <> punctuation "|" <> " " <> pretty p1 <> "?"
+            Monotype.VariableAlternatives p1 ->
+                " " <> punctuation "|" <> " " <> label (pretty p1)
+prettyEntry (Annotation x a) = Pretty.group (Pretty.flatAlt long short)
+  where
+    long =
+        Pretty.align
+            ( pretty x
+                <> operator ":"
+                <> Pretty.hardline
+                <> "  "
+                <> pretty a
+            )
+
+    short = pretty x <> operator ":" <> " " <> pretty a
+prettyEntry (MarkerType a) =
+    "➤ " <> pretty a <> ": Type"
+prettyEntry (MarkerFields a) =
+    "➤ " <> pretty a <> ": Fields"
+prettyEntry (MarkerAlternatives a) =
+    "➤ " <> pretty a <> ": Alternatives"
+
+prettyFieldType :: (Text, Monotype) -> Doc AnsiStyle
+prettyFieldType (k, τ) =
+    punctuation "," <> " " <> pretty k <> operator ":" <> " " <> pretty τ
+
+prettyAlternativeType :: (Text, Monotype) -> Doc AnsiStyle
+prettyAlternativeType (k, τ) =
+    pretty k <> operator ":" <> " " <> pretty τ
+
 {- | Substitute a `Type` using the solved entries of a `Context`
 
     >>> original = Type.UnsolvedType () 0
@@ -158,7 +251,7 @@ type Context s = [Entry s]
     Bool
 -}
 solveType :: Context s -> Type s -> Type s
-solveType context type_ = foldl' snoc type_ context
+solveType context type_ = foldl snoc type_ context
   where
     snoc t (SolvedType a τ) = Type.solveType a τ t
     snoc t (SolvedFields a r) = Type.solveFields a r t
@@ -219,15 +312,16 @@ solveUnion context oldAlternatives = newAlternatives
 
     * Adding universal quantifiers for all unsolved entries in the `Context`
 
->>> original = Type.Function () (Type.UnsolvedType () 1) (Type.UnsolvedType () 0)
->>> pretty @(Type ()) original
-(b? -> a?)
+    >>> original = Type.Function () (Type.UnsolvedType () 1) (Type.UnsolvedType () 0)
+    >>> pretty @(Type ()) original
+    b? -> a?
 
->>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
-∀ a. (a -> Bool)
+    >>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
+    forall (a : Type) . a -> Bool
 -}
-complete :: Show s => Context s -> Type s -> Type s
-complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
+complete :: Context s -> Type s -> Type s
+complete context type0 = do
+    State.evalState (Monad.foldM snoc type0 context) 0
   where
     numUnsolved = fromIntegral (length (filter predicate context)) - 1
       where
@@ -236,9 +330,9 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
         predicate (UnsolvedAlternatives _) = True
         predicate _ = False
 
-    snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
-    snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
-    snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
+    snoc t (SolvedType a τ) = do return (Type.solveType a τ t)
+    snoc t (SolvedFields a r) = do return (Type.solveFields a r t)
+    snoc t (SolvedAlternatives a r) = do return (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
         n <- State.get
 
@@ -254,10 +348,7 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         let nameLocation = location
 
-    
-
-        let fa =  Type.Forall{..}
-        pure fa
+        return Type.Forall{..}
     snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
         n <- State.get
 
@@ -273,7 +364,7 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         let nameLocation = location
 
-        pure Type.Forall{..}
+        return Type.Forall{..}
     snoc t (UnsolvedAlternatives p) | p `Type.alternativesFreeIn` t = do
         n <- State.get
 
@@ -289,13 +380,9 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         let nameLocation = location
 
-        pure Type.Forall{..}
-    snoc t _ = pure t
-
--- | Checks if a type is complete, i.e. it has no unsolved variables.
-isComplete :: Type s -> Bool
-isComplete Type.UnsolvedType{} = False
-isComplete _ = True
+        return Type.Forall{..}
+    snoc t _ = do
+        return t
 
 {- | Split a `Context` into two `Context`s before and after the given
     `UnsolvedType` variable.  Neither `Context` contains the variable
@@ -313,10 +400,11 @@ splitOnUnsolvedType ::
     Existential Monotype ->
     Context s ->
     Maybe (Context s, Context s)
-splitOnUnsolvedType a0 (UnsolvedType a1 : entries) | a0 == a1 = pure ([], entries)
+splitOnUnsolvedType a0 (UnsolvedType a1 : entries)
+    | a0 == a1 = return ([], entries)
 splitOnUnsolvedType a (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedType a entries
-    pure (entry : prefix, suffix)
+    return (entry : prefix, suffix)
 splitOnUnsolvedType _ [] = Nothing
 
 {- | Split a `Context` into two `Context`s before and after the given
@@ -336,10 +424,10 @@ splitOnUnsolvedFields ::
     Context s ->
     Maybe (Context s, Context s)
 splitOnUnsolvedFields p0 (UnsolvedFields p1 : entries)
-    | p0 == p1 = pure ([], entries)
+    | p0 == p1 = return ([], entries)
 splitOnUnsolvedFields p (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedFields p entries
-    pure (entry : prefix, suffix)
+    return (entry : prefix, suffix)
 splitOnUnsolvedFields _ [] = Nothing
 
 {- | Split a `Context` into two `Context`s before and after the given
@@ -359,133 +447,54 @@ splitOnUnsolvedAlternatives ::
     Context s ->
     Maybe (Context s, Context s)
 splitOnUnsolvedAlternatives p0 (UnsolvedAlternatives p1 : entries)
-    | p0 == p1 = pure ([], entries)
+    | p0 == p1 = return ([], entries)
 splitOnUnsolvedAlternatives p (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedAlternatives p entries
-    pure (entry : prefix, suffix)
+    return (entry : prefix, suffix)
 splitOnUnsolvedAlternatives _ [] = Nothing
 
 {- | Retrieve a variable's annotated type from a `Context`, given the variable's
     label and index
 
-    >>> lookup "x" 0 [ Annotation "x" (Type.Scalar () Monotype.Bool), Annotation "y" (Type.Scalar () Monotype.Natural) ]
+    >>> :{ 
+lookup
+        "x"
+        0
+        [ Annotation "x" (Type.Scalar () Monotype.Bool)
+        , Annotation "y" (Type.Scalar () Monotype.Natural)
+        , Annotation "x" (Type.Scalar () Monotype.Text)
+        ]
+    :}
     Just (Scalar {location = (), scalar = Bool})
 -}
+
+
 lookup ::
     -- | Variable label
-    IgnoreLocVarRef Name ->
+    Text ->
+    -- | Variable index (See the documentation of `Value.Variable`)
+    Int ->
     Context s ->
     Maybe (Type s)
-lookup x ctx = viaNonEmpty head (lookupAll x ctx)
-
--- Finds all annotations for a given variable name
-lookupAll ::
-    -- | Variable label
-    IgnoreLocVarRef Name ->
-    Context s ->
-    [Type s]
-lookupAll _ [] = []
-lookupAll x0 (Annotation x1 _A : _Γ) | x0 == x1 = _A : lookupAll x0 _Γ
-lookupAll x0 (_ : _Γ) = lookupAll x0 _Γ
+lookup _ _ [] =
+    Nothing
+lookup x0 n (Annotation x1 _A : _Γ) =
+    if x0 == x1
+        then
+            if n <= 0
+                then Just _A
+                else lookup x0 (n - 1) _Γ
+        else lookup x0 n _Γ
+lookup x n (_ : _Γ) =
+    lookup x n _Γ
 
 {- | Discard all entries from a `Context` up to and including the given `Entry`
 
     >>> discardUpTo (MarkerType 1) [ UnsolvedType 1, MarkerType 1, UnsolvedType 0 ]
     [UnsolvedType 0]
 -}
-discardUpTo :: (Eq s) => Entry s -> Context s -> Context s
+discardUpTo :: Eq s => Entry s -> Context s -> Context s
 discardUpTo entry0 (entry1 : _Γ)
     | entry0 == entry1 = _Γ
     | otherwise = discardUpTo entry0 _Γ
 discardUpTo _ [] = []
-
-instance (Show s) => Pretty (Entry s) where
-    pretty = prettyEntry
-
-prettyEntry :: (Show s) => Entry s -> Doc AnsiStyle
-prettyEntry (Variable domain a) =
-    pretty a <> ":" <> " " <> pretty domain
-prettyEntry (UnsolvedType a) =
-    pretty a <> "?"
-prettyEntry (UnsolvedFields p) =
-    pretty p <> "?"
-prettyEntry (UnsolvedAlternatives p) =
-    pretty p <> "?"
-prettyEntry (SolvedType a τ) =
-    pretty a <> " " <> "=" <> " " <> pretty τ
-prettyEntry (SolvedFields p (Monotype.Fields [] Monotype.EmptyFields)) =
-    pretty p <> " " <> "=" <> " " <> "•"
-prettyEntry (SolvedFields p0 (Monotype.Fields [] (Monotype.UnsolvedFields p1))) =
-    pretty p0
-        <> " "
-        <> "="
-        <> " "
-        <> pretty p1
-        <> "?"
-prettyEntry (SolvedFields p0 (Monotype.Fields [] (Monotype.VariableFields p1))) =
-    pretty p0
-        <> " "
-        <> "="
-        <> " "
-        <> pretty p1
-prettyEntry (SolvedFields p (Monotype.Fields ((k0, τ0) : kτs) fields)) =
-    pretty p
-        <> " = "
-        <> pretty k0
-        <> ":"
-        <> " "
-        <> pretty τ0
-        <> foldMap prettyFieldType kτs
-        <> case fields of
-            Monotype.EmptyFields ->
-                ""
-            Monotype.UnsolvedFields p1 ->
-                "," <> " " <> pretty p1 <> "?"
-            Monotype.VariableFields p1 ->
-                "," <> " " <> pretty p1
-prettyEntry (SolvedAlternatives p (Monotype.Alternatives [] Monotype.EmptyAlternatives)) =
-    pretty p <> " " <> "=" <> " " <> "•"
-prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p1))) =
-    pretty p0 <> " " <> "=" <> " " <> pretty p1 <> "?"
-prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives [] (Monotype.VariableAlternatives p1))) =
-    pretty p0 <> " " <> "=" <> " " <> pretty p1
-prettyEntry (SolvedAlternatives p0 (Monotype.Alternatives ((k0, τ0) : kτs) fields)) =
-    pretty p0
-        <> " "
-        <> "="
-        <> " "
-        <> prettyAlternativeType (k0, τ0)
-        <> foldMap (\kt -> " " <> "|" <> " " <> prettyAlternativeType kt) kτs
-        <> case fields of
-            Monotype.EmptyAlternatives ->
-                ""
-            Monotype.UnsolvedAlternatives p1 ->
-                " " <> "|" <> " " <> pretty p1 <> "?"
-            Monotype.VariableAlternatives p1 ->
-                " " <> "|" <> " " <> pretty p1
-prettyEntry (Annotation x a) = group (flatAlt long short)
-  where
-    long =
-        align
-            ( pretty x
-                <> ":"
-                <> hardline
-                <> "  "
-                <> pretty a
-            )
-
-    short = pretty x <> ":" <> " " <> pretty a
-prettyEntry (MarkerType a) =
-    "➤ " <> pretty a <> ": Type"
-prettyEntry (MarkerFields a) =
-    "➤ " <> pretty a <> ": Fields"
-prettyEntry (MarkerAlternatives a) =
-    "➤ " <> pretty a <> ": Alternatives"
-
-prettyFieldType :: (Text, Monotype) -> Doc AnsiStyle
-prettyFieldType (k, τ) =
-    "," <> " " <> pretty k <> ":" <> " " <> pretty τ
-
-prettyAlternativeType :: (Text, Monotype) -> Doc AnsiStyle
-prettyAlternativeType (k, τ) =
-    pretty k <> ":" <> " " <> pretty τ

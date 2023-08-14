@@ -1,3 +1,4 @@
+{-# LANGUAGE DerivingStrategies #-}
 module Elara.TypeInfer.Existential where
 
 import Elara.Data.Pretty (Pretty (..))
@@ -14,7 +15,8 @@ import Data.Text qualified as Text
       variable
 -}
 newtype Existential a = UnsafeExistential Int
-    deriving (Eq, Num, Ord, Show, Data)
+    deriving (Eq, Num, Ord, Data)
+    deriving newtype Show
 
 instance Pretty (Existential a) where
     pretty x = pretty (toVariable x)

@@ -8,7 +8,7 @@ import Data.Data (Data)
 import Elara.AST.Lenses (HasDeclarationBody (..), HasDeclarationBody' (..))
 import Elara.AST.Name
 import Elara.AST.Pretty
-import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Region (Located (..), unlocated, SourceRegion)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.StripLocation
 import Elara.AST.VarRef
@@ -48,6 +48,9 @@ instance Plated Expr'
 
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq, Data)
+
+location :: Expr -> SourceRegion
+location = view (_Expr . unlocated)
 
 data Pattern'
     = VarPattern (Located (Unique VarName))

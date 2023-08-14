@@ -36,13 +36,15 @@ dependencies:
   - binary
   - directory
   - filepath
+  - safe-exceptions
+  - terminal-size
 
 ghc-options:
   - -Wall
   - -W
   - -Wcompat
   # - -Weverything
-  - -Werror=incomplete-patterns
+  # - -Werror=incomplete-patterns
   - -Werror=incomplete-uni-patterns
   - -Wredundant-constraints
   - -Wunused-imports
@@ -60,7 +62,7 @@ ghc-options:
   - -fdefer-typed-holes
   # - -fno-show-valid-hole-fits
   - -Wunused-packages
-  - -O2
+  - -j4 +RTS -A32m -RTS
 
 default-extensions:
   - OverloadedStrings
@@ -73,7 +75,6 @@ default-extensions:
   - DeriveFunctor
   - TypeApplications
   - PartialTypeSignatures
-  - Strict
 
 library:
   source-dirs: src
@@ -105,3 +106,16 @@ tests:
       - HUnit
       - hspec-megaparsec
       - QuickCheck
+
+  doctest:
+    main: Main.hs
+    source-dirs: doctest
+
+    ghc-options:
+      - -threaded
+      - -O0
+
+    dependencies:
+      - elara
+      - doctest-parallel
+      - Glob
