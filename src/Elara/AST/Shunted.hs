@@ -46,6 +46,7 @@ data Expr'
 
 instance Plated Expr'
 
+
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq, Data)
 

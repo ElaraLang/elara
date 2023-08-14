@@ -4,6 +4,7 @@ module Elara.Data.Kind where
 import Data.Data (Data)
 import Elara.Data.Pretty
 import Elara.Data.Unique
+import Data.Aeson (ToJSON)
 
 data ElaraKind
     = -- | The kind of monotypes (@Type@ or @*@ in Haskell)
@@ -12,9 +13,12 @@ data ElaraKind
       FunctionKind ElaraKind ElaraKind
     | -- | A kind variable for poly-kinds (probably not supported yet)
       VarKind UniqueId
-    deriving (Show, Eq, Data)
+    deriving (Show, Eq, Data, Generic)
 
 instance Pretty ElaraKind where
     pretty TypeKind = typeName "Type"
     pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
     pretty (VarKind v) = varName ("k" <> pretty v)
+
+
+instance ToJSON ElaraKind

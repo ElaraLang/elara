@@ -3,6 +3,7 @@
 module Elara.AST.VarRef where
 
 import Control.Lens (view)
+import Data.Aeson (ToJSON(..))
 import Data.Data (Data)
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located)
@@ -14,7 +15,7 @@ import Elara.Data.Unwrap (Unwrap (unwrap))
 data VarRef' c n
     = Global (c (Qualified n))
     | Local (c (Unique n))
-    deriving (Functor, Typeable)
+    deriving (Functor, Typeable, Generic)
 
 type VarRef n = VarRef' Located n
 
@@ -59,3 +60,7 @@ deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef'
 deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
 deriving instance (Ord (c (Qualified n)), Ord (c (Unique n))) => Ord (VarRef' c n)
 deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Unique n))) => Data (VarRef' c n)
+
+instance (Generic (VarRef' c n), ToJSON (c (Unique n)), ToJSON (c (Qualified n))) => ToJSON (VarRef' c n) where
+    toJSON (Global n) = toJSON n
+    toJSON (Local n) = toJSON n

@@ -3,14 +3,16 @@
 module Elara.AST.Unlocated.Typed where
 
 import Control.Lens hiding (List, none)
-import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName (..))
+import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName (..), LowerAlphaName)
 import Elara.AST.Pretty
+import Elara.Data.Kind
 import Elara.AST.Region (Located (..))
 import Elara.AST.VarRef (UnlocatedVarRef, varRefVal)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
 import Prelude hiding (Op, group)
+import Data.Aeson (ToJSON)
 
 -- | Typed AST Type without location information. See 'Elara.AST.Typed.Expr'' for the location information version.
 data Expr'
@@ -30,10 +32,15 @@ data Expr'
     | Let (Unique VarName) Expr
     | Block (NonEmpty Expr)
     | Tuple (NonEmpty Expr)
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 newtype Expr = Expr (Expr', Type ())
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+instance ToJSON Expr
+instance ToJSON Expr'
+instance ToJSON Pattern
+instance ToJSON Pattern'
 
 data Pattern'
     = VarPattern (Unique VarName)
@@ -46,29 +53,35 @@ data Pattern'
     | StringPattern Text
     | CharPattern Char
     | UnitPattern
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 newtype Pattern = Pattern (Pattern', Type ())
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 data TypeAnnotation = TypeAnnotation (Qualified Name) (Type ())
     deriving (Show, Eq)
+    
 data Declaration = Declaration'
     { _declaration'Module' :: ModuleName
     , _declaration'Name :: Qualified Name
     , _declaration'Body :: DeclarationBody
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 data DeclarationBody
     = -- | def <name> : <type> and / or let <p> = <e>
       Value
         { _expression :: Expr
         }
-    | NativeDef TypeAnnotation
-    | -- | type <name> = <type>
-      TypeAlias (Type ())
-    deriving (Show, Eq)
+    | -- | type <name> <vars> = <type>
+      TypeDeclaration [(Unique LowerAlphaName)] (TypeDeclaration) ElaraKind -- No difference to old AST
+    deriving (Show, Eq, Generic)
+
+
+data TypeDeclaration
+    = ADT (NonEmpty ((Qualified TypeName), [Type ()]))
+    | Alias (Type ())
+    deriving (Show, Eq, Generic)
 
 makePrisms ''Declaration
 makePrisms ''DeclarationBody
@@ -122,3 +135,8 @@ instance Pretty Pattern' where
     pretty (ListPattern l) = prettyListPattern l
     pretty (ConsPattern p1 p2) = prettyConsPattern p1 p2
     pretty other = show other
+
+
+instance ToJSON Declaration
+instance ToJSON DeclarationBody
+instance ToJSON TypeDeclaration

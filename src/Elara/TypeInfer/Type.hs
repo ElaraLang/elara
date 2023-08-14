@@ -28,6 +28,8 @@ import qualified Elara.TypeInfer.Monotype as Monotype
 import qualified Prettyprinter as Pretty
 import Data.Data (Data)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
+import Data.Aeson (ToJSON(..), Value(String))
+import Print (showPrettyUnannotated)
 
 {- $setup
 
@@ -92,6 +94,9 @@ data Type s
     | Scalar { location :: s, scalar :: Scalar }
     deriving stock (Eq, Functor, Generic, Show, Data)
 
+instance ToJSON c =>  ToJSON (Type c) where
+    toJSON s = String (showPrettyUnannotated s)
+
 instance IsString (Type ()) where
     fromString string = VariableType{ name = fromString string, location = () }
 
@@ -140,12 +145,16 @@ instance Plated (Type s) where
 data Record s = Fields [(Text, Type s)] RemainingFields
     deriving stock (Eq, Functor, Generic, Show, Data)
 
+instance ToJSON s => ToJSON (Record s)
+
 instance Pretty (Record s) where
     pretty = prettyRecordType
 
 -- | A potentially polymorphic union type
 data Union s = Alternatives [(Text, Type s)] RemainingAlternatives
     deriving stock (Eq, Functor, Generic, Show, Data)
+
+instance ToJSON s => ToJSON (Union s)
 
 instance Pretty (Union s) where
     pretty = prettyUnionType

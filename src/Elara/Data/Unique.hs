@@ -10,21 +10,27 @@ import Polysemy (Member, Sem, embed, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
+import Data.Aeson (ToJSON)
 
 data Unique a = Unique
     { _uniqueVal :: !a
     , _uniqueId :: !Int
     }
-    deriving (Show, Functor, Data)
+    deriving (Show, Functor, Data, Generic)
 
 unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique
 
 -- | A @Unique@ where the value is not important.
-newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data)
+newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 
 uniqueIdVal :: UniqueId -> Int
 uniqueIdVal (UniqueId u) = _uniqueId u
+
+
+instance ToJSON c => ToJSON (Unique c) where
+    
+instance ToJSON UniqueId
 
 instance Show UniqueId where
     show (UniqueId u) = Text.Show.show (_uniqueId u)

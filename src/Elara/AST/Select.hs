@@ -13,6 +13,7 @@ import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed qualified as Typed
 import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
+import Elara.AST.Unlocated.Typed qualified as Unlocated.Typed
 import Elara.Core.Module (CoreModule)
 import Elara.Core.Module qualified as Core
 import Elara.TypeInfer.Type qualified as Typed
@@ -29,6 +30,8 @@ data Shunted
 
 data Typed
 
+data UnlocatedTyped
+
 data Core
 
 type family ASTExpr ast where
@@ -38,6 +41,7 @@ type family ASTExpr ast where
     ASTExpr Renamed = Renamed.Expr
     ASTExpr Shunted = Shunted.Expr
     ASTExpr Typed = Typed.Expr
+    ASTExpr UnlocatedTyped = Unlocated.Typed.Expr
 
 type family ASTType ast where
     ASTType Frontend = Frontend.Type
@@ -46,6 +50,7 @@ type family ASTType ast where
     ASTType Renamed = Renamed.Type
     ASTType Shunted = Renamed.Type
     ASTType Typed = Typed.Type SourceRegion
+    ASTType UnlocatedTyped = Typed.Type ()
 
 type family ASTPattern ast where
     ASTPattern Frontend = Frontend.Pattern
@@ -54,6 +59,7 @@ type family ASTPattern ast where
     ASTPattern Renamed = Renamed.Pattern
     ASTPattern Shunted = Shunted.Pattern
     ASTPattern Typed = Typed.Pattern
+    ASTPattern UnlocatedTyped = Unlocated.Typed.Pattern
 
 type family ASTQual ast where
     ASTQual Frontend = MaybeQualified
@@ -62,6 +68,7 @@ type family ASTQual ast where
     ASTQual Renamed = Qualified
     ASTQual Shunted = Qualified
     ASTQual Typed = Qualified
+    ASTQual UnlocatedTyped = Qualified
 
 type family ASTLocate' ast where
     ASTLocate' Frontend = Located
@@ -70,7 +77,9 @@ type family ASTLocate' ast where
     ASTLocate' Renamed = Located
     ASTLocate' Shunted = Located
     ASTLocate' Typed = Located
+    ASTLocate' UnlocatedTyped = Unlocated
     ASTLocate' Core = Unlocated
+
 
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
@@ -79,6 +88,7 @@ type family ASTDeclaration ast where
     ASTDeclaration Renamed = Renamed.Declaration
     ASTDeclaration Shunted = Shunted.Declaration
     ASTDeclaration Typed = Typed.Declaration
+    ASTDeclaration UnlocatedTyped = Unlocated.Typed.Declaration
 
 type ASTLocate ast a = UnwrapUnlocated (ASTLocate' ast a)
 

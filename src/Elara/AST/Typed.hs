@@ -110,6 +110,24 @@ makePrisms ''Expr'
 makePrisms ''VarRef'
 makePrisms ''Pattern
 
+
+instance StripLocation Declaration Unlocated.Declaration where
+    stripLocation (Declaration ldb) = (stripLocation ldb)
+
+instance StripLocation Declaration' Unlocated.Declaration where
+    stripLocation (Declaration' m n b) = Unlocated.Declaration' (stripLocation m) (stripLocation n) (stripLocation b)
+
+instance StripLocation DeclarationBody Unlocated.DeclarationBody where
+    stripLocation (DeclarationBody ldb) = (stripLocation ldb)
+
+instance StripLocation DeclarationBody' Unlocated.DeclarationBody where
+    stripLocation (Value e) = Unlocated.Value (stripLocation e)
+    stripLocation (TypeDeclaration vars t kind) = Unlocated.TypeDeclaration (stripLocation vars) (stripLocation t) kind
+
+instance StripLocation TypeDeclaration Unlocated.TypeDeclaration where
+    stripLocation (ADT constructors) = Unlocated.ADT (stripLocation constructors)
+    stripLocation (Alias t) = Unlocated.Alias (stripLocation t)
+
 instance StripLocation Expr Unlocated.Expr where
     stripLocation (Expr (e, t)) = Unlocated.Expr (stripLocation $ stripLocation e, stripLocation t)
 

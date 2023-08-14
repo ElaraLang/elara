@@ -18,9 +18,10 @@ import Elara.Data.Pretty
 import Elara.Data.Unique
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
+import Data.Aeson (ToJSON)
 
 newtype ModuleName = ModuleName (NonEmpty Text)
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 {- | A valid Variable name. This includes anything that could appear in `let [name] = ...`
 In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
@@ -30,7 +31,7 @@ data VarName
       NormalVarName LowerAlphaName
     | -- | An operator var name. Note that while in the source code, the name must be surrounded in parentheses, this is not the case in the AST!
       OperatorVarName OpName
-    deriving (Ord, Show, Eq, Data)
+    deriving (Ord, Show, Eq, Data, Generic)
 
 instance IsString VarName where
     fromString = NormalVarName . fromString
@@ -43,13 +44,13 @@ instance IsString VarName where
 Since type variables can't be operators though, we don't use 'VarName' for them
 -}
 newtype LowerAlphaName = LowerAlphaName Text
-    deriving (Ord, Show, Eq, Data, IsString)
+    deriving (Ord, Show, Eq, Data, IsString, Generic)
 
 newtype TypeName = TypeName Text
-    deriving (Ord, Show, Eq, Data, IsString)
+    deriving (Ord, Show, Eq, Data, IsString, Generic)
 
 newtype OpName = OpName Text
-    deriving (Ord, Show, Eq, Data, IsString)
+    deriving (Ord, Show, Eq, Data, IsString, Generic)
 
 makePrisms ''LowerAlphaName
 makePrisms ''TypeName
@@ -59,7 +60,7 @@ data Name
     = NVarName VarName
     | NTypeName TypeName
     | NOpName OpName
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 type UniqueName = Unique Name
 
@@ -159,7 +160,7 @@ data Qualified name = Qualified
     { _qualifiedName :: name
     , _qualifiedQualifier :: ModuleName
     }
-    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
+    deriving (Show, Eq, Data, Ord, Generic, Functor, Foldable, Traversable)
 
 unqualified :: Lens' (Qualified name) name
 unqualified =
@@ -212,3 +213,12 @@ instance Pretty OpName where
 
 instance Pretty LowerAlphaName where
     pretty (LowerAlphaName n) = pretty n
+
+
+instance ToJSON n => ToJSON (Qualified n)
+instance ToJSON ModuleName
+instance ToJSON VarName
+instance ToJSON OpName
+instance ToJSON TypeName
+instance ToJSON LowerAlphaName
+instance ToJSON Name

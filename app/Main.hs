@@ -8,13 +8,14 @@ where
 
 import Control.Exception as E
 import Control.Lens (Each (each), folded, to, traverseOf_, view, (^.))
+import Data.Aeson (ToJSON, encode)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.ByteString.Char8 (putStrLn)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
-import Elara.AST.Select (Core)
+import Elara.AST.Select (Core, Typed, UnlocatedTyped)
 import Elara.AST.Select hiding (moduleName)
 import Elara.AST.Typed qualified as Typed
 import Elara.Data.Kind.Infer
@@ -37,7 +38,7 @@ import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCoreC, toCore)
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), defaultStyle, printDiagnostic)
+import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic)
 import JVM.Data.Abstract.ClassFile as ClassFile hiding (name)
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
@@ -57,7 +58,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
 import Text.Printf
-
+import Elara.AST.StripLocation
 
 main :: IO ()
 main = run `finally` cleanup
@@ -71,7 +72,7 @@ main = run `finally` cleanup
         let dumpTyped = "--dump-typed" `elem` args
         let dumpCore = "--dump-core" `elem` args
         s <- runElara dumpShunted dumpTyped dumpCore
-        printDiagnostic stdout True True 4 defaultStyle s
+        printDiagnostic stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
 dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
@@ -82,6 +83,18 @@ dumpGraph graph nameFunc suffix = do
             handle <- openFile fileName WriteMode
             hPutDoc handle contents
             hFlush handle
+
+    traverseGraph_ dump graph
+
+dumpJSONGraph :: ToJSON m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpJSONGraph g = dumpJSONGraphWith g identity
+
+dumpJSONGraphWith :: (ToJSON m) => TopologicalGraph a -> (a -> m) -> (a -> Text) -> Text -> IO ()
+dumpJSONGraphWith graph f nameFunc suffix = do
+    let dump mod = do
+            let contents = encode (f mod)
+            let fileName = toString ("out/" <> nameFunc mod <> suffix)
+            writeFileLBS fileName contents
 
     traverseGraph_ dump graph
 
@@ -100,6 +113,7 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     typedGraph <- inferModules shuntedGraph
 
     when dumpTyped $ do
+        liftIO $ dumpJSONGraphWith typedGraph (stripLocation @(Module Typed) @(Module UnlocatedTyped)) (view (name . to nameText)) ".typed.json"
         liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
 
     coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
@@ -184,9 +198,9 @@ shuntModule m = do
             traverse_ report warnings
             justE shunted
 
-inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r ( (TopologicalGraph (Module Typed)))
+inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r ((TopologicalGraph (Module Typed)))
 inferModules modules = do
-     runErrorOrReport $ (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
+    runErrorOrReport $ (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
 loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

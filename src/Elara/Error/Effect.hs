@@ -2,7 +2,6 @@
 
 module Elara.Error.Effect where
 
-import Error.Diagnose (def)
 import Error.Diagnose.Diagnostic as Diagnostic (Diagnostic, addFile, addReport)
 import Error.Diagnose.Report (Report)
 import Polysemy
@@ -25,7 +24,7 @@ execDiagnosticWriter = fmap fst . runDiagnosticWriter
 
 runDiagnosticWriter :: Sem (DiagnosticWriter t ': r) a -> Sem r (Diagnostic t, a)
 runDiagnosticWriter =
-    runState def
+    runState mempty
         . reinterpretH
             ( \case
                 WriteDiagnostic d -> do

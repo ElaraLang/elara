@@ -18,6 +18,7 @@ module Elara.TypeInfer.Monotype (
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.TypeInfer.Existential (Existential)
+import Data.Aeson (ToJSON)
 
 {- $setup
    >>> import qualified Elara.TypeInfer.Monotype as Monotype
@@ -40,6 +41,8 @@ data Monotype
     | Union Union
     | Scalar Scalar
     deriving stock (Eq, Generic, Show)
+
+instance ToJSON Monotype
 
 instance IsString Monotype where
     fromString string = VariableType (fromString string)
@@ -86,9 +89,14 @@ instance Pretty Scalar where
     pretty Integer = "Integer"
     pretty Text = "Text"
 
+instance ToJSON Scalar
+
 -- | A monomorphic record type
 data Record = Fields [(Text, Monotype)] RemainingFields
     deriving stock (Eq, Generic, Show)
+
+instance ToJSON Record
+instance ToJSON RemainingFields
 
 -- | This represents whether or not the record type is open or closed
 data RemainingFields
@@ -107,6 +115,8 @@ data RemainingFields
 data Union = Alternatives [(Text, Monotype)] RemainingAlternatives
     deriving stock (Eq, Generic, Show)
 
+instance ToJSON Union
+
 -- | This represents whether or not the union type is open or closed
 data RemainingAlternatives
     = -- | The union type is closed, meaning that all alternatives are known
@@ -119,3 +129,5 @@ data RemainingAlternatives
       --   alternatives variable an explicit name in the source code
       VariableAlternatives Text
     deriving stock (Eq, Generic, Show, Data)
+
+instance ToJSON RemainingAlternatives

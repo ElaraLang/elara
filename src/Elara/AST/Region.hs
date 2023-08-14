@@ -12,6 +12,7 @@ import GHC.Exts (the)
 import Print (showPretty)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
 import Text.Show (Show (show))
+import Data.Aeson (ToJSON)
 
 generatedFileName :: String
 generatedFileName = "<generated>"
@@ -20,24 +21,24 @@ data RealPosition = Position
     { _line :: Int
     , _column :: Int
     }
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Position
     = RealPosition !RealPosition
     | GeneratedPosition
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data RealSourceRegion = SourceRegion
     { _sourceFile :: !(Maybe FilePath)
     , _startPos :: !RealPosition
     , _endPos :: !RealPosition
     }
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data SourceRegion
     = RealSourceRegion !RealSourceRegion
     | GeneratedRegion !FilePath
-    deriving (Show, Eq, Ord, Data)
+    deriving (Show, Eq, Ord, Data, Generic)
 
 makePrisms ''Position
 makeLenses ''RealPosition
@@ -121,7 +122,7 @@ positionToDiagnosePosition fp (Position ln cn) =
         }
 
 data Located a = Located SourceRegion a
-    deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data)
+    deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
 
 makePrisms ''Located
 
@@ -131,7 +132,7 @@ type family Unlocate g where
 
 -- | Newtype wrapper for 'Located' that ignores the location information for its instances
 newtype IgnoreLocation a = IgnoreLocation (Located a)
-    deriving (Functor, Foldable, Traversable)
+    deriving (Functor, Foldable, Traversable, Generic)
 
 makePrisms ''IgnoreLocation
 
@@ -221,3 +222,9 @@ instance Pretty SourceRegion where
 
 instance Pretty RealPosition where
     pretty (Position ln cn) = pretty ln <> ":" <> pretty cn
+
+
+instance ToJSON s => ToJSON (Located s)
+instance ToJSON SourceRegion
+instance ToJSON RealSourceRegion
+instance ToJSON RealPosition

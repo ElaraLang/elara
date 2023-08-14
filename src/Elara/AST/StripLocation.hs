@@ -17,7 +17,7 @@ instance StripLocation (Located a) a where
 instance StripLocation SourceRegion () where
     stripLocation _ = ()
 
-instance {-# OVERLAPPABLE #-} (StripLocation a1 b1, StripLocation b1 b2) => StripLocation a1 b2 where
+instance {-# OVERLAPPABLE #-}  (StripLocation a1 b1, StripLocation b1 b2) => StripLocation a1 b2 where
     stripLocation b = stripLocation (stripLocation b)
 
 -- We could provide a general Functor instance but the overlapping tends to cause problems

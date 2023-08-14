@@ -5,6 +5,7 @@ import Elara.Data.Pretty (Pretty (..))
 
 import Data.Data (Data)
 import Data.Text qualified as Text
+import Data.Aeson (ToJSON)
 
 {- | An existential variable
     The type variable is used to track what type of existential variable we're
@@ -16,7 +17,7 @@ import Data.Text qualified as Text
 -}
 newtype Existential a = UnsafeExistential Int
     deriving (Eq, Num, Ord, Data)
-    deriving newtype Show
+    deriving newtype (Show, ToJSON)
 
 instance Pretty (Existential a) where
     pretty x = pretty (toVariable x)

@@ -120,12 +120,13 @@ library
   build-tools:
       alex
   build-depends:
-      array
+      aeson
+    , array
     , base-noprelude
     , binary
     , bytestring
     , containers
-    , diagnose >=2.4.0
+    , diagnose
     , directory
     , filepath
     , generic-lens
@@ -165,12 +166,13 @@ executable elara
       PartialTypeSignatures
   ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS -threaded
   build-depends:
-      array
+      aeson
+    , array
     , base-noprelude
     , binary
     , bytestring
     , containers
-    , diagnose >=2.4.0
+    , diagnose
     , directory
     , elara
     , filepath
@@ -213,12 +215,13 @@ test-suite doctest
   ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS -threaded -O0
   build-depends:
       Glob
+    , aeson
     , array
     , base-noprelude
     , binary
     , bytestring
     , containers
-    , diagnose >=2.4.0
+    , diagnose
     , directory
     , doctest-parallel
     , elara
@@ -275,12 +278,13 @@ test-suite elara-test
   build-depends:
       HUnit
     , QuickCheck
+    , aeson
     , array
     , base-noprelude
     , binary
     , bytestring
     , containers
-    , diagnose >=2.4.0
+    , diagnose
     , directory
     , elara
     , filepath

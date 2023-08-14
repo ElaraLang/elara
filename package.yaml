@@ -15,6 +15,7 @@ extra-source-files:
 
 dependencies:
   - base-noprelude
+  - aeson
   - relude
   - lens
   - generic-lens
@@ -26,7 +27,7 @@ dependencies:
   - headed-megaparsec
   - parser-combinators
   - pretty-simple
-  - diagnose >= 2.4.0
+  - diagnose
   - prettyprinter
   - prettyprinter-ansi-terminal
   - polysemy

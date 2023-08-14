@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -16,16 +17,21 @@
 module Elara.AST.Module where
 
 import Control.Lens
+import Data.Aeson (ToJSON)
 import Data.Kind qualified as Kind (Type)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (unlocated)
-import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), UnlocatedFrontend)
+import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), Typed, Unlocated, UnlocatedFrontend, UnlocatedTyped)
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph
 import Unsafe.Coerce (unsafeCoerce)
+import GHC.TypeLits (ErrorMessage (..), TypeError)
+import Prelude hiding (Text)
+
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
+    deriving (Generic)
 
 data Module' ast = Module'
     { _module'Name :: ASTLocate ast ModuleName
@@ -33,24 +39,30 @@ data Module' ast = Module'
     , _module'Imports :: [Import ast]
     , _module'Declarations :: [ASTDeclaration ast]
     }
+    deriving (Generic)
 
 newtype Import ast = Import (ASTLocate ast (Import' ast))
+    deriving (Generic)
+
 data Import' ast = Import'
     { _import'Importing :: ASTLocate ast ModuleName
     , _import'As :: Maybe (ASTLocate ast ModuleName)
     , _import'Qualified :: Bool
     , _import'Exposing :: Exposing ast
     }
+    deriving (Generic)
 
 data Exposing ast
     = ExposingAll
     | ExposingSome [Exposition ast]
+    deriving (Generic)
 
 data Exposition ast
     = ExposedValue (FullASTQual ast VarName) -- exposing foo
     | ExposedOp (FullASTQual ast OpName) -- exposing (+)
     | ExposedType (FullASTQual ast TypeName) -- exposing Foo
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
+    deriving (Generic)
 
 -- traverseModule ::
 --     forall ast ast' f.
@@ -203,13 +215,20 @@ instance (RUnlocate ast) => HasModuleName (Module' ast) ast where
     moduleName = module'Name @ast
     unlocatedModuleName = moduleName @(Module' ast) @ast . rUnlocated' @ast
 
-instance StripLocation (Module Frontend) (Module UnlocatedFrontend) where
-    stripLocation (Module m) = Module (stripLocation (stripLocation m :: Module' Frontend))
+instance
+    (StripLocation (ASTLocate a (Module' a)) (Module' b), ASTLocate b (Module' b) ~ Module' b) =>
+    StripLocation (Module a) (Module b)
+    where
+    stripLocation (Module m) = Module (stripLocation m)
+
 
 instance StripLocation (Module' Frontend) (Module' UnlocatedFrontend) where
     stripLocation (Module' n e i d) = Module' (stripLocation n) (stripLocation e) (stripLocation i) (stripLocation d)
 
-instance StripLocation (Exposing Frontend) (Exposing UnlocatedFrontend) where
+instance StripLocation (Module' Typed) (Module' UnlocatedTyped) where
+    stripLocation (Module' n e i d) = Module' (stripLocation n) (stripLocation e) (stripLocation i) (stripLocation d)
+
+instance StripLocation (Exposition a) (Exposition b) => StripLocation (Exposing a) (Exposing b) where
     stripLocation ExposingAll = ExposingAll
     stripLocation (ExposingSome e) = ExposingSome (stripLocation e)
 
@@ -219,11 +238,23 @@ instance StripLocation (Exposition Frontend) (Exposition UnlocatedFrontend) wher
     stripLocation (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors (stripLocation tn)
     stripLocation (ExposedOp o) = ExposedOp (stripLocation o)
 
-instance StripLocation (Import Frontend) (Import UnlocatedFrontend) where
-    stripLocation (Import m) = Import (stripLocation (stripLocation m :: Import' Frontend))
+instance StripLocation (Exposition Typed) (Exposition UnlocatedTyped) where
+    stripLocation (ExposedValue n) = ExposedValue (stripLocation n)
+    stripLocation (ExposedType tn) = ExposedType (stripLocation tn)
+    stripLocation (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors (stripLocation tn)
+    stripLocation (ExposedOp o) = ExposedOp (stripLocation o)
+
+instance   (StripLocation (ASTLocate a (Import' a)) (Import' b), ASTLocate b (Import' b) ~ Import' b) =>
+    StripLocation (Import a) (Import b) where
+
+    stripLocation (Import m) = Import ((stripLocation m))
 
 instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
     stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
+
+instance StripLocation (Import' Typed) (Import' UnlocatedTyped) where
+    stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
+
 
 -- Traversals
 
@@ -239,7 +270,7 @@ traverseModule traverseDecl =
         (_Module @ast @ast' . unlocated)
         ( \m' -> do
             let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
-            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            let imports' = coerceImport @ast @ast' <$> m' ^. imports
             declarations' <- traverse traverseDecl (m' ^. declarations)
             pure (Module' (m' ^. name) exposing' imports' declarations')
         )
@@ -255,7 +286,7 @@ traverseModuleTopologically traverseDecl =
         (_Module @ast @ast' . unlocated)
         ( \m' -> do
             let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
-            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            let imports' = coerceImport @ast @ast' <$> m' ^. imports
             let declGraph = createGraph (m' ^. declarations)
             declarations' <- traverse traverseDecl (allEntriesTopologically declGraph)
             pure (Module' (m' ^. name) exposing' imports' declarations')
@@ -272,7 +303,7 @@ traverseModuleRevTopologically traverseDecl =
         (_Module @ast @ast' . unlocated)
         ( \m' -> do
             let exposing' = coerceExposing @ast @ast' (m' ^. exposing)
-            let imports' = coerceImport @ast @ast' <$> (m' ^. imports)
+            let imports' = coerceImport @ast @ast' <$> m' ^. imports
             let declGraph = createGraph (m' ^. declarations)
             declarations' <- traverse traverseDecl (allEntriesRevTopologically declGraph)
             pure (Module' (m' ^. name) exposing' imports' declarations')
@@ -280,15 +311,14 @@ traverseModuleRevTopologically traverseDecl =
 
 traverseModule_ ::
     forall ast f.
-    (_) =>
+    _ =>
     (ASTDeclaration ast -> f ()) ->
     Module ast ->
     f ()
 traverseModule_ traverseDecl =
     traverseOf_
         (_Module . unlocated)
-        ( \m' -> do
-            traverse traverseDecl (m' ^. declarations)
+        ( \m' -> traverse traverseDecl (m' ^. declarations)
         )
 
 instance
@@ -352,3 +382,23 @@ instance
             Nothing -> ""
             Just q' -> keyword "as" <+> moduleNameStyle (pretty q')
         qual = if q then keyword "qualified" else ""
+
+instance ToJSON (ASTLocate ast (Module' ast)) => ToJSON (Module ast)
+instance
+    ( ToJSON (ASTLocate ast ModuleName)
+    , ToJSON (ASTDeclaration ast)
+    , ToJSON (Import ast)
+    , ToJSON (Exposing ast)
+    ) =>
+    ToJSON (Module' ast)
+
+instance ToJSON (ASTLocate ast (Import' ast)) => ToJSON (Import ast)
+instance
+    ( ToJSON (ASTLocate ast ModuleName)
+    , ToJSON (Exposing ast)
+    ) =>
+    ToJSON (Import' ast)
+
+instance ToJSON (Exposition ast) => ToJSON (Exposing ast)
+
+instance (ToJSON (FullASTQual ast VarName), ToJSON (FullASTQual ast OpName), ToJSON (FullASTQual ast TypeName)) => ToJSON (Exposition ast)
