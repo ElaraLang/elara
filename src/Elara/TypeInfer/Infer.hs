@@ -30,6 +30,7 @@ import Elara.AST.Region
 import Elara.AST.Shunted (Expr (..), Pattern (Pattern), _Expr, _Pattern)
 import Elara.AST.Shunted qualified as Syntax
 import Elara.AST.VarRef
+import Elara.Data.Pretty (Pretty)
 import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Context qualified as Context
@@ -1294,6 +1295,7 @@ infer' e = fst <$> infer e pass
 -}
 infer ::
     HasCallStack =>
+    Pretty a =>
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     -- | An inner computation that can use any locally scoped context (eg lambda parameters)
@@ -1331,12 +1333,13 @@ infer (Expr (Located location e0)) cont = do
             push (Context.UnsolvedType a)
             push (Context.UnsolvedType b)
 
-
-            c' <- scoped (Context.Annotation (mkLocal' binding) input) do
+            let ann = Context.Annotation (mkLocal' binding) input
+            c' <- scoped ann do
                 check body output
+
                 cont
 
-            pure (Type.Function{input = input, output = output, ..}, c')
+            pure (Type.Function{..}, c')
 
         -- →E
         Syntax.FunctionCall function argument -> do
@@ -1693,7 +1696,7 @@ typeWith syntax = do
     pure (Context.complete _Δ _A)
 
 typeWithStatus ::
-    HasCallStack => 
+    HasCallStack =>
     ( Member (Error TypeInferenceError) r
     , Member (State Status) r
     ) =>
@@ -1704,9 +1707,7 @@ typeWithStatus syntax = do
     (status@Status{context = _Δ}, _A) <- runState cur (infer' syntax)
     State.put status
 
-
     pure (Context.complete _Δ _A)
-
 
 -- instance Exception TypeInferenceError where
 --     displayException (IllFormedAlternatives location a0 _Γ) =

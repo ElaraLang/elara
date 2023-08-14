@@ -5,7 +5,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
 import Elara.Parse.Primitives (HParser, inParens, inParens', located, token_)
-import HeadedMegaparsec (endHead, dbg)
+import HeadedMegaparsec (dbg, endHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
 

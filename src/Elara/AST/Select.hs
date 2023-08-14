@@ -13,9 +13,9 @@ import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.Typed qualified as Typed
 import Elara.AST.Unlocated.Frontend qualified as Unlocated.Frontend
-import Elara.TypeInfer.Type qualified as Typed
-import qualified Elara.Core.Module as Core
 import Elara.Core.Module (CoreModule)
+import Elara.Core.Module qualified as Core
+import Elara.TypeInfer.Type qualified as Typed
 
 data Frontend
 
@@ -162,8 +162,6 @@ instance RUnlocate Shunted where
     fmapRUnlocate' f (Located r a) = Located r (f a)
     sequenceRUnlocate' (Located r fs) = fmap (Located r) fs
 
-
-
 instance GetLocation Renamed where
     getLocation (Located r _) = Just r
     getLocation' (Located r _) = Just r
@@ -193,8 +191,6 @@ instance RUnlocate Typed where
 class HasModuleName c ast | c -> ast where
     moduleName :: Lens' c (ASTLocate ast ModuleName)
     unlocatedModuleName :: Lens' c ModuleName
-
-
 
 instance HasModuleName Desugared.Declaration Desugared where
     moduleName = Desugared._Declaration . unlocated . moduleName @Desugared.Declaration' @Desugared
@@ -235,7 +231,6 @@ instance HasModuleName Typed.Declaration Typed where
     moduleName = Typed._Declaration . unlocated . moduleName @Typed.Declaration' @Typed
     unlocatedModuleName :: Lens' Typed.Declaration ModuleName
     unlocatedModuleName = moduleName @Typed.Declaration @Typed . unlocated
-
 
 instance HasModuleName CoreModule Core where
     moduleName = Core.name

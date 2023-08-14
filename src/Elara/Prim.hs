@@ -50,8 +50,6 @@ primitiveVars = [fetchPrimitiveName]
 primitiveTypes :: [TypeName]
 primitiveTypes = [stringName, intName]
 
-
-
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
     -- assume all primitive types are kind Type
@@ -73,8 +71,9 @@ primitiveTCContext = do
             ]
 
     let primTyVarName = "a"
-    let elaraPrimitive = Annotation  -- elaraPrimitive :: forall a. String -> a
-          (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-          (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion String) (VariableType primRegion primTyVarName)))
+    let elaraPrimitive =
+            Annotation -- elaraPrimitive :: forall a. String -> a
+                (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
+                (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion String) (VariableType primRegion primTyVarName)))
 
     (elaraPrimitive : easies)

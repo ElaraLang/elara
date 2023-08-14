@@ -2,8 +2,8 @@ module Elara.TypeInfer.Existential where
 
 import Elara.Data.Pretty (Pretty (..))
 
-import Data.Text qualified as Text
 import Data.Data (Data)
+import Data.Text qualified as Text
 
 {- | An existential variable
     The type variable is used to track what type of existential variable we're

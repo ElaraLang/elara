@@ -7,6 +7,7 @@ import Elara.AST.Renamed qualified as AST
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
+import Elara.Data.Unique (Unique)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
 import Elara.TypeInfer.Existential
@@ -16,7 +17,6 @@ import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Marker (Where), Note (Hint), Report (Err))
 import Print
-import Elara.Data.Unique (Unique)
 
 -- | A data type holding all errors related to type inference
 data TypeInferenceError
@@ -88,7 +88,6 @@ instance ReportableError TypeInferenceError where
                     ]
                 )
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
-                
                 []
     report (UnboundConstructor v _Γ) =
         writeReport $
@@ -155,5 +154,4 @@ instance ReportableError TypeInferenceError where
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
                 []
-
     report e = writeReport $ Err Nothing (showColored e) [] []

@@ -82,9 +82,9 @@ instance Pretty Expr where
       where
         needsParens = case e of
             FunctionCall _ _ -> True
-            If {} -> True
+            If{} -> True
             Match _ _ -> True
-            LetIn {} -> True
+            LetIn{} -> True
             Let _ _ -> True
             Block _ -> True
             _ -> False

@@ -2,8 +2,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Elara.Data.Pretty
-  ( escapeChar,
+module Elara.Data.Pretty (
+    escapeChar,
     indentDepth,
     parensIf,
     Pretty (..),
@@ -11,8 +11,8 @@ module Elara.Data.Pretty
     module Elara.Data.Pretty.Styles,
     module Prettyprinter.Render.Terminal,
     listToText,
-    bracedBlock
-  )
+    bracedBlock,
+)
 where
 
 import Data.Map qualified as Map (toList)
@@ -31,101 +31,98 @@ parensIf False = identity
 
 listToText :: (Pretty a) => [a] -> Doc AnsiStyle
 listToText elements =
-  vsep (fmap prettyEntry elements)
+    vsep (fmap prettyEntry elements)
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
--- | A haskell-style braced block, which can split over multiple lines.
--- >>> bracedBlock ["foo", "bar"]
--- { foo; bar }
-
+{- | A haskell-style braced block, which can split over multiple lines.
+ >>> bracedBlock ["foo", "bar"]
+ { foo; bar }
+-}
 bracedBlock :: (Pretty a) => [a] -> Doc AnsiStyle
 bracedBlock [] = "{}"
 bracedBlock b = do
-  let open = "{ "
-      close = " }"
-      separator = "; "
-  group (align (encloseSep open close separator (pretty <$> b)))
-
-
+    let open = "{ "
+        close = " }"
+        separator = "; "
+    group (align (encloseSep open close separator (pretty <$> b)))
 
 class Pretty a where
-  pretty :: a -> Doc AnsiStyle
-  default pretty :: (Show a) => a -> Doc AnsiStyle
-  pretty = pretty @Text . show
+    pretty :: a -> Doc AnsiStyle
+    default pretty :: (Show a) => a -> Doc AnsiStyle
+    pretty = pretty @Text . show
 
 instance Pretty (Doc AnsiStyle) where
-  pretty = identity -- careful with this one
+    pretty = identity -- careful with this one
 
 instance Pretty () where
-  pretty = mempty
-
+    pretty = mempty
 
 instance Pretty Bool where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Text where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Int where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Integer where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Double where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Float where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty Char where
-  pretty = PP.pretty
+    pretty = PP.pretty
 
 instance Pretty a => Pretty (Maybe a) where
-  pretty = maybe mempty pretty
+    pretty = maybe mempty pretty
 
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
-  pretty = either pretty pretty
+    pretty = either pretty pretty
 
 instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
-  pretty (a, b, c) = tupled [pretty a, pretty b, pretty c]
+    pretty (a, b, c) = tupled [pretty a, pretty b, pretty c]
 
 -- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
 --     pretty = PP.pretty
 
 -- hack
 instance PP.Pretty (Doc AnsiStyle) where
-  pretty = unAnnotate
+    pretty = unAnnotate
 
 escapeChar :: (IsString s) => Char -> s
 escapeChar c = case c of
-  '\a' -> "\\a"
-  '\b' -> "\\b"
-  '\f' -> "\\f"
-  '\n' -> "\\n"
-  '\r' -> "\\r"
-  '\t' -> "\\t"
-  '\v' -> "\\v"
-  '\\' -> "\\\\"
-  '\'' -> "\\'"
-  '"' -> "\\\""
-  _ -> fromString [c]
+    '\a' -> "\\a"
+    '\b' -> "\\b"
+    '\f' -> "\\f"
+    '\n' -> "\\n"
+    '\r' -> "\\r"
+    '\t' -> "\\t"
+    '\v' -> "\\v"
+    '\\' -> "\\\\"
+    '\'' -> "\\'"
+    '"' -> "\\\""
+    _ -> fromString [c]
 
 instance {-# INCOHERENT #-} Pretty String where
-  pretty = pretty . toText
+    pretty = pretty . toText
 
 instance {-# OVERLAPPABLE #-} (Pretty i) => Pretty [i] where
-  pretty = align . list . map pretty
+    pretty = align . list . map pretty
 
 instance (Pretty i) => Pretty (NonEmpty i) where
-  pretty = pretty . toList
+    pretty = pretty . toList
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
-  pretty (a, b) = tupled [pretty a, pretty b]
+    pretty (a, b) = tupled [pretty a, pretty b]
 
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
-  pretty m = pretty (Map.toList m)
+    pretty m = pretty (Map.toList m)
 
 instance (Pretty s) => Pretty (Set s) where
-  pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
+    pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList

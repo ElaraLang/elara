@@ -1,8 +1,8 @@
 module Elara.TypeInfer.Domain (Domain (..))
 where
 
-import Elara.Data.Pretty (Pretty (..))
 import Data.Data (Data)
+import Elara.Data.Pretty (Pretty (..))
 
 -- | The domain over which a @forall@ is quantified
 data Domain

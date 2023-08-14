@@ -15,9 +15,9 @@ module Elara.TypeInfer.Monotype (
     RemainingAlternatives (..),
 ) where
 
+import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..), tupled)
 import Elara.TypeInfer.Existential (Existential)
-import Data.Data (Data)
 
 {- | A monomorphic type
 

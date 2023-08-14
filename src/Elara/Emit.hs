@@ -12,6 +12,7 @@ import Elara.Emit.Operator (translateOperatorName)
 
 import Elara.Core (Bind (..), CoreExpr, Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
+import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, listCon)
 import JVM.Data.Abstract.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
 import JVM.Data.Abstract.Builder
@@ -26,8 +27,7 @@ import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (showPretty, debugPretty)
-import Elara.Emit.Var (transformTopLevelLambdas, JVMExpr)
+import Print (debugPretty, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -71,7 +71,7 @@ addDeclaration declBody = case declBody of
             then addField (ClassFileField [FPublic, FStatic] declName (generateFieldType type') [])
             else do
                 let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
-                y <- transformTopLevelLambdas e  
+                y <- transformTopLevelLambdas e
                 code <- generateCodeAttribute y (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))
                 addMethod $
                     ClassFileMethod
@@ -80,7 +80,6 @@ addDeclaration declBody = case declBody of
                         descriptor
                         [code]
     e -> error (showPretty e)
-
 
 isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. unlocatedModuleName == ModuleName ("Main" :| [])

@@ -7,17 +7,17 @@ import Control.Lens (to, view, (^.), _2)
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
-import Elara.AST.Module (Module (Module), module'Declarations, module'Name)
-import Elara.AST.Name (ModuleName (ModuleName), NameLike (..), Qualified (..), TypeName)
+import Elara.AST.Module (Module (Module), module'Declarations)
+import Elara.AST.Name (NameLike (..), Qualified (..), TypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Select (HasDeclarationName (declarationName, unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
+import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
 import Elara.AST.StripLocation
 import Elara.AST.Typed as AST
 import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (UniqueGen, makeUnique, makeUniqueId)
+import Elara.Data.Unique (UniqueGen, makeUnique)
 import Elara.Error (ReportableError (..), writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
@@ -30,7 +30,6 @@ import Polysemy.State
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Prim.Core
 import Polysemy.State.Extra (scoped)
-import Print (debugColored, debugPretty, showPretty)
 
 data ToCoreError
     = LetInTopLevel AST.Expr
@@ -111,7 +110,6 @@ moduleToCore (Module (Located _ m)) = do
 
 typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
-
     tv' <- makeUnique tv
     addTyVar tv (TypeVariable tv' TypeKind)
 

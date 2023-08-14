@@ -73,6 +73,7 @@ default-extensions:
   - DeriveFunctor
   - TypeApplications
   - PartialTypeSignatures
+  - Strict
 
 library:
   source-dirs: src

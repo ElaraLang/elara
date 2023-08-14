@@ -19,12 +19,12 @@ import Elara.TypeInfer.Monotype (
     Scalar (..),
  )
 
+import Data.Data (Data)
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Monotype
-import Data.Data (Data)
 
 -- | A potentially polymorphic type
 data Type s

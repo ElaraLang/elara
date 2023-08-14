@@ -115,6 +115,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
+      Strict
   ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2
   build-tools:
       alex
@@ -160,6 +161,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
+      Strict
   ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2 -threaded
   build-depends:
       array
@@ -216,6 +218,7 @@ test-suite elara-test
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
+      Strict
       QuasiQuotes
   ghc-options: -Wall -W -Wcompat -Werror=incomplete-patterns -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Werror=missing-home-modules -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -Wunused-packages -O2 -threaded -O0
   build-depends:

@@ -102,7 +102,6 @@ tupleType = inParens' $ do
     ts <- sepBy1' type' (token_ TokenComma)
     pure $ TupleType (t <| ts)
 
-
 listType :: HParser Type
 listType = do
     token_ TokenLeftBracket

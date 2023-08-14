@@ -101,21 +101,19 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     when dumpTyped $ do
         liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
 
-    coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
+    -- coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
-    when dumpCore $ do
-        liftIO $ dumpGraph coreGraph (view (name . to nameText)) ".core.elr"
+    -- when dumpCore $ do
+    --     liftIO $ dumpGraph coreGraph (view (name . to nameText)) ".core.elr"
 
-    
-    classes <- runReader java8 (emitGraph coreGraph)
+    -- classes <- runReader java8 (emitGraph coreGraph)
 
-
-    for_ classes $ \(mn, class') -> do
-      putTextLn ("Compiling " <> showPretty mn <> "...")
-      let converted = convert class'
-      let bs = runPut (writeBinary converted)
-      liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
-      putTextLn ("Compiled " <> showPretty mn <> "!")
+    -- for_ classes $ \(mn, class') -> do
+    --   putTextLn ("Compiling " <> showPretty mn <> "...")
+    --   let converted = convert class'
+    --   let bs = runPut (writeBinary converted)
+    --   liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
+    --   putTextLn ("Compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double

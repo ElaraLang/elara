@@ -6,9 +6,9 @@ module Elara.Core.Module where
 import Control.Lens (makeFields)
 import Elara.AST.Name (ModuleName)
 import Elara.Core (CoreBind, CoreExpr)
+import Elara.Core.Pretty ()
 import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
-import Elara.Core.Pretty ()
 
 data CoreModule = CoreModule
     { coreModuleName :: ModuleName

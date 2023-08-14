@@ -125,4 +125,4 @@ makePrisms ''Expr
 makePrisms ''Pattern
 makePrisms ''BinaryOperator
 
-instance  Pretty TypeDeclaration where
+instance Pretty TypeDeclaration

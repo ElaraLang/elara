@@ -138,7 +138,7 @@ charL :: HParser Frontend.Expr
 charL = locatedExpr (Frontend.Char <$> charLiteral) <??> "char"
 
 match :: HParser Frontend.Expr
-match =  wrapToHead $ locatedExpr $ do
+match = wrapToHead $ locatedExpr $ do
     token_ TokenMatch
     endHead
     expr <- exprBlock element

@@ -11,9 +11,9 @@ import Test.Hspec
 
 lex' :: Text -> [Lexeme]
 lex' contents =
-  case evalLexMonad "" (toString contents) readTokens of
-    Left e -> error $ toText ("lex fail: " ++ show e)
-    Right tokens -> tokens
+    case evalLexMonad "" (toString contents) readTokens of
+        Left e -> error $ toText ("lex fail: " ++ show e)
+        Right tokens -> tokens
 
 lexUL :: Text -> [Token]
 lexUL = fmap (view unlocated) . lex'

@@ -14,7 +14,6 @@ module Elara.TypeInfer.Context (
 
     -- * Utilities
     lookup,
-    tryFinaliseType,
     splitOnUnsolvedType,
     splitOnUnsolvedFields,
     splitOnUnsolvedAlternatives,
@@ -42,6 +41,7 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Print (debugPretty)
 
 {- $setup
 
@@ -226,7 +226,7 @@ solveUnion context oldAlternatives = newAlternatives
 >>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
 ∀ a. (a -> Bool)
 -}
-complete :: Context s -> Type s -> Type s
+complete :: Show s => Context s -> Type s -> Type s
 complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
   where
     numUnsolved = fromIntegral (length (filter predicate context)) - 1
@@ -254,7 +254,10 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         let nameLocation = location
 
-        pure Type.Forall{..}
+    
+
+        let fa =  Type.Forall{..}
+        pure fa
     snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
         n <- State.get
 
@@ -293,35 +296,6 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 isComplete :: Type s -> Bool
 isComplete Type.UnsolvedType{} = False
 isComplete _ = True
-
-{- | Uses duplicate annotations to resolve any fixable-ambiguity a Type.
-For example, say we have 3 annotations:
-     @
-     id : ∀ a. (a -> a)
-     main: b?
-     id: b?
-     @
-The duplicate annotations for @b@ imply that @b? ~ ∀ a. (a -> a)@ from which we can derive
-that @main: ∀ a. (a -> a)@. That's what this function does.
-If we passed a second argument of @main@ we would first look for annotations with the value @b?@ and then
-use the duplicate annotations to resolve the ambiguity.
--}
-tryFinaliseType :: (Ord s) => Context s -> IgnoreLocVarRef Name -> Maybe (Type s)
-tryFinaliseType ctx name = do
-    let annotations = lookupAll name ctx
-    let y = do
-            ann <- annotations
-            case ann of
-                mono@(Type.UnsolvedType _ _) ->
-                    concatMap
-                        ( \case
-                            Annotation n m | n /= name && m == mono -> ordNub $ filter isComplete (lookupAll n ctx)
-                            _ -> []
-                        )
-                        ctx
-                _ -> []
-
-    viaNonEmpty head y
 
 {- | Split a `Context` into two `Context`s before and after the given
     `UnsolvedType` variable.  Neither `Context` contains the variable
