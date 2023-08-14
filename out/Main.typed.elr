@@ -5,3 +5,7 @@ import Prelude exposing (..)
 def Main.add1 : ∀ a. (a -> a)
 let Main.add1 =
     \x_0 ->  x_0 : ∀ b. b
+
+def Main.three : Integer
+let Main.three =
+    Main.add1 : ∀ a. (a -> a) 3 : Integer

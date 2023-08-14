@@ -11,7 +11,7 @@ import Elara.Core qualified as Core
 import Elara.Core.Pretty (prettyVar)
 import Elara.Data.Pretty
 import Elara.AST.Pretty
-import Print (debugColored, debugPretty, showPretty)
+import Print (debugColored, debugPretty, showPretty, showColored)
 
 data JVMBinder
     = JVMLocal Int
@@ -21,7 +21,7 @@ data JVMBinder
 instance Pretty JVMBinder where
     pretty = \case
         JVMLocal i -> "local_" <> pretty i
-        Normal v -> prettyVar False False v
+        Normal v -> prettyVar True True v
 
 type JVMExpr = Expr JVMBinder
 
@@ -57,7 +57,7 @@ toJVMExpr = fmap Normal
 replaceVar :: JVMBinder -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar old new = transform $ \case
     Core.Var old' | old == old' -> Core.Var new
-    x -> error (show (x, old))
+    x -> error (showPretty (x, old))
 
 {- | We end up with redundant top-level lambdas a lot, that can be converted into normal methods instead.
  For example, 'let add1 = \x -> x + 1' can be turned into `public static int add1(int x) { return x + 1; }`

@@ -23,7 +23,7 @@ instance Pretty CoreBind where
 
 instance Pretty CoreExpr where
     pretty = \case
-        Var v -> prettyVar False False v
+        Var v -> prettyVar True True v
         Lit l -> pretty l
         App e1 e2 -> parens (prettyFunctionCallExpr e1 e2)
         Lam b e -> prettyLambdaExpr [prettyVar True True b] e

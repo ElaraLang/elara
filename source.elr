@@ -1,3 +1,5 @@
 import Prelude 
 
 let add1 = \x -> x
+
+let three = add1 3
