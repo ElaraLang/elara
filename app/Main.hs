@@ -185,9 +185,9 @@ shuntModule m = do
             traverse_ report warnings
             justE shunted
 
-inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (Either _ (TopologicalGraph (Module Typed)))
+inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r ( (TopologicalGraph (Module Typed)))
 inferModules modules = do
-     runError $ (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
+     runErrorOrReport $ (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
 loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp

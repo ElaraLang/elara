@@ -32,6 +32,9 @@ data VarName
       OperatorVarName OpName
     deriving (Ord, Show, Eq, Data)
 
+instance IsString VarName where
+    fromString = NormalVarName . fromString
+
 --
 -- Newtype wrappers over 'Data.Text'
 --

@@ -61,7 +61,6 @@ ghc-options:
   - -feager-blackholing
   - -fdefer-typed-holes
   # - -fno-show-valid-hole-fits
-  - -Wunused-packages
   - -j4 +RTS -A32m -RTS
 
 default-extensions:

@@ -22,7 +22,7 @@ import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Infer hiding (TypeInferenceError, get, inferPattern)
-import Elara.TypeInfer.Infer qualified as Infer hiding (TypeInferenceError)
+import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type ()
 import Elara.TypeInfer.Type qualified as Infer
@@ -31,7 +31,8 @@ import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
 import TODO (todo)
-import Elara.TypeInfer.Infer (TypeInferenceError)
+import Elara.TypeInfer.Error (TypeInferenceError)
+
 
 inferModule ::
     forall r.

@@ -25,15 +25,18 @@ module Elara.TypeInfer.Context (
 ) where
 
 import Data.List (foldl)
-import Elara.Data.Pretty (Pretty (..), label, operator, punctuation, Doc, AnsiStyle)
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), label, operator, punctuation)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type)
 
-
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
+import Elara.AST.Name (Name (NVarName))
+import Elara.AST.Region
+import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef, VarRef' (..))
+import Elara.Data.Unique (unsafeMkUnique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
@@ -44,13 +47,23 @@ import Prettyprinter qualified as Pretty
 
    >>> :set -XOverloadedStrings
    >>> :set -XTypeApplications
+   >>> :set -Wno-deprecations
    >>> import Elara.TypeInfer.Type (Record, Union)
    >>> import Elara.TypeInfer.Type qualified as Type
    >>> import Elara.TypeInfer.Monotype qualified as Monotype
    >>> import Elara.TypeInfer.Type (Type)
    >>> import Elara.Data.Pretty (Pretty (..), label, operator, punctuation, Doc, AnsiStyle)
    >>> import Elara.TypeInfer.Domain qualified as Domain
+   >>> import Elara.AST.VarRef
+   >>> import Elara.AST.Region
+   >>> import Elara.AST.Name
+   >>> import Elara.Data.Unique
+   >>> import Relude (undefined)
 -}
+
+-- y =
+--     pretty @(Entry ())
+--         (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
 
 -- | An element of the `Context` list
 data Entry s
@@ -61,9 +74,9 @@ data Entry s
       Variable Domain Text
     | -- | A bound variable whose type is known
       --
-      -- >>> pretty @(Entry ()) (Annotation "x" "a")
-      -- x: a
-      Annotation Text (Type s)
+      -- >>>  pretty @(Entry ()) (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
+      -- x_0: a
+      Annotation (IgnoreLocVarRef Name) (Type s)
     | -- | A placeholder type variable whose type has not yet been inferred
       --
       -- >>> pretty @(Entry ()) (UnsolvedType 0)
@@ -456,37 +469,28 @@ splitOnUnsolvedAlternatives _ [] = Nothing
 {- | Retrieve a variable's annotated type from a `Context`, given the variable's
     label and index
 
-    >>> :{ 
-lookup
-        "x"
-        0
-        [ Annotation "x" (Type.Scalar () Monotype.Bool)
-        , Annotation "y" (Type.Scalar () Monotype.Natural)
-        , Annotation "x" (Type.Scalar () Monotype.Text)
+>>> :{
+let
+    x0 = Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))
+    y1 = Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "y") 1)))
+    x2 = Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 2)))
+ in lookup
+        x0
+        [ Annotation x0 (Type.Scalar () Monotype.Bool)
+        , Annotation y1 (Type.Scalar () Monotype.Natural)
+        , Annotation x2 (Type.Scalar () Monotype.Text)
         ]
-    :}
-    Just (Scalar {location = (), scalar = Bool})
+:}
+Just (Scalar {location = (), scalar = Bool})
 -}
-
-
 lookup ::
     -- | Variable label
-    Text ->
-    -- | Variable index (See the documentation of `Value.Variable`)
-    Int ->
+    IgnoreLocVarRef Name ->
     Context s ->
     Maybe (Type s)
-lookup _ _ [] =
-    Nothing
-lookup x0 n (Annotation x1 _A : _Γ) =
-    if x0 == x1
-        then
-            if n <= 0
-                then Just _A
-                else lookup x0 (n - 1) _Γ
-        else lookup x0 n _Γ
-lookup x n (_ : _Γ) =
-    lookup x n _Γ
+lookup _ [] = Nothing
+lookup x0 (Annotation x1 _A : _Γ) = if x0 == x1 then Just _A else lookup x0 _Γ
+lookup x (_ : _Γ) = lookup x _Γ
 
 {- | Discard all entries from a `Context` up to and including the given `Entry`
 

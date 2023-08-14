@@ -47,7 +47,7 @@ data TypeInferenceError
     | --
       UnboundAlternatives SourceRegion Text
     | UnboundFields SourceRegion Text
-    | UnboundTypeVariable SourceRegion (Text) (Context SourceRegion)
+    | UnboundTypeVariable SourceRegion Text (Context SourceRegion)
     | UnboundVariable
         SourceRegion
         -- ^ Location of the variable that caused the error
