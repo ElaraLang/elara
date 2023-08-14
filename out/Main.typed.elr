@@ -2,6 +2,9 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.id : ∀ a. (a -> a)
+def Main.id : forall (x : Type) (y : Type) . ((y -> y) -> x) -> x
 let Main.id =
-    \x_0 ->  x_0 : ∀ a. a
+    \f_0 ->
+    (f_0 : (y -> y) -> x
+            \x_1 ->  x_1 : y : forall (y : Type) . y -> y : forall (y : Type) .
+                                                              y)

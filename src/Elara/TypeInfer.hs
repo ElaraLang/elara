@@ -2,7 +2,7 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (concatMapOf, cosmosOn, to, transformM, traverseOf, view, (^.), (^?!), _3)
+import Control.Lens (Plated (..), children, concatMapOf, cosmosOn, deep, rewriteM, to, transformM, traverseOf, view, (^.), (^?!), _3)
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Traversable (for)
 import Elara.AST.Lenses (HasDeclarationBody (..))
@@ -21,18 +21,18 @@ import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
+import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer hiding (TypeInferenceError, get, inferPattern)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
-import Elara.TypeInfer.Type ()
+import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
+import GHC.Exts (the)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
 import TODO (todo)
-import Elara.TypeInfer.Error (TypeInferenceError)
-
 
 inferModule ::
     forall r.
@@ -88,8 +88,6 @@ inferDeclaration (Shunted.Declaration ld) =
         --         mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
         --         astTypeToInferPolyType expected'
 
-        
-
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
         -- case maybeExpected' of
@@ -98,30 +96,33 @@ inferDeclaration (Shunted.Declaration ld) =
         --         ex <- Infer.UnsolvedType primRegion <$> fresh
         --         push (Annotation (mkGlobal' declName) ex)
 
-    
         e'@(Typed.Expr (_, _)) <- inferExpression e Nothing
 
+        ctx <- Infer.getAll
 
-        pure $ Typed.Value e'
-    -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
-    --     ty' <-
-    --         traverseOf
-    --             unlocated
-    --             ( \case
-    --                 Renamed.Alias l -> do
-    --                     inferType <- astTypeToInferType l
-    --                     let vars' = createTypeVar <$> tvs
-    --                     push (Annotation (mkGlobal' n) (Infer.Alias (generatedSourceRegionFrom n) (showPretty n) vars' inferType))
-    --                     pure (Typed.Alias inferType)
-    --                 Renamed.ADT constructors -> do
-    --                     constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
-    --                     let adtType = Infer.Custom (n ^. sourceRegion) (n ^. unlocated . to nameText) (createTypeVar <$> tvs)
-    --                     traverse_ (\(c, b) -> addConstructorToContext tvs c b adtType) constructors'
-    --                     pure $ Typed.ADT constructors'
-    --             )
-    --             ty
-    --     kind <- mapError KindInferError (inferKind (fmap (^?! _NTypeName) (n ^. unlocated)) tvs (ty ^. unlocated))
-    --     pure $ Typed.TypeDeclaration tvs ty' kind
+        completed <- completeExpression ctx e'
+
+        pure $ Typed.Value completed
+
+-- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
+--     ty' <-
+--         traverseOf
+--             unlocated
+--             ( \case
+--                 Renamed.Alias l -> do
+--                     inferType <- astTypeToInferType l
+--                     let vars' = createTypeVar <$> tvs
+--                     push (Annotation (mkGlobal' n) (Infer.Alias (generatedSourceRegionFrom n) (showPretty n) vars' inferType))
+--                     pure (Typed.Alias inferType)
+--                 Renamed.ADT constructors -> do
+--                     constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
+--                     let adtType = Infer.Custom (n ^. sourceRegion) (n ^. unlocated . to nameText) (createTypeVar <$> tvs)
+--                     traverse_ (\(c, b) -> addConstructorToContext tvs c b adtType) constructors'
+--                     pure $ Typed.ADT constructors'
+--             )
+--             ty
+--     kind <- mapError KindInferError (inferKind (fmap (^?! _NTypeName) (n ^. unlocated)) tvs (ty ^. unlocated))
+--     pure $ Typed.TypeDeclaration tvs ty' kind
 
 -- addConstructorToContext :: (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
 -- addConstructorToContext typeVars ctorName ctorArgs adtType = do
@@ -159,14 +160,14 @@ freeTypeVars =
         Renamed.TypeVar l -> [l]
         _ -> [] -- cosmos takes care of the recursion :D
 
--- | Like 'astTypeToInferType' but universally quantifies over the free type variables
--- astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
--- astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
---   where
---     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
---     universallyQuantify [] x = x
---     universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fullTypeVarName u) Domain.Type (universallyQuantify us t)
-
+{- | Like 'astTypeToInferType' but universally quantifies over the free type variables
+ astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
+   where
+     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
+     universallyQuantify [] x = x
+     universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fullTypeVarName u) Domain.Type (universallyQuantify us t)
+-}
 fullTypeVarName :: Unique LowerAlphaName -> Text
 fullTypeVarName = uniqueToText (^. _LowerAlphaName)
 
@@ -238,63 +239,65 @@ inferExpression ::
     Shunted.Expr ->
     Maybe (Infer.Type SourceRegion) ->
     Sem r Typed.Expr
-inferExpression e@(Shunted.Expr le) expected = do
-    (ty') <-
-        infer
-            e
-            -- (traverseOf unlocated inferExpression' le)
-    whenJust expected (check e) -- check that the inferred type is a subtype of the expected type
+inferExpression e@(Shunted.Expr _) expected = do
+    e' <- infer e
+    whenJust expected (void . check e) -- check that the inferred type is a subtype of the expected type
     -- TODO: this is pretty bad for performance, every expression has to be checked twice. However just doing `subtype expected ty'` does not seem to work
-    ctx <- Infer.get
-    let completedType = complete ctx (fromMaybe ty' expected)
+    pure e'
 
-    e' <- traverseOf unlocated inferExpression' le
+completeExpression ::
+    forall r.
+    Member (State Status) r =>
+    Context SourceRegion ->
+    Typed.Expr ->
+    Sem r Typed.Expr
+completeExpression ctx (Typed.Expr (y', t)) = do
+    let completed = complete ctx t
+    unify t completed
 
-    pure $ Typed.Expr (e', completedType)
+    ctx' <- Infer.getAll
+
+    
+    plate (completeExpression ctx') (Typed.Expr (y', completed))
   where
-    inferExpression' :: Shunted.Expr' -> Sem r Typed.Expr'
-    inferExpression' (Shunted.Int l) = pure $ Typed.Int l
-    inferExpression' (Shunted.Float l) = pure $ Typed.Float l
-    inferExpression' (Shunted.String l) = pure $ Typed.String l
-    inferExpression' (Shunted.Char l) = pure $ Typed.Char l
-    inferExpression' Shunted.Unit = pure Typed.Unit
-    inferExpression' (Shunted.Var v) = pure (Typed.Var v)
-    inferExpression' (Shunted.Constructor c) = pure (Typed.Constructor c)
-    inferExpression' (Shunted.Lambda v body) = do
-        e' <- inferExpression body Nothing
-        pure $ Typed.Lambda v e'
-    inferExpression' (Shunted.FunctionCall e1 e2) = do
-        e1' <- inferExpression e1 Nothing
-        e2' <- inferExpression e2 Nothing
-        pure $ Typed.FunctionCall e1' e2'
-    inferExpression' (Shunted.If e1 e2 e3) = do
-        e1' <- inferExpression e1 Nothing
-        e2' <- inferExpression e2 Nothing
-        e3' <- inferExpression e3 Nothing
-        pure $ Typed.If e1' e2' e3'
-    inferExpression' (Shunted.List es) = do
-        es' <- traverse (`inferExpression` Nothing) es
-        pure $ Typed.List es'
-    -- inferExpression' (Shunted.Match against ps) = do
-    --     e'@(Typed.Expr (_, t)) <- inferExpression against Nothing
+    {-
+    Unifies completed types with unsolved ones. It assumes that the types are of the same shape, excluding quantifiers.
 
-    --     ps' <- for ps $ \(pat, ok) -> do
-    --         pat' <- inferPattern pat (Just t)
-    --         ok' <- inferExpression ok Nothing
-    --         pure (pat', ok')
+    unify (a? -> b?) (forall a. a -> a) creates 2 constraints:
+        - a? = a
+        - b? = a
 
-    --     pure $ Typed.Match e' ps'
-    inferExpression' (Shunted.LetIn n val body) = do
-        val' <- inferExpression val Nothing
-        body' <- inferExpression body Nothing
-        pure $ Typed.LetIn n val' body'
-    inferExpression' (Shunted.Let n val) = do
-        val' <- inferExpression val Nothing
-        pure $ Typed.Let n val'
-    inferExpression' (Shunted.Block es) = do
-        es' <- traverse (`inferExpression` Nothing) es
-        pure $ Typed.Block es'
-    inferExpression' (Shunted.Tuple ts) = do
-        ts' <- traverse (`inferExpression` Nothing) ts
-        pure $ Typed.Tuple ts'
+    unify (a? -> b?) (forall a. forall b. a -> b) creates 2 constraints:
+        - a? = a
+        - b? = b
 
+    -}
+    unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
+    unify unsolved solved = case (unsolved, stripForAlls solved) of
+        (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
+            subst unsolvedInput solvedInput
+            unify unsolvedOutput solvedOutput
+        (Infer.VariableType{}, out) -> subst unsolved out
+        (Infer.UnsolvedType{}, out) -> subst unsolved out
+        other -> error (showPretty other)
+
+    stripForAlls :: Type SourceRegion -> Type SourceRegion
+    stripForAlls = \case
+        Infer.Forall{type_} -> stripForAlls type_
+        other -> other
+
+    subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
+    subst Infer.UnsolvedType{existential} solved = do
+        let annotation = SolvedType existential (toMonoType solved)
+        push annotation
+        pass
+    subst _ _ = pass
+
+    toMonoType :: Type SourceRegion -> Mono.Monotype
+    toMonoType = \case
+        Infer.Scalar{..} -> Mono.Scalar scalar
+        Infer.Function{..} -> Mono.Function (toMonoType input) (toMonoType output)
+        Infer.List{..} -> Mono.List (toMonoType type_)
+        Infer.UnsolvedType{..} -> Mono.UnsolvedType existential
+        Infer.VariableType{..} -> Mono.VariableType name
+        other -> error $ "toMonoType: " <> showPretty other

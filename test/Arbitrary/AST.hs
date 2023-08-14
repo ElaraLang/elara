@@ -3,12 +3,7 @@
 module Arbitrary.AST where
 
 import Arbitrary.Names
-import Data.Foldable (foldr1)
-import Data.List.NonEmpty (appendList)
-import Data.Set qualified as Set
 import Elara.AST.Unlocated.Frontend as Unlocated
-import Elara.Parse.Expression (reservedWords)
-import Print (debugColored, debugPretty)
 import Test.QuickCheck
 import Prelude hiding (Op)
 

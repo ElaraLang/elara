@@ -61,10 +61,6 @@ import Prettyprinter qualified as Pretty
    >>> import Relude (undefined)
 -}
 
--- y =
---     pretty @(Entry ())
---         (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
-
 -- | An element of the `Context` list
 data Entry s
     = -- | Universally quantified variable
@@ -333,8 +329,7 @@ solveUnion context oldAlternatives = newAlternatives
     forall (a : Type) . a -> Bool
 -}
 complete :: Context s -> Type s -> Type s
-complete context type0 = do
-    State.evalState (Monad.foldM snoc type0 context) 0
+complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
   where
     numUnsolved = fromIntegral (length (filter predicate context)) - 1
       where
@@ -343,9 +338,9 @@ complete context type0 = do
         predicate (UnsolvedAlternatives _) = True
         predicate _ = False
 
-    snoc t (SolvedType a τ) = do return (Type.solveType a τ t)
-    snoc t (SolvedFields a r) = do return (Type.solveFields a r t)
-    snoc t (SolvedAlternatives a r) = do return (Type.solveAlternatives a r t)
+    snoc t (SolvedType a τ) = return (Type.solveType a τ t)
+    snoc t (SolvedFields a r) = return (Type.solveFields a r t)
+    snoc t (SolvedAlternatives a r) = return (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
         n <- State.get
 
@@ -361,7 +356,7 @@ complete context type0 = do
 
         let nameLocation = location
 
-        return Type.Forall{..}
+        pure Type.Forall{..}
     snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
         n <- State.get
 
@@ -377,7 +372,7 @@ complete context type0 = do
 
         let nameLocation = location
 
-        return Type.Forall{..}
+        pure Type.Forall{..}
     snoc t (UnsolvedAlternatives p) | p `Type.alternativesFreeIn` t = do
         n <- State.get
 
@@ -393,9 +388,8 @@ complete context type0 = do
 
         let nameLocation = location
 
-        return Type.Forall{..}
-    snoc t _ = do
-        return t
+        pure Type.Forall{..}
+    snoc t _ = return t
 
 {- | Split a `Context` into two `Context`s before and after the given
     `UnsolvedType` variable.  Neither `Context` contains the variable
@@ -414,10 +408,10 @@ splitOnUnsolvedType ::
     Context s ->
     Maybe (Context s, Context s)
 splitOnUnsolvedType a0 (UnsolvedType a1 : entries)
-    | a0 == a1 = return ([], entries)
+    | a0 == a1 = pure ([], entries)
 splitOnUnsolvedType a (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedType a entries
-    return (entry : prefix, suffix)
+    pure (entry : prefix, suffix)
 splitOnUnsolvedType _ [] = Nothing
 
 {- | Split a `Context` into two `Context`s before and after the given
@@ -437,10 +431,10 @@ splitOnUnsolvedFields ::
     Context s ->
     Maybe (Context s, Context s)
 splitOnUnsolvedFields p0 (UnsolvedFields p1 : entries)
-    | p0 == p1 = return ([], entries)
+    | p0 == p1 = pure ([], entries)
 splitOnUnsolvedFields p (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedFields p entries
-    return (entry : prefix, suffix)
+    pure (entry : prefix, suffix)
 splitOnUnsolvedFields _ [] = Nothing
 
 {- | Split a `Context` into two `Context`s before and after the given
@@ -460,10 +454,10 @@ splitOnUnsolvedAlternatives ::
     Context s ->
     Maybe (Context s, Context s)
 splitOnUnsolvedAlternatives p0 (UnsolvedAlternatives p1 : entries)
-    | p0 == p1 = return ([], entries)
+    | p0 == p1 = pure ([], entries)
 splitOnUnsolvedAlternatives p (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedAlternatives p entries
-    return (entry : prefix, suffix)
+    pure (entry : prefix, suffix)
 splitOnUnsolvedAlternatives _ [] = Nothing
 
 {- | Retrieve a variable's annotated type from a `Context`, given the variable's

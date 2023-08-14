@@ -42,7 +42,7 @@ listToText elements =
     prettyEntry entry = "• " <> align (pretty entry)
 
 prettyToText :: Pretty a => a -> Text
-prettyToText = renderStrict False Width.defaultWidth
+prettyToText = renderStrict True Width.defaultWidth
 
 prettyToUnannotatedText :: Pretty a => a -> Text
 prettyToUnannotatedText = renderStrictUnannotated Width.defaultWidth

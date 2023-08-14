@@ -99,14 +99,13 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
 
     typedGraph <- inferModules shuntedGraph
 
-    printColored typedGraph 
-    -- when dumpTyped $ do
-    --     liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
+    when dumpTyped $ do
+        liftIO $ dumpGraph typedGraph (view (name . to nameText)) ".typed.elr"
 
-    -- coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
+    coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
-    -- when dumpCore $ do
-    --     liftIO $ dumpGraph coreGraph (view (name . to nameText)) ".core.elr"
+    when dumpCore $ do
+        liftIO $ dumpGraph coreGraph (view (name . to nameText)) ".core.elr"
 
     -- classes <- runReader java8 (emitGraph coreGraph)
 

@@ -44,6 +44,12 @@ data Expr'
 newtype Expr = Expr (Located Expr', Type SourceRegion)
     deriving (Show, Eq, Data)
 
+typeOf :: Expr -> Type SourceRegion
+typeOf (Expr (_, t)) = t
+
+withType :: Expr -> Type SourceRegion -> Expr
+(Expr (e', _)) `withType` t = Expr (e', t) 
+
 instance Plated Expr
 
 data Pattern'
