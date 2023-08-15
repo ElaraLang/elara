@@ -66,7 +66,6 @@ prettyTy1 :: Type -> Doc AnsiStyle
 prettyTy1 (AppTy t1 t2) = prettyTy1 t1 <+> prettyTy2 t2
 prettyTy1 e = prettyTy2 e
 
-
 prettyTy2 :: Type -> Doc AnsiStyle
 prettyTy2 (TyVarTy tv) = prettyTypeVariable False tv
 prettyTy2 (ConTy name) = pretty (name ^. unqualified)

@@ -1,4 +1,4 @@
 module Main
-{ Main.identity : p_1 -> p_1 = \x_0 ->  x_0
+{ Main.identity : p_1 -> p_1 = \x_0 -> x_0
 ; Main.msg : String = Main.identity "hello, world!"
 ; Main.main : IO () = Prelude.println (Main.identity Main.msg) }

@@ -26,7 +26,7 @@ prettyLambdaExpr args body = group (flatAlt long short)
     short =
         "\\"
             <> hsep (pretty <$> args)
-            <+> "-> "
+            <+> "->"
             <+> pretty body
 
     long =
