@@ -1,12 +1,12 @@
 module Elara.Parse.Names where
 
+import Control.Lens (Each (each), asumOf, concatMapOf, concatOf, foldMapOf, foldOf, folded, folding, toListOf)
 import Data.Text qualified as Text
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..), _OpName)
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token_, (<??>))
 import HeadedMegaparsec (endHead)
-import Control.Lens (concatMapOf, concatOf, foldOf, folded, folding, toListOf, asumOf, Each (each), foldMapOf)
 
 varName :: HParser (MaybeQualified VarName)
 varName = operatorVarName <|> normalVarName
@@ -65,7 +65,7 @@ alphaVarName =
             )
 
 opName :: HParser OpName
-opName =do
+opName = do
     o <- some normal
     pure $ OpName $ foldOf (each . _OpName) o
   where

@@ -50,7 +50,8 @@ import Prettyprinter qualified as Pretty
    >>> import Elara.TypeInfer.Type qualified as Type
    >>> import Elara.TypeInfer.Monotype qualified as Monotype
    >>> import Elara.TypeInfer.Type (Type)
-   >>> import Elara.Data.Pretty (Pretty (..), label, operator, punctuation, Doc, AnsiStyle)
+   >>> import Elara.Data.Pretty (Pretty (..), Doc, AnsiStyle)
+   >>> import Elara.Data.Pretty.Styles (label, operator, punctuation)
    >>> import Elara.TypeInfer.Domain qualified as Domain
    >>> import Elara.AST.VarRef
    >>> import Elara.AST.Region
