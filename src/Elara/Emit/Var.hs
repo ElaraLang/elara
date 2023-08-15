@@ -6,10 +6,9 @@ module Elara.Emit.Var where
 
 import Control.Lens (transform)
 import Data.Data (Data)
-import Elara.AST.Pretty
-import Elara.Core (Bind (..), CoreExpr, Expr (..), Var)
+import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
-import Elara.Core.Pretty (prettyVar)
+import Elara.Core.Pretty (prettyVar, PrettyVar)
 import Elara.Data.Pretty
 
 data JVMBinder
@@ -17,38 +16,11 @@ data JVMBinder
     | Normal Var
     deriving (Eq, Show, Data)
 
-instance Pretty JVMBinder where
-    pretty = \case
-        JVMLocal i -> "local_" <> pretty i
-        Normal v -> prettyVar True True v
+instance PrettyVar JVMBinder where
+    prettyVar t p (Normal v )= prettyVar t p v
+    prettyVar _ _ (JVMLocal i) = "local_" <> pretty i
 
 type JVMExpr = Expr JVMBinder
-
-instance Pretty JVMExpr where
-    pretty = \case
-        Var v -> pretty v
-        Lit l -> pretty l
-        App e1 e2 -> parens (prettyFunctionCallExpr e1 e2)
-        Lam b e -> prettyLambdaExpr [pretty b] e
-        Let (Recursive binds) e ->
-            "Rec"
-                <+> prettyBlockExpr
-                    ( fmap
-                        ( \(bindName, bindVal) -> prettyLetInExpr (pretty bindName) none bindVal (Just e)
-                        )
-                        binds
-                    )
-        Let (NonRecursive (b, e)) e' -> prettyLetInExpr (pretty b) none e (Just e')
-        Match e b alts ->
-            let prettyAlts = fmap (\(con, _, b') -> prettyMatchBranch (con, b')) alts
-             in "match"
-                    <+> pretty e
-                    <+> "as"
-                    <+> pretty (pretty <$> b)
-                    <+> "with"
-                    <+> hardline
-                        <> nest indentDepth (align (vsep prettyAlts))
-        Type t -> "@" <> pretty t
 
 toJVMExpr :: CoreExpr -> JVMExpr
 toJVMExpr = fmap Normal

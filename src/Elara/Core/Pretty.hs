@@ -9,37 +9,47 @@ import Elara.Core
 import Elara.Data.Pretty
 import Prelude hiding (Alt)
 
-instance Pretty CoreExpr where
+class PrettyVar v where
+    prettyVar ::
+        Bool -> -- ^ With type
+        Bool -> -- ^ With parens
+        v -> -- ^ Variable
+        Doc AnsiStyle
+
+instance PrettyVar Var where
+    prettyVar withType withParens = \case
+        TyVar tv -> prettyTypeVariable withType tv
+        Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
+
+instance PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
-prettyExpr :: CoreExpr -> Doc AnsiStyle
+prettyExpr :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyLambdaExpr [prettyVar False False b] e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other
 
-prettyExpr1 :: CoreExpr -> Doc AnsiStyle
+prettyExpr1 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
-prettyExpr2 :: CoreExpr -> Doc AnsiStyle
+prettyExpr2 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
-
-
-prettyVdefg :: CoreBind -> Doc AnsiStyle
+prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
 prettyVdefg (Recursive bindings) = "Rec" <> prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
-prettyVdef :: (Var, CoreExpr) -> Doc AnsiStyle
+prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
 prettyVdef (v, e) = prettyVar True False v <+> "=" <+> prettyExpr e
 
-prettyVBind :: Var -> Doc AnsiStyle
+prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
-prettyAlts :: [Alt Var] -> Doc AnsiStyle
+prettyAlts :: (Pretty (Expr v), PrettyVar v) => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = prettyBlockExpr (prettyAlt <$> alts)
   where
     prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e
@@ -71,8 +81,6 @@ prettyTy2 (TyVarTy tv) = prettyTypeVariable False tv
 prettyTy2 (ConTy name) = pretty (name ^. unqualified)
 prettyTy2 e = parens (prettyTy e)
 
-
-
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle
     pretty = \case
@@ -84,11 +92,6 @@ instance Pretty DataCon where
     pretty :: DataCon -> Doc AnsiStyle
     pretty = \case
         DataCon name _ -> (pretty name)
-
-prettyVar :: Bool -> Bool -> Var -> Doc AnsiStyle
-prettyVar withType withParens = \case
-    TyVar tv -> prettyTypeVariable withType tv
-    Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
 
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case
