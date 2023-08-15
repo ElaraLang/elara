@@ -7,45 +7,42 @@ import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.Core
 import Elara.Data.Pretty
-import Elara.Prim.Core
-
-instance Pretty CoreBind where
-    pretty = \case
-        Recursive bindings ->
-            "Rec"
-                <+> bracedBlock
-                    ( fmap
-                        ( \(bindName, bindVal) -> prettyLetInExpr (prettyVar True False bindName) none bindVal nothing
-                        )
-                        bindings
-                    )
-        NonRecursive (b, e) -> prettyLetInExpr (prettyVar True False b) none e nothing
+import Prelude hiding (Alt)
 
 instance Pretty CoreExpr where
-    pretty = \case
-        Var v -> prettyVar True True v
-        Lit l -> pretty l
-        App e1 e2 -> parens (prettyFunctionCallExpr e1 e2)
-        Lam b e -> prettyLambdaExpr [prettyVar True True b] e
-        Let (Recursive bindings) e ->
-            "Rec"
-                <+> prettyBlockExpr
-                    ( fmap
-                        ( \(bindName, bindVal) -> prettyLetInExpr (prettyVar True False bindName) none bindVal (Just e)
-                        )
-                        bindings
-                    )
-        Let (NonRecursive (b, e)) e' -> prettyLetInExpr (prettyVar True False b) none e (Just e')
-        Match e b alts ->
-            let prettyAlts = fmap (\(con, _, b') -> prettyMatchBranch (con, b')) alts
-             in "match"
-                    <+> pretty e
-                    <+> "as"
-                    <+> pretty (prettyVar False False <$> b)
-                    <+> "with"
-                    <+> hardline
-                        <> nest indentDepth (align (vsep prettyAlts))
-        Type t -> "@" <> pretty t
+    pretty = prettyExpr
+
+prettyExpr :: CoreExpr -> Doc AnsiStyle
+prettyExpr (Lam b e) = prettyLambdaExpr [prettyVar False False b] e
+prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
+prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
+prettyExpr other = prettyExpr1 other
+
+prettyExpr1 :: CoreExpr -> Doc AnsiStyle
+prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
+prettyExpr1 e = prettyExpr2 e
+
+prettyExpr2 :: CoreExpr -> Doc AnsiStyle
+prettyExpr2 (Var v) = prettyVar False False v
+prettyExpr2 (Lit l) = pretty l
+prettyExpr2 e = parens (prettyExpr e)
+
+
+
+prettyVdefg :: CoreBind -> Doc AnsiStyle
+prettyVdefg (Recursive bindings) = "Rec" <> prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg (NonRecursive b) = prettyVdef b
+
+prettyVdef :: (Var, CoreExpr) -> Doc AnsiStyle
+prettyVdef (v, e) = prettyVar True False v <+> "=" <+> prettyExpr e
+
+prettyVBind :: Var -> Doc AnsiStyle
+prettyVBind = prettyVar True True
+
+prettyAlts :: [Alt Var] -> Doc AnsiStyle
+prettyAlts alts = prettyBlockExpr (prettyAlt <$> alts)
+  where
+    prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e
 
 instance Pretty Literal where
     pretty :: Literal -> Doc AnsiStyle
@@ -58,13 +55,24 @@ instance Pretty Literal where
 
 instance Pretty Type where
     pretty :: Type -> Doc AnsiStyle
-    pretty = \case
-        TyVarTy tv -> prettyTypeVariable False tv
-        FuncTy t1 t2 -> parens (pretty t1 <+> "->" <+> pretty t2)
-        AppTy c x | c == listCon -> "[" <> pretty x <> "]" -- turn [] x into [x]
-        AppTy t1 t2 -> parens (pretty t1 <+> pretty t2)
-        ConTy name -> pretty (name ^. unqualified)
-        ForAllTy tv t -> parens ("forall" <+> prettyTypeVariable True tv <> "." <+> pretty t)
+    pretty = prettyTy
+
+prettyTy :: Type -> Doc AnsiStyle
+prettyTy (FuncTy t1 t2) = prettyTy1 t1 <+> "->" <+> prettyTy t2
+prettyTy (ForAllTy tv t) = "forall" <+> prettyTypeVariable True tv <> "." <+> prettyTy t
+prettyTy other = prettyTy1 other
+
+prettyTy1 :: Type -> Doc AnsiStyle
+prettyTy1 (AppTy t1 t2) = prettyTy1 t1 <+> prettyTy2 t2
+prettyTy1 e = prettyTy2 e
+
+
+prettyTy2 :: Type -> Doc AnsiStyle
+prettyTy2 (TyVarTy tv) = prettyTypeVariable False tv
+prettyTy2 (ConTy name) = pretty (name ^. unqualified)
+prettyTy2 e = parens (prettyTy e)
+
+
 
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle

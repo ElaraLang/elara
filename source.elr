@@ -4,4 +4,4 @@ let identity x = x
 
 let msg = identity "hello, world!"
 
-let main = println msg
+let main = println (identity msg)

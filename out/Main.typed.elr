@@ -12,4 +12,5 @@ let Main.msg =
 
 def Main.main : IO Unit 
 let Main.main =
-    Prelude.println : Text -> IO Unit  Main.msg : Text
+    Prelude.println : Text -> IO Unit 
+        (Main.identity : forall (p : Type) . p -> p Main.msg : Text : Text)
