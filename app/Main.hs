@@ -92,7 +92,7 @@ dumpJSONGraphWith graph f nameFunc suffix = do
 runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
 runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe $ do
     start <- liftIO getCPUTime
-    liftIO (createDirectoryIfMissing True "out")
+    liftIO (createDirectoryIfMissing True "build")
 
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
@@ -116,13 +116,13 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
         putTextLn ("Compiling " <> showPretty mn <> "...")
         let converted = convert class'
         let bs = runPut (writeBinary converted)
-        liftIO $ writeFileLBS ("out/" <> suitableFilePath (ClassFile.name class')) bs
+        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
         putTextLn ("Compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length []) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
