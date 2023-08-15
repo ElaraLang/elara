@@ -3,16 +3,15 @@
 module Elara.AST.Unlocated.Typed where
 
 import Control.Lens hiding (List, none)
-import Elara.AST.Name (ModuleName, Name, Qualified (..), TypeName, VarName (..), LowerAlphaName)
+import Data.Aeson (ToJSON)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, Qualified (..), TypeName, VarName (..))
 import Elara.AST.Pretty
-import Elara.Data.Kind
-import Elara.AST.Region (Located (..))
 import Elara.AST.VarRef (UnlocatedVarRef, varRefVal)
+import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
 import Prelude hiding (Op, group)
-import Data.Aeson (ToJSON)
 
 -- | Typed AST Type without location information. See 'Elara.AST.Typed.Expr'' for the location information version.
 data Expr'
@@ -60,7 +59,7 @@ newtype Pattern = Pattern (Pattern', Type ())
 
 data TypeAnnotation = TypeAnnotation (Qualified Name) (Type ())
     deriving (Show, Eq)
-    
+
 data Declaration = Declaration'
     { _declaration'Module' :: ModuleName
     , _declaration'Name :: Qualified Name
@@ -74,12 +73,11 @@ data DeclarationBody
         { _expression :: Expr
         }
     | -- | type <name> <vars> = <type>
-      TypeDeclaration [(Unique LowerAlphaName)] (TypeDeclaration) ElaraKind -- No difference to old AST
+      TypeDeclaration [Unique LowerAlphaName] TypeDeclaration ElaraKind -- No difference to old AST
     deriving (Show, Eq, Generic)
 
-
 data TypeDeclaration
-    = ADT (NonEmpty ((Qualified TypeName), [Type ()]))
+    = ADT (NonEmpty (Qualified TypeName, [Type ()]))
     | Alias (Type ())
     deriving (Show, Eq, Generic)
 
@@ -135,7 +133,6 @@ instance Pretty Pattern' where
     pretty (ListPattern l) = prettyListPattern l
     pretty (ConsPattern p1 p2) = prettyConsPattern p1 p2
     pretty other = show other
-
 
 instance ToJSON Declaration
 instance ToJSON DeclarationBody

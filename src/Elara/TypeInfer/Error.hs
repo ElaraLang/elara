@@ -7,7 +7,6 @@ import Elara.AST.Renamed qualified as AST
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique)
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
 import Elara.TypeInfer.Existential
@@ -15,7 +14,7 @@ import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
-import Error.Diagnose (Marker (Where), Note (Hint), Report (Err))
+import Error.Diagnose (Marker (Where), Report (Err))
 import Print
 
 -- | A data type holding all errors related to type inference

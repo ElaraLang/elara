@@ -21,14 +21,12 @@ import Data.Aeson (ToJSON)
 import Data.Kind qualified as Kind (Type)
 import Elara.AST.Name (ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (unlocated)
-import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), Typed, Unlocated, UnlocatedFrontend, UnlocatedTyped)
+import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), Typed, UnlocatedFrontend, UnlocatedTyped)
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph
 import Unsafe.Coerce (unsafeCoerce)
-import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Prelude hiding (Text)
-
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
     deriving (Generic)
@@ -221,7 +219,6 @@ instance
     where
     stripLocation (Module m) = Module (stripLocation m)
 
-
 instance StripLocation (Module' Frontend) (Module' UnlocatedFrontend) where
     stripLocation (Module' n e i d) = Module' (stripLocation n) (stripLocation e) (stripLocation i) (stripLocation d)
 
@@ -244,9 +241,10 @@ instance StripLocation (Exposition Typed) (Exposition UnlocatedTyped) where
     stripLocation (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors (stripLocation tn)
     stripLocation (ExposedOp o) = ExposedOp (stripLocation o)
 
-instance   (StripLocation (ASTLocate a (Import' a)) (Import' b), ASTLocate b (Import' b) ~ Import' b) =>
-    StripLocation (Import a) (Import b) where
-
+instance
+    (StripLocation (ASTLocate a (Import' a)) (Import' b), ASTLocate b (Import' b) ~ Import' b) =>
+    StripLocation (Import a) (Import b)
+    where
     stripLocation (Import m) = Import ((stripLocation m))
 
 instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
@@ -254,7 +252,6 @@ instance StripLocation (Import' Frontend) (Import' UnlocatedFrontend) where
 
 instance StripLocation (Import' Typed) (Import' UnlocatedTyped) where
     stripLocation (Import' i a q e) = Import' (stripLocation i) (stripLocation a) q (stripLocation e)
-
 
 -- Traversals
 

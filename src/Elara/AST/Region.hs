@@ -5,6 +5,7 @@
 module Elara.AST.Region where
 
 import Control.Lens
+import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Error.Diagnose.Position qualified as Diag
@@ -12,7 +13,6 @@ import GHC.Exts (the)
 import Print (showPretty)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
 import Text.Show (Show (show))
-import Data.Aeson (ToJSON)
 
 generatedFileName :: String
 generatedFileName = "<generated>"
@@ -222,7 +222,6 @@ instance Pretty SourceRegion where
 
 instance Pretty RealPosition where
     pretty (Position ln cn) = pretty ln <> ":" <> pretty cn
-
 
 instance ToJSON s => ToJSON (Located s)
 instance ToJSON SourceRegion

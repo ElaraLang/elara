@@ -2,7 +2,8 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-} -- TODO: remove this
+{-# OPTIONS_GHC -Wno-orphans #-} -- The Pretty Monotype instance kinda has to be here without big refactors
 
 module Elara.TypeInfer.Type where
 
@@ -111,40 +112,37 @@ instance Show s => Pretty (Type s) where
 instance Plated (Type s) where
     plate onType type_ =
         case type_ of
-            VariableType{..} -> do
-                pure VariableType{..}
-            UnsolvedType{..} -> do
-                pure UnsolvedType{..}
+            VariableType{..} -> pure VariableType{..}
+            UnsolvedType{..} -> pure UnsolvedType{..}
             Exists{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Exists{type_ = newType, ..}
+                pure Exists{type_ = newType, ..}
             Forall{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Forall{type_ = newType, ..}
+                pure Forall{type_ = newType, ..}
             Function{input = oldInput, output = oldOutput, ..} -> do
                 newInput <- onType oldInput
                 newOutput <- onType oldOutput
-                return Function{input = newInput, output = newOutput, ..}
+                pure Function{input = newInput, output = newOutput, ..}
             Optional{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return Optional{type_ = newType, ..}
+                pure Optional{type_ = newType, ..}
             List{type_ = oldType, ..} -> do
                 newType <- onType oldType
-                return List{type_ = newType, ..}
+                pure List{type_ = newType, ..}
             Record{fields = Fields oldFieldTypes remainingFields, ..} -> do
                 let onPair (field, oldType) = do
                         newType <- onType oldType
-                        return (field, newType)
+                        pure (field, newType)
                 newFieldTypes <- traverse onPair oldFieldTypes
-                return Record{fields = Fields newFieldTypes remainingFields, ..}
+                pure Record{fields = Fields newFieldTypes remainingFields, ..}
             Union{alternatives = Alternatives oldAlternativeTypes remainingAlternatives, ..} -> do
                 let onPair (alternative, oldType) = do
                         newType <- onType oldType
-                        return (alternative, newType)
+                        pure (alternative, newType)
                 newAlternativeTypes <- traverse onPair oldAlternativeTypes
-                return Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
-            Scalar{..} -> do
-                pure Scalar{..}
+                pure Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
+            Scalar{..} -> pure Scalar{..}
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
                 pure Custom{typeArguments = newTypeArguments, ..}
@@ -206,7 +204,7 @@ solveType unsolved monotype = Lens.transform transformType
   where
     transformType UnsolvedType{..}
         | unsolved == existential =
-            fmap (\_ -> location) (fromMonotype monotype)
+            fmap (const location) (fromMonotype monotype)
     transformType type_ =
         type_
 
@@ -226,7 +224,7 @@ solveFields unsolved (Monotype.Fields fieldMonotypes fields) =
             fieldTypes <> map transformPair fieldMonotypes
 
         transformPair (field, monotype) =
-            (field, fmap (\_ -> location) (fromMonotype monotype))
+            (field, fmap (const location) (fromMonotype monotype))
     transformType type_ =
         type_
 
@@ -246,7 +244,7 @@ solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternati
             alternativeTypes <> map transformPair alternativeMonotypes
 
         transformPair (alternative, monotype) =
-            (alternative, fmap (\_ -> location) (fromMonotype monotype))
+            (alternative, fmap (const location) (fromMonotype monotype))
     transformType type_ =
         type_
 
@@ -338,7 +336,7 @@ substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
             | otherwise ->
                 Record{fields = Fields (map (second (substituteFields ρ0 n r)) kAs0) ρ, ..}
           where
-            kAs1 = kAs0 <> map (second (fmap (\_ -> location))) kτs
+            kAs1 = kAs0 <> map (second (fmap (const location))) kτs
         Union{alternatives = Alternatives kAs ρ, ..} ->
             Union{alternatives = Alternatives (map (second (substituteFields ρ0 n r)) kAs) ρ, ..}
         Scalar{..} ->
@@ -804,5 +802,5 @@ prettyAlternativeLabel ::
     Text ->
     Doc AnsiStyle
 prettyAlternativeLabel alternative
-    | otherwise =
+     =
         label (pretty alternative)

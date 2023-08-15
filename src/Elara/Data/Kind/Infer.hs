@@ -81,7 +81,6 @@ inferKind tName args t = do
             }
     pure funcKind
 
-
 inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => AST.Type -> Sem r ElaraKind
 inferTypeKind AST.UnitType = pure TypeKind
 inferTypeKind (AST.TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet

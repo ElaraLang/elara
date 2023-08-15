@@ -20,7 +20,6 @@ import Polysemy
 import Polysemy.Error (Error, runError, throw)
 import Polysemy.State (State, evalState)
 import Polysemy.State.Extra
-import Print (showColored)
 
 data DesugarError
     = DefWithoutLet (Located Desugared.Type)
@@ -86,10 +85,10 @@ partialDeclarationSourceRegion (Both _ sr _ _) = sr
 partialDeclarationSourceRegion (Immediate _ (Located sr _)) = sr
 
 instance Pretty PartialDeclaration where
-    pretty (JustDef name _ ty) = pretty name
-    pretty (JustLet name _ e) = pretty name
-    pretty (Both name _ ty e) = pretty name
-    pretty (Immediate name e) = pretty name
+    pretty (JustDef n _ _) = pretty n
+    pretty (JustLet n _ _) = pretty n
+    pretty (Both n _ _ _) = pretty n
+    pretty (Immediate n _) = pretty n
 
 makeLenses ''DesugarState
 

@@ -1285,10 +1285,6 @@ infer ::
     Expr ->
     Sem r (TypedExpr)
 infer (Syntax.Expr (Located location e0)) = do
-    let input ~> output = Type.Function{location = location, ..}
-
-    let var name = Type.VariableType{location = location, name, ..}
-
     case e0 of
         -- Var
         Syntax.Var vn -> do

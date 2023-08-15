@@ -3,6 +3,7 @@
 module Elara.Data.Unique where
 
 import Control.Lens.TH (makeLenses)
+import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
@@ -10,7 +11,6 @@ import Polysemy (Member, Sem, embed, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
-import Data.Aeson (ToJSON)
 
 data Unique a = Unique
     { _uniqueVal :: !a
@@ -27,9 +27,8 @@ newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 uniqueIdVal :: UniqueId -> Int
 uniqueIdVal (UniqueId u) = _uniqueId u
 
+instance ToJSON c => ToJSON (Unique c)
 
-instance ToJSON c => ToJSON (Unique c) where
-    
 instance ToJSON UniqueId
 
 instance Show UniqueId where

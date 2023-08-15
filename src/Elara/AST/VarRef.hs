@@ -3,7 +3,7 @@
 module Elara.AST.VarRef where
 
 import Control.Lens (view)
-import Data.Aeson (ToJSON(..))
+import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located)

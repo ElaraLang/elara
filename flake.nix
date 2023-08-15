@@ -35,7 +35,7 @@
           inherit system;
           overlays =
             let
-      
+
               ghcName = "ghc92";
               # Desired new setting
               enableProfiling = false;
@@ -101,7 +101,6 @@
               # Skip the tests for now
               check = false;
             };
-
 
           };
 

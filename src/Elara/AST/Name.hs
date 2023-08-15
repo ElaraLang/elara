@@ -11,6 +11,7 @@
 module Elara.AST.Name where
 
 import Control.Lens (Lens', lens, makeFields, makeLenses, makePrisms, view, (^.))
+import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
@@ -18,7 +19,6 @@ import Elara.Data.Pretty
 import Elara.Data.Unique
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
-import Data.Aeson (ToJSON)
 
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data, Generic)
@@ -213,7 +213,6 @@ instance Pretty OpName where
 
 instance Pretty LowerAlphaName where
     pretty (LowerAlphaName n) = pretty n
-
 
 instance ToJSON n => ToJSON (Qualified n)
 instance ToJSON ModuleName

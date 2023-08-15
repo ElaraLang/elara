@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
+
 module Elara.Width where
 
-import System.Console.Terminal.Size (Window(..))
+import System.Console.Terminal.Size (Window (..))
 
-import qualified System.Console.Terminal.Size as Size
+import System.Console.Terminal.Size qualified as Size
 
 -- | Get the width of the terminal (in columns)
 getWidth :: IO Int
@@ -12,7 +13,7 @@ getWidth = do
 
     let renderWidth =
             case maybeWindow of
-                Nothing         -> defaultWidth
+                Nothing -> defaultWidth
                 Just Window{..} -> width
 
     return renderWidth

@@ -9,13 +9,11 @@ import Elara.AST.Name (ModuleName (..), Name (..), Qualified (..), TypeName (..)
 import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Unique (UniqueGen, makeUnique)
 
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
-import Polysemy (Member, Sem)
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"

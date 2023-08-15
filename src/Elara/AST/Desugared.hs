@@ -6,7 +6,6 @@ import Control.Lens.TH
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located)
 
-
 {- |
   This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
 

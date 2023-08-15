@@ -1,0 +1,3 @@
+module Prelude
+{ let Prelude.println : (String -> (IO ()))  = ((Elara.Prim.elaraPrimitive : (String -> a_3))
+    "println") }

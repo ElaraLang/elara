@@ -3,11 +3,10 @@
 
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, (%=), (%~), (^.), (^..), _1, _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, (%~), (^.), (^..), _1, _2)
 import Data.Map qualified as Map
-import Elara.AST.Desugared (HasDeclaration (declaration))
 import Elara.AST.Desugared qualified as Desugared
-import Elara.AST.Lenses (HasDeclarationBody (declarationBody, unlocatedDeclarationBody), HasDeclarationBody' (unlocatedDeclarationBody'))
+import Elara.AST.Lenses (HasDeclarationBody (declarationBody), HasDeclarationBody' (unlocatedDeclarationBody'))
 import Elara.AST.Module (
     Exposing (ExposingAll, ExposingSome),
     Exposition (..),
@@ -42,7 +41,6 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import Print (debugColored)
 
 data RenameError
     = UnknownModule ModuleName

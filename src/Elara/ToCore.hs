@@ -13,11 +13,11 @@ import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
 import Elara.AST.StripLocation
 import Elara.AST.Typed as AST
-import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
+import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal, UnlocatedVarRef)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (UniqueGen, makeUnique)
+import Elara.Data.Unique (UniqueGen, makeUnique, Unique)
 import Elara.Error (ReportableError (..), writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
@@ -130,8 +130,10 @@ typeToCore other = error ("TODO: typeToCore " <> show other)
 conToVar :: DataCon -> Core.Var
 conToVar (Core.DataCon n t) = Core.Id (Global $ Identity n) t
 
+mkLocalRef :: Unique n -> UnlocatedVarRef n
 mkLocalRef = Local . Identity
 
+mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
 toCore :: HasCallStack => (ToCoreC r) => AST.Expr -> Sem r CoreExpr
@@ -149,11 +151,10 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
             pure $ Core.Var (Core.Id (nameText <$> stripLocation v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
-            let t = conToVar ctor
-            pure $ Core.Var t
+            pure $ Core.Var (conToVar ctor)
         AST.Lambda (Located _ vn) body -> do
             -- figure out the type of vn from the type of the lambda
-            let extractLambdaInput (Type.Function{input, ..}) = pure input
+            let extractLambdaInput (Type.Function{input}) = pure input
                 extractLambdaInput (Type.Forall _ _ _ _ t) = extractLambdaInput t
                 extractLambdaInput other = throw (UnknownLambdaType other)
             t' <- extractLambdaInput t

@@ -48,7 +48,7 @@ typeOf :: Expr -> Type SourceRegion
 typeOf (Expr (_, t)) = t
 
 withType :: Expr -> Type SourceRegion -> Expr
-(Expr (e', _)) `withType` t = Expr (e', t) 
+(Expr (e', _)) `withType` t = Expr (e', t)
 
 instance Plated Expr
 
@@ -109,7 +109,6 @@ makePrisms ''Expr
 makePrisms ''Expr'
 makePrisms ''VarRef'
 makePrisms ''Pattern
-
 
 instance StripLocation Declaration Unlocated.Declaration where
     stripLocation (Declaration ldb) = (stripLocation ldb)

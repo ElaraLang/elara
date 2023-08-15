@@ -8,14 +8,13 @@ import Data.Data (Data)
 import Elara.AST.Lenses (HasDeclarationBody (..), HasDeclarationBody' (..))
 import Elara.AST.Name
 import Elara.AST.Pretty
-import Elara.AST.Region (Located (..), unlocated, SourceRegion)
+import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.StripLocation
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Data.Unique (Unique)
-import Print (showColored, showPretty)
 import Prelude hiding (Op)
 
 {- | Shunted AST Type
@@ -46,12 +45,8 @@ data Expr'
 
 instance Plated Expr'
 
-
 newtype Expr = Expr (Located Expr')
     deriving (Show, Eq, Data)
-
-location :: Expr -> SourceRegion
-location = view (_Expr . unlocated)
 
 data Pattern'
     = VarPattern (Located (Unique VarName))

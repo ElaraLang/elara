@@ -4,7 +4,7 @@ module Elara.Emit where
 import Control.Lens hiding (List)
 import Data.List.NonEmpty qualified as NE
 
-import Elara.AST.Name (ModuleName (..), NameLike (nameText), Qualified (..))
+import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.Select (HasModuleName (unlocatedModuleName))
 import Elara.AST.VarRef (VarRef' (..), varRefVal)
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
@@ -13,7 +13,6 @@ import Elara.Emit.Operator (translateOperatorName)
 import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
-import Elara.Prim (fetchPrimitive)
 import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon)
 import Elara.Utils (uncurry3)
 import JVM.Data.Abstract.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
@@ -24,12 +23,12 @@ import JVM.Data.Abstract.Field (ClassFileField (ClassFileField))
 import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCString))
 import JVM.Data.Abstract.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
 import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
-import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType, PrimitiveFieldType), PrimitiveType (..))
+import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (debugColored, debugPretty, showPretty)
+import Print (showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 

@@ -14,19 +14,19 @@ module Elara.Data.Pretty (
     bracedBlock,
     renderStrict,
     prettyToText,
-    prettyToUnannotatedText
+    prettyToUnannotatedText,
 )
 where
 
 import Data.Map qualified as Map (toList)
 import Elara.Data.Pretty.Styles
+import Elara.Width qualified as Width
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
-import qualified Prettyprinter.Render.Text as Pretty.Text
+import Prettyprinter.Render.Text qualified as Pretty.Text
 import Prelude hiding (group)
-import qualified Elara.Width as Width
 
 indentDepth :: Int
 indentDepth = 4
@@ -47,38 +47,37 @@ prettyToText = renderStrict True Width.defaultWidth
 prettyToUnannotatedText :: Pretty a => a -> Text
 prettyToUnannotatedText = renderStrictUnannotated Width.defaultWidth
 
-renderStrict
-    :: Pretty a
-    => Bool
-    -- ^ `True` enable syntax highlighting
-    -> Int
-    -- ^ Available columns
-    -> a
-    -> Text
+renderStrict ::
+    Pretty a =>
+    -- | `True` enable syntax highlighting
+    Bool ->
+    -- | Available columns
+    Int ->
+    a ->
+    Text
 renderStrict highlight columns =
     render . Pretty.layoutSmart (layoutOptions columns) . pretty
   where
     render =
         if highlight
-        then Pretty.Terminal.renderStrict
-        else Pretty.Text.renderStrict
+            then Pretty.Terminal.renderStrict
+            else Pretty.Text.renderStrict
 
-renderStrictUnannotated
-    :: Pretty a
-    => Int
-    -- ^ Available columns
-    -> a
-    -> Text
+renderStrictUnannotated ::
+    Pretty a =>
+    -- | Available columns
+    Int ->
+    a ->
+    Text
 renderStrictUnannotated =
     renderStrict False
 
-layoutOptions
-    :: Int
-    -- ^ Available columns
-    -> LayoutOptions
+layoutOptions ::
+    -- | Available columns
+    Int ->
+    LayoutOptions
 layoutOptions columns =
-    LayoutOptions { layoutPageWidth = AvailablePerLine columns 1 }
-
+    LayoutOptions{layoutPageWidth = AvailablePerLine columns 1}
 
 {- | A haskell-style braced block, which can split over multiple lines.
  >>> bracedBlock ["foo", "bar"]

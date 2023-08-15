@@ -3,7 +3,7 @@
 module Elara.Core.Pretty where
 
 import Control.Lens ((^.))
-import Elara.AST.Name (Qualified (Qualified), unqualified)
+import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.Core
 import Elara.Data.Pretty
@@ -11,13 +11,13 @@ import Elara.Prim.Core
 
 instance Pretty CoreBind where
     pretty = \case
-        Recursive binds ->
+        Recursive bindings ->
             "Rec"
                 <+> bracedBlock
                     ( fmap
                         ( \(bindName, bindVal) -> prettyLetInExpr (prettyVar True False bindName) none bindVal nothing
                         )
-                        binds
+                        bindings
                     )
         NonRecursive (b, e) -> prettyLetInExpr (prettyVar True False b) none e nothing
 
@@ -27,13 +27,13 @@ instance Pretty CoreExpr where
         Lit l -> pretty l
         App e1 e2 -> parens (prettyFunctionCallExpr e1 e2)
         Lam b e -> prettyLambdaExpr [prettyVar True True b] e
-        Let (Recursive binds) e ->
+        Let (Recursive bindings) e ->
             "Rec"
                 <+> prettyBlockExpr
                     ( fmap
                         ( \(bindName, bindVal) -> prettyLetInExpr (prettyVar True False bindName) none bindVal (Just e)
                         )
-                        binds
+                        bindings
                     )
         Let (NonRecursive (b, e)) e' -> prettyLetInExpr (prettyVar True False b) none e (Just e')
         Match e b alts ->

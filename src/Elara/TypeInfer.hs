@@ -2,37 +2,36 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), children, concatMapOf, cosmosOn, deep, rewriteM, to, transformM, traverseOf, view, (^.), (^?!), _3)
+import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _3)
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Traversable (for)
 import Elara.AST.Lenses (HasDeclarationBody (..))
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, Qualified, TypeName, nameText, _LowerAlphaName, _NTypeName)
-import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located (Located), SourceRegion, generatedSourceRegion, generatedSourceRegionFrom, sourceRegion, unlocated, withLocationOf)
+import Elara.AST.Name (LowerAlphaName, Name, Qualified, _LowerAlphaName)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated, withLocationOf)
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
+    ( HasName(name), HasModuleName(moduleName), Typed, Shunted )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.AST.VarRef (VarRef' (..), mkGlobal', mkLocal')
+import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
-import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, unifyKinds)
-import Elara.Data.Unique (Unique, uniqueToText, uniqueVal)
+import Elara.Data.Kind.Infer (InferState, inferTypeKind, unifyKinds)
+import Elara.Data.Unique (Unique, uniqueToText)
 import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError (..))
-import Elara.TypeInfer.Infer hiding (TypeInferenceError, get, inferPattern)
+import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
-import GHC.Exts (the)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
-import TODO (todo)
 
 inferModule ::
     forall r.
@@ -106,6 +105,7 @@ inferDeclaration (Shunted.Declaration ld) =
         whenNothing_ Nothing (push (Annotation (mkGlobal' declName) (typeOf completed)))
 
         pure $ Typed.Value completed
+    inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
 --     ty' <-
@@ -191,7 +191,7 @@ astTypeToInferType (Located sr ut) = astTypeToInferType' ut
         arg' <- astTypeToInferType arg
 
         case ctor' of
-            Infer.Custom{..} -> pure $ Infer.Custom location name (typeArguments ++ [arg'])
+            Infer.Custom{name = ctorName, ..} -> pure $ Infer.Custom location ctorName (typeArguments ++ [arg'])
             -- Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
             other -> error (showColored other)
     astTypeToInferType' other = error (showColored other)
@@ -285,9 +285,9 @@ completeExpression ctx (Typed.Expr (y', t)) = do
 
     toMonoType :: Type SourceRegion -> Mono.Monotype
     toMonoType = \case
-        Infer.Scalar{..} -> Mono.Scalar scalar
-        Infer.Function{..} -> Mono.Function (toMonoType input) (toMonoType output)
-        Infer.List{..} -> Mono.List (toMonoType type_)
-        Infer.UnsolvedType{..} -> Mono.UnsolvedType existential
-        Infer.VariableType{..} -> Mono.VariableType name
+        Infer.Scalar{scalar} -> Mono.Scalar scalar
+        Infer.Function{input, output} -> Mono.Function (toMonoType input) (toMonoType output)
+        Infer.List{type_} -> Mono.List (toMonoType type_)
+        Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
+        Infer.VariableType{name = v} -> Mono.VariableType v
         other -> error $ "toMonoType: " <> showPretty other

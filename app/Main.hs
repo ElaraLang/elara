@@ -7,21 +7,17 @@ module Main (
 where
 
 import Control.Exception as E
-import Control.Lens (Each (each), folded, to, traverseOf_, view, (^.))
+import Control.Lens (to, view)
 import Data.Aeson (ToJSON, encode)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
-import Data.ByteString.Char8 (putStrLn)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
-import Elara.AST.Region (unlocated)
-import Elara.AST.Select (Core, Typed, UnlocatedTyped)
 import Elara.AST.Select hiding (moduleName)
 import Elara.AST.StripLocation
-import Elara.AST.Typed qualified as Typed
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, allEntries, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar)
 import Elara.Emit
@@ -35,16 +31,15 @@ import Elara.Parse.Stream
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (rename, runRenamer)
 import Elara.Shunt
-import Elara.ToCore (moduleToCore, runToCoreC, toCore)
+import Elara.ToCore (moduleToCore, runToCoreC)
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
 import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic)
-import JVM.Data.Abstract.ClassFile as ClassFile hiding (name)
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Member, Members, Sem, raise, runM, subsume, subsume_)
+import Polysemy (Member, Members, Sem, runM, subsume, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -75,23 +70,21 @@ main = run `finally` cleanup
 
 dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
-    let dump mod = do
-            let contents = pretty mod
-            let fileName = toString ("out/" <> nameFunc mod <> suffix)
-            handle <- openFile fileName WriteMode
-            hPutDoc handle contents
-            hFlush handle
+    let dump m = do
+            let contents = pretty m
+            let fileName = toString ("out/" <> nameFunc m <> suffix)
+            fileHandle <- openFile fileName WriteMode
+            hPutDoc fileHandle contents
+            hFlush fileHandle
 
     traverseGraph_ dump graph
 
-dumpJSONGraph :: ToJSON m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
-dumpJSONGraph g = dumpJSONGraphWith g identity
 
 dumpJSONGraphWith :: (ToJSON m) => TopologicalGraph a -> (a -> m) -> (a -> Text) -> Text -> IO ()
 dumpJSONGraphWith graph f nameFunc suffix = do
-    let dump mod = do
-            let contents = encode (f mod)
-            let fileName = toString ("out/" <> nameFunc mod <> suffix)
+    let dump m = do
+            let contents = encode (f m)
+            let fileName = toString ("out/" <> nameFunc m <> suffix)
             writeFileLBS fileName contents
 
     traverseGraph_ dump graph

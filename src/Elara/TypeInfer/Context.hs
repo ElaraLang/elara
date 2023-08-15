@@ -32,15 +32,13 @@ import Elara.TypeInfer.Type (Type)
 
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
-import Elara.AST.Name (Name (NVarName))
-import Elara.AST.Region
-import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef, VarRef' (..))
-import Elara.Data.Unique (unsafeMkUnique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
 import Prettyprinter qualified as Pretty
+import Elara.AST.VarRef (IgnoreLocVarRef)
+import Elara.AST.Name (Name)
 
 {- $setup
 
@@ -161,7 +159,7 @@ instance Show s => Pretty (Entry s) where
 -}
 type Context s = [Entry s]
 
-prettyEntry ::Show s =>  Entry s -> Doc AnsiStyle
+prettyEntry :: Show s => Entry s -> Doc AnsiStyle
 prettyEntry (Variable domain a) =
     label (pretty a) <> operator ":" <> " " <> pretty domain
 prettyEntry (UnsolvedType a) =

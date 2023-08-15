@@ -80,7 +80,6 @@ type family ASTLocate' ast where
     ASTLocate' UnlocatedTyped = Unlocated
     ASTLocate' Core = Unlocated
 
-
 type family ASTDeclaration ast where
     ASTDeclaration Frontend = Frontend.Declaration
     ASTDeclaration UnlocatedFrontend = Unlocated.Frontend.Declaration
