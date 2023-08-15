@@ -52,7 +52,7 @@ prettyVdef (v, e) = prettyVar True False v <+> "=" <+> prettyExpr e
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
-prettyAlts :: (Pretty (Expr v), PrettyVar v) => [Alt v] -> Doc AnsiStyle
+prettyAlts :: (PrettyVar v) => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = prettyBlockExpr (prettyAlt <$> alts)
   where
     prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e

@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
@@ -30,6 +28,7 @@ import Polysemy.State
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Prim.Core
 import Polysemy.State.Extra (scoped)
+import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel AST.Expr
@@ -104,7 +103,6 @@ moduleToCore (Module (Located _ m)) = do
                     pure (ty, v')
                 let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. unlocatedDeclarationName))) ty
                 pure (v', var)
-            other -> error "TODO: other declaration types"
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
@@ -113,10 +111,10 @@ typeToCore (Type.Forall _ _ tv _ t) = do
     tv' <- makeUnique tv
     addTyVar tv (TypeVariable tv' TypeKind)
     typeToCore t
-typeToCore (Type.VariableType{name}) = do
+typeToCore (Type.VariableType{Type.name}) = do
     tv <- lookupTyVar name
     pure (Core.TyVarTy tv)
-typeToCore (Type.Function{input, output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
+typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
 typeToCore (Type.Scalar _ Scalar.Integer) = pure intCon
@@ -154,7 +152,7 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
             pure $ Core.Var (conToVar ctor)
         AST.Lambda (Located _ vn) body -> do
             -- figure out the type of vn from the type of the lambda
-            let extractLambdaInput (Type.Function{input}) = pure input
+            let extractLambdaInput (Type.Function{Type.input}) = pure input
                 extractLambdaInput (Type.Forall _ _ _ _ t) = extractLambdaInput t
                 extractLambdaInput other = throw (UnknownLambdaType other)
             t' <- extractLambdaInput t
@@ -184,7 +182,7 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
             let ref = mkGlobalRef consCtorName
             pure $
                 Core.App
-                    (Core.App (Core.Var $ Core.Id ref _) x') -- x
+                    (Core.App (Core.Var $ Core.Id ref todo) x') -- x
                     xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
@@ -204,7 +202,7 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
             one' <- toCore one
             two' <- toCore two
             let ref = mkGlobalRef tuple2CtorName
-            pure $ Core.App (Core.App (Core.Var (Core.Id ref _)) one') two'
+            pure $ Core.App (Core.App (Core.Var (Core.Id ref todo)) one') two'
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
 

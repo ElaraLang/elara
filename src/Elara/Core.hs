@@ -2,13 +2,11 @@
 
 module Elara.Core where
 
-import Control.Lens (Plated, (^.))
+import Control.Lens (Plated)
 import Data.Data
-import Elara.AST.Name (Qualified (Qualified), unqualified)
-import Elara.AST.Pretty (none, nothing, prettyBlockExpr, prettyFunctionCallExpr, prettyLambdaExpr, prettyLetInExpr, prettyMatchBranch, prettyStringExpr)
+import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), align, bracedBlock, hardline, indentDepth, nest, parens, vsep, (<+>))
 import Elara.Data.Unique (Unique)
 import Prelude hiding (Alt)
 

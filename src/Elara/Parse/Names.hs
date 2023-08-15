@@ -1,7 +1,6 @@
 module Elara.Parse.Names where
 
-import Control.Lens (Each (each), asumOf, concatMapOf, concatOf, foldMapOf, foldOf, folded, folding, toListOf)
-import Data.Text qualified as Text
+import Control.Lens (Each (each), foldOf)
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..), _OpName)
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')

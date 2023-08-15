@@ -2,7 +2,6 @@
 
 module Elara.Prim.Rename where
 
-import Elara.AST.Name (TypeName)
 import Elara.AST.VarRef (VarRef' (Global))
 import Elara.Prim (ioName, mkPrimVarRef, primitiveTypes, primitiveVars)
 import Elara.Rename (RenameState (RenameState))

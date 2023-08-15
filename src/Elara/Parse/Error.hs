@@ -17,7 +17,7 @@ import Control.Lens (to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Name (MaybeQualified, NameLike (nameText), VarName)
+import Elara.AST.Name (MaybeQualified, VarName)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
