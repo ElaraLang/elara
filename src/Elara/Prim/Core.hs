@@ -20,6 +20,9 @@ consCtorName = Qualified "::" (ModuleName ("Elara" :| ["Prim"]))
 tuple2CtorName :: Qualified Text
 tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
 
+fetchPrimitiveName :: Qualified Text
+fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]))
+
 boolCon :: Type
 boolCon = ConTy (mkPrimQual "Bool")
 

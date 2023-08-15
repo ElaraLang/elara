@@ -13,7 +13,8 @@ import Elara.Emit.Operator (translateOperatorName)
 import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
-import Elara.Prim.Core (intCon, ioCon, listCon, stringCon)
+import Elara.Prim (fetchPrimitive)
+import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon)
 import Elara.Utils (uncurry3)
 import JVM.Data.Abstract.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
 import JVM.Data.Abstract.Builder
@@ -79,9 +80,9 @@ addClinit code = do
                 (MethodDescriptor [] VoidReturn)
                 [Code $ CodeAttributeData 255 255 (code <> [Return]) [] []]
 
-generateCodeAttribute :: JVMExpr -> ([Instruction] -> [Instruction]) -> InnerEmit MethodAttribute
-generateCodeAttribute e codeMod = do
-    code <- codeMod <$> generateCode e
+generateCodeAttribute :: JVMExpr -> Maybe Type -> ([Instruction] -> [Instruction]) -> InnerEmit MethodAttribute
+generateCodeAttribute e expected codeMod = do
+    code <- codeMod <$> generateCode e expected
     pure $
         Code $
             CodeAttributeData
@@ -101,11 +102,11 @@ addDeclaration declBody = case declBody of
                 let field = ClassFileField [FPublic, FStatic] declName (generateFieldType type') []
                 embed $ addField field
                 e' <- transformTopLevelLambdas e
-                addStaticFieldInitialiser field e'
+                addStaticFieldInitialiser field e' type'
             else do
                 let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
                 y <- transformTopLevelLambdas e
-                code <- generateCodeAttribute y (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))
+                code <- generateCodeAttribute y (Just type') (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))
                 embed $
                     addMethod $
                         ClassFileMethod
@@ -119,9 +120,9 @@ isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. unlocatedModuleName == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: ClassFileField -> JVMExpr -> InnerEmit ()
-addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
-    code <- generateCode e
+addStaticFieldInitialiser :: ClassFileField -> JVMExpr -> Type -> InnerEmit ()
+addStaticFieldInitialiser (ClassFileField _ name fieldType _) e t = do
+    code <- generateCode e (Just t)
     tell code
     cn <- ask @QualifiedClassName
     tell [PutStatic (ClassInfoType cn) name fieldType]
@@ -153,23 +154,37 @@ generateMainMethod m =
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
-generateCode :: JVMExpr -> InnerEmit [Instruction]
-generateCode (Var (JVMLocal 0)) = pure [ALoad0]
-generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) = do -- load static var
+generateCode :: JVMExpr -> Maybe Type -> InnerEmit [Instruction]
+generateCode (Var (JVMLocal 0)) _ = pure [ALoad0]
+-- Hardcode elaraPrimitive "println"
+generateCode (App (Var (Normal (Id (Global (Identity v)) _))) (Lit (String "println"))) _
+    | v == fetchPrimitiveName =
+        pure
+            [ ALoad0
+            , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
+            ]
+generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ = do
+    -- load static var
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
     pure [uncurry3 GetStatic invokeStaticVars]
-
-generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) x) = do
+generateCode e@(App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) (Just expectedType) = do
     -- static function application
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateMethodDescriptor idVarType)
-    x' <- generateCode x
 
-    pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars, CheckCast (ClassInfoType "java.lang.String")]
-generateCode (Lit (String s)) =
+    x' <- generateCode arg Nothing
+
+    let castInstrs =
+            ( case generateFieldType expectedType of
+                ObjectFieldType a -> [CheckCast (ClassInfoType a)]
+                _ -> []
+            )
+
+    pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars] <> castInstrs
+generateCode (Lit (String s)) _ =
     pure
         [ LDC (LDCString s)
         ]
-generateCode e = error (showPretty e)
+generateCode e t = error (showPretty (e, t))
 
 {- | Determines if a type is a value type.
  That is, a type that can be compiled to a field rather than a method.
@@ -180,7 +195,7 @@ typeIsValue c | c == stringCon = True
 typeIsValue _ = False
 
 generateFieldType :: Type -> FieldType
-generateFieldType c | c == intCon = PrimitiveFieldType JVM.Int
+generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
