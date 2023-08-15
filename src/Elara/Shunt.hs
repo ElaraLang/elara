@@ -9,14 +9,16 @@ import Control.Lens
 import Data.Map (lookup)
 import Elara.AST.Lenses (HasDeclarationBody (..))
 import Elara.AST.Module
-import Elara.AST.Name (Name (NOpName, NVarName), NameLike (nameText), VarName (OperatorVarName))
+import Elara.AST.Name (Name (NOpName, NVarName), NameLike (fullNameText, nameText), VarName (OperatorVarName))
 import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
+import Elara.AST.Renamed (BinaryOperator (MkBinaryOperator))
 import Elara.AST.Renamed qualified as Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted qualified as Shunted
 import Elara.AST.VarRef
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Error (ReportableError (..))
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
@@ -54,17 +56,20 @@ data ShuntError
     = SamePrecedenceError (Renamed.BinaryOperator, Associativity) (Renamed.BinaryOperator, Associativity)
     deriving (Show, Eq)
 
+prettyOp :: Renamed.BinaryOperator -> Doc AnsiStyle
+prettyOp (Renamed.MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
+    Renamed.Op opName -> pretty (fullNameText (opName ^. unlocated . to varRefVal))
+    Renamed.Infixed vn -> "`" <> pretty (nameText (vn ^. unlocated . to varRefVal)) <> "`"
+
 instance ReportableError ShuntError where
-    report (SamePrecedenceError (op1, a1) (op2, a2)) = do
-        -- let op1Src = sourceRegionToDiagnosePosition $ op1 ^. sourceRegion
-        -- let op2Src = sourceRegionToDiagnosePosition $ op2 ^. sourceRegion
+    report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
+        let op1Src = sourceRegionToDiagnosePosition $ op1' ^. sourceRegion
+        let op2Src = sourceRegionToDiagnosePosition $ op2' ^. sourceRegion
         writeReport $
             Err
                 (Just Codes.samePrecedence)
-                ""
-                []
-                -- ("Cannot mix operators with same precedence " <> fullNameText (op1 ^. unlocated) <> " and " <> fullNameText (op2 ^. unlocated) <> " when both operators have different associativity.")
-                -- [(op1Src, This (show a1)), (op2Src, This (show a2))]
+                ("Cannot mix operators with same precedence " <> prettyOp op1 <> " and " <> prettyOp op2 <> " when both operators have different associativity.")
+                [(op1Src, This (show a1)), (op2Src, This (show a2))]
                 [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
 newtype ShuntWarning

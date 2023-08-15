@@ -10,7 +10,8 @@ module Elara.TypeInfer.Type where
 import Control.Lens (Plated (..))
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), builtin, keyword, label, operator, punctuation)
+import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 

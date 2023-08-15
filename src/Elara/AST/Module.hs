@@ -24,6 +24,7 @@ import Elara.AST.Region (unlocated)
 import Elara.AST.Select (ASTDeclaration, ASTExpr, ASTLocate, ASTPattern, ASTType, Frontend, FullASTQual, HasModuleName (moduleName, unlocatedModuleName), HasName (name), RUnlocate (..), Typed, UnlocatedFrontend, UnlocatedTyped)
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Text)
@@ -340,7 +341,7 @@ instance
     where
     pretty (Module' n e i d) =
         vsep
-            [ keyword "module" <+> moduleNameStyle (pretty n) <+> keyword "exposing" <+> pretty e
+            [ Style.keyword "module" <+> Style.moduleName (pretty n) <+> Style.keyword "exposing" <+> pretty e
             , ""
             , vsep (pretty <$> i)
             , ""
@@ -373,12 +374,12 @@ instance
     Pretty (Import' ast)
     where
     pretty (Import' i a q e) =
-        keyword "import" <+> moduleNameStyle (pretty i) <> as' <> qual <+> keyword "exposing" <+> pretty e
+        Style.keyword "import" <+> Style.moduleName (pretty i) <> as' <> qual <+> Style.keyword "exposing" <+> pretty e
       where
         as' = case a of
             Nothing -> ""
-            Just q' -> keyword "as" <+> moduleNameStyle (pretty q')
-        qual = if q then keyword "qualified" else ""
+            Just q' -> Style.keyword "as" <+> Style.moduleName (pretty q')
+        qual = if q then Style.keyword "qualified" else ""
 
 instance ToJSON (ASTLocate ast (Module' ast)) => ToJSON (Module ast)
 instance

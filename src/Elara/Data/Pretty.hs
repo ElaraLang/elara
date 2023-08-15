@@ -8,7 +8,6 @@ module Elara.Data.Pretty (
     parensIf,
     Pretty (..),
     module Pretty,
-    module Elara.Data.Pretty.Styles,
     module Prettyprinter.Render.Terminal,
     listToText,
     bracedBlock,
@@ -19,7 +18,7 @@ module Elara.Data.Pretty (
 where
 
 import Data.Map qualified as Map (toList)
-import Elara.Data.Pretty.Styles
+
 import Elara.Width qualified as Width
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP

@@ -16,6 +16,7 @@ import Data.Data (Data)
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Text.Show (Show (..))
 import Prelude hiding (Show, show)
@@ -194,10 +195,10 @@ instance Pretty Name where
     pretty (NOpName n) = pretty n
 
 instance Pretty ModuleName where
-    pretty (ModuleName m) = moduleNameStyle (hcat (punctuate "." (fmap pretty (toList m))))
+    pretty (ModuleName m) = Style.moduleName (hcat (punctuate "." (fmap pretty (toList m))))
 
 instance Pretty VarName where
-    pretty (NormalVarName n) = varName (pretty n)
+    pretty (NormalVarName n) = Style.varName (pretty n)
     pretty (OperatorVarName n) = "(" <> pretty n <> ")"
 
 instance Pretty (MaybeQualified VarName) where

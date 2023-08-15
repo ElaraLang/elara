@@ -4,6 +4,7 @@ module Elara.Data.Kind where
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 
 data ElaraKind
@@ -16,8 +17,8 @@ data ElaraKind
     deriving (Show, Eq, Data, Generic)
 
 instance Pretty ElaraKind where
-    pretty TypeKind = typeName "Type"
+    pretty TypeKind = Style.typeName "Type"
     pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
-    pretty (VarKind v) = varName ("k" <> pretty v)
+    pretty (VarKind v) = Style.varName ("k" <> pretty v)
 
 instance ToJSON ElaraKind

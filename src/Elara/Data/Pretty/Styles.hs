@@ -18,8 +18,8 @@ builtin = annotate (underlined)
 operator :: Doc AnsiStyle -> Doc AnsiStyle
 operator = punctuation
 
-moduleNameStyle :: Doc AnsiStyle -> Doc AnsiStyle
-moduleNameStyle = annotate (color Blue)
+moduleName :: Doc AnsiStyle -> Doc AnsiStyle
+moduleName = annotate (color Blue)
 
 typeName :: Doc AnsiStyle -> Doc AnsiStyle
 typeName = annotate (color Yellow)

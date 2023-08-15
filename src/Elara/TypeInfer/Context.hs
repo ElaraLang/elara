@@ -24,7 +24,8 @@ module Elara.TypeInfer.Context (
     complete,
 ) where
 
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), label, operator, punctuation)
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..))
+import Elara.Data.Pretty.Styles ( punctuation, label, operator )
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)

@@ -2,6 +2,7 @@
 module Elara.AST.Pretty where
 
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles
 import Prelude hiding (group)
 
 none :: [()]

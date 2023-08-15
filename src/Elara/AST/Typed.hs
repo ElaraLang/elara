@@ -13,6 +13,7 @@ import Elara.AST.Unlocated.Typed qualified as Unlocated
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Elara.TypeInfer.Type (Type)
 import Prelude hiding (Op, group)
@@ -175,13 +176,13 @@ instance Pretty Declaration' where
 
 prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
 prettyDB name (Value (Expr (e, t))) = prettyValueDeclaration name e (Just t)
-prettyDB name (TypeDeclaration vars t kind) = prettyTypeDeclaration name vars t
+prettyDB name (TypeDeclaration vars t _) = prettyTypeDeclaration name vars t
 
 instance Pretty TypeDeclaration where
     pretty (Alias t) = "=" <+> pretty t
     pretty (ADT constructors) = group $ encloseSep "= " "" (flatAlt "| " " | ") (prettyCtor <$> toList constructors)
       where
-        prettyCtor (name, args) = hsep (typeName (pretty name) : (pretty <$> args))
+        prettyCtor (name, args) = hsep (Style.typeName (pretty name) : (pretty <$> args))
 
 instance Pretty Expr where
     pretty e = pretty (stripLocation e)
