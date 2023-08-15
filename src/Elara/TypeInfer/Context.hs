@@ -25,7 +25,7 @@ module Elara.TypeInfer.Context (
 ) where
 
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..))
-import Elara.Data.Pretty.Styles ( punctuation, label, operator )
+import Elara.Data.Pretty.Styles (label, operator, punctuation)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
@@ -33,13 +33,13 @@ import Elara.TypeInfer.Type (Type)
 
 import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
+import Elara.AST.Name (Name)
+import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
 import Prettyprinter qualified as Pretty
-import Elara.AST.VarRef (IgnoreLocVarRef)
-import Elara.AST.Name (Name)
 
 {- $setup
 

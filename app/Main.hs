@@ -79,7 +79,6 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-
 dumpJSONGraphWith :: (ToJSON m) => TopologicalGraph a -> (a -> m) -> (a -> Text) -> Text -> IO ()
 dumpJSONGraphWith graph f nameFunc suffix = do
     let dump m = do

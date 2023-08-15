@@ -10,8 +10,12 @@ import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name, Qualified, _LowerAlphaName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated, withLocationOf)
 import Elara.AST.Renamed qualified as Renamed
-import Elara.AST.Select
-    ( HasName(name), HasModuleName(moduleName), Typed, Shunted )
+import Elara.AST.Select (
+    HasModuleName (moduleName),
+    HasName (name),
+    Shunted,
+    Typed,
+ )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')

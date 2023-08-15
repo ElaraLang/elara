@@ -13,11 +13,11 @@ import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
 import Elara.AST.StripLocation
 import Elara.AST.Typed as AST
-import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal, UnlocatedVarRef)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (UniqueGen, makeUnique, Unique)
+import Elara.Data.Unique (Unique, UniqueGen, makeUnique)
 import Elara.Error (ReportableError (..), writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar

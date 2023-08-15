@@ -8,7 +8,7 @@ import Control.Lens (transform)
 import Data.Data (Data)
 import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
-import Elara.Core.Pretty (prettyVar, PrettyVar)
+import Elara.Core.Pretty (PrettyVar, prettyVar)
 import Elara.Data.Pretty
 
 data JVMBinder
@@ -17,7 +17,7 @@ data JVMBinder
     deriving (Eq, Show, Data)
 
 instance PrettyVar JVMBinder where
-    prettyVar t p (Normal v )= prettyVar t p v
+    prettyVar t p (Normal v) = prettyVar t p v
     prettyVar _ _ (JVMLocal i) = "local_" <> pretty i
 
 type JVMExpr = Expr JVMBinder

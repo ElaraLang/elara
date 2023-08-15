@@ -5,11 +5,11 @@ module Elara.Core.Module where
 
 import Control.Lens (makeFields)
 import Elara.AST.Name (ModuleName)
+import Elara.AST.Pretty (prettyBlockExpr)
 import Elara.Core (CoreBind)
 import Elara.Core.Pretty (prettyVdefg)
 import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
-import Elara.AST.Pretty (prettyBlockExpr)
 
 data CoreModule = CoreModule
     { coreModuleName :: ModuleName
@@ -33,6 +33,6 @@ instance Pretty CoreModule where
                 <> nest indentDepth (bracedBlock decls)
 
 instance Pretty CoreDeclaration where
-    pretty (CoreValue v) = prettyVdefg  v
+    pretty (CoreValue v) = prettyVdefg v
 
 makeFields ''CoreModule

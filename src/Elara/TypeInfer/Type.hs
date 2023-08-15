@@ -2,8 +2,10 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-partial-fields #-} -- TODO: remove this
-{-# OPTIONS_GHC -Wno-orphans #-} -- The Pretty Monotype instance kinda has to be here without big refactors
+-- The Pretty Monotype instance kinda has to be here without big refactors
+{-# OPTIONS_GHC -Wno-orphans #-}
+-- TODO: remove this
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 module Elara.TypeInfer.Type where
 
@@ -802,6 +804,5 @@ prettyRecordLabel alwaysQuote field
 prettyAlternativeLabel ::
     Text ->
     Doc AnsiStyle
-prettyAlternativeLabel alternative
-     =
-        label (pretty alternative)
+prettyAlternativeLabel alternative =
+    label (pretty alternative)

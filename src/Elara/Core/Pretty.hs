@@ -11,9 +11,12 @@ import Prelude hiding (Alt)
 
 class PrettyVar v where
     prettyVar ::
-        Bool -> -- ^ With type
-        Bool -> -- ^ With parens
-        v -> -- ^ Variable
+        -- | With type
+        Bool ->
+        -- | With parens
+        Bool ->
+        -- | Variable
+        v ->
         Doc AnsiStyle
 
 instance PrettyVar Var where
