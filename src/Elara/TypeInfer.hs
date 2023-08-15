@@ -187,7 +187,6 @@ astTypeToInferType (Located sr ut) = astTypeToInferType' ut
             Just ty -> pure ty
             Nothing -> throw (UserDefinedTypeNotInContext sr t ctx)
     astTypeToInferType' ((Renamed.FunctionType a b)) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
-    -- astTypeToInferType' ((Renamed.TupleType ts)) = Infer.Tuple sr <$> traverse astTypeToInferType ts
     astTypeToInferType' (Renamed.ListType ts) = Infer.List sr <$> astTypeToInferType ts
     astTypeToInferType' ((Renamed.TypeConstructorApplication ctor arg)) = do
         ctor' <- astTypeToInferType ctor

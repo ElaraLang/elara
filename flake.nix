@@ -12,6 +12,9 @@
     h2jvm.url = "github:ElaraLang/h2jvm";
     # h2jvm.flake = fa
 
+      diagnose.url = "github:knightzmc/diagnose";
+    diagnose.flake = false;
+
   };
 
   outputs = inputs:
@@ -32,23 +35,11 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc94.override {
-            overrides = hfinal: hprev: {
-              mkDerivation = args: hprev.mkDerivation (args // {
-                # Since we are forcing our ideas upon mkDerivation, this change will
-                # affect every package in the package set.
-                enableLibraryProfiling = true;
-
-                # To actually use profiling on an executable, executable profiling
-                # needs to be enabled for the executable you want to profile. You
-                # can either do this globally or…
-                enableExecutableProfiling = true;
-              });
-            };
-          };
+          basePackages = pkgs.haskell.packages.ghc92;
 
           packages = {
             h2jvm.source = inputs.h2jvm;
+            diagnose.source = inputs.diagnose;
           };
 
           settings = {

@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "diagnose": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1692093697,
+        "narHash": "sha256-pX+RHcnCzOPKPcYcNpxyFPWoxoCOEwUaYtbgLGUF0QQ=",
+        "owner": "knightzmc",
+        "repo": "diagnose",
+        "rev": "59730d9207319d7cae13fb93f21062f2b40a823f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "knightzmc",
+        "repo": "diagnose",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
@@ -220,6 +236,7 @@
     },
     "root": {
       "inputs": {
+        "diagnose": "diagnose",
         "flake-parts": "flake-parts",
         "flake-root": "flake-root",
         "h2jvm": "h2jvm",
