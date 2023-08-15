@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 import Test.DocTest
 import Test.DocTest.Helpers
 
