@@ -53,6 +53,10 @@ import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
 import Text.Printf
 
+
+outDirName :: IsString s => s
+outDirName = "build"
+
 main :: IO ()
 main = run `finally` cleanup
   where
@@ -72,7 +76,7 @@ dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
-            let fileName = toString ("out/" <> nameFunc m <> suffix)
+            let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
             fileHandle <- openFile fileName WriteMode
             hPutDoc fileHandle contents
             hFlush fileHandle
@@ -83,7 +87,7 @@ dumpJSONGraphWith :: (ToJSON m) => TopologicalGraph a -> (a -> m) -> (a -> Text)
 dumpJSONGraphWith graph f nameFunc suffix = do
     let dump m = do
             let contents = encode (f m)
-            let fileName = toString ("out/" <> nameFunc m <> suffix)
+            let fileName = toString (outDirName <> "/" <>nameFunc m <> suffix)
             writeFileLBS fileName contents
 
     traverseGraph_ dump graph
@@ -91,7 +95,7 @@ dumpJSONGraphWith graph f nameFunc suffix = do
 runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
 runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe $ do
     start <- liftIO getCPUTime
-    liftIO (createDirectoryIfMissing True "build")
+    liftIO (createDirectoryIfMissing True outDirName)
 
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
