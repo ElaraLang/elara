@@ -155,7 +155,11 @@ createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name
 
 generateCode :: JVMExpr -> InnerEmit [Instruction]
 generateCode (Var (JVMLocal 0)) = pure [ALoad0]
-generateCode e@(App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) x) = do
+generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) = do -- load static var
+    let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
+    pure [uncurry3 GetStatic invokeStaticVars]
+
+generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) x) = do
     -- static function application
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateMethodDescriptor idVarType)
     x' <- generateCode x
@@ -171,6 +175,7 @@ generateCode e = error (showPretty e)
  That is, a type that can be compiled to a field rather than a method.
 -}
 typeIsValue :: Type -> Bool
+typeIsValue (AppTy con _) | con == ioCon = True
 typeIsValue c | c == stringCon = True
 typeIsValue _ = False
 

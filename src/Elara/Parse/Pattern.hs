@@ -5,7 +5,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
 import Elara.Parse.Primitives (HParser, inParens, inParens', located, token_)
-import HeadedMegaparsec (dbg, endHead)
+import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
 
@@ -40,14 +40,14 @@ listPattern = locatedPattern $ do
 
 consPattern :: HParser Pattern
 consPattern = locatedPattern $ do
-    (head, tail) <- inParens $ do
+    (head', tail') <- inParens $ do
         head' <- pattern'
         token_ TokenDoubleColon
         endHead
         tail' <- pattern'
         pure (head', tail')
 
-    pure $ ConsPattern head tail
+    pure $ ConsPattern head' tail'
 
 constructorPattern :: HParser Pattern
 constructorPattern = locatedPattern $ do

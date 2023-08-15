@@ -12,12 +12,12 @@
     h2jvm.url = "github:ElaraLang/h2jvm";
     # h2jvm.flake = fa
 
-      diagnose.url = "github:knightzmc/diagnose";
+    diagnose.url = "github:knightzmc/diagnose";
     diagnose.flake = false;
 
   };
 
-  outputs = inputs:
+  outputs = inputs@{ self, nixpkgs, ... }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
 
       systems = import inputs.systems;
@@ -27,15 +27,63 @@
         inputs.treefmt-nix.flakeModule
         inputs.flake-root.flakeModule
         inputs.mission-control.flakeModule
+
       ];
 
       perSystem = { self', system, config, pkgs, ... }: {
+        _module.args.pkgs = import self.inputs.nixpkgs {
+          inherit system;
+          overlays =
+            let
+      
+              ghcName = "ghc92";
+              # Desired new setting
+              enableProfiling = false;
+            in
+
+            [
+              (final: prev:
+                let
+                  inherit (final) lib;
+                in
+
+                {
+                  haskell = lib.recursiveUpdate prev.haskell {
+                    compiler.${ghcName} = prev.haskell.compiler.${ghcName}.override {
+                      # Unfortunately, the GHC setting is named differently for historical reasons
+                      enableProfiledLibs = enableProfiling;
+                    };
+                  };
+                })
+
+              (final: prev:
+                let
+                  inherit (final) lib;
+                  haskellLib = final.haskell.lib.compose;
+                in
+
+                {
+                  haskell = lib.recursiveUpdate prev.haskell {
+                    packages.${ghcName} = prev.haskell.packages.${ghcName}.override {
+                      overrides = hfinal: hprev: {
+                        mkDerivation = args: hprev.mkDerivation (args // {
+                          enableLibraryProfiling = enableProfiling;
+                          enableExecutableProfiling = enableProfiling;
+                        });
+                      };
+                    };
+                  };
+                })
+            ];
+        };
 
         haskellProjects.default = {
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
           basePackages = pkgs.haskell.packages.ghc92;
+
+
 
           packages = {
             h2jvm.source = inputs.h2jvm;
@@ -53,6 +101,7 @@
               # Skip the tests for now
               check = false;
             };
+
 
           };
 
@@ -107,6 +156,8 @@
 
 
         packages.default = self'.packages.elara;
+
+
 
 
         devShells.default = pkgs.mkShell {

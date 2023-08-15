@@ -7,15 +7,11 @@
 module Elara.TypeInfer.Type where
 
 import Control.Lens (Plated (..))
-import Data.Bifunctor (Bifunctor (..))
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
-import Data.String (IsString (..))
-import Data.Text (Text)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), builtin, keyword, label, operator, punctuation)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
-import GHC.Generics (Generic)
 
 import Elara.TypeInfer.Monotype (
     Monotype,
@@ -103,13 +99,13 @@ data Type s
       Custom {location :: s, name :: Text, typeArguments :: [Type s]}
     deriving stock (Eq, Functor, Generic, Show, Data)
 
-instance ToJSON c => ToJSON (Type c) where
+instance (Show c, ToJSON c) => ToJSON (Type c) where
     toJSON s = String (showPrettyUnannotated s)
 
 instance IsString (Type ()) where
     fromString string = VariableType{name = fromString string, location = ()}
 
-instance Pretty (Type s) where
+instance Show s => Pretty (Type s) where
     pretty = prettyQuantifiedType
 
 instance Plated (Type s) where
@@ -157,18 +153,18 @@ instance Plated (Type s) where
 data Record s = Fields [(Text, Type s)] RemainingFields
     deriving stock (Eq, Functor, Generic, Show, Data)
 
-instance ToJSON s => ToJSON (Record s)
+instance (Show s, ToJSON s) => ToJSON (Record s)
 
-instance Pretty (Record s) where
+instance Show s => Pretty (Record s) where
     pretty = prettyRecordType
 
 -- | A potentially polymorphic union type
 data Union s = Alternatives [(Text, Type s)] RemainingAlternatives
     deriving stock (Eq, Functor, Generic, Show, Data)
 
-instance ToJSON s => ToJSON (Union s)
+instance (Show s, ToJSON s) => ToJSON (Union s)
 
-instance Pretty (Union s) where
+instance Show s => Pretty (Union s) where
     pretty = prettyUnionType
 
 {- | This function should not be exported or generally used because it does not
@@ -194,6 +190,8 @@ fromMonotype monotype =
             Union{alternatives = Alternatives (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
             Scalar{..}
+        Monotype.Custom name typeArguments ->
+            Custom{typeArguments = map fromMonotype typeArguments, ..}
   where
     location = ()
 
@@ -447,7 +445,7 @@ data PreviousQuantifier
 instance StripLocation a b => StripLocation (Type a) (Type b) where
     stripLocation = fmap (stripLocation @a @b)
 
-prettyQuantifiedType :: Type s -> Doc AnsiStyle
+prettyQuantifiedType :: Show s => Type s -> Doc AnsiStyle
 prettyQuantifiedType type0
     | isQuantified type0 = Pretty.group (Pretty.flatAlt long short)
     | otherwise = prettyFunctionType type0
@@ -528,7 +526,7 @@ prettyQuantifiedType type0
     prettyLong _A =
         "  " <> prettyFunctionType _A
 
-prettyFunctionType :: Type s -> Doc AnsiStyle
+prettyFunctionType :: Show s => Type s -> Doc AnsiStyle
 prettyFunctionType type_@Function{} = Pretty.group (Pretty.flatAlt long short)
   where
     long = Pretty.align (prettyLong type_)
@@ -555,7 +553,7 @@ prettyFunctionType type_@Function{} = Pretty.group (Pretty.flatAlt long short)
 prettyFunctionType other =
     prettyApplicationType other
 
-prettyApplicationType :: Type s -> Doc AnsiStyle
+prettyApplicationType :: Show s => Type s -> Doc AnsiStyle
 prettyApplicationType Optional{..} = Pretty.group (Pretty.flatAlt long short)
   where
     short = builtin "Optional" <> " " <> prettyPrimitiveType type_
@@ -581,7 +579,7 @@ prettyApplicationType List{..} = Pretty.group (Pretty.flatAlt long short)
 prettyApplicationType other =
     prettyPrimitiveType other
 
-prettyPrimitiveType :: Type s -> Doc AnsiStyle
+prettyPrimitiveType :: Show s => Type s -> Doc AnsiStyle
 prettyPrimitiveType VariableType{..} =
     label (pretty name)
 prettyPrimitiveType UnsolvedType{..} =
@@ -592,6 +590,18 @@ prettyPrimitiveType Union{..} =
     prettyUnionType alternatives
 prettyPrimitiveType Scalar{..} =
     pretty scalar
+prettyPrimitiveType Custom{..} =
+    label (pretty name)
+        <> " "
+        <> Pretty.group (Pretty.flatAlt long short)
+  where
+    short =
+        foldMap (\t -> prettyQuantifiedType t <> " ") typeArguments
+
+    long =
+        Pretty.align
+            ( foldMap (\t -> prettyQuantifiedType t <> Pretty.hardline) typeArguments
+            )
 prettyPrimitiveType other =
     Pretty.group (Pretty.flatAlt long short)
   where
@@ -606,7 +616,7 @@ prettyPrimitiveType other =
                 <> punctuation ")"
             )
 
-prettyRecordType :: Record s -> Doc AnsiStyle
+prettyRecordType :: Show s => Record s -> Doc AnsiStyle
 prettyRecordType (Fields [] fields) =
     punctuation "{"
         <> ( case fields of
@@ -657,14 +667,14 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
                             <> punctuation "}"
             )
 
-    prettyShortFieldType :: (Text, Type s) -> Doc AnsiStyle
+    prettyShortFieldType :: Show s => (Text, Type s) -> Doc AnsiStyle
     prettyShortFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
             <> " "
             <> prettyQuantifiedType type_
 
-    prettyLongFieldType :: (Text, Type s) -> Doc AnsiStyle
+    prettyLongFieldType :: Show s => (Text, Type s) -> Doc AnsiStyle
     prettyLongFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
@@ -672,7 +682,7 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
             <> prettyQuantifiedType type_
             <> Pretty.hardline
 
-prettyUnionType :: Union s -> Doc AnsiStyle
+prettyUnionType :: Show s => Union s -> Doc AnsiStyle
 prettyUnionType (Alternatives [] alternatives) =
     punctuation "<"
         <> ( case alternatives of

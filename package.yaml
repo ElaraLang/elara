@@ -54,7 +54,7 @@ ghc-options:
   - -Winaccessible-code
   - -Wincomplete-record-updates
   - -Wpartial-fields
-  - -Werror=missing-home-modules
+  # - -Werror=missing-home-modules
   - -Widentities
   # - -Wmissing-export-lists
   - -fplugin=Polysemy.Plugin

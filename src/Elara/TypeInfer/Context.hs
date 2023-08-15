@@ -24,7 +24,6 @@ module Elara.TypeInfer.Context (
     complete,
 ) where
 
-import Data.List (foldl)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), label, operator, punctuation)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Existential (Existential)
@@ -130,7 +129,7 @@ data Entry s
       MarkerAlternatives (Existential Monotype.Union)
     deriving stock (Eq, Show)
 
-instance Pretty (Entry s) where
+instance Show s => Pretty (Entry s) where
     pretty = prettyEntry
 
 {- | A `Context` is an ordered list of `Entry`s
@@ -162,7 +161,7 @@ instance Pretty (Entry s) where
 -}
 type Context s = [Entry s]
 
-prettyEntry :: Entry s -> Doc AnsiStyle
+prettyEntry ::Show s =>  Entry s -> Doc AnsiStyle
 prettyEntry (Variable domain a) =
     label (pretty a) <> operator ":" <> " " <> pretty domain
 prettyEntry (UnsolvedType a) =
@@ -260,7 +259,7 @@ prettyAlternativeType (k, τ) =
     Bool
 -}
 solveType :: Context s -> Type s -> Type s
-solveType context type_ = foldl snoc type_ context
+solveType context type_ = foldl' snoc type_ context
   where
     snoc t (SolvedType a τ) = Type.solveType a τ t
     snoc t (SolvedFields a r) = Type.solveFields a r t

@@ -1,0 +1,7 @@
+module Prelude exposing (..)
+
+
+
+def Prelude.println : Text -> IO Unit 
+let Prelude.println =
+    Elara.Prim.elaraPrimitive : forall (a : Type) . Text -> a "println" : Text

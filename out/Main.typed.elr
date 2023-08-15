@@ -1,0 +1,15 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+def Main.id : forall (p : Type) . p -> p
+let Main.id =
+    \x_0 ->  x_0 : p
+
+def Main.msg : Text
+let Main.msg =
+    Main.id : forall (p : Type) . p -> p "hello" : Text
+
+def Main.main : IO Unit 
+let Main.main =
+    Prelude.println : Text -> IO Unit  Main.msg : Text

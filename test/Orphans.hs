@@ -9,9 +9,6 @@ import Data.Text (splitOn)
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NOpName, NTypeName, NVarName), Unqualified (..), VarName (..))
 
-instance IsString VarName where
-    fromString = NormalVarName . fromString
-
 instance IsString Name where
     fromString s = case s of
         "" -> error "Empty string is not a valid name"

@@ -6,7 +6,6 @@ module Print where
 
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
-import qualified Prettyprinter.Render.Text as Pretty.Text
 import Prettyprinter.Render.Terminal (putDoc)
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),

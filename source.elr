@@ -2,4 +2,6 @@ import Prelude
 
 let id = \x -> x
 
-let main = println (id "hello")
+let msg = (id "hello")
+
+let main = println msg

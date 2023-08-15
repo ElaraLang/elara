@@ -24,7 +24,7 @@ module Elara.TypeInfer.Infer where
 
 import Control.Lens ((^.))
 import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocated)
-import Elara.AST.Shunted (Expr)
+import Elara.AST.Shunted (Expr, _Expr)
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Existential (Existential)
@@ -34,9 +34,11 @@ import Elara.TypeInfer.Type (Type (..))
 import Control.Monad qualified as Monad
 import Data.Map qualified as Map
 import Data.Text qualified as Text
+import Data.Traversable (for)
 import Elara.AST.Shunted qualified as Syntax
 import Elara.AST.Typed qualified as Typed
 import Elara.AST.VarRef (mkLocal', withName')
+import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error
@@ -47,8 +49,6 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugColored, debugPretty)
-import Elara.Prim (primitiveTCContext)
 
 type TypedExpr = Typed.Expr
 
@@ -900,6 +900,17 @@ instantiateTypeL a _A0 = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesL p (Type.location _A0) alternatives
+        Type.Custom{name, typeArguments} -> do
+            let _ΓL = _Γ
+            let _ΓR = _Γ'
+
+            a1s <- for typeArguments \_ -> do
+                fresh
+
+            set (_ΓR <> (Context.SolvedType a (Monotype.Custom name (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
+
+            for_ (zip typeArguments a1s) \(typeArgument, a1) -> do
+                instantiateTypeL a1 typeArgument
 
 {- | This corresponds to the judgment:
 
@@ -1322,17 +1333,15 @@ infer (Syntax.Expr (Located location e0)) = do
         -- pretty self-explanatory: a scalar literal pures the matching
         -- scalar type.
         Syntax.Float f -> do
-            let t = (Type.Scalar{scalar = Monotype.Real, ..}) 
+            let t = (Type.Scalar{scalar = Monotype.Real, ..})
             pure $ Typed.Expr (Located location (Typed.Float f), t)
-
         Syntax.Int i -> do
-            let t = (Type.Scalar{scalar = Monotype.Integer, ..}) 
+            let t = (Type.Scalar{scalar = Monotype.Integer, ..})
             pure $ Typed.Expr (Located location (Typed.Int i), t)
         Syntax.String s -> do
-            let t = (Type.Scalar{scalar = Monotype.Text, ..}) 
+            let t = (Type.Scalar{scalar = Monotype.Text, ..})
             pure $ Typed.Expr (Located location (Typed.String s), t)
 
-        
 -- -- Anno
 -- Syntax.Annotation{..} -> do
 --     _Γ <- get
@@ -1486,7 +1495,6 @@ infer (Syntax.Expr (Located location e0)) = do
 -- -- All the type inference rules for scalars go here.  This part is
 -- -- pretty self-explanatory: a scalar literal returns the matching
 -- -- scalar type.
-
 
 -- Syntax.Scalar{ scalar = Syntax.Null, .. } -> do
 --     -- NOTE: You might think that you could just infer that `null`
@@ -1853,151 +1861,73 @@ infer (Syntax.Expr (Located location e0)) = do
     context Δ.
 -}
 check ::
+    forall r.
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Expr ->
     Type SourceRegion ->
     Sem r TypedExpr
--- The check function is the most important function to understand for the
--- bidirectional type-checking algorithm.
---
--- Most people, when they first run across the `check` function think that you
--- could get rid of most rules except for the final `Sub` rule, but that's not
--- true!
---
--- The reason you should add `check` rules for many more types (especially
--- complex types) is to ensure that subtyping rules work correctly.  For
--- example, consider this expression:
---
---     [ 2, -3 ]
---
--- If you omit the `check` rule for `List`s then the above expression will
--- fail to type-check because the first element of the list is a `Natural`
--- number and the second element of the `List` is an `Integer`.
---
--- However, if you keep the `check` rule for `List`s and add a type annotation:
---
---     [ 2, -3 ] : List Integer
---
--- … then it works because the interpreter knows to treat both elements as an
--- `Integer`.
---
--- In general, if you want subtyping to work reliably then you need to add
--- more cases to the `check` function so that the interpreter can propagate
--- top-level type annotations down to the "leaves" of your syntax tree.  If
--- you do this consistently then the user only ever needs to provide top-level
--- type annotations to fix any type errors that they might encounter, which is
--- a desirable property!
+check expr = check' (expr ^. (_Expr . unlocated))
+  where
+    check' :: Syntax.Expr' -> Type SourceRegion -> Sem r TypedExpr
+    -- The check function is the most important function to understand for the
+    -- bidirectional type-checking algorithm.
+    --
+    -- Most people, when they first run across the `check` function think that you
+    -- could get rid of most rules except for the final `Sub` rule, but that's not
+    -- true!
+    --
+    -- The reason you should add `check` rules for many more types (especially
+    -- complex types) is to ensure that subtyping rules work correctly.  For
+    -- example, consider this expression:
+    --
+    --     [ 2, -3 ]
+    --
+    -- If you omit the `check` rule for `List`s then the above expression will
+    -- fail to type-check because the first element of the list is a `Natural`
+    -- number and the second element of the `List` is an `Integer`.
+    --
+    -- However, if you keep the `check` rule for `List`s and add a type annotation:
+    --
+    --     [ 2, -3 ] : List Integer
+    --
+    -- … then it works because the interpreter knows to treat both elements as an
+    -- `Integer`.
+    --
+    -- In general, if you want subtyping to work reliably then you need to add
+    -- more cases to the `check` function so that the interpreter can propagate
+    -- top-level type annotations down to the "leaves" of your syntax tree.  If
+    -- you do this consistently then the user only ever needs to provide top-level
+    -- type annotations to fix any type errors that they might encounter, which is
+    -- a desirable property!
 
--- →I
--- check Syntax.Lambda{ location = _, ..} Type.Function{..} = do
---     scoped (Context.Annotation name input) do
---         check body output
+    -- →I
+    check' (Syntax.Lambda name body) Type.Function{..} = do
+        scoped (Context.Annotation (mkLocal' name) input) do
+            check body output
+    -- ∃I
+    check' e Type.Exists{domain = Domain.Type, ..} = do
+        scopedUnsolvedType nameLocation \a -> do
+            check' e (Type.substituteType name 0 a type_)
+    check' e Type.Exists{domain = Domain.Fields, ..} = do
+        scopedUnsolvedFields \a -> do
+            check' e (Type.substituteFields name 0 a type_)
+    check' e Type.Exists{domain = Domain.Alternatives, ..} = do
+        scopedUnsolvedAlternatives \a -> do
+            check' e (Type.substituteAlternatives name 0 a type_)
 
--- -- ∃I
--- check e Type.Exists{ domain = Domain.Type, .. } = do
---     scopedUnsolvedType nameLocation \a -> do
---         check e (Type.substituteType name 0 a type_)
--- check e Type.Exists{ domain = Domain.Fields, .. } = do
---     scopedUnsolvedFields \a -> do
---         check e (Type.substituteFields name 0 a type_)
--- check e Type.Exists{ domain = Domain.Alternatives, .. } = do
---     scopedUnsolvedAlternatives \a -> do
---         check e (Type.substituteAlternatives name 0 a type_)
+    -- ∀I
+    check' e Type.Forall{..} = do
+        scoped (Context.Variable domain name) do
+            check' e type_
 
--- -- ∀I
--- check e Type.Forall{..} = do
---     scoped (Context.Variable domain name) do
---         check e type_
+    -- Sub
+    check' e _B = do
+        _A@(Typed.Expr (_, _At)) <- infer expr
 
--- check Syntax.Operator{ operator = Syntax.Times, .. } _B@Type.Scalar{ scalar }
---     | scalar `elem` ([ Monotype.Natural, Monotype.Integer, Monotype.Real ] :: [Monotype.Scalar])= do
---     check left _B
+        _Θ <- get
 
---     _Γ <- get
-
---     check right (Context.solveType _Γ _B)
--- check Syntax.Operator{ operator = Syntax.Plus, .. } _B@Type.Scalar{ scalar }
---     | scalar `elem` ([ Monotype.Natural, Monotype.Integer, Monotype.Real, Monotype.Text ] :: [Monotype.Scalar]) = do
---     check left _B
-
---     _Γ <- get
-
---     check right (Context.solveType _Γ _B)
--- check Syntax.Operator{ operator = Syntax.Plus, .. } _B@Type.List{} = do
---     check left _B
-
---     _Γ <- get
-
---     check right (Context.solveType _Γ _B)
-
--- check Syntax.List{ location = _, ..} Type.List{..} = do
---     let process element = do
---             _Γ <- get
-
---             check element (Context.solveType _Γ type_)
-
---     traverse_ process elements
-
--- check e@Syntax.Record{ fieldValues } _B@Type.Record{ fields = Type.Fields fieldTypes fields }
---     | let mapValues = Map.fromList fieldValues
---     , let mapTypes  = Map.fromList fieldTypes
-
---     , let extraValues = Map.difference mapValues mapTypes
---     , let extraTypes  = Map.difference mapTypes  mapValues
-
---     , let both = Map.intersectionWith (,) mapValues mapTypes
---     , not (Map.null both) = do
---         let process (value, type_) = do
---                 _Γ <- get
-
---                 check value (Context.solveType _Γ type_)
-
---         traverse_ process both
-
---         let e' = Syntax.Record
---                 { fieldValues = Map.toList extraValues
---                 , location = Syntax.location e
---                 }
-
---         let _B' = Type.Record
---                 { location = Type.location _B
---                 , fields = Type.Fields (Map.toList extraTypes) fields
---                 }
-
---         _Γ <- get
-
---         check e' (Context.solveType _Γ _B')
-
--- check Syntax.Record{..} _B@Type.Scalar{ scalar = Monotype.JSON } = do
---     let process (_, value) = do
---             _Γ <- get
-
---             check value (Context.solveType _Γ _B)
-
---     traverse_ process fieldValues
--- check Syntax.List{..} _B@Type.Scalar{ scalar = Monotype.JSON } = do
---     traverse_ (`check` _B) elements
--- check Syntax.Scalar{ scalar = Syntax.Text _ } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
--- check Syntax.Scalar{ scalar = Syntax.Natural _ } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
--- check Syntax.Scalar{ scalar = Syntax.Integer _ } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
--- check Syntax.Scalar{ scalar = Syntax.Real _ } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
--- check Syntax.Scalar{ scalar = Syntax.Bool _ } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
--- check Syntax.Scalar{ scalar = Syntax.Null } Type.Scalar{ scalar = Monotype.JSON } = do
---     return ()
-
--- Sub
-check e _B = do
-    _A@(Typed.Expr (_, _At)) <- infer e
-
-    _Θ <- get
-
-    subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
-    pure _A
+        subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
+        pure _A
 
 {- | This corresponds to the judgment:
 
@@ -2049,7 +1979,6 @@ inferApplication Type.UnsolvedType{existential = a, ..} e = do
     _Γ <- get
 
     (_ΓR, _ΓL) <- Context.splitOnUnsolvedType a _Γ `orDie` MissingVariable a _Γ
-
 
     a1 <- fresh
     a2 <- fresh

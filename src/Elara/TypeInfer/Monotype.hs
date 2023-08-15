@@ -39,6 +39,7 @@ data Monotype
     | List Monotype
     | Record Record
     | Union Union
+    | Custom Text [Monotype]
     | Scalar Scalar
     deriving stock (Eq, Generic, Show)
 

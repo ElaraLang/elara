@@ -1,0 +1,5 @@
+module Main
+{ let Main.id : (p_1 -> p_1)  = \(x_0 : p_1) ->  (x_0 : p_1)
+; let Main.msg : String  = ((Main.id : (p_2 -> p_2)) "hello")
+; let Main.main : (IO ())  = ((Prelude.println : (String -> (IO ())))
+    (Main.msg : String)) }
