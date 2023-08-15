@@ -68,7 +68,7 @@ tokens :-
       \;                     { simpleTok TokenSemicolon }
       $white_no_nl+          ;
       \n$white*              { startWhite }
-      "--".*				         ;
+      "--" [\ ] .*  			   ;
 
       -- Keywords
       let					           { simpleTok TokenLet }
@@ -129,7 +129,6 @@ tokens :-
       @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
       @opIdentifier         { parametrizedTok TokenOperatorIdentifier identity}
-
   
   }
 

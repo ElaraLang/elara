@@ -21,6 +21,7 @@ spec = do
     symbols
     keywords
     identifiers
+    comments
     Indents.spec
 
 literals :: Spec
@@ -169,13 +170,14 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "++" <=> [TokenOperatorIdentifier "++"]
         lexUL "+++" <=> [TokenOperatorIdentifier "+++"]
         lexUL "==" <=> [TokenOperatorIdentifier "=="]
-        lexUL "<=>" <=> [TokenOperatorIdentifier "<=>"] -- hehe meta
+        lexUL "<=>" <=> [TokenOperatorIdentifier "<=>"] -- hehe <=> ception
         lexUL ">>=" <=> [TokenOperatorIdentifier ">>="]
         lexUL ">>>" <=> [TokenOperatorIdentifier ">>>"]
         lexUL ">>" <=> [TokenOperatorIdentifier ">>"]
         lexUL ">>-" <=> [TokenOperatorIdentifier ">>-"]
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
+        lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
 
     -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
     let tokenOpRes "" = []
@@ -189,3 +191,9 @@ identifiers = describe "Lexes identifiers" $ do
 
     let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
      in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
+
+comments :: Spec
+comments = describe "Lexes comments correctly" $ do
+    it "Ignores contents after a line comment" $ do
+        lexUL "-- foqwhfiu24np1<><!>@<£!><MS`lkxo1" <=> []
+        lexUL "12 -- the rest is ignored" <=> [TokenInt 12]

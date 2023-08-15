@@ -1,11 +1,12 @@
 module Elara.Parse.Names where
 
 import Data.Text qualified as Text
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..), _OpName)
 import Elara.Lexer.Token
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token_, (<??>))
 import HeadedMegaparsec (endHead)
+import Control.Lens (concatMapOf, concatOf, foldOf, folded, folding, toListOf, asumOf, Each (each), foldMapOf)
 
 varName :: HParser (MaybeQualified VarName)
 varName = operatorVarName <|> normalVarName
@@ -64,18 +65,14 @@ alphaVarName =
             )
 
 opName :: HParser OpName
-opName =
-    normal <|> dots
+opName =do
+    o <- some normal
+    pure $ OpName $ foldOf (each . _OpName) o
   where
     normal :: HParser OpName
     normal =
         satisfyMap $ \case
             TokenDoubleColon -> Just "::"
             TokenOperatorIdentifier i -> Just (OpName i)
+            TokenDot -> Just "."
             _ -> Nothing
-
-    dots :: HParser OpName
-    -- Parses a sequence of dots as an operator name. Necessary because of how the lexer handles dots in operator names.
-    dots = do
-        ds <- some (token_ TokenDot)
-        pure $ OpName (Text.replicate (length ds) ".")

@@ -162,6 +162,7 @@ generateCode (App (Var (Normal (Id (Global (Identity v)) _))) (Lit (String "prin
             [ ALoad0
             , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
             ]
+
 generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ = do
     -- load static var
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
