@@ -4,7 +4,7 @@
 
 module Elara.AST.Select where
 
-import Control.Lens (Getting, Lens', lens, mapping, over, sets, to, view)
+import Control.Lens (Getting, Lens', lens, view)
 import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Name (MaybeQualified, ModuleName, Name, Qualified, unqualified)
