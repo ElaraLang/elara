@@ -15,10 +15,10 @@ module Elara.TypeInfer.Monotype (
     RemainingAlternatives (..),
 ) where
 
+import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.TypeInfer.Existential (Existential)
-import Data.Aeson (ToJSON)
 
 {- $setup
    >>> import qualified Elara.TypeInfer.Monotype as Monotype
@@ -79,6 +79,8 @@ data Scalar
       -- >>> pretty Text
       -- Text
       Text
+    | -- | Unit type
+      Unit
     deriving stock (Eq, Generic, Show, Data)
 
 instance Pretty Scalar where
@@ -88,6 +90,7 @@ instance Pretty Scalar where
     pretty Natural = "Natural"
     pretty Integer = "Integer"
     pretty Text = "Text"
+    pretty Unit = "Unit"
 
 instance ToJSON Scalar
 

@@ -8,9 +8,13 @@ flags:
   diagnose:
     megaparsec-compat: true
 
+build:
+  library-profiling: true
+  executable-profiling: true
+
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
-  commit: 9ba960c96d1bb4e2c92db60c47552f4cab24f7be
+  commit: 6f7ba6c9a5f4e2d11661b2852505912bd8c74775
 - OneTuple-0.4.1.1@sha256:be0324c77a0eaf1d48b771b7e86f2b19d53a9f5ecc6ab2c914dab7dad309c671,2539
 - QuickCheck-2.14.3@sha256:f03d2f404d5ba465453d0fbc1944832789a759fe7c4f9bf8616bc1378a02fde4,7847
 - primitive-0.8.0.0@sha256:826bf2a702a26ef87532a135808abad69d74f70ead39f26c06d034b1f0537a19,3104

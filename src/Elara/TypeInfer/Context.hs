@@ -407,8 +407,7 @@ splitOnUnsolvedType ::
     Existential Monotype ->
     Context s ->
     Maybe (Context s, Context s)
-splitOnUnsolvedType a0 (UnsolvedType a1 : entries)
-    | a0 == a1 = pure ([], entries)
+splitOnUnsolvedType a0 (UnsolvedType a1 : entries) | a0 == a1 = pure ([], entries)
 splitOnUnsolvedType a (entry : entries) = do
     (prefix, suffix) <- splitOnUnsolvedType a entries
     pure (entry : prefix, suffix)

@@ -63,6 +63,7 @@ ghc-options:
   - -fdefer-typed-holes
   # - -fno-show-valid-hole-fits
   - -j4 +RTS -A32m -RTS
+  
 
 default-extensions:
   - OverloadedStrings

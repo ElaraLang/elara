@@ -48,6 +48,7 @@ import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
 import Print (debugColored, debugPretty)
+import Elara.Prim (primitiveTCContext)
 
 type TypedExpr = Typed.Expr
 
@@ -66,8 +67,8 @@ initialStatus :: Status
 initialStatus =
     Status
         { count = 0
-        , context = []
-        , writeOnlyContext = []
+        , context = primitiveTCContext
+        , writeOnlyContext = primitiveTCContext
         }
 
 orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
@@ -1317,6 +1318,21 @@ infer (Syntax.Expr (Located location e0)) = do
 
             pure $ Typed.Expr (Located location (Typed.FunctionCall _A typedArgument), appType)
 
+        -- All the type inference rules for scalars go here.  This part is
+        -- pretty self-explanatory: a scalar literal pures the matching
+        -- scalar type.
+        Syntax.Float f -> do
+            let t = (Type.Scalar{scalar = Monotype.Real, ..}) 
+            pure $ Typed.Expr (Located location (Typed.Float f), t)
+
+        Syntax.Int i -> do
+            let t = (Type.Scalar{scalar = Monotype.Integer, ..}) 
+            pure $ Typed.Expr (Located location (Typed.Int i), t)
+        Syntax.String s -> do
+            let t = (Type.Scalar{scalar = Monotype.Text, ..}) 
+            pure $ Typed.Expr (Located location (Typed.String s), t)
+
+        
 -- -- Anno
 -- Syntax.Annotation{..} -> do
 --     _Γ <- get
@@ -1470,20 +1486,7 @@ infer (Syntax.Expr (Located location e0)) = do
 -- -- All the type inference rules for scalars go here.  This part is
 -- -- pretty self-explanatory: a scalar literal returns the matching
 -- -- scalar type.
--- Syntax.Scalar{ scalar = Syntax.Bool _, .. } -> do
---     return Type.Scalar{ scalar = Monotype.Bool, .. }
 
--- Syntax.Scalar{ scalar = Syntax.Real _, .. } -> do
---     return Type.Scalar{ scalar = Monotype.Real, .. }
-
--- Syntax.Scalar{ scalar = Syntax.Integer _, .. } -> do
---     return Type.Scalar{ scalar = Monotype.Integer, .. }
-
--- Syntax.Scalar{ scalar = Syntax.Natural _, .. } -> do
---     return Type.Scalar{ scalar = Monotype.Natural, .. }
-
--- Syntax.Scalar{ scalar = Syntax.Text _, .. } -> do
---     return Type.Scalar{ scalar = Monotype.Text, .. }
 
 -- Syntax.Scalar{ scalar = Syntax.Null, .. } -> do
 --     -- NOTE: You might think that you could just infer that `null`
@@ -2047,6 +2050,7 @@ inferApplication Type.UnsolvedType{existential = a, ..} e = do
 
     (_ΓR, _ΓL) <- Context.splitOnUnsolvedType a _Γ `orDie` MissingVariable a _Γ
 
+
     a1 <- fresh
     a2 <- fresh
 
@@ -2056,11 +2060,11 @@ inferApplication Type.UnsolvedType{existential = a, ..} e = do
 
     let t = Type.UnsolvedType{existential = a2, ..}
 
-    pure $ (e', t)
+    pure (e', t)
 inferApplication Type.Function{..} e = do
     e' <- check e input
 
-    pure $ (e', output)
+    pure (e', output)
 inferApplication Type.VariableType{..} _ = do
     throw (NotNecessarilyFunctionType location name)
 inferApplication _A _ = do
