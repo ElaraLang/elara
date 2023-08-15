@@ -167,7 +167,7 @@ generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), 
     -- load static var
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
     pure [uncurry3 GetStatic invokeStaticVars]
-generateCode e@(App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) (Just expectedType) = do
+generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) (Just expectedType) = do
     -- static function application
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateMethodDescriptor idVarType)
 
