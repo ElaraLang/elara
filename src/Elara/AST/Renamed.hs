@@ -1,13 +1,11 @@
-
-
 {- | Renamed AST Type
  This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
 -}
 module Elara.AST.Renamed where
 
-import Elara.AST.Generic (NoFieldValue, Select, ASTLocate', ASTQual, DataConCantHappen)
+import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, NoFieldValue, Select)
 import Elara.AST.Generic qualified as Generic
-import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName, Name)
+import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (LocatedAST (Renamed))
 import Elara.AST.VarRef (VarRef)

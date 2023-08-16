@@ -1,8 +1,10 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
+
 module Elara.Parse.Module where
 
 import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import' (..), Module (..), Module' (..))
 
+import Elara.AST.Name
 import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Lexer.Token (Token (..))
@@ -12,7 +14,6 @@ import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
-import Elara.AST.Name
 
 module' :: HParser (Module 'Frontend)
 module' = fmapLocated Module $ do

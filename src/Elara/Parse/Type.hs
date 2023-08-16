@@ -3,9 +3,9 @@ module Elara.Parse.Type where
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
 import Data.List.NonEmpty ((<|))
 
+import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendType, FrontendType')
 import Elara.AST.Generic (Type (..), Type' (..))
-import Data.Generics.Wrapped
 import Elara.AST.Name (ModuleName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.Lexer.Token (Token (..))

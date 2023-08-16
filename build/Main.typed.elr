@@ -4,13 +4,12 @@ import Prelude exposing (..)
 
 def Main.identity : forall (p : Type) . p -> p
 let Main.identity =
-    \x_0 -> x_0 : p
+    \x_0 -> x_0 : p : forall (p : Type) . p -> p
 
 def Main.msg : Text
 let Main.msg =
-    Main.identity : forall (p : Type) . p -> p "hello, world!" : Text
+    Main.identity : forall (p : Type) . p -> p "hello, world!" : Text : Text
 
 def Main.main : IO Unit 
 let Main.main =
-    Prelude.println : Text -> IO Unit 
-        (Main.identity : forall (p : Type) . p -> p Main.msg : Text : Text)
+    Prelude.println : Text -> IO Unit  Main.msg : Text : IO Unit 

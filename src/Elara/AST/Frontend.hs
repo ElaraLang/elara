@@ -10,7 +10,6 @@ import Elara.AST.Select (LocatedAST (Frontend))
 type instance ASTLocate' 'Frontend = Located
 type instance ASTQual 'Frontend = MaybeQualified
 
-
 -- Selections for 'Expr'
 type instance Select "ExprType" 'Frontend = Maybe FrontendType
 type instance Select "LambdaPattern" 'Frontend = [FrontendPattern]

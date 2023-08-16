@@ -7,12 +7,14 @@ module Main (
 where
 
 import Control.Exception as E
-import Control.Lens (to, view)
+import Control.Lens (each, to, view, (^.), (^..), _1)
 import Data.Aeson (ToJSON, encode)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
+import Data.Generics.Sum
 import Data.Generics.Wrapped
+import Elara.AST.Generic (Expr, Expr', NoFieldValue (NoFieldValue))
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
@@ -73,8 +75,8 @@ main = run `finally` cleanup
         printDiagnostic stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
-dumpGraph :: TopologicalGraph m -> (m -> Doc AnsiStyle) -> (m -> Text) -> Text -> IO ()
-dumpGraph graph pretty nameFunc suffix = do
+dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
             let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
@@ -103,29 +105,27 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     let graph = createGraph [source, prelude]
     shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
 
-    -- when dumpShunted $ do
-    --     liftIO
-    --         ( dumpGraph
-    --             shuntedGraph
-    --             (pretty @(Module 'Shunted))
-    --             (view ((_Unwrapped . unlocated . field' @"name") . to nameText))
-    --             ".shunted.elr"
-    --         )
+    when dumpShunted $ do
+        liftIO
+            ( dumpGraph
+                shuntedGraph
+                (view (_Unwrapped . unlocated . field' @"name" . to nameText))
+                ".shunted.elr"
+            )
 
     typedGraph <- inferModules shuntedGraph
 
-    -- when dumpTyped $ do
-    --     liftIO
-    --         ( dumpGraph
-    --             typedGraph
-    --             pretty
-    --             (view (_Unwrapped . unlocated . field' @"name" . to nameText))
-    --             ".typed.elr"
-    --         )
+    when dumpTyped $ do
+        liftIO
+            ( dumpGraph
+                typedGraph
+                (view (_Unwrapped . unlocated . field' @"name" . to nameText))
+                ".typed.elr"
+            )
 
     coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
-    -- when dumpCore $ liftIO $ dumpGraph coreGraph pretty (view (field' @"name" . to nameText)) ".core.elr"
+    when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
     classes <- runReader java8 (emitGraph coreGraph)
 

@@ -38,7 +38,6 @@ library
       Elara.AST.Select
       Elara.AST.Shunted
       Elara.AST.StripLocation
-      Elara.AST.Ttg
       Elara.AST.Typed
       Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
@@ -116,7 +115,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS
   build-tools:
       alex
   build-depends:
@@ -164,7 +163,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS -threaded
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -threaded
   build-depends:
       aeson
     , array
@@ -212,7 +211,7 @@ test-suite doctest
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS -threaded -O0
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -threaded -O0
   build-depends:
       Glob
     , aeson
@@ -274,7 +273,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -j4 +RTS -A32m -RTS -threaded -O0
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -fplugin=Polysemy.Plugin -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -threaded -O0
   build-depends:
       HUnit
     , QuickCheck

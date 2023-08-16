@@ -82,7 +82,7 @@
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
           basePackages = pkgs.haskell.packages.ghc92.override (old: {
-            overrides = lib.composeExtensions (old.overrides or (_: _: {})) (self: super: {
+            overrides = lib.composeExtensions (old.overrides or (_: _: { })) (self: super: {
               mkDerivation = args: super.mkDerivation (args // {
                 enableLibraryProfiling = true;
               });
@@ -153,7 +153,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-typed --dump-core' --colour=always --restart=source.elr
+              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-shunted --dump-typed --dump-core' --colour=always --restart=source.elr
             '';
             category = "Primary";
           };

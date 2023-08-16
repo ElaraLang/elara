@@ -18,10 +18,10 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Generic (ASTLocate, ASTLocate', Declaration, FullASTQual)
 import Elara.AST.Region (Located, unlocated)
+import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
 import Unsafe.Coerce
-import Elara.Data.Pretty
-import qualified Elara.Data.Pretty.Styles as Style
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
     deriving (Generic)

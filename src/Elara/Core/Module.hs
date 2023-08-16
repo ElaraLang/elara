@@ -5,18 +5,18 @@
 module Elara.Core.Module where
 
 import Control.Lens (makeFields, view)
+import Data.Generics.Product
 import Elara.AST.Name (ModuleName)
 import Elara.Core (CoreBind)
 import Elara.Core.Pretty (prettyVdefg)
 import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
-import Data.Generics.Product
 
 data CoreModule = CoreModule
     { name :: ModuleName
     , declarations :: [CoreDeclaration]
     }
-    deriving Generic
+    deriving (Generic)
 
 instance HasDependencies CoreModule where
     type Key CoreModule = ModuleName

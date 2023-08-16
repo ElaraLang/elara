@@ -79,8 +79,8 @@ prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)
 
 prettyValueDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> a2 -> Maybe a3 -> Doc AnsiStyle
-prettyValueDeclaration name e t =
-    let defLine = fmap (\t' -> "def" <+> pretty name <+> ":" <+> pretty t') t
+prettyValueDeclaration name e expectedType =
+    let defLine = fmap (\t' -> "def" <+> pretty name <+> ":" <+> pretty t') expectedType
         rest =
             [ "let" <+> pretty name <+> "="
             , indent indentDepth (pretty e)

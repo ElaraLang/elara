@@ -61,7 +61,7 @@ ghc-options:
   - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
   - -feager-blackholing
   - -fdefer-typed-holes
-  # - -fno-show-valid-hole-fits
+  - -fno-show-valid-hole-fits
   - -j4 +RTS -A32m -RTS
   
 

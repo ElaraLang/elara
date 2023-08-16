@@ -3,9 +3,9 @@ module Elara.TypeInfer.Error where
 import Data.Map qualified as Map
 import Elara.AST.Name (Name)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Shunted
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
-import Elara.AST.Shunted
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
@@ -59,7 +59,7 @@ data TypeInferenceError
     | --
       UserDefinedTypeNotInContext SourceRegion ShuntedType (Context SourceRegion)
     | KindInferError KindInferError
-    deriving Show
+    deriving (Show)
 
 instance ReportableError TypeInferenceError where
     report (MissingVariable a _Γ) =

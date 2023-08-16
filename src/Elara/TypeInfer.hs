@@ -48,7 +48,6 @@ inferModule ::
     Sem r (Module Typed)
 inferModule = traverseModuleRevTopologically inferDeclaration
 
-
 inferDeclaration ::
     forall r.
     HasCallStack =>

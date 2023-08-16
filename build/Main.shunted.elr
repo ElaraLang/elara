@@ -1,0 +1,12 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+let Main.identity =
+    \x_0 -> x_0  
+
+let Main.main =
+    Prelude.println  Main.msg  
+
+let Main.msg =
+    Main.identity  "hello, world!"  

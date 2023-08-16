@@ -1,6 +1,7 @@
 module Elara.Parse.Pattern (pattern') where
 
 import Elara.AST.Frontend
+import Elara.AST.Generic (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
@@ -8,8 +9,6 @@ import Elara.Parse.Primitives (HParser, inParens, inParens', located, token_)
 import HeadedMegaparsec (endHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
-import Elara.AST.Generic (Pattern(..), Pattern' (..))
-
 
 pattern' :: HParser FrontendPattern
 pattern' =
@@ -24,7 +23,7 @@ pattern' =
         ]
 
 locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern
-locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located 
+locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located
 
 varPattern :: HParser FrontendPattern
 varPattern = locatedPattern (VarPattern <$> located unqualifiedNormalVarName)

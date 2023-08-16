@@ -245,7 +245,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (Tuple es) = Tuple <$> traverse shuntExpr es
 
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
-shuntPattern (Pattern lp) = (\x -> Pattern (x, _)) <$> traverseOf unlocated shuntPattern' ( lp ^. _1)
+shuntPattern (Pattern lp) = (\x -> Pattern (x, _)) <$> traverseOf unlocated shuntPattern' (lp ^. _1)
   where
     shuntPattern' :: RenamedPattern' -> Sem r ShuntedPattern'
     shuntPattern' (VarPattern v) = pure (VarPattern v)

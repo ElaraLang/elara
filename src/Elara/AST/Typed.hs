@@ -1,6 +1,4 @@
-
 {-# LANGUAGE UndecidableInstances #-}
-
 
 {- | Typed AST Type
  This is very similar to 'Elara.AST.Shunted.Expr' except:
@@ -9,7 +7,9 @@
 -}
 module Elara.AST.Typed where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, NoFieldValue, Select, DataConCantHappen)
+import Control.Lens (Plated)
+import Data.Data (Data)
+import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, NoFieldValue, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (..), SourceRegion)
@@ -17,8 +17,6 @@ import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Type)
-import Data.Data (Data)
-import Control.Lens (Plated)
 
 type instance ASTLocate' 'Typed = Located
 type instance ASTQual 'Typed = Qualified
@@ -73,8 +71,7 @@ type TypedDeclarationBody' = Generic.DeclarationBody' 'Typed
 
 type TypedTypeDeclaration = Generic.TypeDeclaration 'Typed
 
-
-instance Plated TypedExpr 
+instance Plated TypedExpr
 instance Plated TypedExpr'
 instance Plated TypedType
 instance Plated TypedType'

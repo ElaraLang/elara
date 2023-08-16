@@ -1,19 +1,18 @@
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
-
 import Control.Lens (to, view, (^.), _2)
+import Data.Generics.Product
+import Data.Generics.Wrapped
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST
-import Data.Generics.Product
-import Data.Generics.Wrapped
 import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Select (LocatedAST(Typed))
+import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
-import Elara.AST.Typed 
+import Elara.AST.Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
@@ -103,7 +102,7 @@ moduleToCore (Module (Located _ m)) = do
                     ty <- typeToCore (v ^. _Unwrapped . _2)
                     v' <- toCore v
                     pure (ty, v')
-                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. _Unwrapped . unlocated . field' @"name" . unlocated ))) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. _Unwrapped . unlocated . field' @"name" . unlocated))) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls

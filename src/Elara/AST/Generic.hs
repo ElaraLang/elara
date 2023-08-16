@@ -2,6 +2,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RoleAnnotations #-}
@@ -40,6 +42,10 @@ dataConCantHappen x = case x of {}
 
 data NoFieldValue = NoFieldValue
     deriving (Generic, Data)
+
+instance Pretty NoFieldValue where
+    pretty :: HasCallStack => NoFieldValue -> Doc AnsiStyle
+    pretty _ = error "This instance should never be used"
 
 {- | Used to select a field type for a given AST.
 
@@ -167,7 +173,7 @@ class RUnlocate ast where
 instance (ASTLocate' ast ~ Located) => RUnlocate (ast :: LocatedAST) where
     rUnlocate = view unlocated
 
-instance (ASTLocate' ast ~ Unlocated, Pretty a20, Pretty a1, Pretty a1, Pretty a20, Pretty a1) => RUnlocate (ast :: UnlocatedAST) where
+instance (ASTLocate' ast ~ Unlocated) => RUnlocate (ast :: UnlocatedAST) where
     rUnlocate = identity
 
 type ASTLocate :: a -> Kind.Type -> Kind.Type
@@ -245,54 +251,71 @@ deriving instance
     Show (Type' ast)
 
 instance
-    ( Pretty (Expr ast)
-    , Pretty (ASTLocate ast (Declaration' ast))
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "TypeVar" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "DeclarationName" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (TypeDeclaration ast)))
-    , Pretty a3
-    , ToMaybe (Select "ValuePatterns" ast) a3
-    , RUnlocate (ast :: b)
+    ( Pretty (ASTLocate ast (Declaration' ast))
     ) =>
     Pretty (Declaration ast)
     where
     pretty (Declaration ldb) = pretty ldb
 
+data UnknownPretty = forall a. Pretty a => UnknownPretty a
+
+instance Pretty UnknownPretty where
+    pretty (UnknownPretty a) = pretty a
+
 instance
     ( Pretty (Expr ast)
     , Pretty (CleanupLocated (ASTLocate' ast (Select "TypeVar" ast)))
     , Pretty (CleanupLocated (ASTLocate' ast (Select "DeclarationName" ast)))
     , Pretty (CleanupLocated (ASTLocate' ast (TypeDeclaration ast)))
-    , Pretty a3
-    , ToMaybe (Select "ValuePatterns" ast) a3
+    , Pretty valueType
+    , ToMaybe (Select "ValueType" ast) (Maybe valueType)
+    , valueType ~ UnwrapMaybe (Select "ValueType" ast)
+    , Pretty exprType
+    , exprType ~ UnwrapMaybe (Select "ExprType" ast)
+    , (ToMaybe (Select "ExprType" ast) (Maybe exprType))
     , RUnlocate (ast :: b)
     ) =>
     Pretty (Declaration' ast)
     where
     pretty (Declaration' _ n b) =
-        let val = b ^. _Unwrapped :: ASTLocate ast (DeclarationBody' ast)
+        let val = b ^. _Unwrapped
             y = rUnlocate @b @ast @(DeclarationBody' ast) val
          in prettyDB n y
       where
-        prettyDB n (Value e t _) = prettyValueDeclaration n e (toMaybe t :: Maybe a3)
+        prettyDB n (Value e@(Expr (_, t)) _ t') =
+            let typeOfE =
+                    (UnknownPretty <$> (toMaybe t :: Maybe exprType))
+                        <|> (UnknownPretty <$> (toMaybe t' :: Maybe valueType))
+             in prettyValueDeclaration n e typeOfE
         prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
 
 instance Pretty (TypeDeclaration ast) where
     pretty _ = "TODO"
 
-class ToMaybe i o where
-    toMaybe :: i -> Maybe o
+{-# WARNING ToMaybe "Debug is still in code" #-}
 
-instance ToMaybe NoFieldValue a where
+-- | When fields may be optional, we need a way of
+class ToMaybe i o where
+    toMaybe :: i -> o
+
+instance {-# OVERLAPPING #-} ToMaybe NoFieldValue (Maybe a) where
     toMaybe _ = Nothing
 
-instance ToMaybe (Maybe a) a where
+instance ToMaybe (Maybe a) (Maybe a) where
     toMaybe = identity
+
+instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
+    toMaybe = Just
+
+type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
+    UnwrapMaybe (Maybe a) = a
+    UnwrapMaybe a = a
 
 instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Expr' ast)))
     , Pretty a1
-    , ToMaybe (Select "ExprType" ast) a1
+    , ToMaybe (Select "ExprType" ast) (Maybe a1)
+    , a1 ~ UnwrapMaybe (Select "ExprType" ast)
     ) =>
     Pretty (Expr ast)
     where
@@ -311,7 +334,8 @@ instance
     , (Pretty (Select "InParens" ast))
     , (Pretty (CleanupLocated (ASTLocate' ast (Select "LetParamName" ast))))
     , Pretty a2
-    , (ToMaybe (Select "LetPattern" ast) a2)
+    , a2 ~ UnwrapMaybe (Select "LetPattern" ast)
+    , (ToMaybe (Select "LetPattern" ast) (Maybe a2))
     ) =>
     Pretty (Expr' ast)
     where
@@ -333,9 +357,9 @@ instance
     pretty (InParens e) = parens (pretty e)
 
 instance
-    ( Pretty (Pattern' ast)
-    , Pretty a1
-    , ToMaybe (Select "PatternType" ast) a1
+    ( Pretty a1
+    , ToMaybe (Select "PatternType" ast) (Maybe a1)
+    , a1 ~ UnwrapMaybe (Select "PatternType" ast)
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     ) =>
     Pretty (Pattern ast)
@@ -346,7 +370,13 @@ instance
         long = pretty p <+> pretty te
         short = align (pretty p <+> pretty te)
 
-instance (Pretty (CleanupLocated (ASTLocate' ast (Select "VarPat" ast))), Pretty (Pattern ast), Pretty (CleanupLocated (ASTLocate' ast (Select "ConPat" ast)))) => Pretty (Pattern' ast) where
+instance
+    ( Pretty (CleanupLocated (ASTLocate' ast (Select "VarPat" ast)))
+    , Pretty (Pattern ast)
+    , Pretty (CleanupLocated (ASTLocate' ast (Select "ConPat" ast)))
+    ) =>
+    Pretty (Pattern' ast)
+    where
     pretty (VarPattern v) = pretty v
     pretty (ConstructorPattern c ps) = prettyConstructorPattern c ps
     pretty (ListPattern l) = prettyListPattern l

@@ -9,6 +9,10 @@
 -}
 module Elara.AST.Shunted where
 
+import Control.Lens (Plated, concatMapOf, cosmosOn, view, (^.), _1)
+import Data.Data (Data)
+import Data.Generics.Product
+import Data.Generics.Wrapped
 import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, Expr' (..), NoFieldValue, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
@@ -17,10 +21,6 @@ import Elara.AST.Select (LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef, VarRef' (..))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Data.Unique (Unique)
-import Control.Lens (view, cosmosOn, concatMapOf, _1, (^.), Plated)
-import Data.Generics.Product
-import Data.Generics.Wrapped
-import Data.Data (Data)
 
 type instance ASTLocate' 'Shunted = Located
 type instance ASTQual 'Shunted = Qualified
@@ -75,8 +75,7 @@ type ShuntedDeclarationBody' = Generic.DeclarationBody' 'Shunted
 
 type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
 
-
-instance Plated ShuntedExpr 
+instance Plated ShuntedExpr
 instance Plated ShuntedExpr'
 instance Plated ShuntedType
 instance Plated ShuntedType'

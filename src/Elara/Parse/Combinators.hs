@@ -26,7 +26,8 @@ sepEndBy1' p sep = do
 -- Lift a binary operator to work on `Expr` instead of `FrontendExpr`. Probably not the best way to do this, but it works
 
 liftedBinary ::
-    Monad m => m t ->
+    Monad m =>
+    m t ->
     (t -> a -> a -> a1) ->
     Iso' a (Located a1) ->
     m (a -> a -> a)

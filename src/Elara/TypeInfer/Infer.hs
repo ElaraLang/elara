@@ -35,8 +35,9 @@ import Elara.TypeInfer.Type (Type (..))
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Generic (Expr (..), Expr' (..))
+import Elara.AST.Generic qualified as Syntax
+import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
 import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
@@ -49,7 +50,6 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Elara.AST.Typed
 
 -- | Type-checking state
 data Status = Status
@@ -167,10 +167,8 @@ wellFormedType _Γ type0 =
 
         -- ForallWF
         Type.Forall{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
-
         -- ForallWF
         Type.Exists{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
-
         -- EvarWF / SolvedEvarWF
         _A@Type.UnsolvedType{..}
             | any predicate _Γ -> pass
@@ -224,11 +222,9 @@ subtype _A0 _B0 = do
         -- <:Var
         (Type.VariableType{name = a0}, Type.VariableType{name = a1})
             | a0 == a1 -> wellFormedType _Γ _A0
-
         -- <:Exvar
         (Type.UnsolvedType{existential = a0}, Type.UnsolvedType{existential = a1})
             | a0 == a1 && Context.UnsolvedType a0 `elem` _Γ -> pass
-
         -- InstantiateL
         (Type.UnsolvedType{existential = a}, _)
             -- The `not (a `Type.typeFreeIn` _B)` is the "occurs check" which
@@ -240,13 +236,13 @@ subtype _A0 _B0 = do
             -- cannot refer to the record or union that they belong to,
             -- respectively.
             | not (a `Type.typeFreeIn` _B0)
-                && elem (Context.UnsolvedType a) _Γ -> instantiateTypeL a _B0
-
+                && elem (Context.UnsolvedType a) _Γ ->
+                instantiateTypeL a _B0
         -- InstantiateR
         (_, Type.UnsolvedType{existential = a})
             | not (a `Type.typeFreeIn` _A0)
-                && elem (Context.UnsolvedType a) _Γ -> instantiateTypeR _A0 a
-
+                && elem (Context.UnsolvedType a) _Γ ->
+                instantiateTypeR _A0 a
         -- <:→
         (Type.Function{input = _A1, output = _A2}, Type.Function{input = _B1, output = _B2}) -> do
             subtype _B1 _A1
@@ -293,12 +289,10 @@ subtype _A0 _B0 = do
             subtype _A0 (Type.substituteType name 0 a type_)
         (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name 0 a type_)
         (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name 0 a type_)
-
         -- <:∀L
         (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name 0 a type_) _B0
         (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name 0 a type_) _B0
         (Type.Forall{domain = Domain.Alternatives, ..}, _) -> scopedUnsolvedAlternatives \a -> subtype (Type.substituteAlternatives name 0 a type_) _B0
-
         -- <:∃L
         (Type.Exists{..}, _) -> scoped (Context.Variable domain name) do
             subtype type_ _B0
@@ -310,14 +304,12 @@ subtype _A0 _B0 = do
             | s0 == s1 -> pass
         (Type.Optional{type_ = _A}, Type.Optional{type_ = _B}) -> subtype _A _B
         (Type.List{type_ = _A}, Type.List{type_ = _B}) -> subtype _A _B
-
         -- This is where you need to add any non-trivial subtypes.  For example,
         -- the following three rules specify that `Natural` is a subtype of
         -- `Integer`, which is in turn a subtype of `Real`.
         (Type.Scalar{scalar = Monotype.Natural}, Type.Scalar{scalar = Monotype.Integer}) -> pass
         (Type.Scalar{scalar = Monotype.Natural}, Type.Scalar{scalar = Monotype.Real}) -> pass
         (Type.Scalar{scalar = Monotype.Integer}, Type.Scalar{scalar = Monotype.Real}) -> pass
-
         -- Similarly, this is the rule that says that `T` is a subtype of
         -- `Optional T`.  If that feels unprincipled to you then delete this
         -- rule.
@@ -395,7 +387,6 @@ subtype _A0 _B0 = do
             case (fields0, fields1) of
                 -- The two records are identical, so there's nothing left to do
                 _ | null extraA && null extraB && fields0 == fields1 -> pass
-
                 -- Both records type have unsolved Fields variables.  Great!
                 -- This is the most flexible case, since we can replace these
                 -- unsolved variables with whatever fields we want to make the
@@ -715,18 +706,16 @@ instantiateTypeL a _A0 = do
         -- InstLReach
         Type.UnsolvedType{..}
             | let _ΓL = _Γ
-            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' -> set (_ΓR <> (Context.SolvedType existential (Monotype.UnsolvedType a) : _ΓM) <> (Context.UnsolvedType a : _ΓL))
-
+            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' ->
+                set (_ΓR <> (Context.SolvedType existential (Monotype.UnsolvedType a) : _ΓM) <> (Context.UnsolvedType a : _ΓL))
         -- InstLSolve
         Type.UnsolvedType{..} -> instLSolve (Monotype.UnsolvedType existential)
         Type.VariableType{..} -> instLSolve (Monotype.VariableType name)
         Type.Scalar{..} -> instLSolve (Monotype.Scalar scalar)
-
         -- InstLExt
         Type.Exists{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name 0 b type_) a
         Type.Exists{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name 0 b type_) a
         Type.Exists{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name 0 b type_) a
-
         -- InstLArr
         Type.Function{..} -> do
             let _ΓL = _Γ
@@ -869,13 +858,12 @@ instantiateTypeR _A0 a = do
         -- InstRReach
         Type.UnsolvedType{..}
             | let _ΓL = _Γ
-            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' -> set (_ΓR <> (Context.SolvedType existential (Monotype.UnsolvedType a) : _ΓM) <> (Context.UnsolvedType a : _ΓL))
-
+            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' ->
+                set (_ΓR <> (Context.SolvedType existential (Monotype.UnsolvedType a) : _ΓM) <> (Context.UnsolvedType a : _ΓL))
         -- InstRSolve
         Type.UnsolvedType{..} -> instRSolve (Monotype.UnsolvedType existential)
         Type.VariableType{..} -> instRSolve (Monotype.VariableType name)
         Type.Scalar{..} -> instRSolve (Monotype.Scalar scalar)
-
         -- InstRArr
         Type.Function{..} -> do
             let _ΓL = _Γ
@@ -1818,7 +1806,6 @@ check expr = check' (expr ^. _Unwrapped . _1 . unlocated)
     check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name 0 a type_)
     check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name 0 a type_)
     check' e Type.Exists{domain = Domain.Alternatives, ..} = scopedUnsolvedAlternatives \a -> check' e (Type.substituteAlternatives name 0 a type_)
-
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_

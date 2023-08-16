@@ -9,6 +9,7 @@ import Elara.AST.VarRef (VarRef' (..), varRefVal)
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Operator (translateOperatorName)
 
+import Data.Generics.Product
 import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
@@ -28,7 +29,6 @@ import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
 import Print (showPretty)
-import Data.Generics.Product
 
 type Emit r = Members '[Reader JVMVersion] r
 
