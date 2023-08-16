@@ -7,14 +7,12 @@ module Main (
 where
 
 import Control.Exception as E
-import Control.Lens (each, to, view, (^.), (^..), _1)
+import Control.Lens (to, view)
 import Data.Aeson (ToJSON, encode)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
-import Data.Generics.Sum
 import Data.Generics.Wrapped
-import Elara.AST.Generic (Expr, Expr', NoFieldValue (NoFieldValue))
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
@@ -164,7 +162,7 @@ lexFile path = do
             -- debugColored (stripLocation <$> lexemes)
             justE (contents, lexemes)
 
-parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module Frontend)
+parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module 'Frontend)
 parseModule path (contents, lexemes) = do
     let tokenStream = TokenStream contents lexemes 0
     case parse path tokenStream of
@@ -173,23 +171,23 @@ parseModule path (contents, lexemes) = do
             -- debugColored (stripLocation m)
             justE m
 
-desugarModule :: (Members MainMembers r) => Module Frontend -> Sem r (Module Desugared)
+desugarModule :: (Members MainMembers r) => Module 'Frontend -> Sem r (Module 'Desugared)
 desugarModule m = case runDesugar (desugar m) of
     Left err -> report err *> nothingE
     Right desugared -> justE desugared
 
 renameModule ::
     (Members MainMembers r, Member (Embed IO) r) =>
-    TopologicalGraph (Module Desugared) ->
-    Module Desugared ->
-    Sem r (Module Renamed)
+    TopologicalGraph (Module 'Desugared) ->
+    Module 'Desugared ->
+    Sem r (Module 'Renamed)
 renameModule mp m = do
     y <- subsume $ runRenamer primitiveRenameState mp (rename m)
     case y of
         Left err -> report err *> nothingE
         Right renamed -> justE renamed
 
-shuntModule :: (Members MainMembers r) => Module Renamed -> Sem r (Module Shunted)
+shuntModule :: (Members MainMembers r) => Module 'Renamed -> Sem r (Module 'Shunted)
 shuntModule m = do
     x <-
         runError $
@@ -201,10 +199,10 @@ shuntModule m = do
             traverse_ report warnings
             justE shunted
 
-inferModules :: (Members MainMembers r) => TopologicalGraph (Module Shunted) -> Sem r (TopologicalGraph (Module Typed))
+inferModules :: (Members MainMembers r) => TopologicalGraph (Module 'Shunted) -> Sem r (TopologicalGraph (Module 'Typed))
 inferModules modules = runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
-loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module Desugared)
+loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
 
 runErrorOrReport ::
