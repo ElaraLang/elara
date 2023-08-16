@@ -292,9 +292,9 @@ instance
 instance Pretty (TypeDeclaration ast) where
     pretty _ = "TODO"
 
-{-# WARNING ToMaybe "Debug is still in code" #-}
-
--- | When fields may be optional, we need a way of
+-- | When fields may be optional, we need a way of representing that generally. This class does that.
+-- In short, it converts a type to a 'Maybe'. If the type is already a 'Maybe', it is left alone.
+-- If it is not, it is wrapped in a 'Just'. If it is 'NoFieldValue', it is converted to 'Nothing'.
 class ToMaybe i o where
     toMaybe :: i -> o
 
@@ -307,6 +307,7 @@ instance ToMaybe (Maybe a) (Maybe a) where
 instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
     toMaybe = Just
 
+-- | Unwraps 1 level of 'Maybe' from a type. Useful when a type family returns Maybe
 type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
     UnwrapMaybe (Maybe a) = a
     UnwrapMaybe a = a
