@@ -1,21 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-
-module Elara.AST.Shunted where
-
-import Control.Lens (Plated, concatMapOf, cosmosOn, makeLenses, makePrisms, view, (^.))
-import Data.Data (Data)
-import Elara.AST.Lenses (HasDeclarationBody (..), HasDeclarationBody' (..))
-import Elara.AST.Name
-import Elara.AST.Pretty
-import Elara.AST.Region (Located (..), unlocated)
-import Elara.AST.Renamed qualified as Renamed
-import Elara.AST.StripLocation
-import Elara.AST.VarRef
-import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (HasDependencies (..))
-import Elara.Data.Unique (Unique)
-import Prelude hiding (Op)
 
 {- | Shunted AST Type
  This is very similar to 'Elara.AST.Renamed.Expr' except:
@@ -24,155 +7,101 @@ import Prelude hiding (Op)
  - This means there's no need for an 'InParens' token anymore so that's also gone :D
  - The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
 -}
-data Expr'
-    = Int Integer
-    | Float Double
-    | String Text
-    | Char Char
-    | Unit
-    | Var (Located (VarRef VarName))
-    | Constructor (Located (Qualified TypeName))
-    | Lambda (Located (Unique VarName)) Expr
-    | FunctionCall Expr Expr
-    | If Expr Expr Expr
-    | List [Expr]
-    | Match Expr [(Pattern, Expr)]
-    | LetIn (Located (Unique VarName)) Expr Expr
-    | Let (Located (Unique VarName)) Expr
-    | Block (NonEmpty Expr)
-    | Tuple (NonEmpty Expr)
-    deriving (Show, Eq, Data)
+module Elara.AST.Shunted where
 
-instance Plated Expr'
+import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, Expr' (..), NoFieldValue, Select)
+import Elara.AST.Generic qualified as Generic
+import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
+import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Select (LocatedAST (Shunted))
+import Elara.AST.VarRef (VarRef, VarRef' (..))
+import Elara.Data.TopologicalGraph (HasDependencies (..))
+import Elara.Data.Unique (Unique)
+import Control.Lens (view, cosmosOn, concatMapOf, _1, (^.), Plated)
+import Data.Generics.Product
+import Data.Generics.Wrapped
+import Data.Data (Data)
 
-newtype Expr = Expr (Located Expr')
-    deriving (Show, Eq, Data)
+type instance ASTLocate' 'Shunted = Located
+type instance ASTQual 'Shunted = Qualified
 
-data Pattern'
-    = VarPattern (Located (Unique VarName))
-    | ConstructorPattern (Located (Qualified TypeName)) [Pattern]
-    | ListPattern [Pattern]
-    | ConsPattern Pattern Pattern
-    | WildcardPattern
-    | IntegerPattern Integer
-    | FloatPattern Double
-    | StringPattern Text
-    | CharPattern Char
-    deriving (Show, Eq, Data)
+-- Selections for 'Expr'
+type instance Select "ExprType" 'Shunted = Maybe ShuntedType
+type instance Select "LambdaPattern" 'Shunted = Unique VarName
+type instance Select "LetPattern" 'Shunted = NoFieldValue
 
-newtype Pattern = Pattern (Located Pattern')
-    deriving (Show, Eq, Data)
+type instance Select "VarRef" 'Shunted = VarRef VarName
+type instance Select "ConRef" 'Shunted = Qualified TypeName
 
-newtype Declaration = Declaration (Located Declaration')
-    deriving (Show, Eq)
+type instance Select "SymOp" 'Shunted = VarRef OpName
+type instance Select "Infixed" 'Shunted = VarRef VarName
+type instance Select "LetParamName" 'Shunted = Unique VarName
+type instance Select "InParens" 'Shunted = ShuntedExpr
 
-data Declaration' = Declaration'
-    { _declaration'Module' :: Located ModuleName
-    , _declaration'Name :: Located (Qualified Name)
-    , _declaration'Body :: Located DeclarationBody
-    }
-    deriving (Show, Eq)
+type instance Select "PatternType" 'Shunted = Maybe ShuntedType
+type instance Select "VarPat" 'Shunted = Unique VarName
+type instance Select "ConPat" 'Shunted = Qualified TypeName
 
-newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
-    deriving (Show, Eq)
+-- Selections for 'DeclarationBody'
+type instance Select "ValuePatterns" 'Shunted = NoFieldValue
+type instance Select "ValueType" 'Shunted = Maybe ShuntedType
+type instance Select "ValueTypeDef" 'Shunted = DataConCantHappen
 
-data DeclarationBody'
-    = -- | def <name> : <type> and / or let <p> = <e>
-      Value
-        { _expression :: Expr
-        -- ^ The expression
-        , _valueType :: Maybe (Located Renamed.Type)
-        -- ^ An optional type annotation for the expression
-        }
-    | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located (Unique LowerAlphaName)] (Located Renamed.TypeDeclaration) -- No difference to old AST
-    deriving (Show, Eq)
+-- Selections for 'Declaration'
+type instance Select "DeclarationName" 'Shunted = Qualified Name
 
-makePrisms ''Declaration
-makeLenses ''Declaration'
-makePrisms ''Declaration'
-makePrisms ''DeclarationBody
-makePrisms ''DeclarationBody'
-makeLenses ''DeclarationBody
-makeLenses ''DeclarationBody'
-makePrisms ''Expr
-makePrisms ''Pattern
+-- Selections for 'Type'
+type instance Select "TypeVar" 'Shunted = Unique LowerAlphaName
+type instance Select "UserDefinedType" 'Shunted = Qualified TypeName
+type instance Select "ConstructorName" 'Shunted = Qualified TypeName
 
-instance HasDependencies Declaration where
-    type Key Declaration = Qualified Name
-    key = view (_Declaration . unlocated . declaration'Name . unlocated)
-    dependencies decl = case decl ^. unlocatedDeclarationBody' of
-        Value e _ -> valueDependencies e
-        TypeDeclaration _ _ -> []
+type ShuntedExpr = Generic.Expr 'Shunted
+type ShuntedExpr' = Generic.Expr' 'Shunted
 
-valueDependencies :: Expr -> [Qualified Name]
+type ShuntedPattern = Generic.Pattern 'Shunted
+type ShuntedPattern' = Generic.Pattern' 'Shunted
+
+type ShuntedBinaryOperator = Generic.BinaryOperator 'Shunted
+type ShuntedBinaryOperator' = Generic.BinaryOperator' 'Shunted
+
+type ShuntedType = Generic.Type 'Shunted
+type ShuntedType' = Generic.Type' 'Shunted
+
+type ShuntedDeclaration = Generic.Declaration 'Shunted
+type ShuntedDeclaration' = Generic.Declaration' 'Shunted
+
+type ShuntedDeclarationBody = Generic.DeclarationBody 'Shunted
+type ShuntedDeclarationBody' = Generic.DeclarationBody' 'Shunted
+
+type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
+
+
+instance Plated ShuntedExpr 
+instance Plated ShuntedExpr'
+instance Plated ShuntedType
+instance Plated ShuntedType'
+
+deriving instance Data ShuntedExpr'
+deriving instance Data ShuntedExpr
+deriving instance Data ShuntedBinaryOperator
+deriving instance Data ShuntedBinaryOperator'
+deriving instance Data ShuntedType
+deriving instance Data ShuntedType'
+deriving instance Data ShuntedPattern
+deriving instance Data ShuntedPattern'
+
+instance HasDependencies ShuntedDeclaration where
+    type Key ShuntedDeclaration = Qualified Name
+    key = view (_Unwrapped . unlocated . field' @"name" . unlocated)
+    dependencies decl = case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
+        Generic.Value e _ _ -> valueDependencies e
+        Generic.TypeDeclaration _ _ -> []
+
+valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =
-    concatMapOf (cosmosOn (_Expr . unlocated)) names
+    concatMapOf (cosmosOn (_Unwrapped . _1 . unlocated)) names
   where
-    names :: Expr' -> [Qualified Name]
+    names :: ShuntedExpr' -> [Qualified Name]
     names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
     names (Constructor (Located _ e)) = [NTypeName <$> e]
     names _ = []
-
-instance HasDeclarationBody Declaration (Located DeclarationBody) where
-    declarationBody = _Declaration . unlocated . declarationBody
-    unlocatedDeclarationBody = declarationBody . unlocated
-
-instance HasDeclarationBody Declaration' (Located DeclarationBody) where
-    declarationBody = declaration'Body
-    unlocatedDeclarationBody = declarationBody . unlocated
-
-instance HasDeclarationBody' Declaration (Located DeclarationBody') where
-    declarationBody' = declarationBody . unlocated . _DeclarationBody
-    unlocatedDeclarationBody' = declarationBody' . unlocated
-
-instance HasDeclarationBody' Declaration' (Located DeclarationBody') where
-    declarationBody' = declarationBody . unlocated . _DeclarationBody
-    unlocatedDeclarationBody' = declarationBody' . unlocated
-
--- Pretty Printing :D
-
-instance Pretty Declaration where
-    pretty (Declaration ldb) = pretty ldb
-
-instance Pretty Declaration' where
-    pretty (Declaration' _ n b) = prettyDB (n ^. unlocated) (b ^. unlocated . _DeclarationBody . unlocated)
-
-prettyDB :: Qualified Name -> DeclarationBody' -> Doc AnsiStyle
-prettyDB n (Value e t) = prettyValueDeclaration n e t
-prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
-
-instance Pretty Expr where
-    pretty (Expr e) = pretty (stripLocation e)
-
-instance Pretty Expr' where
-    pretty (Int i) = pretty i
-    pretty (Float f) = pretty f
-    pretty (String s) = pretty '\"' <> pretty s <> pretty '\"'
-    pretty (Char c) = "'" <> escapeChar c <> "'"
-    pretty Unit = "()"
-    pretty (Var v) = pretty v
-    pretty (Constructor c) = pretty c
-    pretty (Lambda ps e) = prettyLambdaExpr [ps] e
-    -- re-sugar infix operators
-    pretty (FunctionCall (Expr (Located _ (FunctionCall (Expr (Located _ (Var (Located _ fName)))) lr))) r)
-        | (Located _ (OperatorVarName _)) <- varRefVal fName =
-            prettyBinaryOperatorExpr lr fName r
-    pretty (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2
-    pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
-    pretty (List l) = prettyListExpr l
-    pretty (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
-    pretty (LetIn v e1 e2) = prettyLetInExpr v none e1 (Just e2)
-    pretty (Let v e) = prettyLetExpr v none e
-    pretty (Block b) = prettyBlockExpr b
-    pretty other = show other
-
-instance Pretty Pattern where
-    pretty (Pattern p) = pretty (stripLocation p)
-
-instance Pretty Pattern' where
-    pretty (VarPattern v) = pretty v
-    pretty (ConstructorPattern c ps) = prettyConstructorPattern c ps
-    pretty (ListPattern l) = prettyListPattern l
-    pretty (ConsPattern p1 p2) = prettyConsPattern p1 p2
-    pretty other = show other

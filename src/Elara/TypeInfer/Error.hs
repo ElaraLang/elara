@@ -3,9 +3,9 @@ module Elara.TypeInfer.Error where
 import Data.Map qualified as Map
 import Elara.AST.Name (Name)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
-import Elara.AST.Renamed qualified as AST
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
+import Elara.AST.Shunted
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
@@ -57,9 +57,9 @@ data TypeInferenceError
       RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
     | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
     | --
-      UserDefinedTypeNotInContext SourceRegion AST.Type (Context SourceRegion)
+      UserDefinedTypeNotInContext SourceRegion ShuntedType (Context SourceRegion)
     | KindInferError KindInferError
-    deriving (Eq, Show)
+    deriving Show
 
 instance ReportableError TypeInferenceError where
     report (MissingVariable a _Γ) =

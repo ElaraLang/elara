@@ -1,8 +1,10 @@
 module Elara.Parse.Indents where
 
-import Elara.AST.Frontend (Expr (..), Expr' (Block), _Expr)
+import Elara.AST.Frontend
 
-import Control.Lens (view)
+import Control.Lens (view, _1)
+import Data.Generics.Wrapped
+import Elara.AST.Generic (Expr (Expr), Expr' (..), NoFieldValue (NoFieldValue))
 import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
@@ -29,19 +31,18 @@ block mergeFunction single exprParser =
             pure $ mergeFunction exprs
         )
 
-exprBlock :: HParser Expr -> HParser Expr
+exprBlock :: HParser FrontendExpr -> HParser FrontendExpr
 exprBlock = wrapToHead . block merge identity
   where
-    merge :: NonEmpty Expr -> Expr
+    merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
         single :| [] -> single
         x :| xs -> do
-            let unwrap = view _Expr
-            let expressions' = unwrap <$> (x :| xs)
-            let region = Region.spanningRegion' (view sourceRegion <$> expressions')
+            let expressions' = view _Unwrapped <$> (x :| xs)
+            let region = Region.spanningRegion' (view (_1 . sourceRegion) <$> expressions')
             let asBlock = \case
                     single :| [] -> Expr single
-                    o -> Expr (Located region (Block $ Expr <$> o))
+                    o -> Expr (Located region (Block $ Expr <$> o), Nothing)
             asBlock expressions'
 
 ignoreFollowingIndents :: (IsParser m) => Int -> m ()

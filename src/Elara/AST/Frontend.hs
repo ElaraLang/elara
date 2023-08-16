@@ -1,175 +1,63 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Elara.AST.Frontend where
 
-import Control.Lens.TH
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
+import Elara.AST.Generic (ASTLocate', ASTQual, NoFieldValue, Select)
+import Elara.AST.Generic qualified as Generic
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Region (Located (..))
-import Elara.AST.Unlocated.Frontend qualified as Unlocated
-import Elara.AST.StripLocation (StripLocation (..))
-import Prelude hiding (Op)
+import Elara.AST.Select (LocatedAST (Frontend))
 
--- | Frontend AST
-data Expr'
-    = Int Integer
-    | Float Double
-    | String Text
-    | Char Char
-    | Unit
-    | Var (Located (MaybeQualified VarName))
-    | Constructor (Located (MaybeQualified TypeName))
-    | Lambda [Pattern] Expr
-    | FunctionCall Expr Expr
-    | If Expr Expr Expr
-    | BinaryOperator BinaryOperator Expr Expr
-    | List [Expr]
-    | Match Expr [(Pattern, Expr)]
-    | LetIn (Located VarName) [Pattern] Expr Expr
-    | Let (Located VarName) [Pattern] Expr
-    | Block (NonEmpty Expr)
-    | InParens Expr
-    | Tuple (NonEmpty Expr)
-    deriving (Show, Eq)
+-- Generic location and qualification types
+type instance ASTLocate' 'Frontend = Located
+type instance ASTQual 'Frontend = MaybeQualified
 
-newtype Expr = Expr (Located Expr')
-    deriving (Show, Eq)
 
-data Pattern'
-    = VarPattern (Located VarName)
-    | ConstructorPattern (Located (MaybeQualified TypeName)) [Pattern]
-    | ListPattern [Pattern]
-    | ConsPattern Pattern Pattern
-    | WildcardPattern
-    | IntegerPattern Integer
-    | FloatPattern Double
-    | StringPattern Text
-    | CharPattern Char
-    deriving (Show, Eq)
+-- Selections for 'Expr'
+type instance Select "ExprType" 'Frontend = Maybe FrontendType
+type instance Select "LambdaPattern" 'Frontend = [FrontendPattern]
+type instance Select "LetPattern" 'Frontend = [FrontendPattern]
+type instance Select "VarRef" 'Frontend = MaybeQualified VarName
+type instance Select "ConRef" 'Frontend = MaybeQualified TypeName
+type instance Select "LetParamName" 'Frontend = VarName
+type instance Select "InParens" 'Frontend = FrontendExpr
 
-newtype Pattern = Pattern (Located Pattern')
-    deriving (Show, Eq)
+-- Selections for 'BinaryOperator'
+type instance Select "SymOp" 'Frontend = MaybeQualified OpName
+type instance Select "Infixed" 'Frontend = MaybeQualified VarName
 
-data BinaryOperator'
-    = Op (Located (MaybeQualified OpName))
-    | Infixed (Located (MaybeQualified VarName))
-    deriving (Show, Eq)
+-- Selections for 'Pattern'
+type instance Select "PatternType" 'Frontend = Maybe FrontendType
+type instance Select "VarPat" 'Frontend = VarName
+type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
 
-newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
-    deriving (Show, Eq)
+-- Selections for 'DeclarationBody'
+type instance Select "ValuePatterns" 'Frontend = [FrontendPattern]
+type instance Select "ValueType" 'Frontend = NoFieldValue
+type instance Select "ValueTypeDef" 'Frontend = FrontendType
 
-data Type
-    = TypeVar (Located LowerAlphaName)
-    | FunctionType (Located Type) (Located Type)
-    | UnitType
-    | TypeConstructorApplication (Located Type) (Located Type)
-    | UserDefinedType (Located (MaybeQualified TypeName))
-    | RecordType (NonEmpty (Located VarName, Located Type))
-    | TupleType (NonEmpty (Located Type))
-    | ListType (Located Type)
-    deriving (Show, Eq)
+-- Selections for 'Declaration'
+type instance Select "DeclarationName" 'Frontend = Name
 
-newtype Declaration = Declaration (Located Declaration')
-    deriving (Show, Eq)
+-- Selections for 'Type'
+type instance Select "TypeVar" 'Frontend = LowerAlphaName
+type instance Select "UserDefinedType" 'Frontend = MaybeQualified TypeName
+type instance Select "ConstructorName" 'Frontend = TypeName
 
-data Declaration' = Declaration'
-    { _declaration'Module' :: Located ModuleName
-    , _declaration'Name :: Located Name
-    , _declaration'Body :: Located DeclarationBody
-    }
-    deriving (Show, Eq)
+type FrontendExpr = Generic.Expr 'Frontend
+type FrontendExpr' = Generic.Expr' 'Frontend
 
-newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
-    deriving (Show, Eq)
+type FrontendPattern = Generic.Pattern 'Frontend
+type FrontendPattern' = Generic.Pattern' 'Frontend
 
-data DeclarationBody'
-    = -- | let <p> = <e>
-      Value
-        { _expression :: Expr
-        , _patterns :: [Pattern]
-        }
-    | -- | def <name> : <type>.
-      ValueTypeDef (Located Type)
-    | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located LowerAlphaName] (Located TypeDeclaration)
-    deriving (Show, Eq)
+type FrontendBinaryOperator = Generic.BinaryOperator 'Frontend
+type FrontendBinaryOperator' = Generic.BinaryOperator' 'Frontend
 
-data TypeDeclaration
-    = ADT (NonEmpty (Located TypeName, [Located Type]))
-    | Alias (Located Type)
-    deriving (Show, Eq)
+type FrontendType = Generic.Type 'Frontend
+type FrontendType' = Generic.Type' 'Frontend
 
-makeLenses ''Declaration'
-makeClassy ''Declaration
-makeClassy ''DeclarationBody'
-makePrisms ''Declaration
-makePrisms ''DeclarationBody
-makePrisms ''TypeDeclaration
-makePrisms ''Expr
-makePrisms ''Pattern
+type FrontendDeclaration = Generic.Declaration 'Frontend
+type FrontendDeclaration' = Generic.Declaration' 'Frontend
 
-instance StripLocation Expr Unlocated.Expr where
-    stripLocation (Expr (Located _ expr)) = case expr of
-        Int i -> Unlocated.Int i
-        Float f -> Unlocated.Float f
-        String s -> Unlocated.String s
-        Char c -> Unlocated.Char c
-        Unit -> Unlocated.Unit
-        Var v -> Unlocated.Var (stripLocation v)
-        Constructor c -> Unlocated.Constructor (stripLocation c)
-        Lambda p e -> Unlocated.Lambda (stripLocation p) (stripLocation e)
-        FunctionCall e1 e2 -> Unlocated.FunctionCall (stripLocation e1) (stripLocation e2)
-        If e1 e2 e3 -> Unlocated.If (stripLocation e1) (stripLocation e2) (stripLocation e3)
-        BinaryOperator o e1 e2 -> Unlocated.BinaryOperator (stripLocation o) (stripLocation e1) (stripLocation e2)
-        List l -> Unlocated.List (stripLocation l)
-        Match e m -> Unlocated.Match (stripLocation e) (stripLocation m)
-        LetIn v p e1 e2 -> Unlocated.LetIn (stripLocation v) (stripLocation p) (stripLocation e1) (stripLocation e2)
-        Let v p e -> Unlocated.Let (stripLocation v) (stripLocation p) (stripLocation e)
-        Block b -> Unlocated.Block (stripLocation b)
-        InParens e -> Unlocated.InParens (stripLocation e)
-        Tuple l -> Unlocated.Tuple (stripLocation l)
+type FrontendDeclarationBody = Generic.DeclarationBody 'Frontend
+type FrontendDeclarationBody' = Generic.DeclarationBody' 'Frontend
 
-instance StripLocation Pattern Unlocated.Pattern where
-    stripLocation (Pattern (Located _ pat)) = case pat of
-        VarPattern n -> Unlocated.VarPattern (stripLocation n)
-        ConstructorPattern c p -> Unlocated.ConstructorPattern (stripLocation c) (stripLocation p)
-        ListPattern p -> Unlocated.ListPattern (stripLocation p)
-        ConsPattern p1 p2 -> Unlocated.ConsPattern (stripLocation p1) (stripLocation p2)
-        WildcardPattern -> Unlocated.WildcardPattern
-        IntegerPattern i -> Unlocated.IntegerPattern i
-        FloatPattern f -> Unlocated.FloatPattern f
-        StringPattern s -> Unlocated.StringPattern s
-        CharPattern c -> Unlocated.CharPattern c
-
-instance StripLocation BinaryOperator Unlocated.BinaryOperator where
-    stripLocation (MkBinaryOperator (Located _ op)) = case op of
-        Op o -> Unlocated.Op (stripLocation o)
-        Infixed i -> Unlocated.Infixed (stripLocation i)
-
-instance StripLocation Type Unlocated.Type where
-    stripLocation (TypeVar t) = Unlocated.TypeVar (stripLocation t)
-    stripLocation (FunctionType t1 t2) = Unlocated.FunctionType (stripLocation t1) (stripLocation t2)
-    stripLocation UnitType = Unlocated.UnitType
-    stripLocation (TypeConstructorApplication t1 t2) = Unlocated.TypeConstructorApplication (stripLocation t1) (stripLocation t2)
-    stripLocation (UserDefinedType t) = Unlocated.UserDefinedType (stripLocation t)
-    stripLocation (RecordType r) = Unlocated.RecordType (stripLocation r)
-    stripLocation (TupleType t) = Unlocated.TupleType (stripLocation t)
-    stripLocation (ListType t) = Unlocated.ListType (stripLocation t)
-
-instance StripLocation Declaration Unlocated.Declaration where
-    stripLocation (Declaration d) = stripLocation d
-
-instance StripLocation Declaration' Unlocated.Declaration where
-    stripLocation (Declaration' m n b) = Unlocated.Declaration (stripLocation m) (stripLocation n) (stripLocation b)
-
-instance StripLocation DeclarationBody Unlocated.DeclarationBody where
-    stripLocation (DeclarationBody d) = stripLocation d
-
-instance StripLocation DeclarationBody' Unlocated.DeclarationBody where
-    stripLocation (Value e p) = Unlocated.Value (stripLocation e) (stripLocation p)
-    stripLocation (ValueTypeDef t) = Unlocated.ValueTypeDef (stripLocation t)
-    stripLocation (TypeDeclaration args t) = Unlocated.TypeDeclaration (stripLocation args) (stripLocation t)
-
-instance StripLocation TypeDeclaration Unlocated.TypeDeclaration where
-    stripLocation (ADT t) = Unlocated.ADT (stripLocation t)
-    stripLocation (Alias t) = Unlocated.Alias (stripLocation t)
+type FrontendTypeDeclaration = Generic.TypeDeclaration 'Frontend

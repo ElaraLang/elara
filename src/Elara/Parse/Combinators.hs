@@ -1,5 +1,7 @@
-module Elara.Parse.Combinators (sepBy1', sepEndBy1') where
+module Elara.Parse.Combinators (sepBy1', sepEndBy1', liftedBinary) where
 
+import Control.Lens (Iso', from, (^.))
+import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion)
 import Elara.Parse.Primitives (HParser)
 import HeadedMegaparsec (endHead)
 
@@ -20,3 +22,17 @@ sepEndBy1' p sep = do
     (x :|) -- at least one
         <$> many (sep *> p) -- many
         <* optional sep -- optional ending
+
+-- Lift a binary operator to work on `Expr` instead of `FrontendExpr`. Probably not the best way to do this, but it works
+
+liftedBinary ::
+    Monad m => m t ->
+    (t -> a -> a -> a1) ->
+    Iso' a (Located a1) ->
+    m (a -> a -> a)
+liftedBinary op f _Expr = do
+    op' <- op
+    let create l r =
+            let region = enclosingRegion' (l ^. _Expr . sourceRegion) (r ^. _Expr . sourceRegion)
+             in Located region (f op' l r) ^. from _Expr
+    pure create

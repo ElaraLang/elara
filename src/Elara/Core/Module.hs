@@ -1,23 +1,26 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoFieldSelectors #-}
 
 module Elara.Core.Module where
 
-import Control.Lens (makeFields)
+import Control.Lens (makeFields, view)
 import Elara.AST.Name (ModuleName)
 import Elara.Core (CoreBind)
 import Elara.Core.Pretty (prettyVdefg)
 import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
+import Data.Generics.Product
 
 data CoreModule = CoreModule
-    { coreModuleName :: ModuleName
-    , coreModuleDeclarations :: [CoreDeclaration]
+    { name :: ModuleName
+    , declarations :: [CoreDeclaration]
     }
+    deriving Generic
 
 instance HasDependencies CoreModule where
     type Key CoreModule = ModuleName
-    key = coreModuleName
+    key = view (field @"name")
 
     dependencies = const [] -- TODO
 

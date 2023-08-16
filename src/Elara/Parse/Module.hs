@@ -1,7 +1,8 @@
+{-# LANGUAGE DisambiguateRecordFields #-}
 module Elara.Parse.Module where
 
 import Elara.AST.Module (Exposing (..), Exposition (ExposedOp, ExposedValue), Import (..), Import' (..), Module (..), Module' (..))
-import Elara.AST.Name
+
 import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Lexer.Token (Token (..))
@@ -11,8 +12,9 @@ import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
+import Elara.AST.Name
 
-module' :: HParser (Module Frontend)
+module' :: HParser (Module 'Frontend)
 module' = fmapLocated Module $ do
     mHeader <- optional (header <* optional (token_ TokenSemicolon))
     endHead
@@ -24,23 +26,23 @@ module' = fmapLocated Module $ do
 
     pure $
         Module'
-            { _module'Name = _name
-            , _module'Exposing = maybe ExposingAll snd mHeader
-            , _module'Imports = imports
-            , _module'Declarations = declarations
+            { name = _name
+            , exposing = maybe ExposingAll snd mHeader
+            , imports = imports
+            , declarations = declarations
             }
 
 -- | module Name exposing (..)
-header :: HParser (Located ModuleName, Exposing Frontend)
+header :: HParser (Located ModuleName, Exposing 'Frontend)
 header = do
     token_ TokenModule
     endHead
     moduleName' <- located Parse.moduleName
-    exposing' <- exposing
-    pure (moduleName', exposing')
+    mExposing <- exposing'
+    pure (moduleName', mExposing)
 
-exposing :: HParser (Exposing Frontend)
-exposing =
+exposing' :: HParser (Exposing 'Frontend)
+exposing' =
     fromMaybe ExposingAll
         <$> optional
             ( do
@@ -48,14 +50,14 @@ exposing =
                 ExposingSome <$> oneOrCommaSeparatedInParens exposition
             )
 
-exposition :: HParser (Exposition Frontend)
+exposition :: HParser (Exposition 'Frontend)
 exposition = exposedValue <|> exposedOp
   where
-    exposedValue, exposedOp :: HParser (Exposition Frontend)
+    exposedValue, exposedOp :: HParser (Exposition 'Frontend)
     exposedValue = ExposedValue <$> located varName
     exposedOp = ExposedOp <$> located (inParens (maybeQualified opName))
 
-import' :: HParser (Import Frontend)
+import' :: HParser (Import 'Frontend)
 import' = fmapLocated Import $ do
     token_ TokenImport
     endHead
@@ -64,4 +66,4 @@ import' = fmapLocated Import $ do
     as <- optional . located $ do
         token_ TokenAs
         Parse.moduleName
-    Import' moduleName' as isQualified <$> exposing
+    Import' moduleName' as isQualified <$> exposing'

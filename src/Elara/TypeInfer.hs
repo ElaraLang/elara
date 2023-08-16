@@ -2,19 +2,22 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _3)
+import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2, _3)
 import Data.Containers.ListUtils (nubOrdOn)
+import Data.Generics.Product
+import Data.Generics.Sum
+import Data.Generics.Wrapped
 import Data.Traversable (for)
-import Elara.AST.Lenses (HasDeclarationBody (..))
+import Elara.AST.Generic hiding (Type)
+import Elara.AST.Generic qualified as Generic
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name, Qualified, _LowerAlphaName)
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated, withLocationOf)
-import Elara.AST.Renamed qualified as Renamed
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
-    HasModuleName (moduleName),
-    HasName (name),
-    Shunted,
-    Typed,
+    LocatedAST (
+        Shunted,
+        Typed
+    ),
  )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
@@ -41,55 +44,45 @@ inferModule ::
     forall r.
     HasCallStack =>
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
-    Module Shunted ->
+    Module 'Shunted ->
     Sem r (Module Typed)
-inferModule = traverseModuleRevTopologically @Shunted @Typed inferDeclaration
+inferModule = traverseModuleRevTopologically inferDeclaration
 
-traverseExpr ::
-    (Applicative f) =>
-    (Located (Qualified Name) -> Typed.Expr -> f Typed.Expr) ->
-    Typed.Declaration ->
-    f Typed.Declaration
-traverseExpr f =
-    traverseOf
-        (Typed._Declaration . unlocated . Typed._Declaration')
-        ( \decl@(_, declName, _) -> traverseOf (_3 . unlocated . Typed._DeclarationBody . unlocated . Typed._Value) (f declName) decl
-        )
 
 inferDeclaration ::
     forall r.
     HasCallStack =>
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
-    Shunted.Declaration ->
-    Sem r Typed.Declaration
-inferDeclaration (Shunted.Declaration ld) =
-    Typed.Declaration
+    ShuntedDeclaration ->
+    Sem r TypedDeclaration
+inferDeclaration (Declaration ld) =
+    Declaration
         <$> traverseOf
             unlocated
             ( \d' -> do
-                let (Shunted.DeclarationBody ldb) = d' ^. unlocatedDeclarationBody
+                let (DeclarationBody ldb) = d' ^. field' @"body"
 
                 db' <-
-                    Typed.DeclarationBody
+                    DeclarationBody
                         <$> traverseOf
                             unlocated
-                            (inferDeclarationBody' (d' ^. name))
+                            (inferDeclarationBody' (d' ^. field' @"name"))
                             ldb
-                pure (Typed.Declaration' (d' ^. moduleName) (d' ^. name) (db' `withLocationOf` ldb))
+                pure (Declaration' (d' ^. field' @"moduleName") (d' ^. field' @"name") db')
             )
             ld
   where
     inferDeclarationBody' ::
         HasCallStack =>
         Located (Qualified Name) ->
-        Shunted.DeclarationBody' ->
-        Sem r Typed.DeclarationBody'
-    inferDeclarationBody' declName (Shunted.Value e maybeExpected) = do
+        ShuntedDeclarationBody' ->
+        Sem r TypedDeclarationBody'
+    inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType)) = do
         maybeExpected' <- for maybeExpected $
             \expected' -> do
-                kind <- mapError KindInferError (inferTypeKind (expected' ^. unlocated))
+                kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped . unlocated))
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
-                astTypeToInferPolyType $! expected'
+                astTypeToInferPolyType expected'
 
         -- add the expected type as an annotation
         -- this makes recursive definitions work (although perhaps it shouldn't)
@@ -100,15 +93,15 @@ inferDeclaration (Shunted.Declaration ld) =
                 push (UnsolvedType exist)
                 push (Annotation (mkGlobal' declName) (Infer.UnsolvedType primRegion exist))
 
-        e'@(Typed.Expr (_, _)) <- inferExpression e maybeExpected'
+        e' <- inferExpression e maybeExpected'
 
         ctx <- Infer.getAll
 
         completed <- completeExpression ctx e'
 
-        whenNothing_ Nothing (push (Annotation (mkGlobal' declName) (typeOf completed)))
+        whenNothing_ Nothing (push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2)))
 
-        pure $ Typed.Value completed
+        pure $ Value completed NoFieldValue NoFieldValue
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
@@ -157,18 +150,18 @@ inferDeclaration (Shunted.Declaration ld) =
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
-freeTypeVars :: Located Renamed.Type -> [Located (Unique LowerAlphaName)]
+freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
-    nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
-        . concatMapOf (cosmosOn unlocated) names
+    nubOrdOn identity -- remove duplicates, ignore location info when comparing
+        . concatMapOf (cosmosOn (_Unwrapped . unlocated)) names
   where
-    names :: Renamed.Type -> [Located (Unique LowerAlphaName)]
+    names :: ShuntedType' -> [Located (Unique LowerAlphaName)]
     names = \case
-        Renamed.TypeVar l -> [l]
+        TypeVar l -> [l]
         _ -> [] -- cosmos takes care of the recursion :D
 
 -- | Like 'astTypeToInferType' but universally quantifies over the free type variables
-astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
+astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
   where
     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
@@ -178,19 +171,20 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
 fullTypeVarName :: Unique LowerAlphaName -> Text
 fullTypeVarName = uniqueToText (^. _LowerAlphaName)
 
-astTypeToInferType :: HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => Located Renamed.Type -> Sem r (Infer.Type SourceRegion)
-astTypeToInferType (Located sr ut) = astTypeToInferType' ut
+astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
-    astTypeToInferType' (Renamed.TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to fullTypeVarName))
-    astTypeToInferType' Renamed.UnitType = pure (Infer.Scalar sr Mono.Unit)
-    astTypeToInferType' t@(Renamed.UserDefinedType n) = do
+    astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to fullTypeVarName))
+    astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
+    astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get
         case Context.lookup (mkGlobal' n) ctx of
             Just ty -> pure ty
-            Nothing -> throw (UserDefinedTypeNotInContext sr t ctx)
-    astTypeToInferType' (Renamed.FunctionType a b) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
-    astTypeToInferType' (Renamed.ListType ts) = Infer.List sr <$> astTypeToInferType ts
-    astTypeToInferType' (Renamed.TypeConstructorApplication ctor arg) = do
+            Nothing -> throw (UserDefinedTypeNotInContext sr lt ctx)
+    astTypeToInferType' (FunctionType a b) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
+    astTypeToInferType' (ListType ts) = Infer.List sr <$> astTypeToInferType ts
+    astTypeToInferType' (TypeConstructorApplication ctor arg) = do
         ctor' <- astTypeToInferType ctor
         arg' <- astTypeToInferType arg
 
@@ -228,10 +222,10 @@ astTypeToInferType (Located sr ut) = astTypeToInferType' ut
 inferExpression ::
     forall r.
     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
-    Shunted.Expr ->
+    ShuntedExpr ->
     Maybe (Infer.Type SourceRegion) ->
-    Sem r Typed.Expr
-inferExpression e@(Shunted.Expr _) expected = do
+    Sem r TypedExpr
+inferExpression e expected = do
     e' <- infer e
     case expected of
         Just ex -> check e ex
@@ -241,15 +235,15 @@ completeExpression ::
     forall r.
     Member (State Status) r =>
     Context SourceRegion ->
-    Typed.Expr ->
-    Sem r Typed.Expr
-completeExpression ctx (Typed.Expr (y', t)) = do
+    TypedExpr ->
+    Sem r TypedExpr
+completeExpression ctx (Expr (y', t)) = do
     let completed = complete ctx t
     unify t completed
 
     ctx' <- Infer.getAll
 
-    plate (completeExpression ctx') (Typed.Expr (y', completed))
+    plate (completeExpression ctx') (Expr (y', completed))
   where
     {-
     Unifies completed types with unsolved ones. It assumes that the types are of the same shape, excluding quantifiers.

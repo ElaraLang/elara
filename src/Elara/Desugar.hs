@@ -2,12 +2,16 @@
 
 module Elara.Desugar where
 
-import Control.Lens
+import Control.Lens (Each (each), makeLenses, over, traverseOf, traverseOf_, (^.), _1, _2)
+import Data.Generics.Product (field, field', the)
+import Data.Generics.Sum (_As)
+import Data.Generics.Wrapped
 import Data.Map qualified as M
+import Elara.AST.Desugared
 import Elara.AST.Desugared qualified as Desugared
-import Elara.AST.Frontend (declaration'Name)
+import Elara.AST.Frontend
 import Elara.AST.Frontend qualified as Frontend
-import Elara.AST.Lenses (HasDeclarationBody' (..))
+import Elara.AST.Generic
 import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
@@ -20,14 +24,16 @@ import Polysemy
 import Polysemy.Error (Error, runError, throw)
 import Polysemy.State (State, evalState)
 import Polysemy.State.Extra
+import Unsafe.Coerce (unsafeCoerce)
+import Prelude hiding (Op)
 
 data DesugarError
-    = DefWithoutLet (Located Desugared.Type)
+    = DefWithoutLet DesugaredType
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
 
 instance ReportableError DesugarError where
-    report (DefWithoutLet (Located _ _)) =
+    report (DefWithoutLet _) =
         writeReport $ Err (Just Codes.defWithoutLet) "Def without let" [] []
     report (DuplicateDeclaration a b) =
         writeReport $
@@ -70,19 +76,22 @@ data PartialDeclaration
     = -- | A partial declaration with just a def line
       JustDef
         Name
+        -- ^ Name of the declaration
         SourceRegion
         -- ^ The *overall* region of the declaration, not just the body!
-        (Located Desugared.Type)
-    | JustLet Name SourceRegion Desugared.Expr
-    | Both Name SourceRegion (Located Desugared.Type) Desugared.Expr
-    | Immediate Name (Located Desugared.DeclarationBody)
-    deriving (Show)
+        DesugaredType
+    | JustLet
+        Name
+        SourceRegion
+        DesugaredExpr
+    | Both Name SourceRegion DesugaredType DesugaredExpr
+    | Immediate Name DesugaredDeclarationBody
 
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _) = sr
 partialDeclarationSourceRegion (JustLet _ sr _) = sr
 partialDeclarationSourceRegion (Both _ sr _ _) = sr
-partialDeclarationSourceRegion (Immediate _ (Located sr _)) = sr
+partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
 
 instance Pretty PartialDeclaration where
     pretty (JustDef n _ _) = pretty n
@@ -92,25 +101,30 @@ instance Pretty PartialDeclaration where
 
 makeLenses ''DesugarState
 
-resolvePartialDeclaration :: PartialDeclaration -> Desugar (Located Desugared.DeclarationBody)
+resolvePartialDeclaration :: PartialDeclaration -> Desugar DesugaredDeclarationBody
 resolvePartialDeclaration (Immediate _ a) = pure a
 resolvePartialDeclaration ((JustDef _ _ ty)) = throw (DefWithoutLet ty)
-resolvePartialDeclaration ((JustLet _ sr e)) = pure (Located sr $ Desugared.DeclarationBody (Located sr (Desugared.Value e Nothing)))
-resolvePartialDeclaration ((Both _ sr ty e)) = pure (Located sr $ Desugared.DeclarationBody (Located sr (Desugared.Value e (Just ty))))
-
-desugar ::
-    Module Frontend ->
-    Desugar (Module Desugared)
-desugar =
-    traverseOf
-        (_Module . unlocated)
-        ( \(m' :: Module' Frontend) -> do
-            let decls = m' ^. module'Declarations :: [Frontend.Declaration]
-            decls' <- desugarDeclarations (m' ^. name) decls
-            pure (Module' (m' ^. module'Name) (coerceExposing (m' ^. module'Exposing)) (coerceImport <$> m' ^. module'Imports) decls')
+resolvePartialDeclaration ((JustLet _ sr e)) = pure (DeclarationBody (Located sr (Value e NoFieldValue Nothing)))
+resolvePartialDeclaration ((Both _ sr ty e)) =
+    pure
+        ( DeclarationBody
+            (Located sr (Value e NoFieldValue (Just ty)))
         )
 
-desugarDeclarations :: Located ModuleName -> [Frontend.Declaration] -> Desugar [Desugared.Declaration]
+desugar ::
+    Module 'Frontend ->
+    Desugar (Module 'Desugared)
+desugar =
+    traverseOf
+        (_Unwrapped . unlocated)
+        ( \(m' :: Module' 'Frontend) -> do
+            let decls = m' ^. field' @"declarations" :: [FrontendDeclaration]
+            decls' <- desugarDeclarations (m' ^. the @(Located ModuleName)) decls
+
+            pure (Module' (m' ^. field' @"name") (coerceExposing (m' ^. field' @"exposing")) (coerceImport <$> m' ^. field' @"imports") decls')
+        )
+
+desugarDeclarations :: Located ModuleName -> [FrontendDeclaration] -> Desugar [DesugaredDeclaration]
 desugarDeclarations mn decls = do
     genPartials decls
     completePartials mn
@@ -127,48 +141,42 @@ mergePartials p1@(JustLet n sr e) p2@(JustDef n' sr' ty) = do
     pure (Both n'' (sr <> sr') ty e)
 mergePartials l r = throw (DuplicateDeclaration l r)
 
-genPartials :: [Frontend.Declaration] -> Desugar ()
-genPartials = traverseOf_ (each . Frontend._Declaration) genPartial
+genPartials :: [FrontendDeclaration] -> Desugar ()
+genPartials = traverseOf_ (each . _Unwrapped) genPartial
   where
-    genPartial :: Located Frontend.Declaration' -> Desugar ()
-    genPartial (Located wholeDeclRegion decl) =
-        traverseOf_ unlocatedDeclarationBody' genPartial' decl
+    genPartial :: Located FrontendDeclaration' -> Desugar ()
+    genPartial (Located wholeDeclRegion (decl :: FrontendDeclaration')) =
+        traverseOf_ (the @"body" . _Unwrapped . unlocated) genPartial' decl
       where
-        genPartial' :: Frontend.DeclarationBody' -> Desugar ()
+        genPartial' :: FrontendDeclarationBody' -> Desugar ()
         genPartial' db = do
             partial <- genPartial'' db
-            let f = insertWithM mergePartials (IgnoreLocation (decl ^. name)) partial
+            let f = insertWithM mergePartials (IgnoreLocation (decl ^. field' @"name")) partial
             modifyM (traverseOf partialDeclarations f)
 
-        genPartial'' :: Frontend.DeclarationBody' -> Desugar PartialDeclaration
-        genPartial'' (Frontend.Value e pats) = do
+        genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
+        genPartial'' (Value e pats _) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
-            pure (JustLet (decl ^. declaration'Name . unlocated) wholeDeclRegion body)
-        genPartial'' (Frontend.ValueTypeDef ty) = do
-            ty' <- traverse desugarType ty
-            pure (JustDef (decl ^. declaration'Name . unlocated) wholeDeclRegion ty')
-        genPartial'' (Frontend.TypeDeclaration vars typeDecl) = do
-            let traverseDecl :: Frontend.TypeDeclaration -> Desugar Desugared.TypeDeclaration
-                traverseDecl (Frontend.Alias t) = Desugared.Alias <$> traverseOf unlocated desugarType t
-                traverseDecl (Frontend.ADT constructors) = Desugared.ADT <$> traverseOf (each . _2 . each . unlocated) desugarType constructors
+
+            pure (JustLet (decl ^. field' @"name" . unlocated :: Name) wholeDeclRegion body)
+        genPartial'' (ValueTypeDef ty) = do
+            ty' <- traverseOf (_Unwrapped . unlocated) desugarType ty
+            pure (JustDef (decl ^. field' @"name" . unlocated) wholeDeclRegion ty')
+        genPartial'' (TypeDeclaration vars typeDecl) = do
+            let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
+                traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped . unlocated) desugarType t
+                traverseDecl (ADT constructors) = ADT <$> traverseOf (each . _2 . each . _Unwrapped . unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
-            let decl' = Desugared.TypeDeclaration vars typeDecl'
-            let bodyLoc = decl ^. declarationBody' . sourceRegion
-            pure (Immediate (decl ^. declaration'Name . unlocated) (Located bodyLoc (Desugared.DeclarationBody (Located bodyLoc decl'))))
+            let decl' = TypeDeclaration vars typeDecl'
+            let bodyLoc = decl ^. the @"body" . _Unwrapped . sourceRegion
+            pure (Immediate (decl ^. field' @"name" . unlocated) (DeclarationBody (Located bodyLoc decl')))
 
-desugarType :: Frontend.Type -> Desugar Desugared.Type
-desugarType (Frontend.TypeVar t) = pure (Desugared.TypeVar t)
-desugarType Frontend.UnitType = pure Desugared.UnitType
-desugarType (Frontend.FunctionType a b) = Desugared.FunctionType <$> traverseOf unlocated desugarType a <*> traverseOf unlocated desugarType b
-desugarType (Frontend.TypeConstructorApplication a b) = Desugared.TypeConstructorApplication <$> traverseOf unlocated desugarType a <*> traverseOf unlocated desugarType b
-desugarType (Frontend.UserDefinedType a) = pure (Desugared.UserDefinedType a)
-desugarType (Frontend.RecordType fields) = Desugared.RecordType <$> traverseOf (each . _2 . unlocated) desugarType fields
-desugarType (Frontend.TupleType fields) = Desugared.TupleType <$> traverse (traverseOf unlocated desugarType) fields
-desugarType (Frontend.ListType t) = Desugared.ListType <$> traverseOf unlocated desugarType t
+desugarType :: FrontendType' -> Desugar DesugaredType'
+desugarType x = pure (unsafeCoerce x)
 
-completePartials :: Located ModuleName -> Desugar [Desugared.Declaration]
+completePartials :: Located ModuleName -> Desugar [DesugaredDeclaration]
 completePartials mn = do
     partials <- use' partialDeclarations
     decls <-
@@ -176,69 +184,75 @@ completePartials mn = do
             ( \declName partial -> do
                 body <- resolvePartialDeclaration partial
                 let locatedName = declName ^. _IgnoreLocation
-                let declaration' = Desugared.Declaration' mn locatedName body
-                let overallLocation = locatedName ^. sourceRegion <> body ^. unlocated . Desugared._DeclarationBody . sourceRegion
-                pure (Desugared.Declaration (Located overallLocation declaration'))
+                let declaration' = Declaration' mn locatedName body
+                let overallLocation = locatedName ^. sourceRegion <> body ^. _Unwrapped . sourceRegion
+                pure (Declaration (Located overallLocation declaration'))
             )
             partials
     pure (M.elems decls)
 
-desugarExpr :: Frontend.Expr -> Desugar Desugared.Expr
-desugarExpr (Frontend.Expr fe) = Desugared.Expr <$> traverseOf unlocated desugarExpr' fe
+desugarExpr :: FrontendExpr -> Desugar DesugaredExpr
+desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desugarExpr' (fe ^. _1)
   where
-    desugarExpr' :: Frontend.Expr' -> Desugar Desugared.Expr'
-    desugarExpr' (Frontend.Int i) = pure (Desugared.Int i)
-    desugarExpr' (Frontend.Float f) = pure (Desugared.Float f)
-    desugarExpr' (Frontend.String s) = pure (Desugared.String s)
-    desugarExpr' (Frontend.Char c) = pure (Desugared.Char c)
-    desugarExpr' Frontend.Unit = pure Desugared.Unit
-    desugarExpr' (Frontend.Var v) = pure (Desugared.Var v)
-    desugarExpr' (Frontend.Constructor c) = pure (Desugared.Constructor c)
-    desugarExpr' (Frontend.Lambda pats e) = do
-        pats' <- traverse desugarPattern pats
+    desugarExpr' :: FrontendExpr' -> Desugar DesugaredExpr'
+    desugarExpr' (Int i) = pure (Int i)
+    desugarExpr' (Float f) = pure (Float f)
+    desugarExpr' (String s) = pure (String s)
+    desugarExpr' (Char c) = pure (Char c)
+    desugarExpr' Unit = pure Unit
+    desugarExpr' (Var v) = pure (Var v)
+    desugarExpr' (Constructor c) = pure (Constructor c)
+    desugarExpr' (Lambda pats e) = do
+        pats' <- traverseOf unlocated (traverse desugarPattern) pats
         e' <- desugarExpr e
-        pure (foldLambda pats' e' ^. Desugared._Expr . unlocated) -- Somewhat cursed but it works
-    desugarExpr' (Frontend.FunctionCall e1 e2) = liftA2 Desugared.FunctionCall (desugarExpr e1) (desugarExpr e2)
-    desugarExpr' (Frontend.If a b c) = liftA3 Desugared.If (desugarExpr a) (desugarExpr b) (desugarExpr c)
-    desugarExpr' (Frontend.BinaryOperator o a b) = liftA3 Desugared.BinaryOperator (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
-    desugarExpr' (Frontend.List e) = Desugared.List <$> traverse desugarExpr e
-    desugarExpr' (Frontend.Match e cases) = do
+
+        pure (foldLambda (pats' ^. unlocated) e' ^. _Unwrapped . _1 . unlocated) -- Somewhat cursed but it works
+    desugarExpr' (FunctionCall e1 e2) = liftA2 FunctionCall (desugarExpr e1) (desugarExpr e2)
+    desugarExpr' (If a b c) = liftA3 If (desugarExpr a) (desugarExpr b) (desugarExpr c)
+    desugarExpr' (BinaryOperator o a b) = liftA3 BinaryOperator (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
+    desugarExpr' (List e) = List <$> traverse desugarExpr e
+    desugarExpr' (Match e cases) = do
         e' <- desugarExpr e
         cases' <- traverse (bitraverse desugarPattern desugarExpr) cases
-        pure $ Desugared.Match e' cases'
-    desugarExpr' (Frontend.Let n pats body) = do
+        pure $ Match e' cases'
+    desugarExpr' (Let n pats body) = do
         pats' <- traverse desugarPattern pats
         body' <- desugarExpr body
-        pure (Desugared.Let n (foldLambda pats' body'))
-    desugarExpr' (Frontend.LetIn n pats e body) = do
+        pure (Let n NoFieldValue (foldLambda pats' body'))
+    desugarExpr' (LetIn n pats e body) = do
         pats' <- traverse desugarPattern pats
         e' <- desugarExpr e
         body' <- desugarExpr body
-        pure (Desugared.LetIn n (foldLambda pats' e') body')
-    desugarExpr' (Frontend.Block e) = Desugared.Block <$> traverse desugarExpr e
-    desugarExpr' (Frontend.InParens e) = Desugared.InParens <$> desugarExpr e
-    desugarExpr' (Frontend.Tuple e) = Desugared.Tuple <$> traverse desugarExpr e
+        pure (LetIn n NoFieldValue (foldLambda pats' e') body')
+    desugarExpr' (Block e) = Block <$> traverse desugarExpr e
+    desugarExpr' (InParens e) = InParens <$> desugarExpr e
+    desugarExpr' (Tuple e) = Tuple <$> traverse desugarExpr e
 
-desugarBinaryOperator :: Frontend.BinaryOperator -> Desugar Desugared.BinaryOperator
-desugarBinaryOperator (Frontend.MkBinaryOperator lop) = Desugared.MkBinaryOperator <$> traverseOf unlocated desugarBinaryOperator' lop
+desugarBinaryOperator :: FrontendBinaryOperator -> Desugar DesugaredBinaryOperator
+desugarBinaryOperator (MkBinaryOperator lop) = MkBinaryOperator <$> traverseOf unlocated desugarBinaryOperator' lop
   where
-    desugarBinaryOperator' :: Frontend.BinaryOperator' -> Desugar Desugared.BinaryOperator'
-    desugarBinaryOperator' (Frontend.Op o) = pure (Desugared.Op o)
-    desugarBinaryOperator' (Frontend.Infixed o) = pure (Desugared.Infixed o)
+    desugarBinaryOperator' :: FrontendBinaryOperator' -> Desugar DesugaredBinaryOperator'
+    desugarBinaryOperator' (SymOp o) = pure (SymOp o)
+    desugarBinaryOperator' (Infixed o) = pure (Infixed o)
 
-desugarPattern :: Frontend.Pattern -> Desugar Desugared.Pattern
-desugarPattern (Frontend.Pattern lp) = Desugared.Pattern <$> traverseOf unlocated desugarPattern' lp
+desugarPattern :: FrontendPattern -> Desugar DesugaredPattern
+desugarPattern (Pattern lp) =
+    Pattern
+        <$> bitraverse
+            (traverseOf unlocated desugarPattern')
+            (traverse (traverseOf (_Unwrapped . unlocated) desugarType))
+            lp
   where
-    desugarPattern' :: Frontend.Pattern' -> Desugar Desugared.Pattern'
-    desugarPattern' (Frontend.IntegerPattern i) = pure (Desugared.IntegerPattern i)
-    desugarPattern' (Frontend.FloatPattern f) = pure (Desugared.FloatPattern f)
-    desugarPattern' (Frontend.StringPattern s) = pure (Desugared.StringPattern s)
-    desugarPattern' (Frontend.CharPattern c) = pure (Desugared.CharPattern c)
-    desugarPattern' (Frontend.VarPattern v) = pure (Desugared.VarPattern v)
-    desugarPattern' (Frontend.ConstructorPattern c pats) = Desugared.ConstructorPattern c <$> traverse desugarPattern pats
-    desugarPattern' Frontend.WildcardPattern = pure Desugared.WildcardPattern
-    desugarPattern' (Frontend.ListPattern pats) = Desugared.ListPattern <$> traverse desugarPattern pats
-    desugarPattern' (Frontend.ConsPattern a b) = liftA2 Desugared.ConsPattern (desugarPattern a) (desugarPattern b)
+    desugarPattern' :: FrontendPattern' -> Desugar DesugaredPattern'
+    desugarPattern' (IntegerPattern i) = pure (IntegerPattern i)
+    desugarPattern' (FloatPattern f) = pure (FloatPattern f)
+    desugarPattern' (StringPattern s) = pure (StringPattern s)
+    desugarPattern' (CharPattern c) = pure (CharPattern c)
+    desugarPattern' (VarPattern v) = pure (VarPattern v)
+    desugarPattern' (ConstructorPattern c pats) = ConstructorPattern c <$> traverse desugarPattern pats
+    desugarPattern' WildcardPattern = pure WildcardPattern
+    desugarPattern' (ListPattern pats) = ListPattern <$> traverse desugarPattern pats
+    desugarPattern' (ConsPattern a b) = liftA2 ConsPattern (desugarPattern a) (desugarPattern b)
 
 {-
 
@@ -254,10 +268,10 @@ Instead, we unfold the lambda, but keep the patterns, and the renamer handles th
 
 -}
 
-foldLambda :: [Desugared.Pattern] -> Desugared.Expr -> Desugared.Expr
+foldLambda :: [DesugaredPattern] -> DesugaredExpr -> DesugaredExpr
 foldLambda [] e = e
 foldLambda (p : ps) e =
     over
-        Desugared._Expr
-        (\e' -> Located (e' ^. sourceRegion) (Desugared.Lambda p (foldLambda ps e)))
+        (_Unwrapped . _1)
+        (\e' -> Located (e' ^. sourceRegion) (Lambda p (foldLambda ps e)))
         e

@@ -30,7 +30,7 @@
 
       ];
 
-      perSystem = { self', system, config, pkgs, ... }: {
+      perSystem = { self', lib, system, config, pkgs, ... }: {
         _module.args.pkgs = import self.inputs.nixpkgs {
           inherit system;
           overlays =
@@ -81,7 +81,13 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc92;
+          basePackages = pkgs.haskell.packages.ghc92.override (old: {
+            overrides = lib.composeExtensions (old.overrides or (_: _: {})) (self: super: {
+              mkDerivation = args: super.mkDerivation (args // {
+                enableLibraryProfiling = true;
+              });
+            });
+          });
 
 
 

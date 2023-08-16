@@ -22,9 +22,10 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Control.Lens ((^.))
+import Control.Lens ((^.), _1, _2)
+import Data.Generics.Wrapped
 import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocated)
-import Elara.AST.Shunted (Expr, _Expr)
+import Elara.AST.Shunted
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Existential (Existential)
@@ -34,8 +35,8 @@ import Elara.TypeInfer.Type (Type (..))
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Shunted qualified as Syntax
-import Elara.AST.Typed qualified as Typed
+import Elara.AST.Generic qualified as Syntax
+import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.VarRef (mkLocal', withName')
 import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
@@ -48,8 +49,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-
-type TypedExpr = Typed.Expr
+import Elara.AST.Typed
 
 -- | Type-checking state
 data Status = Status
@@ -1198,9 +1198,9 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
 -}
 infer ::
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
-    Expr ->
+    ShuntedExpr ->
     Sem r TypedExpr
-infer (Syntax.Expr (Located location e0)) = case e0 of
+infer (Syntax.Expr (Located location e0, _)) = case e0 of
     -- Var
     Syntax.Var vn -> do
         _Γ <- get
@@ -1209,7 +1209,7 @@ infer (Syntax.Expr (Located location e0)) = case e0 of
 
         t <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
 
-        pure $ Typed.Expr (Located location (Typed.Var vn), t)
+        pure $ Expr (Located location (Var vn), t)
 
     -- →I⇒
     Syntax.Lambda name body -> do
@@ -1228,7 +1228,7 @@ infer (Syntax.Expr (Located location e0)) = case e0 of
 
         let t = Type.Function{..}
 
-        pure $ Typed.Expr (Located location (Typed.Lambda name body'), t)
+        pure $ Syntax.Expr (Located location (Lambda name body'), t)
 
     -- →E
     Syntax.FunctionCall function argument -> do
@@ -1236,22 +1236,22 @@ infer (Syntax.Expr (Located location e0)) = case e0 of
 
         _Θ <- get
 
-        (typedArgument, appType) <- inferApplication (Context.solveType _Θ (Typed.typeOf _A)) argument
+        (typedArgument, appType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
 
-        pure $ Typed.Expr (Located location (Typed.FunctionCall _A typedArgument), appType)
+        pure $ Expr (Located location (FunctionCall _A typedArgument), appType)
 
     -- All the type inference rules for scalars go here.  This part is
     -- pretty self-explanatory: a scalar literal pures the matching
     -- scalar type.
     Syntax.Float f -> do
         let t = (Type.Scalar{scalar = Monotype.Real, ..})
-        pure $ Typed.Expr (Located location (Typed.Float f), t)
+        pure $ Expr (Located location (Float f), t)
     Syntax.Int i -> do
         let t = (Type.Scalar{scalar = Monotype.Integer, ..})
-        pure $ Typed.Expr (Located location (Typed.Int i), t)
+        pure $ Expr (Located location (Int i), t)
     Syntax.String s -> do
         let t = (Type.Scalar{scalar = Monotype.Text, ..})
-        pure $ Typed.Expr (Located location (Typed.String s), t)
+        pure $ Expr (Located location (String s), t)
 
 -- -- Anno
 -- Syntax.Annotation{..} -> do
@@ -1774,12 +1774,12 @@ infer (Syntax.Expr (Located location e0)) = case e0 of
 check ::
     forall r.
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
-    Expr ->
+    ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
-check expr = check' (expr ^. _Expr . unlocated)
+check expr = check' (expr ^. _Unwrapped . _1 . unlocated)
   where
-    check' :: Syntax.Expr' -> Type SourceRegion -> Sem r TypedExpr
+    check' :: ShuntedExpr' -> Type SourceRegion -> Sem r TypedExpr
     -- The check function is the most important function to understand for the
     -- bidirectional type-checking algorithm.
     --
@@ -1825,7 +1825,7 @@ check expr = check' (expr ^. _Expr . unlocated)
 
     -- Sub
     check' _ _B = do
-        _A@(Typed.Expr (_, _At)) <- infer expr
+        _A@(Syntax.Expr (_, _At)) <- infer expr
 
         _Θ <- get
 
@@ -1844,7 +1844,7 @@ check expr = check' (expr ^. _Expr . unlocated)
 inferApplication ::
     (Member (State Status) r, Member (Error TypeInferenceError) r) =>
     Type SourceRegion ->
-    Expr ->
+    ShuntedExpr ->
     Sem r (TypedExpr, Type SourceRegion)
 -- ∀App
 inferApplication Type.Forall{domain = Domain.Type, ..} e = do

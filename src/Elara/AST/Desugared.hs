@@ -1,112 +1,69 @@
-{-# LANGUAGE TemplateHaskell #-}
-
-module Elara.AST.Desugared where
-
-import Control.Lens.TH
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, ModuleName, Name, OpName, TypeName, VarName)
-import Elara.AST.Region (Located)
-
 {- |
-  This is the second main AST stage, which is very similar to the `Elara.AST.Frontend.Expr` AST, with a few key differences:
+  This is the second main AST stage, which is very similar to the `Elara.AST.Desugared.Expr` AST, with a few key differences:
 
     * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
     * Let bindings have no patterns, they are desugared into lambdas
     * Def and Let declarations are merged into a single entity
 -}
-data Expr'
-    = Int Integer
-    | Float Double
-    | String Text
-    | Char Char
-    | Unit
-    | Var (Located (MaybeQualified VarName))
-    | Constructor (Located (MaybeQualified TypeName))
-    | Lambda Pattern Expr
-    | FunctionCall Expr Expr
-    | If Expr Expr Expr
-    | BinaryOperator BinaryOperator Expr Expr
-    | List [Expr]
-    | Match Expr [(Pattern, Expr)]
-    | LetIn (Located VarName) Expr Expr
-    | Let (Located VarName) Expr
-    | Block (NonEmpty Expr)
-    | -- | Required for operator shunting
-      InParens Expr
-    | Tuple (NonEmpty Expr)
-    deriving (Show, Eq)
+module Elara.AST.Desugared where
 
-newtype Expr = Expr (Located Expr')
-    deriving (Show, Eq)
+import Elara.AST.Generic
+import Elara.AST.Generic qualified as Generic
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
+import Elara.AST.Region (Located)
+import Elara.AST.Select (LocatedAST (Desugared))
 
-data Pattern'
-    = VarPattern (Located VarName)
-    | ConstructorPattern (Located (MaybeQualified TypeName)) [Pattern]
-    | ListPattern [Pattern]
-    | ConsPattern Pattern Pattern
-    | WildcardPattern
-    | IntegerPattern Integer
-    | FloatPattern Double
-    | StringPattern Text
-    | CharPattern Char
-    deriving (Show, Eq)
+-- Generic location and qualification types
+type instance ASTLocate' 'Desugared = Located
+type instance ASTQual 'Desugared = MaybeQualified
 
-newtype Pattern = Pattern (Located Pattern')
-    deriving (Show, Eq)
+-- Selections for 'Expr'
+type instance Select "ExprType" 'Desugared = Maybe DesugaredType
+type instance Select "LambdaPattern" 'Desugared = DesugaredPattern
+type instance Select "LetPattern" 'Desugared = NoFieldValue
+type instance Select "VarRef" 'Desugared = MaybeQualified VarName
+type instance Select "ConRef" 'Desugared = MaybeQualified TypeName
+type instance Select "LetParamName" 'Desugared = VarName
+type instance Select "InParens" 'Desugared = DesugaredExpr
 
-data BinaryOperator'
-    = Op (Located (MaybeQualified OpName))
-    | Infixed (Located (MaybeQualified VarName))
-    deriving (Show, Eq)
+-- Selections for 'BinaryOperator'
+type instance Select "SymOp" 'Desugared = MaybeQualified OpName
+type instance Select "Infixed" 'Desugared = MaybeQualified VarName
 
-newtype BinaryOperator = MkBinaryOperator (Located BinaryOperator')
-    deriving (Show, Eq)
+-- Selections for 'Pattern'
+type instance Select "PatternType" 'Desugared = Maybe DesugaredType
+type instance Select "VarPat" 'Desugared = VarName
+type instance Select "ConPat" 'Desugared = MaybeQualified TypeName
 
-data Type
-    = TypeVar (Located LowerAlphaName)
-    | FunctionType (Located Type) (Located Type)
-    | UnitType
-    | TypeConstructorApplication (Located Type) (Located Type)
-    | UserDefinedType (Located (MaybeQualified TypeName))
-    | RecordType (NonEmpty (Located VarName, Located Type))
-    | TupleType (NonEmpty (Located Type))
-    | ListType (Located Type)
-    deriving (Show, Eq)
+-- Selections for 'Declaration'
+type instance Select "DeclarationName" 'Desugared = Name
 
-newtype Declaration = Declaration (Located Declaration')
-    deriving (Show, Eq)
+-- Selections for 'DeclarationBody'
+type instance Select "ValuePatterns" 'Desugared = NoFieldValue
+type instance Select "ValueType" 'Desugared = Maybe DesugaredType
+type instance Select "ValueTypeDef" 'Desugared = DataConCantHappen
 
-data Declaration' = Declaration'
-    { _declaration'Module' :: Located ModuleName
-    , _declaration'Name :: Located Name
-    , _declaration'Body :: Located DeclarationBody
-    }
-    deriving (Show, Eq)
+-- Selections for 'Type'
+type instance Select "TypeVar" 'Desugared = LowerAlphaName
+type instance Select "UserDefinedType" 'Desugared = MaybeQualified TypeName
+type instance Select "ConstructorName" 'Desugared = TypeName
 
-newtype DeclarationBody = DeclarationBody (Located DeclarationBody')
-    deriving (Show, Eq)
+type DesugaredExpr = Generic.Expr 'Desugared
+type DesugaredExpr' = Generic.Expr' 'Desugared
 
-data DeclarationBody'
-    = -- | let <p> = <e> and / or def <name> : <type>
-      Value
-        { _expression :: Expr
-        , _valueType :: Maybe (Located Type)
-        }
-    | -- | Unused for now
-      NativeDef (Located Type)
-    | -- | type <name> <vars> = <type>
-      TypeDeclaration [Located LowerAlphaName] (Located TypeDeclaration)
-    deriving (Show, Eq)
+type DesugaredPattern = Generic.Pattern 'Desugared
+type DesugaredPattern' = Generic.Pattern' 'Desugared
 
-data TypeDeclaration
-    = ADT (NonEmpty (Located TypeName, [Located Type]))
-    | Alias (Located Type)
-    deriving (Show, Eq)
+type DesugaredBinaryOperator = Generic.BinaryOperator 'Desugared
+type DesugaredBinaryOperator' = Generic.BinaryOperator' 'Desugared
 
-makeLenses ''Declaration'
-makeClassy ''Declaration
-makePrisms ''Declaration
-makePrisms ''DeclarationBody
-makePrisms ''TypeDeclaration
-makePrisms ''Expr
-makePrisms ''Pattern
-makePrisms ''BinaryOperator
+type DesugaredType = Generic.Type 'Desugared
+type DesugaredType' = Generic.Type' 'Desugared
+
+type DesugaredDeclaration = Generic.Declaration 'Desugared
+type DesugaredDeclaration' = Generic.Declaration' 'Desugared
+
+type DesugaredDeclarationBody = Generic.DeclarationBody 'Desugared
+type DesugaredDeclarationBody' = Generic.DeclarationBody' 'Desugared
+
+type DesugaredTypeDeclaration = Generic.TypeDeclaration 'Desugared

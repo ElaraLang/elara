@@ -20,10 +20,12 @@
 module Elara.Data.Kind.Infer where
 
 import Control.Lens (Each (each), traverseOf_, view, (^.), _2)
+import Data.Generics.Wrapped
 import Data.Map qualified as Map
+import Elara.AST.Generic
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Region (Located, unlocated)
-import Elara.AST.Renamed qualified as AST
+import Elara.AST.Shunted
 import Elara.Data.Kind
 import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId)
 import Elara.Prim (primKindCheckContext)
@@ -63,14 +65,14 @@ inferKind ::
     (Member (State InferState) r, Member (Error KindInferError) r) =>
     Qualified TypeName ->
     [Located (Unique LowerAlphaName)] ->
-    AST.TypeDeclaration ->
+    ShuntedTypeDeclaration ->
     Sem r ElaraKind
 inferKind tName args t = do
     let args' = fmap (getUniqueId . view unlocated) args
     t' <- case t of
-        AST.Alias a -> inferTypeKind (a ^. unlocated)
-        AST.ADT constructors -> do
-            traverseOf_ (each . _2 . each . unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
+        Alias a -> inferTypeKind (a ^. _Unwrapped . unlocated)
+        ADT constructors -> do
+            traverseOf_ (each . _2 . each . _Unwrapped . unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
             pure TypeKind
 
     let funcKind = foldr FunctionKind t' (VarKind <$> args')
@@ -81,30 +83,30 @@ inferKind tName args t = do
             }
     pure funcKind
 
-inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => AST.Type -> Sem r ElaraKind
-inferTypeKind AST.UnitType = pure TypeKind
-inferTypeKind (AST.TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet
-inferTypeKind (AST.UserDefinedType name) = lookupKind (name ^. unlocated)
-inferTypeKind (AST.FunctionType a b) = do
-    a' <- inferTypeKind (a ^. unlocated)
-    b' <- inferTypeKind (b ^. unlocated)
+inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => ShuntedType' -> Sem r ElaraKind
+inferTypeKind UnitType = pure TypeKind
+inferTypeKind (TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet
+inferTypeKind (UserDefinedType name) = lookupKind (name ^. unlocated)
+inferTypeKind (FunctionType a b) = do
+    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
+    b' <- inferTypeKind (b ^. _Unwrapped . unlocated)
     unifyKinds a' TypeKind
     unifyKinds b' TypeKind
     pure TypeKind
-inferTypeKind (AST.TypeConstructorApplication ctor a) = do
-    ctor' <- inferTypeKind (ctor ^. unlocated)
-    a' <- inferTypeKind (a ^. unlocated)
+inferTypeKind (TypeConstructorApplication ctor a) = do
+    ctor' <- inferTypeKind (ctor ^. _Unwrapped . unlocated)
+    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
     case ctor' of
         FunctionKind a'' b -> do
             unifyKinds a' a''
             pure b
         e -> throw (NotFunctionKind e)
-inferTypeKind (AST.RecordType _) = todo
-inferTypeKind (AST.TupleType fields) = do
-    traverse_ (unifyKinds TypeKind <=< inferTypeKind) (fmap (view unlocated) fields)
+inferTypeKind (RecordType _) = todo
+inferTypeKind (TupleType fields) = do
+    traverse_ (unifyKinds TypeKind <=< inferTypeKind) (fmap (view (_Unwrapped . unlocated)) fields)
     pure TypeKind
-inferTypeKind (AST.ListType a) = do
-    a' <- inferTypeKind (a ^. unlocated)
+inferTypeKind (ListType a) = do
+    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
     unifyKinds a' TypeKind
     pure TypeKind
 

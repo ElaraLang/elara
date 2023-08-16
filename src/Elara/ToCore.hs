@@ -1,16 +1,19 @@
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
+
 import Control.Lens (to, view, (^.), _2)
 import Data.Map qualified as M
 import Data.Traversable (for)
-import Elara.AST.Lenses (HasDeclarationBody' (unlocatedDeclarationBody'))
-import Elara.AST.Module (Module (Module), module'Declarations)
+import Elara.AST.Generic as AST
+import Data.Generics.Product
+import Data.Generics.Wrapped
+import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Select (HasDeclarationName (unlocatedDeclarationName), HasModuleName (unlocatedModuleName), Typed)
+import Elara.AST.Select (LocatedAST(Typed))
 import Elara.AST.StripLocation
-import Elara.AST.Typed as AST
+import Elara.AST.Typed 
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
@@ -31,14 +34,13 @@ import Polysemy.State.Extra (scoped)
 import TODO (todo)
 
 data ToCoreError
-    = LetInTopLevel AST.Expr
+    = LetInTopLevel TypedExpr
     | UnknownConstructor (Located (Qualified TypeName))
     | UnknownPrimConstructor (Qualified Text)
     | UnknownLambdaType (Type.Type SourceRegion)
-    deriving (Show, Eq)
 
 instance ReportableError ToCoreError where
-    report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") (pretty e) [] []
+    report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") ("TODO") [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
@@ -92,16 +94,16 @@ runToCoreC =
 
 moduleToCore :: HasCallStack => (ToCoreC r) => Module Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
-    let name = m ^. unlocatedModuleName
-    decls <- for (m ^. module'Declarations) $ \decl -> do
-        (body', var) <- case decl ^. unlocatedDeclarationBody' of
-            Value v -> do
+    let name = m ^. field' @"name" . unlocated
+    decls <- for (m ^. field' @"declarations") $ \decl -> do
+        (body', var) <- case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
+            Value v _ _ -> do
                 (ty, v') <- scoped @TyVarTable $ do
                     -- clear the tyvar table for each value
-                    ty <- typeToCore (v ^. _Expr . _2)
+                    ty <- typeToCore (v ^. _Unwrapped . _2)
                     v' <- toCore v
                     pure (ty, v')
-                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. unlocatedDeclarationName))) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. _Unwrapped . unlocated . field' @"name" . unlocated ))) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
@@ -134,10 +136,10 @@ mkLocalRef = Local . Identity
 mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
-toCore :: HasCallStack => (ToCoreC r) => AST.Expr -> Sem r CoreExpr
-toCore le@(AST.Expr (Located _ e, t)) = toCore' e
+toCore :: HasCallStack => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
+toCore le@(Expr (Located _ e, t)) = toCore' e
   where
-    toCore' :: (ToCoreC r) => AST.Expr' -> Sem r CoreExpr
+    toCore' :: (ToCoreC r) => TypedExpr' -> Sem r CoreExpr
     toCore' = \case
         AST.Int i -> pure $ Lit (Core.Int i)
         AST.Float f -> pure $ Lit (Core.Double f)
@@ -186,7 +188,7 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
                     xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
-        AST.LetIn (Located _ vn) e1 e2 -> do
+        AST.LetIn (Located _ vn) _ e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
             let isRecursive = False -- todo
@@ -206,7 +208,7 @@ toCore le@(AST.Expr (Located _ e, t)) = toCore' e
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
 
-desugarMatch :: ToCoreC r => AST.Expr -> [(AST.Pattern, AST.Expr)] -> Sem r CoreExpr
+desugarMatch :: ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
     e' <- toCore e
     bind' <- mkBindName e
@@ -233,11 +235,11 @@ desugarMatch e pats = do
             AST.ConsPattern (Pattern (Located _ p1, _)) (Pattern (Located _ p2, _)) -> do
                 c <- lookupPrimCtor consCtorName
                 pure (Core.DataAlt c, [], branch')
-            other -> error $ "TODO: pattern " <> show other
+            other -> error $ "TODO: pattern "
 
     pure $ Core.Match e' (Just bind') pats'
 
-mkBindName :: ToCoreC r => AST.Expr -> Sem r Var
+mkBindName :: ToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
@@ -248,6 +250,6 @@ mkBindName (AST.Expr (_, t)) = do
     unique <- makeUnique "bind"
     pure (Core.Id (mkLocalRef unique) t')
 
-desugarBlock :: ToCoreC r => NonEmpty AST.Expr -> Sem r CoreExpr
+desugarBlock :: ToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (one :| []) = toCore one
 desugarBlock _ = error "todo"

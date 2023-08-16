@@ -29,7 +29,7 @@ library
   exposed-modules:
       Elara.AST.Desugared
       Elara.AST.Frontend
-      Elara.AST.Lenses
+      Elara.AST.Generic
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Pretty
@@ -38,8 +38,8 @@ library
       Elara.AST.Select
       Elara.AST.Shunted
       Elara.AST.StripLocation
+      Elara.AST.Ttg
       Elara.AST.Typed
-      Elara.AST.Unlocated.Frontend
       Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
       Elara.Compile

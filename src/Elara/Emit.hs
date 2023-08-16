@@ -5,7 +5,6 @@ import Control.Lens hiding (List)
 import Data.List.NonEmpty qualified as NE
 
 import Elara.AST.Name (ModuleName (..), Qualified (..))
-import Elara.AST.Select (HasModuleName (unlocatedModuleName))
 import Elara.AST.VarRef (VarRef' (..), varRefVal)
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Operator (translateOperatorName)
@@ -29,6 +28,7 @@ import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
 import Print (showPretty)
+import Data.Generics.Product
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -48,7 +48,7 @@ emitGraph g = do
 
 emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
-    let name = createModuleName (m ^. unlocatedModuleName)
+    let name = createModuleName (m ^. field' @"name")
     version <- ask
 
     let runInnerEmit =
@@ -59,13 +59,13 @@ emitModule m = do
 
     let (_, clazz) = runInnerEmit $ do
             (clinit, _) <- runWriter @[Instruction] $ do
-                traverse_ addDeclaration (m ^. declarations)
+                traverse_ addDeclaration (m ^. field @"declarations")
                 when (isMainModule m) (embed $ addMethod (generateMainMethod m))
 
             addClinit clinit
 
     pure
-        ( m ^. unlocatedModuleName
+        ( m ^. field @"name"
         , clazz
         )
 
@@ -116,7 +116,7 @@ addDeclaration declBody = case declBody of
     e -> error (showPretty e)
 
 isMainModule :: CoreModule -> Bool
-isMainModule m = m ^. unlocatedModuleName == ModuleName ("Main" :| [])
+isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
 addStaticFieldInitialiser :: ClassFileField -> JVMExpr -> Type -> InnerEmit ()
@@ -141,7 +141,7 @@ generateMainMethod m =
                 { maxStack = 2 -- TODO: calculate this
                 , maxLocals = 2 -- TODO: calculate this too
                 , code =
-                    [ GetStatic (ClassInfoType (createModuleName (m ^. unlocatedModuleName))) "main" (ObjectFieldType "elara.IO")
+                    [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "elara.IO")
                     , InvokeVirtual (ClassInfoType "elara.IO") "run" (MethodDescriptor [] VoidReturn)
                     , Return
                     ]
