@@ -139,7 +139,7 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length []) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
