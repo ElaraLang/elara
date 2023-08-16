@@ -16,7 +16,6 @@ import Data.Generics.Wrapped
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
-import Elara.AST.Select hiding (moduleName)
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
@@ -54,6 +53,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
 import Text.Printf
+import Elara.AST.Select
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -81,15 +81,6 @@ dumpGraph graph nameFunc suffix = do
             fileHandle <- openFile fileName WriteMode
             hPutDoc fileHandle contents
             hFlush fileHandle
-
-    traverseGraph_ dump graph
-
-dumpJSONGraphWith :: (ToJSON m) => TopologicalGraph a -> (a -> m) -> (a -> Text) -> Text -> IO ()
-dumpJSONGraphWith graph f nameFunc suffix = do
-    let dump m = do
-            let contents = encode (f m)
-            let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
-            writeFileLBS fileName contents
 
     traverseGraph_ dump graph
 
