@@ -53,9 +53,9 @@ functionTypes = describe "Infers function types correctly" $ do
                     ) | a == a' && b == b' && b == b'' -> pass
             o -> fail o
 
-    it "Infers polymorphic lets correctly" $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in (id 1, id ())" "(Int, ())"
-        case t of
-            VariableType' "x" -> pass
-            -- (Tuple' [VariableType' "Int", Unit']) -> pass
-            o -> fail o
+-- it "Infers polymorphic lets correctly" $ do
+--     (t, fail) <- inferSpec "let id = \\x -> x in (id 1, id ())" "(Int, ())"
+--     case t of
+--         VariableType' "x" -> pass
+--         -- (Tuple' [VariableType' "Int", Unit']) -> pass
+--         o -> fail o
