@@ -1,0 +1,25 @@
+name: "CI"
+on:
+  push:
+    branches:
+      - '*'
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - uses: cachix/cachix-action@v12
+        with:
+          name: srid
+      - name: Build examples
+        id: examples
+        run: |
+          # Github Action runners do not support M1 yet.
+          nix run nixpkgs#sd mkARMMacosSystem mkIntelMacosSystem ./examples/*/flake.nix
+
+          nix run github:srid/nixci
