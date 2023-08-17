@@ -87,8 +87,9 @@ bracedBlock [] = "{}"
 bracedBlock b = do
     let open = "{ "
         close = " }"
-        separator = "; "
-    group (align (encloseSep open close separator (pretty <$> b)))
+        shortSeparator = "; "
+        longSeparator = "; " <> line
+    group (align (encloseSep open close (flatAlt longSeparator shortSeparator) (pretty <$> b)))
 
 class Pretty a where
     pretty :: a -> Doc AnsiStyle

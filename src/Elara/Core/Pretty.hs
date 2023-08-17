@@ -28,7 +28,7 @@ instance PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr (Lam b e) = prettyLambdaExpr [prettyVar False False b] e
+prettyExpr (Lam b e) = prettyLambdaExpr [prettyVar True True b] e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other
@@ -47,7 +47,7 @@ prettyVdefg (Recursive bindings) = "Rec" <> prettyBlockExpr (prettyVdef <$> bind
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
-prettyVdef (v, e) = prettyVar True False v <+> "=" <+> prettyExpr e
+prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True

@@ -13,7 +13,7 @@ instance StripLocation (Located a) a where
     stripLocation :: Located a -> a
     stripLocation (Located _ a) = a
 
-instance StripLocation SourceRegion () where
+instance {-# INCOHERENT #-} StripLocation SourceRegion () where
     stripLocation _ = ()
 
 instance {-# OVERLAPPABLE #-} (StripLocation a1 b1, StripLocation b1 b2) => StripLocation a1 b2 where

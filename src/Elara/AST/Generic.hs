@@ -4,6 +4,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RoleAnnotations #-}
@@ -23,6 +24,7 @@ import Elara.AST.Name (ModuleName, Name, Qualified, VarName (..))
 import Elara.AST.Pretty
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select (AST (..), LocatedAST, UnlocatedAST)
+import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Pretty
 import GHC.Generics (
     C,
@@ -33,6 +35,7 @@ import GHC.Generics (
     type (:+:),
  )
 import GHC.TypeLits
+import TODO (todo)
 import Prelude hiding (group)
 
 data DataConCantHappen deriving (Generic, Data)
@@ -170,11 +173,20 @@ class RUnlocate ast where
         ASTLocate ast a ->
         a
 
+    fmapUnlocated ::
+        forall a b.
+        (CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
+        (a -> b) ->
+        ASTLocate ast a ->
+        ASTLocate ast b
+
 instance (ASTLocate' ast ~ Located) => RUnlocate (ast :: LocatedAST) where
     rUnlocate = view unlocated
+    fmapUnlocated = fmap
 
 instance (ASTLocate' ast ~ Unlocated) => RUnlocate (ast :: UnlocatedAST) where
     rUnlocate = identity
+    fmapUnlocated f = f
 
 type ASTLocate :: a -> Kind.Type -> Kind.Type
 type ASTLocate ast a = CleanupLocated (ASTLocate' ast a)
@@ -223,33 +235,8 @@ coerceType' (ListType a) = ListType (coerceType a)
 -- Pretty printing
 
 deriving newtype instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
-deriving newtype instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
-deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
-deriving newtype instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
-
-deriving instance
-    ( Eq (ASTLocate ast (Select "SymOp" ast))
-    , Eq (ASTLocate ast (Select "Infixed" ast))
-    ) =>
-    Eq (BinaryOperator' ast)
-
-deriving instance
-    ( Ord (ASTLocate ast (Select "SymOp" ast))
-    , Ord (ASTLocate ast (Select "Infixed" ast))
-    ) =>
-    Ord (BinaryOperator' ast)
 
 deriving newtype instance Pretty (ASTLocate ast (Type' ast)) => Pretty (Type ast)
-deriving newtype instance Show (ASTLocate ast (Type' ast)) => Show (Type ast)
-
-deriving instance
-    ( Show (ASTLocate ast (Select "TypeVar" ast))
-    , Show (ASTLocate ast (Select "UserDefinedType" ast))
-    , Show (ASTLocate ast (Type' ast))
-    , Show (ASTLocate ast VarName)
-    ) =>
-    Show (Type' ast)
-
 instance
     ( Pretty (ASTLocate ast (Declaration' ast))
     ) =>
@@ -282,19 +269,26 @@ instance
             y = rUnlocate @b @ast @(DeclarationBody' ast) val
          in prettyDB n y
       where
+        -- The type of a 'Value' can appear in 2 places: Either as a field in 'Value''s constructor, or as the second field of the 'Expr' tuple
+        -- We know that only one will ever exist at a time (in theory, this isn't a formal invariant) so need to find a way of handling both cases
+        -- The fields have different types, but both are required to have a Pretty instance (see constraints above).
+        -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
+        -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
+        -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
         prettyDB n (Value e@(Expr (_, t)) _ t') =
             let typeOfE =
-                    (UnknownPretty <$> (toMaybe t :: Maybe exprType))
-                        <|> (UnknownPretty <$> (toMaybe t' :: Maybe valueType))
+                    (UnknownPretty <$> (toMaybe t :: Maybe exprType)) -- Prioritise the type in the expression
+                        <|> (UnknownPretty <$> (toMaybe t' :: Maybe valueType)) -- Otherwise, use the type in the declaration
              in prettyValueDeclaration n e typeOfE
         prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
 
 instance Pretty (TypeDeclaration ast) where
     pretty _ = "TODO"
 
--- | When fields may be optional, we need a way of representing that generally. This class does that.
--- In short, it converts a type to a 'Maybe'. If the type is already a 'Maybe', it is left alone.
--- If it is not, it is wrapped in a 'Just'. If it is 'NoFieldValue', it is converted to 'Nothing'.
+{- | When fields may be optional, we need a way of representing that generally. This class does that.
+ In short, it converts a type to a 'Maybe'. If the type is already a 'Maybe', it is left alone.
+ If it is not, it is wrapped in a 'Just'. If it is 'NoFieldValue', it is converted to 'Nothing'.
+-}
 class ToMaybe i o where
     toMaybe :: i -> o
 
@@ -404,26 +398,125 @@ instance
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
 
-type ForAllX c x =
-    ( AllX c (CNames (Expr x)) x
-    , AllX c (CNames (Expr' x)) x
-    , AllX c (CNames (Pattern x)) x
-    , AllX c (CNames (Pattern' x)) x
-    , AllX c (CNames (BinaryOperator x)) x
-    , AllX c (CNames (BinaryOperator' x)) x
-    )
+stripExprLocation ::
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ((ASTLocate' ast1 ~ Located), ASTLocate' ast2 ~ Unlocated) =>
+    Expr ast1 ->
+    Expr ast2
+stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
+    let e' = fmapUnlocated @LocatedAST @ast1 stripExprLocation' e
+     in -- t' = fmapUnlocated @LocatedAST @ast1 _ t :: ASTLocate ast1 (Select "ExprType" ast2)
+        Expr (stripLocation e', todo t)
+  where
+    stripExprLocation' :: forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST). Expr' ast1 -> Expr' ast2
+    stripExprLocation' (Int i) = Int i
+    stripExprLocation' (Float f) = Float f
+    stripExprLocation' (String s) = String s
+    stripExprLocation' (Char c) = Char c
+    stripExprLocation' Unit = Unit
+    stripExprLocation' (Var v) = Var (todo)
 
-type CNames a = GCNames (Rep a)
+-- Messy deriving stuff
 
-type family GCNames (f :: Kind.Type -> Kind.Type) :: [Symbol] where
-    GCNames (M1 D c f) = GCNames f
-    GCNames (f :+: g) = GCNames f ++ GCNames g
-    GCNames (M1 C ('MetaCons name _ _) f) = '[name]
+deriving instance
+    ( (Eq (Select "LetPattern" ast))
+    , (Eq (ASTLocate ast (Select "VarRef" ast)))
+    , (Eq (ASTLocate ast (Select "LambdaPattern" ast)))
+    , (Eq (ASTLocate ast (Select "ConRef" ast)))
+    , (Eq (ASTLocate ast (Select "LetParamName" ast)))
+    , (Eq (ASTLocate ast (BinaryOperator' ast)))
+    , (Eq (Select "InParens" ast))
+    , (Eq (Select "ExprType" ast))
+    , (Eq (Select "PatternType" ast))
+    , Eq (ASTLocate ast (Expr' ast))
+    , Eq (ASTLocate ast (Pattern' ast))
+    ) =>
+    Eq (Expr' ast)
 
-type family (xs :: [k]) ++ (ys :: [k]) :: [k] where
-    '[] ++ ys = ys
-    (x ': xs) ++ ys = x ': (xs ++ ys)
+deriving instance (Eq (ASTLocate ast (Expr' ast)), Eq (Select "ExprType" ast)) => Eq (Expr ast)
 
-type family AllX (c :: Kind.Type -> Constraint) (xs :: [Symbol]) (x :: a) :: Constraint where
-    AllX c '[] x = ()
-    AllX c (s ': ss) x = (c (Select s x), AllX c ss x)
+deriving instance
+    
+    ( Eq (ASTLocate ast (Select "VarPat" ast))
+    , Eq (ASTLocate ast (Select "ConPat" ast))
+    , (Eq (Select "PatternType" ast))
+    , Eq (ASTLocate ast (Pattern' ast))
+    ) =>
+    Eq (Pattern' ast)
+
+deriving instance (Eq (ASTLocate ast (Pattern' ast)), Eq (Select "PatternType" ast)) => Eq (Pattern ast)
+
+deriving instance
+    ( Eq (ASTLocate ast (Select "TypeVar" ast))
+    , Eq (ASTLocate ast (Select "UserDefinedType" ast))
+    , Eq (ASTLocate ast (Type' ast))
+    , Eq (ASTLocate ast VarName)
+    , Eq (Type ast)
+    ) =>
+    Eq (Type' ast)
+
+deriving instance (Eq (ASTLocate ast (Type' ast))) => Eq (Type ast)
+
+
+deriving instance
+    ( (Show (Select "LetPattern" ast))
+    , (Show (ASTLocate ast (Select "VarRef" ast)))
+    , (Show (ASTLocate ast (Select "LambdaPattern" ast)))
+    , (Show (ASTLocate ast (Select "ConRef" ast)))
+    , (Show (ASTLocate ast (Select "LetParamName" ast)))
+    , (Show (ASTLocate ast (BinaryOperator' ast)))
+    , (Show (Select "InParens" ast))
+    , (Show (Select "ExprType" ast))
+    , (Show (Select "PatternType" ast))
+    , Show (ASTLocate ast (Expr' ast))
+    , Show (ASTLocate ast (Pattern' ast))
+    ) =>
+    Show (Expr' ast)
+
+deriving instance (Show (ASTLocate ast (Expr' ast)), Show (Select "ExprType" ast)) => Show (Expr ast)
+
+deriving instance
+    
+    ( Show (ASTLocate ast (Select "VarPat" ast))
+    , Show (ASTLocate ast (Select "ConPat" ast))
+    , (Show (Select "PatternType" ast))
+    , Show (ASTLocate ast (Pattern' ast))
+    ) =>
+    Show (Pattern' ast)
+
+deriving instance (Show (ASTLocate ast (Pattern' ast)), Show (Select "PatternType" ast)) => Show (Pattern ast)
+
+deriving instance
+    ( Show (ASTLocate ast (Select "TypeVar" ast))
+    , Show (ASTLocate ast (Select "UserDefinedType" ast))
+    , Show (ASTLocate ast (Type' ast))
+    , Show (ASTLocate ast VarName)
+    , Show (Type ast)
+    ) =>
+    Show (Type' ast)
+
+deriving instance (Show (ASTLocate ast (Type' ast))) => Show (Type ast)
+
+deriving newtype instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
+deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
+deriving newtype instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
+
+deriving instance
+    ( Eq (ASTLocate ast (Select "SymOp" ast))
+    , Eq (ASTLocate ast (Select "Infixed" ast))
+    ) =>
+    Eq (BinaryOperator' ast)
+
+deriving instance
+    ( Ord (ASTLocate ast (Select "SymOp" ast))
+    , Ord (ASTLocate ast (Select "Infixed" ast))
+    ) =>
+    Ord (BinaryOperator' ast)
+
+deriving instance
+    ( Show (ASTLocate ast (Select "SymOp" ast))
+    , Show (ASTLocate ast (Select "Infixed" ast))
+    ) =>
+    Show (BinaryOperator' ast)
+
+

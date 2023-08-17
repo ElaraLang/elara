@@ -39,6 +39,8 @@ library
       Elara.AST.Shunted
       Elara.AST.StripLocation
       Elara.AST.Typed
+      Elara.AST.Unlocated
+      Elara.AST.Unlocated.Frontend
       Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
       Elara.Compile
