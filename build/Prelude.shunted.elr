@@ -1,7 +1,0 @@
-module Prelude exposing (..)
-
-
-
-def Prelude.println : (Elara.Prim.String -> Elara.Prim.IO ())
-let Prelude.println =
-    Elara.Prim.elaraPrimitive  "println"  
