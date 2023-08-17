@@ -1,0 +1,4 @@
+module Main
+{ Main.y : r_2 -> r_2
+    = let id_0 : r_3 -> r_3
+        = \(x_1 : r_2) -> x_1 in id_0 }

@@ -28,7 +28,7 @@ toJVMExpr = fmap Normal
 replaceVar :: JVMBinder -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar old new = transform $ \case
     Core.Var old' | old == old' -> Core.Var new
-    _ -> error "aaa"
+    x -> x
 
 {- | We end up with redundant top-level lambdas a lot, that can be converted into normal methods instead.
  For example, 'let add1 = \x -> x + 1' can be turned into `public static int add1(int x) { return x + 1; }`

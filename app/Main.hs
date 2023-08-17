@@ -116,19 +116,20 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
 
     when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
-    classes <- runReader java8 (emitGraph coreGraph)
+    -- classes <- runReader java8 (emitGraph coreGraph)
 
-    for_ classes $ \(mn, class') -> do
-        putTextLn ("Compiling " <> showPretty mn <> "...")
-        let converted = convert class'
-        let bs = runPut (writeBinary converted)
-        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
-        putTextLn ("Compiled " <> showPretty mn <> "!")
+    -- for_ classes $ \(mn, class') -> do
+    --     putTextLn ("Compiling " <> showPretty mn <> "...")
+    --     let converted = convert class'
+    --     let bs = runPut (writeBinary converted)
+    --     liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
+    --     putTextLn ("Compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show (length []) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply

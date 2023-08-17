@@ -2,14 +2,8 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.identity : forall (p : Type) . p -> p
-let Main.identity =
-    \x_0 -> x_0 : p : forall (p : Type) . p -> p
-
-def Main.msg : Text
-let Main.msg =
-    Main.identity : forall (p : Type) . p -> p "hello, world!" : Text : Text
-
-def Main.main : IO Unit 
-let Main.main =
-    Prelude.println : Text -> IO Unit  Main.msg : Text : IO Unit 
+def Main.y : forall (r : Type) . r -> r
+let Main.y =
+    (let id_0  = \x_1 -> x_1 : r : r -> r in id_0 : r ->
+                                                      r) : forall (r : Type) .
+                                                             r -> r

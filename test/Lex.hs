@@ -175,10 +175,14 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
+        lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour 
 
     -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
     let tokenOpRes "" = []
-        tokenOpRes str = if Text.head str == '.' then TokenDot : tokenOpRes (Text.tail str) else [TokenOperatorIdentifier str]
+        tokenOpRes str =
+            case Text.head str of
+                '.' -> TokenDot : tokenOpRes (Text.tail str)
+                _ -> [TokenOperatorIdentifier str]
 
     let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
      in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)

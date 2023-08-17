@@ -1,77 +1,56 @@
 module Infer where
 
-import Control.Exception (throwIO)
-import Elara.AST.Typed (TypedExpr)
-import Elara.Data.TopologicalGraph (createGraph)
-import Elara.Data.Unique (uniqueGenToIO)
-import Elara.Desugar (DesugarError, DesugarState (..), desugarExpr)
-import Elara.Error (runDiagnosticWriter, runErrorOrReport)
-import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
-import Elara.Parse.Expression (exprParser)
-import Elara.Parse.Stream
-import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Rename (RenameError, renameExpr)
-import Elara.Shunt (OpTable, ShuntError, shuntExpr)
-import Elara.TypeInfer (completeExpression, inferExpression)
-import Elara.TypeInfer.Error (TypeInferenceError)
-import Elara.TypeInfer.Infer (initialStatus)
-import Elara.TypeInfer.Infer qualified as Infer
-import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (WithUnicode), defaultStyle, printDiagnostic)
-import Parse.Common (lexAndParse)
-import Polysemy
-import Polysemy.Error (Error, errorToIOFinal)
-import Polysemy.Maybe (runMaybe)
-import Polysemy.Reader (runReader)
-import Polysemy.State (evalState)
-import Polysemy.Writer (runWriter)
-import Print (printPretty)
+import Elara.TypeInfer.Domain qualified as Domain
+import Elara.TypeInfer.Monotype qualified as Scalar
+import Elara.TypeInfer.Type (Type (..))
+import Infer.Common
 import Test.Hspec
-import Elara.Error.Effect (addFile)
-
-completeInference x = do
-    ctx <- Infer.getAll
-    completeExpression ctx x
-
-inferPipeline :: _ => Text -> Sem r TypedExpr
-inferPipeline =
-    lexAndParse exprParser
-        >=> (subsume_ . desugarExpr)
-        >=> renameExpr
-        >=> shuntExpr
-        >=> flip inferExpression Nothing
-        >=> completeInference
-
-errorToIOFinal' :: forall e r a. (Member (Final IO) r, Exception e) => Sem (Error e ': r) a -> Sem r a
-errorToIOFinal' sem = do
-    res <- errorToIOFinal sem
-    case res of
-        Left e -> embedFinal $ throwIO e
-        Right a -> pure a
-
-runInferPipeline :: Text -> IO (Diagnostic _, Maybe TypedExpr)
-runInferPipeline t = runFinal
-        . runDiagnosticWriter
-        . (\x -> addFile "" (toString t) *> runMaybe x)
-        . fmap snd
-        . runWriter
-        . embedToFinal
-        . uniqueGenToIO
-        . evalState primitiveRenameState
-        . runErrorOrReport @DesugarError
-        . runErrorOrReport @(WParseErrorBundle TokenStream ElaraParseError)
-        . runReader (createGraph []) -- Module graph
-        . evalState (DesugarState mempty)
-        . runErrorOrReport @RenameError
-        . runReader @OpTable (fromList []) -- Operator table
-        . runErrorOrReport @ShuntError
-        . evalState initialStatus
-        . runErrorOrReport @TypeInferenceError
-        . inferPipeline
-        $ t
+import Prelude hiding (fail)
 
 spec :: Spec
-spec = do
-    (d, x) <- runIO $ runInferPipeline "\\x -> "
+spec = describe "Infers types correctly" $ do
+    simpleTypes
+    functionTypes
 
-    runIO $ printDiagnostic stdout WithUnicode (TabSize 4) defaultStyle d
-    runIO $ printPretty x
+simpleTypes :: Spec
+simpleTypes = describe "Infers simple types correctly" $ do
+    it "Infers Int literals correctly" $ do
+        (t, fail) <- inferSpec "1" "Int"
+        case t of
+            Scalar () Scalar.Integer -> pass
+            o -> fail o
+
+
+
+functionTypes :: Spec
+functionTypes = describe "Infers function types correctly" $ do
+    it "Infers identity function correctly" $ do
+        (t, fail) <- inferSpec "\\x -> x" "forall a. a -> a"
+        case t of
+            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
+            o -> fail o
+
+    it "Infers nested identity function correctly" $ do
+        (t, fail) <- inferSpec "let id = \\x -> x in id" "forall a. a -> a"
+        case t of
+            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
+            o -> fail o
+
+    it "Infers VERY nested identity function correctly" $ do
+        (t, fail) <- inferSpec "let id = \\x -> x in id id id id id id id id id id id"  "forall a. a -> a"
+        case t of
+            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
+            o -> fail o
+
+    it "Infers fix-point function correctly" $ do
+        (t, fail) <- inferSpec "let fix = \\f -> f (fix f) in fix" "forall a b. (a -> b) -> b"
+        case t of
+            Forall'
+                a
+                Domain.Type
+                ( Forall'
+                        b
+                        Domain.Type
+                        (Function' (Function' (VariableType' a') (VariableType' b')) (VariableType' b''))
+                    ) | a == a' && b == b' && b == b'' -> pass
+            o -> fail o

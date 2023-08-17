@@ -35,11 +35,11 @@ import Elara.TypeInfer.Type (Type (..))
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Generic (Expr (..), Expr' (..))
+import Elara.AST.Generic (Expr (..), Expr' (..), NoFieldValue (..))
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
-import Elara.Prim (primitiveTCContext)
+import Elara.Prim (primRegion, primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error
@@ -50,6 +50,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
+import Print (debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -1240,6 +1241,26 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
     Syntax.String s -> do
         let t = (Type.Scalar{scalar = Monotype.Text, ..})
         pure $ Expr (Located location (String s), t)
+    Syntax.LetIn name NoFieldValue val body -> do
+        -- TODO: infer whether a let-in is recursive or not
+        -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
+        existential <- fresh
+
+        push ((Context.UnsolvedType existential))
+        push (Context.Annotation (mkLocal' name) (Type.UnsolvedType primRegion existential))
+
+        val'@(Expr (_, valType)) <-
+            (infer val)
+
+        ctx <- get
+
+        let valType' = Context.complete ctx valType -- I have a feeling that this will break things
+        -- Basically in a case of something like let id = \x -> x in id id, we have to 'complete' \x -> x early, otherwise we get a type error
+        -- But this is probably not the right way to do it
+        push (Context.Annotation (mkLocal' name) valType')
+
+        body'@(Expr (_, bodyType)) <- infer body
+        pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
 
 -- -- Anno
 -- Syntax.Annotation{..} -> do
@@ -1250,20 +1271,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 --     check annotated annotation
 
 --     return annotation
-
--- Syntax.Let{..} -> do
---     let process Syntax.Binding{ annotation = Nothing, .. } = do
---             _A <- infer assignment
-
---             push (Context.Annotation name _A)
---         process Syntax.Binding{ annotation = Just _A, .. } = do
---             check assignment _A
-
---             push (Context.Annotation name _A)
-
---     traverse_ process bindings
-
---     infer body
 
 -- Syntax.List{..} -> do
 --     case Seq.viewl elements of
@@ -1765,7 +1772,9 @@ check ::
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
-check expr = check' (expr ^. _Unwrapped . _1 . unlocated)
+check expr t = do
+    let x = expr ^. _Unwrapped . _1 . unlocated
+    check' x t
   where
     check' :: ShuntedExpr' -> Type SourceRegion -> Sem r TypedExpr
     -- The check function is the most important function to understand for the
@@ -1885,26 +1894,6 @@ inferApplication Type.Function{..} e = do
     pure (e', output)
 inferApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
 inferApplication _A _ = throw (NotFunctionType (location _A) _A)
-
-{- | Infer the `Type` of the given `Syntax` tree
- typeOf
-     :: Expr
-     -> Either TypeInferenceError (Type SourceRegion)
- typeOf = typeWith []
--}
-
-{- | Like `typeOf`, but accepts a custom type-checking `Context`
- typeWith
-     :: Context SourceRegion
-     -> Expr
-     -> Either TypeInferenceError (Type SourceRegion)
- typeWith context syntax = do
-     let initialStatus = Status{ count = 0, context }
--}
-
---     (_A, Status{ context = _Δ }) <- State.runStateT (infer syntax) initialStatus
-
---     return (Context.complete _Δ _A)
 
 -- Helper functions for displaying errors
 

@@ -29,7 +29,7 @@ $octit = [0-7]
 -- Identifiers
 $lower = [a-z]
 $upper = [A-Z]
-$opCharNotDot = [\! \# \$ \% \& \* \+ \/ \\ \< \> \= \? \@ \^ \| \- \~]
+$opCharNotDot = [\! \# \$ \% \& \* \+ \/ \\ \< \> \? \@ \^ \| \- \~ \=]
 $opChar = [$opCharNotDot \.]
 $underscore = \_
 $identifier = [$lower $upper $digit $underscore]
@@ -37,9 +37,10 @@ $identifier = [$lower $upper $digit $underscore]
 @variableIdentifer = [$lower $underscore] $identifier*
 @typeIdentifier = $upper $identifier*
 
-@opIdentifier = $opCharNotDot $opChar*  
+@opIdentifier = $opCharNotDot $opChar*
+
 -- Operators are a little tricky because if we allow them to start with dots, we end up with `a Prelude.+ b`
--- ending up being lexed as `(a Prelude) .+ b` instead of `a (Prelude.+ b)`
+-- ending up being lexed as `(a Prelude) .+ b` instead of `a (Prelude.+ b)` (parentheses added for clarity)
 -- So we have to disallow dots at the start and fix the discrepancy in the parser
 
 
@@ -92,7 +93,6 @@ tokens :-
       \.                     { simpleTok TokenDot }
       \:                     { simpleTok TokenColon }
       \:\:                   { simpleTok TokenDoubleColon }
-      \=                     { simpleTok TokenEquals }
       \\                     { simpleTok TokenBackslash }
       \-\>                   { simpleTok TokenRightArrow }
       \<\-                   { simpleTok TokenLeftArrow }
@@ -107,7 +107,8 @@ tokens :-
       \`                     { simpleTok TokenBacktick }
       \|                     { simpleTok TokenPipe }
       $underscore            { simpleTok TokenUnderscore }
-
+      \=                     { simpleTok TokenEquals }
+      @opIdentifier          { parametrizedTok TokenOperatorIdentifier identity}
       -- Literals
       \-? (
           @decimal 
@@ -128,7 +129,7 @@ tokens :-
       -- Identifiers
       @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
-      @opIdentifier         { parametrizedTok TokenOperatorIdentifier identity}
+      
   
   }
 

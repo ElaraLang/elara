@@ -1,7 +1,3 @@
 import Prelude 
 
-let identity x = x
-
-let msg = identity "hello, world!"
-
-let main = println msg
+let y = let id = \x -> x in id id

@@ -168,7 +168,8 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
 
             expressionLambda <- Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
             -- add type variables as parameters
-            pure (Core.Lam _ expressionLambda)
+            pure expressionLambda
+            -- pure (Core.Lam _ expressionLambda)
         AST.FunctionCall e1 e2 -> Core.App <$> toCore e1 <*> toCore e2
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond

@@ -254,6 +254,7 @@ test-suite elara-test
       Arbitrary.Names
       Common
       Infer
+      Infer.Common
       Lex
       Lex.Common
       Lex.Indents
