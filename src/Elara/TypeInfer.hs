@@ -7,6 +7,7 @@ import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Sum
 import Data.Generics.Wrapped
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Traversable (for)
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
@@ -39,7 +40,6 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
-import qualified Data.List.NonEmpty as NonEmpty
 
 inferModule ::
     forall r.

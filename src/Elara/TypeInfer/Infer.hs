@@ -155,7 +155,7 @@ wellFormedType ::
     Context SourceRegion ->
     Type SourceRegion ->
     Sem r ()
-wellFormedType _Γ type0 =do 
+wellFormedType _Γ type0 = do
     case type0 of
         -- UvarWF
         Type.VariableType{..}
@@ -1838,7 +1838,6 @@ check expr@(Expr (Located exprLoc _, _)) t = do
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_
-
     check' (Syntax.Tuple elements) Type.Tuple{tupleArguments} = do
         let process (element, type_) = do
                 _Γ <- get

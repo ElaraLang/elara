@@ -47,7 +47,6 @@ pattern Function' a b = Function () a b
 pattern VariableType' :: Text -> Type ()
 pattern VariableType' name = VariableType () name
 
-
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()
 pattern Tuple' ts = Type.Tuple () ts
 
@@ -100,8 +99,6 @@ diagShouldSucceed (d, x) = do
     case x of
         Just x -> pure x
         Nothing -> error "Expected successful inference"
-
-
 
 typeOf' :: MonadIO m => Text -> m (Type ())
 typeOf' msg = do

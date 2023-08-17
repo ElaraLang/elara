@@ -42,6 +42,7 @@ import Print (showPrettyUnannotated)
    >>> import qualified Elara.TypeInfer.Monotype as Monotype
    >>> import Elara.Data.Pretty (pretty)
    >>> import qualified Elara.TypeInfer.Domain as Domain
+   >>> import Data.List.NonEmpty as NE
 -}
 
 -- | A potentially polymorphic type
@@ -103,7 +104,7 @@ data Type s
       Custom {location :: s, name :: Text, typeArguments :: [Type s]}
     | -- | A tuple
       --
-      -- >>> pretty @(Type ()) (Tuple () ["a", "b"])
+      -- >>> pretty @(Type ()) (Tuple () ("a" :| ["b"]))
       -- (a, b)
       Tuple {location :: s, tupleArguments :: NonEmpty (Type s)}
     deriving stock (Eq, Functor, Generic, Show, Data)
@@ -635,7 +636,6 @@ prettyPrimitiveType Tuple{..} =
                 <> Pretty.hardline
                 <> punctuation ")"
             )
-            
 prettyPrimitiveType other =
     Pretty.group (Pretty.flatAlt long short)
   where
