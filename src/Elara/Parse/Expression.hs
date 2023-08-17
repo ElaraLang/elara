@@ -11,7 +11,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
-import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
+import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
 import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, token_, withPredicate, (<??>))
@@ -48,7 +48,7 @@ statement :: HParser FrontendExpr
 statement = letStatement <??> "statement"
 
 unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
-unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, _))
+unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
 
 binOp, functionCall :: HParser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 binOp = liftedBinary operator BinaryOperator unannotatedExpr
@@ -119,7 +119,7 @@ constructor = locatedExpr $ do
         pure res
 
 unit :: HParser FrontendExpr
-unit = locatedExpr (Unit <$ token_ TokenLeftParen <* token_ TokenRightParen) <??> "unit"
+unit = locatedExpr (Unit <$ unitLiteral) <??> "unit"
 
 int :: HParser FrontendExpr
 int = locatedExpr (Int <$> integerLiteral) <??> "int"

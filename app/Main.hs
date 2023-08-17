@@ -17,6 +17,7 @@ import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
+import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
@@ -26,7 +27,7 @@ import Elara.Emit
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Reader
-import Elara.Lexer.Token (Lexeme)
+import Elara.Lexer.Token (Lexeme, Token)
 import Elara.Lexer.Utils
 import Elara.Parse
 import Elara.Parse.Stream
@@ -150,7 +151,7 @@ lexFile path = do
     case evalLexMonad path contents readTokens of
         Left err -> report err *> nothingE
         Right lexemes -> do
-            -- debugColored (stripLocation <$> lexemes)
+            debugColored (stripLocation <$> lexemes :: [Token])
             justE (contents, lexemes)
 
 parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module 'Frontend)

@@ -31,6 +31,7 @@ instance Arbitrary AlphaUpperText where
             c <- arbitraryUpper
             cs <- listOf (oneof [arbitraryLower, arbitraryLower])
             pure (c : cs)
+
 arbitraryLower :: Gen Char
 arbitraryLower = elements ['a' .. 'z']
 

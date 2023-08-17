@@ -231,6 +231,14 @@ coerceType' (ListType a) = ListType (coerceType a)
 -- Pretty printing
 
 deriving newtype instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
+instance
+    ( Pretty (CleanupLocated (ASTLocate' ast (Select "SymOp" ast)))
+    , (Pretty (CleanupLocated (ASTLocate' ast (Select "Infixed" ast))))
+    ) =>
+    Pretty (BinaryOperator' ast)
+    where
+    pretty (SymOp op) = pretty op
+    pretty (Infixed op) = "`" <> pretty op <> "`"
 
 deriving newtype instance Pretty (ASTLocate ast (Type' ast)) => Pretty (Type ast)
 instance
@@ -345,6 +353,7 @@ instance
     , Pretty a2
     , a2 ~ UnwrapMaybe (Select "LetPattern" ast)
     , (ToMaybe (Select "LetPattern" ast) (Maybe a2))
+    , (Pretty (CleanupLocated (ASTLocate' ast (BinaryOperator' ast))))
     ) =>
     Pretty (Expr' ast)
     where
@@ -360,11 +369,12 @@ instance
     pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
     pretty (List l) = prettyListExpr l
     pretty (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
-    pretty (LetIn v p e1 e2) = prettyLetInExpr v (maybeToList $ toMaybe p :: [a2]) e1 (Just e2)
+    pretty (LetIn v p e1 e2) = prettyLetInExpr v (maybeToList $ toMaybe p :: [a2]) e1 (e2)
     pretty (Let v p e) = prettyLetExpr v (maybeToList $ toMaybe p :: [a2]) e
     pretty (Block b) = prettyBlockExpr b
     pretty (InParens e) = parens (pretty e)
     pretty (Tuple t) = prettyTupleExpr t
+    pretty (BinaryOperator op e1 e2) = prettyBinaryOperatorExpr e1 op e2
 
 instance
     ( Pretty a1

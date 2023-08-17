@@ -1,7 +1,7 @@
-module Elara.Parse.Literal (charLiteral, stringLiteral, integerLiteral, floatLiteral) where
+module Elara.Parse.Literal (charLiteral, stringLiteral, integerLiteral, floatLiteral, unitLiteral) where
 
-import Elara.Lexer.Token (Token (TokenChar, TokenFloat, TokenInt, TokenString))
-import Elara.Parse.Primitives (HParser, satisfyMap)
+import Elara.Lexer.Token (Token (..))
+import Elara.Parse.Primitives (HParser, satisfyMap, token_)
 
 charLiteral :: HParser Char
 charLiteral = satisfyMap $ \case
@@ -22,3 +22,6 @@ floatLiteral :: HParser Double
 floatLiteral = satisfyMap $ \case
     TokenFloat i -> Just i
     _ -> Nothing
+
+unitLiteral :: HParser ()
+unitLiteral = (token_ TokenLeftParen <* token_ TokenRightParen)

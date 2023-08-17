@@ -58,9 +58,8 @@ prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExp
 prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
 prettyMatchBranch (p, e) = pretty p <+> "->" <+> pretty e
 
-prettyLetInExpr :: (Pretty a1, Pretty a2, Pretty a3, Pretty a4) => a1 -> [a2] -> a3 -> Maybe a4 -> Doc AnsiStyle
-prettyLetInExpr v ps e1 Nothing = prettyLetExpr v ps e1
-prettyLetInExpr v ps e1 (Just e2) = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e1 <+> "in" <+> pretty e2)
+prettyLetInExpr :: (Pretty a1, Pretty a2, Pretty a3, Pretty a4) => a1 -> [a2] -> a3 -> a4 -> Doc AnsiStyle
+prettyLetInExpr v ps e1 e2 = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e1 <+> "in" <+> pretty e2)
 
 prettyLetExpr :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> Doc AnsiStyle
 prettyLetExpr v ps e = "let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e

@@ -5,21 +5,28 @@ import Elara.AST.Generic (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
-import Elara.Parse.Primitives (HParser, inParens, inParens', located, token_)
+import Elara.Parse.Primitives (HParser, inParens, located, token_)
 import HeadedMegaparsec (endHead)
-import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (choice, sepEndBy)
 
 pattern' :: HParser FrontendPattern
 pattern' =
-    choice @[]
-        [ varPattern
+    choice
+        [ consPattern
+        , constructorPattern'
+        ]
+
+constructorPattern' :: HParser FrontendPattern
+constructorPattern' = choice [zeroArgConstructorPattern, constructorPattern, terminalPattern]
+
+terminalPattern :: HParser FrontendPattern
+terminalPattern =
+    choice
+        [ literalPattern
         , wildcardPattern
+        , varPattern
         , listPattern
-        , consPattern
-        , constructorPattern
-        , inParens' pattern'
-        , literalPattern
+        , inParens pattern'
         ]
 
 locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern
@@ -42,26 +49,34 @@ listPattern = locatedPattern $ do
 consPattern :: HParser FrontendPattern
 consPattern = locatedPattern $ do
     (head', tail') <- inParens $ do
-        head' <- pattern'
+        head' <- constructorPattern
         token_ TokenDoubleColon
         endHead
-        tail' <- pattern'
+        tail' <- constructorPattern
         pure (head', tail')
 
     pure $ ConsPattern head' tail'
 
-constructorPattern :: HParser FrontendPattern
-constructorPattern = locatedPattern $ do
+-- To prevent ambiguity between space-separated patterns and constructor patterns
+zeroArgConstructorPattern :: HParser FrontendPattern
+zeroArgConstructorPattern = locatedPattern $ do
     con <- located typeName
-    args <- many pattern'
+    pure $ ConstructorPattern con []
+
+constructorPattern :: HParser FrontendPattern
+constructorPattern = locatedPattern $ inParens $ do
+    con <- located typeName
+    endHead
+    args <- many terminalPattern
     pure $ ConstructorPattern con args
 
 literalPattern :: HParser FrontendPattern
 literalPattern =
     locatedPattern $
-        choice @[]
+        choice
             [ IntegerPattern <$> integerLiteral
             , FloatPattern <$> floatLiteral
             , StringPattern <$> stringLiteral
             , CharPattern <$> charLiteral
+            , UnitPattern <$ unitLiteral
             ]
