@@ -16,35 +16,27 @@ module Elara.AST.Generic where
 
 -- import Elara.AST.Frontend qualified as Frontend
 
-import Control.Lens (to, view, (^.))
+import Control.Lens (view, (^.))
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
-import Elara.AST.Name (ModuleName, Name, Qualified, VarName (..))
+import Elara.AST.Name (ModuleName, VarName (..))
 import Elara.AST.Pretty
 import Elara.AST.Region (Located, unlocated)
-import Elara.AST.Select (AST (..), LocatedAST, UnlocatedAST)
+import Elara.AST.Select (LocatedAST, UnlocatedAST)
 import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Pretty
-import GHC.Generics (
-    C,
-    D,
-    Generic (Rep),
-    M1,
-    Meta (MetaCons),
-    type (:+:),
- )
 import GHC.TypeLits
 import TODO (todo)
 import Prelude hiding (group)
 
-data DataConCantHappen deriving (Generic, Data)
+data DataConCantHappen deriving (Generic, Data, Show)
 
 dataConCantHappen :: DataConCantHappen -> a
 dataConCantHappen x = case x of {}
 
 data NoFieldValue = NoFieldValue
-    deriving (Generic, Data)
+    deriving (Generic, Data, Show)
 
 instance Pretty NoFieldValue where
     pretty :: HasCallStack => NoFieldValue -> Doc AnsiStyle
@@ -416,7 +408,12 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
     stripExprLocation' Unit = Unit
     stripExprLocation' (Var v) = Var (todo)
 
--- Messy deriving stuff
+{-  =====================
+    Messy deriving stuff
+    ====================
+-}
+
+-- Eq instances
 
 deriving instance
     ( (Eq (Select "LetPattern" ast))
@@ -436,7 +433,6 @@ deriving instance
 deriving instance (Eq (ASTLocate ast (Expr' ast)), Eq (Select "ExprType" ast)) => Eq (Expr ast)
 
 deriving instance
-    
     ( Eq (ASTLocate ast (Select "VarPat" ast))
     , Eq (ASTLocate ast (Select "ConPat" ast))
     , (Eq (Select "PatternType" ast))
@@ -457,6 +453,15 @@ deriving instance
 
 deriving instance (Eq (ASTLocate ast (Type' ast))) => Eq (Type ast)
 
+deriving instance
+    ( Eq (ASTLocate ast (Select "SymOp" ast))
+    , Eq (ASTLocate ast (Select "Infixed" ast))
+    ) =>
+    Eq (BinaryOperator' ast)
+
+deriving instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
+
+-- Show instances
 
 deriving instance
     ( (Show (Select "LetPattern" ast))
@@ -476,7 +481,6 @@ deriving instance
 deriving instance (Show (ASTLocate ast (Expr' ast)), Show (Select "ExprType" ast)) => Show (Expr ast)
 
 deriving instance
-    
     ( Show (ASTLocate ast (Select "VarPat" ast))
     , Show (ASTLocate ast (Select "ConPat" ast))
     , (Show (Select "PatternType" ast))
@@ -497,26 +501,48 @@ deriving instance
 
 deriving instance (Show (ASTLocate ast (Type' ast))) => Show (Type ast)
 
-deriving newtype instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
-deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
-deriving newtype instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
-
-deriving instance
-    ( Eq (ASTLocate ast (Select "SymOp" ast))
-    , Eq (ASTLocate ast (Select "Infixed" ast))
-    ) =>
-    Eq (BinaryOperator' ast)
-
-deriving instance
-    ( Ord (ASTLocate ast (Select "SymOp" ast))
-    , Ord (ASTLocate ast (Select "Infixed" ast))
-    ) =>
-    Ord (BinaryOperator' ast)
-
 deriving instance
     ( Show (ASTLocate ast (Select "SymOp" ast))
     , Show (ASTLocate ast (Select "Infixed" ast))
     ) =>
     Show (BinaryOperator' ast)
 
+deriving instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
 
+deriving instance
+    ( Show (DeclarationBody ast)
+    , Show (ASTLocate ast (Select "DeclarationName" ast))
+    , Show (ASTLocate ast ModuleName)
+    ) =>
+    Show (Declaration' ast)
+
+deriving instance Show (ASTLocate ast (Declaration' ast)) => Show (Declaration ast)
+
+deriving instance
+    ( (Show (Select "ValueTypeDef" ast))
+    , (Show (Select "ValuePatterns" ast))
+    , (Show (Select "ValueType" ast))
+    , Show (Select "ExprType" ast)
+    , Show (ASTLocate ast (Select "TypeVar" ast))
+    , Show (ASTLocate ast (Expr' ast))
+    , Show (ASTLocate ast (TypeDeclaration ast))
+    ) =>
+    Show (DeclarationBody' ast)
+
+deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (DeclarationBody ast)
+
+deriving instance
+    ( Show (ASTLocate ast (Select "ConstructorName" ast))
+    , Show (Type ast)
+    ) =>
+    Show (TypeDeclaration ast)
+
+-- Ord instances
+
+deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
+
+deriving instance
+    ( Ord (ASTLocate ast (Select "SymOp" ast))
+    , Ord (ASTLocate ast (Select "Infixed" ast))
+    ) =>
+    Ord (BinaryOperator' ast)

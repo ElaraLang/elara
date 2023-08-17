@@ -35,7 +35,9 @@ data RenameError
     | UnknownTypeVariable LowerAlphaName
     | UnknownName (Located Name)
     | NativeDefUnsupported (Located DesugaredDeclaration')
+    deriving (Show)
 
+instance Exception RenameError
 instance ReportableError RenameError where
     report (UnknownModule mn) =
         writeReport $

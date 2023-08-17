@@ -61,6 +61,8 @@ data TypeInferenceError
     | KindInferError KindInferError
     deriving (Show)
 
+instance Exception TypeInferenceError
+
 instance ReportableError TypeInferenceError where
     report (MissingVariable a _Γ) =
         writeReport $

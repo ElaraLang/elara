@@ -5,7 +5,6 @@ module Parse where
 import Arbitrary.AST ()
 import Elara.AST.Generic
 import Elara.AST.Select
-import Elara.AST.StripLocation
 import Elara.Data.Pretty
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Stream

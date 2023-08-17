@@ -253,13 +253,13 @@ test-suite elara-test
       Arbitrary.Literals
       Arbitrary.Names
       Common
+      Infer
       Lex
       Lex.Common
       Lex.Indents
       Orphans
       Parse
       Parse.Common
-      Parse.Stream
       Paths_elara
   hs-source-dirs:
       test

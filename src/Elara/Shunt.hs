@@ -54,6 +54,9 @@ data Associativity
 
 data ShuntError
     = SamePrecedenceError (RenamedBinaryOperator, Associativity) (RenamedBinaryOperator, Associativity)
+    deriving (Show)
+
+instance Exception ShuntError
 
 prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
 prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of

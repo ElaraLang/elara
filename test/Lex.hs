@@ -3,10 +3,7 @@ module Lex where
 import Arbitrary.Literals
 import Arbitrary.Names
 import Common
-import Control.Lens (view)
 import Data.Text qualified as Text
-import Elara.AST.Region (unlocated)
-import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Lex.Common
 import Lex.Indents qualified as Indents

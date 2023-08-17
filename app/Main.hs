@@ -16,6 +16,7 @@ import Data.Generics.Wrapped
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
+import Elara.AST.Select
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
@@ -40,7 +41,7 @@ import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Member, Members, Sem, runM, subsume, subsume_)
+import Polysemy (Member, Members, Sem, runM, subsume)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -53,7 +54,6 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.IO (openFile)
 import Text.Printf
-import Elara.AST.Select
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -195,20 +195,3 @@ inferModules modules = runErrorOrReport (evalState @InferState initialInferState
 
 loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
-
-runErrorOrReport ::
-    (Members MainMembers r, ReportableError e) =>
-    Sem (Error e ': r) a ->
-    Sem r a
-runErrorOrReport e = do
-    x <- subsume_ (runError e)
-    case x of
-        Left err -> report err *> nothingE
-        Right a -> justE a
-
-reportMaybe :: Member MaybeE r => Member (DiagnosticWriter (Doc AnsiStyle)) r => (ReportableError e) => Sem r (Either e a) -> Sem r a
-reportMaybe x = do
-    x' <- x
-    case x' of
-        Left err -> report err *> nothingE
-        Right a -> justE a

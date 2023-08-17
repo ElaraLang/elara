@@ -3,14 +3,11 @@
 module Elara.Desugar where
 
 import Control.Lens (Each (each), makeLenses, over, traverseOf, traverseOf_, (^.), _1, _2)
-import Data.Generics.Product (field, field', the)
-import Data.Generics.Sum (_As)
+import Data.Generics.Product (field', the)
 import Data.Generics.Wrapped
 import Data.Map qualified as M
 import Elara.AST.Desugared
-import Elara.AST.Desugared qualified as Desugared
 import Elara.AST.Frontend
-import Elara.AST.Frontend qualified as Frontend
 import Elara.AST.Generic
 import Elara.AST.Module
 import Elara.AST.Name hiding (name)
@@ -31,6 +28,9 @@ data DesugarError
     = DefWithoutLet DesugaredType
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
+    deriving (Typeable, Show)
+
+instance Exception DesugarError
 
 instance ReportableError DesugarError where
     report (DefWithoutLet _) =
@@ -86,6 +86,7 @@ data PartialDeclaration
         DesugaredExpr
     | Both Name SourceRegion DesugaredType DesugaredExpr
     | Immediate Name DesugaredDeclarationBody
+    deriving (Typeable, Show)
 
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _) = sr
