@@ -80,7 +80,15 @@ data Scalar
       -- >>> pretty Text
       -- Text
       Text
+    | -- | Char type
+      --
+      -- >>> pretty Char
+      -- Char
+      Char
     | -- | Unit type
+      --
+      -- >>> pretty Unit
+      -- Unit
       Unit
     deriving stock (Eq, Generic, Show, Data)
 
@@ -92,6 +100,7 @@ instance Pretty Scalar where
     pretty Integer = "Integer"
     pretty Text = "Text"
     pretty Unit = "Unit"
+    pretty Char = "Char"
 
 instance ToJSON Scalar
 

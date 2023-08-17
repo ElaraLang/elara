@@ -51,6 +51,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
+import Print (showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -1251,6 +1252,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
     Syntax.Unit -> do
         let t = (Type.Scalar{scalar = Monotype.Unit, ..})
         pure $ Expr (Located location Unit, t)
+    Syntax.Char c -> do
+        let t = (Type.Scalar{scalar = Monotype.Char, ..})
+        pure $ Expr (Located location (Char c), t)
     Syntax.LetIn name NoFieldValue val body -> do
         -- TODO: infer whether a let-in is recursive or not
         -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
@@ -1281,6 +1285,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
         pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
+    other -> error $ "infer: " <> showPretty other
 
 -- -- Anno
 -- Syntax.Annotation{..} -> do

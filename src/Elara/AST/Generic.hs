@@ -27,6 +27,7 @@ import Elara.AST.Select (LocatedAST, UnlocatedAST)
 import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Pretty
 import GHC.TypeLits
+import Relude.Extra (bimapF)
 import TODO (todo)
 import Prelude hiding (group)
 
@@ -296,6 +297,24 @@ instance ToMaybe (Maybe a) (Maybe a) where
 instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
     toMaybe = Just
 
+-- Sometimes fields are wrapped in functors eg lists, we need a way of transcending them.
+-- This class does that.
+-- For example, let's say we have `cleanPattern :: Pattern ast1 -> Pattern ast2`, and `x :: Select ast1 "Pattern"`.
+-- `x` could be `Pattern ast1`, `[Pattern ast1]`, `Maybe (Pattern ast1)`, or something else entirely.
+-- `cleanPattern` will only work on the first of these, so we need a way of lifting it to the others. Obviously, this sounds like a Functor
+-- but the problem is that `Pattern ast1` has the wrong kind.
+class ApplyAsFunctorish i o a b where
+    applyAsFunctorish :: (a -> b) -> i -> o
+
+instance Functor f => ApplyAsFunctorish (f a) (f b) a b where
+    applyAsFunctorish = fmap
+
+instance ApplyAsFunctorish a b a b where
+    applyAsFunctorish f = f
+
+instance ApplyAsFunctorish NoFieldValue NoFieldValue a b where
+    applyAsFunctorish _ = identity
+
 -- | Unwraps 1 level of 'Maybe' from a type. Useful when a type family returns Maybe
 type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
     UnwrapMaybe (Maybe a) = a
@@ -372,7 +391,12 @@ instance
     pretty (ConstructorPattern c ps) = prettyConstructorPattern c ps
     pretty (ListPattern l) = prettyListPattern l
     pretty (ConsPattern p1 p2) = prettyConsPattern p1 p2
-    pretty other = error "aaaaaaa"
+    pretty WildcardPattern = "_"
+    pretty (IntegerPattern i) = pretty i
+    pretty (FloatPattern f) = pretty f
+    pretty (StringPattern s) = pretty '\"' <> pretty s <> pretty '\"'
+    pretty (CharPattern c) = "'" <> escapeChar c <> "'"
+    pretty UnitPattern = "()"
 
 instance
     ( Pretty (ASTLocate ast (Type' ast))
@@ -396,21 +420,118 @@ instance
 
 stripExprLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
-    ((ASTLocate' ast1 ~ Located), ASTLocate' ast2 ~ Unlocated) =>
+    ( ASTLocate' ast1 ~ Located
+    , ASTLocate' ast2 ~ Unlocated
+    , ApplyAsFunctorish (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2) (Pattern ast1) (Pattern ast2)
+    , _
+    ) =>
     Expr ast1 ->
     Expr ast2
 stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
     let e' = fmapUnlocated @LocatedAST @ast1 stripExprLocation' e
-     in -- t' = fmapUnlocated @LocatedAST @ast1 _ t :: ASTLocate ast1 (Select "ExprType" ast2)
-        Expr (stripLocation e', todo t)
+     in Expr (stripLocation e', fmap stripTypeLocation t)
   where
-    stripExprLocation' :: forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST). Expr' ast1 -> Expr' ast2
+    stripExprLocation' :: Expr' ast1 -> Expr' ast2
     stripExprLocation' (Int i) = Int i
     stripExprLocation' (Float f) = Float f
     stripExprLocation' (String s) = String s
     stripExprLocation' (Char c) = Char c
     stripExprLocation' Unit = Unit
-    stripExprLocation' (Var v) = Var (todo)
+    stripExprLocation' (Var v) = Var (stripLocation v)
+    stripExprLocation' (Constructor c) = Constructor (stripLocation c)
+    stripExprLocation' (Lambda ps e) =
+        let ps' = stripLocation ps
+            ps'' =
+                applyAsFunctorish @(Select "LambdaPattern" ast1) @(Select "LambdaPattern" ast2) @(Pattern ast1) @(Pattern ast2)
+                    stripPatternLocation
+                    ps'
+         in Lambda ps'' (stripExprLocation e)
+    stripExprLocation' (FunctionCall e1 e2) = FunctionCall (stripExprLocation e1) (stripExprLocation e2)
+    stripExprLocation' (If e1 e2 e3) = If (stripExprLocation e1) (stripExprLocation e2) (stripExprLocation e3)
+    stripExprLocation' (BinaryOperator op e1 e2) = BinaryOperator (stripBinaryOperatorLocation op) (stripExprLocation e1) (stripExprLocation e2)
+    stripExprLocation' (List l) = List (stripExprLocation <$> l)
+    stripExprLocation' (Match e m) = Match (stripExprLocation e) (bimapF stripPatternLocation stripExprLocation m)
+    stripExprLocation' (LetIn v p e1 e2) =
+        let p' = stripLocation p
+            p'' =
+                applyAsFunctorish @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) @(Pattern ast1) @(Pattern ast2)
+                    stripPatternLocation
+                    p'
+         in LetIn
+                (stripLocation v)
+                p''
+                (stripExprLocation e1)
+                (stripExprLocation e2)
+    stripExprLocation' (Let v p e) =
+        let p' = stripLocation p
+            p'' =
+                applyAsFunctorish @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) @(Pattern ast1) @(Pattern ast2)
+                    stripPatternLocation
+                    p'
+         in Let (stripLocation v) p'' (stripExprLocation e)
+    stripExprLocation' (Block b) = Block (stripExprLocation <$> b)
+    stripExprLocation' (InParens e) = InParens (stripExprLocation e)
+    stripExprLocation' (Tuple t) = Tuple (stripExprLocation <$> t)
+
+stripPatternLocation ::
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( (ASTLocate' ast1 ~ Located)
+    , ASTLocate' ast2 ~ Unlocated
+    , _
+    ) =>
+    Pattern ast1 ->
+    Pattern ast2
+stripPatternLocation (Pattern (p :: ASTLocate ast1 (Pattern' ast1), t)) =
+    let p' = fmapUnlocated @LocatedAST @ast1 stripPatternLocation' p
+     in Pattern (stripLocation p', fmap stripTypeLocation t)
+  where
+    stripPatternLocation' :: Pattern' ast1 -> Pattern' ast2
+    stripPatternLocation' (VarPattern v) = VarPattern (stripLocation v)
+    stripPatternLocation' (ConstructorPattern c ps) = ConstructorPattern (stripLocation c) (stripPatternLocation <$> ps)
+    stripPatternLocation' (ListPattern l) = ListPattern (stripPatternLocation <$> l)
+    stripPatternLocation' (ConsPattern p1 p2) = ConsPattern (stripPatternLocation p1) (stripPatternLocation p2)
+    stripPatternLocation' WildcardPattern = WildcardPattern
+    stripPatternLocation' (IntegerPattern i) = IntegerPattern i
+    stripPatternLocation' (FloatPattern f) = FloatPattern f
+    stripPatternLocation' (StringPattern s) = StringPattern s
+    stripPatternLocation' (CharPattern c) = CharPattern c
+    stripPatternLocation' UnitPattern = UnitPattern
+
+stripBinaryOperatorLocation ::
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( (ASTLocate' ast1 ~ Located)
+    , ASTLocate' ast2 ~ Unlocated
+    , _
+    ) =>
+    BinaryOperator ast1 ->
+    BinaryOperator ast2
+stripBinaryOperatorLocation (MkBinaryOperator (op :: ASTLocate ast1 (BinaryOperator' ast1))) =
+    let op' = fmapUnlocated @LocatedAST @ast1 stripBinaryOperatorLocation' op
+     in MkBinaryOperator (stripLocation op')
+  where
+    stripBinaryOperatorLocation' :: BinaryOperator' ast1 -> BinaryOperator' ast2
+    stripBinaryOperatorLocation' (SymOp name) = SymOp (stripLocation name)
+    stripBinaryOperatorLocation' (Infixed name) = Infixed (stripLocation name)
+
+stripTypeLocation ::
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( (ASTLocate' ast1 ~ Located)
+    , ASTLocate' ast2 ~ Unlocated
+    , _
+    ) =>
+    Type ast1 ->
+    Type ast2
+stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1))) =
+    let t' = fmapUnlocated @LocatedAST @ast1 stripTypeLocation' t
+     in Type (stripLocation t')
+  where
+    stripTypeLocation' :: Type' ast1 -> Type' ast2
+    stripTypeLocation' (TypeVar name) = TypeVar (rUnlocate @LocatedAST @ast1 name)
+    stripTypeLocation' (FunctionType a b) = FunctionType (stripTypeLocation a) (stripTypeLocation b)
+    stripTypeLocation' UnitType = UnitType
+    stripTypeLocation' (TypeConstructorApplication a b) = TypeConstructorApplication (stripTypeLocation a) (stripTypeLocation b)
+
+-- stripTypeLocation' (UserDefinedType name) = UserDefinedType (_ name)
 
 {-  =====================
     Messy deriving stuff

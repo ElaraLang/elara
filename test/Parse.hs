@@ -17,7 +17,7 @@ import Test.QuickCheck
 
 spec :: Spec
 spec = do
-    -- quickCheckSpec
+    quickCheckSpec
     pass
 
 quickCheckSpec :: Spec

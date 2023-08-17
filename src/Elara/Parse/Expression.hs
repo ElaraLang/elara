@@ -21,7 +21,7 @@ import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy)
 import Prelude hiding (Op)
 
 locatedExpr :: HParser FrontendExpr' -> HParser FrontendExpr
-locatedExpr = fmap (\x -> Expr (x, _)) . (H.parse . located . H.toParsec)
+locatedExpr = fmap (\x -> Expr (x, Nothing)) . (H.parse . located . H.toParsec)
 
 exprParser :: HParser FrontendExpr
 exprParser =

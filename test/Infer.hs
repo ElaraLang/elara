@@ -8,7 +8,7 @@ import Test.Hspec
 import Prelude hiding (fail)
 
 spec :: Spec
-spec = describe "Infers types correctly" $ do
+spec = describe "Infers types correctly" $ parallel $ do
     simpleTypes
     functionTypes
 
@@ -18,6 +18,30 @@ simpleTypes = describe "Infers simple types correctly" $ do
         (t, fail) <- inferSpec "1" "Int"
         case t of
             Scalar () Scalar.Integer -> pass
+            o -> fail o
+
+    it "Infers Unit literals correctly" $ do
+        (t, fail) <- inferSpec "()" "()"
+        case t of
+            Scalar () Scalar.Unit -> pass
+            o -> fail o
+
+    it "Infers Real literals correctly" $ do
+        (t, fail) <- inferSpec "1.0" "Real"
+        case t of
+            Scalar () Scalar.Real -> pass
+            o -> fail o
+
+    it "Infers Text literals correctly" $ do
+        (t, fail) <- inferSpec "\"hello\"" "Text"
+        case t of
+            Scalar () Scalar.Text -> pass
+            o -> fail o
+
+    it "Infers Char literals correctly" $ do
+        (t, fail) <- inferSpec "'c'" "Text"
+        case t of
+            Scalar () Scalar.Char -> pass
             o -> fail o
 
 functionTypes :: Spec

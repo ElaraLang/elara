@@ -18,5 +18,5 @@ type family Replace (needle :: LocatedAST) (replacement :: UnlocatedAST) (haysta
     Replace needle replacement (DeclarationBody needle) = DeclarationBody replacement
     Replace needle replacement (DeclarationBody' needle) = DeclarationBody' replacement
     Replace needle replacement [list] = [Replace needle replacement list]
-    -- Replace needle replacement (Select f needle) = Select f replacement
+    Replace needle replacement (Maybe maybe) = Maybe (Replace needle replacement maybe)
     Replace needle replacement other = other

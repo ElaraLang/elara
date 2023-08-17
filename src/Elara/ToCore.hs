@@ -8,12 +8,12 @@ import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (NameLike (..), Qualified (..), TypeName)
+import Elara.AST.Name (NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
@@ -152,7 +152,7 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
         AST.Var (Located _ v) -> do
             t' <- typeToCore t
 
-            pure $ Core.Var (Core.Id (nameText <$> stripLocation v) t')
+            pure $ Core.Var (Core.Id (nameText <$> stripLocation @(VarRef VarName) @(UnlocatedVarRef VarName) v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
             pure $ Core.Var (conToVar ctor)
