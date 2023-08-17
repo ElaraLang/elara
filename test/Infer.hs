@@ -26,6 +26,7 @@ import Polysemy.State (evalState)
 import Polysemy.Writer (runWriter)
 import Print (printPretty)
 import Test.Hspec
+import Elara.Error.Effect (addFile)
 
 completeInference x = do
     ctx <- Infer.getAll
@@ -48,10 +49,9 @@ errorToIOFinal' sem = do
         Right a -> pure a
 
 runInferPipeline :: Text -> IO (Diagnostic _, Maybe TypedExpr)
-runInferPipeline =
-    runFinal
+runInferPipeline t = runFinal
         . runDiagnosticWriter
-        . runMaybe
+        . (\x -> addFile "" (toString t) *> runMaybe x)
         . fmap snd
         . runWriter
         . embedToFinal
@@ -67,9 +67,11 @@ runInferPipeline =
         . evalState initialStatus
         . runErrorOrReport @TypeInferenceError
         . inferPipeline
+        $ t
 
 spec :: Spec
 spec = do
     (d, x) <- runIO $ runInferPipeline "\\x -> "
+
     runIO $ printDiagnostic stdout WithUnicode (TabSize 4) defaultStyle d
     runIO $ printPretty x

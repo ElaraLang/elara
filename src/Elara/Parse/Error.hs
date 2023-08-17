@@ -27,11 +27,13 @@ import Prelude hiding (error, lines)
 data ElaraParseError
     = KeywordUsedAsName (Located (MaybeQualified VarName))
     | EmptyRecord SourceRegion
+    | EmptyLambda SourceRegion
     deriving (Eq, Show, Ord)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]
 parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
+parseErrorSources (EmptyLambda sr) = [sr]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
@@ -43,10 +45,14 @@ instance HasHints ElaraParseError (Doc AnsiStyle) where
         , Hint "Try adding a field to the record type e.g. { x : Int }"
         , Hint "You may be looking for the unit type, which is written as ()"
         ]
+    
+    hints (EmptyLambda _) =
+        [ Note "Lambda expressions cannot be empty."]
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
     showErrorComponent (EmptyRecord _) = "Empty record"
+    showErrorComponent (EmptyLambda _) = "Empty lambda"
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 

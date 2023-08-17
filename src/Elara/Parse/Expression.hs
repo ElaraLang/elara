@@ -1,12 +1,12 @@
 module Elara.Parse.Expression where
 
-import Control.Lens (Iso', iso)
+import Control.Lens (Iso', iso, (^.))
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
 import Elara.AST.Name (VarName, nameText)
-import Elara.AST.Region (Located (..))
+import Elara.AST.Region (Located (..), sourceRegion, spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
@@ -14,10 +14,10 @@ import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral)
 import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern
-import Elara.Parse.Primitives (HParser, inParens, located, token_, withPredicate, (<??>))
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, token_, withPredicate, (<??>))
 import HeadedMegaparsec (endHead, wrapToHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
-import Text.Megaparsec (sepEndBy)
+import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy)
 import Prelude hiding (Op)
 
 locatedExpr :: HParser FrontendExpr' -> HParser FrontendExpr
@@ -155,11 +155,19 @@ match = wrapToHead $ locatedExpr $ do
 
 lambda :: HParser FrontendExpr
 lambda = locatedExpr $ do
-    token_ TokenBackslash
+    bsLoc <- located (token_ TokenBackslash)
     endHead
     args <- located (many pattern')
-    token_ TokenRightArrow
-    res <- exprBlock element
+    arrLoc <- located (token_ TokenRightArrow)
+
+    let emptyLambdaLoc = spanningRegion' (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
+    let failEmptyBody =
+            fromParsec
+                ( eof
+                    *> customFailure
+                        (EmptyLambda emptyLambdaLoc)
+                )
+    res <- failEmptyBody <|> exprBlock element
     pure (Lambda args res)
 
 ifElse :: HParser FrontendExpr
