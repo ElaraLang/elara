@@ -31,7 +31,7 @@ import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
 import Polysemy.Maybe (runMaybe)
 import Polysemy.Reader (runReader)
-import Polysemy.State (evalState, State)
+import Polysemy.State (State, evalState)
 import Polysemy.Writer (runWriter)
 import Print (showPretty)
 import Test.HUnit (assertFailure)

@@ -130,7 +130,6 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
         t = fromIntegral (end - start) * 1e-9
     putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
-
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 

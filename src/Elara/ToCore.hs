@@ -136,7 +136,6 @@ mkLocalRef = Local . Identity
 mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
-
 -- addTypeParameterLambda :: CoreExpr -> AST.Type SourceRegion -> CoreExpr
 -- addTypeParameterLambda e (Type.Forall _ _ tv _ t) = Core.Lam () (addTypeParameterLambda e t)
 
@@ -152,7 +151,7 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
         AST.Unit -> pure $ Lit Core.Unit
         AST.Var (Located _ v) -> do
             t' <- typeToCore t
-    
+
             pure $ Core.Var (Core.Id (nameText <$> stripLocation v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
@@ -169,7 +168,7 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
             expressionLambda <- Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
             -- add type variables as parameters
             pure expressionLambda
-            -- pure (Core.Lam _ expressionLambda)
+        -- pure (Core.Lam _ expressionLambda)
         AST.FunctionCall e1 e2 -> Core.App <$> toCore e1 <*> toCore e2
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond

@@ -20,8 +20,6 @@ simpleTypes = describe "Infers simple types correctly" $ do
             Scalar () Scalar.Integer -> pass
             o -> fail o
 
-
-
 functionTypes :: Spec
 functionTypes = describe "Infers function types correctly" $ do
     it "Infers identity function correctly" $ do
@@ -37,7 +35,7 @@ functionTypes = describe "Infers function types correctly" $ do
             o -> fail o
 
     it "Infers VERY nested identity function correctly" $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in id id id id id id id id id id id"  "forall a. a -> a"
+        (t, fail) <- inferSpec "let id = \\x -> x in id id id id id id id id id id id" "forall a. a -> a"
         case t of
             (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
             o -> fail o

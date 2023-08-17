@@ -15,16 +15,14 @@ instance Arbitrary (Pattern 'UnlocatedFrontend) where
       where
         pattern' :: Int -> Gen (Pattern 'UnlocatedFrontend)
         pattern' n = (\p -> Pattern (p, Nothing)) <$> pattern'' n
-        
+
         pattern'' n = if n <= 0 then nonRecursivePattern else oneof [nonRecursivePattern, recursivePattern (n `div` 2)]
 
-        
         nonRecursivePattern =
             oneof
                 [ VarPattern <$> arbitraryNormalVarName
                 , pure WildcardPattern
                 ]
-
 
         recursivePattern n =
             oneof

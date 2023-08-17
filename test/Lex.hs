@@ -175,7 +175,7 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
-        lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour 
+        lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour
 
     -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
     let tokenOpRes "" = []

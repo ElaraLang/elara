@@ -34,4 +34,3 @@ runDiagnosticWriter =
                 AddFile fp s -> do
                     modify (\x -> Diagnostic.addFile x fp s) >>= pureT
             )
-

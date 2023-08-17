@@ -1,6 +1,6 @@
+import Infer qualified
 import Lex qualified
 import Parse qualified
-import Infer qualified
 import Test.Hspec
 
 main :: IO ()

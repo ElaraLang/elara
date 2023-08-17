@@ -45,9 +45,8 @@ instance HasHints ElaraParseError (Doc AnsiStyle) where
         , Hint "Try adding a field to the record type e.g. { x : Int }"
         , Hint "You may be looking for the unit type, which is written as ()"
         ]
-    
     hints (EmptyLambda _) =
-        [ Note "Lambda expressions cannot be empty."]
+        [Note "Lambda expressions cannot be empty."]
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"

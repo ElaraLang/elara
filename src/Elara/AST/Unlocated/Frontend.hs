@@ -8,11 +8,9 @@ module Elara.AST.Unlocated.Frontend where
 import Data.Kind qualified as Kind
 import Elara.AST.Generic
 import Elara.AST.Select
-import Prelude hiding (Op, group)
 import Elara.AST.Unlocated (Replace)
+import Prelude hiding (Op, group)
 
 type instance ASTLocate' 'UnlocatedFrontend = Unlocated
 
 type instance Select any 'UnlocatedFrontend = Replace 'Frontend 'UnlocatedFrontend (Select any 'Frontend)
-
-
