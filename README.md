@@ -1,5 +1,7 @@
 # Elara
 
+[![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml)
+
 Elara is a multi-paradigm, primarily-functional programming language targeting the JVM. It features a Haskell & F#
 inspired syntax, a complete Hindley-Milner type system, functional purity enforcement, and can interoperate with Java
 code.
