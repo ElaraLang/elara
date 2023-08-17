@@ -120,7 +120,7 @@
           };
         };
 
-      checks = {
+        checks = {
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             settings = {
@@ -183,6 +183,7 @@
             config.flake-root.devShell
             config.mission-control.devShell
           ];
+          inherit (self.checks.${system}.pre-commit-check) shellHook;
 
           buildInputs =
             let
