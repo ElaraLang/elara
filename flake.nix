@@ -8,6 +8,7 @@
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     flake-root.url = "github:srid/flake-root";
     mission-control.url = "github:Platonic-Systems/mission-control";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
     h2jvm.url = "github:ElaraLang/h2jvm";
     # h2jvm.flake = fa
@@ -17,7 +18,7 @@
 
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }:
+  outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
 
       systems = import inputs.systems;
@@ -119,6 +120,17 @@
           };
         };
 
+      checks = {
+          pre-commit-check = pre-commit-hooks.lib.${system}.run {
+            src = ./.;
+            settings = {
+              treefmt.package = config.treefmt.build.wrapper;
+            };
+            hooks = {
+              treefmt.enable = true;
+            };
+          };
+        };
 
 
         treefmt.config = {
