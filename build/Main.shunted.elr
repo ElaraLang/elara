@@ -3,4 +3,4 @@ module Main exposing (..)
 import Prelude exposing (..)
 
 let Main.y =
-    (let id_0  = \x_1 -> x_1   in id_0  id_0  ) 
+    (let id_0  = \x_1 -> x_1   in (id_0  1  , id_0  ()  ) ) 

@@ -49,6 +49,9 @@ prettyBinaryOperatorExpr e1 o e2 = parens (pretty e1 <+> pretty o <+> pretty e2)
 prettyListExpr :: (Pretty a) => [a] -> Doc AnsiStyle
 prettyListExpr l = list (pretty <$> l)
 
+prettyTupleExpr :: (Pretty a) => NonEmpty a -> Doc AnsiStyle
+prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))
+
 prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t) => a1 -> t a2 -> Doc AnsiStyle
 prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExpr m)
 

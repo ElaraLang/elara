@@ -101,6 +101,11 @@ data Type s
       -- >>> pretty @(Type ()) (Custom () "Maybe" ["a"])
       -- Maybe a
       Custom {location :: s, name :: Text, typeArguments :: [Type s]}
+    | -- | A tuple
+      --
+      -- >>> pretty @(Type ()) (Tuple () ["a", "b"])
+      -- (a, b)
+      Tuple {location :: s, tupleArguments :: NonEmpty (Type s)}
     deriving stock (Eq, Functor, Generic, Show, Data)
 
 instance (Show c, ToJSON c) => ToJSON (Type c) where
@@ -149,6 +154,9 @@ instance Plated (Type s) where
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
                 pure Custom{typeArguments = newTypeArguments, ..}
+            Tuple{tupleArguments = oldTypeArguments, ..} -> do
+                newTypeArguments <- traverse onType oldTypeArguments
+                pure Tuple{tupleArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(Text, Type s)] RemainingFields
@@ -296,6 +304,8 @@ substituteType a n _A type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
+        Tuple{tupleArguments = oldTypeArguments, ..} ->
+            Tuple{tupleArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
@@ -346,6 +356,8 @@ substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
+        Tuple{tupleArguments = oldTypeArguments, ..} ->
+            Tuple{tupleArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
@@ -396,6 +408,8 @@ substituteAlternatives ρ0 n r@(Alternatives kτs ρ1) type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
+        Tuple{tupleArguments = oldTypeArguments, ..} ->
+            Tuple{tupleArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
 
 {- | Count how many times the given `Existential` `Type` variable appears within
     a `Type`
@@ -603,6 +617,25 @@ prettyPrimitiveType Custom{..} =
         Pretty.align
             ( foldMap (\t -> prettyQuantifiedType t <> Pretty.hardline) typeArguments
             )
+prettyPrimitiveType Tuple{..} =
+    Pretty.group (Pretty.flatAlt long short)
+  where
+    short =
+        punctuation "("
+            <> prettyQuantifiedType (head tupleArguments)
+            <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
+            <> punctuation ")"
+
+    long =
+        Pretty.align
+            ( punctuation "("
+                <> " "
+                <> prettyQuantifiedType (head tupleArguments)
+                <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
+                <> Pretty.hardline
+                <> punctuation ")"
+            )
+            
 prettyPrimitiveType other =
     Pretty.group (Pretty.flatAlt long short)
   where

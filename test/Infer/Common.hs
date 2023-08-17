@@ -25,6 +25,7 @@ import Elara.TypeInfer.Error (TypeInferenceError)
 import Elara.TypeInfer.Infer (initialStatus)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
+import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (WithUnicode), defaultStyle, printDiagnostic)
 import Parse.Common (lexAndParse)
 import Polysemy
@@ -45,6 +46,10 @@ pattern Function' a b = Function () a b
 
 pattern VariableType' :: Text -> Type ()
 pattern VariableType' name = VariableType () name
+
+
+pattern Tuple' :: NonEmpty (Type ()) -> Type ()
+pattern Tuple' ts = Type.Tuple () ts
 
 completeInference :: Member (State Infer.Status) r => TypedExpr -> Sem r TypedExpr
 completeInference x = do
@@ -96,14 +101,13 @@ diagShouldSucceed (d, x) = do
         Just x -> pure x
         Nothing -> error "Expected successful inference"
 
-typeOf :: forall {a} {ast :: a} {b}. StripLocation (Select "ExprType" ast) b => Expr ast -> b
-typeOf (Expr (_, t)) = stripLocation t
+
 
 typeOf' :: MonadIO m => Text -> m (Type ())
 typeOf' msg = do
     x <- liftIO $ runInferPipeline msg
     y <- liftIO $ diagShouldSucceed x
-    pure $ typeOf y
+    pure $ stripLocation $ typeOf y
 
 failTypeMismatch :: Pretty a1 => String -> String -> a1 -> IO a2
 failTypeMismatch name expected actual =

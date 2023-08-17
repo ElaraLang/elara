@@ -32,6 +32,7 @@ import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type (..))
 
+import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
@@ -50,7 +51,6 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -155,7 +155,7 @@ wellFormedType ::
     Context SourceRegion ->
     Type SourceRegion ->
     Sem r ()
-wellFormedType _Γ type0 =
+wellFormedType _Γ type0 =do 
     case type0 of
         -- UvarWF
         Type.VariableType{..}
@@ -203,6 +203,7 @@ wellFormedType _Γ type0 =
             | Context.Variable Domain.Alternatives a `elem` _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
             | otherwise -> throw (UnboundAlternatives location a)
         Type.Scalar{} -> pass
+        Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
 
 {- | This corresponds to the judgment:
 
@@ -305,6 +306,12 @@ subtype _A0 _B0 = do
             | s0 == s1 -> pass
         (Type.Optional{type_ = _A}, Type.Optional{type_ = _B}) -> subtype _A _B
         (Type.List{type_ = _A}, Type.List{type_ = _B}) -> subtype _A _B
+        (Type.Tuple{tupleArguments = typesA}, Type.Tuple{tupleArguments = typesB}) -> do
+            when (length typesA /= length typesB) do
+                error "Tuple types must have the same number of elements"
+
+            for_ (NE.zip typesA typesB) \(a, b) -> do
+                subtype a b
         -- This is where you need to add any non-trivial subtypes.  For example,
         -- the following three rules specify that `Natural` is a subtype of
         -- `Integer`, which is in turn a subtype of `Real`.
@@ -1241,6 +1248,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
     Syntax.String s -> do
         let t = (Type.Scalar{scalar = Monotype.Text, ..})
         pure $ Expr (Located location (String s), t)
+    Syntax.Unit -> do
+        let t = (Type.Scalar{scalar = Monotype.Unit, ..})
+        pure $ Expr (Located location Unit, t)
     Syntax.LetIn name NoFieldValue val body -> do
         -- TODO: infer whether a let-in is recursive or not
         -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
@@ -1261,6 +1271,16 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         body'@(Expr (_, bodyType)) <- infer body
         pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
+    Syntax.Tuple elements -> do
+        let process element = do
+                _Γ <- get
+
+                infer element
+
+        elementTypes <- traverse process elements
+
+        let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
+        pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
 
 -- -- Anno
 -- Syntax.Annotation{..} -> do
@@ -1772,7 +1792,7 @@ check ::
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
-check expr t = do
+check expr@(Expr (Located exprLoc _, _)) t = do
     let x = expr ^. _Unwrapped . _1 . unlocated
     check' x t
   where
@@ -1818,6 +1838,16 @@ check expr t = do
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_
+
+    check' (Syntax.Tuple elements) Type.Tuple{tupleArguments} = do
+        let process (element, type_) = do
+                _Γ <- get
+
+                check element (Context.solveType _Γ type_)
+
+        y <- traverse process (NE.zip elements tupleArguments)
+
+        pure $ Expr (Located exprLoc (Syntax.Tuple y), t)
 
     -- Sub
     check' _ _B = do

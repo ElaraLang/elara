@@ -39,6 +39,7 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
+import qualified Data.List.NonEmpty as NonEmpty
 
 inferModule ::
     forall r.
@@ -266,6 +267,8 @@ completeExpression ctx (Expr (y', t)) = do
         (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
         (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> do
             traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
+        (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> do
+            traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
         other -> error (showPretty other)
 
     stripForAlls :: Type SourceRegion -> Type SourceRegion
@@ -277,7 +280,6 @@ completeExpression ctx (Expr (y', t)) = do
     subst Infer.UnsolvedType{existential} solved = do
         let annotation = SolvedType existential (toMonoType solved)
         push annotation
-        pass
     subst _ _ = pass
 
     toMonoType :: Type SourceRegion -> Mono.Monotype
@@ -287,4 +289,5 @@ completeExpression ctx (Expr (y', t)) = do
         Infer.List{type_} -> Mono.List (toMonoType type_)
         Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
         Infer.VariableType{name = v} -> Mono.VariableType v
+        Infer.Custom{name = n, typeArguments = args} -> Mono.Custom n (toMonoType <$> args)
         other -> error $ "toMonoType: " <> showPretty other

@@ -2,8 +2,10 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.y : forall (r : Type) . r -> r
+def Main.y : (Integer, Unit)
 let Main.y =
-    (let id_0  = \x_1 -> x_1 : r : r -> r in id_0 : r ->
-                                                      r) : forall (r : Type) .
-                                                             r -> r
+    (let id_0  = \x_1 -> x_1 : b0 : forall (b0 : Type) .
+                                      b0 -> b0 in (id_0 : forall (d : Type) .
+                                                            d -> d
+        1 : Integer : Integer, id_0 : forall (d : Type) . d -> d
+        () : Unit : Unit) : (Integer, Unit)) : (Integer, Unit)

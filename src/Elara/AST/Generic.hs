@@ -84,6 +84,9 @@ data Expr' (ast :: a)
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
     deriving (Generic)
 
+typeOf :: forall ast. Expr ast -> Select "ExprType" ast
+typeOf (Expr (_, t)) = t
+
 data Pattern' (ast :: a)
     = VarPattern (ASTLocate ast (Select "VarPat" ast))
     | ConstructorPattern (ASTLocate ast (Select "ConPat" ast)) [Pattern ast]
@@ -342,6 +345,7 @@ instance
     pretty (Let v p e) = prettyLetExpr v (maybeToList $ toMaybe p :: [a2]) e
     pretty (Block b) = prettyBlockExpr b
     pretty (InParens e) = parens (pretty e)
+    pretty (Tuple t) = prettyTupleExpr t
 
 instance
     ( Pretty a1
