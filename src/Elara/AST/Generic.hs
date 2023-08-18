@@ -4,6 +4,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
@@ -367,10 +368,8 @@ instance
         short = align (pretty e <+> pretty te)
 
 instance
-    ( Pretty (Expr ast)
-    , Pretty (ASTLocate ast (Select "ConRef" ast))
+    ( Pretty (ASTLocate ast (Select "ConRef" ast))
     , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty (Pattern ast)
     , (Pretty (Select "InParens" ast))
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty a2
@@ -380,27 +379,44 @@ instance
     , a3 ~ UnwrapList (Select "LambdaPattern" ast)
     , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [a3])
     , (Pretty (ASTLocate ast (BinaryOperator' ast)))
+    , (ToMaybe (Select "ExprType" ast) (Maybe (UnwrapMaybe (Select "ExprType" ast))))
+    , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
+    , (Pretty (UnwrapMaybe (Select "ExprType" ast)))
+    , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
+    , (Pretty (CleanupLocated (ASTLocate' ast (Expr' ast))))
+    , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     ) =>
     Pretty (Expr' ast)
     where
-    pretty (Int i) = pretty i
-    pretty (Float f) = pretty f
-    pretty (String s) = pretty '\"' <> pretty s <> pretty '\"'
-    pretty (Char c) = "'" <> escapeChar c <> "'"
-    pretty Unit = "()"
-    pretty (Var v) = pretty v
-    pretty (Constructor c) = pretty c
-    pretty (Lambda ps e) = prettyLambdaExpr (fieldToList ps :: [a3]) e
-    pretty (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2
-    pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
-    pretty (List l) = prettyListExpr l
-    pretty (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
-    pretty (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList p :: [a2]) e1 e2
-    pretty (Let v p e) = prettyLetExpr v (fieldToList p :: [a2]) e
-    pretty (Block b) = prettyBlockExpr b
-    pretty (InParens e) = parens (pretty e)
-    pretty (Tuple t) = prettyTupleExpr t
-    pretty (BinaryOperator op e1 e2) = prettyBinaryOperatorExpr e1 op e2
+    pretty e = let ?contextFree = True in prettyExpr @ast @a2 @a3 e
+
+prettyExpr ::
+    forall ast a2 lambdaPatterns.
+    ( lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
+    , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
+    , _
+    ) =>
+    (?contextFree :: Bool) =>
+    Expr' ast ->
+    Doc AnsiStyle
+prettyExpr (Int i) = pretty i
+prettyExpr (Float f) = pretty f
+prettyExpr (String s) = pretty '\"' <> pretty s <> pretty '\"'
+prettyExpr (Char c) = "'" <> escapeChar c <> "'"
+prettyExpr Unit = "()"
+prettyExpr (Var v) = pretty v
+prettyExpr (Constructor c) = pretty c
+prettyExpr (Lambda ps e) = prettyLambdaExpr (fieldToList ps :: [lambdaPatterns]) e
+prettyExpr (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2
+prettyExpr (If e1 e2 e3) = prettyIfExpr e1 e2 e3
+prettyExpr (List l) = prettyList l
+prettyExpr (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
+prettyExpr (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList p :: [a2]) e1 e2
+prettyExpr (Let v p e) = prettyLetExpr v (fieldToList p :: [a2]) e
+prettyExpr (Block b) = prettyBlockExpr b
+prettyExpr (InParens e) = parens (pretty e)
+prettyExpr (Tuple t) = prettyTupleExpr t
+prettyExpr (BinaryOperator op e1 e2) = prettyBinaryOperatorExpr e1 op e2
 
 instance
     ( Pretty a1
@@ -420,19 +436,30 @@ instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Select "VarPat" ast)))
     , Pretty (Pattern ast)
     , Pretty (CleanupLocated (ASTLocate' ast (Select "ConPat" ast)))
+    , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
+    , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
+    , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     ) =>
     Pretty (Pattern' ast)
     where
-    pretty (VarPattern v) = pretty v
-    pretty (ConstructorPattern c ps) = prettyConstructorPattern c ps
-    pretty (ListPattern l) = prettyListPattern l
-    pretty (ConsPattern p1 p2) = prettyConsPattern p1 p2
-    pretty WildcardPattern = "_"
-    pretty (IntegerPattern i) = pretty i
-    pretty (FloatPattern f) = pretty f
-    pretty (StringPattern s) = pretty '\"' <> pretty s <> pretty '\"'
-    pretty (CharPattern c) = "'" <> escapeChar c <> "'"
-    pretty UnitPattern = "()"
+    pretty = let ?contextFree = True in prettyPattern
+
+prettyPattern ::
+    forall ast.
+    _ =>
+    (?contextFree :: Bool) =>
+    Pattern' ast ->
+    Doc AnsiStyle
+prettyPattern (VarPattern v) = pretty v
+prettyPattern (ConstructorPattern c ps) = prettyConstructorPattern c ps
+prettyPattern (ListPattern l) = prettyList l
+prettyPattern (ConsPattern p1 p2) = prettyConsPattern p1 p2
+prettyPattern WildcardPattern = "_"
+prettyPattern (IntegerPattern i) = pretty i
+prettyPattern (FloatPattern f) = pretty f
+prettyPattern (StringPattern s) = pretty '\"' <> pretty s <> pretty '\"'
+prettyPattern (CharPattern c) = "'" <> escapeChar c <> "'"
+prettyPattern UnitPattern = "()"
 
 instance
     ( Pretty (ASTLocate ast (Type' ast))

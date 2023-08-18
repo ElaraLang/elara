@@ -48,4 +48,4 @@ ppEq (removeInParens -> expr) =
     let source = showPrettyUnannotated $ pretty expr
         parsed = run $ runError $ lexAndParse exprParser source
         cleaned = removeInParens . stripExprLocation <$> parsed
-     in counterexample ("pretty source: " <> toString (showPretty $ pretty source)) (cleaned `shouldParseProp` expr)
+     in counterexample ("pretty source: \n" <> toString (showPretty $ pretty source)) (cleaned `shouldParseProp` expr)

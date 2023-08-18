@@ -1,4 +1,8 @@
--- | Common module for all the different AST pretty impls
+{-# LANGUAGE ImplicitParams #-}
+
+{- | Common module for all the different AST pretty impls.
+ This includes functions for pretty printing in both context-free and context-sensitive forms
+-}
 module Elara.AST.Pretty where
 
 import Elara.Data.Pretty
@@ -20,22 +24,36 @@ prettyStringExpr = dquotes . pretty
 prettyCharExpr :: Char -> Doc AnsiStyle
 prettyCharExpr = squotes . escapeChar
 
-prettyLambdaExpr :: (Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
-prettyLambdaExpr args body = group (flatAlt long short)
+prettyLambdaExpr :: (?contextFree :: Bool) => (Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
+prettyLambdaExpr args body = if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr'
   where
-    short =
-        "\\"
-            <> hsep (pretty <$> args)
-            <+> "->"
-            <+> pretty body
+    prettyCTFLambdaExpr = group (flatAlt long short)
+      where
+        short =
+            "\\"
+                <> hsep (pretty <$> args)
+                <+> "->"
+                <+> pretty body
 
-    long =
-        align
-            ( "\\" <> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
-            )
+        long =
+            align
+                ( "\\" <> hsep (pretty <$> args) <+> "->" <+> pretty body
+                )
+    prettyLambdaExpr' = group (flatAlt long short)
+      where
+        short =
+            "\\"
+                <> hsep (pretty <$> args)
+                <+> "->"
+                <+> pretty body
 
-prettyFunctionCallExpr :: (Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
-prettyFunctionCallExpr e1 e2 = group (flatAlt long short)
+        long =
+            align
+                ( "\\" <> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
+                )
+
+prettyFunctionCallExpr :: (Pretty a, Pretty b, ?contextFree :: Bool) => a -> b -> Doc AnsiStyle
+prettyFunctionCallExpr e1 e2 = if ?contextFree then short else group (flatAlt long short)
   where
     short = pretty e1 <+> pretty e2
     long = pretty e1 <> hardline <> indent indentDepth (pretty e2)
@@ -46,13 +64,10 @@ prettyIfExpr e1 e2 e3 = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> 
 prettyBinaryOperatorExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
 prettyBinaryOperatorExpr e1 o e2 = parens (pretty e1 <+> pretty o <+> pretty e2)
 
-prettyListExpr :: (Pretty a) => [a] -> Doc AnsiStyle
-prettyListExpr l = list (pretty <$> l)
-
 prettyTupleExpr :: (Pretty a) => NonEmpty a -> Doc AnsiStyle
 prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))
 
-prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t) => a1 -> t a2 -> Doc AnsiStyle
+prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t, ?contextFree :: Bool) => a1 -> t a2 -> Doc AnsiStyle
 prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExpr m)
 
 prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
@@ -64,18 +79,30 @@ prettyLetInExpr v ps e1 e2 = parens ("let" <+> pretty v <+> hsep (pretty <$> ps)
 prettyLetExpr :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> Doc AnsiStyle
 prettyLetExpr v ps e = "let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e
 
-prettyBlockExpr :: (Pretty a, Foldable t) => t a -> Doc AnsiStyle
+prettyBlockExpr :: (Pretty a, Foldable t, ?contextFree :: Bool) => t a -> Doc AnsiStyle
 prettyBlockExpr b = do
-    let open = flatAlt "" "{ "
-        close = flatAlt "" " }"
-        separator = flatAlt "" "; "
-    group (align (encloseSep open close separator (pretty <$> toList b)))
+    let open = if ?contextFree then "{ " else flatAlt "" "{ "
+        close = if ?contextFree then "}" else flatAlt "" " }"
+        separator = if ?contextFree then "; " else flatAlt "" "; "
+        arrange = if ?contextFree then identity else group . align
+
+    arrange (encloseSep' open close separator (pretty <$> toList b))
+
+encloseSep' :: (?contextFree :: Bool) => Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
+encloseSep' = if ?contextFree then encloseSepUnarranged else encloseSep
+  where
+    encloseSepUnarranged :: Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
+    encloseSepUnarranged open close _ [] = open <> close
+    encloseSepUnarranged open close sep (x : xs) = open <> x <> foldr (\y ys -> sep <> y <> ys) close xs
 
 prettyConstructorPattern :: (Pretty a1, Pretty a2) => a1 -> [a2] -> Doc AnsiStyle
 prettyConstructorPattern c p = parens (pretty c <+> hsep (pretty <$> p))
 
-prettyListPattern :: (Pretty a) => [a] -> Doc AnsiStyle
-prettyListPattern l = list (pretty <$> l)
+prettyList :: (Pretty a, ?contextFree :: Bool) => [a] -> Doc AnsiStyle
+prettyList l =
+    if ?contextFree
+        then encloseSep' "[ " " ]" ", " (pretty <$> l)
+        else list (pretty <$> l)
 
 prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)

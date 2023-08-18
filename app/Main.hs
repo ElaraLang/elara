@@ -151,7 +151,7 @@ lexFile path = do
     case evalLexMonad path contents readTokens of
         Left err -> report err *> nothingE
         Right lexemes -> do
-            debugColored (stripLocation <$> lexemes :: [Token])
+            -- debugColored (stripLocation <$> lexemes :: [Token])
             justE (contents, lexemes)
 
 parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module 'Frontend)

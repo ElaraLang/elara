@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE ImplicitParams #-}
 
 module Elara.Core.Pretty where
 
@@ -28,7 +28,7 @@ instance PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr (Lam b e) = prettyLambdaExpr [prettyVar True True b] e
+prettyExpr (Lam b e) = let ?contextFree = True in prettyLambdaExpr [prettyVar True True b] e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other
@@ -43,7 +43,7 @@ prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
-prettyVdefg (Recursive bindings) = "Rec" <> prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = True in prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
@@ -53,7 +53,7 @@ prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
 prettyAlts :: (PrettyVar v) => [Alt v] -> Doc AnsiStyle
-prettyAlts alts = prettyBlockExpr (prettyAlt <$> alts)
+prettyAlts alts = let ?contextFree = True in prettyBlockExpr (prettyAlt <$> alts)
   where
     prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e
 

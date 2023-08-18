@@ -42,24 +42,26 @@ instance Arbitrary Text where
     arbitrary = getAlphaText <$> arbitrary
 
 instance Arbitrary (Expr 'UnlocatedFrontend) where
-    -- shrink (Int i) = Int <$> shrink i
-    -- shrink (Float f) = Float <$> shrink f
-    -- shrink (String s) = String <$> shrink s
-    -- shrink (Char c) = Char <$> shrink c
-    -- shrink (Var v) = Var <$> shrink v
-    -- shrink (Constructor c) = Constructor <$> shrink c
-    -- shrink (Lambda ps e) = Lambda <$> shrink ps <*> shrink e
-    -- shrink (FunctionCall e1 e2) = FunctionCall <$> shrink e1 <*> shrink e2
-    -- shrink (If e1 e2 e3) = If <$> shrink e1 <*> shrink e2 <*> shrink e3
-    -- shrink (BinaryOperator op e1 e2) = BinaryOperator <$> shrink op <*> shrink e1 <*> shrink e2
-    -- shrink (List es) = List <$> shrink es
-    -- shrink (LetIn v ps e1 e2) = LetIn <$> shrink v <*> shrink ps <*> shrink e1 <*> shrink e2
-    -- shrink (Let v ps e) = Let <$> shrink v <*> shrink ps <*> shrink e
-    -- shrink (Block es) = Block <$> shrink es
-    -- shrink (InParens e) = InParens <$> shrink e
-    -- shrink Unit = []
-    -- shrink (Tuple ts) = Tuple <$> shrink ts
-    -- shrink (Match e ps) = Match <$> shrink e <*> shrink ps
+    shrink (Expr (e, t)) = Expr . (,t) <$> shrink' e
+      where
+        shrink' (Int i) = Int <$> shrink i
+        shrink' (Float f) = Float <$> shrink f
+        shrink' (String s) = String <$> shrink s
+        shrink' (Char c) = Char <$> shrink c
+        shrink' (Var v) = Var <$> shrink v
+        shrink' (Constructor c) = Constructor <$> shrink c
+        shrink' (Lambda ps e) = Lambda <$> shrink ps <*> shrink e
+        shrink' (FunctionCall e1 e2) = FunctionCall <$> shrink e1 <*> shrink e2
+        shrink' (If e1 e2 e3) = If <$> shrink e1 <*> shrink e2 <*> shrink e3
+        shrink' (BinaryOperator op e1 e2) = BinaryOperator <$> shrink op <*> shrink e1 <*> shrink e2
+        shrink' (List es) = List <$> shrink es
+        shrink' (LetIn v ps e1 e2) = LetIn <$> shrink v <*> shrink ps <*> shrink e1 <*> shrink e2
+        shrink' (Let v ps e) = Let <$> shrink v <*> shrink ps <*> shrink e
+        shrink' (Block es) = Block <$> shrink es
+        shrink' (InParens e) = InParens <$> shrink e
+        shrink' Unit = []
+        shrink' (Tuple ts) = Tuple <$> shrink ts
+        shrink' (Match e ps) = Match <$> shrink e <*> shrink ps
 
     arbitrary = sized expr'
       where
