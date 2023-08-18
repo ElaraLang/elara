@@ -14,11 +14,15 @@ import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Data.Pretty (Pretty (pretty), (<+>))
-import Elara.Error (ReportableError (report), writeReport)
+import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes
+import Elara.Lexer.Pipeline
+import Elara.Parse
+import Elara.Pipeline
+import Elara.ReadFile
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
-import Polysemy.Error (Error, runError, throw)
+import Polysemy.Error (Error, fromEither, runError, throw)
 import Polysemy.State (State, evalState)
 import Polysemy.State.Extra
 import Unsafe.Coerce (unsafeCoerce)
@@ -49,10 +53,17 @@ instance ReportableError DesugarError where
     report (PartialNamesNotEqual a b) =
         writeReport $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
 
-type Desugar a = Sem [State DesugarState, Error DesugarError] a
+type Desugar a = Sem DesugarPipelineEffects a
 
-runDesugar :: Desugar a -> Either DesugarError a
-runDesugar = run . runError . evalState (DesugarState M.empty)
+type DesugarPipelineEffects = '[State DesugarState, Error DesugarError]
+
+runDesugar :: Desugar a -> Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a
+runDesugar = subsume_
+
+runDesugarPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
+runDesugarPipeline =
+    runErrorOrReport @DesugarError
+        . evalState (DesugarState M.empty)
 
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration

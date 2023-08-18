@@ -4,14 +4,18 @@ module Lex.Common where
 
 import Control.Lens (view)
 import Elara.AST.Region (unlocated)
+import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
+import Elara.Pipeline (finalisePipeline)
+import Polysemy
+import Polysemy.Error (runError)
 import Test.Hspec
 
 lex' :: Text -> [Lexeme]
-lex' contents =
-    case evalLexMonad "" (toString contents) readTokens of
+lex' contents = do
+    case run $ runLexPipelinePure (readTokensWith "<tests>" (toString contents)) of
         Left e -> error $ toText ("lex fail: " ++ show e)
         Right tokens -> tokens
 

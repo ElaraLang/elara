@@ -3,7 +3,7 @@
 module Elara.TypeInfer where
 
 import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2, _3)
-import Data.Containers.ListUtils (nubOrdOn)
+import Data.Containers.ListUtils (nubOrd, nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Sum
 import Data.Generics.Wrapped
@@ -24,8 +24,10 @@ import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
-import Elara.Data.Kind.Infer (InferState, inferTypeKind, unifyKinds)
+import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
 import Elara.Data.Unique (Unique, uniqueToText)
+import Elara.Error (runErrorOrReport)
+import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
@@ -40,6 +42,14 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
+
+type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError]
+
+runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
+runInferPipeline =
+    runErrorOrReport @TypeInferenceError
+        . evalState initialInferState
+        . evalState initialStatus
 
 inferModule ::
     forall r.
@@ -152,7 +162,7 @@ createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
 
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
-    nubOrdOn identity -- remove duplicates, ignore location info when comparing
+    nubOrd -- remove duplicates, ignore location info when comparing
         . concatMapOf (cosmosOn (_Unwrapped . unlocated)) names
   where
     names :: ShuntedType' -> [Located (Unique LowerAlphaName)]

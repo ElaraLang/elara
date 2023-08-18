@@ -8,7 +8,7 @@ import Elara.AST.Region (Located (Located), SourceRegion)
 class StripLocation a b where
     stripLocation :: a -> b
 
-instance {-# OVERLAPPABLE #-} (a ~ b) => StripLocation a b where
+instance StripLocation a a where
     stripLocation = identity
 
 instance StripLocation (Located a) a where

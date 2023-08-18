@@ -20,14 +20,16 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Error (ReportableError (..))
+import Elara.Error (ReportableError (..), runErrorOrReport)
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
+import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
-import Polysemy (Member, Sem)
+import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader
 import Polysemy.Writer
+import Print (debugColored, debugPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (VarRef Name) OpInfo
@@ -45,6 +47,9 @@ data OpInfo = OpInfo
     { precedence :: Precedence
     , associativity :: Associativity
     }
+    deriving (Show)
+
+instance Pretty OpInfo
 
 data Associativity
     = LeftAssociative
@@ -76,7 +81,7 @@ instance ReportableError ShuntError where
 
 newtype ShuntWarning
     = UnknownPrecedence RenamedBinaryOperator
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 instance ReportableError ShuntWarning where
     report (UnknownPrecedence (MkBinaryOperator lOperator)) = do
@@ -89,7 +94,7 @@ instance ReportableError ShuntWarning where
                 (Just Codes.unknownPrecedence)
                 ("Unknown precedence/associativity for operator" <+> pretty (operatorName (lOperator ^. unlocated)) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
                 [(opSrc, This "operator")]
-                [Hint "Define the precedence and associativity of the operator explicitly"]
+                [Hint "Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol"]
 
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
 opInfo table operator = case operator ^. _Unwrapped . unlocated of
@@ -108,7 +113,7 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
-fixOperators :: forall r. (Member (Error ShuntError) r, Member (Writer (Set ShuntWarning)) r) => OpTable -> RenamedExpr -> Sem r RenamedExpr
+fixOperators :: forall r. (Members ShuntPipelineEffects r) => OpTable -> RenamedExpr -> Sem r RenamedExpr
 fixOperators opTable = reassoc
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
@@ -137,7 +142,7 @@ fixOperators opTable = reassoc
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
-            let reassociated = Expr (Located sr reassociated', _)
+            let reassociated = Expr (Located sr reassociated', Nothing)
             pure (BinaryOperator o2 (withLocationOf' reassociated (InParens reassociated)) e3)
 
         assocRight = do
@@ -151,11 +156,22 @@ fixOperators opTable = reassoc
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator operator l r)
 
+type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
+
+runShuntPipeline :: IsPipeline r => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
+runShuntPipeline opTable s =
+    do
+        (warnings, a) <-
+            runReader opTable
+                . runWriter
+                . runErrorOrReport
+                $ s
+        traverse_ report warnings
+        pure a
+
 shunt ::
     forall r.
-    ( Member (Error ShuntError) r
-    , Member (Writer (Set ShuntWarning)) r
-    , Member (Reader OpTable) r
+    ( Members ShuntPipelineEffects r
     ) =>
     Module 'Renamed ->
     Sem r (Module 'Shunted)
@@ -163,9 +179,7 @@ shunt = traverseModule shuntDeclaration
 
 shuntDeclaration ::
     forall r.
-    ( Member (Error ShuntError) r
-    , Member (Writer (Set ShuntWarning)) r
-    , Member (Reader OpTable) r
+    ( Members ShuntPipelineEffects r
     ) =>
     RenamedDeclaration ->
     Sem r ShuntedDeclaration
@@ -181,9 +195,7 @@ shuntDeclaration (Declaration decl) =
 
 shuntDeclarationBody ::
     forall r.
-    ( Member (Error ShuntError) r
-    , Member (Writer (Set ShuntWarning)) r
-    , Member (Reader OpTable) r
+    ( Members ShuntPipelineEffects r
     ) =>
     RenamedDeclarationBody ->
     Sem r ShuntedDeclarationBody
@@ -191,18 +203,20 @@ shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlo
   where
     shuntDeclarationBody' :: RenamedDeclarationBody' -> Sem r ShuntedDeclarationBody'
     shuntDeclarationBody' (Value e _ ty) = do
-        opTable <- ask
-        fixed <- fixOperators opTable e
-        shunted <- shuntExpr fixed
+        shunted <- fixExpr e
         let ty' = fmap coerceType ty
         pure (Value shunted NoFieldValue ty')
     shuntDeclarationBody' (TypeDeclaration vars ty) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty))
 
+fixExpr :: (Members ShuntPipelineEffects r) => RenamedExpr -> Sem r ShuntedExpr
+fixExpr e = do
+    opTable <- ask
+    fixed <- fixOperators opTable e
+    shuntExpr fixed
+
 shuntExpr ::
     forall r.
-    ( Member (Error ShuntError) r
-    , Member (Writer (Set ShuntWarning)) r
-    , Member (Reader OpTable) r
+    ( Members ShuntPipelineEffects r
     ) =>
     RenamedExpr ->
     Sem r ShuntedExpr
@@ -219,20 +233,25 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (Lambda n e) = Lambda n <$> shuntExpr e
     shuntExpr' (FunctionCall f x) = FunctionCall <$> shuntExpr f <*> shuntExpr x
     shuntExpr' (BinaryOperator operator l r) = do
-        -- turn the binary operator into a function call
-        -- (a `op` b) -> op a b
+        -- turn the binary operator into 2 function calls
+        -- (a `op` b) -> (op a) b
+        -- Semantics for type annotation shifting are as follows:
+        -- (a : T) `op` b -> (op (a : T)) b
+        -- a `op` (b : T) -> (op a) (b : T)
+        -- (a : T1) `op` (b : T2) -> (op (a : T1)) (b : T2)
+
         l' <- shuntExpr l
         r' <- shuntExpr r
         let op' = case operator ^. _Unwrapped . unlocated of
                 SymOp lopName -> OperatorVarName <<$>> lopName
                 Infixed inName -> inName
-        let opVar = Expr (Var op' `withLocationOf` op', _)
+        let opVar = Expr (Var op' `withLocationOf` op', Nothing) -- There can't ever be a type annotation on an operator
         let leftCall =
                 Expr
                     ( Located
                         (Located.spanningRegion' (op' ^. sourceRegion :| [l' ^. _Unwrapped . _1 . sourceRegion]))
                         (FunctionCall opVar l')
-                    , _
+                    , Nothing -- this will / can never have a type annotation
                     )
         pure (FunctionCall leftCall r')
     shuntExpr' (List es) = List <$> traverse shuntExpr es
@@ -248,7 +267,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (Tuple es) = Tuple <$> traverse shuntExpr es
 
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
-shuntPattern (Pattern lp) = (\x -> Pattern (x, _)) <$> traverseOf unlocated shuntPattern' (lp ^. _1)
+shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
   where
     shuntPattern' :: RenamedPattern' -> Sem r ShuntedPattern'
     shuntPattern' (VarPattern v) = pure (VarPattern v)

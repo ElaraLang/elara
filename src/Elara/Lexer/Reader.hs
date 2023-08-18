@@ -5,8 +5,11 @@ import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-import Polysemy.Error (throw)
+import Polysemy
+import Polysemy.Error (Error, throw)
 import Polysemy.State
+
+import Elara.ReadFile (readFileString)
 
 -- TODO: maybe also define empty Constructor for TokPosition
 -- use it when constructing and here compute position and update it and return complete and correct Token
@@ -46,6 +49,10 @@ readTokens = do
         _ -> do
             next <- readTokens
             pure (tok : next)
+
+readTokensWith :: Member (Error LexerError) r => FilePath -> String -> Sem r [Lexeme]
+readTokensWith fp s = do
+    evalState (initialState fp s) (subsume_ readTokens)
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a
 lexer cont = do

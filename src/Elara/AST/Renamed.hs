@@ -27,6 +27,7 @@ type instance Select "Infixed" 'Renamed = VarRef VarName
 type instance Select "LetParamName" 'Renamed = Unique VarName
 type instance Select "InParens" 'Renamed = RenamedExpr
 
+type instance Select "PatternType" 'Renamed = Maybe RenamedType
 type instance Select "VarPat" 'Renamed = Unique VarName
 type instance Select "ConPat" 'Renamed = Qualified TypeName
 

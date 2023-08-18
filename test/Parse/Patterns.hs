@@ -9,7 +9,7 @@ import Elara.Parse.Pattern (patParser)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Orphans ()
-import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern)
+import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern, trippingParse)
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Print (showPrettyUnannotated)
@@ -19,7 +19,7 @@ import Test.Hspec.Hedgehog
 arbitraryPattern :: Spec
 arbitraryPattern = it "Arbitrary patterns parse prettyPrinted" $ hedgehog $ do
     expr <- forAll genPattern
-    tripping expr showPrettyUnannotated (fmap stripPatternLocation . run . runError . lexAndParse patParser)
+    trippingParse expr showPrettyUnannotated (\s -> Right . stripPatternLocation <$> (lexAndParse patParser s >>= evalEither))
 
 spec :: Spec
 spec = parallel $ describe "Parses patterns correctly" $ do
@@ -60,7 +60,8 @@ consPatterns :: Spec
 consPatterns = describe "Parses cons patterns" $ do
     it
         "Doesn't allow cons patterns without parentheses"
-        (shouldFailToParse "x :: xs")
+        $ hedgehog
+            (shouldFailToParse "x :: xs")
 
     it "Parses correct cons patterns correctly" $ hedgehog $ do
         "(x :: xs)"
@@ -90,7 +91,7 @@ constructorPatterns = describe "Parses constructor parens" $ do
     it "Parses constructor patterns correctly" $ hedgehog $ do
         "ZeroArity" `shouldParsePattern` Pattern (ConstructorPattern "ZeroArity" [], Nothing)
 
-    it "Fails with multiple arguments without parens" $ do
+    it "Fails with multiple arguments without parens" $ hedgehog $ do
         shouldFailToParse "TwoArgs 1 2"
 
     it "Parses constructor patterns with parens correctly" $ hedgehog $ do

@@ -12,6 +12,8 @@ import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion 
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenDedent, TokenIndent, TokenSemicolon))
+import Elara.Pipeline (PipelineResultEff)
+import Elara.ReadFile (readFileString)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
@@ -49,7 +51,7 @@ makeLenses ''IndentInfo
 makeLenses ''ParseState
 
 type LexMonad :: Type -> Type
-type LexMonad a = Sem [State ParseState, Error LexerError] a
+type LexMonad a = Sem '[State ParseState, Error LexerError] a
 
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
@@ -125,9 +127,6 @@ initialState fp s =
         , _indentStack = IndentInfo 0 (Position 1 1) :| []
         , _pendingPosition = Position 1 1
         }
-
-evalLexMonad :: FilePath -> String -> LexMonad a -> Either LexerError a
-evalLexMonad fp s = run . runError . evalState (initialState fp s)
 
 fake :: Token -> LexMonad Lexeme
 fake t = do

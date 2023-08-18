@@ -39,6 +39,12 @@ mkGlobal n = Global (toName <<$>> n)
 mkGlobal' :: (ToName n) => Located (Qualified n) -> IgnoreLocVarRef Name
 mkGlobal' n = Global (toName <<$>> IgnoreLocation n)
 
+mkGlobalUnlocated :: (ToName n) => Qualified n -> UnlocatedVarRef Name
+mkGlobalUnlocated n = Global (Identity (toName <$> n))
+
+mkLocalUnlocated :: (ToName n) => Unique n -> UnlocatedVarRef Name
+mkLocalUnlocated n = Local (Identity (toName <$> n))
+
 withName :: (ToName n) => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)
 withName (Local n) = Local (toName <<$>> n)
@@ -50,6 +56,12 @@ withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 instance (Unwrap c, Pretty n) => Pretty (VarRef' c n) where
     pretty (Global n) = pretty (unwrap n)
     pretty (Local n) = pretty (unwrap n)
+
+instance StripLocation (Located (VarRef a)) (VarRef a) where
+    stripLocation = unwrap
+
+instance StripLocation (Located (VarRef a)) (UnlocatedVarRef a) where
+    stripLocation = unwrap . fmap stripLocation
 
 instance StripLocation (VarRef a) (UnlocatedVarRef a) where
     stripLocation v = case v of

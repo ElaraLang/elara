@@ -7,7 +7,7 @@ import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
-import Polysemy (Member, Sem, embed, makeSem, reinterpret)
+import Polysemy (Member, Sem, embed, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
@@ -70,8 +70,8 @@ uniqueGenToState = reinterpret $ \case
                 put (UniqueSupply is)
                 pure i
 
-uniqueGenToIO :: Sem (UniqueGen ': r) a -> Sem (Embed IO : r) a
-uniqueGenToIO = reinterpret $ \case
+uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem (r) a
+uniqueGenToIO = interpret $ \case
     NewUniqueNum -> do
         us <- embed (readIORef globalUniqueSupply)
         case _uniqueSupplyUniques us of

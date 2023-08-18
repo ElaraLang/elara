@@ -22,27 +22,31 @@ import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
-import Elara.Desugar (desugar, runDesugar)
+import Elara.Desugar (DesugarError, DesugarState, desugar, runDesugar, runDesugarPipeline)
 import Elara.Emit
 import Elara.Error
 import Elara.Error.Codes qualified as Codes (fileReadError)
+import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token (Lexeme, Token)
 import Elara.Lexer.Utils
 import Elara.Parse
+import Elara.Parse.Error
 import Elara.Parse.Stream
+import Elara.Pipeline (IsPipeline, PipelineResultEff, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Rename (rename, runRenamer)
+import Elara.ReadFile (ReadFileError, readFileString, runReadFilePipeline)
+import Elara.Rename (rename)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCoreC)
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic)
+import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic, printDiagnostic')
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Member, Members, Sem, runM, subsume)
+import Polysemy (Member, Members, Sem, raise, raise_, runM, subsume, subsume_)
 import Polysemy.Embed
 import Polysemy.Error
 import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
@@ -71,7 +75,7 @@ main = run `finally` cleanup
         let dumpTyped = "--dump-typed" `elem` args
         let dumpCore = "--dump-core" `elem` args
         s <- runElara dumpShunted dumpTyped dumpCore
-        printDiagnostic stdout WithUnicode (TabSize 4) defaultStyle s
+        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
 dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
@@ -92,107 +96,82 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
 
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
+
     let graph = createGraph [source, prelude]
-    shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
+    printPretty graph
 
-    when dumpShunted $ do
-        liftIO
-            ( dumpGraph
-                shuntedGraph
-                (view (_Unwrapped . unlocated . field' @"name" . to nameText))
-                ".shunted.elr"
-            )
+-- shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
 
-    typedGraph <- inferModules shuntedGraph
+-- when dumpShunted $ do
+--     liftIO
+--         ( dumpGraph
+--             shuntedGraph
+--             (view (_Unwrapped . unlocated . field' @"name" . to nameText))
+--             ".shunted.elr"
+--         )
 
-    when dumpTyped $ do
-        liftIO
-            ( dumpGraph
-                typedGraph
-                (view (_Unwrapped . unlocated . field' @"name" . to nameText))
-                ".typed.elr"
-            )
+-- typedGraph <- inferModules shuntedGraph
 
-    coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
+-- when dumpTyped $ do
+--     liftIO
+--         ( dumpGraph
+--             typedGraph
+--             (view (_Unwrapped . unlocated . field' @"name" . to nameText))
+--             ".typed.elr"
+--         )
 
-    when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
+-- coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
 
-    classes <- runReader java8 (emitGraph coreGraph)
+-- when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
-    for_ classes $ \(mn, class') -> do
-        putTextLn ("Compiling " <> showPretty mn <> "...")
-        let converted = convert class'
-        let bs = runPut (writeBinary converted)
-        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
-        putTextLn ("Compiled " <> showPretty mn <> "!")
+-- classes <- runReader java8 (emitGraph coreGraph)
 
-    end <- liftIO getCPUTime
-    let t :: Double
-        t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+-- for_ classes $ \(mn, class') -> do
+--     putTextLn ("Compiling " <> showPretty mn <> "...")
+--     let converted = convert class'
+--     let bs = runPut (writeBinary converted)
+--     liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
+--     putTextLn ("Compiled " <> showPretty mn <> "!")
+
+-- end <- liftIO getCPUTime
+-- let t :: Double
+--     t = fromIntegral (end - start) * 1e-9
+-- putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
 type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
 
-readFileString :: (Member (Embed IO) r, Members MainMembers r) => FilePath -> Sem r String
-readFileString path = do
-    contentsBS <- readFileBS path
-    case decodeUtf8Strict contentsBS of
-        Left err -> writeReport (Err (Just Codes.fileReadError) ("Could not read " <> pretty path <> ": " <> show err) [] []) *> nothingE
-        Right contents -> do
-            addFile path contents
-            justE contents
+-- renameModule ::
+--     (Members MainMembers r, Member (Embed IO) r) =>
+--     TopologicalGraph (Module 'Desugared) ->
+--     Module 'Desugared ->
+--     Sem r (Module 'Renamed)
+-- renameModule mp m = do
+--     y <- subsume $ runRenamer primitiveRenameState mp (rename m)
+--     case y of
+--         Left err -> report err *> nothingE
+--         Right renamed -> justE renamed
 
-lexFile :: (Member (Embed IO) r, Members MainMembers r) => FilePath -> Sem r (String, [Lexeme])
-lexFile path = do
-    contents <- readFileString path
-    case evalLexMonad path contents readTokens of
-        Left err -> report err *> nothingE
-        Right lexemes -> do
-            -- debugColored (stripLocation <$> lexemes :: [Token])
-            justE (contents, lexemes)
-
-parseModule :: (Members MainMembers r) => FilePath -> (String, [Lexeme]) -> Sem r (Module 'Frontend)
-parseModule path (contents, lexemes) = do
-    let tokenStream = TokenStream contents lexemes 0
-    case parse path tokenStream of
-        Left parseError -> report parseError *> nothingE
-        Right m -> do
-            -- debugColored (stripLocation m)
-            justE m
-
-desugarModule :: (Members MainMembers r) => Module 'Frontend -> Sem r (Module 'Desugared)
-desugarModule m = case runDesugar (desugar m) of
-    Left err -> report err *> nothingE
-    Right desugared -> justE desugared
-
-renameModule ::
-    (Members MainMembers r, Member (Embed IO) r) =>
-    TopologicalGraph (Module 'Desugared) ->
-    Module 'Desugared ->
-    Sem r (Module 'Renamed)
-renameModule mp m = do
-    y <- subsume $ runRenamer primitiveRenameState mp (rename m)
-    case y of
-        Left err -> report err *> nothingE
-        Right renamed -> justE renamed
-
-shuntModule :: (Members MainMembers r) => Module 'Renamed -> Sem r (Module 'Shunted)
-shuntModule m = do
-    x <-
-        runError $
-            runWriter $
-                runReader (fromList []) (shunt m)
-    case x of
-        Left err -> report err *> nothingE
-        Right (warnings, shunted) -> do
-            traverse_ report warnings
-            justE shunted
+-- shuntModule :: (Members MainMembers r) => Module 'Renamed -> Sem r (Module 'Shunted)
+-- shuntModule m = do
+--     x <-
+--         runError $
+--             runWriter $
+--                 runReader (fromList []) (shunt m)
+--     case x of
+--         Left err -> report err *> nothingE
+--         Right (warnings, shunted) -> do
+--             traverse_ report warnings
+--             justE shunted
 
 inferModules :: (Members MainMembers r) => TopologicalGraph (Module 'Shunted) -> Sem r (TopologicalGraph (Module 'Typed))
 inferModules modules = runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
-loadModule :: (Members MainMembers r, Member (Embed IO) r) => FilePath -> Sem r (Module 'Desugared)
-loadModule fp = (lexFile >=> parseModule fp >=> desugarModule) fp
+loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
+loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
+    source <- readFileString fp
+    tokens <- readTokensWith fp source
+    parsed <- parsePipeline moduleParser fp tokens
+    runDesugarPipeline $ runDesugar $ desugar parsed

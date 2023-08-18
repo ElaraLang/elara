@@ -4,19 +4,11 @@ module Parse where
 
 import Arbitrary.AST (genExpr)
 import Elara.AST.Generic
-import Elara.AST.Name (LowerAlphaName (LowerAlphaName), Name (NVarName), VarName (NormalVarName))
 import Elara.AST.Select
-import Elara.Data.Pretty
 import Elara.Parse.Expression (exprParser)
-import Elara.Parse.Stream
 import Hedgehog
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
-import Lex.Common
 import Orphans ()
 import Parse.Common
-import Polysemy (run)
-import Polysemy.Error (runError)
 import Print (showPrettyUnannotated)
 
 import Parse.Patterns qualified as Patterns
@@ -32,7 +24,7 @@ spec = parallel $ do
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
     expr <- forAll genExpr
-    let parsePretty = fmap (removeInParens . stripExprLocation) . run . runError . lexAndParse exprParser
+    let parsePretty s = Right . removeInParens . stripExprLocation <$> (lexAndParse exprParser s >>= evalEither)
     trippingParse (removeInParens expr) (showPrettyUnannotated . removeInParens) parsePretty
   where
     -- The AST needs to have the 'InParens' element for operator shunting later, but its presence messes up the pretty printing & parsing equality

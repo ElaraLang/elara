@@ -20,6 +20,7 @@ where
 import Data.Map qualified as Map (toList)
 
 import Elara.Width qualified as Width
+import Error.Diagnose (Annotation, defaultStyle)
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal (AnsiStyle)
@@ -96,8 +97,11 @@ class Pretty a where
     default pretty :: (Show a) => a -> Doc AnsiStyle
     pretty = pretty @Text . show
 
+instance Pretty (Doc (Annotation AnsiStyle)) where
+    pretty = pretty . reAnnotate defaultStyle
+
 instance Pretty (Doc AnsiStyle) where
-    pretty = identity -- careful with this one
+    pretty = identity
 
 instance Pretty () where
     pretty = mempty
@@ -134,10 +138,6 @@ instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
 
 -- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
 --     pretty = PP.pretty
-
--- hack
-instance PP.Pretty (Doc AnsiStyle) where
-    pretty = unAnnotate
 
 escapeChar :: (IsString s) => Char -> s
 escapeChar c = case c of

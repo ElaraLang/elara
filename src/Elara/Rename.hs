@@ -17,10 +17,11 @@ import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
-import Elara.Error (ReportableError (report), writeReport)
+import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
+import Elara.Pipeline
 import Error.Diagnose (Marker (This), Report (Err))
-import Polysemy (Members, Sem)
+import Polysemy (Members, Sem, subsume, subsume_)
 import Polysemy.Embed
 import Polysemy.Error (Error, note, runError, throw)
 import Polysemy.Reader hiding (Local)
@@ -97,10 +98,20 @@ instance Semigroup RenameState where
 instance Monoid RenameState where
     mempty = RenameState mempty mempty mempty
 
-type Rename r = Members '[State RenameState, Error RenameError, Reader (TopologicalGraph (Module Desugared)), UniqueGen] r
+type RenamePipelineEffects = '[State RenameState, Error RenameError, Reader (TopologicalGraph (Module 'Desugared)), UniqueGen]
+type Rename r = Members RenamePipelineEffects r
 
-runRenamer :: RenameState -> i -> Sem (State RenameState : Error e : Reader i : UniqueGen : r) a -> Sem (Embed IO : r) (Either e a)
-runRenamer st mp = uniqueGenToIO . runReader mp . runError . evalState st
+runRenamePipeline ::
+    IsPipeline r =>
+    TopologicalGraph (Module 'Desugared) ->
+    RenameState ->
+    Sem (EffectsAsPrefixOf RenamePipelineEffects r) a ->
+    Sem r a
+runRenamePipeline graph st =
+    uniqueGenToIO
+        . runReader graph
+        . runErrorOrReport @RenameError
+        . evalState st
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Sem r (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
@@ -182,23 +193,32 @@ rename =
     renameImport :: Rename r => Import Desugared -> Sem r (Import Renamed)
     renameImport = traverseOf (_Unwrapped . unlocated) renameImport'
 
-    renameImport' :: Rename r => Import' Desugared -> Sem r (Import' Renamed)
+    renameImport' :: Rename r => Import' 'Desugared -> Sem r (Import' 'Renamed)
     renameImport' imp = do
         exposing' <- renameExposing (imp ^. field' @"importing" . unlocated) (imp ^. field' @"exposing")
         pure $ Import' (imp ^. field' @"importing") (imp ^. field' @"as") (imp ^. field' @"qualified") exposing'
 
-addImportsToContext :: Rename r => [Import Desugared] -> Sem r ()
+addImportsToContext :: Rename r => [Import 'Desugared] -> Sem r ()
 addImportsToContext = traverse_ addImportToContext
-  where
-    addImportToContext :: Rename r => Import Desugared -> Sem r ()
-    addImportToContext imp = do
-        modules <- ask
-        imported <- note (UnknownModule (imp ^. _Unwrapped . unlocated . field' @"importing" . unlocated)) $ moduleFromName (imp ^. _Unwrapped . unlocated . field' @"importing" . unlocated) modules
-        let isExposingL = _Unwrapped . unlocated . field' @"name" . unlocated . to (isExposingAndExists imported)
-        let exposed = case imported ^. _Unwrapped . unlocated . field' @"exposing" of
-                ExposingAll -> imported ^. _Unwrapped . unlocated . field' @"declarations"
-                ExposingSome _ -> imported ^.. _Unwrapped . unlocated . field' @"declarations" . folded . filteredBy isExposingL
-        traverse_ (addDeclarationToContext (imp ^. _Unwrapped . unlocated . field' @"qualified")) exposed
+
+addImportToContext :: Rename r => Import 'Desugared -> Sem r ()
+addImportToContext imp = do
+    addModuleToContext
+        (imp ^. _Unwrapped . unlocated . field' @"importing" . unlocated)
+        (imp ^. _Unwrapped . unlocated . field' @"exposing")
+
+addModuleToContext :: Rename r => ModuleName -> Exposing 'Desugared -> Sem r ()
+addModuleToContext mn exposing = do
+    modules <- ask
+    imported <-
+        note
+            (UnknownModule mn)
+            (moduleFromName mn modules)
+    let isExposingL = _Unwrapped . unlocated . field' @"name" . unlocated . to (isExposingAndExists imported)
+    let exposed = case exposing of
+            ExposingAll -> imported ^. _Unwrapped . unlocated . field' @"declarations"
+            ExposingSome _ -> imported ^.. _Unwrapped . unlocated . field' @"declarations" . folded . filteredBy isExposingL
+    traverse_ (addDeclarationToContext False) exposed
 
 addDeclarationToContext :: Rename r => Bool -> DesugaredDeclaration -> Sem r ()
 addDeclarationToContext _ decl = do

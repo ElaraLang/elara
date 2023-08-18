@@ -2,38 +2,39 @@ module Parse.Common where
 
 import Elara.AST.Generic (Pattern, stripPatternLocation)
 import Elara.AST.Select (UnlocatedAST (..))
-import Elara.AST.Unlocated.Frontend ()
+import Elara.AST.Unlocated ()
+import Elara.Lexer.Pipeline (runLexPipelinePure)
+import Elara.Lexer.Reader (readTokensWith)
+import Elara.Parse (parsePipeline, runParsePipelinePure)
 import Elara.Parse.Error
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
-import Hedgehog (MonadTest, diff, evalEither, success, tripping)
+import Hedgehog (MonadTest, diff, evalEither, tripping)
 import Hedgehog.Internal.Property (failWith)
-import Lex.Common (lex')
 import Polysemy
-import Polysemy.Error (Error, fromEither, runError)
 import Print (showPretty)
-import Test.Hspec (Expectation, expectationFailure, shouldBe)
 import Test.QuickCheck
-import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty, runParser)
+import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
 
-lexAndParse :: Member (Error (WParseErrorBundle TokenStream ElaraParseError)) r => HParser a -> Text -> Sem r a
-lexAndParse p t = fromEither (Parse.Common.parse p (TokenStream (toString t) (lex' t) 0))
-
-parse :: HParser a -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) a
-parse p = first WParseErrorBundle . runParser (toParsec p <* eof) "<tests>"
+-- lexAndParse :: ToString a => HParser b -> a -> Either (WParseErrorBundle TokenStream ElaraParseError) b
+lexAndParse :: (MonadTest m, ToString a1) => HParser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
+lexAndParse parser source = do
+    let fp = "<tests>"
+    tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
+    pure $ run $ runParsePipelinePure $ parsePipeline parser fp tokens
 
 shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = do
-    parsed <- evalEither $ run $ runError $ lexAndParse patParser source
+    parsed <- lexAndParse patParser source >>= evalEither
     diff (stripPatternLocation parsed) (==) expected
 
-shouldFailToParse :: Text -> Expectation
+shouldFailToParse :: (MonadTest m) => Text -> m ()
 shouldFailToParse source = do
-    let parsed = run $ runError $ lexAndParse patParser source
+    parsed <- lexAndParse patParser source
     case parsed of
         Left _ -> pass
-        Right ast -> expectationFailure ("Expected to fail to parse, but parsed " <> toString (showPretty ast))
+        Right ast -> failWith Nothing ("Expected to fail to parse, but parsed " <> toString (showPretty ast))
 
 shouldParseProp :: (VisualStream s, TraversableStream s, ShowErrorComponent e, Eq a, Show a) => Either (WParseErrorBundle s e) a -> a -> Property
 result `shouldParseProp` a = ioProperty $
@@ -46,14 +47,11 @@ trippingParse ::
     (MonadTest m, Show b, HasCallStack, Eq a, Show a) =>
     a ->
     (a -> b) ->
-    (b -> Either (WParseErrorBundle TokenStream ElaraParseError) a) ->
+    (b -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a)) ->
     m ()
-trippingParse x encode decode =
-    let
-        i = encode x
-
-        my = decode i
-     in
-        case my of
-            Left e -> withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
-            Right y -> tripping x (const i) (const (Identity y))
+trippingParse x encode decode = do
+    let i = encode x
+    my <- decode i
+    case my of
+        Left e -> withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
+        Right y -> tripping x (const i) (const (Identity y))

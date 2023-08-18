@@ -5,7 +5,7 @@ module Arbitrary.AST where
 import Arbitrary.Names
 import Elara.AST.Generic
 import Elara.AST.Select
-import Elara.AST.Unlocated.Frontend ()
+import Elara.AST.Unlocated ()
 
 import Arbitrary.Literals
 import Hedgehog hiding (Var)

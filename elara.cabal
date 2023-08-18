@@ -30,6 +30,7 @@ library
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Generic
+      Elara.AST.Generic.Pattern
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Pretty
@@ -40,8 +41,6 @@ library
       Elara.AST.StripLocation
       Elara.AST.Typed
       Elara.AST.Unlocated
-      Elara.AST.Unlocated.Frontend
-      Elara.AST.Unlocated.Typed
       Elara.AST.VarRef
       Elara.Compile
       Elara.Core
@@ -63,6 +62,7 @@ library
       Elara.Error.Effect
       Elara.Lexer.Char
       Elara.Lexer.Lexer
+      Elara.Lexer.Pipeline
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
@@ -79,9 +79,11 @@ library
       Elara.Parse.Primitives
       Elara.Parse.Stream
       Elara.Parse.Type
+      Elara.Pipeline
       Elara.Prim
       Elara.Prim.Core
       Elara.Prim.Rename
+      Elara.ReadFile
       Elara.Rename
       Elara.Shunt
       Elara.ToCore
@@ -262,6 +264,7 @@ test-suite elara-test
       Parse
       Parse.Common
       Parse.Patterns
+      Shunt
       Paths_elara
   hs-source-dirs:
       test

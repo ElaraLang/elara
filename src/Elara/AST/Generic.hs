@@ -38,7 +38,7 @@ dataConCantHappen :: DataConCantHappen -> a
 dataConCantHappen x = case x of {}
 
 data NoFieldValue = NoFieldValue
-    deriving (Generic, Data, Show)
+    deriving (Generic, Data, Show, Eq)
 
 instance Pretty NoFieldValue where
     pretty :: HasCallStack => NoFieldValue -> Doc AnsiStyle
@@ -483,18 +483,76 @@ instance
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
 
+instance
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( ASTLocate' ast1 ~ Located
+    , ASTLocate' ast2 ~ Unlocated
+    , (StripLocation (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2))
+    , (StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2))
+    , (ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2))
+    , (ApplyAsFunctorish (Select "PatternType" ast1) (Select "PatternType" ast2) (Type ast1) (Type ast2))
+    , Select "InParens" ast2 ~ Expr ast2
+    , Select "InParens" ast1 ~ Expr ast1
+    , ( StripLocation
+            (CleanupLocated (Located (Select "Infixed" ast1)))
+            (Select "Infixed" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "SymOp" ast1)))
+            (Select "SymOp" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "TypeVar" ast1)))
+            (Select "TypeVar" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "VarRef" ast1)))
+            (Select "VarRef" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "VarPat" ast1)))
+            (Select "VarPat" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "ConPat" ast1)))
+            (Select "ConPat" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "ConRef" ast1)))
+            (Select "ConRef" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "LambdaPattern" ast1)))
+            (Select "LambdaPattern" ast1)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "LetParamName" ast1)))
+            (Select "LetParamName" ast2)
+      )
+    ) =>
+    StripLocation (Expr ast1) (Expr ast2)
+    where
+    stripLocation = stripExprLocation @ast1 @ast2
+
 stripExprLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( ASTLocate' ast1 ~ Located
     , ASTLocate' ast2 ~ Unlocated
-    , ApplyAsFunctorish (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2) (Pattern ast1) (Pattern ast2)
+    , StripLocation (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2)
+    , StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2)
+    , ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2)
     , _
     ) =>
     Expr ast1 ->
     Expr ast2
 stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
     let e' = fmapUnlocated @LocatedAST @ast1 stripExprLocation' e
-     in Expr (stripLocation e', fmap stripTypeLocation t)
+     in Expr
+            ( stripLocation e'
+            , applyAsFunctorish @(Select "ExprType" ast1) @(Select "ExprType" ast2) @(Type ast1) @(Type ast2)
+                stripTypeLocation
+                t
+            )
   where
     stripExprLocation' :: Expr' ast1 -> Expr' ast2
     stripExprLocation' (Int i) = Int i
@@ -507,8 +565,7 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
     stripExprLocation' (Lambda ps e) =
         let ps' = stripLocation ps
             ps'' =
-                applyAsFunctorish @(Select "LambdaPattern" ast1) @(Select "LambdaPattern" ast2) @(Pattern ast1) @(Pattern ast2)
-                    stripPatternLocation
+                stripLocation @(Select "LambdaPattern" ast1) @(Select "LambdaPattern" ast2)
                     ps'
          in Lambda ps'' (stripExprLocation e)
     stripExprLocation' (FunctionCall e1 e2) = FunctionCall (stripExprLocation e1) (stripExprLocation e2)
@@ -517,30 +574,49 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
     stripExprLocation' (List l) = List (stripExprLocation <$> l)
     stripExprLocation' (Match e m) = Match (stripExprLocation e) (bimapF stripPatternLocation stripExprLocation m)
     stripExprLocation' (LetIn v p e1 e2) =
-        let p' = stripLocation p
-            p'' =
-                applyAsFunctorish @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) @(Pattern ast1) @(Pattern ast2)
-                    stripPatternLocation
-                    p'
+        let p' = stripLocation @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) p
          in LetIn
                 (stripLocation v)
-                p''
+                p'
                 (stripExprLocation e1)
                 (stripExprLocation e2)
     stripExprLocation' (Let v p e) =
-        let p' = stripLocation p
-            p'' =
-                applyAsFunctorish @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) @(Pattern ast1) @(Pattern ast2)
-                    stripPatternLocation
-                    p'
-         in Let (stripLocation v) p'' (stripExprLocation e)
+        let p' = stripLocation @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) p
+         in Let (stripLocation v) p' (stripExprLocation e)
     stripExprLocation' (Block b) = Block (stripExprLocation <$> b)
     stripExprLocation' (InParens e) = InParens (stripExprLocation e)
     stripExprLocation' (Tuple t) = Tuple (stripExprLocation <$> t)
 
+instance
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( ASTLocate' ast1 ~ Located
+    , ASTLocate' ast2 ~ Unlocated
+    , ( ApplyAsFunctorish
+            (Select "PatternType" ast1)
+            (Select "PatternType" ast2)
+            (Type ast1)
+            (Type ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "TypeVar" ast1)))
+            (Select "TypeVar" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "VarPat" ast1)))
+            (Select "VarPat" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "ConPat" ast1)))
+            (Select "ConPat" ast2)
+      )
+    ) =>
+    StripLocation (Pattern ast1) (Pattern ast2)
+    where
+    stripLocation = stripPatternLocation @ast1 @ast2
+
 stripPatternLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
-    ( (ASTLocate' ast1 ~ Located)
+    ( ASTLocate' ast1 ~ Located
     , ASTLocate' ast2 ~ Unlocated
     , _
     ) =>
@@ -548,7 +624,10 @@ stripPatternLocation ::
     Pattern ast2
 stripPatternLocation (Pattern (p :: ASTLocate ast1 (Pattern' ast1), t)) =
     let p' = fmapUnlocated @LocatedAST @ast1 stripPatternLocation' p
-     in Pattern (stripLocation p', fmap stripTypeLocation t)
+     in Pattern
+            ( stripLocation p'
+            , applyAsFunctorish @(Select "PatternType" ast1) @(Select "PatternType" ast2) @(Type ast1) @(Type ast2) stripTypeLocation t
+            )
   where
     stripPatternLocation' :: Pattern' ast1 -> Pattern' ast2
     stripPatternLocation' (VarPattern v) = VarPattern (stripLocation v)
@@ -562,17 +641,35 @@ stripPatternLocation (Pattern (p :: ASTLocate ast1 (Pattern' ast1), t)) =
     stripPatternLocation' (CharPattern c) = CharPattern c
     stripPatternLocation' UnitPattern = UnitPattern
 
+instance
+    forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+    ( ASTLocate' ast1 ~ Located
+    , ASTLocate' ast2 ~ Unlocated
+    , ( StripLocation
+            (CleanupLocated (Located (Select "Infixed" ast1)))
+            (Select "Infixed" ast2)
+      )
+    , ( StripLocation
+            (CleanupLocated (Located (Select "SymOp" ast1)))
+            (Select "SymOp" ast2)
+      )
+    ) =>
+    StripLocation (BinaryOperator ast1) (BinaryOperator ast2)
+    where
+    stripLocation = stripBinaryOperatorLocation @ast1 @ast2
+
 stripBinaryOperatorLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( (ASTLocate' ast1 ~ Located)
     , ASTLocate' ast2 ~ Unlocated
+    , StripLocation (ASTLocate ast1 (BinaryOperator' ast2)) (BinaryOperator' ast2)
     , _
     ) =>
     BinaryOperator ast1 ->
     BinaryOperator ast2
 stripBinaryOperatorLocation (MkBinaryOperator (op :: ASTLocate ast1 (BinaryOperator' ast1))) =
     let op' = fmapUnlocated @LocatedAST @ast1 stripBinaryOperatorLocation' op
-     in MkBinaryOperator (stripLocation op')
+     in MkBinaryOperator (stripLocation op' :: BinaryOperator' ast2)
   where
     stripBinaryOperatorLocation' :: BinaryOperator' ast1 -> BinaryOperator' ast2
     stripBinaryOperatorLocation' (SymOp name) = SymOp (stripLocation name)
@@ -588,10 +685,10 @@ stripTypeLocation ::
     Type ast2
 stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1))) =
     let t' = fmapUnlocated @LocatedAST @ast1 stripTypeLocation' t
-     in Type (stripLocation t')
+     in Type (stripLocation @(ASTLocate ast1 (Type' ast2)) @(Type' ast2) t')
   where
     stripTypeLocation' :: Type' ast1 -> Type' ast2
-    stripTypeLocation' (TypeVar name) = TypeVar (rUnlocate @LocatedAST @ast1 name)
+    stripTypeLocation' (TypeVar name) = TypeVar (stripLocation name)
     stripTypeLocation' (FunctionType a b) = FunctionType (stripTypeLocation a) (stripTypeLocation b)
     stripTypeLocation' UnitType = UnitType
     stripTypeLocation' (TypeConstructorApplication a b) = TypeConstructorApplication (stripTypeLocation a) (stripTypeLocation b)
