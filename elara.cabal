@@ -294,7 +294,9 @@ test-suite elara-test
     , generic-lens
     , h2jvm
     , headed-megaparsec
+    , hedgehog
     , hspec ==2.*
+    , hspec-hedgehog
     , hspec-megaparsec
     , lens
     , megaparsec >=9.0.0

@@ -107,6 +107,8 @@ tests:
       - HUnit
       - hspec-megaparsec
       - QuickCheck
+      - hedgehog
+      - hspec-hedgehog
 
   doctest:
     main: Main.hs

@@ -7,6 +7,7 @@ import Elara.Parse.Error
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
+import Hedgehog (MonadTest, diff, evalEither)
 import Lex.Common (lex')
 import Polysemy
 import Polysemy.Error (Error, fromEither, runError)
@@ -21,12 +22,10 @@ lexAndParse p t = fromEither (Parse.Common.parse p (TokenStream (toString t) (le
 parse :: HParser a -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) a
 parse p = first WParseErrorBundle . runParser (toParsec p <* eof) "<tests>"
 
-shouldParsePattern :: Text -> Pattern 'UnlocatedFrontend -> Expectation
+shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = do
-    let parsed = run $ runError $ lexAndParse patParser source
-    case parsed of
-        Left err -> expectationFailure (errorBundlePretty (unWParseErrorBundle err))
-        Right ast -> stripPatternLocation ast `shouldBe` expected
+    parsed <- evalEither $ run $ runError $ lexAndParse patParser source
+    diff (stripPatternLocation parsed) (==) expected
 
 shouldFailToParse :: Text -> Expectation
 shouldFailToParse source = do

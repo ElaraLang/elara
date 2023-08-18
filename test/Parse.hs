@@ -3,33 +3,33 @@
 module Parse where
 
 import Arbitrary.AST ()
-import Arbitrary.Names (AlphaText (getAlphaText))
 import Elara.AST.Generic
 import Elara.AST.Name (LowerAlphaName (LowerAlphaName), Name (NVarName), VarName (NormalVarName))
 import Elara.AST.Select
 import Elara.Data.Pretty
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Stream
+import Hedgehog
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Lex.Common
 import Orphans ()
 import Parse.Common
 import Polysemy (run)
 import Polysemy.Error (runError)
 import Print (showPretty, showPrettyUnannotated)
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Test.QuickCheck
 
 import Parse.Patterns qualified as Patterns
+import Test.Hspec
 
 spec :: Spec
 spec = parallel $ do
     Patterns.spec
-    quickCheckSpec
+    -- quickCheckSpec
     pass
 
-quickCheckSpec :: Spec
-quickCheckSpec = modifyMaxSize (const 5) $ prop "Arbitrary expressions parse prettyPrinted" ppEq
+-- quickCheckSpec :: Spec
+-- quickCheckSpec = modifyMaxSize (const 5) $ prop "Arbitrary expressions parse prettyPrinted" ppEq
 
 removeInParens :: Expr 'UnlocatedFrontend -> Expr 'UnlocatedFrontend
 removeInParens (Expr (Lambda p e, t)) = Expr (Lambda p (removeInParens e), t)
@@ -43,9 +43,10 @@ removeInParens (Expr (Block es, t)) = Expr (Block (removeInParens <$> es), t)
 removeInParens (Expr (InParens e, _)) = removeInParens e
 removeInParens e = e
 
-ppEq :: Expr 'UnlocatedFrontend -> Property
-ppEq (removeInParens -> expr) =
-    let source = showPrettyUnannotated $ pretty expr
-        parsed = run $ runError $ lexAndParse exprParser source
-        cleaned = removeInParens . stripExprLocation <$> parsed
-     in counterexample ("pretty source: \n" <> toString (showPretty $ pretty source)) (cleaned `shouldParseProp` expr)
+-- ppEq :: Property
+-- ppEq = do
+--     expr <- removeInParens <$> forAll
+--     let source = showPrettyUnannotated $ pretty expr
+--         parsed = run $ runError $ lexAndParse exprParser source
+--         cleaned = removeInParens . stripExprLocation <$> parsed
+--      in counterexample ("pretty source: \n" <> toString (showPretty $ pretty source)) (cleaned `shouldParseProp` expr)

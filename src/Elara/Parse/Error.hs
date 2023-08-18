@@ -55,6 +55,9 @@ instance ShowErrorComponent ElaraParseError where
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 
+deriving instance (Show s, Show (MP.Token s), Show e) => Show (WParseErrorBundle s e)
+deriving instance (Eq s, Eq (MP.Token s), Eq e) => Eq (WParseErrorBundle s e)
+
 instance ReportableError (WParseErrorBundle TokenStream ElaraParseError) where
     report (WParseErrorBundle e) =
         writeDiagnostic $

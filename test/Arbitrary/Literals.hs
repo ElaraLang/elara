@@ -1,6 +1,8 @@
 module Arbitrary.Literals where
 
-import Test.QuickCheck
+import Hedgehog
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Text.Printf
 import Text.Show qualified as TS (Show (..))
 
@@ -18,48 +20,50 @@ instance Show StringLiteral where
 newtype CharLiteral = CharLiteral {unCharLiteral :: Text}
     deriving (Show)
 
-instance Arbitrary IntLiteral where
-    arbitrary = oneof [intLiteral, hexLiteral, octLiteral]
-      where
-        intLiteral = IntLiteral . show <$> arbitrary @Integer
-        hexLiteral = IntLiteral . ("0x" <>) <$> arbitraryHexString
-        octLiteral = IntLiteral . ("0o" <>) <$> arbitraryOctString
+genInteger :: Gen Integer
+genInteger = Gen.integral_ (Range.linear (-100000000) 100000000)
 
-arbitraryHexString :: Gen Text
-arbitraryHexString = fromString <$> listOf1 (oneof hexChars)
+genDouble :: Gen Double
+genDouble = Gen.realFrac_ (Range.linearFracFrom 0 (-100000000) 100000000)
+
+genHexString :: Gen Text
+genHexString = Gen.text (Range.linear 1 10) (Gen.choice hexChars)
   where
     hexChars = pure <$> ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']
 
 arbitraryOctString :: Gen Text
-arbitraryOctString = fromString <$> listOf1 (oneof octChars)
+arbitraryOctString = Gen.text (Range.linear 1 10) (Gen.choice octChars)
   where
     octChars = pure <$> ['0', '1', '2', '3', '4', '5', '6', '7']
 
-instance Arbitrary FloatLiteral where
-    arbitrary = oneof [normalFloat, scientificIntFloat, scientificFloat]
-      where
-        normalFloat = FloatLiteral . show <$> arbitrary @Double
-        scientificIntFloat = do
-            p1 <- arbitrarySizedIntegral
-            p2 <- arbitrarySizedNatural
-            p3 <- arbitrarySizedIntegral
+genIntLiteral :: Gen IntLiteral
+genIntLiteral = IntLiteral <$> Gen.choice [genDecimal, genHex, genOct]
+  where
+    genDecimal = show <$> genInteger
+    genHex = ("0x" <>) <$> genHexString
+    genOct = ("0o" <>) <$> arbitraryOctString
 
-            pure (FloatLiteral (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3))
+genFloatLiteral :: Gen FloatLiteral
+genFloatLiteral = FloatLiteral <$> Gen.choice [normalFloat, scientificIntFloat, scientificFloat]
+  where
+    normalFloat = show <$> Gen.double (Range.linearFracFrom 0 (-100000000) 100000000)
+    scientificIntFloat = do
+        p1 <- genInteger
+        p2 <- Gen.integral_ (Range.linear (0 :: Integer) 100000000)
+        p3 <- genInteger
 
-        scientificFloat = do
-            p1 <- arbitrarySizedIntegral
-            p2 <- arbitrarySizedIntegral
-            pure (FloatLiteral (safelyPrintInt p1 <> "e" <> show p2))
+        pure (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3)
 
-instance Arbitrary StringLiteral where
-    arbitrary = do
-        s <- show <$> listOf arbitraryPrintableChar
-        pure (StringLiteral s)
+    scientificFloat = do
+        p1 <- genInteger
+        p2 <- genInteger
+        pure (safelyPrintInt p1 <> "e" <> show p2)
 
-instance Arbitrary CharLiteral where
-    arbitrary = do
-        c <- show <$> arbitraryPrintableChar
-        pure (CharLiteral c)
+genStringLiteral :: Gen StringLiteral
+genStringLiteral = StringLiteral . show <$> Gen.list (Range.linear 0 10) Gen.unicode
+
+genCharLiteral :: Gen CharLiteral
+genCharLiteral = CharLiteral . show <$> Gen.unicode
 
 safelyPrintInt :: Integer -> Text
 safelyPrintInt d = fromString (printf "%d" d)

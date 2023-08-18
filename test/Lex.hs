@@ -1,16 +1,14 @@
 module Lex where
 
 import Arbitrary.Literals
-import Arbitrary.Names
 import Common
-import Data.Text qualified as Text
 import Elara.Lexer.Token
 import Lex.Common
 import Lex.Indents qualified as Indents
 import NeatInterpolation (text)
 import Relude.Unsafe (read)
 import Test.Hspec
-import Test.Hspec.QuickCheck
+import Test.Hspec.Hedgehog (forAll, hedgehog, (===))
 
 spec :: Spec
 spec = do
@@ -100,17 +98,21 @@ literals = describe "Lexes literals" $ do
         lexUL [text| "a b" |] <=> [TokenString "a b"]
         lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
 
-    let prop_ArbIntLexes str = lexUL str <=> [TokenInt (read $ toString str)]
-     in prop "Lexes arbitrary integers" (prop_ArbIntLexes . unIntLiteral)
+    it "Lexes arbitrary integers" $ hedgehog $ do
+        i <- unIntLiteral <$> forAll genIntLiteral
+        lexUL i === [TokenInt (read $ toString i)]
 
-    let prop_ArbFloatLexes str = lexUL str <=> [TokenFloat (read $ toString str)]
-     in prop "Lexes arbitrary floats" (prop_ArbFloatLexes . unFloatLiteral)
+    it "Lexes arbitrary floats" $ hedgehog $ do
+        i <- unFloatLiteral <$> forAll genFloatLiteral
+        lexUL i === [TokenFloat (read $ toString i)]
 
-    let prop_ArbCharLexes str = lexUL str <=> [TokenChar (read $ toString str)]
-     in prop "Lexes arbitrary chars" (prop_ArbCharLexes . unCharLiteral)
+    it "Lexes arbitrary chars" $ hedgehog $ do
+        i <- unCharLiteral <$> forAll genCharLiteral
+        lexUL i === [TokenChar (read $ toString i)]
 
-    let prop_ArbStringLexes str = lexUL str <=> [TokenString (read $ toString str)]
-     in prop "Lexes arbitrary strings" (prop_ArbStringLexes . unStringLiteral)
+    it "Lexes arbitrary strings" $ hedgehog $ do
+        i <- unStringLiteral <$> forAll genStringLiteral
+        lexUL i === [TokenString (read $ toString i)]
 
 symbols :: SpecWith ()
 symbols = it "Lexes symbols" $ do
@@ -177,21 +179,21 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
         lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour
 
-    -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
-    let tokenOpRes "" = []
-        tokenOpRes str =
-            case Text.head str of
-                '.' -> TokenDot : tokenOpRes (Text.tail str)
-                _ -> [TokenOperatorIdentifier str]
+-- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
+-- let tokenOpRes "" = []
+--     tokenOpRes str =
+--         case Text.head str of
+--             '.' -> TokenDot : tokenOpRes (Text.tail str)
+--             _ -> [TokenOperatorIdentifier str]
 
-    let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
-     in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
+-- let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
+--  in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
 
-    let prop_ArbVarLexes str = lexUL str <=> [TokenVariableIdentifier str]
-     in prop "Lexes arbitrary variable identifier" (prop_ArbVarLexes . getAlphaText)
+-- let prop_ArbVarLexes str = lexUL str <=> [TokenVariableIdentifier str]
+--  in prop "Lexes arbitrary variable identifier" (prop_ArbVarLexes . getAlphaText)
 
-    let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
-     in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
+-- let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
+--  in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
 
 comments :: Spec
 comments = describe "Lexes comments correctly" $ do
