@@ -12,7 +12,7 @@ import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (element)
 import Elara.Parse.Indents (exprBlock)
 import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
-import Elara.Parse.Pattern (pattern')
+import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token_)
 import Elara.Parse.Type (type', typeNotApplication)
 import HeadedMegaparsec (endHead, wrapToHead)
@@ -52,7 +52,7 @@ letRaw = wrapToHead $ do
     token_ TokenLet
     endHead
     name <- located unqualifiedVarName
-    patterns <- many pattern'
+    patterns <- many patParser
     token_ TokenEquals
     e <- exprBlock element
     pure (name, patterns, e)

@@ -1,33 +1,45 @@
-module Elara.Parse.Pattern (pattern') where
+module Elara.Parse.Pattern (patParser) where
 
+import Control.Lens (Iso', iso)
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Elara.AST.Frontend
 import Elara.AST.Generic (Pattern (..), Pattern' (..))
+import Elara.AST.Region (Located)
 import Elara.Lexer.Token (Token (..))
+import Elara.Parse.Combinators (liftedBinary)
 import Elara.Parse.Literal
 import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
-import Elara.Parse.Primitives (HParser, inParens, located, token_)
+import Elara.Parse.Primitives (HParser, inParens, located, token_, (<??>))
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice, sepEndBy)
 
-pattern' :: HParser FrontendPattern
-pattern' =
+patParser :: HParser FrontendPattern
+patParser =
     choice
-        [ consPattern
-        , constructorPattern'
-        ]
-
-constructorPattern' :: HParser FrontendPattern
-constructorPattern' = choice [zeroArgConstructorPattern, constructorPattern, terminalPattern]
-
-terminalPattern :: HParser FrontendPattern
-terminalPattern =
-    choice
-        [ literalPattern
+        [ varPattern
+        , zeroArgConstructorPattern
+        , literalPattern
         , wildcardPattern
-        , varPattern
+        , inParens apat
         , listPattern
-        , inParens pattern'
         ]
+
+apat :: HParser FrontendPattern
+apat = constructorPattern <|> rpat
+
+rpat :: HParser FrontendPattern
+rpat =
+    makeExprParser
+        patParser
+        [ [InfixR cons]
+        ]
+        <??> "pattern"
+
+unannotatedExpr :: Iso' FrontendPattern (Located FrontendPattern')
+unannotatedExpr = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
+
+-- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y
+cons = liftedBinary (token_ TokenDoubleColon) (const ConsPattern) unannotatedExpr
 
 locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern
 locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located
@@ -42,20 +54,20 @@ listPattern :: HParser FrontendPattern
 listPattern = locatedPattern $ do
     token_ TokenLeftBracket
     endHead
-    elements <- sepEndBy pattern' (token_ TokenComma)
+    elements <- sepEndBy patParser (token_ TokenComma)
     token_ TokenRightBracket
     pure $ ListPattern elements
 
-consPattern :: HParser FrontendPattern
-consPattern = locatedPattern $ do
-    (head', tail') <- inParens $ do
-        head' <- constructorPattern
-        token_ TokenDoubleColon
-        endHead
-        tail' <- constructorPattern
-        pure (head', tail')
+-- consPattern :: HParser FrontendPattern
+-- consPattern i = locatedPattern $ do
+--     (head', tail') <- do
+--         head' <- pat' (i + 1)
+--         token_ TokenDoubleColon
+--         endHead
+--         tail' <- pat' (i + 1)
+--         pure (head', tail')
 
-    pure $ ConsPattern head' tail'
+--     pure $ ConsPattern head' tail'
 
 -- To prevent ambiguity between space-separated patterns and constructor patterns
 zeroArgConstructorPattern :: HParser FrontendPattern
@@ -64,10 +76,10 @@ zeroArgConstructorPattern = locatedPattern $ do
     pure $ ConstructorPattern con []
 
 constructorPattern :: HParser FrontendPattern
-constructorPattern = locatedPattern $ inParens $ do
+constructorPattern = locatedPattern $ do
     con <- located typeName
     endHead
-    args <- many terminalPattern
+    args <- many patParser
     pure $ ConstructorPattern con args
 
 literalPattern :: HParser FrontendPattern

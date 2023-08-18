@@ -11,6 +11,7 @@ import Elara.Data.Pretty
 import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Stream
 import Lex.Common
+import Orphans ()
 import Parse.Common
 import Polysemy (run)
 import Polysemy.Error (runError)
@@ -19,53 +20,16 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
+import Parse.Patterns qualified as Patterns
+
 spec :: Spec
 spec = do
-    patterns
+    Patterns.spec
     -- quickCheckSpec
     pass
 
 quickCheckSpec :: Spec
 quickCheckSpec = modifyMaxSize (const 5) $ prop "Arbitrary expressions parse prettyPrinted" ppEq
-
-patterns :: Spec
-patterns = describe "Parses patterns correctly" $ do
-    describe "Parses terminal patterns correctly" $ do
-        prop
-            "Parses arbitrary var patterns correctly"
-            ( let prop_ArbVarPatParses str = str `shouldParsePattern` Pattern (VarPattern (NormalVarName $ LowerAlphaName str), Nothing) in prop_ArbVarPatParses . getAlphaText
-            )
-
-        it "Parses wildcard pattern correctly" $ do
-            "_" `shouldParsePattern` Pattern (WildcardPattern, Nothing)
-
-        it "Parses unit pattern correctly" $ do
-            "()" `shouldParsePattern` Pattern (UnitPattern, Nothing)
-
-        prop
-            "Parses arbitrary int literal patterns correctly"
-            (\i -> show i `shouldParsePattern` Pattern (IntegerPattern i, Nothing))
-
-        prop
-            "Parses arbitrary float literal patterns correctly"
-            (\i -> show i `shouldParsePattern` Pattern (FloatPattern i, Nothing))
-
-        prop
-            "Parses arbitrary char literal patterns correctly"
-            (\i -> show i `shouldParsePattern` Pattern (CharPattern i, Nothing))
-
-        prop
-            "Parses arbitrary string literal patterns correctly"
-            (\i -> show i `shouldParsePattern` Pattern (StringPattern i, Nothing))
-
-    it "Parses cons patterns correctly" $ do
-        "(x :: xs)"
-            `shouldParsePattern` Pattern
-                ( ConsPattern
-                    (Pattern (VarPattern "x", Nothing))
-                    (Pattern (VarPattern "xs", Nothing))
-                , Nothing
-                )
 
 removeInParens :: Expr 'UnlocatedFrontend -> Expr 'UnlocatedFrontend
 removeInParens (Expr (Lambda p e, t)) = Expr (Lambda p (removeInParens e), t)

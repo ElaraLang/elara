@@ -261,6 +261,7 @@ test-suite elara-test
       Orphans
       Parse
       Parse.Common
+      Parse.Patterns
       Paths_elara
   hs-source-dirs:
       test

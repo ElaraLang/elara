@@ -147,7 +147,7 @@ match = wrapToHead $ locatedExpr $ do
   where
     matchCase :: HParser (FrontendPattern, FrontendExpr)
     matchCase = do
-        case' <- pattern'
+        case' <- patParser
         token_ TokenRightArrow
         endHead
         expr <- exprBlock element
@@ -157,7 +157,7 @@ lambda :: HParser FrontendExpr
 lambda = locatedExpr $ do
     bsLoc <- located (token_ TokenBackslash)
     endHead
-    args <- located (many pattern')
+    args <- located (many patParser)
     arrLoc <- located (token_ TokenRightArrow)
 
     let emptyLambdaLoc = spanningRegion' (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
@@ -204,7 +204,7 @@ letPreamble = do
     token_ TokenLet
     endHead
     name <- located unqualifiedVarName
-    patterns <- many pattern'
+    patterns <- many patParser
     token_ TokenEquals
     e <- exprBlock element
     pure (name, patterns, e)
