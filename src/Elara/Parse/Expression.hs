@@ -2,6 +2,7 @@ module Elara.Parse.Expression where
 
 import Control.Lens (Iso', iso, (^.))
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
@@ -14,7 +15,7 @@ import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
 import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
 import Elara.Parse.Pattern
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, token_, withPredicate, (<??>))
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, optionallyInParens, token_, withPredicate, (<??>))
 import HeadedMegaparsec (endHead, wrapToHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy)
@@ -45,7 +46,8 @@ element =
 | in places where they are valid, such as in the body of a function.
 -}
 statement :: HParser FrontendExpr
-statement = letStatement <??> "statement"
+statement =
+    letStatement <??> "let statement"
 
 unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
 unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
@@ -71,9 +73,9 @@ operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <??> "operator"
 expression :: HParser FrontendExpr
 expression =
     unit
+        <|> (tuple <??> "tuple expression")
         <|> (parensExpr <??> "parenthesized expression")
         <|> (list <??> "list")
-        <|> (tuple <??> "tuple expression")
         <|> (ifElse <??> "if expression")
         <|> (letInExpression <??> "let-in expression")
         <|> (lambda <??> "lambda expression")
@@ -113,7 +115,6 @@ constructor = locatedExpr $ do
     failIfDotAfter :: HParser a -> HParser a
     failIfDotAfter p = do
         res <- p
-        endHead
         o <- optional (token_ TokenDot)
         whenJust o $ \_ -> fail "Cannot use dot after expression"
         pure res
@@ -213,9 +214,11 @@ tuple :: HParser FrontendExpr
 tuple = locatedExpr $ do
     token_ TokenLeftParen
     endHead
-    elements <- sepEndBy1' exprParser (token_ TokenComma)
+    firstElement <- exprParser
+    token_ TokenComma
+    otherElements <- sepEndBy1' exprParser (token_ TokenComma)
     token_ TokenRightParen
-    pure $ Tuple elements
+    pure $ Tuple (firstElement `NE.cons` otherElements)
 
 list :: HParser FrontendExpr
 list = locatedExpr $ do

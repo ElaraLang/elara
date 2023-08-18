@@ -5,6 +5,7 @@ module Elara.Parse.Primitives (
     HParser,
     fmapLocated,
     located,
+    optionallyInParens,
     inParens,
     inParens',
     inBraces,
@@ -98,6 +99,9 @@ locatedTokens' tokenList = do
 
 inParens :: HParser a -> HParser a
 inParens = surroundedBy (token_ TokenLeftParen) (token_ TokenRightParen)
+
+optionallyInParens :: HParser a -> HParser a
+optionallyInParens p = inParens p <|> p
 
 -- | Greedy version of 'inParens', commits as soon as it sees the opening paren
 inParens' :: HParser a -> HParser a

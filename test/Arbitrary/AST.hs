@@ -74,7 +74,7 @@ genStatement' =
         Gen.choice
         [genExpr']
         [ Gen.subtermM genExpr' (\x -> Let <$> genNormalVarName <*> Gen.list (Range.linear 0 5) genPattern <*> mkExpr x)
-        , Block <$> Gen.nonEmpty (Range.linear 2 10) genStatement
+        , Block <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 
 genStatement :: Gen (Expr 'UnlocatedFrontend)

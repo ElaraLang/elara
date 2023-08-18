@@ -10,14 +10,13 @@ import Elara.Parse.Error
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
-import Hedgehog (MonadTest, diff, evalEither, tripping)
-import Hedgehog.Internal.Property (failWith)
+import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
+import Hedgehog.Internal.Property (failWith, writeLog)
 import Polysemy
 import Print (showPretty)
 import Test.QuickCheck
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
 
--- lexAndParse :: ToString a => HParser b -> a -> Either (WParseErrorBundle TokenStream ElaraParseError) b
 lexAndParse :: (MonadTest m, ToString a1) => HParser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
 lexAndParse parser source = do
     let fp = "<tests>"
@@ -53,5 +52,7 @@ trippingParse x encode decode = do
     let i = encode x
     my <- decode i
     case my of
-        Left e -> withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
+        Left e -> do
+            footnoteShow i
+            withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
         Right y -> tripping x (const i) (const (Identity y))

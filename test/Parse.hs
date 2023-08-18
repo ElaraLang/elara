@@ -16,13 +16,13 @@ import Test.Hspec.Hedgehog (hedgehog)
 spec :: Spec
 spec = parallel $ do
     Patterns.spec
-    -- arbitraryExpr
+    arbitraryExpr
     pass
 
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
     expr <- forAll genExpr
-    let parsePretty s = Right . removeInParens . stripExprLocation <$> (lexAndParse exprParser s >>= evalEither)
+    let parsePretty s = fmap (removeInParens . stripExprLocation) <$> lexAndParse exprParser s
     trippingParse (removeInParens expr) (showPrettyUnannotated . removeInParens) parsePretty
   where
     -- The AST needs to have the 'InParens' element for operator shunting later, but its presence messes up the pretty printing & parsing equality
@@ -37,6 +37,7 @@ arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
     removeInParens (Expr (Let v ps e, t)) = Expr (Let v ps (removeInParens e), t)
     removeInParens (Expr (Block es, t)) = Expr (Block (removeInParens <$> es), t)
     removeInParens (Expr (Tuple e, t)) = Expr (Tuple (removeInParens <$> e), t)
+    removeInParens (Expr (Match e ps, t)) = Expr (Match (removeInParens e) (second removeInParens <$> ps), t)
     removeInParens (Expr (InParens e, _)) = removeInParens e
     removeInParens e = e
 

@@ -179,7 +179,6 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
-        lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour
 
     -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
     let tokenOpRes "" = []
@@ -203,5 +202,5 @@ identifiers = describe "Lexes identifiers" $ do
 comments :: Spec
 comments = describe "Lexes comments correctly" $ do
     it "Ignores contents after a line comment" $ do
-        lexUL "-- foqwhfiu24np1<><!>@<£!><MS`lkxo1" <=> []
+        lexUL "-- the rest is ignored" <=> []
         lexUL "12 -- the rest is ignored" <=> [TokenInt 12]

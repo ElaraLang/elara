@@ -19,7 +19,8 @@ import Test.Hspec.Hedgehog
 arbitraryPattern :: Spec
 arbitraryPattern = it "Arbitrary patterns parse prettyPrinted" $ hedgehog $ do
     expr <- forAll genPattern
-    trippingParse expr showPrettyUnannotated (\s -> Right . stripPatternLocation <$> (lexAndParse patParser s >>= evalEither))
+    let parsePretty s = fmap stripPatternLocation <$> lexAndParse patParser s
+    trippingParse expr showPrettyUnannotated parsePretty
 
 spec :: Spec
 spec = parallel $ describe "Parses patterns correctly" $ do

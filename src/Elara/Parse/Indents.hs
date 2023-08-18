@@ -9,7 +9,7 @@ import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), token_)
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), optionallyInParens, token_)
 import Elara.Parse.Stream (TokenStream (..))
 import HeadedMegaparsec
 import Text.Megaparsec (MonadParsec (updateParserState), State (stateInput))
@@ -21,18 +21,18 @@ dedentToken :: HParser ()
 dedentToken = token_ TokenDedent <|> token_ TokenRightBrace
 
 block :: (NonEmpty a -> b) -> (a -> b) -> HParser a -> HParser b
-block mergeFunction single exprParser =
-    wrapToHead
-        ( (single <$> exprParser) <|> do
-            indentToken
-            endHead
-            exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
-            dedentToken
-            pure $ mergeFunction exprs
-        )
+block mergeFunction single exprParser = wrapToHead (singleBlock <|> wholeBlock)
+  where
+    singleBlock = single <$> exprParser
+    wholeBlock = do
+        indentToken
+        endHead
+        exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
+        dedentToken
+        pure $ mergeFunction exprs
 
 exprBlock :: HParser FrontendExpr -> HParser FrontendExpr
-exprBlock = wrapToHead . block merge identity
+exprBlock = optionallyInParens . wrapToHead . block merge identity
   where
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of

@@ -73,11 +73,25 @@ prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExp
 prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
 prettyMatchBranch (p, e) = pretty p <+> "->" <+> pretty e
 
-prettyLetInExpr :: (Pretty a1, Pretty a2, Pretty a3, Pretty a4) => a1 -> [a2] -> a3 -> a4 -> Doc AnsiStyle
-prettyLetInExpr v ps e1 e2 = parens ("let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e1 <+> "in" <+> pretty e2)
+prettyLetInExpr :: (Pretty a1, Pretty a2, Pretty a3, Pretty a4, ?contextFree :: Bool) => a1 -> [a2] -> a3 -> a4 -> Doc AnsiStyle
+prettyLetInExpr v ps e1 e2 =
+    parens
+        ( "let"
+            <+> pretty v
+            <+> hsep (pretty <$> ps)
+            <+> "="
+            <+> parensIf ?contextFree (pretty e1)
+            <+> "in"
+            <+> parensIf ?contextFree (pretty e2)
+        )
 
-prettyLetExpr :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> Doc AnsiStyle
-prettyLetExpr v ps e = "let" <+> pretty v <+> hsep (pretty <$> ps) <+> "=" <+> pretty e
+prettyLetExpr :: (Pretty a1, Pretty a2, Pretty a3, ?contextFree :: Bool) => a1 -> [a2] -> a3 -> Doc AnsiStyle
+prettyLetExpr v ps e =
+    "let"
+        <+> pretty v
+        <+> hsep (pretty <$> ps)
+        <+> "="
+        <+> parensIf ?contextFree (pretty e)
 
 prettyBlockExpr :: (Pretty a, Foldable t, ?contextFree :: Bool) => t a -> Doc AnsiStyle
 prettyBlockExpr b = do
