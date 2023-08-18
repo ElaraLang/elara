@@ -28,7 +28,7 @@ ppEq expr =
      in counterexample ("pretty source: " <> toString (showPretty $ pretty source)) (cleaned `shouldParseProp` expr)
 
 spec :: Spec
-spec = describe "Parses patterns correctly" $ do
+spec = parallel $ describe "Parses patterns correctly" $ do
     arbitraryPattern
     terminalPatterns
     consPatterns

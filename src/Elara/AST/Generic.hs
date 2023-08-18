@@ -281,8 +281,8 @@ instance
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
         prettyDB n (Value e@(Expr (_, t)) _ t') =
             let typeOfE =
-                    (UnknownPretty <$> (toMaybe t :: Maybe exprType)) -- Prioritise the type in the expression
-                        <|> (UnknownPretty <$> (toMaybe t' :: Maybe valueType)) -- Otherwise, use the type in the declaration
+                    UnknownPretty <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
+                        <|> UnknownPretty <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
              in prettyValueDeclaration n e typeOfE
         prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
 
@@ -304,6 +304,25 @@ instance ToMaybe (Maybe a) (Maybe a) where
 
 instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
     toMaybe = Just
+
+instance ToMaybe a b => ToMaybe (Located a) b where
+    toMaybe = toMaybe . view unlocated
+
+-- | Like 'ToMaybe' but for lists. Useful when fields may be lists or single values.
+class ToList i o where
+    fieldToList :: i -> o
+
+instance {-# OVERLAPPING #-} ToList NoFieldValue [a] where
+    fieldToList _ = []
+
+instance ToList [a] [a] where
+    fieldToList = identity
+
+instance {-# INCOHERENT #-} ToList a [a] where
+    fieldToList = pure
+
+instance ToList a b => ToList (Located a) b where
+    fieldToList = fieldToList . view unlocated
 
 -- Sometimes fields are wrapped in functors eg lists, we need a way of transcending them.
 -- This class does that.
@@ -328,6 +347,11 @@ type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
     UnwrapMaybe (Maybe a) = a
     UnwrapMaybe a = a
 
+-- | Unwraps 1 level of '[]' from a type. Useful when a type family returns []
+type family UnwrapList (a :: Kind.Type) = (k :: Kind.Type) where
+    UnwrapList [a] = a
+    UnwrapList a = a
+
 instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Expr' ast)))
     , Pretty a1
@@ -344,16 +368,18 @@ instance
 
 instance
     ( Pretty (Expr ast)
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "LambdaPattern" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "ConRef" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "VarRef" ast)))
+    , Pretty (ASTLocate ast (Select "ConRef" ast))
+    , Pretty (ASTLocate ast (Select "VarRef" ast))
     , Pretty (Pattern ast)
     , (Pretty (Select "InParens" ast))
-    , (Pretty (CleanupLocated (ASTLocate' ast (Select "LetParamName" ast))))
+    , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty a2
-    , a2 ~ UnwrapMaybe (Select "LetPattern" ast)
-    , (ToMaybe (Select "LetPattern" ast) (Maybe a2))
-    , (Pretty (CleanupLocated (ASTLocate' ast (BinaryOperator' ast))))
+    , a2 ~ UnwrapList (Select "LetPattern" ast)
+    , (ToList (Select "LetPattern" ast) [a2])
+    , Pretty a3
+    , a3 ~ UnwrapList (Select "LambdaPattern" ast)
+    , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [a3])
+    , (Pretty (ASTLocate ast (BinaryOperator' ast)))
     ) =>
     Pretty (Expr' ast)
     where
@@ -364,13 +390,13 @@ instance
     pretty Unit = "()"
     pretty (Var v) = pretty v
     pretty (Constructor c) = pretty c
-    pretty (Lambda ps e) = prettyLambdaExpr [ps] e
+    pretty (Lambda ps e) = prettyLambdaExpr (fieldToList ps :: [a3]) e
     pretty (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2
     pretty (If e1 e2 e3) = prettyIfExpr e1 e2 e3
     pretty (List l) = prettyListExpr l
     pretty (Match e m) = prettyMatchExpr e (prettyMatchBranch <$> m)
-    pretty (LetIn v p e1 e2) = prettyLetInExpr v (maybeToList $ toMaybe p :: [a2]) e1 (e2)
-    pretty (Let v p e) = prettyLetExpr v (maybeToList $ toMaybe p :: [a2]) e
+    pretty (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList p :: [a2]) e1 e2
+    pretty (Let v p e) = prettyLetExpr v (fieldToList p :: [a2]) e
     pretty (Block b) = prettyBlockExpr b
     pretty (InParens e) = parens (pretty e)
     pretty (Tuple t) = prettyTupleExpr t

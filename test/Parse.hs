@@ -23,9 +23,9 @@ import Test.QuickCheck
 import Parse.Patterns qualified as Patterns
 
 spec :: Spec
-spec = do
+spec = parallel $ do
     Patterns.spec
-    -- quickCheckSpec
+    quickCheckSpec
     pass
 
 quickCheckSpec :: Spec
