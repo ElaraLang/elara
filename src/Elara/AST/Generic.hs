@@ -17,7 +17,7 @@ module Elara.AST.Generic where
 
 -- import Elara.AST.Frontend qualified as Frontend
 
-import Control.Lens (view, (^.))
+import Control.Lens (Plated, view, (^.))
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
@@ -84,7 +84,9 @@ data Expr' (ast :: a)
     deriving (Generic)
 
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
-    deriving (Generic)
+    deriving (Generic, Typeable)
+
+-- instance (Typeable ast) => Plated (Expr ast)
 
 typeOf :: forall ast. Expr ast -> Select "ExprType" ast
 typeOf (Expr (_, t)) = t
@@ -601,14 +603,31 @@ stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1))) =
     ====================
 -}
 
+type ForAllExpr :: (Kind.Type -> Kind.Constraint) -> ast -> Kind.Constraint
+type ForAllExpr c ast =
+    ( c (Expr ast)
+    , c (ASTLocate ast (Select "VarRef" ast))
+    , c (ASTLocate ast (Select "LambdaPattern" ast))
+    , c (ASTLocate ast (Select "ConRef" ast))
+    , c (ASTLocate ast (Select "LetParamName" ast))
+    )
+
+-- Data instances
+-- deriving instance
+--     ( Typeable ast
+--     , (Data (Select "InParens" ast))
+--     , (Data (Select "LetPattern" ast))
+--     , ForAllExpr Data ast
+--     , Data (BinaryOperator ast)
+--     , Data (Pattern ast)
+--     ) =>
+--     Data (Expr' ast)
+
 -- Eq instances
 
 deriving instance
     ( (Eq (Select "LetPattern" ast))
-    , (Eq (ASTLocate ast (Select "VarRef" ast)))
-    , (Eq (ASTLocate ast (Select "LambdaPattern" ast)))
-    , (Eq (ASTLocate ast (Select "ConRef" ast)))
-    , (Eq (ASTLocate ast (Select "LetParamName" ast)))
+    , ForAllExpr Eq ast
     , (Eq (ASTLocate ast (BinaryOperator' ast)))
     , (Eq (Select "InParens" ast))
     , (Eq (Select "ExprType" ast))

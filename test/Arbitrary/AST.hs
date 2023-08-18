@@ -8,13 +8,16 @@ import Elara.AST.Select
 import Elara.AST.Unlocated.Frontend ()
 
 import Arbitrary.Literals
-import Hedgehog
+import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Prelude hiding (Op)
 
 mkPat :: Pattern' 'UnlocatedFrontend -> Pattern 'UnlocatedFrontend
 mkPat p = Pattern (p, Nothing)
+
+mkExpr :: Applicative m => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
+mkExpr e = pure (Expr (e, Nothing))
 
 genPattern :: Gen (Pattern 'UnlocatedFrontend)
 genPattern =
@@ -25,7 +28,7 @@ genPattern =
         , pure (mkPat UnitPattern)
         , mkPat . IntegerPattern <$> genInteger
         , mkPat . FloatPattern <$> genDouble
-        , mkPat . StringPattern . getAlphaText <$> genLowerAlphaText
+        , mkPat . StringPattern <$> genLowerAlphaText
         , mkPat . CharPattern <$> Gen.unicode
         ]
         [ Gen.subterm2 genPattern genPattern (\x y -> mkPat (ConsPattern x y))
@@ -33,13 +36,49 @@ genPattern =
         , (\x y -> mkPat (ConstructorPattern x y)) <$> genMaybeQualified genTypeName <*> Gen.list (Range.linear 0 5) genPattern
         ]
 
--- instance Arbitrary (BinaryOperator 'UnlocatedFrontend) where
---     arbitrary =
---         MkBinaryOperator
---             <$> oneof
---                 [ SymOp <$> arbitrary
---                 , Infixed <$> arbitrary
---                 ]
+genBinaryOperator :: Gen (BinaryOperator 'UnlocatedFrontend)
+genBinaryOperator =
+    MkBinaryOperator
+        <$> Gen.choice
+            [ SymOp <$> genMaybeQualified genOpName
+            , Infixed <$> genMaybeQualified genNormalVarName
+            ]
+
+genExpr :: Gen (Expr 'UnlocatedFrontend)
+genExpr = genExpr' >>= mkExpr
+
+genExpr' :: Gen (Expr' 'UnlocatedFrontend)
+genExpr' =
+    Gen.recursive
+        Gen.choice
+        [ Int <$> genInteger
+        , Float <$> genDouble
+        , String <$> genLowerAlphaText
+        , Char <$> Gen.unicode
+        , Var <$> genMaybeQualified genNormalVarName
+        , Constructor <$> genMaybeQualified genTypeName
+        ]
+        [ Gen.subtermM genExpr' (\x -> Lambda <$> Gen.list (Range.linear 0 3) genPattern <*> mkExpr x)
+        , Gen.subtermM2 genExpr' genExpr' (\x y -> FunctionCall <$> mkExpr x <*> mkExpr y)
+        , Gen.subtermM3 genExpr' genExpr' genExpr' (\x y z -> If <$> mkExpr x <*> mkExpr y <*> mkExpr z)
+        , Gen.subtermM2 genExpr' genExpr' (\y z -> BinaryOperator <$> genBinaryOperator <*> mkExpr y <*> mkExpr z)
+        , List <$> Gen.list (Range.linear 0 10) genExpr
+        , Gen.subtermM genExpr' (\x -> Match <$> mkExpr x <*> Gen.list (Range.linear 0 5) (liftA2 (,) genPattern genExpr))
+        , LetIn <$> genNormalVarName <*> Gen.list (Range.linear 0 5) genPattern <*> genStatement <*> genStatement
+        , Tuple <$> Gen.nonEmpty (Range.linear 2 10) genExpr
+        ]
+
+genStatement' :: Gen (Expr' 'UnlocatedFrontend)
+genStatement' =
+    Gen.recursive
+        Gen.choice
+        [genExpr']
+        [ Gen.subtermM genExpr' (\x -> Let <$> genNormalVarName <*> Gen.list (Range.linear 0 5) genPattern <*> mkExpr x)
+        , Block <$> Gen.nonEmpty (Range.linear 2 10) genStatement
+        ]
+
+genStatement :: Gen (Expr 'UnlocatedFrontend)
+genStatement = genStatement' >>= mkExpr
 
 -- instance Arbitrary (Expr 'UnlocatedFrontend) where
 --     shrink (Expr (e, t)) = Expr . (,t) <$> shrink' e

@@ -7,7 +7,8 @@ import Elara.Parse.Error
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
-import Hedgehog (MonadTest, diff, evalEither)
+import Hedgehog (MonadTest, diff, evalEither, success, tripping)
+import Hedgehog.Internal.Property (failWith)
 import Lex.Common (lex')
 import Polysemy
 import Polysemy.Error (Error, fromEither, runError)
@@ -40,3 +41,19 @@ result `shouldParseProp` a = ioProperty $
         Left err -> do
             pure $ counterexample (errorBundlePretty (unWParseErrorBundle err)) False
         Right ast -> if ast == a then pure $ property True else pure $ counterexample (show ast) False
+
+trippingParse ::
+    (MonadTest m, Show b, HasCallStack, Eq a, Show a) =>
+    a ->
+    (a -> b) ->
+    (b -> Either (WParseErrorBundle TokenStream ElaraParseError) a) ->
+    m ()
+trippingParse x encode decode =
+    let
+        i = encode x
+
+        my = decode i
+     in
+        case my of
+            Left e -> withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
+            Right y -> tripping x (const i) (const (Identity y))

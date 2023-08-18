@@ -92,8 +92,8 @@ reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
 parensExpr :: HParser FrontendExpr
 parensExpr = do
-    e@(Expr (le, _)) <- inParens exprParser
-    pure (Expr (InParens e <$ le, _))
+    e@(Expr (le, t)) <- inParens exprParser
+    pure (Expr (InParens e <$ le, t))
 
 variable :: HParser FrontendExpr
 variable =
@@ -142,7 +142,7 @@ match = wrapToHead $ locatedExpr $ do
 
     cases <-
         (toList <$> block identity pure matchCase)
-            <|> ([] <$ pass) -- allow empty match blocks
+            <|> (token_ TokenLeftBrace *> token_ TokenRightBrace $> []) -- allow empty match blocks
     pure $ Match expr cases
   where
     matchCase :: HParser (FrontendPattern, FrontendExpr)

@@ -1,21 +1,19 @@
 module Parse.Patterns where
 
+import Arbitrary.AST (genPattern)
+import Arbitrary.Literals (genDouble, genInteger)
+import Arbitrary.Names (genLowerAlphaText)
 import Elara.AST.Generic
+import Elara.AST.Name
 import Elara.Parse.Pattern (patParser)
 import Hedgehog
+import Hedgehog.Gen qualified as Gen
 import Orphans ()
 import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern)
 import Polysemy (run)
 import Polysemy.Error (runError)
-import Print (debugPretty, showPrettyUnannotated)
+import Print (showPrettyUnannotated)
 import Test.Hspec
-
-import Arbitrary.AST (genPattern)
-import Arbitrary.Literals (genDouble, genIntLiteral, genInteger)
-import Arbitrary.Names (LowerAlphaText (getAlphaText), genLowerAlphaText)
-import Elara.AST.Name
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
 import Test.Hspec.Hedgehog
 
 arbitraryPattern :: Spec
@@ -33,7 +31,7 @@ spec = parallel $ describe "Parses patterns correctly" $ do
 terminalPatterns :: Spec
 terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
     it "Parses arbitrary var patterns correctly" $ hedgehog $ do
-        expr <- getAlphaText <$> forAll genLowerAlphaText
+        expr <- forAll genLowerAlphaText
         expr `shouldParsePattern` Pattern (VarPattern (NormalVarName $ LowerAlphaName expr), Nothing)
 
     it "Parses wildcard pattern correctly" $ hedgehog $ do
@@ -55,7 +53,7 @@ terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
         show i `shouldParsePattern` Pattern (CharPattern i, Nothing)
 
     it "Parses arbitrary string literal patterns correctly" $ hedgehog $ do
-        i <- getAlphaText <$> forAll genLowerAlphaText
+        i <- forAll genLowerAlphaText
         show i `shouldParsePattern` Pattern (StringPattern i, Nothing)
 
 consPatterns :: Spec

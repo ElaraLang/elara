@@ -25,7 +25,7 @@ prettyCharExpr :: Char -> Doc AnsiStyle
 prettyCharExpr = squotes . escapeChar
 
 prettyLambdaExpr :: (?contextFree :: Bool) => (Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
-prettyLambdaExpr args body = if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr'
+prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr')
   where
     prettyCTFLambdaExpr = group (flatAlt long short)
       where
@@ -33,11 +33,11 @@ prettyLambdaExpr args body = if ?contextFree then prettyCTFLambdaExpr else prett
             "\\"
                 <> hsep (pretty <$> args)
                 <+> "->"
-                <+> pretty body
+                <+> parens (pretty body)
 
         long =
             align
-                ( "\\" <> hsep (pretty <$> args) <+> "->" <+> pretty body
+                ( "\\" <> hsep (pretty <$> args) <+> "->" <+> parens (pretty body)
                 )
     prettyLambdaExpr' = group (flatAlt long short)
       where
@@ -53,7 +53,7 @@ prettyLambdaExpr args body = if ?contextFree then prettyCTFLambdaExpr else prett
                 )
 
 prettyFunctionCallExpr :: (Pretty a, Pretty b, ?contextFree :: Bool) => a -> b -> Doc AnsiStyle
-prettyFunctionCallExpr e1 e2 = if ?contextFree then short else group (flatAlt long short)
+prettyFunctionCallExpr e1 e2 = parens (if ?contextFree then short else group (flatAlt long short))
   where
     short = pretty e1 <+> pretty e2
     long = pretty e1 <> hardline <> indent indentDepth (pretty e2)

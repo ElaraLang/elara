@@ -1,7 +1,9 @@
 module Lex where
 
 import Arbitrary.Literals
+import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Common
+import Data.Text qualified as Text
 import Elara.Lexer.Token
 import Lex.Common
 import Lex.Indents qualified as Indents
@@ -179,21 +181,24 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
         lexUL ".=" <=> [TokenDot, TokenEquals] -- Again, this is a weird one. But this is expected behaviour
 
--- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
--- let tokenOpRes "" = []
---     tokenOpRes str =
---         case Text.head str of
---             '.' -> TokenDot : tokenOpRes (Text.tail str)
---             _ -> [TokenOperatorIdentifier str]
+    -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
+    let tokenOpRes "" = []
+        tokenOpRes str =
+            case Text.head str of
+                '.' -> TokenDot : tokenOpRes (Text.tail str)
+                _ -> [TokenOperatorIdentifier str]
 
--- let prop_ArbOpLexes str = lexUL str <=> tokenOpRes str
---  in prop "Lexes arbitrary operator identifier" (prop_ArbOpLexes . getOpText)
+    it "Lexes arbitrary operator identifiers" $ hedgehog $ do
+        i <- forAll genOpText
+        lexUL i === tokenOpRes i
 
--- let prop_ArbVarLexes str = lexUL str <=> [TokenVariableIdentifier str]
---  in prop "Lexes arbitrary variable identifier" (prop_ArbVarLexes . getAlphaText)
+    it "Lexes arbitrary variable identifiers" $ hedgehog $ do
+        i <- forAll genLowerAlphaText
+        lexUL i === [TokenVariableIdentifier i]
 
--- let prop_ArbConLexes str = lexUL str <=> [TokenConstructorIdentifier str]
---  in prop "Lexes arbitrary constructor identifier" (prop_ArbConLexes . getAlphaUpperText)
+    it "Lexes arbitrary constructor identifiers" $ hedgehog $ do
+        i <- forAll genUpperAlphaText
+        lexUL i === [TokenConstructorIdentifier i]
 
 comments :: Spec
 comments = describe "Lexes comments correctly" $ do
