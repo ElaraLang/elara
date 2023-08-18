@@ -13,7 +13,7 @@ label :: Doc AnsiStyle -> Doc AnsiStyle
 label = annotate mempty
 
 builtin :: Doc AnsiStyle -> Doc AnsiStyle
-builtin = annotate (underlined)
+builtin = annotate underlined
 
 operator :: Doc AnsiStyle -> Doc AnsiStyle
 operator = punctuation

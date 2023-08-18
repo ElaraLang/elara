@@ -40,7 +40,7 @@ data ToCoreError
     | UnknownLambdaType (Type.Type SourceRegion)
 
 instance ReportableError ToCoreError where
-    report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") ("TODO") [] []
+    report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
@@ -165,10 +165,7 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
 
             t'' <- typeToCore t'
 
-            expressionLambda <- Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
-            -- add type variables as parameters
-            pure expressionLambda
-        -- pure (Core.Lam _ expressionLambda)
+            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
         AST.FunctionCall e1 e2 -> Core.App <$> toCore e1 <*> toCore e2
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
@@ -242,7 +239,7 @@ desugarMatch e pats = do
             AST.ConsPattern (Pattern (Located _ p1, _)) (Pattern (Located _ p2, _)) -> do
                 c <- lookupPrimCtor consCtorName
                 pure (Core.DataAlt c, [], branch')
-            other -> error $ "TODO: pattern "
+            other -> error "TODO: pattern "
 
     pure $ Core.Match e' (Just bind') pats'
 

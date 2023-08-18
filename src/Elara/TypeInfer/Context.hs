@@ -337,9 +337,9 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
         predicate (UnsolvedAlternatives _) = True
         predicate _ = False
 
-    snoc t (SolvedType a τ) = return (Type.solveType a τ t)
-    snoc t (SolvedFields a r) = return (Type.solveFields a r t)
-    snoc t (SolvedAlternatives a r) = return (Type.solveAlternatives a r t)
+    snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
+    snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
+    snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
         n <- State.get
 
@@ -388,7 +388,7 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
         let nameLocation = location
 
         pure Type.Forall{..}
-    snoc t _ = return t
+    snoc t _ = pure t
 
 {- | Split a `Context` into two `Context`s before and after the given
     `UnsolvedType` variable.  Neither `Context` contains the variable

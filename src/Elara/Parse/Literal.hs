@@ -24,4 +24,4 @@ floatLiteral = satisfyMap $ \case
     _ -> Nothing
 
 unitLiteral :: HParser ()
-unitLiteral = (token_ TokenLeftParen <* token_ TokenRightParen)
+unitLiteral = token_ TokenLeftParen <* token_ TokenRightParen

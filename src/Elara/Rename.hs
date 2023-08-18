@@ -28,6 +28,7 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
+import TODO (todo)
 
 data RenameError
     = UnknownModule ModuleName
@@ -231,7 +232,7 @@ addDeclarationToContext _ decl = do
 
     case decl ^. _Unwrapped . unlocated . field @"body" . _Unwrapped . unlocated of
         -- Add all the constructor names to field' context
-        -- TypeDeclaration _ (Located _ (ADT constructors)) ->
+        TypeDeclaration _ (Located _ (ADT constructors)) -> todo
         --     traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) constructors
         _ -> pass
 
@@ -347,7 +348,7 @@ renameExpr (Expr le) =
     renameExpr' Unit = pure Unit
     renameExpr' (Var i) = Var <$> lookupVarName i
     renameExpr' (Constructor i) = Constructor <$> lookupTypeName i
-    renameExpr' (Lambda pat e) = renameLambda (pat) e
+    renameExpr' (Lambda pat e) = renameLambda pat e
     renameExpr' (FunctionCall e1 e2) = do
         e1' <- renameExpr e1
         e2' <- renameExpr e2

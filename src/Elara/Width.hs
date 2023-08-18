@@ -16,7 +16,7 @@ getWidth = do
                 Nothing -> defaultWidth
                 Just Window{..} -> width
 
-    return renderWidth
+    pure renderWidth
 
 -- | The default width to use
 defaultWidth :: Int

@@ -1,11 +1,9 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 module Shunt where
 
 import Common (diagShouldSucceed)
 import Elara.AST.Generic
-import Elara.AST.Generic.Pattern (functionCall, int, var, pattern FunctionCall')
-import Elara.AST.Name (ModuleName (..), Name (NOpName), OpName (..), Qualified (..), VarName (OperatorVarName))
+import Elara.AST.Generic.Pattern (functionCall, int, var)
+import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
 import Elara.AST.Region (generatedLocated)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedShunted))
 import Elara.AST.StripLocation
@@ -20,10 +18,9 @@ import Elara.Parse.Expression (exprParser)
 import Elara.Pipeline (PipelineRes, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (RenameState (..), renameExpr, runRenamePipeline)
-import Elara.Shunt (Associativity (..), OpInfo (OpInfo), OpTable, fixExpr, mkPrecedence, runShuntPipeline, shuntExpr)
+import Elara.Shunt (Associativity (..), OpInfo (OpInfo), OpTable, fixExpr, mkPrecedence, runShuntPipeline)
 import Hedgehog hiding (Var)
 import Orphans ()
-import Print (printColored, printPretty)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 
@@ -68,8 +65,6 @@ fakeOperatorTable =
             , mkFakeVarP "*" (OpInfo (mkPrecedence 7) LeftAssociative)
             , mkFakeVarP "/" (OpInfo (mkPrecedence 7) LeftAssociative)
             ]
-
-expr f = Expr (f, Nothing)
 
 shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do

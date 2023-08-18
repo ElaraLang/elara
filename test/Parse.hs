@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Parse where
 
 import Arbitrary.AST (genExpr)

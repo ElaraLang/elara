@@ -157,7 +157,7 @@ merge fn l1 l2 =
 {- | Get the region that contains both of the given regions.
  This function will throw an error if the regions are in different files.
 -}
-enclosingRegion :: (HasCallStack) => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
+enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
 enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
 
@@ -165,7 +165,7 @@ enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion 
  This function will throw an error if the regions are in different files.
  If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
-enclosingRegion' :: (HasCallStack) => SourceRegion -> SourceRegion -> SourceRegion
+enclosingRegion' :: HasCallStack => SourceRegion -> SourceRegion -> SourceRegion
 enclosingRegion' a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
 enclosingRegion' (GeneratedRegion fp) _ = GeneratedRegion fp
 enclosingRegion' _ (GeneratedRegion fp) = GeneratedRegion fp

@@ -70,7 +70,7 @@ uniqueGenToState = reinterpret $ \case
                 put (UniqueSupply is)
                 pure i
 
-uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem (r) a
+uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
 uniqueGenToIO = interpret $ \case
     NewUniqueNum -> do
         us <- embed (readIORef globalUniqueSupply)

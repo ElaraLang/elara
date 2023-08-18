@@ -156,55 +156,54 @@ wellFormedType ::
     Context SourceRegion ->
     Type SourceRegion ->
     Sem r ()
-wellFormedType _Γ type0 = do
-    case type0 of
-        -- UvarWF
-        Type.VariableType{..}
-            | Context.Variable Domain.Type name `elem` _Γ -> pass
-            | otherwise -> throw (UnboundTypeVariable location name _Γ)
-        -- ArrowWF
-        Type.Function{..} -> do
-            wellFormedType _Γ input
-            wellFormedType _Γ output
+wellFormedType _Γ type0 = case type0 of
+    -- UvarWF
+    Type.VariableType{..}
+        | Context.Variable Domain.Type name `elem` _Γ -> pass
+        | otherwise -> throw (UnboundTypeVariable location name _Γ)
+    -- ArrowWF
+    Type.Function{..} -> do
+        wellFormedType _Γ input
+        wellFormedType _Γ output
 
-        -- ForallWF
-        Type.Forall{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
-        -- ForallWF
-        Type.Exists{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
-        -- EvarWF / SolvedEvarWF
-        _A@Type.UnsolvedType{..}
-            | any predicate _Γ -> pass
-            | otherwise -> throw (IllFormedType location _A _Γ)
-          where
-            predicate (Context.UnsolvedType a) = existential == a
-            predicate (Context.SolvedType a _) = existential == a
-            predicate _ = False
-        Type.Optional{..} -> wellFormedType _Γ type_
-        Type.List{..} -> wellFormedType _Γ type_
-        Type.Record{fields = Type.Fields kAs Monotype.EmptyFields} -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-        Type.Record{fields = Type.Fields kAs (Monotype.UnsolvedFields a0), ..}
-            | any predicate _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-            | otherwise -> throw (IllFormedFields location a0 _Γ)
-          where
-            predicate (Context.UnsolvedFields a1) = a0 == a1
-            predicate (Context.SolvedFields a1 _) = a0 == a1
-            predicate _ = False
-        Type.Record{fields = Type.Fields kAs (Monotype.VariableFields a), ..}
-            | Context.Variable Domain.Fields a `elem` _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-            | otherwise -> throw (UnboundFields location a)
-        Type.Union{alternatives = Type.Alternatives kAs Monotype.EmptyAlternatives} -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-        Type.Union{alternatives = Type.Alternatives kAs (Monotype.UnsolvedAlternatives a0), ..}
-            | any predicate _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-            | otherwise -> throw (IllFormedAlternatives location a0 _Γ)
-          where
-            predicate (Context.UnsolvedAlternatives a1) = a0 == a1
-            predicate (Context.SolvedAlternatives a1 _) = a0 == a1
-            predicate _ = False
-        Type.Union{alternatives = Type.Alternatives kAs (Monotype.VariableAlternatives a), ..}
-            | Context.Variable Domain.Alternatives a `elem` _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
-            | otherwise -> throw (UnboundAlternatives location a)
-        Type.Scalar{} -> pass
-        Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
+    -- ForallWF
+    Type.Forall{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
+    -- ForallWF
+    Type.Exists{..} -> wellFormedType (Context.Variable domain name : _Γ) type_
+    -- EvarWF / SolvedEvarWF
+    _A@Type.UnsolvedType{..}
+        | any predicate _Γ -> pass
+        | otherwise -> throw (IllFormedType location _A _Γ)
+      where
+        predicate (Context.UnsolvedType a) = existential == a
+        predicate (Context.SolvedType a _) = existential == a
+        predicate _ = False
+    Type.Optional{..} -> wellFormedType _Γ type_
+    Type.List{..} -> wellFormedType _Γ type_
+    Type.Record{fields = Type.Fields kAs Monotype.EmptyFields} -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+    Type.Record{fields = Type.Fields kAs (Monotype.UnsolvedFields a0), ..}
+        | any predicate _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+        | otherwise -> throw (IllFormedFields location a0 _Γ)
+      where
+        predicate (Context.UnsolvedFields a1) = a0 == a1
+        predicate (Context.SolvedFields a1 _) = a0 == a1
+        predicate _ = False
+    Type.Record{fields = Type.Fields kAs (Monotype.VariableFields a), ..}
+        | Context.Variable Domain.Fields a `elem` _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+        | otherwise -> throw (UnboundFields location a)
+    Type.Union{alternatives = Type.Alternatives kAs Monotype.EmptyAlternatives} -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+    Type.Union{alternatives = Type.Alternatives kAs (Monotype.UnsolvedAlternatives a0), ..}
+        | any predicate _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+        | otherwise -> throw (IllFormedAlternatives location a0 _Γ)
+      where
+        predicate (Context.UnsolvedAlternatives a1) = a0 == a1
+        predicate (Context.SolvedAlternatives a1 _) = a0 == a1
+        predicate _ = False
+    Type.Union{alternatives = Type.Alternatives kAs (Monotype.VariableAlternatives a), ..}
+        | Context.Variable Domain.Alternatives a `elem` _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
+        | otherwise -> throw (UnboundAlternatives location a)
+    Type.Scalar{} -> pass
+    Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
 
 {- | This corresponds to the judgment:
 
@@ -311,8 +310,7 @@ subtype _A0 _B0 = do
             when (length typesA /= length typesB) do
                 error "Tuple types must have the same number of elements"
 
-            for_ (NE.zip typesA typesB) \(a, b) -> do
-                subtype a b
+            for_ (NE.zip typesA typesB) (uncurry subtype)
         -- This is where you need to add any non-trivial subtypes.  For example,
         -- the following three rules specify that `Natural` is a subtype of
         -- `Integer`, which is in turn a subtype of `Real`.
@@ -1260,11 +1258,11 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
         existential <- fresh
 
-        push ((Context.UnsolvedType existential))
+        push (Context.UnsolvedType existential)
         push (Context.Annotation (mkLocal' name) (Type.UnsolvedType primRegion existential))
 
         val'@(Expr (_, valType)) <-
-            (infer val)
+            infer val
 
         ctx <- get
 
