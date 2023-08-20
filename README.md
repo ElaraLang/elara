@@ -1,18 +1,35 @@
-# Elara
 
-[![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml)
+# Elara Programming Language
 
-Elara is a multi-paradigm, primarily-functional programming language targeting the JVM. It features a Haskell & F#
-inspired syntax, a complete Hindley-Milner type system, functional purity enforcement, and can interoperate with Java
-code.
+![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)
+![Static Badge](https://img.shields.io/badge/Code%20Quality-A%2B-blue)
 
-Elara is currently a WIP, and is not yet ready for use.
-See [the specification](specification/specification.pdf) for some examples and a very incomplete specification
 
-If you're interested in Elara or contributing, please join our Discord server! <https://discord.gg/xu5gSTV>
+Elara is a multi-paradigm, primarily-functional programming language targeting the JVM. It features a Haskell & F# inspired syntax, a complete Hindley-Milner type system, functional purity enforcement, and can interoperate with Java code.
 
-## Library Credit ❤️
+**Please note that Elara is currently a work in progress and is not yet ready for production use.**
 
-Elara couldn't have been possible without many different open-source projects, and while I can't possibly credit them all here are the most important ones:
+## Features
 
-* [Grace](https://github.com/Gabriella439/grace) - Without this resource I would've never figured out type checking
+-   **Syntax:** Elara's syntax draws inspiration from Haskell and F#, offering an expressive and concise coding style.
+-   **Type System:** Elara uses a Hindley-Milner type system for robust type checking and inference.
+-   **Functional Purity:** The language enforces functional purity, promoting clean and side-effect-free code.
+-   **Interoperability:** Elara seamlessly works with Java code, enabling integration with existing Java libraries.
+
+## Getting Involved
+
+If you're interested in Elara or contributing to its development, join our [Discord server](https://discord.gg/xu5gSTV) to connect with the community.
+
+## Library Acknowledgments
+
+Elara owes its existence to numerous open-source projects. We want to express our gratitude, especially to [Grace](https://github.com/Gabriella439/grace) for its invaluable contribution to type checking.
+
+## License
+
+Elara is released under the [MIT License](LICENSE).
+
+## Technical Details
+
+-   **Languages:** Primarily implemented in Haskell (95%), with contributions from Nix (1.3%) and Lex (1.3%).
+
+------
