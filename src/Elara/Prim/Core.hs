@@ -38,6 +38,9 @@ stringCon = ConTy (mkPrimQual "String")
 unitCon :: Type
 unitCon = ConTy (mkPrimQual "()")
 
+charCon :: Type
+charCon = ConTy (mkPrimQual "Char")
+
 ioCon :: Type
 ioCon = ConTy (mkPrimQual "IO")
 

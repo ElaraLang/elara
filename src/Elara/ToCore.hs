@@ -107,6 +107,7 @@ typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
 typeToCore (Type.Scalar _ Scalar.Integer) = pure intCon
 typeToCore (Type.Scalar _ Scalar.Unit) = pure unitCon
+typeToCore (Type.Scalar _ Scalar.Char) = pure charCon
 typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
     let con = Core.ConTy (mkPrimQual n)
