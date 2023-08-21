@@ -21,7 +21,7 @@ import Control.Lens (Plated, view, (^.))
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
-import Elara.AST.Name (ModuleName, VarName (..))
+import Elara.AST.Name (LowerAlphaName, ModuleName, VarName (..))
 import Elara.AST.Pretty
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select (LocatedAST, UnlocatedAST)
@@ -109,7 +109,7 @@ newtype Pattern (ast :: a) = Pattern (ASTLocate ast (Pattern' ast), Select "Patt
 
 data BinaryOperator' (ast :: a)
     = SymOp (ASTLocate ast (Select "SymOp" ast))
-    | Infixed (ASTLocate ast (Select "Infixed" ast))
+    | Infixed (Select "Infixed" ast)
     deriving (Generic)
 
 newtype BinaryOperator ast = MkBinaryOperator (ASTLocate ast (BinaryOperator' ast))
@@ -157,7 +157,7 @@ data Type' ast
     | UnitType
     | TypeConstructorApplication (Type ast) (Type ast)
     | UserDefinedType (ASTLocate ast (Select "UserDefinedType" ast))
-    | RecordType (NonEmpty (ASTLocate ast VarName, Type ast))
+    | RecordType (NonEmpty (ASTLocate ast LowerAlphaName, Type ast))
     | TupleType (NonEmpty (Type ast))
     | ListType (Type ast)
     deriving (Generic)
@@ -236,7 +236,7 @@ coerceType' (ListType a) = ListType (coerceType a)
 deriving newtype instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
 instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Select "SymOp" ast)))
-    , (Pretty (CleanupLocated (ASTLocate' ast (Select "Infixed" ast))))
+    , (Pretty (Select "Infixed" ast))
     ) =>
     Pretty (BinaryOperator' ast)
     where
@@ -465,7 +465,7 @@ prettyPattern UnitPattern = "()"
 
 instance
     ( Pretty (ASTLocate ast (Type' ast))
-    , Pretty (ASTLocate ast VarName)
+    , Pretty (ASTLocate ast LowerAlphaName)
     , Pretty (ASTLocate ast (Select "TypeVar" ast))
     , Pretty (ASTLocate ast (Select "UserDefinedType" ast))
     ) =>
@@ -494,7 +494,7 @@ instance
     , Select "InParens" ast2 ~ Expr ast2
     , Select "InParens" ast1 ~ Expr ast1
     , ( StripLocation
-            (CleanupLocated (Located (Select "Infixed" ast1)))
+            (Select "Infixed" ast1)
             (Select "Infixed" ast2)
       )
     , ( StripLocation
@@ -646,7 +646,7 @@ instance
     ( ASTLocate' ast1 ~ Located
     , ASTLocate' ast2 ~ Unlocated
     , ( StripLocation
-            (CleanupLocated (Located (Select "Infixed" ast1)))
+            (Select "Infixed" ast1)
             (Select "Infixed" ast2)
       )
     , ( StripLocation
@@ -750,7 +750,7 @@ deriving instance
     ( Eq (ASTLocate ast (Select "TypeVar" ast))
     , Eq (ASTLocate ast (Select "UserDefinedType" ast))
     , Eq (ASTLocate ast (Type' ast))
-    , Eq (ASTLocate ast VarName)
+    , Eq (ASTLocate ast LowerAlphaName)
     , Eq (Type ast)
     ) =>
     Eq (Type' ast)
@@ -759,7 +759,7 @@ deriving instance (Eq (ASTLocate ast (Type' ast))) => Eq (Type ast)
 
 deriving instance
     ( Eq (ASTLocate ast (Select "SymOp" ast))
-    , Eq (ASTLocate ast (Select "Infixed" ast))
+    , Eq (Select "Infixed" ast)
     ) =>
     Eq (BinaryOperator' ast)
 
@@ -798,7 +798,7 @@ deriving instance
     ( Show (ASTLocate ast (Select "TypeVar" ast))
     , Show (ASTLocate ast (Select "UserDefinedType" ast))
     , Show (ASTLocate ast (Type' ast))
-    , Show (ASTLocate ast VarName)
+    , Show (ASTLocate ast LowerAlphaName)
     , Show (Type ast)
     ) =>
     Show (Type' ast)
@@ -807,7 +807,7 @@ deriving instance (Show (ASTLocate ast (Type' ast))) => Show (Type ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "SymOp" ast))
-    , Show (ASTLocate ast (Select "Infixed" ast))
+    , Show (Select "Infixed" ast)
     ) =>
     Show (BinaryOperator' ast)
 
@@ -847,6 +847,6 @@ deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (Bina
 
 deriving instance
     ( Ord (ASTLocate ast (Select "SymOp" ast))
-    , Ord (ASTLocate ast (Select "Infixed" ast))
+    , Ord (Select "Infixed" ast)
     ) =>
     Ord (BinaryOperator' ast)

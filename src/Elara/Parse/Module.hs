@@ -9,7 +9,7 @@ import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Declaration (declaration)
-import Elara.Parse.Names (maybeQualified, opName, varName)
+import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import HeadedMegaparsec (endHead)
@@ -56,7 +56,7 @@ exposition = exposedValue <|> exposedOp
   where
     exposedValue, exposedOp :: HParser (Exposition 'Frontend)
     exposedValue = ExposedValue <$> located varName
-    exposedOp = ExposedOp <$> located (inParens (maybeQualified opName))
+    exposedOp = ExposedOp <$> located (inParens opName)
 
 import' :: HParser (Import 'Frontend)
 import' = fmapLocated Import $ do

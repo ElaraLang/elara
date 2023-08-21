@@ -13,7 +13,7 @@ import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
-import Elara.Parse.Names (maybeQualified, opName, typeName, unqualifiedVarName, varName)
+import Elara.Parse.Names (conName, normalVarName, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, optionallyInParens, token_, withPredicate, (<??>))
 import HeadedMegaparsec (endHead, wrapToHead)
@@ -24,6 +24,7 @@ import Prelude hiding (Op)
 locatedExpr :: HParser FrontendExpr' -> HParser FrontendExpr
 locatedExpr = fmap (\x -> Expr (x, Nothing)) . (H.parse . located . H.toParsec)
 
+-- TODO: move qualification to the lexer to avoid all the dot operator issues
 exprParser :: HParser FrontendExpr
 exprParser =
     makeExprParser
@@ -62,11 +63,11 @@ operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <??> "operator"
   where
     asciiOp :: HParser (Located FrontendBinaryOperator')
     asciiOp = located $ do
-        SymOp <$> located (maybeQualified opName)
+        SymOp <$> located opName
     infixOp = located $ do
         token_ TokenBacktick
         endHead
-        op <- located varName
+        op <- located varOrConName
         token_ TokenBacktick
         pure $ Infixed op
 
@@ -106,7 +107,7 @@ variable =
 
 constructor :: HParser FrontendExpr
 constructor = locatedExpr $ do
-    con <- located (failIfDotAfter typeName)
+    con <- located (failIfDotAfter conName)
     pure $ Constructor con
   where
     -- Nasty hacky function that causes the parser to fail if the next token is a dot

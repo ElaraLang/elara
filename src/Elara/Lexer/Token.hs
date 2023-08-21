@@ -1,5 +1,6 @@
 module Elara.Lexer.Token where
 
+import Elara.AST.Name (ModuleName, nameText)
 import Elara.AST.Region (Located, RealPosition)
 
 type Lexeme = Located Token
@@ -78,6 +79,9 @@ data Token
     | TokenConstructorIdentifier Text
     | -- | Other
       TokenOperatorIdentifier Text
+    | TokenQVariableIdentifier (ModuleName, Text)
+    | TokenQConstructorIdentifier (ModuleName, Text)
+    | TokenQOperatorIdentifier (ModuleName, Text)
     | TokenUnderscore
     | TokenIndent
     | TokenDedent
@@ -135,6 +139,9 @@ tokenRepr = \case
     TokenVariableIdentifier i -> i
     TokenConstructorIdentifier i -> i
     TokenOperatorIdentifier i -> i
+    TokenQVariableIdentifier (m, i) -> nameText m <> "." <> i
+    TokenQConstructorIdentifier (m, i) -> nameText m <> "." <> i
+    TokenQOperatorIdentifier (m, i) -> nameText m <> "." <> i
     TokenUnderscore -> "_"
     TokenIndent -> "<INDENT>"
     TokenDedent -> "<DEDENT>"

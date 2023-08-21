@@ -6,12 +6,12 @@ import Data.List.NonEmpty ((<|))
 import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendType, FrontendType')
 import Elara.AST.Generic (Type (..), Type' (..))
-import Elara.AST.Name (ModuleName, VarName)
+import Elara.AST.Name (LowerAlphaName (LowerAlphaName), ModuleName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
-import Elara.Parse.Names (alphaVarName, moduleName, typeName, unqualifiedVarName)
+import Elara.Parse.Names
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, inParens, inParens', located, locatedTokens', token_)
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice, customFailure)
@@ -56,7 +56,7 @@ typeTerm =
 typeVar :: HParser FrontendType
 typeVar =
     locatedType $
-        TypeVar <$> located alphaVarName
+        TypeVar <$> located varId
 
 unit :: HParser FrontendType
 unit =
@@ -65,22 +65,16 @@ unit =
 
 namedType :: HParser FrontendType
 namedType =
-    locatedType $ UserDefinedType <$> located typeName
-
-maybeQualified :: HParser (Maybe ModuleName -> b) -> HParser b
-maybeQualified p = do
-    moduleQualification <- optional (moduleName <* token_ TokenDot)
-    t <- p
-    pure (t moduleQualification)
+    locatedType $ UserDefinedType <$> located conName
 
 recordType :: HParser FrontendType
 recordType = locatedType $ inBraces $ do
     fields <- sepBy1' recordField (token_ TokenComma)
     pure $ RecordType fields
   where
-    recordField :: HParser (Located VarName, FrontendType)
+    recordField :: HParser (Located LowerAlphaName, FrontendType)
     recordField = do
-        name <- located unqualifiedVarName
+        name <- located varId
         token_ TokenColon
         t <- type'
         pure (name, t)

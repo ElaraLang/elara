@@ -1,77 +1,69 @@
 module Elara.Parse.Names where
 
-import Control.Lens (Each (each), foldOf)
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..), _OpName)
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.Lexer.Token
-import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Primitives (HParser, inParens, satisfyMap, token_, (<??>))
-import HeadedMegaparsec (endHead)
-
-varName :: HParser (MaybeQualified VarName)
-varName = operatorVarName <|> normalVarName
-
-unqualifiedVarName :: HParser VarName
-unqualifiedVarName = unqualifiedOperatorVarName <|> unqualifiedNormalVarName
-
-normalVarName :: HParser (MaybeQualified VarName)
-normalVarName = maybeQualified $ unqualifiedNormalVarName <??> "variable name"
-
-unqualifiedNormalVarName :: HParser VarName
-unqualifiedNormalVarName = NormalVarName <$> alphaVarName <??> "variable name"
-
-operatorVarName :: HParser (MaybeQualified VarName)
-operatorVarName = (OperatorVarName <<$>> inParens (maybeQualified opName)) <??> "operator name in parens"
-
-unqualifiedOperatorVarName :: HParser VarName
-unqualifiedOperatorVarName = (OperatorVarName <$> inParens opName) <??> "operator name in parens"
-
-typeName :: HParser (MaybeQualified TypeName)
-typeName = do
-    ModuleName names <- moduleName
-    pure $ case names of
-        x :| [] -> MaybeQualified (TypeName x) Nothing
-        _ -> MaybeQualified (TypeName (last names)) (Just $ ModuleName (fromList $ init names))
-
-unqualifiedTypeName :: HParser TypeName
-unqualifiedTypeName = TypeName <$> upperVarName
-
-maybeQualified :: HParser name -> HParser (MaybeQualified name)
-maybeQualified nameParser = qualified <|> unqualified
-  where
-    unqualified = MaybeQualified <$> nameParser <*> pure Nothing
-    qualified = do
-        qual <- moduleName
-        token_ TokenDot
-        endHead
-        MaybeQualified <$> nameParser <*> pure (Just qual)
+import Elara.Parse.Primitives (HParser, inParens, satisfyMap)
 
 moduleName :: HParser ModuleName
-moduleName = ModuleName <$> sepBy1' upperVarName (token_ TokenDot)
+moduleName = satisfyMap $ \case
+    TokenQConstructorIdentifier (ModuleName m, n) -> Just $ ModuleName (m <> one n)
+    TokenConstructorIdentifier n -> Just $ ModuleName (one n)
+    _ -> Nothing
 
-upperVarName :: HParser Text
-upperVarName = satisfyMap $
-    \case
-        TokenConstructorIdentifier i -> Just i
-        _ -> Nothing
+varOrConName :: HParser (MaybeQualified VarOrConName)
+varOrConName = (ConName <<$>> conName) <|> (VarName <<$>> normalVarName)
 
-alphaVarName :: HParser LowerAlphaName
-alphaVarName =
-    LowerAlphaName
-        <$> satisfyMap
-            ( \case
-                TokenVariableIdentifier i -> Just i
-                _ -> Nothing
-            )
-
-opName :: HParser OpName
-opName = do
-    o <- some normal
-    pure $ OpName $ foldOf (each . _OpName) o
+varName :: HParser (MaybeQualified VarName)
+varName = operatorVarName' <|> normalVarName'
   where
-    normal :: HParser OpName
-    normal =
-        satisfyMap $ \case
-            TokenDoubleColon -> Just "::"
-            TokenOperatorIdentifier i -> Just (OpName i)
-            TokenDot -> Just "."
-            _ -> Nothing
+    operatorVarName' = OperatorVarName <<$>> inParens opName
+    normalVarName' = NormalVarName <<$>> normalVarName
+
+unqualifiedVarName :: HParser VarName
+unqualifiedVarName = operatorVarName' <|> normalVarName'
+  where
+    operatorVarName' = OperatorVarName <$> inParens opId
+    normalVarName' = NormalVarName <$> varId
+
+normalVarName :: HParser (MaybeQualified LowerAlphaName)
+normalVarName = qVarId <|> (`MaybeQualified` Nothing) <$> varId
+
+conName :: HParser (MaybeQualified TypeName)
+conName = qConId <|> (`MaybeQualified` Nothing) <$> conId
+
+opName :: HParser (MaybeQualified OpName)
+opName = qOpId <|> (`MaybeQualified` Nothing) <$> opId
+
+-- Qualified identifiers
+
+qVarId :: HParser (MaybeQualified LowerAlphaName)
+qVarId = satisfyMap $ \case
+    TokenQVariableIdentifier (m, v) -> Just $ MaybeQualified (LowerAlphaName v) (Just m)
+    _ -> Nothing
+
+qConId :: HParser (MaybeQualified TypeName)
+qConId = satisfyMap $ \case
+    TokenQConstructorIdentifier (m, v) -> Just $ MaybeQualified (TypeName v) (Just m)
+    _ -> Nothing
+
+qOpId :: HParser (MaybeQualified OpName)
+qOpId = satisfyMap $ \case
+    TokenQOperatorIdentifier (m, v) -> Just $ MaybeQualified (OpName v) (Just m)
+    _ -> Nothing
+
+-- Unqualified identifiers
+
+varId :: HParser LowerAlphaName
+varId = satisfyMap $ \case
+    TokenVariableIdentifier v -> Just $ LowerAlphaName v
+    _ -> Nothing
+
+conId :: HParser TypeName
+conId = satisfyMap $ \case
+    TokenConstructorIdentifier v -> Just $ TypeName v
+    _ -> Nothing
+
+opId :: HParser OpName
+opId = satisfyMap $ \case
+    TokenOperatorIdentifier v -> Just $ OpName v
+    _ -> Nothing

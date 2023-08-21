@@ -11,7 +11,7 @@ import Data.Generics.Wrapped
 import Data.Map (lookup)
 import Elara.AST.Generic
 import Elara.AST.Module
-import Elara.AST.Name (Name (NOpName, NVarName), NameLike (fullNameText, nameText), VarName (OperatorVarName))
+import Elara.AST.Name (Name (..), NameLike (fullNameText, nameText), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed
@@ -20,16 +20,16 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (ReportableError (..), runErrorOrReport)
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
-import Polysemy (Member, Members, Sem)
+import Polysemy (Members, Sem)
 import Polysemy.Error (Error, throw)
-import Polysemy.Reader
+import Polysemy.Reader hiding (Local)
 import Polysemy.Writer
-import Print (debugColored, debugPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (VarRef Name) OpInfo
@@ -66,7 +66,7 @@ instance Exception ShuntError
 prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
 prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
     SymOp opName -> pretty (fullNameText (opName ^. unlocated . to varRefVal))
-    Infixed vn -> "`" <> pretty (nameText (vn ^. unlocated . to varRefVal)) <> "`"
+    Infixed vn -> "`" <> pretty (nameText (vn ^. to varRefVal)) <> "`"
 
 instance ReportableError ShuntError where
     report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
@@ -88,7 +88,7 @@ instance ReportableError ShuntWarning where
         let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
         let operatorName o = case o of
                 SymOp opName -> nameText $ varRefVal (opName ^. unlocated)
-                Infixed vn -> "`" <> nameText (varRefVal (vn ^. unlocated)) <> "`"
+                Infixed vn -> "`" <> nameText (varRefVal vn) <> "`"
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
@@ -99,7 +99,10 @@ instance ReportableError ShuntWarning where
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
 opInfo table operator = case operator ^. _Unwrapped . unlocated of
     SymOp opName -> lookup (NOpName <$> opName ^. unlocated) table
-    Infixed vn -> lookup (NVarName <$> vn ^. unlocated) table
+    Infixed vn -> lookup (toName <$> vn) table
+      where
+        toName (VarName n) = NVarName (NormalVarName n)
+        toName (ConName n) = NTypeName n
 
 pattern InExpr :: RenamedExpr' -> RenamedExpr
 pattern InExpr y <- Expr (Located _ y, _)
@@ -243,9 +246,25 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         l' <- shuntExpr l
         r' <- shuntExpr r
         let op' = case operator ^. _Unwrapped . unlocated of
-                SymOp lopName -> OperatorVarName <<$>> lopName
-                Infixed inName -> inName
-        let opVar = Expr (Var op' `withLocationOf` op', Nothing) -- There can't ever be a type annotation on an operator
+                SymOp lopName -> Var (OperatorVarName <<$>> lopName) `withLocationOf` lopName
+                Infixed inName -> do
+                    let z :: Expr' 'Shunted = case inName of
+                            Global (Located l' (Qualified (VarName n) m)) ->
+                                Var
+                                    ( Located l' (Global (Located l' (Qualified (NormalVarName n) m)))
+                                    )
+                            Global (Located l' (Qualified (ConName n) m)) ->
+                                Constructor
+                                    ( Located l' (Qualified n m)
+                                    )
+                            Local (Located l' (Unique (VarName n) i)) ->
+                                Var
+                                    ( Located l' (Local (Located l' (Unique (NormalVarName n) i)))
+                                    )
+                            Local (Located _ (Unique (ConName _1) _)) -> error "Shouldn't have local con names"
+                    z `withLocationOf` (operator ^. _Unwrapped)
+
+        let opVar = Expr (op', Nothing) -- There can't ever be a type annotation on an operator
         let leftCall =
                 Expr
                     ( Located

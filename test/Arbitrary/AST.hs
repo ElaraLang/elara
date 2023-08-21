@@ -8,6 +8,7 @@ import Elara.AST.Select
 import Elara.AST.Unlocated ()
 
 import Arbitrary.Literals
+import Elara.AST.Name (VarOrConName (VarName))
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
@@ -41,7 +42,7 @@ genBinaryOperator =
     MkBinaryOperator
         <$> Gen.choice
             [ SymOp <$> genMaybeQualified genOpName
-            , Infixed <$> genMaybeQualified genNormalVarName
+            , Infixed <$> genMaybeQualified (VarName <$> genNormalVarName)
             ]
 
 genExpr :: Gen (Expr 'UnlocatedFrontend)
@@ -55,7 +56,7 @@ genExpr' =
         , Float <$> genDouble
         , String <$> genLowerAlphaText
         , Char <$> Gen.unicode
-        , Var <$> genMaybeQualified genNormalVarName
+        , Var <$> genMaybeQualified genVarName
         , Constructor <$> genMaybeQualified genTypeName
         ]
         [ Gen.subtermM genExpr' (\x -> Lambda <$> Gen.list (Range.linear 0 3) genPattern <*> mkExpr x)
@@ -64,7 +65,7 @@ genExpr' =
         , Gen.subtermM2 genExpr' genExpr' (\y z -> BinaryOperator <$> genBinaryOperator <*> mkExpr y <*> mkExpr z)
         , List <$> Gen.list (Range.linear 0 10) genExpr
         , Gen.subtermM genExpr' (\x -> Match <$> mkExpr x <*> Gen.list (Range.linear 0 5) (liftA2 (,) genPattern genExpr))
-        , LetIn <$> genNormalVarName <*> Gen.list (Range.linear 0 5) genPattern <*> genStatement <*> genStatement
+        , LetIn <$> genVarName <*> Gen.list (Range.linear 0 5) genPattern <*> genStatement <*> genStatement
         , Tuple <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 
@@ -73,7 +74,7 @@ genStatement' =
     Gen.recursive
         Gen.choice
         [genExpr']
-        [ Gen.subtermM genExpr' (\x -> Let <$> genNormalVarName <*> Gen.list (Range.linear 0 5) genPattern <*> mkExpr x)
+        [ Gen.subtermM genExpr' (\x -> Let <$> genVarName <*> Gen.list (Range.linear 0 5) genPattern <*> mkExpr x)
         , Block <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 

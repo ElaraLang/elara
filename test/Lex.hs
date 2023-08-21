@@ -3,7 +3,6 @@ module Lex where
 import Arbitrary.Literals
 import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Common
-import Data.Text qualified as Text
 import Elara.Lexer.Token
 import Lex.Common
 import Lex.Indents qualified as Indents
@@ -179,17 +178,11 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$>" <=> [TokenOperatorIdentifier "<$>"]
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
-
-    -- Operators starting with dots will be lexed with the dot as a separate token, so produce the right expected result
-    let tokenOpRes "" = []
-        tokenOpRes str =
-            case Text.head str of
-                '.' -> TokenDot : tokenOpRes (Text.tail str)
-                _ -> [TokenOperatorIdentifier str]
+        lexUL ".=" <=> [TokenOperatorIdentifier ".="]
 
     it "Lexes arbitrary operator identifiers" $ hedgehog $ do
         i <- forAll genOpText
-        lexUL i === tokenOpRes i
+        lexUL i === [TokenOperatorIdentifier i]
 
     it "Lexes arbitrary variable identifiers" $ hedgehog $ do
         i <- forAll genLowerAlphaText

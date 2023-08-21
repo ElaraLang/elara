@@ -8,6 +8,7 @@ import Control.Lens (makeLenses, to, view, (^.))
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
+import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -216,3 +217,42 @@ createRegionStartingAt :: TokPosition -> LexMonad RealSourceRegion
 createRegionStartingAt start = do
     end <- getPosition 0
     createRegion start end
+
+{- | splits a qualified name into the qualifier and the name
+
+ Examples:
+
+>>> splitQualName "Hello.world"
+(ModuleName ("Hello" :| []),"world")
+
+>>> splitQualName "A.B.C"
+(ModuleName ("A" :| ["B"]),"C")
+
+>>> splitQualName "A"
+*** Exception: No module name
+
+>>> splitQualName ""
+*** Exception: Empty string
+
+>>> splitQualName "Prelude..+"
+(ModuleName ("Prelude" :| []),".+")
+-}
+splitQualName :: HasCallStack => Text -> (ModuleName, Text)
+splitQualName t = do
+    let parts = T.splitOn "." t
+    case parts of
+        [] -> error "Empty string"
+        [""] -> error "Empty string"
+        [_] -> error "No module name"
+        xs ->
+            -- we have to be careful here, we can't just take the 'init' because that will break operators that start with .
+            -- >>> ["Prelude", "", "+"] = ("Prelude", ".+")
+            -- >>> ["Prelude", "T"] = ("Prelude", "T")
+            -- >>> ["Prelude", "T", ""] = ("Prelude.T", ".")
+            let
+                (modPart, namePart) = span (not . T.null) (fromList xs)
+             in
+                if null namePart
+                    then -- TODO: this isn't very efficient
+                        (ModuleName $ fromList (init (fromList modPart)), last (fromList modPart))
+                    else (ModuleName $ fromList modPart, T.intercalate "." namePart)

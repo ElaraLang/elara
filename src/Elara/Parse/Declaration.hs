@@ -11,7 +11,7 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (element)
 import Elara.Parse.Indents (exprBlock)
-import Elara.Parse.Names (alphaVarName, unqualifiedTypeName, unqualifiedVarName)
+import Elara.Parse.Names
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives (HParser, fmapLocated, located, token_)
 import Elara.Parse.Type (type', typeNotApplication)
@@ -62,8 +62,8 @@ typeDeclaration modName = fmapLocated Declaration $ do
     token_ TokenType
     endHead
     isAlias <- isJust <$> optional (token_ TokenAlias)
-    name <- located unqualifiedTypeName
-    args <- many (located alphaVarName)
+    name <- located conId
+    args <- many (located varId)
     token_ TokenEquals
     body <- located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
@@ -76,7 +76,7 @@ adt =
     ADT <$> (constructor `sepBy1'` token_ TokenPipe)
   where
     constructor = do
-        name <- located unqualifiedTypeName
+        name <- located conId
         args <- many typeNotApplication
         pure (name, args)
 

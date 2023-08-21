@@ -8,7 +8,7 @@ import Elara.AST.Region (Located)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary)
 import Elara.Parse.Literal
-import Elara.Parse.Names (typeName, unqualifiedNormalVarName)
+import Elara.Parse.Names (conName, varId)
 import Elara.Parse.Primitives (HParser, inParens, located, token_, (<??>))
 import HeadedMegaparsec (endHead)
 import Text.Megaparsec (choice, sepEndBy)
@@ -45,7 +45,7 @@ locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern
 locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located
 
 varPattern :: HParser FrontendPattern
-varPattern = locatedPattern (VarPattern <$> located unqualifiedNormalVarName)
+varPattern = locatedPattern (VarPattern <$> located varId)
 
 wildcardPattern :: HParser FrontendPattern
 wildcardPattern = locatedPattern (WildcardPattern <$ token_ TokenUnderscore)
@@ -72,12 +72,12 @@ listPattern = locatedPattern $ do
 -- To prevent ambiguity between space-separated patterns and constructor patterns
 zeroArgConstructorPattern :: HParser FrontendPattern
 zeroArgConstructorPattern = locatedPattern $ do
-    con <- located typeName
+    con <- located conName
     pure $ ConstructorPattern con []
 
 constructorPattern :: HParser FrontendPattern
 constructorPattern = locatedPattern $ do
-    con <- located typeName
+    con <- located conName
     endHead
     args <- many patParser
     pure $ ConstructorPattern con args

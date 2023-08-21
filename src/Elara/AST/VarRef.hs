@@ -2,11 +2,11 @@
 
 module Elara.AST.VarRef where
 
-import Control.Lens (view)
+import Control.Lens (Lens, Lens', Traversal, lens, view)
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
-import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
-import Elara.AST.Region (IgnoreLocation (..), Located)
+import Elara.AST.Name (HasName (name), Name, Qualified (Qualified), ToName (toName))
+import Elara.AST.Region (IgnoreLocation (..), Located (..), unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
@@ -26,6 +26,10 @@ type UnlocatedVarRef n = VarRef' Identity n
 varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
+
+varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
+varRefVal' f (Global n) = let n' = traverse (traverse f) n in Global <$> n'
+varRefVal' f (Local n) = let n' = traverse (traverse f) n in Local <$> n'
 
 mkLocal :: (ToName n) => Located (Unique n) -> VarRef Name
 mkLocal n = Local (toName <<$>> n)

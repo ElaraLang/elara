@@ -57,6 +57,11 @@ makePrisms ''LowerAlphaName
 makePrisms ''TypeName
 makePrisms ''OpName
 
+data VarOrConName
+    = VarName LowerAlphaName
+    | ConName TypeName
+    deriving (Ord, Show, Eq, Data, Generic)
+
 data Name
     = NVarName VarName
     | NTypeName TypeName
@@ -146,6 +151,16 @@ instance NameLike Name where
     moduleName (NTypeName name) = moduleName name
     moduleName (NOpName name) = moduleName name
 
+instance NameLike VarOrConName where
+    nameText (VarName name) = nameText name
+    nameText (ConName name) = nameText name
+
+    fullNameText (VarName name) = fullNameText name
+    fullNameText (ConName name) = fullNameText name
+
+    moduleName (VarName name) = moduleName name
+    moduleName (ConName name) = moduleName name
+
 instance (NameLike n) => NameLike (Located n) where
     nameText = nameText . view unlocated
     fullNameText = fullNameText . view unlocated
@@ -193,6 +208,10 @@ instance Pretty Name where
     pretty (NVarName n) = pretty n
     pretty (NTypeName n) = pretty n
     pretty (NOpName n) = pretty n
+
+instance Pretty VarOrConName where
+    pretty (VarName n) = pretty n
+    pretty (ConName n) = pretty n
 
 instance Pretty ModuleName where
     pretty (ModuleName m) = Style.moduleName (hcat (punctuate "." (fmap pretty (toList m))))

@@ -27,29 +27,23 @@ prettyCharExpr = squotes . escapeChar
 prettyLambdaExpr :: (?contextFree :: Bool) => (Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
 prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr')
   where
-    prettyCTFLambdaExpr = group (flatAlt long short)
-      where
-        short =
-            "\\"
-                <> hsep (pretty <$> args)
-                <+> "->"
-                <+> parens (pretty body)
+    prettyCTFLambdaExpr =
+        "\\"
+            <+> hsep (pretty <$> args)
+            <+> "->"
+            <+> parens (pretty body)
 
-        long =
-            align
-                ( "\\" <> hsep (pretty <$> args) <+> "->" <+> parens (pretty body)
-                )
     prettyLambdaExpr' = group (flatAlt long short)
       where
         short =
             "\\"
-                <> hsep (pretty <$> args)
+                <+> hsep (pretty <$> args)
                 <+> "->"
                 <+> pretty body
 
         long =
             align
-                ( "\\" <> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
+                ( "\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
                 )
 
 prettyFunctionCallExpr :: (Pretty a, Pretty b, ?contextFree :: Bool) => a -> b -> Doc AnsiStyle

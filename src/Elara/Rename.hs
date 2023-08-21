@@ -9,7 +9,7 @@ import Data.Map qualified as Map
 import Elara.AST.Desugared
 import Elara.AST.Generic
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
@@ -203,7 +203,7 @@ addImportsToContext :: Rename r => [Import 'Desugared] -> Sem r ()
 addImportsToContext = traverse_ addImportToContext
 
 addImportToContext :: Rename r => Import 'Desugared -> Sem r ()
-addImportToContext imp = do
+addImportToContext imp =
     addModuleToContext
         (imp ^. _Unwrapped . unlocated . field' @"importing" . unlocated)
         (imp ^. _Unwrapped . unlocated . field' @"exposing")
@@ -328,7 +328,7 @@ renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped .
 renameType _ UnitType = pure UnitType
 renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped . unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
-renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 . (_Unwrapped . unlocated)) (renameType antv)) ln
+renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 . _Unwrapped . unlocated) (renameType antv)) ln
 renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped . unlocated) (renameType antv)) ts
 renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t
 
@@ -393,8 +393,16 @@ renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unl
             onlyOpName _ = error "renameBinaryOperator': I really don't like this"
         let op'' = onlyOpName <<$>> op'
         pure $ SymOp op''
-    renameBinaryOperator' (Infixed o) = do
-        op' <- lookupVarName o
+    renameBinaryOperator' (Infixed (Located l o)) = do
+        op' :: VarRef VarOrConName <- case o of -- TODO: tidy this up
+            MaybeQualified (VarName n) q -> do
+                vn <- lookupVarName (Located l (MaybeQualified (NormalVarName n) q))
+                let onlyVarName (NormalVarName n') = n'
+                    onlyVarName _ = error "renameBinaryOperator': I really don't like this"
+                pure $ (VarName . onlyVarName <<$>> vn) ^. unlocated
+            MaybeQualified (ConName n) q -> do
+                tn <- lookupTypeName (Located l (MaybeQualified n q))
+                pure $ Global (ConName <<$>> tn)
         pure $ Infixed op'
 
 renamePattern :: Rename r => DesugaredPattern -> Sem r RenamedPattern
@@ -410,7 +418,7 @@ renamePattern (Pattern fp) = (\x -> Pattern (x, _)) <$> traverseOf unlocated ren
     renamePattern' (ConsPattern p1 p2) = ConsPattern <$> renamePattern p1 <*> renamePattern p2
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
-        modify (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local vn'))
+        modify (the @"varNames" %~ Map.insert (vn ^. unlocated . to NormalVarName) (Local (NormalVarName <<$>> vn')))
         pure $ VarPattern vn'
     renamePattern' (ConstructorPattern cn ps) = do
         cn' <- qualifyTypeName cn
@@ -426,7 +434,7 @@ patternToVarName (Pattern (Located _ p, _)) =
      in case p of
             WildcardPattern -> mn "wildcard"
             ListPattern _ -> mn "list"
-            VarPattern vn -> vn ^. unlocated
+            VarPattern vn -> NormalVarName $ vn ^. unlocated
             IntegerPattern _ -> mn "int"
             FloatPattern _ -> mn "float"
             StringPattern _ -> mn "string"
@@ -439,8 +447,8 @@ patternToMatch :: Rename r => DesugaredPattern -> DesugaredExpr -> Sem r (Locate
 -- Special case, no match needed
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
-    uniqueVn <- uniquify vn
-    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local uniqueVn)) $ renameExpr body
+    uniqueVn <- uniquify (NormalVarName <$> vn)
+    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated . to NormalVarName) (Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat

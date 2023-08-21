@@ -33,7 +33,7 @@ terminalPatterns :: Spec
 terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
     it "Parses arbitrary var patterns correctly" $ hedgehog $ do
         expr <- forAll genLowerAlphaText
-        expr `shouldParsePattern` Pattern (VarPattern (NormalVarName $ LowerAlphaName expr), Nothing)
+        expr `shouldParsePattern` Pattern (VarPattern (LowerAlphaName expr), Nothing)
 
     it "Parses wildcard pattern correctly" $ hedgehog $ do
         "_" `shouldParsePattern` Pattern (WildcardPattern, Nothing)

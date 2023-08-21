@@ -16,7 +16,7 @@ data Unique a = Unique
     { _uniqueVal :: !a
     , _uniqueId :: !Int
     }
-    deriving (Show, Functor, Data, Generic)
+    deriving (Show, Functor, Data, Generic, Traversable, Foldable)
 
 unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique

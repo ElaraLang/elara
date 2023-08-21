@@ -5,7 +5,7 @@ module Elara.AST.Renamed where
 
 import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, NoFieldValue, Select)
 import Elara.AST.Generic qualified as Generic
-import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (LocatedAST (Renamed))
 import Elara.AST.VarRef (VarRef)
@@ -23,12 +23,12 @@ type instance Select "VarRef" 'Renamed = VarRef VarName
 type instance Select "ConRef" 'Renamed = Qualified TypeName
 
 type instance Select "SymOp" 'Renamed = VarRef OpName
-type instance Select "Infixed" 'Renamed = VarRef VarName
+type instance Select "Infixed" 'Renamed = VarRef VarOrConName
 type instance Select "LetParamName" 'Renamed = Unique VarName
 type instance Select "InParens" 'Renamed = RenamedExpr
 
 type instance Select "PatternType" 'Renamed = Maybe RenamedType
-type instance Select "VarPat" 'Renamed = Unique VarName
+type instance Select "VarPat" 'Renamed = Unique LowerAlphaName
 type instance Select "ConPat" 'Renamed = Qualified TypeName
 
 -- Selections for 'DeclarationBody'

@@ -2,7 +2,7 @@ module Elara.AST.Frontend where
 
 import Elara.AST.Generic (ASTLocate', ASTQual, NoFieldValue, Select)
 import Elara.AST.Generic qualified as Generic
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (LocatedAST (Frontend))
 
@@ -21,11 +21,11 @@ type instance Select "InParens" 'Frontend = FrontendExpr
 
 -- Selections for 'BinaryOperator'
 type instance Select "SymOp" 'Frontend = MaybeQualified OpName
-type instance Select "Infixed" 'Frontend = MaybeQualified VarName
+type instance Select "Infixed" 'Frontend = Located (MaybeQualified VarOrConName)
 
 -- Selections for 'Pattern'
 type instance Select "PatternType" 'Frontend = Maybe FrontendType
-type instance Select "VarPat" 'Frontend = VarName
+type instance Select "VarPat" 'Frontend = LowerAlphaName
 type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
 
 -- Selections for 'DeclarationBody'

@@ -15,7 +15,7 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
-import Elara.AST.Region (unlocated)
+import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Kind.Infer
@@ -173,5 +173,6 @@ loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
+    printColored (stripLocation @(Located Token) @Token <$> tokens)
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed

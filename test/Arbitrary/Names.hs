@@ -96,11 +96,14 @@ genOpText =
 -- instance Arbitrary VarName where
 --     arbitrary = frequency [(4, arbitraryNormalVarName), (1, arbitraryOpVarName)]
 
+genVarName :: Gen VarName
+genVarName = NormalVarName <$> genNormalVarName
+
 genOpName :: Gen OpName
 genOpName = OpName <$> genOpText
 
-genNormalVarName :: Gen VarName
-genNormalVarName = NormalVarName . LowerAlphaName <$> genLowerAlphaText
+genNormalVarName :: Gen LowerAlphaName
+genNormalVarName = LowerAlphaName <$> genLowerAlphaText
 
 genTypeName :: Gen TypeName
 genTypeName = TypeName <$> genUpperAlphaText

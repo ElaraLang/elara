@@ -39,7 +39,7 @@ type instance Select "LetParamName" 'Shunted = Unique VarName
 type instance Select "InParens" 'Shunted = ShuntedExpr
 
 type instance Select "PatternType" 'Shunted = Maybe ShuntedType
-type instance Select "VarPat" 'Shunted = Unique VarName
+type instance Select "VarPat" 'Shunted = Unique LowerAlphaName
 type instance Select "ConPat" 'Shunted = Qualified TypeName
 
 -- Selections for 'DeclarationBody'

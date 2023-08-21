@@ -29,15 +29,19 @@ $octit = [0-7]
 -- Identifiers
 $lower = [a-z]
 $upper = [A-Z]
-$opCharNotDot = [\! \# \$ \% \& \* \+ \/ \\ \< \> \? \@ \^ \| \- \~ \=]
-$opChar = [$opCharNotDot \.]
+
+$opChar = [\! \# \$ \% \& \* \+ \/ \\ \< \> \? \@ \^ \| \- \~ \= \.]
 $underscore = \_
 $identifier = [$lower $upper $digit $underscore]
 
 @variableIdentifer = [$lower $underscore] $identifier*
 @typeIdentifier = $upper $identifier*
+@opIdentifier = $opChar+
 
-@opIdentifier = $opCharNotDot $opChar*
+@qual = (@typeIdentifier \.)+
+@qVariableIdentifer = @qual @variableIdentifer
+@qTypeIdentifier = @qual @typeIdentifier
+@qOpIdentifier = @qual @opIdentifier
 
 -- Operators are a little tricky because if we allow them to start with dots, we end up with `a Prelude.+ b`
 -- ending up being lexed as `(a Prelude) .+ b` instead of `a (Prelude.+ b)` (parentheses added for clarity)
@@ -70,6 +74,26 @@ tokens :-
       $white_no_nl+          ;
       \n$white*              { startWhite }
       "--" [\ ] .*  			   ;
+
+      -- Qualified identifiers have higher precedence than the symbol tokens
+      @qVariableIdentifer    { parametrizedTok TokenQVariableIdentifier splitQualName }
+      @qTypeIdentifier       { parametrizedTok TokenQConstructorIdentifier splitQualName }
+      @qOpIdentifier         { parametrizedTok TokenQOperatorIdentifier splitQualName }
+      
+      -- Literals
+      \-? (
+          @decimal 
+          | 0[o0] @octal
+          | 0[xX] @hexadecimal
+          )
+      { parametrizedTok TokenInt (read . toString) }
+
+      \-? (  @decimal \. @decimal @exponent?
+             | @decimal @exponent
+          )
+      { parametrizedTok TokenFloat (read . toString) }
+
+      \' (. # [\'\\] | " " | @escape) \' { parametrizedTok TokenChar (read . toString) }
 
       -- Keywords
       let					           { simpleTok TokenLet }
@@ -108,28 +132,14 @@ tokens :-
       \|                     { simpleTok TokenPipe }
       $underscore            { simpleTok TokenUnderscore }
       \=                     { simpleTok TokenEquals }
-      @opIdentifier          { parametrizedTok TokenOperatorIdentifier identity}
-      -- Literals
-      \-? (
-          @decimal 
-          | 0[o0] @octal
-          | 0[xX] @hexadecimal
-          )
-      { parametrizedTok TokenInt (read . toString) }
-
-      \-? (  @decimal \. @decimal @exponent?
-             | @decimal @exponent
-          )
-      { parametrizedTok TokenFloat (read . toString) }
-
-      \' (. # [\'\\] | " " | @escape) \' { parametrizedTok TokenChar (read . toString) }
+     
 
       \"                     { beginString }
 
       -- Identifiers
       @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
-      
+      @opIdentifier          { parametrizedTok TokenOperatorIdentifier identity}
   
   }
 
@@ -151,6 +161,10 @@ parametrizedTok tc read' tokenLen matched = do
   region <- createRegionStartingAt start 
   let token = tc (read' matched)
   return $ Just (Located (RealSourceRegion region) token)
+
+
+
+
 
 
 beginString :: LexAction

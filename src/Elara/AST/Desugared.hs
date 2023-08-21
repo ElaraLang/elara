@@ -9,7 +9,7 @@ module Elara.AST.Desugared where
 
 import Elara.AST.Generic
 import Elara.AST.Generic qualified as Generic
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located)
 import Elara.AST.Select (LocatedAST (Desugared))
 
@@ -28,11 +28,11 @@ type instance Select "InParens" 'Desugared = DesugaredExpr
 
 -- Selections for 'BinaryOperator'
 type instance Select "SymOp" 'Desugared = MaybeQualified OpName
-type instance Select "Infixed" 'Desugared = MaybeQualified VarName
+type instance Select "Infixed" 'Desugared = Located (MaybeQualified VarOrConName)
 
 -- Selections for 'Pattern'
 type instance Select "PatternType" 'Desugared = Maybe DesugaredType
-type instance Select "VarPat" 'Desugared = VarName
+type instance Select "VarPat" 'Desugared = LowerAlphaName
 type instance Select "ConPat" 'Desugared = MaybeQualified TypeName
 
 -- Selections for 'Declaration'

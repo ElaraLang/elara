@@ -4,6 +4,7 @@ module Elara.AST.Unlocated where
 
 import Data.Kind qualified as Kind
 import Elara.AST.Generic
+import Elara.AST.Region (Located)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (..))
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
 import Elara.Data.Unique (Unique)
@@ -22,6 +23,7 @@ type instance Select any 'UnlocatedTyped = Replace 'Typed 'UnlocatedTyped (Selec
 
 type family Replace (needle :: LocatedAST) (replacement :: UnlocatedAST) (haystack :: Kind.Type) where
     Replace _ _ (VarRef a) = UnlocatedVarRef a -- This doesn't really belong here but it's easier than putting it elsewhere
+    Replace needle replacement (Located a) = a
     Replace needle replacement (Expr needle) = Expr replacement
     Replace needle replacement (Expr' needle) = Expr' replacement
     Replace needle replacement (Pattern needle) = Pattern replacement
