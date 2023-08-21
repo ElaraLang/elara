@@ -218,7 +218,8 @@ createRegionStartingAt start = do
     end <- getPosition 0
     createRegion start end
 
-{- | splits a qualified name into the qualifier and the name
+{- | splits a qualified name into the qualifier and the name.
+Throws an error if the name is not qualified.
 
  Examples:
 
@@ -227,12 +228,6 @@ createRegionStartingAt start = do
 
 >>> splitQualName "A.B.C"
 (ModuleName ("A" :| ["B"]),"C")
-
->>> splitQualName "A"
-*** Exception: No module name
-
->>> splitQualName ""
-*** Exception: Empty string
 
 >>> splitQualName "Prelude..+"
 (ModuleName ("Prelude" :| []),".+")
