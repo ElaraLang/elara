@@ -20,7 +20,7 @@ import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Field (ClassFileField (ClassFileField))
-import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCString))
+import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCInt, LDCString))
 import JVM.Data.Abstract.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
 import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
@@ -183,6 +183,11 @@ generateCode (Lit (String s)) _ =
     pure
         [ LDC (LDCString s)
         ]
+generateCode (Lit (Int i)) _ =
+    pure
+        [ LDC (LDCInt (fromIntegral i))
+        , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "java.lang.Integer")))
+        ]
 generateCode e t = error (showPretty (e, t))
 
 {- | Determines if a type is a value type.
@@ -191,6 +196,7 @@ generateCode e t = error (showPretty (e, t))
 typeIsValue :: Type -> Bool
 typeIsValue (AppTy con _) | con == ioCon = True
 typeIsValue c | c == stringCon = True
+typeIsValue c | c == intCon = True
 typeIsValue _ = False
 
 generateFieldType :: Type -> FieldType
