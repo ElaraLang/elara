@@ -77,7 +77,7 @@ dumpGraph graph nameFunc suffix = do
     traverseGraph_ dump graph
 
 runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpShunted dumpTyped dumpCore = finalisePipeline $ do
+runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 

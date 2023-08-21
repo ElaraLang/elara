@@ -2,7 +2,7 @@
 
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, makeLenses, over, to, traverseOf, traverseOf_, (%~), (^.), (^..), _1, _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, over, to, traverseOf, traverseOf_, (%~), (^.), (^..), _1, _2)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
@@ -21,9 +21,8 @@ import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
 import Elara.Pipeline
 import Error.Diagnose (Marker (This), Report (Err))
-import Polysemy (Members, Sem, subsume, subsume_)
-import Polysemy.Embed
-import Polysemy.Error (Error, note, runError, throw)
+import Polysemy (Members, Sem)
+import Polysemy.Error (Error, note, throw)
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
@@ -181,17 +180,17 @@ rename =
             pure (Module' (m' ^. field' @"name") exposing' imports' sorted)
         )
   where
-    renameExposing :: Rename r => ModuleName -> Exposing Desugared -> Sem r (Exposing Renamed)
+    renameExposing :: Rename r => ModuleName -> Exposing 'Desugared -> Sem r (Exposing 'Renamed)
     renameExposing _ ExposingAll = pure ExposingAll
     renameExposing mn (ExposingSome es) = ExposingSome <$> traverse (renameExposition mn) es
 
-    renameExposition :: Rename r => ModuleName -> Exposition Desugared -> Sem r (Exposition Renamed)
+    renameExposition :: Rename r => ModuleName -> Exposition 'Desugared -> Sem r (Exposition 'Renamed)
     renameExposition mn (ExposedValue vn) = ExposedValue <$> traverse (qualifyIn mn) vn
     renameExposition mn (ExposedOp opn) = ExposedOp <$> traverse (qualifyIn mn) opn
     renameExposition mn (ExposedType tn) = ExposedType <$> traverse (qualifyIn mn) tn
     renameExposition mn (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors <$> traverse (qualifyIn mn) tn
 
-    renameImport :: Rename r => Import Desugared -> Sem r (Import Renamed)
+    renameImport :: Rename r => Import 'Desugared -> Sem r (Import 'Renamed)
     renameImport = traverseOf (_Unwrapped . unlocated) renameImport'
 
     renameImport' :: Rename r => Import' 'Desugared -> Sem r (Import' 'Renamed)
