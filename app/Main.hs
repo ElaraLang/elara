@@ -173,6 +173,6 @@ loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
-    printColored (stripLocation @(Located Token) @Token <$> tokens)
+    -- printColored (stripLocation @(Located Token) @Token <$> tokens)
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
