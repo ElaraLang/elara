@@ -9,6 +9,7 @@ import Elara.AST.StripLocation
 import Elara.AST.Typed (TypedExpr)
 import Elara.Data.Pretty (Pretty)
 import Elara.Data.TopologicalGraph (createGraph)
+import Elara.Data.Unique
 import Elara.Desugar (desugarExpr, runDesugar, runDesugarPipeline)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader (readTokensWith)
@@ -29,13 +30,13 @@ import Polysemy.State (State)
 import Print (showPretty)
 import Test.HUnit (assertFailure)
 
-pattern Forall' :: Text -> Domain -> Type () -> Type ()
+pattern Forall' :: Unique Text -> Domain -> Type () -> Type ()
 pattern Forall' name domain t = Forall () () name domain t
 
 pattern Function' :: Type () -> Type () -> Type ()
 pattern Function' a b = Function () a b
 
-pattern VariableType' :: Text -> Type ()
+pattern VariableType' :: Unique Text -> Type ()
 pattern VariableType' name = VariableType () name
 
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()

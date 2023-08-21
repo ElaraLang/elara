@@ -40,3 +40,6 @@ toVariable (UnsafeExistential n) = Text.cons prefix suffix
     prefix = chr (ord 'a' + r)
 
     suffix = if q == 0 then "" else show (q - 1)
+
+existentialVal :: Existential a -> Int
+existentialVal (UnsafeExistential n) = n

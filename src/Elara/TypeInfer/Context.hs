@@ -35,6 +35,7 @@ import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
 import Elara.AST.Name (Name)
 import Elara.AST.VarRef (IgnoreLocVarRef)
+import Elara.Data.Unique (Unique, unsafeMkUnique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
@@ -66,7 +67,7 @@ data Entry s
       --
       -- >>> pretty @(Entry ()) (Variable Domain.Type "a")
       -- a: Type
-      Variable Domain Text
+      Variable Domain (Unique Text)
     | -- | A bound variable whose type is known
       --
       -- >>>  pretty @(Entry ()) (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
@@ -241,11 +242,11 @@ prettyEntry (MarkerFields a) =
 prettyEntry (MarkerAlternatives a) =
     "➤ " <> pretty a <> ": Alternatives"
 
-prettyFieldType :: (Text, Monotype) -> Doc AnsiStyle
+prettyFieldType :: (Unique Text, Monotype) -> Doc AnsiStyle
 prettyFieldType (k, τ) =
     punctuation "," <> " " <> pretty k <> operator ":" <> " " <> pretty τ
 
-prettyAlternativeType :: (Text, Monotype) -> Doc AnsiStyle
+prettyAlternativeType :: (Unique Text, Monotype) -> Doc AnsiStyle
 prettyAlternativeType (k, τ) =
     pretty k <> operator ":" <> " " <> pretty τ
 
@@ -345,7 +346,8 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         State.put $! n + 1
 
-        let name = Existential.toVariable (numUnsolved - n)
+        let ex = numUnsolved - n
+        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
 
         let domain = Domain.Type
 
@@ -361,7 +363,8 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         State.put $! n + 1
 
-        let name = Existential.toVariable (numUnsolved - n)
+        let ex = numUnsolved - n
+        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
 
         let domain = Domain.Fields
 
@@ -377,7 +380,8 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         State.put $! n + 1
 
-        let name = Existential.toVariable (numUnsolved - n)
+        let ex = numUnsolved - n
+        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
 
         let domain = Domain.Alternatives
 

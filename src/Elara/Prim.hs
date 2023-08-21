@@ -10,10 +10,12 @@ import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion,
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
 
+import Elara.Data.Unique (UniqueGen, makeUnique)
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
+import Polysemy
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"
@@ -54,7 +56,7 @@ primKindCheckContext =
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
         <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
 
-primitiveTCContext :: (Context SourceRegion)
+primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
 primitiveTCContext = do
     let easies =
             [ Annotation
@@ -68,10 +70,10 @@ primitiveTCContext = do
                 (Custom primRegion "IO" [])
             ]
 
-    let primTyVarName = "a"
+    primTyVarName <- makeUnique "a"
     let elaraPrimitive =
             Annotation -- elaraPrimitive :: forall a. String -> a
                 (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
                 (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion primTyVarName)))
 
-    elaraPrimitive : easies
+    pure (elaraPrimitive : easies)

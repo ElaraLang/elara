@@ -40,6 +40,7 @@ import Elara.AST.Generic (Expr (..), Expr' (..), NoFieldValue (..))
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
+import Elara.Data.Unique
 import Elara.Prim (primRegion, primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -64,13 +65,15 @@ data Status = Status
     -- ^ A write-only context that logs every entry that is added to the main context
     }
 
-initialStatus :: Status
-initialStatus =
-    Status
-        { count = 0
-        , context = primitiveTCContext
-        , writeOnlyContext = primitiveTCContext
-        }
+initialStatus :: Member UniqueGen r => Sem r Status
+initialStatus = do
+    primitiveTCContext <- primitiveTCContext
+    pure
+        Status
+            { count = 0
+            , context = primitiveTCContext
+            , writeOnlyContext = primitiveTCContext
+            }
 
 orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
@@ -288,13 +291,13 @@ subtype _A0 _B0 = do
 
         -- <:∃R
         (_, Type.Exists{domain = Domain.Type, ..}) -> scopedUnsolvedType nameLocation \a ->
-            subtype _A0 (Type.substituteType name 0 a type_)
-        (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name 0 a type_)
-        (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name 0 a type_)
+            subtype _A0 (Type.substituteType name a type_)
+        (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name a type_)
+        (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name a type_)
         -- <:∀L
-        (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name 0 a type_) _B0
-        (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name 0 a type_) _B0
-        (Type.Forall{domain = Domain.Alternatives, ..}, _) -> scopedUnsolvedAlternatives \a -> subtype (Type.substituteAlternatives name 0 a type_) _B0
+        (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name a type_) _B0
+        (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name a type_) _B0
+        (Type.Forall{domain = Domain.Alternatives, ..}, _) -> scopedUnsolvedAlternatives \a -> subtype (Type.substituteAlternatives name a type_) _B0
         -- <:∃L
         (Type.Exists{..}, _) -> scoped (Context.Variable domain name) do
             subtype type_ _B0
@@ -720,9 +723,9 @@ instantiateTypeL a _A0 = do
         Type.VariableType{..} -> instLSolve (Monotype.VariableType name)
         Type.Scalar{..} -> instLSolve (Monotype.Scalar scalar)
         -- InstLExt
-        Type.Exists{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name 0 b type_) a
-        Type.Exists{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name 0 b type_) a
-        Type.Exists{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name 0 b type_) a
+        Type.Exists{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name b type_) a
+        Type.Exists{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name b type_) a
+        Type.Exists{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name b type_) a
         -- InstLArr
         Type.Function{..} -> do
             let _ΓL = _Γ
@@ -829,13 +832,13 @@ instantiateTypeL a _A0 = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesL p (Type.location _A0) alternatives
-        Type.Custom{name, typeArguments} -> do
+        Type.Custom{conName, typeArguments} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
 
             a1s <- for typeArguments (const fresh)
 
-            set (_ΓR <> (Context.SolvedType a (Monotype.Custom name (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
+            set (_ΓR <> (Context.SolvedType a (Monotype.Custom conName (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
 
             for_ (zip typeArguments a1s) \(typeArgument, a1) -> instantiateTypeL a1 typeArgument
 
@@ -892,9 +895,9 @@ instantiateTypeR _A0 a = do
             instantiateTypeL a type_
 
         -- InstRAllL
-        Type.Forall{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name 0 b type_) a
-        Type.Forall{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name 0 b type_) a
-        Type.Forall{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name 0 b type_) a
+        Type.Forall{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name b type_) a
+        Type.Forall{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name b type_) a
+        Type.Forall{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name b type_) a
         Type.Optional{..} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
@@ -1835,9 +1838,9 @@ check expr@(Expr (Located exprLoc _, _)) t = do
     check' (Syntax.Lambda name body) Type.Function{..} = scoped (Context.Annotation (mkLocal' name) input) do
         check body output
     -- ∃I
-    check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name 0 a type_)
-    check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name 0 a type_)
-    check' e Type.Exists{domain = Domain.Alternatives, ..} = scopedUnsolvedAlternatives \a -> check' e (Type.substituteAlternatives name 0 a type_)
+    check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name a type_)
+    check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name a type_)
+    check' e Type.Exists{domain = Domain.Alternatives, ..} = scopedUnsolvedAlternatives \a -> check' e (Type.substituteAlternatives name a type_)
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_
@@ -1882,7 +1885,7 @@ inferApplication Type.Forall{domain = Domain.Type, ..} e = do
 
     let a' = Type.UnsolvedType{location = nameLocation, existential = a}
 
-    inferApplication (Type.substituteType name 0 a' type_) e
+    inferApplication (Type.substituteType name a' type_) e
 inferApplication Type.Forall{domain = Domain.Fields, ..} e = do
     a <- fresh
 
@@ -1890,7 +1893,7 @@ inferApplication Type.Forall{domain = Domain.Fields, ..} e = do
 
     let a' = Type.Fields [] (Monotype.UnsolvedFields a)
 
-    inferApplication (Type.substituteFields name 0 a' type_) e
+    inferApplication (Type.substituteFields name a' type_) e
 inferApplication Type.Forall{domain = Domain.Alternatives, ..} e = do
     a <- fresh
 
@@ -1898,7 +1901,7 @@ inferApplication Type.Forall{domain = Domain.Alternatives, ..} e = do
 
     let a' = Type.Alternatives [] (Monotype.UnsolvedAlternatives a)
 
-    inferApplication (Type.substituteAlternatives name 0 a' type_) e
+    inferApplication (Type.substituteAlternatives name a' type_) e
 
 -- ∃App
 inferApplication Type.Exists{..} e = scoped (Context.Variable domain name) do

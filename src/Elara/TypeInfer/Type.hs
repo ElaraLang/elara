@@ -9,7 +9,7 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..))
+import Control.Lens (Plated (..), (^.))
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
 import Elara.Data.Pretty
@@ -31,6 +31,7 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Data.Aeson (ToJSON (..), Value (String))
 import Data.Data (Data)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
+import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Prettyprinter qualified as Pretty
 import Print (showPrettyUnannotated)
@@ -51,7 +52,7 @@ data Type s
       --
       -- >>> pretty @(Type ()) (VariableType () "a")
       -- a
-      VariableType {location :: s, name :: Text}
+      VariableType {location :: s, name :: Unique Text}
     | -- | A placeholder variable whose type has not yet been inferred
       --
       -- >>> pretty @(Type ()) (UnsolvedType () 0)
@@ -61,12 +62,12 @@ data Type s
       --
       -- >>> pretty @(Type ()) (Exists () () "a" Domain.Type "a")
       -- exists (a : Type) . a
-      Exists {location :: s, nameLocation :: s, name :: Text, domain :: Domain, type_ :: Type s}
+      Exists {location :: s, nameLocation :: s, name :: Unique Text, domain :: Domain, type_ :: Type s}
     | -- | Universally quantified type
       --
       -- >>> pretty @(Type ()) (Forall () () "a" Domain.Type "a")
       -- forall (a : Type) . a
-      Forall {location :: s, nameLocation :: s, name :: Text, domain :: Domain, type_ :: Type s}
+      Forall {location :: s, nameLocation :: s, name :: Unique Text, domain :: Domain, type_ :: Type s}
     | -- | Function type
       --
       -- >>> pretty @(Type ()) (Function () "a" "b")
@@ -101,7 +102,7 @@ data Type s
       --
       -- >>> pretty @(Type ()) (Custom () "Maybe" ["a"])
       -- Maybe a
-      Custom {location :: s, name :: Text, typeArguments :: [Type s]}
+      Custom {location :: s, conName :: Text, typeArguments :: [Type s]}
     | -- | A tuple
       --
       -- >>> pretty @(Type ()) (Tuple () ("a" :| ["b"]))
@@ -111,9 +112,6 @@ data Type s
 
 instance (Show c, ToJSON c) => ToJSON (Type c) where
     toJSON s = String (showPrettyUnannotated s)
-
-instance IsString (Type ()) where
-    fromString string = VariableType{name = fromString string, location = ()}
 
 instance Show s => Pretty (Type s) where
     pretty = prettyQuantifiedType
@@ -160,7 +158,7 @@ instance Plated (Type s) where
                 pure Tuple{tupleArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
-data Record s = Fields [(Text, Type s)] RemainingFields
+data Record s = Fields [(Unique Text, Type s)] RemainingFields
     deriving stock (Eq, Functor, Generic, Show, Data)
 
 instance (Show s, ToJSON s) => ToJSON (Record s)
@@ -169,7 +167,7 @@ instance Show s => Pretty (Record s) where
     pretty = prettyRecordType
 
 -- | A potentially polymorphic union type
-data Union s = Alternatives [(Text, Type s)] RemainingAlternatives
+data Union s = Alternatives [(Unique Text, Type s)] RemainingAlternatives
     deriving stock (Eq, Functor, Generic, Show, Data)
 
 instance (Show s, ToJSON s) => ToJSON (Union s)
@@ -200,7 +198,7 @@ fromMonotype monotype =
             Union{alternatives = Alternatives (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
             Scalar{..}
-        Monotype.Custom name typeArguments ->
+        Monotype.Custom conName typeArguments ->
             Custom{typeArguments = map fromMonotype typeArguments, ..}
   where
     location = ()
@@ -263,56 +261,48 @@ solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternati
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteType :: Text -> Int -> Type s -> Type s -> Type s
-substituteType a n _A type_ =
+substituteType :: Unique Text -> Type s -> Type s -> Type s
+substituteType a _A type_ =
     case type_ of
         VariableType{..}
-            | a == name && n == 0 -> _A
+            | a == name -> _A
             | otherwise -> VariableType{..}
         UnsolvedType{..} ->
             UnsolvedType{..}
         Exists{type_ = oldType, ..} -> Exists{type_ = newType, ..}
           where
-            newType = substituteType a n' _A oldType
-
-            n'
-                | a == name && domain == Domain.Type = n + 1
-                | otherwise = n
+            newType = substituteType a _A oldType
         Forall{type_ = oldType, ..} -> Forall{type_ = newType, ..}
           where
-            newType = substituteType a n' _A oldType
-
-            n'
-                | a == name && domain == Domain.Type = n + 1
-                | otherwise = n
+            newType = substituteType a _A oldType
         Function{input = oldInput, output = oldOutput, ..} ->
             Function{input = newInput, output = newOutput, ..}
           where
-            newInput = substituteType a n _A oldInput
+            newInput = substituteType a _A oldInput
 
-            newOutput = substituteType a n _A oldOutput
+            newOutput = substituteType a _A oldOutput
         Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
           where
-            newType = substituteType a n _A oldType
+            newType = substituteType a _A oldType
         List{type_ = oldType, ..} -> List{type_ = newType, ..}
           where
-            newType = substituteType a n _A oldType
+            newType = substituteType a _A oldType
         Record{fields = Fields kAs ρ, ..} ->
-            Record{fields = Fields (map (second (substituteType a n _A)) kAs) ρ, ..}
+            Record{fields = Fields (map (second (substituteType a _A)) kAs) ρ, ..}
         Union{alternatives = Alternatives kAs ρ, ..} ->
-            Union{alternatives = Alternatives (map (second (substituteType a n _A)) kAs) ρ, ..}
+            Union{alternatives = Alternatives (map (second (substituteType a _A)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
-            Custom{typeArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
+            Custom{typeArguments = fmap (substituteType a _A) oldTypeArguments, ..}
         Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteType a n _A) oldTypeArguments, ..}
+            Tuple{tupleArguments = fmap (substituteType a _A) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteFields :: Text -> Int -> Record s -> Type s -> Type s
-substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
+substituteFields :: Unique Text -> Record s -> Type s -> Type s
+substituteFields ρ0 r@(Fields kτs ρ1) type_ =
     case type_ of
         VariableType{..} ->
             VariableType{..}
@@ -320,51 +310,43 @@ substituteFields ρ0 n r@(Fields kτs ρ1) type_ =
             UnsolvedType{..}
         Exists{type_ = oldType, ..} -> Exists{type_ = newType, ..}
           where
-            newType = substituteFields ρ0 n' r oldType
-
-            n'
-                | ρ0 == name && domain == Domain.Fields = n + 1
-                | otherwise = n
+            newType = substituteFields ρ0 r oldType
         Forall{type_ = oldType, ..} -> Forall{type_ = newType, ..}
           where
-            newType = substituteFields ρ0 n' r oldType
-
-            n'
-                | ρ0 == name && domain == Domain.Fields = n + 1
-                | otherwise = n
+            newType = substituteFields ρ0 r oldType
         Function{input = oldInput, output = oldOutput, ..} ->
             Function{input = newInput, output = newOutput, ..}
           where
-            newInput = substituteFields ρ0 n r oldInput
+            newInput = substituteFields ρ0 r oldInput
 
-            newOutput = substituteFields ρ0 n r oldOutput
+            newOutput = substituteFields ρ0 r oldOutput
         Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
           where
-            newType = substituteFields ρ0 n r oldType
+            newType = substituteFields ρ0 r oldType
         List{type_ = oldType, ..} -> List{type_ = newType, ..}
           where
-            newType = substituteFields ρ0 n r oldType
+            newType = substituteFields ρ0 r oldType
         Record{fields = Fields kAs0 ρ, ..}
-            | VariableFields ρ0 == ρ && n == 0 ->
-                Record{fields = Fields (map (second (substituteFields ρ0 n r)) kAs1) ρ1, ..}
+            | VariableFields ρ0 == ρ ->
+                Record{fields = Fields (map (second (substituteFields ρ0 r)) kAs1) ρ1, ..}
             | otherwise ->
-                Record{fields = Fields (map (second (substituteFields ρ0 n r)) kAs0) ρ, ..}
+                Record{fields = Fields (map (second (substituteFields ρ0 r)) kAs0) ρ, ..}
           where
             kAs1 = kAs0 <> map (second (fmap (const location))) kτs
         Union{alternatives = Alternatives kAs ρ, ..} ->
-            Union{alternatives = Alternatives (map (second (substituteFields ρ0 n r)) kAs) ρ, ..}
+            Union{alternatives = Alternatives (map (second (substituteFields ρ0 r)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
-            Custom{typeArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
+            Custom{typeArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
         Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteFields ρ0 n r) oldTypeArguments, ..}
+            Tuple{tupleArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteAlternatives :: Text -> Int -> Union s -> Type s -> Type s
-substituteAlternatives ρ0 n r@(Alternatives kτs ρ1) type_ =
+substituteAlternatives :: Unique Text -> Union s -> Type s -> Type s
+substituteAlternatives ρ0 r@(Alternatives kτs ρ1) type_ =
     case type_ of
         VariableType{..} ->
             VariableType{..}
@@ -372,45 +354,37 @@ substituteAlternatives ρ0 n r@(Alternatives kτs ρ1) type_ =
             UnsolvedType{..}
         Exists{type_ = oldType, ..} -> Exists{type_ = newType, ..}
           where
-            newType = substituteAlternatives ρ0 n' r oldType
-
-            n'
-                | ρ0 == name && domain == Domain.Alternatives = n + 1
-                | otherwise = n
+            newType = substituteAlternatives ρ0 r oldType
         Forall{type_ = oldType, ..} -> Forall{type_ = newType, ..}
           where
-            newType = substituteAlternatives ρ0 n' r oldType
-
-            n'
-                | ρ0 == name && domain == Domain.Alternatives = n + 1
-                | otherwise = n
+            newType = substituteAlternatives ρ0 r oldType
         Function{input = oldInput, output = oldOutput, ..} ->
             Function{input = newInput, output = newOutput, ..}
           where
-            newInput = substituteAlternatives ρ0 n r oldInput
+            newInput = substituteAlternatives ρ0 r oldInput
 
-            newOutput = substituteAlternatives ρ0 n r oldOutput
+            newOutput = substituteAlternatives ρ0 r oldOutput
         Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
           where
-            newType = substituteAlternatives ρ0 n r oldType
+            newType = substituteAlternatives ρ0 r oldType
         List{type_ = oldType, ..} -> List{type_ = newType, ..}
           where
-            newType = substituteAlternatives ρ0 n r oldType
+            newType = substituteAlternatives ρ0 r oldType
         Record{fields = Fields kAs ρ, ..} ->
-            Record{fields = Fields (map (second (substituteAlternatives ρ0 n r)) kAs) ρ, ..}
+            Record{fields = Fields (map (second (substituteAlternatives ρ0 r)) kAs) ρ, ..}
         Union{alternatives = Alternatives kAs0 ρ, ..}
-            | Monotype.VariableAlternatives ρ0 == ρ && n == 0 ->
-                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 n r)) kAs1) ρ1, ..}
+            | Monotype.VariableAlternatives ρ0 == ρ ->
+                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 r)) kAs1) ρ1, ..}
             | otherwise ->
-                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 n r)) kAs0) ρ, ..}
+                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 r)) kAs0) ρ, ..}
           where
             kAs1 = kAs0 <> map (second (fmap (const location))) kτs
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
-            Custom{typeArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
+            Custom{typeArguments = fmap (substituteAlternatives ρ0 r) oldTypeArguments, ..}
         Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteAlternatives ρ0 n r) oldTypeArguments, ..}
+            Tuple{tupleArguments = fmap (substituteAlternatives ρ0 r) oldTypeArguments, ..}
 
 {- | Count how many times the given `Existential` `Type` variable appears within
     a `Type`
@@ -607,7 +581,7 @@ prettyPrimitiveType Union{..} =
 prettyPrimitiveType Scalar{..} =
     pretty scalar
 prettyPrimitiveType Custom{..} =
-    label (pretty name)
+    label (pretty conName)
         <> " "
         <> Pretty.group (Pretty.flatAlt long short)
   where
@@ -701,14 +675,14 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
                             <> punctuation "}"
             )
 
-    prettyShortFieldType :: Show s => (Text, Type s) -> Doc AnsiStyle
+    prettyShortFieldType :: Show s => (Unique Text, Type s) -> Doc AnsiStyle
     prettyShortFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
             <> " "
             <> prettyQuantifiedType type_
 
-    prettyLongFieldType :: Show s => (Text, Type s) -> Doc AnsiStyle
+    prettyLongFieldType :: Show s => (Unique Text, Type s) -> Doc AnsiStyle
     prettyLongFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
@@ -825,17 +799,17 @@ prettyRecordLabel ::
     -- This is mainly set to `True` when pretty-printing records so that the
     -- output is valid JSON
     Bool ->
-    Text ->
+    Unique Text ->
     Doc AnsiStyle
 prettyRecordLabel alwaysQuote field
     | not alwaysQuote =
         label (pretty field)
     | otherwise =
-        label (prettyTextLiteral field)
+        label (pretty (prettyTextLiteral <$> field))
 
 -- | Pretty-print an alternative label
 prettyAlternativeLabel ::
-    Text ->
+    Unique Text ->
     Doc AnsiStyle
 prettyAlternativeLabel alternative =
     label (pretty alternative)

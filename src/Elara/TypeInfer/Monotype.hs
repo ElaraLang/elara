@@ -18,6 +18,7 @@ module Elara.TypeInfer.Monotype (
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Unique
 import Elara.TypeInfer.Existential (Existential)
 
 {- $setup
@@ -32,7 +33,7 @@ import Elara.TypeInfer.Existential (Existential)
     `Grace.Type.Forall` and `Grace.Type.Exists` constructors
 -}
 data Monotype
-    = VariableType Text
+    = VariableType (Unique Text)
     | UnsolvedType (Existential Monotype)
     | Function Monotype Monotype
     | Optional Monotype
@@ -44,9 +45,6 @@ data Monotype
     deriving stock (Eq, Generic, Show)
 
 instance ToJSON Monotype
-
-instance IsString Monotype where
-    fromString string = VariableType (fromString string)
 
 -- | A scalar type
 data Scalar
@@ -105,7 +103,7 @@ instance Pretty Scalar where
 instance ToJSON Scalar
 
 -- | A monomorphic record type
-data Record = Fields [(Text, Monotype)] RemainingFields
+data Record = Fields [(Unique Text, Monotype)] RemainingFields
     deriving stock (Eq, Generic, Show)
 
 instance ToJSON Record
@@ -121,11 +119,11 @@ data RemainingFields
       UnsolvedFields (Existential Record)
     | -- | Same as `UnsolvedFields`, except that the user has given the fields
       --   variable an explicit name in the source code
-      VariableFields Text
+      VariableFields (Unique Text)
     deriving stock (Eq, Generic, Show, Data)
 
 -- | A monomorphic union type
-data Union = Alternatives [(Text, Monotype)] RemainingAlternatives
+data Union = Alternatives [(Unique Text, Monotype)] RemainingAlternatives
     deriving stock (Eq, Generic, Show)
 
 instance ToJSON Union
@@ -140,7 +138,7 @@ data RemainingAlternatives
       UnsolvedAlternatives (Existential Union)
     | -- | Same as `UnsolvedAlternatives`, except that the user has given the
       --   alternatives variable an explicit name in the source code
-      VariableAlternatives Text
+      VariableAlternatives (Unique Text)
     deriving stock (Eq, Generic, Show, Data)
 
 instance ToJSON RemainingAlternatives

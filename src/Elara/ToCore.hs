@@ -48,7 +48,7 @@ instance ReportableError ToCoreError where
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
-type TyVarTable = Map Text TypeVariable
+type TyVarTable = Map (Unique Text) TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -75,14 +75,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyVar :: HasCallStack => ToCoreC r => Text -> Sem r TypeVariable
+lookupTyVar :: HasCallStack => ToCoreC r => Unique Text -> Sem r TypeVariable
 lookupTyVar n = do
     table <- get @TyVarTable
     case M.lookup n table of
         Just v -> pure v
         Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
 
-addTyVar :: ToCoreC r => Text -> TypeVariable -> Sem r ()
+addTyVar :: ToCoreC r => Unique Text -> TypeVariable -> Sem r ()
 addTyVar n v = modify @TyVarTable (M.insert n v)
 
 type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
@@ -113,8 +113,7 @@ moduleToCore (Module (Located _ m)) = do
 
 typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
-    tv' <- makeUnique tv
-    addTyVar tv (TypeVariable tv' TypeKind)
+    addTyVar tv (TypeVariable tv TypeKind)
     typeToCore t
 typeToCore (Type.VariableType{Type.name}) = do
     tv <- lookupTyVar name
