@@ -17,6 +17,7 @@ import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Unique (makeUniqueTyVar, makeUniqueTyVarWith)
 import Polysemy
+import Print (debugPretty)
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"
@@ -72,6 +73,7 @@ primitiveTCContext = do
             ]
 
     primTyVarName <- makeUniqueTyVarWith "a"
+    debugPretty primTyVarName
     let elaraPrimitive =
             Annotation -- elaraPrimitive :: forall a. String -> a
                 (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))

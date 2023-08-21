@@ -136,6 +136,9 @@ instance (Pretty a, Pretty b) => Pretty (Either a b) where
 instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
     pretty (a, b, c) = tupled [pretty a, pretty b, pretty c]
 
+instance (Pretty a, Pretty b, Pretty c, Pretty d) => Pretty (a, b, c, d) where
+    pretty (a, b, c, d) = tupled [pretty a, pretty b, pretty c, pretty d]
+
 -- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
 --     pretty = PP.pretty
 

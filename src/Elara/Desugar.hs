@@ -263,6 +263,7 @@ desugarPattern (Pattern lp) =
     desugarPattern' (VarPattern v) = pure (VarPattern v)
     desugarPattern' (ConstructorPattern c pats) = ConstructorPattern c <$> traverse desugarPattern pats
     desugarPattern' WildcardPattern = pure WildcardPattern
+    desugarPattern' UnitPattern = pure UnitPattern
     desugarPattern' (ListPattern pats) = ListPattern <$> traverse desugarPattern pats
     desugarPattern' (ConsPattern a b) = liftA2 ConsPattern (desugarPattern a) (desugarPattern b)
 

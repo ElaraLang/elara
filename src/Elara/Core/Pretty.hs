@@ -1,4 +1,5 @@
 {-# LANGUAGE ImplicitParams #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Elara.Core.Pretty where
 
@@ -30,42 +31,46 @@ instance PrettyVar Var where
         TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
         v -> prettyVar True True v
 
-instance PrettyVar v => Pretty (Expr v) where
+instance (PrettyVar v, Show v) => Pretty (Expr v) where
     pretty = prettyExpr
 
+prettyTLLam :: (PrettyVar v1, PrettyVar v2, Show v2) => v1 -> Expr v2 -> Doc AnsiStyle
 prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
 prettyTLLam b e = "\\" <+> prettyVarArg b <+> "->" <+> prettyExpr e
 
 prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
-prettyLam (Lam b e) = prettyVarArg b <+> "->" <+> prettyExpr e
+prettyLam (Lam b e) = prettyVarArg b <+> "->" <+> prettyLam e
+prettyLam e = pretty e
 
-prettyExpr :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
+prettyExpr :: (Pretty (Expr v), PrettyVar v, Show v) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other
 
-prettyExpr1 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
+prettyExpr1 :: (Pretty (Expr v), PrettyVar v, Show v) => Expr v -> Doc AnsiStyle
+prettyExpr1 (App f (Type t)) = prettyExpr1 f <+> "@" <> prettyTy2 t
 prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
-prettyExpr2 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
+prettyExpr2 :: (Pretty (Expr v), PrettyVar v, Show v) => Expr v -> Doc AnsiStyle
 prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
-prettyExpr2 e = parens (prettyExpr e)
+prettyExpr2 (Type t) = prettyTy t
+prettyExpr2 e = error (show e)
 
-prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
+prettyVdefg :: (PrettyVar v, Pretty (Expr v), Show v) => Bind v -> Doc AnsiStyle
 prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = True in prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
-prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
+prettyVdef :: (PrettyVar v, Pretty (Expr v), Show v) => (v, Expr v) -> Doc AnsiStyle
 prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
-prettyAlts :: (PrettyVar v) => [Alt v] -> Doc AnsiStyle
+prettyAlts :: (PrettyVar v, Show v) => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = let ?contextFree = True in prettyBlockExpr (prettyAlt <$> alts)
   where
     prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e

@@ -88,7 +88,7 @@ data RenameState = RenameState
     { varNames :: Map VarName (VarRef VarName)
     , typeNames :: Map TypeName (VarRef TypeName)
     , typeVars :: Map LowerAlphaName (Unique LowerAlphaName)
-    -- ^ All field' type variables in scope
+    -- ^ All the type variables in scope
     }
     deriving (Show, Generic)
 
@@ -266,6 +266,7 @@ renameDeclaration (Declaration ld) = Declaration <$> traverseOf unlocated rename
   where
     renameDeclaration' :: Rename r => DesugaredDeclaration' -> Sem r RenamedDeclaration'
     renameDeclaration' fd = do
+        -- qualify the name with the module name
         let name' = sequenceA (traverseOf unlocated (`Qualified` (fd ^. field' @"moduleName" . unlocated)) (fd ^. field' @"name"))
         body' <- renameDeclarationBody (fd ^. field' @"body")
 
@@ -275,9 +276,9 @@ renameDeclaration (Declaration ld) = Declaration <$> traverseOf unlocated rename
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
 
     renameDeclarationBody' :: Rename r => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
-    renameDeclarationBody' (Value val _ ty) = do
-        val' <- renameExpr val
+    renameDeclarationBody' (Value val _ ty) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType True)) ty
+        val' <- renameExpr val
         pure $ Value val' NoFieldValue ty'
     renameDeclarationBody' (TypeDeclaration vars ty) = do
         vars' <- traverse uniquify vars
@@ -418,6 +419,7 @@ renamePattern (Pattern fp) =
     renamePattern' (StringPattern i) = pure $ StringPattern i
     renamePattern' (CharPattern i) = pure $ CharPattern i
     renamePattern' WildcardPattern = pure WildcardPattern
+    renamePattern' UnitPattern = pure UnitPattern
     renamePattern' (ListPattern ps) = ListPattern <$> traverse renamePattern ps
     renamePattern' (ConsPattern p1 p2) = ConsPattern <$> renamePattern p1 <*> renamePattern p2
     renamePattern' (VarPattern vn) = do

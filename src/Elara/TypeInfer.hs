@@ -2,8 +2,8 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, (^.), _2)
-import Data.Containers.ListUtils (nubOrd)
+import Control.Lens (Plated (..), concatMapOf, cosmos, cosmosOn, to, traverseOf, view, (^.), _2)
+import Data.Containers.ListUtils (nubOrd, nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
@@ -37,6 +37,7 @@ import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
+import Elara.TypeInfer.Unique
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
@@ -96,25 +97,22 @@ inferDeclaration (Declaration ld) =
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
                 astTypeToInferPolyType expected'
 
-        -- add the expected type as an annotation
-        -- this makes recursive definitions work (although perhaps it shouldn't)
-        case maybeExpected' of
-            Just expectedType -> push (Annotation (mkGlobal' declName) expectedType)
-            Nothing -> do
-                exist <- fresh
-                push (UnsolvedType exist)
-                push (Annotation (mkGlobal' declName) (Infer.UnsolvedType primRegion exist))
-
         e' <- inferExpression e maybeExpected'
 
         ctx <- Infer.getAll
 
         completed <- completeExpression ctx e'
-
-        whenNothing_ Nothing (push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2)))
+        push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2))
 
         pure $ Value completed NoFieldValue NoFieldValue
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
+
+inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
+inferExpression e Nothing = infer e
+inferExpression e (Just expectedType) = do
+    ctx <- Infer.get
+    wellFormedType ctx expectedType
+    check e expectedType
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
 --     ty' <-
@@ -164,7 +162,7 @@ createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
-    nubOrd -- remove duplicates, ignore location info when comparing
+    nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
         . concatMapOf (cosmosOn (_Unwrapped . unlocated)) names
   where
     names :: ShuntedType' -> [Located (Unique LowerAlphaName)]
@@ -203,43 +201,6 @@ astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
             other -> error (showColored other)
     astTypeToInferType' other = error (showColored other)
 
--- inferPattern ::
---     forall r.
---     (Member (Error TypeInferenceError) r, Member (State Status) r) =>
---     Shunted.Pattern ->
---     Maybe (Infer.Type SourceRegion) ->
---     Sem r Typed.Pattern
--- inferPattern p@(Shunted.Pattern lp) expected = do
---     (ty', p') <-
---         Infer.inferPattern
---             p
---             (traverseOf unlocated inferPattern' lp)
---     ctx <- Infer.get
---     whenJust expected (checkPattern p) -- check that the inferred type is a subtype of the expected type
---     let completedType = complete ctx (fromMaybe ty' expected)
---     -- We set the type of the expression to the expected type if it was given, otherwise we use the inferred type
-
---     pure $ Typed.Pattern (p', completedType)
---   where
---     inferPattern' :: Shunted.Pattern' -> Sem r Typed.Pattern'
---     inferPattern' (Shunted.VarPattern v) = pure (Typed.VarPattern v)
---     inferPattern' Shunted.WildcardPattern = pure Typed.WildcardPattern
---     inferPattern' (Shunted.ListPattern l) = Typed.ListPattern <$> traverse (`inferPattern` Nothing) l
---     inferPattern' (Shunted.ConsPattern l r) = Typed.ConsPattern <$> (`inferPattern` Nothing) l <*> (`inferPattern` Nothing) r
---     inferPattern' other = error (showColored other)
-
-inferExpression ::
-    forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r, Member UniqueGen r) =>
-    ShuntedExpr ->
-    Maybe (Infer.Type SourceRegion) ->
-    Sem r TypedExpr
-inferExpression e expected = do
-    e' <- infer e
-    case expected of
-        Just ex -> check e ex
-        Nothing -> pure e'
-
 completeExpression ::
     forall r.
     (Member (State Status) r, Member UniqueGen r) =>
@@ -247,13 +208,24 @@ completeExpression ::
     TypedExpr ->
     Sem r TypedExpr
 completeExpression ctx (Expr (y', t)) = do
-    completed <- complete ctx t
+    completed <- quantify <$> complete ctx t
     unify t completed
 
     ctx' <- Infer.getAll
 
     plate (completeExpression ctx') (Expr (y', completed))
   where
+    -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
+    -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
+    quantify :: Type SourceRegion -> Type SourceRegion
+    quantify x =
+        let ftvs = nubOrd (concatMapOf cosmos names x)
+         in foldr (\(Located l tv) acc -> Infer.Forall l l tv Domain.Type acc) x ftvs
+      where
+        names :: Type SourceRegion -> [Located UniqueTyVar]
+        names = \case
+            Infer.VariableType sr l -> [Located sr l]
+            o -> []
     {-
     Unifies completed types with unsolved ones. It assumes that the types are of the same shape, excluding quantifiers.
 
@@ -289,7 +261,7 @@ completeExpression ctx (Expr (y', t)) = do
     subst Infer.UnsolvedType{existential} solved = do
         let annotation = SolvedType existential (toMonoType solved)
         push annotation
-    subst _ _ = pass
+    subst a b = pass
 
     toMonoType :: Type SourceRegion -> Mono.Monotype
     toMonoType = \case

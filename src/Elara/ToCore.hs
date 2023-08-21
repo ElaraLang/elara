@@ -23,7 +23,7 @@ import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (..))
-import Polysemy (Member, Sem)
+import Polysemy (Member, Members, Sem)
 import Polysemy.Error
 import Polysemy.State
 
@@ -32,7 +32,7 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
 import Elara.TypeInfer.Unique
 import Polysemy.State.Extra (scoped)
-import Print (debugPretty)
+import Print (debugPretty, printPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -48,8 +48,6 @@ instance ReportableError ToCoreError where
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
-
-type TyVarTable = Map UniqueTyVar TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -76,25 +74,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyVar :: HasCallStack => ToCoreC r => UniqueTyVar -> Sem r TypeVariable
-lookupTyVar n = do
-    table <- get @TyVarTable
-    case M.lookup n table of
-        Just v -> pure v
-        Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
-
-addTyVar :: ToCoreC r => UniqueTyVar -> TypeVariable -> Sem r ()
-addTyVar n v = modify @TyVarTable (M.insert n v)
-
-type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
-type ToCoreC r = (Member (Error ToCoreError) r, Member (State CtorSymbolTable) r, Member (State TyVarTable) r, Member UniqueGen r)
+type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
+type ToCoreC r = (Members ToCoreEffects r)
 
 runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
 runToCorePipeline =
     uniqueGenToIO
         . runErrorOrReport
         . evalState primCtorSymbolTable
-        . evalState @TyVarTable mempty
 
 moduleToCore :: HasCallStack => (ToCoreC r) => Module 'Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
@@ -102,11 +89,8 @@ moduleToCore (Module (Located _ m)) = do
     decls <- for (m ^. field' @"declarations") $ \decl -> do
         (body', var) <- case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
             Value v _ _ -> do
-                (ty, v') <- scoped @TyVarTable $ do
-                    -- clear the tyvar table for each value
-                    ty <- typeToCore (v ^. _Unwrapped . _2)
-                    v' <- toCore v
-                    pure (ty, v')
+                ty <- typeToCore (v ^. _Unwrapped . _2)
+                v' <- toCore v
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped . unlocated . field' @"name" . unlocated)) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
@@ -114,11 +98,10 @@ moduleToCore (Module (Located _ m)) = do
 
 typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
-    addTyVar tv (TypeVariable tv TypeKind)
-    typeToCore t
+    t' <- typeToCore t
+    pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
 typeToCore (Type.VariableType{Type.name}) = do
-    tv <- lookupTyVar name
-    pure (Core.TyVarTy tv)
+    pure (Core.TyVarTy (TypeVariable name TypeKind))
 typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
@@ -139,9 +122,6 @@ mkLocalRef = Local . Identity
 mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
--- addTypeParameterLambda :: CoreExpr -> AST.Type SourceRegion -> CoreExpr
--- addTypeParameterLambda e (Type.Forall _ _ tv _ t) = Core.Lam () (addTypeParameterLambda e t)
-
 toCore :: HasCallStack => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
 toCore le@(Expr (Located _ e, t)) = toCore' e
   where
@@ -154,7 +134,6 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
         AST.Unit -> pure $ Lit Core.Unit
         AST.Var (Located _ v) -> do
             t' <- typeToCore t
-
             pure $ Core.Var (Core.Id (nameText <$> stripLocation @(VarRef VarName) @(UnlocatedVarRef VarName) v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
@@ -175,9 +154,14 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
             pure (addTypeParameterLambda lam t)
         AST.FunctionCall e1 e2 -> do
             -- If the function is polymorphic we need to add the type arguments
-            debugPretty (typeOf e1)
-            debugPretty (typeOf e2)
-            Core.App <$> toCore e1 <*> toCore e2
+            e1' <- toCore e1
+            e2' <- toCore e2
+            e1t <- typeToCore (typeOf e1)
+            t' <- typeToCore t
+
+            debugPretty e1'
+            apps <- addTyVarApplications (e1', e1t) t'
+            pure (Core.App apps e2')
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
             ifTrue' <- toCore ifTrue
@@ -222,6 +206,18 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
             pure $ Core.App (Core.App (Core.Var (Core.Id ref todo)) one') two'
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
+
+{- | Adds explicit type applications for parameters
+ Takes the variable and the type of the value being applied / expected
+ For example, given a variable `e :: forall a. a` and a type `String` we get `e @String`
+ Given `e :: forall a b. a -> b` and
+-}
+addTyVarApplications :: ToCoreC r => (CoreExpr, Core.Type) -> Core.Type -> Sem r CoreExpr
+addTyVarApplications (e, t) expected = do
+    case (t, expected) of
+        (Core.ForAllTy tv t, expected') -> do
+            pure (Core.App e (Core.Type expected'))
+addTyVarApplications (e, t) _ = pure e
 
 desugarMatch :: ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do

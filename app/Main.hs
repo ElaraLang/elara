@@ -11,8 +11,10 @@ import Control.Lens (to, view)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
+import Data.Generics.Wrapped
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
+import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind.Infer
@@ -87,24 +89,24 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
 
-    let graph = createGraph [source, prelude]
-    coreGraph <- processModules graph
+    let graph = createGraph [source]
+    coreGraph <- processModules graph dumpShunted
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
-    classes <- runReader java8 (emitGraph coreGraph)
-    for_ classes $ \(mn, class') -> do
-        putTextLn ("Compiling " <> showPretty mn <> "...")
-        let converted = convert class'
-        let bs = runPut (writeBinary converted)
-        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
-        putTextLn ("Compiled " <> showPretty mn <> "!")
+    -- classes <- runReader java8 (emitGraph coreGraph)
+    -- for_ classes $ \(mn, class') -> do
+    --     putTextLn ("Compiling " <> showPretty mn <> "...")
+    --     let converted = convert class'
+    --     let bs = runPut (writeBinary converted)
+    --     liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
+    --     putTextLn ("Compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show 0 <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 -- typedGraph <- inferModules shuntedGraph
 
@@ -168,12 +170,21 @@ loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runRead
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 
-processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> Sem r (TopologicalGraph CoreModule)
-processModules graph =
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> Bool -> Sem r (TopologicalGraph CoreModule)
+processModules graph dumpShunted =
     runToCorePipeline $
         runInferPipeline $
             runShuntPipeline mempty $
                 runRenamePipeline
                     graph
                     primitiveRenameState
-                    (traverseGraph rename >=> traverseGraph shunt >=> traverseGraph inferModule >=> traverseGraph moduleToCore $ graph)
+                    ( traverseGraph rename
+                        >=> traverseGraph shunt
+                        >=> ( if dumpShunted
+                                then (\x -> liftIO (dumpGraph x (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr") $> x)
+                                else pure
+                            )
+                        >=> traverseGraph inferModule
+                        >=> traverseGraph moduleToCore
+                        $ graph
+                    )

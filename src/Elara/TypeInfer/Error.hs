@@ -16,7 +16,7 @@ import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
-import Error.Diagnose (Marker (Where), Report (Err))
+import Error.Diagnose (Marker (Where), Note (..), Report (Err))
 import Print
 
 -- | A data type holding all errors related to type inference
@@ -105,7 +105,7 @@ instance ReportableError TypeInferenceError where
                 )
                 []
                 []
-    report (NotSubtype _ t1 _ t2) =
+    report (NotSubtype p1 t1 p2 t2) =
         writeReport $
             Err
                 Nothing
@@ -116,7 +116,7 @@ instance ReportableError TypeInferenceError where
                     , pretty t2
                     ]
                 )
-                []
+                [(sourceRegionToDiagnosePosition p1, Where (pretty t1)), (sourceRegionToDiagnosePosition p2, Where (pretty t2))]
                 []
     report (UnboundTypeVariable location a _Γ) =
         writeReport $
@@ -157,4 +157,11 @@ instance ReportableError TypeInferenceError where
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
                 []
+    report (NotNecessarilyFunctionType loc a) = do
+        writeReport $
+            Err
+                Nothing
+                (vsep ["Type error: The following type is not necessarily a function type:", pretty a])
+                [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
+                [Note "The type could be anything and so can't be asserted to be a function"]
     report e = writeReport $ Err Nothing (showColored e) [] []

@@ -10,6 +10,7 @@ import GHC.IO (unsafePerformIO)
 import Polysemy (Member, Sem, embed, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
+import Print (debugPretty)
 import Text.Show (Show (show))
 
 data Unique a = Unique
@@ -70,11 +71,11 @@ uniqueGenToState = reinterpret $ \case
 uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
 uniqueGenToIO = interpret $ \case
     NewUniqueNum -> do
-        us <- embed (readIORef globalUniqueSupply)
+        us <- liftIO (readIORef globalUniqueSupply)
         case _uniqueSupplyUniques us of
             [] -> error "Ran out of unique IDs! Should be impossible."
             (i : is) -> do
-                embed (writeIORef globalUniqueSupply (UniqueSupply is))
+                liftIO (writeIORef globalUniqueSupply (UniqueSupply is))
                 pure i
 
 makeSem ''UniqueGen

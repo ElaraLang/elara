@@ -1,2 +1,3 @@
 module Prelude
-{ Prelude.println : String -> IO ()     = Elara.Prim.elaraPrimitive "println" }
+{ Prelude.println : String -> IO ()
+    = Elara.Prim.elaraPrimitive @(String -> IO ()) "println" }

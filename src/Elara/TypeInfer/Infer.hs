@@ -199,6 +199,7 @@ wellFormedType _Γ type0 = case type0 of
         | otherwise -> throw (UnboundAlternatives location a)
     Type.Scalar{} -> pass
     Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
+    Type.Custom _ _ ts -> traverse_ (wellFormedType _Γ) ts
 
 {- | This corresponds to the judgment:
 
@@ -1828,7 +1829,8 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 
     -- →I
     check' (Syntax.Lambda name body) Type.Function{..} = scoped (Context.Annotation (mkLocal' name) input) do
-        check body output
+        o <- check body output
+        pure $ Expr (Located exprLoc (Lambda name o), t)
     -- ∃I
     check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name a type_)
     check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name a type_)
@@ -1876,7 +1878,6 @@ inferApplication Type.Forall{domain = Domain.Type, ..} e = do
     push (Context.UnsolvedType a)
 
     let a' = Type.UnsolvedType{location = nameLocation, existential = a}
-
     inferApplication (Type.substituteType name a' type_) e
 inferApplication Type.Forall{domain = Domain.Fields, ..} e = do
     a <- fresh
