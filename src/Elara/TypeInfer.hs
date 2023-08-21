@@ -2,17 +2,16 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2, _3)
-import Data.Containers.ListUtils (nubOrd, nubOrdOn)
+import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, (^.), _2)
+import Data.Containers.ListUtils (nubOrd)
 import Data.Generics.Product
-import Data.Generics.Sum
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Traversable (for)
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, Qualified, _LowerAlphaName)
+import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -25,7 +24,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
-import Elara.Data.Unique (Unique, uniqueToText)
+import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (primRegion)
@@ -43,25 +42,28 @@ import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
 
-type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError]
+type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
 runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
-runInferPipeline =
-    runErrorOrReport @TypeInferenceError
+runInferPipeline e = do
+    s <- uniqueGenToIO initialStatus
+
+    uniqueGenToIO
+        . runErrorOrReport @TypeInferenceError
         . evalState initialInferState
-        . evalState initialStatus
+        . evalState s
+        $ e
 
 inferModule ::
     forall r.
-    HasCallStack =>
-    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
+    (Members InferPipelineEffects r) =>
     Module 'Shunted ->
-    Sem r (Module Typed)
+    Sem r (Module 'Typed)
 inferModule = traverseModuleRevTopologically inferDeclaration
 
 inferDeclaration ::
     forall r.
-    HasCallStack =>
+    (HasCallStack, Member UniqueGen r) =>
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
@@ -158,7 +160,7 @@ inferDeclaration (Declaration ld) =
 --     push (Annotation (mkGlobal' ctorName) forall')
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
-createTypeVar (Located sr u) = Infer.VariableType sr (showPretty u)
+createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
@@ -176,16 +178,13 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
   where
     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
     universallyQuantify [] x = x
-    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fullTypeVarName u) Domain.Type (universallyQuantify us t)
-
-fullTypeVarName :: Unique LowerAlphaName -> Text
-fullTypeVarName = uniqueToText (^. _LowerAlphaName)
+    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to fullTypeVarName))
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to (fmap (Just . nameText))))
     astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
     astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get
@@ -199,7 +198,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
         arg' <- astTypeToInferType arg
 
         case ctor' of
-            Infer.Custom{name = ctorName, ..} -> pure $ Infer.Custom location ctorName (typeArguments ++ [arg'])
+            Infer.Custom{conName = ctorName, ..} -> pure $ Infer.Custom location ctorName (typeArguments ++ [arg'])
             -- Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
             other -> error (showColored other)
     astTypeToInferType' other = error (showColored other)
@@ -231,7 +230,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
 
 inferExpression ::
     forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Maybe (Infer.Type SourceRegion) ->
     Sem r TypedExpr
@@ -243,12 +242,12 @@ inferExpression e expected = do
 
 completeExpression ::
     forall r.
-    Member (State Status) r =>
+    (Member (State Status) r, Member UniqueGen r) =>
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr
 completeExpression ctx (Expr (y', t)) = do
-    let completed = complete ctx t
+    completed <- complete ctx t
     unify t completed
 
     ctx' <- Infer.getAll
@@ -299,5 +298,5 @@ completeExpression ctx (Expr (y', t)) = do
         Infer.List{type_} -> Mono.List (toMonoType type_)
         Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
         Infer.VariableType{name = v} -> Mono.VariableType v
-        Infer.Custom{name = n, typeArguments = args} -> Mono.Custom n (toMonoType <$> args)
+        Infer.Custom{conName = n, typeArguments = args} -> Mono.Custom n (toMonoType <$> args)
         other -> error $ "toMonoType: " <> showPretty other

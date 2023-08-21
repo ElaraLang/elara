@@ -30,8 +30,8 @@ import Polysemy.State
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
+import Elara.TypeInfer.Unique
 import Polysemy.State.Extra (scoped)
-import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -48,7 +48,7 @@ instance ReportableError ToCoreError where
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
-type TyVarTable = Map Text TypeVariable
+type TyVarTable = Map UniqueTyVar TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -75,14 +75,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyVar :: HasCallStack => ToCoreC r => Text -> Sem r TypeVariable
+lookupTyVar :: HasCallStack => ToCoreC r => UniqueTyVar -> Sem r TypeVariable
 lookupTyVar n = do
     table <- get @TyVarTable
     case M.lookup n table of
         Just v -> pure v
         Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
 
-addTyVar :: ToCoreC r => Text -> TypeVariable -> Sem r ()
+addTyVar :: ToCoreC r => UniqueTyVar -> TypeVariable -> Sem r ()
 addTyVar n v = modify @TyVarTable (M.insert n v)
 
 type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
@@ -106,15 +106,14 @@ moduleToCore (Module (Located _ m)) = do
                     ty <- typeToCore (v ^. _Unwrapped . _2)
                     v' <- toCore v
                     pure (ty, v')
-                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. _Unwrapped . unlocated . field' @"name" . unlocated))) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped . unlocated . field' @"name" . unlocated)) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
 typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
-    tv' <- makeUnique tv
-    addTyVar tv (TypeVariable tv' TypeKind)
+    addTyVar tv (TypeVariable tv TypeKind)
     typeToCore t
 typeToCore (Type.VariableType{Type.name}) = do
     tv <- lookupTyVar name

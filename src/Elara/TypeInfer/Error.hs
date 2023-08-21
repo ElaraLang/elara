@@ -7,6 +7,7 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
+import Elara.Data.Unique
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
 import Elara.TypeInfer.Existential
@@ -14,6 +15,7 @@ import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Error.Diagnose (Marker (Where), Report (Err))
 import Print
 
@@ -36,7 +38,7 @@ data TypeInferenceError
     | MissingVariable (Existential Monotype) (Context SourceRegion)
     | --
       NotFunctionType SourceRegion (Type SourceRegion)
-    | NotNecessarilyFunctionType SourceRegion Text
+    | NotNecessarilyFunctionType SourceRegion UniqueTyVar
     | --
       NotAlternativesSubtype SourceRegion (Existential Monotype.Union) (Type.Union SourceRegion)
     | NotFieldsSubtype SourceRegion (Existential Monotype.Record) (Type.Record SourceRegion)
@@ -44,9 +46,9 @@ data TypeInferenceError
     | NotUnionSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
     | NotSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
     | --
-      UnboundAlternatives SourceRegion Text
-    | UnboundFields SourceRegion Text
-    | UnboundTypeVariable SourceRegion Text (Context SourceRegion)
+      UnboundAlternatives SourceRegion UniqueTyVar
+    | UnboundFields SourceRegion UniqueTyVar
+    | UnboundTypeVariable SourceRegion UniqueTyVar (Context SourceRegion)
     | UnboundVariable
         SourceRegion
         -- ^ Location of the variable that caused the error
@@ -54,8 +56,8 @@ data TypeInferenceError
         (Context SourceRegion)
     | UnboundConstructor (IgnoreLocVarRef Name) (Context SourceRegion)
     | --
-      RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
-    | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map Text (Type SourceRegion)) (Map.Map Text (Type SourceRegion))
+      RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
+    | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
     | --
       UserDefinedTypeNotInContext SourceRegion ShuntedType (Context SourceRegion)
     | KindInferError KindInferError

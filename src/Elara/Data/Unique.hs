@@ -24,9 +24,6 @@ unsafeMkUnique = Unique
 -- | A @Unique@ where the value is not important.
 newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 
-uniqueIdVal :: UniqueId -> Int
-uniqueIdVal (UniqueId u) = _uniqueId u
-
 instance ToJSON c => ToJSON (Unique c)
 
 instance ToJSON UniqueId

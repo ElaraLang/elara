@@ -140,8 +140,6 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
-type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
-
 -- renameModule ::
 --     (Members MainMembers r, Member (Embed IO) r) =>
 --     TopologicalGraph (Module 'Desugared) ->
@@ -164,9 +162,6 @@ type MainMembers = '[DiagnosticWriter (Doc AnsiStyle), MaybeE]
 --         Right (warnings, shunted) -> do
 --             traverse_ report warnings
 --             justE shunted
-
-inferModules :: (Members MainMembers r) => TopologicalGraph (Module 'Shunted) -> Sem r (TopologicalGraph (Module 'Typed))
-inferModules modules = runErrorOrReport (evalState @InferState initialInferState (evalState @Status initialStatus (traverseGraphRevTopologically Infer.inferModule modules)))
 
 loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do

@@ -28,7 +28,7 @@ import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocate
 import Elara.AST.Shunted
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.TypeInfer.Context (Context, Entry)
-import Elara.TypeInfer.Existential (Existential)
+import Elara.TypeInfer.Existential (Existential (UnsafeExistential))
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type (..))
 
@@ -40,12 +40,14 @@ import Elara.AST.Generic (Expr (..), Expr' (..), NoFieldValue (..))
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
+import Elara.Data.Unique
 import Elara.Prim (primRegion, primitiveTCContext)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
@@ -55,35 +57,28 @@ import Print (showPretty)
 
 -- | Type-checking state
 data Status = Status
-    { count :: !Int
-    -- ^ Used to generate fresh unsolved variables (e.g. α̂, β̂ from the
-    --   original paper)
-    , context :: Context SourceRegion
+    { context :: Context SourceRegion
     -- ^ The type-checking context (e.g. Γ, Δ, Θ)
     , writeOnlyContext :: Context SourceRegion
     -- ^ A write-only context that logs every entry that is added to the main context
     }
 
-initialStatus :: Status
-initialStatus =
-    Status
-        { count = 0
-        , context = primitiveTCContext
-        , writeOnlyContext = primitiveTCContext
-        }
+initialStatus :: Member UniqueGen r => Sem r Status
+initialStatus = do
+    primitiveTCContext <- primitiveTCContext
+    pure
+        Status
+            { context = primitiveTCContext
+            , writeOnlyContext = primitiveTCContext
+            }
 
 orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
 Nothing `orDie` e = throw e
 
 -- | Generate a fresh existential variable (of any type)
-fresh :: Member (State Status) r => Sem r (Existential a)
-fresh = do
-    Status{count = n, ..} <- State.get
-
-    State.put $! Status{count = n + 1, ..}
-
-    pure (fromIntegral n)
+fresh :: (Member UniqueGen r) => Sem r (Existential a)
+fresh = UnsafeExistential <$> makeUniqueTyVar
 
 -- Unlike the original paper, we don't explicitly thread the `Context` around.
 -- Instead, we modify the ambient state using the following utility functions:
@@ -117,7 +112,7 @@ scoped entry k = do
 
     pure r
 
-scopedUnsolvedType :: Member (State Status) r => s -> (Type.Type s -> Sem r a) -> Sem r a
+scopedUnsolvedType :: (Member (State Status) r, Member UniqueGen r) => s -> (Type.Type s -> Sem r a) -> Sem r a
 scopedUnsolvedType location k = do
     existential <- fresh
 
@@ -126,7 +121,7 @@ scopedUnsolvedType location k = do
 
         k Type.UnsolvedType{..}
 
-scopedUnsolvedFields :: Member (State Status) r => (Type.Record s -> Sem r a) -> Sem r a
+scopedUnsolvedFields :: (Member (State Status) r, Member UniqueGen r) => (Type.Record s -> Sem r a) -> Sem r a
 scopedUnsolvedFields k = do
     a <- fresh
 
@@ -136,7 +131,7 @@ scopedUnsolvedFields k = do
         k (Type.Fields [] (Monotype.UnsolvedFields a))
 
 scopedUnsolvedAlternatives ::
-    Member (State Status) r => (Type.Union s -> Sem r a) -> Sem r a
+    (Member (State Status) r, Member UniqueGen r) => (Type.Union s -> Sem r a) -> Sem r a
 scopedUnsolvedAlternatives k = do
     a <- fresh
 
@@ -213,7 +208,7 @@ wellFormedType _Γ type0 = case type0 of
     type A is a subtype of type B.
 -}
 subtype ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     Type SourceRegion ->
     Sem r ()
@@ -288,13 +283,13 @@ subtype _A0 _B0 = do
 
         -- <:∃R
         (_, Type.Exists{domain = Domain.Type, ..}) -> scopedUnsolvedType nameLocation \a ->
-            subtype _A0 (Type.substituteType name 0 a type_)
-        (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name 0 a type_)
-        (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name 0 a type_)
+            subtype _A0 (Type.substituteType name a type_)
+        (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name a type_)
+        (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name a type_)
         -- <:∀L
-        (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name 0 a type_) _B0
-        (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name 0 a type_) _B0
-        (Type.Forall{domain = Domain.Alternatives, ..}, _) -> scopedUnsolvedAlternatives \a -> subtype (Type.substituteAlternatives name 0 a type_) _B0
+        (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name a type_) _B0
+        (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name a type_) _B0
+        (Type.Forall{domain = Domain.Alternatives, ..}, _) -> scopedUnsolvedAlternatives \a -> subtype (Type.substituteAlternatives name a type_) _B0
         -- <:∃L
         (Type.Exists{..}, _) -> scoped (Context.Variable domain name) do
             subtype type_ _B0
@@ -695,7 +690,7 @@ subtype _A0 _B0 = do
     However, for consistency with the paper we still name them @instantiate*@.
 -}
 instantiateTypeL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype ->
     Type SourceRegion ->
     Sem r ()
@@ -720,9 +715,9 @@ instantiateTypeL a _A0 = do
         Type.VariableType{..} -> instLSolve (Monotype.VariableType name)
         Type.Scalar{..} -> instLSolve (Monotype.Scalar scalar)
         -- InstLExt
-        Type.Exists{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name 0 b type_) a
-        Type.Exists{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name 0 b type_) a
-        Type.Exists{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name 0 b type_) a
+        Type.Exists{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name b type_) a
+        Type.Exists{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name b type_) a
+        Type.Exists{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name b type_) a
         -- InstLArr
         Type.Function{..} -> do
             let _ΓL = _Γ
@@ -829,13 +824,13 @@ instantiateTypeL a _A0 = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesL p (Type.location _A0) alternatives
-        Type.Custom{name, typeArguments} -> do
+        Type.Custom{conName, typeArguments} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
 
             a1s <- for typeArguments (const fresh)
 
-            set (_ΓR <> (Context.SolvedType a (Monotype.Custom name (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
+            set (_ΓR <> (Context.SolvedType a (Monotype.Custom conName (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
 
             for_ (zip typeArguments a1s) \(typeArgument, a1) -> instantiateTypeL a1 typeArgument
 
@@ -847,7 +842,7 @@ instantiateTypeL a _A0 = do
     α̂ such that A :< α̂.
 -}
 instantiateTypeR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     Existential Monotype ->
     Sem r ()
@@ -892,9 +887,9 @@ instantiateTypeR _A0 a = do
             instantiateTypeL a type_
 
         -- InstRAllL
-        Type.Forall{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name 0 b type_) a
-        Type.Forall{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name 0 b type_) a
-        Type.Forall{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name 0 b type_) a
+        Type.Forall{domain = Domain.Type, ..} -> scopedUnsolvedType nameLocation \b -> instantiateTypeR (Type.substituteType name b type_) a
+        Type.Forall{domain = Domain.Fields, ..} -> scopedUnsolvedFields \b -> instantiateTypeR (Type.substituteFields name b type_) a
+        Type.Forall{domain = Domain.Alternatives, ..} -> scopedUnsolvedAlternatives \b -> instantiateTypeR (Type.substituteAlternatives name b type_) a
         Type.Optional{..} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
@@ -979,7 +974,7 @@ equateFields p0 p1 = do
         Just setContext -> setContext
 
 instantiateFieldsL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype.Record ->
     SourceRegion ->
     Type.Record SourceRegion ->
@@ -1024,7 +1019,7 @@ instantiateFieldsL p0 location fields@(Type.Fields kAs rest) = do
     traverse_ instantiate kAbs
 
 instantiateFieldsR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     SourceRegion ->
     Type.Record SourceRegion ->
     Existential Monotype.Record ->
@@ -1095,7 +1090,7 @@ equateAlternatives p0 p1 = do
         Just setContext -> setContext
 
 instantiateAlternativesL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype.Union ->
     SourceRegion ->
     Type.Union SourceRegion ->
@@ -1140,7 +1135,7 @@ instantiateAlternativesL p0 location alternatives@(Type.Alternatives kAs rest) =
     traverse_ instantiate kAbs
 
 instantiateAlternativesR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     SourceRegion ->
     Type.Union SourceRegion ->
     Existential Monotype.Union ->
@@ -1192,7 +1187,7 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
     type of A and an updated context Δ.
 -}
 infer ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Sem r TypedExpr
 infer (Syntax.Expr (Located location e0, _)) = case e0 of
@@ -1266,7 +1261,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         ctx <- get
 
-        let valType' = Context.complete ctx valType -- I have a feeling that this will break things
+        valType' <- Context.complete ctx valType -- I have a feeling that this will break things
         -- Basically in a case of something like let id = \x -> x in id id, we have to 'complete' \x -> x early, otherwise we get a type error
         -- But this is probably not the right way to do it
         push (Context.Annotation (mkLocal' name) valType')
@@ -1791,7 +1786,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 -}
 check ::
     forall r.
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
@@ -1835,9 +1830,9 @@ check expr@(Expr (Located exprLoc _, _)) t = do
     check' (Syntax.Lambda name body) Type.Function{..} = scoped (Context.Annotation (mkLocal' name) input) do
         check body output
     -- ∃I
-    check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name 0 a type_)
-    check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name 0 a type_)
-    check' e Type.Exists{domain = Domain.Alternatives, ..} = scopedUnsolvedAlternatives \a -> check' e (Type.substituteAlternatives name 0 a type_)
+    check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name a type_)
+    check' e Type.Exists{domain = Domain.Fields, ..} = scopedUnsolvedFields \a -> check' e (Type.substituteFields name a type_)
+    check' e Type.Exists{domain = Domain.Alternatives, ..} = scopedUnsolvedAlternatives \a -> check' e (Type.substituteAlternatives name a type_)
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_
@@ -1870,7 +1865,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
     This has been adjusted to return the typed argument as well as C
 -}
 inferApplication ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     ShuntedExpr ->
     Sem r (TypedExpr, Type SourceRegion)
@@ -1882,7 +1877,7 @@ inferApplication Type.Forall{domain = Domain.Type, ..} e = do
 
     let a' = Type.UnsolvedType{location = nameLocation, existential = a}
 
-    inferApplication (Type.substituteType name 0 a' type_) e
+    inferApplication (Type.substituteType name a' type_) e
 inferApplication Type.Forall{domain = Domain.Fields, ..} e = do
     a <- fresh
 
@@ -1890,7 +1885,7 @@ inferApplication Type.Forall{domain = Domain.Fields, ..} e = do
 
     let a' = Type.Fields [] (Monotype.UnsolvedFields a)
 
-    inferApplication (Type.substituteFields name 0 a' type_) e
+    inferApplication (Type.substituteFields name a' type_) e
 inferApplication Type.Forall{domain = Domain.Alternatives, ..} e = do
     a <- fresh
 
@@ -1898,7 +1893,7 @@ inferApplication Type.Forall{domain = Domain.Alternatives, ..} e = do
 
     let a' = Type.Alternatives [] (Monotype.UnsolvedAlternatives a)
 
-    inferApplication (Type.substituteAlternatives name 0 a' type_) e
+    inferApplication (Type.substituteAlternatives name a' type_) e
 
 -- ∃App
 inferApplication Type.Exists{..} e = scoped (Context.Variable domain name) do

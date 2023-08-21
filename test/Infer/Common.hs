@@ -9,6 +9,7 @@ import Elara.AST.StripLocation
 import Elara.AST.Typed (TypedExpr)
 import Elara.Data.Pretty (Pretty)
 import Elara.Data.TopologicalGraph (createGraph)
+import Elara.Data.Unique
 import Elara.Desugar (desugarExpr, runDesugar, runDesugarPipeline)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader (readTokensWith)
@@ -23,25 +24,26 @@ import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
 import Polysemy.State (State)
 import Print (showPretty)
 import Test.HUnit (assertFailure)
 
-pattern Forall' :: Text -> Domain -> Type () -> Type ()
+pattern Forall' :: UniqueTyVar -> Domain -> Type () -> Type ()
 pattern Forall' name domain t = Forall () () name domain t
 
 pattern Function' :: Type () -> Type () -> Type ()
 pattern Function' a b = Function () a b
 
-pattern VariableType' :: Text -> Type ()
+pattern VariableType' :: UniqueTyVar -> Type ()
 pattern VariableType' name = VariableType () name
 
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()
 pattern Tuple' ts = Type.Tuple () ts
 
-completeInference :: Member (State Infer.Status) r => TypedExpr -> Sem r TypedExpr
+completeInference :: (Member (State Infer.Status) r, Member UniqueGen r) => TypedExpr -> Sem r TypedExpr
 completeInference x = do
     ctx <- Infer.getAll
     completeExpression ctx x
