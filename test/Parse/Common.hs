@@ -11,7 +11,7 @@ import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
-import Hedgehog.Internal.Property (failWith, writeLog)
+import Hedgehog.Internal.Property (failWith)
 import Polysemy
 import Print (showPretty)
 import Test.QuickCheck

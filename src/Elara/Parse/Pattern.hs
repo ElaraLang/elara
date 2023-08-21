@@ -39,6 +39,7 @@ unannotatedExpr :: Iso' FrontendPattern (Located FrontendPattern')
 unannotatedExpr = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
 
 -- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y
+cons :: HParser (FrontendPattern -> FrontendPattern -> FrontendPattern)
 cons = liftedBinary (token_ TokenDoubleColon) (const ConsPattern) unannotatedExpr
 
 locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern

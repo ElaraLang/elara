@@ -2,8 +2,6 @@
 
 module Lex.Indents where
 
-import Common
-import Elara.Lexer.Lexer
 import Lex.Common
 import NeatInterpolation (text)
 import Test.Hspec

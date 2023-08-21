@@ -10,8 +10,6 @@ import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Orphans ()
 import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern, trippingParse)
-import Polysemy (run)
-import Polysemy.Error (runError)
 import Print (showPrettyUnannotated)
 import Test.Hspec
 import Test.Hspec.Hedgehog

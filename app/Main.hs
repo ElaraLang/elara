@@ -7,54 +7,39 @@ module Main (
 where
 
 import Control.Exception as E
-import Control.Lens (to, view)
-import Data.Aeson (ToJSON, encode)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
-import Data.Generics.Product
-import Data.Generics.Wrapped
 import Elara.AST.Module
-import Elara.AST.Name (NameLike (..))
-import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
-import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
-import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
-import Elara.Desugar (DesugarError, DesugarState, desugar, runDesugar, runDesugarPipeline)
+import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 import Elara.Emit
 import Elara.Error
-import Elara.Error.Codes qualified as Codes (fileReadError)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
-import Elara.Lexer.Token (Lexeme, Token)
-import Elara.Lexer.Utils
 import Elara.Parse
-import Elara.Parse.Error
-import Elara.Parse.Stream
-import Elara.Pipeline (IsPipeline, PipelineResultEff, finalisePipeline)
+import Elara.Pipeline (IsPipeline, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
-import Elara.ReadFile (ReadFileError, readFileString, runReadFilePipeline)
+import Elara.ReadFile (readFileString, runReadFilePipeline)
 import Elara.Rename (rename, runRenamePipeline)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
-import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic, printDiagnostic')
+import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Member, Members, Sem, raise, raise_, runM, subsume, subsume_)
-import Polysemy.Embed
-import Polysemy.Error
-import Polysemy.Maybe (MaybeE, justE, nothingE, runMaybe)
+import Polysemy (Members, Sem, runM)
+import Polysemy.Maybe (MaybeE, runMaybe)
 import Polysemy.Reader
 import Polysemy.State
-import Polysemy.Writer (runWriter)
 import Prettyprinter.Render.Text
 import Print
 import System.CPUTime
@@ -92,7 +77,7 @@ dumpGraph graph nameFunc suffix = do
     traverseGraph_ dump graph
 
 runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe $ do
+runElara dumpShunted dumpTyped dumpCore = finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 

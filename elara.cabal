@@ -42,7 +42,6 @@ library
       Elara.AST.Typed
       Elara.AST.Unlocated
       Elara.AST.VarRef
-      Elara.Compile
       Elara.Core
       Elara.Core.Module
       Elara.Core.Pretty

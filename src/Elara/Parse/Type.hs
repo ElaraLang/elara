@@ -6,7 +6,7 @@ import Data.List.NonEmpty ((<|))
 import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendType, FrontendType')
 import Elara.AST.Generic (Type (..), Type' (..))
-import Elara.AST.Name (LowerAlphaName (LowerAlphaName), ModuleName, VarName)
+import Elara.AST.Name (VarName)
 import Elara.AST.Region (Located (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepBy1')
