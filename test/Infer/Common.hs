@@ -2,7 +2,7 @@
 
 module Infer.Common where
 
-import Common (diagShouldSucceed)
+import Common (diagShouldFail, diagShouldSucceed)
 import Control.Exception (throwIO)
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.StripLocation
@@ -77,3 +77,8 @@ inferSpec :: (MonadIO m, Pretty a1) => Text -> String -> m (Type (), a1 -> IO a2
 inferSpec code expected = do
     t' <- typeOf' code
     pure (t', failTypeMismatch (toString code) expected)
+
+inferShouldFail :: (MonadIO m) => Text -> m ()
+inferShouldFail code = do
+    x <- liftIO $ inferFully code
+    diagShouldFail x

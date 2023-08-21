@@ -14,3 +14,10 @@ diagShouldSucceed (d, x) = liftIO $ do
     case x of
         Just ok -> pure ok
         Nothing -> assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+
+diagShouldFail :: MonadIO m => (Diagnostic (Doc AnsiStyle), Maybe b) -> m ()
+diagShouldFail (d, x) = liftIO $ do
+    unless (hasReports d) $ assertFailure "Expected diagnostic to fail, but succeeded."
+    case x of
+        Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
+        Nothing -> pass
