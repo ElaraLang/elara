@@ -204,6 +204,7 @@
             in
             [
               stack-wrapped
+              pkgs.haskellPackages.haskell-debug-adapter
             ];
         };
 
