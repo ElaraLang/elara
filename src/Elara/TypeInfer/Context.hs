@@ -35,11 +35,12 @@ import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
 import Elara.AST.Name (Name)
 import Elara.AST.VarRef (IgnoreLocVarRef)
-import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId, unsafeMkUnique)
+import Elara.Data.Unique (Unique, UniqueGen, unsafeMkUnique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Internal.TH.Common (makeUnambiguousSend)
 import Prettyprinter qualified as Pretty
@@ -70,7 +71,7 @@ data Entry s
       --
       -- >>> pretty @(Entry ()) (Variable Domain.Type "a")
       -- a: Type
-      Variable Domain UniqueId
+      Variable Domain UniqueTyVar
     | -- | A bound variable whose type is known
       --
       -- >>>  pretty @(Entry ()) (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
@@ -245,11 +246,11 @@ prettyEntry (MarkerFields a) =
 prettyEntry (MarkerAlternatives a) =
     "➤ " <> pretty a <> ": Alternatives"
 
-prettyFieldType :: (UniqueId, Monotype) -> Doc AnsiStyle
+prettyFieldType :: (UniqueTyVar, Monotype) -> Doc AnsiStyle
 prettyFieldType (k, τ) =
     punctuation "," <> " " <> pretty k <> operator ":" <> " " <> pretty τ
 
-prettyAlternativeType :: (UniqueId, Monotype) -> Doc AnsiStyle
+prettyAlternativeType :: (UniqueTyVar, Monotype) -> Doc AnsiStyle
 prettyAlternativeType (k, τ) =
     pretty k <> operator ":" <> " " <> pretty τ
 
@@ -338,7 +339,7 @@ complete context type0 = Monad.foldM snoc type0 context
     snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
     snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
-        name <- makeUniqueId
+        name <- makeUniqueTyVar
 
         let domain = Domain.Type
 
@@ -350,7 +351,7 @@ complete context type0 = Monad.foldM snoc type0 context
 
         pure Type.Forall{..}
     snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
-        name <- makeUniqueId
+        name <- makeUniqueTyVar
 
         let domain = Domain.Fields
 
@@ -362,7 +363,7 @@ complete context type0 = Monad.foldM snoc type0 context
 
         pure Type.Forall{..}
     snoc t (UnsolvedAlternatives p) | p `Type.alternativesFreeIn` t = do
-        name <- makeUniqueId
+        name <- makeUniqueTyVar
 
         let domain = Domain.Alternatives
 

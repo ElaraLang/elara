@@ -94,6 +94,7 @@ library
       Elara.TypeInfer.Infer
       Elara.TypeInfer.Monotype
       Elara.TypeInfer.Type
+      Elara.TypeInfer.Unique
       Elara.Utils
       Elara.Width
       Polysemy.Lens

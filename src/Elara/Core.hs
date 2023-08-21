@@ -7,11 +7,12 @@ import Data.Data
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Unique (Unique, UniqueId)
+import Elara.Data.Unique (Unique)
+import Elara.TypeInfer.Unique
 import Prelude hiding (Alt)
 
 data TypeVariable = TypeVariable
-    { tvName :: UniqueId
+    { tvName :: UniqueTyVar
     , tvKind :: ElaraKind
     }
     deriving (Show, Eq, Data)

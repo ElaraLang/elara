@@ -15,6 +15,7 @@ import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
+import Elara.TypeInfer.Unique (makeUniqueTyVar, makeUniqueTyVarWith)
 import Polysemy
 
 fetchPrimitiveName :: VarName
@@ -70,7 +71,7 @@ primitiveTCContext = do
                 (Custom primRegion "IO" [])
             ]
 
-    primTyVarName <- makeUniqueId
+    primTyVarName <- makeUniqueTyVarWith "a"
     let elaraPrimitive =
             Annotation -- elaraPrimitive :: forall a. String -> a
                 (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))

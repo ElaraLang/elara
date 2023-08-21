@@ -31,8 +31,9 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Data.Aeson (ToJSON (..), Value (String))
 import Data.Data (Data)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
-import Elara.Data.Unique (Unique, UniqueId, uniqueVal)
+import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Monotype qualified as Monotype
+import Elara.TypeInfer.Unique
 import Prettyprinter qualified as Pretty
 import Print (showPrettyUnannotated)
 
@@ -52,7 +53,7 @@ data Type s
       --
       -- >>> pretty @(Type ()) (VariableType () "a")
       -- a
-      VariableType {location :: s, name :: UniqueId}
+      VariableType {location :: s, name :: UniqueTyVar}
     | -- | A placeholder variable whose type has not yet been inferred
       --
       -- >>> pretty @(Type ()) (UnsolvedType () 0)
@@ -62,12 +63,12 @@ data Type s
       --
       -- >>> pretty @(Type ()) (Exists () () "a" Domain.Type "a")
       -- exists (a : Type) . a
-      Exists {location :: s, nameLocation :: s, name :: UniqueId, domain :: Domain, type_ :: Type s}
+      Exists {location :: s, nameLocation :: s, name :: UniqueTyVar, domain :: Domain, type_ :: Type s}
     | -- | Universally quantified type
       --
       -- >>> pretty @(Type ()) (Forall () () "a" Domain.Type "a")
       -- forall (a : Type) . a
-      Forall {location :: s, nameLocation :: s, name :: UniqueId, domain :: Domain, type_ :: Type s}
+      Forall {location :: s, nameLocation :: s, name :: UniqueTyVar, domain :: Domain, type_ :: Type s}
     | -- | Function type
       --
       -- >>> pretty @(Type ()) (Function () "a" "b")
@@ -158,7 +159,7 @@ instance Plated (Type s) where
                 pure Tuple{tupleArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
-data Record s = Fields [(UniqueId, Type s)] RemainingFields
+data Record s = Fields [(UniqueTyVar, Type s)] RemainingFields
     deriving stock (Eq, Functor, Generic, Show, Data)
 
 instance (Show s, ToJSON s) => ToJSON (Record s)
@@ -167,7 +168,7 @@ instance Show s => Pretty (Record s) where
     pretty = prettyRecordType
 
 -- | A potentially polymorphic union type
-data Union s = Alternatives [(UniqueId, Type s)] RemainingAlternatives
+data Union s = Alternatives [(UniqueTyVar, Type s)] RemainingAlternatives
     deriving stock (Eq, Functor, Generic, Show, Data)
 
 instance (Show s, ToJSON s) => ToJSON (Union s)
@@ -261,7 +262,7 @@ solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternati
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteType :: UniqueId -> Type s -> Type s -> Type s
+substituteType :: UniqueTyVar -> Type s -> Type s -> Type s
 substituteType a _A type_ =
     case type_ of
         VariableType{..}
@@ -301,7 +302,7 @@ substituteType a _A type_ =
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteFields :: UniqueId -> Record s -> Type s -> Type s
+substituteFields :: UniqueTyVar -> Record s -> Type s -> Type s
 substituteFields ρ0 r@(Fields kτs ρ1) type_ =
     case type_ of
         VariableType{..} ->
@@ -345,7 +346,7 @@ substituteFields ρ0 r@(Fields kτs ρ1) type_ =
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
     given the variable's label and index
 -}
-substituteAlternatives :: UniqueId -> Union s -> Type s -> Type s
+substituteAlternatives :: UniqueTyVar -> Union s -> Type s -> Type s
 substituteAlternatives ρ0 r@(Alternatives kτs ρ1) type_ =
     case type_ of
         VariableType{..} ->
@@ -675,14 +676,14 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
                             <> punctuation "}"
             )
 
-    prettyShortFieldType :: Show s => (UniqueId, Type s) -> Doc AnsiStyle
+    prettyShortFieldType :: Show s => (UniqueTyVar, Type s) -> Doc AnsiStyle
     prettyShortFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
             <> " "
             <> prettyQuantifiedType type_
 
-    prettyLongFieldType :: Show s => (UniqueId, Type s) -> Doc AnsiStyle
+    prettyLongFieldType :: Show s => (UniqueTyVar, Type s) -> Doc AnsiStyle
     prettyLongFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
@@ -799,7 +800,7 @@ prettyRecordLabel ::
     -- This is mainly set to `True` when pretty-printing records so that the
     -- output is valid JSON
     Bool ->
-    UniqueId ->
+    UniqueTyVar ->
     Doc AnsiStyle
 prettyRecordLabel alwaysQuote field
     | not alwaysQuote =
@@ -809,7 +810,7 @@ prettyRecordLabel alwaysQuote field
 
 -- | Pretty-print an alternative label
 prettyAlternativeLabel ::
-    UniqueId ->
+    UniqueTyVar ->
     Doc AnsiStyle
 prettyAlternativeLabel alternative =
     label (pretty alternative)

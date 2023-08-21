@@ -47,6 +47,7 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
@@ -77,7 +78,7 @@ Nothing `orDie` e = throw e
 
 -- | Generate a fresh existential variable (of any type)
 fresh :: (Member UniqueGen r) => Sem r (Existential a)
-fresh = UnsafeExistential <$> makeUniqueId
+fresh = UnsafeExistential <$> makeUniqueTyVar
 
 -- Unlike the original paper, we don't explicitly thread the `Context` around.
 -- Instead, we modify the ambient state using the following utility functions:

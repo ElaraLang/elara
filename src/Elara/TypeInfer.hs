@@ -2,17 +2,16 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2, _3)
-import Data.Containers.ListUtils (nubOrd, nubOrdOn)
+import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, (^.), _2)
+import Data.Containers.ListUtils (nubOrd)
 import Data.Generics.Product
-import Data.Generics.Sum
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Traversable (for)
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified, _LowerAlphaName)
+import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -25,7 +24,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
-import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, uniqueGenToIO, uniqueToText)
+import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (primRegion)
@@ -161,7 +160,7 @@ inferDeclaration (Declaration ld) =
 --     push (Annotation (mkGlobal' ctorName) forall')
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
-createTypeVar (Located sr u) = Infer.VariableType sr (getUniqueId u)
+createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
@@ -179,13 +178,13 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
   where
     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
     universallyQuantify [] x = x
-    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (getUniqueId u) Domain.Type (universallyQuantify us t)
+    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to getUniqueId))
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to (fmap (Just . nameText))))
     astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
     astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get

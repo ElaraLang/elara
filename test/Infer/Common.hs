@@ -24,19 +24,20 @@ import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
 import Polysemy.State (State)
 import Print (showPretty)
 import Test.HUnit (assertFailure)
 
-pattern Forall' :: UniqueId -> Domain -> Type () -> Type ()
+pattern Forall' :: UniqueTyVar -> Domain -> Type () -> Type ()
 pattern Forall' name domain t = Forall () () name domain t
 
 pattern Function' :: Type () -> Type () -> Type ()
 pattern Function' a b = Function () a b
 
-pattern VariableType' :: UniqueId -> Type ()
+pattern VariableType' :: UniqueTyVar -> Type ()
 pattern VariableType' name = VariableType () name
 
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()

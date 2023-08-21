@@ -17,7 +17,7 @@ import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRe
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (Unique, UniqueGen, UniqueId, getUniqueId, makeUnique, uniqueGenToIO)
+import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
@@ -30,8 +30,8 @@ import Polysemy.State
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
+import Elara.TypeInfer.Unique
 import Polysemy.State.Extra (scoped)
-import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -48,7 +48,7 @@ instance ReportableError ToCoreError where
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
-type TyVarTable = Map UniqueId TypeVariable
+type TyVarTable = Map UniqueTyVar TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -75,14 +75,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyVar :: HasCallStack => ToCoreC r => UniqueId -> Sem r TypeVariable
+lookupTyVar :: HasCallStack => ToCoreC r => UniqueTyVar -> Sem r TypeVariable
 lookupTyVar n = do
     table <- get @TyVarTable
     case M.lookup n table of
         Just v -> pure v
         Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
 
-addTyVar :: ToCoreC r => UniqueId -> TypeVariable -> Sem r ()
+addTyVar :: ToCoreC r => UniqueTyVar -> TypeVariable -> Sem r ()
 addTyVar n v = modify @TyVarTable (M.insert n v)
 
 type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
