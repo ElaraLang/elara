@@ -7,9 +7,12 @@ module Main (
 where
 
 import Control.Exception as E
+import Control.Lens (to, view)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
+import Data.Generics.Product
 import Elara.AST.Module
+import Elara.AST.Name (NameLike (..))
 import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind.Infer
@@ -86,6 +89,10 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
 
     let graph = createGraph [source, prelude]
     coreGraph <- processModules graph
+
+    when dumpCore $ do
+        liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
+
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
         putTextLn ("Compiling " <> showPretty mn <> "...")
@@ -98,16 +105,6 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
     putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
-
--- shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
-
--- when dumpShunted $ do
---     liftIO
---         ( dumpGraph
---             shuntedGraph
---             (view (_Unwrapped . unlocated . field' @"name" . to nameText))
---             ".shunted.elr"
---         )
 
 -- typedGraph <- inferModules shuntedGraph
 

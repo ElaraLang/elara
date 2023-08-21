@@ -32,6 +32,7 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
 import Elara.TypeInfer.Unique
 import Polysemy.State.Extra (scoped)
+import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -167,8 +168,16 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
 
             t'' <- typeToCore t'
 
-            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
-        AST.FunctionCall e1 e2 -> Core.App <$> toCore e1 <*> toCore e2
+            lam <- Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
+            -- Add the type variables, if any, as parameters to the lambda
+            let addTypeParameterLambda e (Type.Forall _ _ tv _ t) = Core.Lam (Core.TyVar (TypeVariable tv TypeKind)) (addTypeParameterLambda e t)
+                addTypeParameterLambda e _ = e
+            pure (addTypeParameterLambda lam t)
+        AST.FunctionCall e1 e2 -> do
+            -- If the function is polymorphic we need to add the type arguments
+            debugPretty (typeOf e1)
+            debugPretty (typeOf e2)
+            Core.App <$> toCore e1 <*> toCore e2
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
             ifTrue' <- toCore ifTrue

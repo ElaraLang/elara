@@ -19,16 +19,29 @@ class PrettyVar v where
         v ->
         Doc AnsiStyle
 
+    prettyVarArg :: v -> Doc AnsiStyle
+
 instance PrettyVar Var where
     prettyVar withType withParens = \case
         TyVar tv -> prettyTypeVariable withType tv
         Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
 
+    prettyVarArg = \case
+        TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        v -> prettyVar True True v
+
 instance PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
+prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
+prettyTLLam b e = "\\" <+> prettyVarArg b <+> "->" <+> prettyExpr e
+
+prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
+prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
+prettyLam (Lam b e) = prettyVarArg b <+> "->" <+> prettyExpr e
+
 prettyExpr :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr (Lam b e) = let ?contextFree = True in prettyLambdaExpr [prettyVar True True b] e
+prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other

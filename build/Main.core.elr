@@ -1,0 +1,6 @@
+module Main
+{ Main.y : _5 -> _5
+    = \ (@_5) (x_1 : _5) -> x_1
+; 
+Main.main : Int
+    = Main.y 5 }
