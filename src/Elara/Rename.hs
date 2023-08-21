@@ -406,7 +406,12 @@ renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unl
         pure $ Infixed op'
 
 renamePattern :: Rename r => DesugaredPattern -> Sem r RenamedPattern
-renamePattern (Pattern fp) = (\x -> Pattern (x, _)) <$> traverseOf unlocated renamePattern' (fp ^. _1)
+renamePattern (Pattern fp) =
+    Pattern
+        <$> bitraverse
+            (traverseOf unlocated renamePattern')
+            (traverse (traverseOf (_Unwrapped . unlocated) (renameType False)))
+            fp
   where
     renamePattern' :: Rename r => DesugaredPattern' -> Sem r RenamedPattern'
     renamePattern' (IntegerPattern i) = pure $ IntegerPattern i
@@ -460,10 +465,10 @@ patternToMatch pat body = do
     body' <- renameExpr body
     let match =
             Match
-                (Expr (Var varRef `withLocationOf` uniqueVn, _))
+                (Expr (Var varRef `withLocationOf` uniqueVn, Nothing))
                 [(pat', body')]
 
-    pure (uniqueVn, Expr (Located (enclosingRegion' patLocation bodyLocation) match, _))
+    pure (uniqueVn, Expr (Located (enclosingRegion' patLocation bodyLocation) match, Nothing))
 
 {- | Rename a lambda expression
  This is a little bit special because patterns have to be converted to match expressions

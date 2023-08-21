@@ -17,8 +17,8 @@ import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRe
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (Unique, UniqueGen, makeUnique)
-import Elara.Error (ReportableError (..), writeReport)
+import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
+import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
@@ -28,6 +28,7 @@ import Polysemy.Error
 import Polysemy.State
 
 import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
 import Polysemy.State.Extra (scoped)
 import Print (debugPretty)
@@ -84,15 +85,17 @@ lookupTyVar n = do
 addTyVar :: ToCoreC r => Text -> TypeVariable -> Sem r ()
 addTyVar n v = modify @TyVarTable (M.insert n v)
 
+type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
 type ToCoreC r = (Member (Error ToCoreError) r, Member (State CtorSymbolTable) r, Member (State TyVarTable) r, Member UniqueGen r)
 
-runToCoreC :: Sem (State TyVarTable : State CtorSymbolTable : Error ToCoreError : r) a -> Sem r (Either ToCoreError a)
-runToCoreC =
-    runError
+runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
+runToCorePipeline =
+    uniqueGenToIO
+        . runErrorOrReport
         . evalState primCtorSymbolTable
         . evalState @TyVarTable mempty
 
-moduleToCore :: HasCallStack => (ToCoreC r) => Module Typed -> Sem r CoreModule
+moduleToCore :: HasCallStack => (ToCoreC r) => Module 'Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
     let name = m ^. field' @"name" . unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do

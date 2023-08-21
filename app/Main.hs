@@ -18,6 +18,7 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select
 import Elara.AST.StripLocation (StripLocation (..))
+import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
@@ -36,9 +37,10 @@ import Elara.Parse.Stream
 import Elara.Pipeline (IsPipeline, PipelineResultEff, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.ReadFile (ReadFileError, readFileString, runReadFilePipeline)
-import Elara.Rename (rename)
+import Elara.Rename (rename, runRenamePipeline)
 import Elara.Shunt
-import Elara.ToCore (moduleToCore, runToCoreC)
+import Elara.ToCore (moduleToCore, runToCorePipeline)
+import Elara.TypeInfer
 import Elara.TypeInfer qualified as Infer
 import Elara.TypeInfer.Infer (Status, initialStatus)
 import Error.Diagnose (Diagnostic, Report (Err), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic, printDiagnostic')
@@ -98,7 +100,19 @@ runElara dumpShunted dumpTyped dumpCore = runM $ execDiagnosticWriter $ runMaybe
     prelude <- loadModule "prelude.elr"
 
     let graph = createGraph [source, prelude]
-    printPretty graph
+    coreGraph <- processModules graph
+    classes <- runReader java8 (emitGraph coreGraph)
+    for_ classes $ \(mn, class') -> do
+        putTextLn ("Compiling " <> showPretty mn <> "...")
+        let converted = convert class'
+        let bs = runPut (writeBinary converted)
+        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
+        putTextLn ("Compiled " <> showPretty mn <> "!")
+
+    end <- liftIO getCPUTime
+    let t :: Double
+        t = fromIntegral (end - start) * 1e-9
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 -- shuntedGraph <- traverseGraph (renameModule graph >=> shuntModule) graph
 
@@ -176,3 +190,13 @@ loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runRead
     -- printColored (stripLocation @(Located Token) @Token <$> tokens)
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
+
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> Sem r (TopologicalGraph CoreModule)
+processModules graph =
+    runToCorePipeline $
+        runInferPipeline $
+            runShuntPipeline mempty $
+                runRenamePipeline
+                    graph
+                    primitiveRenameState
+                    (traverseGraph rename >=> traverseGraph shunt >=> traverseGraph inferModule >=> traverseGraph moduleToCore $ graph)
