@@ -7,6 +7,7 @@ import Elara.Data.Pretty (Pretty (..))
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Text qualified as Text
+import Elara.Data.Unique
 
 {- | An existential variable
     The type variable is used to track what type of existential variable we're
@@ -16,8 +17,8 @@ import Data.Text qualified as Text
     * @`Existential` "Grace.Monotype".Union@ - An existential alternatives
       variable
 -}
-newtype Existential a = UnsafeExistential Int
-    deriving (Eq, Num, Ord, Data)
+newtype Existential a = UnsafeExistential UniqueId
+    deriving (Eq, Ord, Data)
     deriving newtype (Show, ToJSON)
 
 instance Pretty (Existential a) where
@@ -35,11 +36,8 @@ instance Pretty (Existential a) where
 toVariable :: Existential a -> Text
 toVariable (UnsafeExistential n) = Text.cons prefix suffix
   where
-    (q, r) = n `quotRem` 26
+    (q, r) = uniqueIdVal n `quotRem` 26
 
     prefix = chr (ord 'a' + r)
 
     suffix = if q == 0 then "" else show (q - 1)
-
-existentialVal :: Existential a -> Int
-existentialVal (UnsafeExistential n) = n

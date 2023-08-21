@@ -17,7 +17,7 @@ import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRe
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
+import Elara.Data.Unique (Unique, UniqueGen, UniqueId, getUniqueId, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Monotype qualified as Scalar
@@ -48,7 +48,7 @@ instance ReportableError ToCoreError where
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
-type TyVarTable = Map (Unique Text) TypeVariable
+type TyVarTable = Map UniqueId TypeVariable
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -75,14 +75,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyVar :: HasCallStack => ToCoreC r => Unique Text -> Sem r TypeVariable
+lookupTyVar :: HasCallStack => ToCoreC r => UniqueId -> Sem r TypeVariable
 lookupTyVar n = do
     table <- get @TyVarTable
     case M.lookup n table of
         Just v -> pure v
         Nothing -> error ("TODO: lookupTyVar " <> show n <> " " <> show table)
 
-addTyVar :: ToCoreC r => Unique Text -> TypeVariable -> Sem r ()
+addTyVar :: ToCoreC r => UniqueId -> TypeVariable -> Sem r ()
 addTyVar n v = modify @TyVarTable (M.insert n v)
 
 type ToCoreEffects = [State TyVarTable, State CtorSymbolTable, Error ToCoreError, UniqueGen]
@@ -106,7 +106,7 @@ moduleToCore (Module (Located _ m)) = do
                     ty <- typeToCore (v ^. _Unwrapped . _2)
                     v' <- toCore v
                     pure (ty, v')
-                let var = Core.Id (mkGlobalRef (nameText <$> (decl ^. _Unwrapped . unlocated . field' @"name" . unlocated))) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped . unlocated . field' @"name" . unlocated)) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls

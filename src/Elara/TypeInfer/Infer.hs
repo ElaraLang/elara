@@ -28,7 +28,7 @@ import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocate
 import Elara.AST.Shunted
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.TypeInfer.Context (Context, Entry)
-import Elara.TypeInfer.Existential (Existential)
+import Elara.TypeInfer.Existential (Existential (UnsafeExistential))
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Type (Type (..))
 
@@ -56,10 +56,7 @@ import Print (showPretty)
 
 -- | Type-checking state
 data Status = Status
-    { count :: !Int
-    -- ^ Used to generate fresh unsolved variables (e.g. α̂, β̂ from the
-    --   original paper)
-    , context :: Context SourceRegion
+    { context :: Context SourceRegion
     -- ^ The type-checking context (e.g. Γ, Δ, Θ)
     , writeOnlyContext :: Context SourceRegion
     -- ^ A write-only context that logs every entry that is added to the main context
@@ -70,8 +67,7 @@ initialStatus = do
     primitiveTCContext <- primitiveTCContext
     pure
         Status
-            { count = 0
-            , context = primitiveTCContext
+            { context = primitiveTCContext
             , writeOnlyContext = primitiveTCContext
             }
 
@@ -80,13 +76,8 @@ Just x `orDie` _ = pure x
 Nothing `orDie` e = throw e
 
 -- | Generate a fresh existential variable (of any type)
-fresh :: Member (State Status) r => Sem r (Existential a)
-fresh = do
-    Status{count = n, ..} <- State.get
-
-    State.put $! Status{count = n + 1, ..}
-
-    pure (fromIntegral n)
+fresh :: (Member UniqueGen r) => Sem r (Existential a)
+fresh = UnsafeExistential <$> makeUniqueId
 
 -- Unlike the original paper, we don't explicitly thread the `Context` around.
 -- Instead, we modify the ambient state using the following utility functions:
@@ -120,7 +111,7 @@ scoped entry k = do
 
     pure r
 
-scopedUnsolvedType :: Member (State Status) r => s -> (Type.Type s -> Sem r a) -> Sem r a
+scopedUnsolvedType :: (Member (State Status) r, Member UniqueGen r) => s -> (Type.Type s -> Sem r a) -> Sem r a
 scopedUnsolvedType location k = do
     existential <- fresh
 
@@ -129,7 +120,7 @@ scopedUnsolvedType location k = do
 
         k Type.UnsolvedType{..}
 
-scopedUnsolvedFields :: Member (State Status) r => (Type.Record s -> Sem r a) -> Sem r a
+scopedUnsolvedFields :: (Member (State Status) r, Member UniqueGen r) => (Type.Record s -> Sem r a) -> Sem r a
 scopedUnsolvedFields k = do
     a <- fresh
 
@@ -139,7 +130,7 @@ scopedUnsolvedFields k = do
         k (Type.Fields [] (Monotype.UnsolvedFields a))
 
 scopedUnsolvedAlternatives ::
-    Member (State Status) r => (Type.Union s -> Sem r a) -> Sem r a
+    (Member (State Status) r, Member UniqueGen r) => (Type.Union s -> Sem r a) -> Sem r a
 scopedUnsolvedAlternatives k = do
     a <- fresh
 
@@ -216,7 +207,7 @@ wellFormedType _Γ type0 = case type0 of
     type A is a subtype of type B.
 -}
 subtype ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     Type SourceRegion ->
     Sem r ()
@@ -698,7 +689,7 @@ subtype _A0 _B0 = do
     However, for consistency with the paper we still name them @instantiate*@.
 -}
 instantiateTypeL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype ->
     Type SourceRegion ->
     Sem r ()
@@ -850,7 +841,7 @@ instantiateTypeL a _A0 = do
     α̂ such that A :< α̂.
 -}
 instantiateTypeR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     Existential Monotype ->
     Sem r ()
@@ -982,7 +973,7 @@ equateFields p0 p1 = do
         Just setContext -> setContext
 
 instantiateFieldsL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype.Record ->
     SourceRegion ->
     Type.Record SourceRegion ->
@@ -1027,7 +1018,7 @@ instantiateFieldsL p0 location fields@(Type.Fields kAs rest) = do
     traverse_ instantiate kAbs
 
 instantiateFieldsR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     SourceRegion ->
     Type.Record SourceRegion ->
     Existential Monotype.Record ->
@@ -1098,7 +1089,7 @@ equateAlternatives p0 p1 = do
         Just setContext -> setContext
 
 instantiateAlternativesL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Existential Monotype.Union ->
     SourceRegion ->
     Type.Union SourceRegion ->
@@ -1143,7 +1134,7 @@ instantiateAlternativesL p0 location alternatives@(Type.Alternatives kAs rest) =
     traverse_ instantiate kAbs
 
 instantiateAlternativesR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     SourceRegion ->
     Type.Union SourceRegion ->
     Existential Monotype.Union ->
@@ -1195,7 +1186,7 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
     type of A and an updated context Δ.
 -}
 infer ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Sem r TypedExpr
 infer (Syntax.Expr (Located location e0, _)) = case e0 of
@@ -1269,7 +1260,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         ctx <- get
 
-        let valType' = Context.complete ctx valType -- I have a feeling that this will break things
+        valType' <- Context.complete ctx valType -- I have a feeling that this will break things
         -- Basically in a case of something like let id = \x -> x in id id, we have to 'complete' \x -> x early, otherwise we get a type error
         -- But this is probably not the right way to do it
         push (Context.Annotation (mkLocal' name) valType')
@@ -1794,7 +1785,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 -}
 check ::
     forall r.
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
@@ -1873,7 +1864,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
     This has been adjusted to return the typed argument as well as C
 -}
 inferApplication ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     ShuntedExpr ->
     Sem r (TypedExpr, Type SourceRegion)

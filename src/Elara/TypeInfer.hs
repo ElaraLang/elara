@@ -25,7 +25,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
-import Elara.Data.Unique (Unique, uniqueGenToIO, uniqueToText)
+import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, uniqueGenToIO, uniqueToText)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (primRegion)
@@ -43,28 +43,28 @@ import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
 
-type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError]
+type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
 runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
     s <- uniqueGenToIO initialStatus
 
-    runErrorOrReport @TypeInferenceError
+    uniqueGenToIO
+        . runErrorOrReport @TypeInferenceError
         . evalState initialInferState
         . evalState s
         $ e
 
 inferModule ::
     forall r.
-    HasCallStack =>
-    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
+    (Members InferPipelineEffects r) =>
     Module 'Shunted ->
     Sem r (Module 'Typed)
 inferModule = traverseModuleRevTopologically inferDeclaration
 
 inferDeclaration ::
     forall r.
-    HasCallStack =>
+    (HasCallStack, Member UniqueGen r) =>
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
@@ -161,7 +161,7 @@ inferDeclaration (Declaration ld) =
 --     push (Annotation (mkGlobal' ctorName) forall')
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
-createTypeVar (Located sr u) = Infer.VariableType sr (nameText <$> u)
+createTypeVar (Located sr u) = Infer.VariableType sr (getUniqueId u)
 
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
@@ -179,13 +179,13 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
   where
     universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
     universallyQuantify [] x = x
-    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap nameText u) Domain.Type (universallyQuantify us t)
+    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (getUniqueId u) Domain.Type (universallyQuantify us t)
 
 astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to (fmap nameText)))
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to getUniqueId))
     astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
     astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get
@@ -231,7 +231,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
 
 inferExpression ::
     forall r.
-    (Member (Error TypeInferenceError) r, Member (State Status) r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Maybe (Infer.Type SourceRegion) ->
     Sem r TypedExpr
@@ -243,12 +243,12 @@ inferExpression e expected = do
 
 completeExpression ::
     forall r.
-    Member (State Status) r =>
+    (Member (State Status) r, Member UniqueGen r) =>
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr
 completeExpression ctx (Expr (y', t)) = do
-    let completed = complete ctx t
+    completed <- complete ctx t
     unify t completed
 
     ctx' <- Infer.getAll

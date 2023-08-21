@@ -35,12 +35,15 @@ import Control.Monad qualified as Monad
 import Control.Monad.State.Strict qualified as State
 import Elara.AST.Name (Name)
 import Elara.AST.VarRef (IgnoreLocVarRef)
-import Elara.Data.Unique (Unique, unsafeMkUnique)
+import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId, unsafeMkUnique)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type qualified as Type
+import Polysemy
+import Polysemy.Internal.TH.Common (makeUnambiguousSend)
 import Prettyprinter qualified as Pretty
+import Print (debugPretty)
 
 {- $setup
 
@@ -67,7 +70,7 @@ data Entry s
       --
       -- >>> pretty @(Entry ()) (Variable Domain.Type "a")
       -- a: Type
-      Variable Domain (Unique Text)
+      Variable Domain UniqueId
     | -- | A bound variable whose type is known
       --
       -- >>>  pretty @(Entry ()) (Annotation (Local (IgnoreLocation (Located undefined (unsafeMkUnique (NVarName "x") 0)))) "a")
@@ -242,11 +245,11 @@ prettyEntry (MarkerFields a) =
 prettyEntry (MarkerAlternatives a) =
     "➤ " <> pretty a <> ": Alternatives"
 
-prettyFieldType :: (Unique Text, Monotype) -> Doc AnsiStyle
+prettyFieldType :: (UniqueId, Monotype) -> Doc AnsiStyle
 prettyFieldType (k, τ) =
     punctuation "," <> " " <> pretty k <> operator ":" <> " " <> pretty τ
 
-prettyAlternativeType :: (Unique Text, Monotype) -> Doc AnsiStyle
+prettyAlternativeType :: (UniqueId, Monotype) -> Doc AnsiStyle
 prettyAlternativeType (k, τ) =
     pretty k <> operator ":" <> " " <> pretty τ
 
@@ -328,26 +331,14 @@ solveUnion context oldAlternatives = newAlternatives
     >>> pretty @(Type ()) (complete [ UnsolvedType 1, SolvedType 0 (Monotype.Scalar Monotype.Bool) ] original)
     forall (a : Type) . a -> Bool
 -}
-complete :: Context s -> Type s -> Type s
-complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
+complete :: Member UniqueGen r => Context s -> Type s -> Sem r (Type s)
+complete context type0 = Monad.foldM snoc type0 context
   where
-    numUnsolved = fromIntegral (length (filter predicate context)) - 1
-      where
-        predicate (UnsolvedType _) = True
-        predicate (UnsolvedFields _) = True
-        predicate (UnsolvedAlternatives _) = True
-        predicate _ = False
-
     snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
     snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
     snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
-        n <- State.get
-
-        State.put $! n + 1
-
-        let ex = numUnsolved - n
-        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
+        name <- makeUniqueId
 
         let domain = Domain.Type
 
@@ -359,12 +350,7 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         pure Type.Forall{..}
     snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
-        n <- State.get
-
-        State.put $! n + 1
-
-        let ex = numUnsolved - n
-        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
+        name <- makeUniqueId
 
         let domain = Domain.Fields
 
@@ -376,12 +362,7 @@ complete context type0 = State.evalState (Monad.foldM snoc type0 context) 0
 
         pure Type.Forall{..}
     snoc t (UnsolvedAlternatives p) | p `Type.alternativesFreeIn` t = do
-        n <- State.get
-
-        State.put $! n + 1
-
-        let ex = numUnsolved - n
-        let name = unsafeMkUnique (Existential.toVariable ex) (Existential.existentialVal ex)
+        name <- makeUniqueId
 
         let domain = Domain.Alternatives
 

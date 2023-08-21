@@ -30,19 +30,19 @@ import Polysemy.State (State)
 import Print (showPretty)
 import Test.HUnit (assertFailure)
 
-pattern Forall' :: Unique Text -> Domain -> Type () -> Type ()
+pattern Forall' :: UniqueId -> Domain -> Type () -> Type ()
 pattern Forall' name domain t = Forall () () name domain t
 
 pattern Function' :: Type () -> Type () -> Type ()
 pattern Function' a b = Function () a b
 
-pattern VariableType' :: Unique Text -> Type ()
+pattern VariableType' :: UniqueId -> Type ()
 pattern VariableType' name = VariableType () name
 
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()
 pattern Tuple' ts = Type.Tuple () ts
 
-completeInference :: Member (State Infer.Status) r => TypedExpr -> Sem r TypedExpr
+completeInference :: (Member (State Infer.Status) r, Member UniqueGen r) => TypedExpr -> Sem r TypedExpr
 completeInference x = do
     ctx <- Infer.getAll
     completeExpression ctx x

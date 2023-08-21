@@ -10,7 +10,7 @@ import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion,
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
 
-import Elara.Data.Unique (UniqueGen, makeUnique)
+import Elara.Data.Unique (UniqueGen, makeUnique, makeUniqueId)
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
@@ -70,7 +70,7 @@ primitiveTCContext = do
                 (Custom primRegion "IO" [])
             ]
 
-    primTyVarName <- makeUnique "a"
+    primTyVarName <- makeUniqueId
     let elaraPrimitive =
             Annotation -- elaraPrimitive :: forall a. String -> a
                 (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
