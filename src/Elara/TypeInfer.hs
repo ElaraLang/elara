@@ -218,14 +218,11 @@ completeExpression ctx (Expr (y', t)) = do
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
     quantify :: Type SourceRegion -> Type SourceRegion
-    quantify x =
-        let ftvs = nubOrd (concatMapOf cosmos names x)
-         in foldr (\(Located l tv) acc -> Infer.Forall l l tv Domain.Type acc) x ftvs
-      where
-        names :: Type SourceRegion -> [Located UniqueTyVar]
-        names = \case
-            Infer.VariableType sr l -> [Located sr l]
-            o -> []
+    quantify t@(Infer.Forall{}) = t
+    quantify x = do
+        let ftvs = Infer.freeTypeVars x
+
+        foldr (\(Located l tv) acc -> Infer.Forall l l tv Domain.Type acc) x ftvs
     {-
     Unifies completed types with unsolved ones. It assumes that the types are of the same shape, excluding quantifiers.
 

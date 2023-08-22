@@ -1,0 +1,22 @@
+module Main exposing (..)
+
+
+
+def Main.add : forall (a_1 : Type) (b_2 : Type) (c_3 : Type) . a_1 -> b_2 -> c_3
+let Main.add =
+    (Elara.Prim.elaraPrimitive : forall (a_0 : Type) .
+                                   Text ->
+                                     a_0 "undefined" : Text) : forall (a_1 : Type) .
+                                                               forall (b_2 : Type) .
+                                                               forall (c_3 : Type) .
+                                                                 a_1 ->
+                                                                 b_2 ->
+                                                                   c_3
+
+def Main.main : Integer
+let Main.main =
+    ((Main.add : forall (a_1 : Type) .
+                 forall (b_2 : Type) .
+                 forall (c_3 : Type) .
+                   a_1 -> b_2 -> c_3 "1" : Text) : Char ->
+                                                     Integer 'c' : Char) : Integer

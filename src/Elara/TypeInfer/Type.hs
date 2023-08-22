@@ -9,7 +9,7 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..), (^.))
+import Control.Lens (Plated (..), view, (^.))
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
 import Elara.Data.Pretty
@@ -29,7 +29,9 @@ import Data.Text qualified as Text
 import Elara.TypeInfer.Domain qualified as Domain
 
 import Data.Aeson (ToJSON (..), Value (String))
+import Data.Containers.ListUtils (nubOrd, nubOrdOn)
 import Data.Data (Data)
+import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Monotype qualified as Monotype
@@ -206,6 +208,14 @@ fromMonotype monotype =
 
 instance Pretty Monotype where
     pretty = pretty . fromMonotype
+
+freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
+-- todo: make this check for foralls rather than assuming they're all free
+freeTypeVars t = nubOrdOn (view unlocated) (Lens.concatMapOf Lens.cosmos names t)
+  where
+    names = \case
+        VariableType sr l -> [Located sr l]
+        _ -> []
 
 {- | Substitute a `Type` by replacing all occurrences of the given unsolved
     variable with a `Monotype`

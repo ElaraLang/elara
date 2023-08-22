@@ -1,6 +1,6 @@
 module Main
-{ Main.add : forall (a_1 : Type). a_1 -> a_1
-    = Elara.Prim.elaraPrimitive @(forall (a_1 : Type). a_1 -> a_1) "id"
+{ Main.add : forall (a_1 : Type). forall (b_2 : Type). forall (c_3 : Type). a_1 -> b_2 -> c_3
+    = Elara.Prim.elaraPrimitive "undefined"
 ; 
 Main.main : Int
-    = Main.add @Int 1 }
+    = Main.add "1" c }

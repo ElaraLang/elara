@@ -32,7 +32,7 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim.Core
 import Elara.TypeInfer.Unique
 import Polysemy.State.Extra (scoped)
-import Print (debugPretty, printPretty)
+import Print (debugPretty, printPretty, showPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -124,7 +124,8 @@ mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
 toCore :: HasCallStack => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
-toCore le@(Expr (Located _ e, t)) = toCore' e
+toCore le@(Expr (Located _ e, t)) = do
+    toCore' e
   where
     toCore' :: (ToCoreC r) => TypedExpr' -> Sem r CoreExpr
     toCore' = \case
@@ -148,21 +149,13 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
 
             t'' <- typeToCore t'
 
-            lam <- Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
-            -- Add the type variables, if any, as parameters to the lambda
-            let addTypeParameterLambda e (Type.Forall _ _ tv _ t) = Core.Lam (Core.TyVar (TypeVariable tv TypeKind)) (addTypeParameterLambda e t)
-                addTypeParameterLambda e _ = e
-            pure (addTypeParameterLambda lam t)
+            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
         AST.FunctionCall e1 e2 -> do
             -- If the function is polymorphic we need to add the type arguments
             e1' <- toCore e1
             e2' <- toCore e2
-            e1t <- typeToCore (typeOf e1)
-            t' <- typeToCore t
 
-            debugPretty e1'
-            apps <- addTyVarApplications (e1', e1t) t'
-            pure (Core.App apps e2')
+            pure (App e1' e2')
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
             ifTrue' <- toCore ifTrue
@@ -208,17 +201,9 @@ toCore le@(Expr (Located _ e, t)) = toCore' e
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
 
-{- | Adds explicit type applications for parameters
- Takes the variable and the type of the value being applied / expected
- For example, given a variable `e :: forall a. a` and a type `String` we get `e @String`
- Given `e :: forall a b. a -> b` and
--}
-addTyVarApplications :: ToCoreC r => (CoreExpr, Core.Type) -> Core.Type -> Sem r CoreExpr
-addTyVarApplications (e, t) expected = do
-    case (t, expected) of
-        (Core.ForAllTy tv t, expected') -> do
-            pure (Core.App e (Core.Type expected'))
-addTyVarApplications (e, t) _ = pure e
+stripForAll :: Core.Type -> Core.Type
+stripForAll (Core.ForAllTy _ t) = stripForAll t
+stripForAll t = t
 
 desugarMatch :: ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do

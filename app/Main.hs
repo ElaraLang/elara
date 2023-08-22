@@ -49,6 +49,7 @@ import Prettyprinter.Render.Text
 import Print
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
+import System.Environment (getEnvironment)
 import System.IO (openFile)
 import Text.Printf
 
@@ -63,9 +64,10 @@ main = run `finally` cleanup
         hSetBuffering stdout NoBuffering
         putTextLn "\n"
         args <- getArgs
-        let dumpShunted = "--dump-shunted" `elem` args
-        let dumpTyped = "--dump-typed" `elem` args
-        let dumpCore = "--dump-core" `elem` args
+        env <- getEnvironment
+        let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
+        let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
+        let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
         s <- runElara dumpShunted dumpTyped dumpCore
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
@@ -90,7 +92,7 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     prelude <- loadModule "prelude.elr"
 
     let graph = createGraph [source]
-    coreGraph <- processModules graph dumpShunted
+    coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
@@ -170,8 +172,8 @@ loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runRead
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 
-processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> Bool -> Sem r (TopologicalGraph CoreModule)
-processModules graph dumpShunted =
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
+processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $
             runShuntPipeline mempty $
@@ -180,11 +182,11 @@ processModules graph dumpShunted =
                     primitiveRenameState
                     ( traverseGraph rename
                         >=> traverseGraph shunt
-                        >=> ( if dumpShunted
-                                then (\x -> liftIO (dumpGraph x (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr") $> x)
-                                else pure
-                            )
+                        >=> dumpIf dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
                         >=> traverseGraph inferModule
+                        >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
                         >=> traverseGraph moduleToCore
                         $ graph
                     )
+  where
+    dumpIf cond f p = if cond then (\x -> liftIO (dumpGraph x f p) $> x) else pure

@@ -1,5 +1,4 @@
 def add : a -> b -> c
 let add = elaraPrimitive "undefined"
-
 def main : Int
 let main = add "1" 'c'
