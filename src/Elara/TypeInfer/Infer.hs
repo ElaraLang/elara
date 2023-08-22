@@ -26,7 +26,7 @@ import Control.Lens ((^.), _1, _2)
 import Data.Generics.Wrapped
 import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocated)
 import Elara.AST.Shunted
-import Elara.Data.Pretty (Pretty (..), prettyToText)
+import Elara.Data.Pretty (Pretty (..), prettyToText, (<+>))
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Existential (Existential (UnsafeExistential))
 import Elara.TypeInfer.Monotype (Monotype)
@@ -53,7 +53,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -702,7 +702,7 @@ instantiateTypeL a _A0 = do
 
     let instLSolve τ = do
             wellFormedType _Γ _A0
-
+            debugPretty ("InstLSolve" <+> pretty a <+> ":" <+> pretty _A0 <+> "τ:" <+> pretty τ)
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
 
     case _A0 of
@@ -854,7 +854,7 @@ instantiateTypeR _A0 a = do
 
     let instRSolve τ = do
             wellFormedType _Γ _A0
-
+            debugPretty ("InstRSolve" <+> pretty a <+> ":" <+> pretty _A0 <+> "τ:" <+> pretty τ)
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
 
     case _A0 of

@@ -154,7 +154,6 @@ toCore le@(Expr (Located _ e, t)) = do
             -- If the function is polymorphic we need to add the type arguments
             e1' <- toCore e1
             e2' <- toCore e2
-
             pure (App e1' e2')
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond

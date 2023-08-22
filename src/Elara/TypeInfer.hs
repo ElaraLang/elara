@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Elara.TypeInfer where
@@ -24,6 +26,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -60,7 +63,11 @@ inferModule ::
     (Members InferPipelineEffects r) =>
     Module 'Shunted ->
     Sem r (Module 'Typed)
-inferModule = traverseModuleRevTopologically inferDeclaration
+inferModule m = do
+    m' <- traverseModuleRevTopologically inferDeclaration m
+    y <- Infer.getAll
+    debugPretty (nubOrd y & filter (\case SolvedType{} -> True; _ -> False))
+    pure m'
 
 inferDeclaration ::
     forall r.
@@ -207,7 +214,8 @@ completeExpression ::
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr
-completeExpression ctx (Expr (y', t)) = do
+completeExpression ctx e@(Expr (y', t)) = do
+    debugPretty (let ?withType = False; ?contextFree = True in prettyExpr e)
     completed <- quantify <$> complete ctx t
     unify t completed
 
@@ -236,18 +244,22 @@ completeExpression ctx (Expr (y', t)) = do
 
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    unify unsolved solved = case (stripForAlls unsolved, stripForAlls solved) of
-        (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
-            subst unsolvedInput solvedInput
-            unify unsolvedOutput solvedOutput
-        (Infer.VariableType{}, out) -> subst unsolved out
-        (Infer.UnsolvedType{}, out) -> subst unsolved out
-        (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
-        (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> do
-            traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
-        (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> do
-            traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
-        other -> error (showPretty other)
+    unify unsolved solved = do
+        debugPretty ("Unify" :: Text, unsolved, solved)
+        case (stripForAlls unsolved, stripForAlls solved) of
+            (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
+                subst unsolvedInput solvedInput
+                unify unsolvedInput solvedInput
+                subst unsolvedOutput solvedOutput
+                unify unsolvedOutput solvedOutput
+            (Infer.VariableType{}, out) -> subst unsolved out
+            (Infer.UnsolvedType{}, out) -> subst unsolved out
+            (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
+            (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> do
+                traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
+            (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> do
+                traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
+            other -> error (showPretty other)
 
     stripForAlls :: Type SourceRegion -> Type SourceRegion
     stripForAlls = \case
@@ -255,7 +267,8 @@ completeExpression ctx (Expr (y', t)) = do
         other -> other
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    subst Infer.UnsolvedType{existential} solved = do
+    subst s@Infer.UnsolvedType{existential} solved = do
+        debugPretty ("Subst" :: Text, s, solved)
         let annotation = SolvedType existential (toMonoType solved)
         push annotation
     subst a b = pass

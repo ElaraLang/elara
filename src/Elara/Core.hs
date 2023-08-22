@@ -1,9 +1,8 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Elara.Core where
 
 import Control.Lens (Plated)
 import Data.Data
+import Data.Map qualified as Map
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)

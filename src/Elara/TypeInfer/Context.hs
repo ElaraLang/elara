@@ -132,7 +132,7 @@ data Entry s
       -- >>> pretty @(Entry ()) (MarkerAlternatives 0)
       -- ➤ a: Alternatives
       MarkerAlternatives (Existential Monotype.Union)
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Ord)
 
 instance Show s => Pretty (Entry s) where
     pretty = prettyEntry

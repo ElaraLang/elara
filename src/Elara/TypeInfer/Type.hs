@@ -111,7 +111,7 @@ data Type s
       -- >>> pretty @(Type ()) (Tuple () ("a" :| ["b"]))
       -- (a, b)
       Tuple {location :: s, tupleArguments :: NonEmpty (Type s)}
-    deriving stock (Eq, Functor, Generic, Show, Data)
+    deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
 instance (Show c, ToJSON c) => ToJSON (Type c) where
     toJSON s = String (showPrettyUnannotated s)
@@ -162,7 +162,7 @@ instance Plated (Type s) where
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(UniqueTyVar, Type s)] RemainingFields
-    deriving stock (Eq, Functor, Generic, Show, Data)
+    deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
 instance (Show s, ToJSON s) => ToJSON (Record s)
 
@@ -171,7 +171,7 @@ instance Show s => Pretty (Record s) where
 
 -- | A potentially polymorphic union type
 data Union s = Alternatives [(UniqueTyVar, Type s)] RemainingAlternatives
-    deriving stock (Eq, Functor, Generic, Show, Data)
+    deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
 instance (Show s, ToJSON s) => ToJSON (Union s)
 
@@ -224,8 +224,7 @@ solveType :: Existential Monotype -> Monotype -> Type s -> Type s
 solveType unsolved monotype = Lens.transform transformType
   where
     transformType UnsolvedType{..}
-        | unsolved == existential =
-            fmap (const location) (fromMonotype monotype)
+        | unsolved == existential = location <$ fromMonotype monotype
     transformType type_ =
         type_
 

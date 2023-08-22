@@ -43,7 +43,7 @@ data Monotype
     | Union Union
     | Custom Text [Monotype]
     | Scalar Scalar
-    deriving stock (Eq, Generic, Show)
+    deriving stock (Eq, Generic, Show, Ord)
 
 instance ToJSON Monotype
 
@@ -89,7 +89,7 @@ data Scalar
       -- >>> pretty Unit
       -- Unit
       Unit
-    deriving stock (Eq, Generic, Show, Data)
+    deriving stock (Eq, Generic, Show, Data, Ord)
 
 instance Pretty Scalar where
     pretty Bool = "Bool"
@@ -105,7 +105,7 @@ instance ToJSON Scalar
 
 -- | A monomorphic record type
 data Record = Fields [(UniqueTyVar, Monotype)] RemainingFields
-    deriving stock (Eq, Generic, Show)
+    deriving stock (Eq, Generic, Show, Ord)
 
 instance ToJSON Record
 instance ToJSON RemainingFields
@@ -121,11 +121,11 @@ data RemainingFields
     | -- | Same as `UnsolvedFields`, except that the user has given the fields
       --   variable an explicit name in the source code
       VariableFields UniqueTyVar
-    deriving stock (Eq, Generic, Show, Data)
+    deriving stock (Eq, Generic, Show, Data, Ord)
 
 -- | A monomorphic union type
 data Union = Alternatives [(UniqueTyVar, Monotype)] RemainingAlternatives
-    deriving stock (Eq, Generic, Show)
+    deriving stock (Eq, Generic, Show, Ord)
 
 instance ToJSON Union
 
@@ -140,6 +140,6 @@ data RemainingAlternatives
     | -- | Same as `UnsolvedAlternatives`, except that the user has given the
       --   alternatives variable an explicit name in the source code
       VariableAlternatives UniqueTyVar
-    deriving stock (Eq, Generic, Show, Data)
+    deriving stock (Eq, Generic, Show, Data, Ord)
 
 instance ToJSON RemainingAlternatives
