@@ -12,6 +12,7 @@ import Elara.Emit.Operator (translateOperatorName)
 import Data.Generics.Product
 import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
+import Elara.Core.Pretty ()
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon)
 import Elara.Utils (uncurry3)
@@ -23,12 +24,13 @@ import JVM.Data.Abstract.Field (ClassFileField (ClassFileField))
 import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCInt, LDCString))
 import JVM.Data.Abstract.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
 import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
-import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
+import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType, PrimitiveFieldType))
+import JVM.Data.Abstract.Type qualified as JVM (PrimitiveType (..))
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (showColored, showPretty)
+import Print (debugPretty, showColored, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -162,30 +164,52 @@ generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (
             [ ALoad0
             , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
             ]
+-- Hardcode elaraPrimitive "undefined"
 generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (String "undefined")))) (Just t)
     | v == fetchPrimitiveName =
         pure
-            [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Throwable")))
-            , AThrow
+            [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object")))
+            , AConstNull
             ]
-generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ = do
+generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ | typeIsValue idVarType = do
     -- load static var
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
     pure [uncurry3 GetStatic invokeStaticVars]
-generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) (Just expectedType) = do
+generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ = do
+    pure []
+generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) expectedType = do
     -- static function application
     let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateMethodDescriptor idVarType)
 
     x' <- generateCode arg Nothing
 
     let castInstrs =
-            ( case generateFieldType expectedType of
-                ObjectFieldType a -> [CheckCast (ClassInfoType a)]
+            ( case generateFieldType <$> expectedType of
+                Just (ObjectFieldType a) -> [CheckCast (ClassInfoType a)]
                 _ -> []
             )
 
     pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars] <> castInstrs
-generateCode (TyApp a t) _ = generateCode a (Just t)
+generateCode (App f x) t = do
+    let fTypes = case f of
+            Var (Normal (Id{idVarType = FuncTy i o})) -> Just (FuncTy i o, o)
+            _ -> Nothing
+
+    -- function application
+    x' <- generateCode x Nothing
+    f' <- generateCode f (fst <$> fTypes)
+    pure $
+        x'
+            <> f'
+            <> [ InvokeVirtual
+                    (ClassInfoType "elara.Func")
+                    "apply"
+                    ( MethodDescriptor
+                        [ObjectFieldType "java.lang.Object"]
+                        (TypeReturn (maybe (ObjectFieldType "java.lang.Object") (generateFieldType . snd) fTypes))
+                    )
+               ]
+generateCode (TyApp a t) t' = generateCode a (t' <|> Just t)
 generateCode (Lit (String s)) _ =
     pure
         [ LDC (LDCString s)
@@ -193,7 +217,7 @@ generateCode (Lit (String s)) _ =
 generateCode (Lit (Int i)) _ =
     pure
         [ LDC (LDCInt (fromIntegral i))
-        , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "java.lang.Integer")))
+        , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
         ]
 generateCode e t = error (showPretty e)
 

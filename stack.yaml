@@ -11,7 +11,7 @@ flags:
 
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
-  commit: 533ea177137ec737ba4ce7f22fab44a1fd60b44a
+  commit: e93fece99c2fa0d1f1dd80c31527b272d19702e4
 - git: git@github.com:knightzmc/diagnose.git
   commit: 59730d9207319d7cae13fb93f21062f2b40a823f
 - OneTuple-0.4.1.1@sha256:be0324c77a0eaf1d48b771b7e86f2b19d53a9f5ecc6ab2c914dab7dad309c671,2539

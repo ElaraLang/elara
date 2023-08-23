@@ -4,4 +4,4 @@ def add2 : Int -> String
 let add2 = elaraPrimitive "undefined"
 
 def main : IO ()
-let main = println (add2 1 )
+let main = println (add2 1)

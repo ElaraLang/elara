@@ -1,4 +1,5 @@
 {-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Elara.Core.Pretty where
@@ -43,6 +44,9 @@ instance PrettyVar Type where
 
 instance (PrettyVar v, Show v) => Pretty (Expr v) where
     pretty = prettyExpr
+
+instance {-# OVERLAPPABLE #-} PrettyVar v => Pretty v where
+    pretty = prettyVar True True
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2, Show v2) => v1 -> Expr v2 -> Doc AnsiStyle
 prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
