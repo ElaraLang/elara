@@ -28,10 +28,11 @@ data Expr b
     = Var b
     | Lit Literal
     | App (Expr b) (Expr b)
+    | TyApp (Expr b) Type
     | Lam b (Expr b)
+    | TyLam Type (Expr b)
     | Let (Bind b) (Expr b)
     | Match (Expr b) (Maybe b) [Alt b]
-    | Type Type
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
 
 instance Data b => Plated (Expr b)

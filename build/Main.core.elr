@@ -6,4 +6,4 @@ Main.add2 : String -> Char -> Int
     = Elara.Prim.elaraPrimitive @(String -> Char -> Int) "undefined"
 ; 
 Main.main : Int
-    = Main.add @String "1" @Char @Int 'c' }
+    = Main.add @String @Char @Int "1" 'c' }

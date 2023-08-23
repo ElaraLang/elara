@@ -31,6 +31,16 @@ instance PrettyVar Var where
         TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
         v -> prettyVar True True v
 
+instance PrettyVar Type where
+    prettyVar withType withParens = \case
+        TyVarTy tv -> prettyTypeVariable withType tv
+        ConTy name -> pretty name
+        other -> prettyVar withType withParens other
+
+    prettyVarArg = \case
+        TyVarTy (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        v -> prettyVar True True v
+
 instance (PrettyVar v, Show v) => Pretty (Expr v) where
     pretty = prettyExpr
 
@@ -45,19 +55,19 @@ prettyLam e = pretty e
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v, Show v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
+prettyExpr (TyLam b e) = prettyTLLam b e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
 prettyExpr other = prettyExpr1 other
 
 prettyExpr1 :: (Pretty (Expr v), PrettyVar v, Show v, HasCallStack) => Expr v -> Doc AnsiStyle
-prettyExpr1 (App f (Type t)) = prettyExpr1 f <+> "@" <> prettyTy2 t
+prettyExpr1 (TyApp f t) = prettyExpr1 f <+> "@" <> prettyTy2 t
 prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
 prettyExpr2 :: (Pretty (Expr v), PrettyVar v, Show v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
-prettyExpr2 (Type t) = prettyTy t
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (Expr v), Show v) => Bind v -> Doc AnsiStyle

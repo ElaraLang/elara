@@ -125,8 +125,12 @@ mkGlobalRef = Global . Identity
 
 toCore :: HasCallStack => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
 toCore le@(Expr (Located _ e, t)) = do
-    toCore' e
+    moveTypeApplications <$> toCore' e
   where
+    moveTypeApplications :: CoreExpr -> CoreExpr
+    moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
+    moveTypeApplications x = x
+
     toCore' :: (ToCoreC r) => TypedExpr' -> Sem r CoreExpr
     toCore' = \case
         AST.Int i -> pure $ Lit (Core.Int i)
@@ -158,7 +162,7 @@ toCore le@(Expr (Located _ e, t)) = do
         AST.TypeApplication e1 t1 -> do
             e1' <- toCore e1
             t1' <- typeToCore t1
-            pure (Core.App e1' (Core.Type t1'))
+            pure (Core.TyApp e1' t1')
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
             ifTrue' <- toCore ifTrue
