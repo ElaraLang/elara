@@ -63,9 +63,7 @@ inferModule ::
     Module 'Shunted ->
     Sem r (Module 'Typed)
 inferModule m = do
-    m' <- traverseModuleRevTopologically inferDeclaration m
-    y <- Infer.getAll
-    pure m'
+    traverseModuleRevTopologically inferDeclaration m
 
 inferDeclaration ::
     forall r.

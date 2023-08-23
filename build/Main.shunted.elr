@@ -1,15 +1,11 @@
 module Main exposing (..)
 
+import Prelude exposing (..)
 
-
-def Main.add : (a_1 -> (b_2 -> c_3))
-let Main.add =
-    (Elara.Prim.elaraPrimitive  "undefined" ) 
-
-def Main.add2 : (Elara.Prim.String -> (Elara.Prim.Char -> Elara.Prim.Int))
+def Main.add2 : (Elara.Prim.Int -> Elara.Prim.String)
 let Main.add2 =
     (Elara.Prim.elaraPrimitive  "undefined" ) 
 
-def Main.main : Elara.Prim.Int
+def Main.main : Elara.Prim.IO ()
 let Main.main =
-    ((Main.add  "1" )  'c' ) 
+    (Prelude.println  (Main.add2  1 ) ) 

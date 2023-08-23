@@ -58,6 +58,7 @@ data TypeInferenceError
     | --
       RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
     | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
+    | CustomTypeMismatch (Type SourceRegion) (Type SourceRegion) Text Text
     | --
       UserDefinedTypeNotInContext SourceRegion ShuntedType (Context SourceRegion)
     | KindInferError KindInferError

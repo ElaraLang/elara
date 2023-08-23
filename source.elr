@@ -1,8 +1,7 @@
-def add : a -> b -> c
-let add = elaraPrimitive "undefined"
+import Prelude 
 
-def add2 : String -> Char -> Int
+def add2 : Int -> String
 let add2 = elaraPrimitive "undefined"
 
-def main : Int
-let main = add "1" 'c'
+def main : IO ()
+let main = println (add2 1 )

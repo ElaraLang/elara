@@ -28,7 +28,7 @@ import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (showPretty)
+import Print (showColored, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -156,11 +156,17 @@ createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name
 generateCode :: JVMExpr -> Maybe Type -> InnerEmit [Instruction]
 generateCode (Var (JVMLocal 0)) _ = pure [ALoad0]
 -- Hardcode elaraPrimitive "println"
-generateCode (App (Var (Normal (Id (Global (Identity v)) _))) (Lit (String "println"))) _
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (String "println")))) _
     | v == fetchPrimitiveName =
         pure
             [ ALoad0
             , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
+            ]
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (String "undefined")))) (Just t)
+    | v == fetchPrimitiveName =
+        pure
+            [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Throwable")))
+            , AThrow
             ]
 generateCode ((Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ = do
     -- load static var
@@ -179,6 +185,7 @@ generateCode (App (Var (Normal (Id{idVarName = Global (Identity (Qualified vn mn
             )
 
     pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars] <> castInstrs
+generateCode (TyApp a t) _ = generateCode a (Just t)
 generateCode (Lit (String s)) _ =
     pure
         [ LDC (LDCString s)
@@ -188,7 +195,7 @@ generateCode (Lit (Int i)) _ =
         [ LDC (LDCInt (fromIntegral i))
         , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "java.lang.Integer")))
         ]
-generateCode e t = error (showPretty (e, t))
+generateCode e t = error (showPretty e)
 
 {- | Determines if a type is a value type.
  That is, a type that can be compiled to a field rather than a method.
@@ -205,6 +212,7 @@ generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
+generateFieldType (FuncTy _ _) = ObjectFieldType "elara.Func"
 generateFieldType o = error $ "generateFieldType: " <> show o
 
 generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor

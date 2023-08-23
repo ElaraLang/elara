@@ -1,9 +1,6 @@
 module Main
-{ Main.add : forall (a_1 : Type). forall (b_2 : Type). forall (c_3 : Type). a_1 -> b_2 -> c_3
-    = Elara.Prim.elaraPrimitive @(a_1 -> b_2 -> c_3) "undefined"
+{ Main.add2 : Int -> String
+    = Elara.Prim.elaraPrimitive @(Int -> String) "undefined"
 ; 
-Main.add2 : String -> Char -> Int
-    = Elara.Prim.elaraPrimitive @(String -> Char -> Int) "undefined"
-; 
-Main.main : Int
-    = Main.add @String @Char @Int "1" 'c' }
+Main.main : IO ()
+    = Prelude.println (Main.add2 1) }

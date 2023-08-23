@@ -21,6 +21,7 @@ import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
+import Print (debugPretty)
 import Unsafe.Coerce
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))

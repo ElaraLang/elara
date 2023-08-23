@@ -91,24 +91,24 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
 
-    let graph = createGraph [source]
+    let graph = createGraph [source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
-    -- classes <- runReader java8 (emitGraph coreGraph)
-    -- for_ classes $ \(mn, class') -> do
-    --     putTextLn ("Compiling " <> showPretty mn <> "...")
-    --     let converted = convert class'
-    --     let bs = runPut (writeBinary converted)
-    --     liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
-    --     putTextLn ("Compiled " <> showPretty mn <> "!")
+    classes <- runReader java8 (emitGraph coreGraph)
+    for_ classes $ \(mn, class') -> do
+        putTextLn ("Compiling " <> showPretty mn <> "...")
+        let converted = convert class'
+        let bs = runPut (writeBinary converted)
+        liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
+        putTextLn ("Compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show 0 <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 -- typedGraph <- inferModules shuntedGraph
 
@@ -183,7 +183,7 @@ processModules graph (dumpShunted, dumpTyped) =
                     ( traverseGraph rename
                         >=> traverseGraph shunt
                         >=> dumpIf dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
-                        >=> traverseGraph inferModule
+                        >=> traverseGraphRevTopologically inferModule
                         >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
                         >=> traverseGraph moduleToCore
                         $ graph

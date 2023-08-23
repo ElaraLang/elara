@@ -660,6 +660,18 @@ subtype _A0 _B0 = do
                         )
                         p1
                 (_, _) -> throw (NotUnionSubtype (Type.location _A0) _A (Type.location _B0) _B)
+        (_A@Type.Custom{conName, typeArguments = kAs0}, _B@Type.Custom{conName = conName2, typeArguments = kBs0}) -> do
+            when (conName /= conName2) do
+                throw (CustomTypeMismatch _A0 _B0 conName conName2)
+
+            let process (_A1, _B1) = do
+                    _Θ <- get
+
+                    subtype
+                        (Context.solveType _Θ _A1)
+                        (Context.solveType _Θ _B1)
+
+            traverse_ process (zip kAs0 kBs0)
 
         -- Unfortunately, we need to have this wildcard match at the end,
         -- otherwise we'd have to specify a number of cases that is quadratic
