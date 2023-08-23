@@ -69,7 +69,7 @@ data Expr' (ast :: a)
     | FunctionCall (Expr ast) (Expr ast)
     | TypeApplication (Expr ast) (Select "ExprType" ast)
     | If (Expr ast) (Expr ast) (Expr ast)
-    | BinaryOperator (BinaryOperator ast) (Expr ast) (Expr ast)
+    | BinaryOperator !(Select "BinaryOperator" ast)
     | List [Expr ast]
     | Match (Expr ast) [(Pattern ast, Expr ast)]
     | LetIn
@@ -348,6 +348,18 @@ instance ApplyAsFunctorish a b a b where
 instance ApplyAsFunctorish NoFieldValue NoFieldValue a b where
     applyAsFunctorish _ = identity
 
+class DataConAs a b where
+    dataConAs :: a -> b
+    asDataCon :: b -> a
+
+instance DataConAs a a where
+    dataConAs = identity
+    asDataCon = identity
+
+instance DataConAs DataConCantHappen a where
+    dataConAs = dataConCantHappen
+    asDataCon = error "asDataCon: DataConCantHappen"
+
 -- | Unwraps 1 level of 'Maybe' from a type. Useful when a type family returns Maybe
 type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
     UnwrapMaybe (Maybe a) = a
@@ -380,6 +392,7 @@ instance
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
+    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     ) =>
     Pretty (Expr ast)
     where
@@ -409,6 +422,7 @@ prettyExpr ::
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
+    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (?contextFree :: Bool, ?withType :: Bool)
     ) =>
     Expr ast ->
@@ -439,6 +453,7 @@ instance
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (CleanupLocated (ASTLocate' ast (Expr' ast))) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
+    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     ) =>
     Pretty (Expr' ast)
     where
@@ -469,6 +484,7 @@ prettyExpr' ::
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
+    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     ) =>
     Expr' ast ->
     Doc AnsiStyle
@@ -490,7 +506,9 @@ prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast
 prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
 prettyExpr' (InParens e) = parens (pretty e)
 prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)
-prettyExpr' (BinaryOperator op e1 e2) = prettyBinaryOperatorExpr (prettyExpr e1) op (prettyExpr e2)
+prettyExpr' (BinaryOperator b) =
+    let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
+     in prettyBinaryOperatorExpr (prettyExpr e1) op (prettyExpr e2)
 
 instance
     ( Pretty a1
@@ -600,6 +618,14 @@ instance
             (CleanupLocated (Located (Select "LetParamName" ast1)))
             (Select "LetParamName" ast2)
       )
+    , ( DataConAs
+            (Select "BinaryOperator" ast1)
+            (BinaryOperator ast1, Expr ast1, Expr ast1)
+      )
+    , ( DataConAs
+            (Select "BinaryOperator" ast2)
+            (BinaryOperator ast2, Expr ast2, Expr ast2)
+      )
     ) =>
     StripLocation (Expr ast1) (Expr ast2)
     where
@@ -612,6 +638,10 @@ stripExprLocation ::
     , StripLocation (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2)
     , StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2)
     , ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2)
+    , ( DataConAs
+            (Select "BinaryOperator" ast1)
+            (BinaryOperator ast1, Expr ast1, Expr ast1)
+      )
     , _
     ) =>
     Expr ast1 ->
@@ -645,7 +675,9 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
             (stripExprLocation e1)
             (applyAsFunctorish @(Select "ExprType" ast1) @(Select "ExprType" ast2) @(Type ast1) @(Type ast2) stripTypeLocation e2)
     stripExprLocation' (If e1 e2 e3) = If (stripExprLocation e1) (stripExprLocation e2) (stripExprLocation e3)
-    stripExprLocation' (BinaryOperator op e1 e2) = BinaryOperator (stripBinaryOperatorLocation op) (stripExprLocation e1) (stripExprLocation e2)
+    stripExprLocation' (BinaryOperator b) =
+        let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast1) @(BinaryOperator ast1, Expr ast1, Expr ast1) b
+         in BinaryOperator $ asDataCon (stripBinaryOperatorLocation @ast1 @ast2 op, stripExprLocation e1, stripExprLocation e2)
     stripExprLocation' (List l) = List (stripExprLocation <$> l)
     stripExprLocation' (Match e m) = Match (stripExprLocation e) (bimapF stripPatternLocation stripExprLocation m)
     stripExprLocation' (LetIn v p e1 e2) =
@@ -804,6 +836,7 @@ deriving instance
     , (Eq (Select "InParens" ast))
     , (Eq (Select "ExprType" ast))
     , (Eq (Select "PatternType" ast))
+    , (Eq (Select "BinaryOperator" ast))
     , Eq (ASTLocate ast (Expr' ast))
     , Eq (ASTLocate ast (Pattern' ast))
     ) =>
@@ -852,6 +885,7 @@ deriving instance
     , (Show (Select "InParens" ast))
     , (Show (Select "ExprType" ast))
     , (Show (Select "PatternType" ast))
+    , Show (Select "BinaryOperator" ast)
     , Show (ASTLocate ast (Expr' ast))
     , Show (ASTLocate ast (Pattern' ast))
     ) =>

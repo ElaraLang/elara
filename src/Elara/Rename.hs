@@ -358,11 +358,11 @@ renameExpr (Expr le) =
         e2' <- renameExpr e2
         e3' <- renameExpr e3
         pure $ If e1' e2' e3'
-    renameExpr' (BinaryOperator op left right) = do
+    renameExpr' (BinaryOperator (op, left, right)) = do
         op' <- renameBinaryOperator op
         left' <- renameExpr left
         right' <- renameExpr right
-        pure $ BinaryOperator op' left' right'
+        pure $ BinaryOperator (op', left', right')
     renameExpr' (List es) = List <$> traverse renameExpr es
     renameExpr' (Let vn _ e) = do
         vn' <- uniquify vn

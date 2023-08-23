@@ -16,6 +16,7 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (conName, opName, unqualifiedVarName, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inParens, located, token_, withPredicate, (<??>))
+import Elara.Utils (curry3, uncurry3)
 import HeadedMegaparsec (endHead, wrapToHead)
 import HeadedMegaparsec qualified as H (parse, toParsec)
 import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy)
@@ -53,7 +54,7 @@ unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
 unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
 
 binOp, functionCall :: HParser (FrontendExpr -> FrontendExpr -> FrontendExpr)
-binOp = liftedBinary operator BinaryOperator unannotatedExpr
+binOp = liftedBinary operator (curry3 BinaryOperator) unannotatedExpr
 functionCall = liftedBinary pass (const FunctionCall) unannotatedExpr
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications

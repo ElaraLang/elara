@@ -25,6 +25,7 @@ type instance Select "VarRef" 'Desugared = MaybeQualified VarName
 type instance Select "ConRef" 'Desugared = MaybeQualified TypeName
 type instance Select "LetParamName" 'Desugared = VarName
 type instance Select "InParens" 'Desugared = DesugaredExpr
+type instance Select "BinaryOperator" 'Desugared = (DesugaredBinaryOperator, DesugaredExpr, DesugaredExpr)
 
 -- Selections for 'BinaryOperator'
 type instance Select "SymOp" 'Desugared = MaybeQualified OpName

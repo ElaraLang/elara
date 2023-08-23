@@ -37,6 +37,7 @@ type instance Select "SymOp" 'Shunted = VarRef OpName
 type instance Select "Infixed" 'Shunted = VarRef VarName
 type instance Select "LetParamName" 'Shunted = Unique VarName
 type instance Select "InParens" 'Shunted = DataConCantHappen
+type instance Select "BinaryOperator" 'Shunted = DataConCantHappen
 
 type instance Select "PatternType" 'Shunted = Maybe ShuntedType
 type instance Select "VarPat" 'Shunted = Unique LowerAlphaName

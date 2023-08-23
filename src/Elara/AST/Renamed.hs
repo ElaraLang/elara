@@ -26,6 +26,7 @@ type instance Select "SymOp" 'Renamed = VarRef OpName
 type instance Select "Infixed" 'Renamed = VarRef VarOrConName
 type instance Select "LetParamName" 'Renamed = Unique VarName
 type instance Select "InParens" 'Renamed = RenamedExpr
+type instance Select "BinaryOperator" 'Renamed = (RenamedBinaryOperator, RenamedExpr, RenamedExpr)
 
 type instance Select "PatternType" 'Renamed = Maybe RenamedType
 type instance Select "VarPat" 'Renamed = Unique LowerAlphaName

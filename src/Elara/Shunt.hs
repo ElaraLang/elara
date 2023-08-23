@@ -124,7 +124,7 @@ fixOperators opTable = reassoc
 
     reassoc :: RenamedExpr -> Sem r RenamedExpr
     reassoc e@(InExpr (InParens e2)) = withLocationOf' e . InParens <$> reassoc e2
-    reassoc e@(InExpr' loc (BinaryOperator operator l r)) = do
+    reassoc e@(InExpr' loc (BinaryOperator (operator, l, r))) = do
         l' <- reassoc l
         r' <- reassoc r
         withLocationOf' e <$> reassoc' loc operator l' r'
@@ -132,7 +132,7 @@ fixOperators opTable = reassoc
 
     reassoc' :: SourceRegion -> RenamedBinaryOperator -> RenamedExpr -> RenamedExpr -> Sem r RenamedExpr'
     reassoc' sr operator l (InExpr (InParens r)) = reassoc' sr operator l r
-    reassoc' sr o1 e1 r@(InExpr (BinaryOperator o2 e2 e3)) = do
+    reassoc' sr o1 e1 r@(InExpr (BinaryOperator (o2, e2, e3))) = do
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
         case compare info1.precedence info2.precedence of
@@ -146,10 +146,10 @@ fixOperators opTable = reassoc
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
             let reassociated = Expr (Located sr reassociated', Nothing)
-            pure (BinaryOperator o2 (withLocationOf' reassociated (InParens reassociated)) e3)
+            pure (BinaryOperator (o2, withLocationOf' reassociated (InParens reassociated), e3))
 
         assocRight = do
-            pure (BinaryOperator o1 e1 r)
+            pure (BinaryOperator (o1, e1, r))
 
         getInfoOrWarn :: RenamedBinaryOperator -> Sem r OpInfo
         getInfoOrWarn operator = case opInfo opTable operator of
@@ -157,7 +157,7 @@ fixOperators opTable = reassoc
             Nothing -> do
                 tell (fromList [UnknownPrecedence operator])
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
-    reassoc' _ operator l r = pure (BinaryOperator operator l r)
+    reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
 type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
@@ -235,7 +235,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (Constructor v) = pure (Constructor v)
     shuntExpr' (Lambda n e) = Lambda n <$> shuntExpr e
     shuntExpr' (FunctionCall f x) = FunctionCall <$> shuntExpr f <*> shuntExpr x
-    shuntExpr' (BinaryOperator operator l r) = do
+    shuntExpr' (BinaryOperator (operator, l, r)) = do
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
         -- Semantics for type annotation shifting are as follows:

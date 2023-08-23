@@ -18,6 +18,7 @@ type instance Select "VarRef" 'Frontend = MaybeQualified VarName
 type instance Select "ConRef" 'Frontend = MaybeQualified TypeName
 type instance Select "LetParamName" 'Frontend = VarName
 type instance Select "InParens" 'Frontend = FrontendExpr
+type instance Select "BinaryOperator" 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
 
 -- Selections for 'BinaryOperator'
 type instance Select "SymOp" 'Frontend = MaybeQualified OpName

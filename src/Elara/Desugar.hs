@@ -20,6 +20,7 @@ import Elara.Lexer.Pipeline
 import Elara.Parse
 import Elara.Pipeline
 import Elara.ReadFile
+import Elara.Utils (curry3)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error (Error, fromEither, runError, throw)
@@ -221,7 +222,7 @@ desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desug
         pure (foldLambda (pats' ^. unlocated) e' ^. _Unwrapped . _1 . unlocated) -- Somewhat cursed but it works
     desugarExpr' (FunctionCall e1 e2) = liftA2 FunctionCall (desugarExpr e1) (desugarExpr e2)
     desugarExpr' (If a b c) = liftA3 If (desugarExpr a) (desugarExpr b) (desugarExpr c)
-    desugarExpr' (BinaryOperator o a b) = liftA3 BinaryOperator (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
+    desugarExpr' (BinaryOperator (o, a, b)) = liftA3 (curry3 BinaryOperator) (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
     desugarExpr' (List e) = List <$> traverse desugarExpr e
     desugarExpr' (Match e cases) = do
         e' <- desugarExpr e
