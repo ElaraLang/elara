@@ -32,7 +32,7 @@ type instance Select "ConRef" 'Typed = Qualified TypeName
 type instance Select "SymOp" 'Typed = VarRef OpName
 type instance Select "Infixed" 'Typed = VarRef VarName
 type instance Select "LetParamName" 'Typed = Unique VarName
-type instance Select "InParens" 'Typed = TypedExpr
+type instance Select "InParens" 'Typed = DataConCantHappen
 
 type instance Select "PatternType" 'Typed = Type SourceRegion
 type instance Select "VarPat" 'Typed = Unique VarName

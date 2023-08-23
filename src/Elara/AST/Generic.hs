@@ -29,10 +29,12 @@ import Elara.AST.StripLocation (StripLocation (..))
 import Elara.Data.Pretty
 import GHC.TypeLits
 import Relude.Extra (bimapF)
-import TODO (todo)
 import Prelude hiding (group)
 
 data DataConCantHappen deriving (Generic, Data, Show)
+instance Pretty DataConCantHappen where
+    pretty :: HasCallStack => DataConCantHappen -> Doc AnsiStyle
+    pretty _ = error "This instance should never be used"
 
 dataConCantHappen :: DataConCantHappen -> a
 dataConCantHappen x = case x of {}
