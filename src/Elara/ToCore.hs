@@ -155,6 +155,10 @@ toCore le@(Expr (Located _ e, t)) = do
             e1' <- toCore e1
             e2' <- toCore e2
             pure (App e1' e2')
+        AST.TypeApplication e1 t1 -> do
+            e1' <- toCore e1
+            t1' <- typeToCore t1
+            pure (Core.App e1' (Core.Type t1'))
         AST.If cond ifTrue ifFalse -> do
             cond' <- toCore cond
             ifTrue' <- toCore ifTrue

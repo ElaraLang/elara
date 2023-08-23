@@ -80,7 +80,7 @@ instance Pretty Literal where
     pretty = \case
         Int i -> pretty i
         String s -> prettyStringExpr s
-        Char c -> pretty c
+        Char c -> "'" <> pretty c <> "'"
         Double d -> pretty d
         Unit -> "()"
 

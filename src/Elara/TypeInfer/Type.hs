@@ -209,6 +209,14 @@ fromMonotype monotype =
 instance Pretty Monotype where
     pretty = pretty . fromMonotype
 
+stripForAll :: Type s -> Type s
+stripForAll type_ =
+    case type_ of
+        Forall{type_ = type_'} ->
+            stripForAll type_'
+        _ ->
+            type_
+
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free
 freeTypeVars t = nubOrdOn (view unlocated) (Lens.concatMapOf Lens.cosmos names t)

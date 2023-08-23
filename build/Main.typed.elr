@@ -4,19 +4,35 @@ module Main exposing (..)
 
 def Main.add : forall (a_1 : Type) (b_2 : Type) (c_3 : Type) . a_1 -> b_2 -> c_3
 let Main.add =
-    (Elara.Prim.elaraPrimitive : forall (a_0 : Type) .
-                                   Text ->
-                                     a_0 "undefined" : Text) : forall (a_1 : Type) .
-                                                               forall (b_2 : Type) .
-                                                               forall (c_3 : Type) .
-                                                                 a_1 ->
-                                                                 b_2 ->
-                                                                   c_3
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_1 ->
+                                                                     b_2 ->
+                                                                       c_3) : forall (a_1 : Type) .
+                                                                              forall (b_2 : Type) .
+                                                                              forall (c_3 : Type) .
+                                                                                a_1 ->
+                                                                                b_2 ->
+                                                                                  c_3 "undefined" : Text) : forall (a_1 : Type) .
+                                                                                                            forall (b_2 : Type) .
+                                                                                                            forall (c_3 : Type) .
+                                                                                                              a_1 ->
+                                                                                                              b_2 ->
+                                                                                                                c_3
+
+def Main.add2 : Text -> Char -> Integer
+let Main.add2 =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Text ->
+                                                                     Char ->
+                                                                       Integer) : Text ->
+                                                                                  Char ->
+                                                                                    Integer "undefined" : Text) : Text ->
+                                                                                                                  Char ->
+                                                                                                                    Integer
 
 def Main.main : Integer
 let Main.main =
-    ((Main.add : forall (a_1 : Type) .
-                 forall (b_2 : Type) .
-                 forall (c_3 : Type) .
-                   a_1 -> b_2 -> c_3 "1" : Text) : Char ->
-                                                     Integer 'c' : Char) : Integer
+    (((((Main.add : forall (a_1 : Type) .
+                    forall (b_2 : Type) .
+                    forall (c_3 : Type) .
+                      a_1 -> b_2 -> c_3 @Text) : Char ->
+                                                   Integer "1" : Text) : Char ->
+                                                                           Integer @Char) : Integer @Integer) : Integer 'c' : Char) : Integer

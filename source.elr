@@ -1,4 +1,8 @@
 def add : a -> b -> c
 let add = elaraPrimitive "undefined"
+
+def add2 : String -> Char -> Int
+let add2 = elaraPrimitive "undefined"
+
 def main : Int
 let main = add "1" 'c'

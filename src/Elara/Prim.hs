@@ -31,6 +31,9 @@ stringName = TypeName "String"
 intName :: TypeName
 intName = TypeName "Int"
 
+charName :: TypeName
+charName = TypeName "Char"
+
 ioName :: TypeName
 ioName = TypeName "IO"
 
@@ -50,7 +53,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, intName]
+primitiveTypes = [stringName, charName, intName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
@@ -68,12 +71,14 @@ primitiveTCContext = do
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
                 (Scalar primRegion Integer)
             , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName charName)))
+                (Scalar primRegion Char)
+            , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
                 (Custom primRegion "IO" [])
             ]
 
     primTyVarName <- makeUniqueTyVarWith "a"
-    debugPretty primTyVarName
     let elaraPrimitive =
             Annotation -- elaraPrimitive :: forall a. String -> a
                 (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))

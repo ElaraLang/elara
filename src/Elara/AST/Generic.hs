@@ -65,6 +65,7 @@ data Expr' (ast :: a)
         (ASTLocate ast (Select "LambdaPattern" ast))
         (Expr ast)
     | FunctionCall (Expr ast) (Expr ast)
+    | TypeApplication (Expr ast) (Select "ExprType" ast)
     | If (Expr ast) (Expr ast) (Expr ast)
     | BinaryOperator (BinaryOperator ast) (Expr ast) (Expr ast)
     | List [Expr ast]
@@ -376,6 +377,7 @@ instance
     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
+    , (Pretty (Select "ExprType" ast))
     ) =>
     Pretty (Expr ast)
     where
@@ -404,6 +406,7 @@ prettyExpr ::
     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
+    , (Pretty (Select "ExprType" ast))
     , (?contextFree :: Bool, ?withType :: Bool)
     ) =>
     Expr ast ->
@@ -433,6 +436,7 @@ instance
     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (CleanupLocated (ASTLocate' ast (Expr' ast))) (Expr' ast))
+    , (Pretty (Select "ExprType" ast))
     ) =>
     Pretty (Expr' ast)
     where
@@ -452,10 +456,8 @@ prettyExpr' ::
     , (Pretty (Select "InParens" ast))
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty letPatterns
-    , letPatterns ~ UnwrapList (Select "LetPattern" ast)
     , (ToList (Select "LetPattern" ast) [letPatterns])
     , Pretty lambdaPatterns
-    , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
     , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
     , (Pretty (ASTLocate ast (BinaryOperator' ast)))
     , (ToMaybe (Select "ExprType" ast) (Maybe (UnwrapMaybe (Select "ExprType" ast))))
@@ -464,6 +466,7 @@ prettyExpr' ::
     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
+    , (Pretty (Select "ExprType" ast))
     ) =>
     Expr' ast ->
     Doc AnsiStyle
@@ -476,6 +479,7 @@ prettyExpr' (Var v) = pretty v
 prettyExpr' (Constructor c) = pretty c
 prettyExpr' (Lambda ps e) = prettyLambdaExpr (fieldToList @(ASTLocate ast (Select "LambdaPattern" ast)) ps :: [lambdaPatterns]) (prettyExpr e)
 prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr (prettyExpr e1) (prettyExpr e2)
+prettyExpr' (TypeApplication e1 e2) = prettyFunctionCallExpr (prettyExpr e1) ("@" <> pretty e2)
 prettyExpr' (If e1 e2 e3) = prettyIfExpr (prettyExpr e1) (prettyExpr e2) (prettyExpr e3)
 prettyExpr' (List l) = prettyList (prettyExpr <$> l)
 prettyExpr' (Match e m) = prettyMatchExpr (prettyExpr e) (prettyMatchBranch . second prettyExpr <$> m)
@@ -634,6 +638,10 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
                     ps'
          in Lambda ps'' (stripExprLocation e)
     stripExprLocation' (FunctionCall e1 e2) = FunctionCall (stripExprLocation e1) (stripExprLocation e2)
+    stripExprLocation' (TypeApplication e1 e2) =
+        TypeApplication
+            (stripExprLocation e1)
+            (applyAsFunctorish @(Select "ExprType" ast1) @(Select "ExprType" ast2) @(Type ast1) @(Type ast2) stripTypeLocation e2)
     stripExprLocation' (If e1 e2 e3) = If (stripExprLocation e1) (stripExprLocation e2) (stripExprLocation e3)
     stripExprLocation' (BinaryOperator op e1 e2) = BinaryOperator (stripBinaryOperatorLocation op) (stripExprLocation e1) (stripExprLocation e2)
     stripExprLocation' (List l) = List (stripExprLocation <$> l)

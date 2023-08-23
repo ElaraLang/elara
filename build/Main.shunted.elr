@@ -6,6 +6,10 @@ def Main.add : (a_1 -> (b_2 -> c_3))
 let Main.add =
     (Elara.Prim.elaraPrimitive  "undefined" ) 
 
+def Main.add2 : (Elara.Prim.String -> (Elara.Prim.Char -> Elara.Prim.Int))
+let Main.add2 =
+    (Elara.Prim.elaraPrimitive  "undefined" ) 
+
 def Main.main : Elara.Prim.Int
 let Main.main =
     ((Main.add  "1" )  'c' ) 

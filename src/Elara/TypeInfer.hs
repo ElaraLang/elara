@@ -1,11 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmos, cosmosOn, to, traverseOf, view, (^.), _2)
-import Data.Containers.ListUtils (nubOrd, nubOrdOn)
+import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2)
+import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
@@ -66,7 +65,6 @@ inferModule ::
 inferModule m = do
     m' <- traverseModuleRevTopologically inferDeclaration m
     y <- Infer.getAll
-    debugPretty (nubOrd y & filter (\case SolvedType{} -> True; _ -> False))
     pure m'
 
 inferDeclaration ::
@@ -215,13 +213,19 @@ completeExpression ::
     TypedExpr ->
     Sem r TypedExpr
 completeExpression ctx e@(Expr (y', t)) = do
-    debugPretty (let ?withType = False; ?contextFree = True in prettyExpr e)
     completed <- quantify <$> complete ctx t
     unify t completed
 
     ctx' <- Infer.getAll
-
-    plate (completeExpression ctx') (Expr (y', completed))
+    y'' <-
+        traverseOf
+            unlocated
+            ( \case
+                TypeApplication f t' -> TypeApplication f <$> complete ctx' t'
+                o -> pure o
+            )
+            y'
+    plate (completeExpression ctx') (Expr (y'', completed))
   where
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
@@ -245,7 +249,7 @@ completeExpression ctx e@(Expr (y', t)) = do
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     unify unsolved solved = do
-        debugPretty ("Unify" :: Text, unsolved, solved)
+        -- debugPretty ("Unify" :: Text, unsolved, solved)
         case (stripForAlls unsolved, stripForAlls solved) of
             (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
                 subst unsolvedInput solvedInput
@@ -268,7 +272,7 @@ completeExpression ctx e@(Expr (y', t)) = do
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     subst s@Infer.UnsolvedType{existential} solved = do
-        debugPretty ("Subst" :: Text, s, solved)
+        -- debugPretty ("Subst" :: Text, s, solved)
         let annotation = SolvedType existential (toMonoType solved)
         push annotation
     subst a b = pass

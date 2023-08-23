@@ -702,7 +702,6 @@ instantiateTypeL a _A0 = do
 
     let instLSolve τ = do
             wellFormedType _Γ _A0
-            debugPretty ("InstLSolve" <+> pretty a <+> ":" <+> pretty _A0 <+> "τ:" <+> pretty τ)
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
 
     case _A0 of
@@ -854,7 +853,6 @@ instantiateTypeR _A0 a = do
 
     let instRSolve τ = do
             wellFormedType _Γ _A0
-            debugPretty ("InstRSolve" <+> pretty a <+> ":" <+> pretty _A0 <+> "τ:" <+> pretty τ)
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
 
     case _A0 of
@@ -1227,12 +1225,52 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         _Θ <- get
 
-        (typedArgument, appType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
+        (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
 
-        pure $ Expr (Located location (FunctionCall _A typedArgument), appType)
+        let isVar = \case Type.VariableType{} -> True; Type.UnsolvedType{} -> True; _ -> False
+        e <- case Type.stripForAll (Syntax.typeOf _A) of
+            Type.Function{input, output}
+                | isVar input && isVar output ->
+                    pure $
+                        FunctionCall
+                            ( Expr
+                                ( Located
+                                    primRegion
+                                    ( TypeApplication
+                                        ( Expr
+                                            ( Located
+                                                primRegion
+                                                (TypeApplication _A (Syntax.typeOf typedArgument))
+                                            , resultType
+                                            )
+                                        )
+                                        (Type.stripForAll resultType)
+                                    )
+                                , resultType
+                                )
+                            )
+                            typedArgument
+            Type.Function{input}
+                | isVar input ->
+                    pure $
+                        FunctionCall
+                            ( Expr (Located primRegion (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
+                            )
+                            typedArgument
+            Type.Function{output}
+                | isVar output ->
+                    pure $
+                        FunctionCall
+                            ( Expr (Located primRegion (TypeApplication _A (Type.stripForAll resultType)), resultType)
+                            )
+                            typedArgument
+            o -> do
+                pure $ FunctionCall _A typedArgument
+
+        pure $ Expr (Located location e, resultType)
 
     -- All the type inference rules for scalars go here.  This part is
-    -- pretty self-explanatory: a scalar literal pures the matching
+    -- pretty self-explanatory: a scalar literal returns the matching
     -- scalar type.
     Syntax.Float f -> do
         let t = (Type.Scalar{scalar = Monotype.Real, ..})
