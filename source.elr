@@ -1,7 +1,8 @@
 import Prelude 
 
-def add2 : Int -> String
-let add2 = elaraPrimitive "undefined"
+def add2 : Int -> Int
+let add2 x = x + 2
+
 
 def main : IO ()
-let main = println (add2 1)
+let main = println (toString (add2 1))

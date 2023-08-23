@@ -2,15 +2,19 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.add2 : Integer -> Text
+def Main.add2 : Integer -> Integer
 let Main.add2 =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
-                                                                       Text) : Integer ->
-                                                                                 Text "undefined" : Text) : Integer ->
-                                                                                                              Text
+    (\ x_1 -> (((Prelude.(+) : Integer ->
+                               Integer ->
+                                 Integer x_1 : Integer) : Integer ->
+                                                            Integer 2 : Integer) : Integer)) : Integer ->
+                                                                                                 Integer
 
 def Main.main : IO Unit 
 let Main.main =
-    (Prelude.println : Text -> IO Unit  (Main.add2 : Integer ->
-                                                       Text 1 : Integer) : Text) : IO Unit
+    (Prelude.println : Text ->
+                         IO Unit  ((Prelude.toString : forall (a_2 : Type) .
+                                                         a_2 ->
+                                                           Text @Integer) : Text (Main.add2 : Integer ->
+                                                                                                Integer 1 : Integer) : Integer) : Text) : IO Unit
 

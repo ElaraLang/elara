@@ -11,3 +11,22 @@ let Prelude.println =
                                                                                     "println" : Text) : Text ->
                                                                                                           IO Unit
 
+
+def Prelude.toString : forall (a_2 : Type) . a_2 -> Text
+let Prelude.toString =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_2 ->
+                                                                       Text) : forall (a_2 : Type) .
+                                                                                 a_2 ->
+                                                                                   Text "toString" : Text) : forall (a_2 : Type) .
+                                                                                                               a_2 ->
+                                                                                                                 Text
+
+def Prelude.(+) : Integer -> Integer -> Integer
+let Prelude.(+) =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
+                                                                     Integer ->
+                                                                       Integer) : Integer ->
+                                                                                  Integer ->
+                                                                                    Integer "+" : Text) : Integer ->
+                                                                                                          Integer ->
+                                                                                                            Integer

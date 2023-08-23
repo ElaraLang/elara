@@ -5,3 +5,11 @@ module Prelude exposing (..)
 def Prelude.println : (Elara.Prim.String -> Elara.Prim.IO ())
 let Prelude.println =
     (Elara.Prim.elaraPrimitive  "println" ) 
+
+def Prelude.toString : (a_2 -> Elara.Prim.String)
+let Prelude.toString =
+    (Elara.Prim.elaraPrimitive  "toString" ) 
+
+def Prelude.(+) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
+let Prelude.(+) =
+    (Elara.Prim.elaraPrimitive  "+" ) 

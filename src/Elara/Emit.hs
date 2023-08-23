@@ -30,7 +30,7 @@ import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
 import Polysemy.Writer
-import Print (debugPretty, showColored, showPretty)
+import Print (showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
@@ -217,7 +217,7 @@ generateCode (Lit (Int i)) _ =
         [ LDC (LDCInt (fromIntegral i))
         , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
         ]
-generateCode e t = error (showPretty e)
+generateCode e t = error (showPretty (e, t))
 
 {- | Determines if a type is a value type.
  That is, a type that can be compiled to a field rather than a method.
