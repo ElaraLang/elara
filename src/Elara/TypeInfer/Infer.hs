@@ -63,7 +63,7 @@ data Status = Status
     -- ^ A write-only context that logs every entry that is added to the main context
     }
 
-initialStatus :: Member UniqueGen r => Sem r Status
+initialStatus :: (Member UniqueGen r) => Sem r Status
 initialStatus = do
     primitiveTCContext <- primitiveTCContext
     pure
@@ -72,7 +72,7 @@ initialStatus = do
             , writeOnlyContext = primitiveTCContext
             }
 
-orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
+orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
 Nothing `orDie` e = throw e
 
@@ -84,25 +84,25 @@ fresh = UnsafeExistential <$> makeUniqueTyVar
 -- Instead, we modify the ambient state using the following utility functions:
 
 -- | Push a new `Context` `Entry` onto the stack
-push :: Member (State Status) r => Entry SourceRegion -> Sem r ()
+push :: (Member (State Status) r) => Entry SourceRegion -> Sem r ()
 push entry = State.modify (\s -> s{context = entry : context s, writeOnlyContext = entry : writeOnlyContext s})
 
 -- | Retrieve the current `Context`
-get :: Member (State Status) r => Sem r (Context SourceRegion)
+get :: (Member (State Status) r) => Sem r (Context SourceRegion)
 get = State.gets context
 
-getAll :: Member (State Status) r => Sem r (Context SourceRegion)
+getAll :: (Member (State Status) r) => Sem r (Context SourceRegion)
 getAll = State.gets writeOnlyContext
 
 -- | Set the `Context` to a new value
-set :: Member (State Status) r => Context SourceRegion -> Sem r ()
+set :: (Member (State Status) r) => Context SourceRegion -> Sem r ()
 set context = State.modify (\s -> s{context, writeOnlyContext = context <> writeOnlyContext s})
 
 {- | This is used to temporarily add a `Context` entry that is discarded at the
     end of the entry's scope, along with any downstream entries that were
     created within that same scope
 -}
-scoped :: Member (State Status) r => Entry SourceRegion -> Sem r a -> Sem r a
+scoped :: (Member (State Status) r) => Entry SourceRegion -> Sem r a -> Sem r a
 scoped entry k = do
     push entry
 
@@ -147,7 +147,7 @@ scopedUnsolvedAlternatives k = do
     … which checks that under context Γ, the type A is well-formed
 -}
 wellFormedType ::
-    Member (Error TypeInferenceError) r =>
+    (Member (Error TypeInferenceError) r) =>
     Context SourceRegion ->
     Type SourceRegion ->
     Sem r ()
@@ -1975,10 +1975,10 @@ inferApplication _A _ = throw (NotFunctionType (location _A) _A)
 
 -- Helper functions for displaying errors
 
-insert :: Pretty a => a -> String
+insert :: (Pretty a) => a -> String
 insert a = toString (prettyToText ("  " <> Pretty.align (pretty a)))
 
-listToText :: Pretty a => [a] -> String
+listToText :: (Pretty a) => [a] -> String
 listToText elements =
     toString (Text.intercalate "\n" (map prettyEntry elements))
   where

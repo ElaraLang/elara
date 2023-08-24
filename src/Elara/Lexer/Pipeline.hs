@@ -13,7 +13,7 @@ import Polysemy.Error
 
 type LexPipelineEffects = '[Error LexerError]
 
-runLexPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf LexPipelineEffects r) a -> Sem r a
+runLexPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf LexPipelineEffects r) a -> Sem r a
 runLexPipeline =
     runErrorOrReport @LexerError
 

@@ -16,10 +16,10 @@ instance IsString Name where
         c : _ | isLower c -> NVarName (fromString s)
         _ -> NOpName (fromString s)
 
-instance IsString s => IsString (MaybeQualified s) where
+instance (IsString s) => IsString (MaybeQualified s) where
     fromString s = MaybeQualified (fromString s) Nothing
 
-instance IsString s => IsString (Unqualified s) where
+instance (IsString s) => IsString (Unqualified s) where
     fromString s = Unqualified (fromString s)
 
 instance IsString ModuleName where

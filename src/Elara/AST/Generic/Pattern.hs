@@ -8,7 +8,7 @@ pattern FunctionCall' a b <- Expr (FunctionCall a b, _)
 
 functionCall ::
     forall {a1} {a2} {ast1 :: a1} {ast2 :: a2}.
-    _ =>
+    (_) =>
     Expr ast2 ->
     Expr ast2 ->
     Expr ast1

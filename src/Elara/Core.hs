@@ -35,7 +35,7 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
 
-instance Data b => Plated (Expr b)
+instance (Data b) => Plated (Expr b)
 
 type CoreExpr = Expr Var
 

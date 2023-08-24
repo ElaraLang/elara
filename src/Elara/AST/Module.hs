@@ -105,7 +105,7 @@ instance (ASTLocate' ast ~ Located) => HasDependencies (Module ast) where
     key m = m ^. _Unwrapped . unlocated . field' @"name" . unlocated
     dependencies = toListOf (_Unwrapped . unlocated . field' @"imports" . each . _Unwrapped . unlocated . field' @"importing" . unlocated)
 
-traverseModuleRevTopologically :: _ => (Declaration ast -> f (Declaration ast')) -> Module ast1 -> f (Module ast2)
+traverseModuleRevTopologically :: (_) => (Declaration ast -> f (Declaration ast')) -> Module ast1 -> f (Module ast2)
 traverseModuleRevTopologically traverseDecl =
     traverseOf
         (_Unwrapped . unlocated)

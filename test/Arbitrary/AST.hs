@@ -9,6 +9,7 @@ import Elara.AST.Unlocated ()
 
 import Arbitrary.Literals
 import Elara.AST.Name (VarOrConName (VarName))
+import Elara.Utils
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
@@ -17,7 +18,7 @@ import Prelude hiding (Op)
 mkPat :: Pattern' 'UnlocatedFrontend -> Pattern 'UnlocatedFrontend
 mkPat p = Pattern (p, Nothing)
 
-mkExpr :: Applicative m => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
+mkExpr :: (Applicative m) => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
 mkExpr e = pure (Expr (e, Nothing))
 
 genPattern :: Gen (Pattern 'UnlocatedFrontend)
@@ -62,7 +63,7 @@ genExpr' =
         [ Gen.subtermM genExpr' (\x -> Lambda <$> Gen.list (Range.linear 0 3) genPattern <*> mkExpr x)
         , Gen.subtermM2 genExpr' genExpr' (\x y -> FunctionCall <$> mkExpr x <*> mkExpr y)
         , Gen.subtermM3 genExpr' genExpr' genExpr' (\x y z -> If <$> mkExpr x <*> mkExpr y <*> mkExpr z)
-        , Gen.subtermM2 genExpr' genExpr' (\y z -> BinaryOperator <$> genBinaryOperator <*> mkExpr y <*> mkExpr z)
+        , Gen.subtermM2 genExpr' genExpr' (\y z -> curry3 BinaryOperator <$> genBinaryOperator <*> mkExpr y <*> mkExpr z)
         , List <$> Gen.list (Range.linear 0 10) genExpr
         , Gen.subtermM genExpr' (\x -> Match <$> mkExpr x <*> Gen.list (Range.linear 0 5) (liftA2 (,) genPattern genExpr))
         , LetIn <$> genVarName <*> Gen.list (Range.linear 0 5) genPattern <*> genStatement <*> genStatement

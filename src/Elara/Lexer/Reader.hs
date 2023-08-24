@@ -50,7 +50,7 @@ readTokens = do
             next <- readTokens
             pure (tok : next)
 
-readTokensWith :: Member (Error LexerError) r => FilePath -> String -> Sem r [Lexeme]
+readTokensWith :: (Member (Error LexerError) r) => FilePath -> String -> Sem r [Lexeme]
 readTokensWith fp s = do
     evalState (initialState fp s) (subsume_ readTokens)
 

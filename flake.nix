@@ -11,10 +11,12 @@
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
     h2jvm.url = "github:ElaraLang/h2jvm";
-    # h2jvm.flake = fa
 
     diagnose.url = "github:knightzmc/diagnose";
     diagnose.flake = false;
+
+    megaparsec.url = "github:mrkkrp/megaparsec";
+    megaparsec.flake = true;
 
   };
 
@@ -28,80 +30,31 @@
         inputs.treefmt-nix.flakeModule
         inputs.flake-root.flakeModule
         inputs.mission-control.flakeModule
-
       ];
 
       perSystem = { self', lib, system, config, pkgs, ... }: {
-        _module.args.pkgs = import self.inputs.nixpkgs {
-          inherit system;
-          overlays =
-            let
-
-              ghcName = "ghc92";
-              # Desired new setting
-              enableProfiling = false;
-            in
-
-            [
-              (final: prev:
-                let
-                  inherit (final) lib;
-                in
-
-                {
-                  haskell = lib.recursiveUpdate prev.haskell {
-                    compiler.${ghcName} = prev.haskell.compiler.${ghcName}.override {
-                      # Unfortunately, the GHC setting is named differently for historical reasons
-                      enableProfiledLibs = enableProfiling;
-                    };
-                  };
-                })
-
-              (final: prev:
-                let
-                  inherit (final) lib;
-                  haskellLib = final.haskell.lib.compose;
-                in
-
-                {
-                  haskell = lib.recursiveUpdate prev.haskell {
-                    packages.${ghcName} = prev.haskell.packages.${ghcName}.override {
-                      overrides = hfinal: hprev: {
-                        mkDerivation = args: hprev.mkDerivation (args // {
-                          enableLibraryProfiling = enableProfiling;
-                          enableExecutableProfiling = enableProfiling;
-                        });
-                      };
-                    };
-                  };
-                })
-            ];
-        };
 
         haskellProjects.default = {
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc92.override (old: {
-            overrides = lib.composeExtensions (old.overrides or (_: _: { })) (self: super: {
-              mkDerivation = args: super.mkDerivation (args // {
-                enableLibraryProfiling = true;
-              });
-            });
-          });
-
+          basePackages = pkgs.haskell.packages.ghc945;
 
 
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
+            megaparsec.source = inputs.megaparsec;
           };
 
           settings = {
 
             diagnose = {
-              extraBuildDepends = [ pkgs.haskellPackages.megaparsec ];
-              extraConfigureFlags = [ "-f megaparsec-compat" ];
+              extraBuildDepends = [
+                pkgs.haskellPackages.megaparsec_9_4_1
+              ];
+              cabalFlags.megaparsec-compat = true;
+              jailbreak = true;
             };
 
             h2jvm = {

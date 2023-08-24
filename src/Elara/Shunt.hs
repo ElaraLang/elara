@@ -161,7 +161,7 @@ fixOperators opTable = reassoc
 
 type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
-runShuntPipeline :: IsPipeline r => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
+runShuntPipeline :: (IsPipeline r) => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
 runShuntPipeline opTable s =
     do
         (warnings, a) <-

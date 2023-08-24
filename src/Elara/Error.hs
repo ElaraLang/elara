@@ -33,8 +33,8 @@ runErrorOrReport e = do
         Right a -> justE a
 
 reportMaybe ::
-    Member MaybeE r =>
-    Member (DiagnosticWriter (Doc AnsiStyle)) r =>
+    (Member MaybeE r) =>
+    (Member (DiagnosticWriter (Doc AnsiStyle)) r) =>
     (ReportableError e) =>
     Sem r (Either e a) ->
     Sem r a

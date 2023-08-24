@@ -136,7 +136,7 @@ library
     , h2jvm
     , headed-megaparsec
     , lens
-    , megaparsec >=9.0.0
+    , megaparsec
     , mtl
     , parser-combinators
     , polysemy
@@ -183,7 +183,7 @@ executable elara
     , h2jvm
     , headed-megaparsec
     , lens
-    , megaparsec >=9.0.0
+    , megaparsec
     , mtl
     , parser-combinators
     , polysemy
@@ -233,7 +233,7 @@ test-suite doctest
     , h2jvm
     , headed-megaparsec
     , lens
-    , megaparsec >=9.0.0
+    , megaparsec
     , mtl
     , parser-combinators
     , polysemy
@@ -302,7 +302,7 @@ test-suite elara-test
     , hspec-hedgehog
     , hspec-megaparsec
     , lens
-    , megaparsec >=9.0.0
+    , megaparsec
     , mtl
     , neat-interpolation
     , parser-combinators

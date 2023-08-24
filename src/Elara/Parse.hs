@@ -21,7 +21,7 @@ parseModule y = first WParseErrorBundle . runParser (toParsec module' <* eof) y
 moduleParser :: HParser (Module 'Frontend)
 moduleParser = module' <* fromParsec eof
 
-parse :: Members ParsePipelineEffects r => HParser a -> FilePath -> TokenStream -> Sem r a
+parse :: (Members ParsePipelineEffects r) => HParser a -> FilePath -> TokenStream -> Sem r a
 parse p path = fromEither . first WParseErrorBundle . runParser (toParsec p <* eof) path
 
 type ParsePipelineEffects = '[Error (WParseErrorBundle TokenStream ElaraParseError)]
@@ -39,7 +39,7 @@ parsePipeline parser fp lexemes =
     parse parser fp $ createTokenStream fp lexemes
 
 -- | Interpret a result of 'parsePipeline' in terms of the common effects
-runParsePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ParsePipelineEffects r) a -> Sem r a
+runParsePipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf ParsePipelineEffects r) a -> Sem r a
 runParsePipeline = runErrorOrReport @(WParseErrorBundle TokenStream ElaraParseError)
 
 runParsePipelinePure ::

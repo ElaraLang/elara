@@ -38,7 +38,7 @@ replaceVar old new = transform $ \case
 
  This function handles the transform, and renaming of Elara variables to @JVMBinder@s where applicable.
 -}
-transformTopLevelLambdas :: Monad m => CoreExpr -> m JVMExpr
+transformTopLevelLambdas :: (Monad m) => CoreExpr -> m JVMExpr
 transformTopLevelLambdas (Core.Lam p1 x) = do
     let e = toJVMExpr x
     pure $ replaceVar (Normal p1) (JVMLocal 0) e

@@ -43,12 +43,12 @@ type InnerEmit a =
          ]
         a
 
-emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
+emitGraph :: forall r. (Emit r) => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
     let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
+emitModule :: (Emit r) => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
     let name = createModuleName (m ^. field' @"name")
     version <- ask
@@ -71,7 +71,7 @@ emitModule m = do
         , clazz
         )
 
-addClinit :: Member (Embed ClassBuilder) r => [Instruction] -> Sem r ()
+addClinit :: (Member (Embed ClassBuilder) r) => [Instruction] -> Sem r ()
 addClinit code = do
     embed $
         addMethod $
@@ -237,7 +237,7 @@ generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
 generateFieldType (FuncTy _ _) = ObjectFieldType "elara.Func"
 generateFieldType o = error $ "generateFieldType: " <> show o
 
-generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor
+generateMethodDescriptor :: (HasCallStack) => Type -> MethodDescriptor
 generateMethodDescriptor (ForAllTy _ t) = generateMethodDescriptor t
 generateMethodDescriptor f@(FuncTy _ _) = do
     -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)

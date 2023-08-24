@@ -23,7 +23,7 @@ dependencies:
   - bytestring
   - utf8-string
   - array
-  - megaparsec >= 9.0.0
+  - megaparsec
   - headed-megaparsec
   - parser-combinators
   - pretty-simple

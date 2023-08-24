@@ -41,14 +41,14 @@ listToText elements =
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
-prettyToText :: Pretty a => a -> Text
+prettyToText :: (Pretty a) => a -> Text
 prettyToText = renderStrict True Width.defaultWidth
 
-prettyToUnannotatedText :: Pretty a => a -> Text
+prettyToUnannotatedText :: (Pretty a) => a -> Text
 prettyToUnannotatedText = renderStrictUnannotated Width.defaultWidth
 
 renderStrict ::
-    Pretty a =>
+    (Pretty a) =>
     -- | `True` enable syntax highlighting
     Bool ->
     -- | Available columns
@@ -64,7 +64,7 @@ renderStrict highlight columns =
             else Pretty.Text.renderStrict
 
 renderStrictUnannotated ::
-    Pretty a =>
+    (Pretty a) =>
     -- | Available columns
     Int ->
     a ->
@@ -127,7 +127,7 @@ instance Pretty Float where
 instance Pretty Char where
     pretty = PP.pretty
 
-instance Pretty a => Pretty (Maybe a) where
+instance (Pretty a) => Pretty (Maybe a) where
     pretty = maybe mempty pretty
 
 instance (Pretty a, Pretty b) => Pretty (Either a b) where

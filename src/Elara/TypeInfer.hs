@@ -47,7 +47,7 @@ import Print
 
 type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
-runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
+runInferPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
     s <- uniqueGenToIO initialStatus
 
@@ -62,8 +62,7 @@ inferModule ::
     (Members InferPipelineEffects r) =>
     Module 'Shunted ->
     Sem r (Module 'Typed)
-inferModule m = do
-    traverseModuleRevTopologically inferDeclaration m
+inferModule = traverseModuleRevTopologically inferDeclaration
 
 inferDeclaration ::
     forall r.
@@ -89,7 +88,7 @@ inferDeclaration (Declaration ld) =
             ld
   where
     inferDeclarationBody' ::
-        HasCallStack =>
+        (HasCallStack) =>
         Located (Qualified Name) ->
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
@@ -110,7 +109,7 @@ inferDeclaration (Declaration ld) =
         pure $ Value completed NoFieldValue NoFieldValue
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
 
-inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
+inferExpression :: (Members InferPipelineEffects r) => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
     ctx <- Infer.get
@@ -181,7 +180,7 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
     universallyQuantify [] x = x
     universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
-astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType :: forall r. (HasCallStack) => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
@@ -257,10 +256,8 @@ completeExpression ctx e@(Expr (y', t)) = do
             (Infer.VariableType{}, out) -> subst unsolved out
             (Infer.UnsolvedType{}, out) -> subst unsolved out
             (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
-            (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> do
-                traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
-            (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> do
-                traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
+            (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
+            (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
             other -> error (showPretty other)
 
     stripForAlls :: Type SourceRegion -> Type SourceRegion

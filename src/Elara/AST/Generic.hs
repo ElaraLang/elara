@@ -33,8 +33,12 @@ import Prelude hiding (group)
 
 data DataConCantHappen deriving (Generic, Data, Show)
 instance Pretty DataConCantHappen where
-    pretty :: HasCallStack => DataConCantHappen -> Doc AnsiStyle
-    pretty _ = error "This instance should never be used"
+    pretty :: (HasCallStack) => DataConCantHappen -> Doc AnsiStyle
+    pretty _ = error "DataConCantHappen"
+
+instance Eq DataConCantHappen where
+    (==) :: (HasCallStack) => DataConCantHappen -> DataConCantHappen -> Bool
+    (==) = error "DataConCantHappen"
 
 dataConCantHappen :: DataConCantHappen -> a
 dataConCantHappen x = case x of {}
@@ -43,7 +47,7 @@ data NoFieldValue = NoFieldValue
     deriving (Generic, Data, Show, Eq)
 
 instance Pretty NoFieldValue where
-    pretty :: HasCallStack => NoFieldValue -> Doc AnsiStyle
+    pretty :: (HasCallStack) => NoFieldValue -> Doc AnsiStyle
     pretty _ = error "This instance should never be used"
 
 {- | Used to select a field type for a given AST.
@@ -171,7 +175,7 @@ type RUnlocate :: ast -> Kind.Constraint
 class RUnlocate ast where
     rUnlocate ::
         forall a.
-        CleanupLocated (Located a) ~ Located a =>
+        (CleanupLocated (Located a) ~ Located a) =>
         ASTLocate ast a ->
         a
 
@@ -217,14 +221,14 @@ type family ASTQual (ast :: a) :: Kind.Type -> Kind.Type
 
 -- Coercions
 
-coerceTypeDeclaration :: _ => TypeDeclaration ast1 -> TypeDeclaration ast2
+coerceTypeDeclaration :: (_) => TypeDeclaration ast1 -> TypeDeclaration ast2
 coerceTypeDeclaration (Alias a) = Alias (coerceType a)
 coerceTypeDeclaration (ADT a) = ADT (fmap coerceType <<$>> a)
 
-coerceType :: _ => Type ast1 -> Type ast2
+coerceType :: (_) => Type ast1 -> Type ast2
 coerceType (Type a) = Type (coerceType' <$> a)
 
-coerceType' :: _ => Type' ast1 -> Type' ast2
+coerceType' :: (_) => Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
 coerceType' (FunctionType a b) = FunctionType (coerceType a) (coerceType b)
 coerceType' UnitType = UnitType
@@ -236,7 +240,7 @@ coerceType' (ListType a) = ListType (coerceType a)
 
 -- Pretty printing
 
-deriving newtype instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
+deriving newtype instance (Pretty (ASTLocate ast (BinaryOperator' ast))) => Pretty (BinaryOperator ast)
 instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Select "SymOp" ast)))
     , (Pretty (Select "Infixed" ast))
@@ -246,7 +250,7 @@ instance
     pretty (SymOp op) = pretty op
     pretty (Infixed op) = "`" <> pretty op <> "`"
 
-deriving newtype instance Pretty (ASTLocate ast (Type' ast)) => Pretty (Type ast)
+deriving newtype instance (Pretty (ASTLocate ast (Type' ast))) => Pretty (Type ast)
 instance
     ( Pretty (ASTLocate ast (Declaration' ast))
     ) =>
@@ -254,7 +258,7 @@ instance
     where
     pretty (Declaration ldb) = pretty ldb
 
-data UnknownPretty = forall a. Pretty a => UnknownPretty a
+data UnknownPretty = forall a. (Pretty a) => UnknownPretty a
 
 instance Pretty UnknownPretty where
     pretty (UnknownPretty a) = pretty a
@@ -311,7 +315,7 @@ instance ToMaybe (Maybe a) (Maybe a) where
 instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
     toMaybe = Just
 
-instance ToMaybe a b => ToMaybe (Located a) b where
+instance (ToMaybe a b) => ToMaybe (Located a) b where
     toMaybe = toMaybe . view unlocated
 
 -- | Like 'ToMaybe' but for lists. Useful when fields may be lists or single values.
@@ -327,7 +331,7 @@ instance ToList [a] [a] where
 instance {-# INCOHERENT #-} ToList a [a] where
     fieldToList = pure
 
-instance ToList a b => ToList (Located a) b where
+instance (ToList a b) => ToList (Located a) b where
     fieldToList = fieldToList . view unlocated
 
 -- Sometimes fields are wrapped in functors eg lists, we need a way of transcending them.
@@ -339,7 +343,7 @@ instance ToList a b => ToList (Located a) b where
 class ApplyAsFunctorish i o a b where
     applyAsFunctorish :: (a -> b) -> i -> o
 
-instance Functor f => ApplyAsFunctorish (f a) (f b) a b where
+instance (Functor f) => ApplyAsFunctorish (f a) (f b) a b where
     applyAsFunctorish = fmap
 
 instance ApplyAsFunctorish a b a b where
@@ -537,7 +541,7 @@ instance
 
 prettyPattern ::
     forall ast.
-    _ =>
+    (_) =>
     (?contextFree :: Bool) =>
     Pattern' ast ->
     Doc AnsiStyle
@@ -580,8 +584,6 @@ instance
     , (StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2))
     , (ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2))
     , (ApplyAsFunctorish (Select "PatternType" ast1) (Select "PatternType" ast2) (Type ast1) (Type ast2))
-    , Select "InParens" ast2 ~ Expr ast2
-    , Select "InParens" ast1 ~ Expr ast1
     , ( StripLocation
             (Select "Infixed" ast1)
             (Select "Infixed" ast2)
@@ -626,6 +628,8 @@ instance
             (Select "BinaryOperator" ast2)
             (BinaryOperator ast2, Expr ast2, Expr ast2)
       )
+    , (DataConAs (Select "InParens" ast1) (Expr ast1))
+    , (DataConAs (Select "InParens" ast2) (Expr ast2))
     ) =>
     StripLocation (Expr ast1) (Expr ast2)
     where
@@ -691,7 +695,9 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
         let p' = stripLocation @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) p
          in Let (stripLocation v) p' (stripExprLocation e)
     stripExprLocation' (Block b) = Block (stripExprLocation <$> b)
-    stripExprLocation' (InParens e) = InParens (stripExprLocation e)
+    stripExprLocation' (InParens e) =
+        let e' = dataConAs @(Select "InParens" ast1) @(Expr ast1) e
+         in InParens $ asDataCon (stripExprLocation e')
     stripExprLocation' (Tuple t) = Tuple (stripExprLocation <$> t)
 
 instance
@@ -871,7 +877,7 @@ deriving instance
     ) =>
     Eq (BinaryOperator' ast)
 
-deriving instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
+deriving instance (Eq (ASTLocate ast (BinaryOperator' ast))) => Eq (BinaryOperator ast)
 
 -- Show instances
 
@@ -920,7 +926,7 @@ deriving instance
     ) =>
     Show (BinaryOperator' ast)
 
-deriving instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
+deriving instance (Show (ASTLocate ast (BinaryOperator' ast))) => Show (BinaryOperator ast)
 
 deriving instance
     ( Show (DeclarationBody ast)
@@ -929,7 +935,7 @@ deriving instance
     ) =>
     Show (Declaration' ast)
 
-deriving instance Show (ASTLocate ast (Declaration' ast)) => Show (Declaration ast)
+deriving instance (Show (ASTLocate ast (Declaration' ast))) => Show (Declaration ast)
 
 deriving instance
     ( (Show (Select "ValueTypeDef" ast))
@@ -942,7 +948,7 @@ deriving instance
     ) =>
     Show (DeclarationBody' ast)
 
-deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (DeclarationBody ast)
+deriving instance (Show (ASTLocate ast (DeclarationBody' ast))) => Show (DeclarationBody ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "ConstructorName" ast))
@@ -952,7 +958,7 @@ deriving instance
 
 -- Ord instances
 
-deriving newtype instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
+deriving newtype instance (Ord (ASTLocate ast (BinaryOperator' ast))) => Ord (BinaryOperator ast)
 
 deriving instance
     ( Ord (ASTLocate ast (Select "SymOp" ast))

@@ -45,7 +45,7 @@ instance PrettyVar Type where
 instance (PrettyVar v, Show v) => Pretty (Expr v) where
     pretty = prettyExpr
 
-instance {-# OVERLAPPABLE #-} PrettyVar v => Pretty v where
+instance {-# OVERLAPPABLE #-} (PrettyVar v) => Pretty v where
     pretty = prettyVar True True
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2, Show v2) => v1 -> Expr v2 -> Doc AnsiStyle
@@ -81,7 +81,7 @@ prettyVdefg (NonRecursive b) = prettyVdef b
 prettyVdef :: (PrettyVar v, Pretty (Expr v), Show v) => (v, Expr v) -> Doc AnsiStyle
 prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
 
-prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
+prettyVBind :: (PrettyVar v) => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
 prettyAlts :: (PrettyVar v, Show v) => [Alt v] -> Doc AnsiStyle

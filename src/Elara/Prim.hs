@@ -61,7 +61,7 @@ primKindCheckContext =
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
         <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
 
-primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
+primitiveTCContext :: (Member UniqueGen r) => Sem r (Context SourceRegion)
 primitiveTCContext = do
     let easies =
             [ Annotation

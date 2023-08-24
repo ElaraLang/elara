@@ -30,6 +30,6 @@ readFileString path = do
             addFile path contents -- add the file to the diagnostic writer for nicer error messages
             pure contents
 
-runReadFilePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
+runReadFilePipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
 runReadFilePipeline =
     runErrorOrReport @ReadFileError . subsume_

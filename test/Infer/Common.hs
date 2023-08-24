@@ -64,13 +64,13 @@ errorToIOFinal' sem = do
         Left e -> embedFinal $ throwIO e
         Right a -> pure a
 
-typeOf' :: MonadIO m => Text -> m (Type ())
+typeOf' :: (MonadIO m) => Text -> m (Type ())
 typeOf' msg = do
     x <- liftIO $ inferFully msg
     y <- liftIO $ diagShouldSucceed x
     pure $ stripLocation $ typeOf y
 
-failTypeMismatch :: Pretty a1 => String -> String -> a1 -> IO a2
+failTypeMismatch :: (Pretty a1) => String -> String -> a1 -> IO a2
 failTypeMismatch name expected actual =
     assertFailure
         ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))

@@ -234,7 +234,7 @@ instance Pretty OpName where
 instance Pretty LowerAlphaName where
     pretty (LowerAlphaName n) = pretty n
 
-instance ToJSON n => ToJSON (Qualified n)
+instance (ToJSON n) => ToJSON (Qualified n)
 instance ToJSON ModuleName
 instance ToJSON VarName
 instance ToJSON OpName

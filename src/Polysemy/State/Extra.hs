@@ -10,7 +10,7 @@ import Control.Lens (Getting, Lens', set, view)
 import Polysemy
 import Polysemy.State as P (State (Get, Put), get, gets, modify', put)
 
-use' :: Member (State s) r => Getting a s a -> Sem r a
+use' :: (Member (State s) r) => Getting a s a -> Sem r a
 use' lens = view lens <$> P.get
 
 locally :: (Member (State s) r) => (s -> s) -> Sem r a -> Sem r a
@@ -26,7 +26,7 @@ scoped :: forall s r a. (Member (State s) r) => Sem r a -> Sem r a
 scoped = locally identity
 
 stateToStateViaLens ::
-    Member (State bigSt) r =>
+    (Member (State bigSt) r) =>
     Lens' bigSt smallSt ->
     Sem (State smallSt ': r) a ->
     Sem r a

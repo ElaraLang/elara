@@ -87,7 +87,7 @@ expression =
         <|> (string <??> "string")
         <|> (variable <??> "variable")
         <|> (constructor <??> "constructor")
-        <??> "expression"
+            <??> "expression"
 
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text

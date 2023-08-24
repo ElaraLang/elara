@@ -61,7 +61,7 @@ type DesugarPipelineEffects = '[State DesugarState, Error DesugarError]
 runDesugar :: Desugar a -> Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a
 runDesugar = subsume_
 
-runDesugarPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
+runDesugarPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
 runDesugarPipeline =
     runErrorOrReport @DesugarError
         . evalState (DesugarState M.empty)

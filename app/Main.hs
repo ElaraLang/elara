@@ -53,7 +53,7 @@ import System.Environment (getEnvironment)
 import System.IO (openFile)
 import Text.Printf
 
-outDirName :: IsString s => s
+outDirName :: (IsString s) => s
 outDirName = "build"
 
 main :: IO ()
@@ -72,7 +72,7 @@ main = run `finally` cleanup
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
-dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph :: (Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
@@ -164,7 +164,7 @@ cleanup = resetGlobalUniqueSupply
 --             traverse_ report warnings
 --             justE shunted
 
-loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
+loadModule :: (IsPipeline r) => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
@@ -172,7 +172,7 @@ loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runRead
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 
-processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
+processModules :: (IsPipeline r) => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
 processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $

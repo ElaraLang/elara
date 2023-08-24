@@ -25,7 +25,7 @@ unsafeMkUnique = Unique
 -- | A @Unique@ where the value is not important.
 newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 
-instance ToJSON c => ToJSON (Unique c)
+instance (ToJSON c) => ToJSON (Unique c)
 
 instance ToJSON UniqueId
 
@@ -68,7 +68,7 @@ uniqueGenToState = reinterpret $ \case
                 put (UniqueSupply is)
                 pure i
 
-uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
+uniqueGenToIO :: (Member (Embed IO) r) => Sem (UniqueGen ': r) a -> Sem r a
 uniqueGenToIO = interpret $ \case
     NewUniqueNum -> do
         us <- liftIO (readIORef globalUniqueSupply)

@@ -59,7 +59,7 @@ primCtorSymbolTable =
         , (tuple2CtorName, tuple2Ctor)
         ]
 
-lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Sem r DataCon
+lookupCtor :: (ToCoreC r) => Located (Qualified TypeName) -> Sem r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
     let plainName = nameText <$> qn ^. unlocated
@@ -67,7 +67,7 @@ lookupCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownConstructor qn)
 
-lookupPrimCtor :: ToCoreC r => Qualified Text -> Sem r DataCon
+lookupPrimCtor :: (ToCoreC r) => Qualified Text -> Sem r DataCon
 lookupPrimCtor qn = do
     table <- get @CtorSymbolTable
     case M.lookup qn table of
@@ -77,13 +77,13 @@ lookupPrimCtor qn = do
 type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
 type ToCoreC r = (Members ToCoreEffects r)
 
-runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
+runToCorePipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
 runToCorePipeline =
     uniqueGenToIO
         . runErrorOrReport
         . evalState primCtorSymbolTable
 
-moduleToCore :: HasCallStack => (ToCoreC r) => Module 'Typed -> Sem r CoreModule
+moduleToCore :: (HasCallStack) => (ToCoreC r) => Module 'Typed -> Sem r CoreModule
 moduleToCore (Module (Located _ m)) = do
     let name = m ^. field' @"name" . unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do
@@ -96,12 +96,11 @@ moduleToCore (Module (Located _ m)) = do
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
-typeToCore :: HasCallStack => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
+typeToCore :: (HasCallStack) => (ToCoreC r) => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
     t' <- typeToCore t
     pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
-typeToCore (Type.VariableType{Type.name}) = do
-    pure (Core.TyVarTy (TypeVariable name TypeKind))
+typeToCore (Type.VariableType{Type.name}) = pure (Core.TyVarTy (TypeVariable name TypeKind))
 typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
 typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
@@ -123,9 +122,8 @@ mkLocalRef = Local . Identity
 mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
-toCore :: HasCallStack => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
-toCore le@(Expr (Located _ e, t)) = do
-    moveTypeApplications <$> toCore' e
+toCore :: (HasCallStack) => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
+toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
   where
     moveTypeApplications :: CoreExpr -> CoreExpr
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
@@ -212,7 +210,7 @@ stripForAll :: Core.Type -> Core.Type
 stripForAll (Core.ForAllTy _ t) = stripForAll t
 stripForAll t = t
 
-desugarMatch :: ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
+desugarMatch :: (ToCoreC r) => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
     e' <- toCore e
     bind' <- mkBindName e
@@ -243,7 +241,7 @@ desugarMatch e pats = do
 
     pure $ Core.Match e' (Just bind') pats'
 
-mkBindName :: ToCoreC r => TypedExpr -> Sem r Var
+mkBindName :: (ToCoreC r) => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
@@ -254,6 +252,6 @@ mkBindName (AST.Expr (_, t)) = do
     unique <- makeUnique "bind"
     pure (Core.Id (mkLocalRef unique) t')
 
-desugarBlock :: ToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
+desugarBlock :: (ToCoreC r) => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (one :| []) = toCore one
 desugarBlock _ = error "todo"

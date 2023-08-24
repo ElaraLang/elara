@@ -23,7 +23,7 @@ lexAndParse parser source = do
     tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
     pure $ run $ runParsePipelinePure $ parsePipeline parser fp tokens
 
-shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
+shouldParsePattern :: (MonadTest m) => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = do
     parsed <- lexAndParse patParser source >>= evalEither
     diff (stripPatternLocation parsed) (==) expected
