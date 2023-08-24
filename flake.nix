@@ -38,7 +38,7 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc945;
+          basePackages = pkgs.haskell.packages.ghc96;
 
 
           packages = {

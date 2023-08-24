@@ -57,12 +57,13 @@ ghc-options:
   # - -Werror=missing-home-modules
   - -Widentities
   # - -Wmissing-export-lists
-  - -fplugin=Polysemy.Plugin
   - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
   - -feager-blackholing
   - -fdefer-typed-holes
   - -fno-show-valid-hole-fits
   - -j4 +RTS -A32m -RTS
+  - -flate-specialise
+  - -fspecialise-aggressively
   
 
 default-extensions:
@@ -81,6 +82,10 @@ library:
   source-dirs: src
   build-tools:
     - alex
+  dependencies:
+    - polysemy-plugin
+  ghc-options:
+    - -fplugin=Polysemy.Plugin
 
 executables:
   elara:
