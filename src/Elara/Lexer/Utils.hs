@@ -232,7 +232,7 @@ Throws an error if the name is not qualified.
 >>> splitQualName "Prelude..+"
 (ModuleName ("Prelude" :| []),".+")
 -}
-splitQualName :: (HasCallStack) => Text -> (ModuleName, Text)
+splitQualName :: Text -> (ModuleName, Text)
 splitQualName t = do
     let parts = T.splitOn "." t
     case parts of

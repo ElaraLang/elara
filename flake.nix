@@ -45,10 +45,16 @@
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
             megaparsec.source = inputs.megaparsec;
+            fourmolu.source = "0.13.0.0";
           };
 
           settings = {
 
+            elara = { name, pkgs, self, super, ... }: {
+              imports = [
+              ];
+            };
+            fourmolu.check = false;
             diagnose = {
               extraBuildDepends = [
                 pkgs.haskellPackages.megaparsec_9_4_1
@@ -57,11 +63,23 @@
               jailbreak = true;
             };
 
+            type-errors = {
+              extraSetupDepends = [ pkgs.haskellPackages.doctest ];
+              extraBuildDepends = [ pkgs.haskellPackages.doctest ];
+
+              check = false;
+            };
+
             h2jvm = {
               # Skip the tests for now
               check = false;
             };
 
+            ghcid = {
+              separateBinOutput = false;
+            };
+
+            crypton-x509 = { check = false; };
           };
 
           devShell = {
@@ -95,7 +113,7 @@
           programs.cabal-fmt.enable = false;
           programs.hlint.enable = true;
 
-          programs.ormolu.package = pkgs.haskellPackages.fourmolu;
+          programs.ormolu.package = pkgs.haskellPackages.fourmolu_0_13_1_0;
 
         };
 
@@ -126,9 +144,6 @@
 
 
         packages.default = self'.packages.elara;
-
-
-
 
         devShells.default = pkgs.mkShell {
           inputsFrom = [

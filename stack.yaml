@@ -116,3 +116,7 @@ extra-deps:
 - concurrent-output-1.10.18
 - lifted-async-0.10.2.4
 - constraints-0.13.4
+- base-compat-0.13.0@sha256:5ebd0e68acc0de64a945bf0bebcd39d4869a4ea3618cdd5ec639aac527bf599e,7210
+- code-page-0.2.1@sha256:fe596b0f421abd2894fdb7049b3d76230eb1de6e04e9f635e2695dd55ded856e,2427
+- ghc-paths-0.1.0.12@sha256:2cedd51fe0e85bd7c7edee768c229db74e071a15a1dfb9bf94bd4b0f3a0ec78b,699
+- doctest-0.22.0@sha256:6e873455274d6e98367574b73e7313c75cf4e89b58b37ac1d1cf52fe1c446b7b,7356

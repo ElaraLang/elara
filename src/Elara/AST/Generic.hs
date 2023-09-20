@@ -221,14 +221,14 @@ type family ASTQual (ast :: a) :: Kind.Type -> Kind.Type
 
 -- Coercions
 
-coerceTypeDeclaration :: (_) => TypeDeclaration ast1 -> TypeDeclaration ast2
+coerceTypeDeclaration :: _ => TypeDeclaration ast1 -> TypeDeclaration ast2
 coerceTypeDeclaration (Alias a) = Alias (coerceType a)
 coerceTypeDeclaration (ADT a) = ADT (fmap coerceType <<$>> a)
 
-coerceType :: (_) => Type ast1 -> Type ast2
+coerceType :: _ => Type ast1 -> Type ast2
 coerceType (Type a) = Type (coerceType' <$> a)
 
-coerceType' :: (_) => Type' ast1 -> Type' ast2
+coerceType' :: _ => Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
 coerceType' (FunctionType a b) = FunctionType (coerceType a) (coerceType b)
 coerceType' UnitType = UnitType
@@ -541,7 +541,7 @@ instance
 
 prettyPattern ::
     forall ast.
-    (_) =>
+    _ =>
     (?contextFree :: Bool) =>
     Pattern' ast ->
     Doc AnsiStyle
