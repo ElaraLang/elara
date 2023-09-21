@@ -13,9 +13,9 @@ import Elara.Data.Unique
 import Elara.Data.Unwrap (Unwrap (unwrap))
 
 data VarRef' c n
-    = Global (c (Qualified n))
-    | Local (c (Unique n))
-    deriving (Functor, Typeable, Generic)
+  = Global (c (Qualified n))
+  | Local (c (Unique n))
+  deriving (Functor, Typeable, Generic)
 
 type VarRef n = VarRef' Located n
 
@@ -58,25 +58,28 @@ withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
 withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 
 instance (Unwrap c, Pretty n) => Pretty (VarRef' c n) where
-    pretty (Global n) = pretty (unwrap n)
-    pretty (Local n) = pretty (unwrap n)
+  pretty (Global n) = pretty (unwrap n)
+  pretty (Local n) = pretty (unwrap n)
 
 instance StripLocation (Located (VarRef a)) (VarRef a) where
-    stripLocation = unwrap
+  stripLocation = unwrap
 
 instance StripLocation (Located (VarRef a)) (UnlocatedVarRef a) where
-    stripLocation = unwrap . fmap stripLocation
+  stripLocation = unwrap . fmap stripLocation
 
 instance StripLocation (VarRef a) (UnlocatedVarRef a) where
-    stripLocation v = case v of
-        Global q -> Global (Identity $ stripLocation q)
-        Local u -> Local (Identity $ stripLocation u)
+  stripLocation v = case v of
+    Global q -> Global (Identity $ stripLocation q)
+    Local u -> Local (Identity $ stripLocation u)
 
 deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
+
 deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
+
 deriving instance (Ord (c (Qualified n)), Ord (c (Unique n))) => Ord (VarRef' c n)
+
 deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Unique n))) => Data (VarRef' c n)
 
 instance (Generic (VarRef' c n), ToJSON (c (Unique n)), ToJSON (c (Qualified n))) => ToJSON (VarRef' c n) where
-    toJSON (Global n) = toJSON n
-    toJSON (Local n) = toJSON n
+  toJSON (Global n) = toJSON n
+  toJSON (Local n) = toJSON n

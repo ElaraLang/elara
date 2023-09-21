@@ -15,25 +15,25 @@ import Text.Megaparsec (choice, sepEndBy)
 
 patParser :: HParser FrontendPattern
 patParser =
-    choice
-        [ varPattern
-        , zeroArgConstructorPattern
-        , literalPattern
-        , wildcardPattern
-        , inParens apat
-        , listPattern
-        ]
+  choice
+    [ varPattern,
+      zeroArgConstructorPattern,
+      literalPattern,
+      wildcardPattern,
+      inParens apat,
+      listPattern
+    ]
 
 apat :: HParser FrontendPattern
 apat = constructorPattern <|> rpat
 
 rpat :: HParser FrontendPattern
 rpat =
-    makeExprParser
-        patParser
-        [ [InfixR cons]
-        ]
-        <??> "pattern"
+  makeExprParser
+    patParser
+    [ [InfixR cons]
+    ]
+    <??> "pattern"
 
 unannotatedExpr :: Iso' FrontendPattern (Located FrontendPattern')
 unannotatedExpr = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
@@ -53,11 +53,11 @@ wildcardPattern = locatedPattern (WildcardPattern <$ token_ TokenUnderscore)
 
 listPattern :: HParser FrontendPattern
 listPattern = locatedPattern $ do
-    token_ TokenLeftBracket
-    endHead
-    elements <- sepEndBy patParser (token_ TokenComma)
-    token_ TokenRightBracket
-    pure $ ListPattern elements
+  token_ TokenLeftBracket
+  endHead
+  elements <- sepEndBy patParser (token_ TokenComma)
+  token_ TokenRightBracket
+  pure $ ListPattern elements
 
 -- consPattern :: HParser FrontendPattern
 -- consPattern i = locatedPattern $ do
@@ -73,23 +73,23 @@ listPattern = locatedPattern $ do
 -- To prevent ambiguity between space-separated patterns and constructor patterns
 zeroArgConstructorPattern :: HParser FrontendPattern
 zeroArgConstructorPattern = locatedPattern $ do
-    con <- located conName
-    pure $ ConstructorPattern con []
+  con <- located conName
+  pure $ ConstructorPattern con []
 
 constructorPattern :: HParser FrontendPattern
 constructorPattern = locatedPattern $ do
-    con <- located conName
-    endHead
-    args <- many patParser
-    pure $ ConstructorPattern con args
+  con <- located conName
+  endHead
+  args <- many patParser
+  pure $ ConstructorPattern con args
 
 literalPattern :: HParser FrontendPattern
 literalPattern =
-    locatedPattern $
-        choice
-            [ IntegerPattern <$> integerLiteral
-            , FloatPattern <$> floatLiteral
-            , StringPattern <$> stringLiteral
-            , CharPattern <$> charLiteral
-            , UnitPattern <$ unitLiteral
-            ]
+  locatedPattern $
+    choice
+      [ IntegerPattern <$> integerLiteral,
+        FloatPattern <$> floatLiteral,
+        StringPattern <$> stringLiteral,
+        CharPattern <$> charLiteral,
+        UnitPattern <$ unitLiteral
+      ]

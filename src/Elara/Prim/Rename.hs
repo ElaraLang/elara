@@ -8,8 +8,8 @@ import Elara.Rename (RenameState (RenameState))
 
 primitiveRenameState :: RenameState
 primitiveRenameState =
-    let vars =
-            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveVars)
-        types =
-            fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveTypes) <> fromList [(ioName, Global (mkPrimVarRef ioName))]
-     in RenameState vars types mempty
+  let vars =
+        fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveVars)
+      types =
+        fromList ((\x -> (x, Global (mkPrimVarRef x))) <$> primitiveTypes) <> fromList [(ioName, Global (mkPrimVarRef ioName))]
+   in RenameState vars types mempty

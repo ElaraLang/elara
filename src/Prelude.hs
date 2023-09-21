@@ -1,5 +1,5 @@
-module Prelude (
-    module Relude,
+module Prelude
+  ( module Relude,
     (:~:),
     (<<$),
     ($>>),
@@ -8,7 +8,8 @@ module Prelude (
     insertWithM,
     modifyM,
     identity,
-) where
+  )
+where
 
 import Data.Map qualified as M
 import Data.Type.Equality ((:~:))
@@ -31,8 +32,8 @@ f <<&>> a = fmap (a <$>) f
 
 insertWithM :: (Ord k, Applicative m) => (a -> a -> m a) -> k -> a -> Map k a -> m (Map k a)
 insertWithM f k v m = case M.lookup k m of
-    Nothing -> pure (M.insert k v m)
-    Just v' -> M.insert k <$> f v v' <*> pure m
+  Nothing -> pure (M.insert k v m)
+  Just v' -> M.insert k <$> f v v' <*> pure m
 
 modifyM :: (Member (State s) r) => (s -> Sem r s) -> Sem r ()
 modifyM f = get >>= (put <=< f)

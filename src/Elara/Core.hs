@@ -11,29 +11,29 @@ import Elara.TypeInfer.Unique
 import Prelude hiding (Alt)
 
 data TypeVariable = TypeVariable
-    { tvName :: UniqueTyVar
-    , tvKind :: ElaraKind
-    }
-    deriving (Show, Eq, Data)
+  { tvName :: UniqueTyVar,
+    tvKind :: ElaraKind
+  }
+  deriving (Show, Eq, Data)
 
 data Var
-    = TyVar TypeVariable
-    | Id
-        { idVarName :: UnlocatedVarRef Text
-        , idVarType :: Type
-        }
-    deriving (Show, Data, Eq)
+  = TyVar TypeVariable
+  | Id
+      { idVarName :: UnlocatedVarRef Text,
+        idVarType :: Type
+      }
+  deriving (Show, Data, Eq)
 
 data Expr b
-    = Var b
-    | Lit Literal
-    | App (Expr b) (Expr b)
-    | TyApp (Expr b) Type
-    | Lam b (Expr b)
-    | TyLam Type (Expr b)
-    | Let (Bind b) (Expr b)
-    | Match (Expr b) (Maybe b) [Alt b]
-    deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
+  = Var b
+  | Lit Literal
+  | App (Expr b) (Expr b)
+  | TyApp (Expr b) Type
+  | Lam b (Expr b)
+  | TyLam Type (Expr b)
+  | Let (Bind b) (Expr b)
+  | Match (Expr b) (Maybe b) [Alt b]
+  deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
 
 instance (Data b) => Plated (Expr b)
 
@@ -44,43 +44,43 @@ type CoreAlt = Alt Var
 type CoreBind = Bind Var
 
 data Bind b
-    = Recursive [(b, Expr b)]
-    | NonRecursive (b, Expr b)
-    deriving (Show, Eq, Data, Functor, Foldable, Traversable)
+  = Recursive [(b, Expr b)]
+  | NonRecursive (b, Expr b)
+  deriving (Show, Eq, Data, Functor, Foldable, Traversable)
 
 binds :: Bind b -> [(b, Expr b)]
 binds = \case
-    Recursive bs -> bs
-    NonRecursive b -> [b]
+  Recursive bs -> bs
+  NonRecursive b -> [b]
 
 type Alt b = (AltCon, [b], Expr b)
 
 data AltCon
-    = DataAlt DataCon
-    | LitAlt Literal
-    | DEFAULT
-    deriving (Show, Eq, Data)
+  = DataAlt DataCon
+  | LitAlt Literal
+  | DEFAULT
+  deriving (Show, Eq, Data)
 
 -- | A data constructor.
 data DataCon = DataCon
-    { name :: Qualified Text
-    , dataConType :: Type
-    }
-    deriving (Show, Eq, Data)
+  { name :: Qualified Text,
+    dataConType :: Type
+  }
+  deriving (Show, Eq, Data)
 
 data Type
-    = TyVarTy TypeVariable
-    | FuncTy Type Type
-    | AppTy Type Type
-    | -- | A type constructor
-      ConTy (Qualified Text)
-    | ForAllTy TypeVariable Type
-    deriving (Show, Eq, Data)
+  = TyVarTy TypeVariable
+  | FuncTy Type Type
+  | AppTy Type Type
+  | -- | A type constructor
+    ConTy (Qualified Text)
+  | ForAllTy TypeVariable Type
+  deriving (Show, Eq, Data)
 
 data Literal
-    = Int Integer
-    | String Text
-    | Char Char
-    | Double Double
-    | Unit
-    deriving (Show, Eq, Data)
+  = Int Integer
+  | String Text
+  | Char Char
+  | Double Double
+  | Unit
+  deriving (Show, Eq, Data)

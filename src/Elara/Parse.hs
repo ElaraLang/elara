@@ -3,7 +3,6 @@ module Elara.Parse where
 import Elara.AST.Module (Module)
 import Elara.AST.Select
 import Elara.Error (runErrorOrReport)
-
 import Elara.Lexer.Pipeline (LexPipelineEffects, runLexPipeline)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Error
@@ -30,19 +29,19 @@ createTokenStream :: String -> [Lexeme] -> TokenStream
 createTokenStream source lexemes = TokenStream source lexemes 0
 
 parsePipeline ::
-    (Members ParsePipelineEffects r) =>
-    HParser a ->
-    FilePath ->
-    [Lexeme] ->
-    Sem r a
+  (Members ParsePipelineEffects r) =>
+  HParser a ->
+  FilePath ->
+  [Lexeme] ->
+  Sem r a
 parsePipeline parser fp lexemes =
-    parse parser fp $ createTokenStream fp lexemes
+  parse parser fp $ createTokenStream fp lexemes
 
 -- | Interpret a result of 'parsePipeline' in terms of the common effects
 runParsePipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf ParsePipelineEffects r) a -> Sem r a
 runParsePipeline = runErrorOrReport @(WParseErrorBundle TokenStream ElaraParseError)
 
 runParsePipelinePure ::
-    Sem (EffectsAsPrefixOf ParsePipelineEffects r) a ->
-    Sem r (Either (WParseErrorBundle TokenStream ElaraParseError) a)
+  Sem (EffectsAsPrefixOf ParsePipelineEffects r) a ->
+  Sem r (Either (WParseErrorBundle TokenStream ElaraParseError) a)
 runParsePipelinePure = runError @(WParseErrorBundle TokenStream ElaraParseError)

@@ -44,28 +44,28 @@ dependencies:
 
 ghc-options:
   - -Wall
-  # - -W
-  # - -Wcompat
-  # # - -Weverything
-  # # - -Werror=incomplete-patterns
-  # - -Werror=incomplete-uni-patterns
-  # - -Wredundant-constraints
-  # - -Wunused-imports
-  # - -Wunused-foralls
-  # - -Wmissing-fields
-  # - -Winaccessible-code
-  # - -Wincomplete-record-updates
-  # - -Wpartial-fields
-  # # - -Werror=missing-home-modules
-  # - -Widentities
-  # # - -Wmissing-export-lists
-  # - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
-  # - -feager-blackholing
-  # - -fdefer-typed-holes
-  # - -fno-show-valid-hole-fits
-  # - -j4 +RTS -A32m -RTS
-  # - -flate-specialise
-  # - -fspecialise-aggressively
+  - -W
+  - -Wcompat
+  # - -Weverything
+  # - -Werror=incomplete-patterns
+  - -Werror=incomplete-uni-patterns
+  - -Wredundant-constraints
+  - -Wunused-imports
+  - -Wunused-foralls
+  - -Wmissing-fields
+  - -Winaccessible-code
+  - -Wincomplete-record-updates
+  - -Wpartial-fields
+  # - -Werror=missing-home-modules
+  - -Widentities
+  # - -Wmissing-export-lists
+  - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
+  - -feager-blackholing
+  - -fdefer-typed-holes
+  - -fno-show-valid-hole-fits
+  - -j4 +RTS -A32m -RTS
+  - -flate-specialise
+  - -fspecialise-aggressively
   - -fplugin=Polysemy.Plugin
   
 
@@ -96,34 +96,34 @@ executables:
     dependencies:
       - elara
 
-# tests:
-#   elara-test:
-#     defaults: hspec/hspec@main
-#     main: Spec.hs
-#     source-dirs: test
-#     default-extensions:
-#       - QuasiQuotes
-#     ghc-options:
-#       - -threaded
-#       - -O0
-#     dependencies:
-#       - elara
-#       - neat-interpolation
-#       - HUnit
-#       - hspec-megaparsec
-#       - QuickCheck
-#       - hedgehog
-#       - hspec-hedgehog
+tests:
+  elara-test:
+    defaults: hspec/hspec@main
+    main: Spec.hs
+    source-dirs: test
+    default-extensions:
+      - QuasiQuotes
+    ghc-options:
+      - -threaded
+      - -O0
+    dependencies:
+      - elara
+      - neat-interpolation
+      - HUnit
+      - hspec-megaparsec
+      - QuickCheck
+      - hedgehog
+      - hspec-hedgehog
 
-#   doctest:
-#     main: Main.hs
-#     source-dirs: doctest
+  doctest:
+    main: Main.hs
+    source-dirs: doctest
 
-#     ghc-options:
-#       - -threaded
-#       - -O0
+    ghc-options:
+      - -threaded
+      - -O0
 
-#     dependencies:
-#       - elara
-#       - doctest-parallel
-#       - Glob
+    dependencies:
+      - elara
+      - doctest-parallel
+      - Glob

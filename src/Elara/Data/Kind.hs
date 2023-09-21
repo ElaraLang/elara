@@ -8,17 +8,17 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 
 data ElaraKind
-    = -- | The kind of monotypes (@Type@ or @*@ in Haskell)
-      TypeKind
-    | -- | Functions over kinds (eg @Type -> Type@ in Haskell)
-      FunctionKind ElaraKind ElaraKind
-    | -- | A kind variable for poly-kinds (probably not supported yet)
-      VarKind UniqueId
-    deriving (Show, Eq, Data, Generic)
+  = -- | The kind of monotypes (@Type@ or @*@ in Haskell)
+    TypeKind
+  | -- | Functions over kinds (eg @Type -> Type@ in Haskell)
+    FunctionKind ElaraKind ElaraKind
+  | -- | A kind variable for poly-kinds (probably not supported yet)
+    VarKind UniqueId
+  deriving (Show, Eq, Data, Generic)
 
 instance Pretty ElaraKind where
-    pretty TypeKind = Style.typeName "Type"
-    pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
-    pretty (VarKind v) = Style.varName ("k" <> pretty v)
+  pretty TypeKind = Style.typeName "Type"
+  pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
+  pretty (VarKind v) = Style.varName ("k" <> pretty v)
 
 instance ToJSON ElaraKind

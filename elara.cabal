@@ -121,7 +121,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -fplugin=Polysemy.Plugin
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin
   build-tools:
       alex
   build-depends:
@@ -173,7 +173,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -fplugin=Polysemy.Plugin -threaded
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -threaded
   build-depends:
       aeson
     , array
@@ -204,3 +204,132 @@ executable elara
   mixins:
       base hiding (Prelude)
   default-language: GHC2021
+
+test-suite doctest
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_elara
+  autogen-modules:
+      Paths_elara
+  hs-source-dirs:
+      doctest
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      DataKinds
+      DeriveFunctor
+      TypeApplications
+      PartialTypeSignatures
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -threaded -O0
+  build-depends:
+      Glob
+    , aeson
+    , array
+    , base
+    , binary
+    , bytestring
+    , containers
+    , diagnose
+    , directory
+    , doctest-parallel
+    , elara
+    , filepath
+    , generic-lens
+    , h2jvm
+    , headed-megaparsec
+    , lens
+    , megaparsec
+    , mtl
+    , parser-combinators
+    , polysemy
+    , polysemy-plugin
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , relude
+    , safe-exceptions
+    , terminal-size
+    , utf8-string
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2021
+
+test-suite elara-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Arbitrary.AST
+      Arbitrary.Literals
+      Arbitrary.Names
+      Common
+      Infer
+      Infer.Common
+      Lex
+      Lex.Common
+      Lex.Indents
+      Orphans
+      Parse
+      Parse.Common
+      Parse.Patterns
+      Shunt
+      Paths_elara
+  autogen-modules:
+      Paths_elara
+  hs-source-dirs:
+      test
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      DataKinds
+      DeriveFunctor
+      TypeApplications
+      PartialTypeSignatures
+      QuasiQuotes
+  ghc-options: -Wall -W -Wcompat -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -threaded -O0
+  build-depends:
+      HUnit
+    , QuickCheck
+    , aeson
+    , array
+    , base
+    , binary
+    , bytestring
+    , containers
+    , diagnose
+    , directory
+    , elara
+    , filepath
+    , generic-lens
+    , h2jvm
+    , headed-megaparsec
+    , hedgehog
+    , hspec ==2.*
+    , hspec-hedgehog
+    , hspec-megaparsec
+    , lens
+    , megaparsec
+    , mtl
+    , neat-interpolation
+    , parser-combinators
+    , polysemy
+    , polysemy-plugin
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , relude
+    , safe-exceptions
+    , terminal-size
+    , utf8-string
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2021
+  build-tool-depends: hspec-discover:hspec-discover == 2.*

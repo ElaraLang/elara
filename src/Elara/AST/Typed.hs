@@ -1,10 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-{- | Typed AST Type
- This is very similar to 'Elara.AST.Shunted.Expr' except:
-
- - Everything has a type!
--}
+-- | Typed AST Type
+-- This is very similar to 'Elara.AST.Shunted.Expr' except:
+--
+-- - Everything has a type!
 module Elara.AST.Typed where
 
 import Control.Lens (Plated)
@@ -19,29 +18,41 @@ import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Type)
 
 type instance ASTLocate' 'Typed = Located
+
 type instance ASTQual 'Typed = Qualified
 
 -- Selections for 'Expr'
 type instance Select "ExprType" 'Typed = Type SourceRegion
+
 type instance Select "LambdaPattern" 'Typed = Unique VarName
+
 type instance Select "LetPattern" 'Typed = NoFieldValue
 
 type instance Select "VarRef" 'Typed = VarRef VarName
+
 type instance Select "ConRef" 'Typed = Qualified TypeName
 
 type instance Select "SymOp" 'Typed = VarRef OpName
+
 type instance Select "Infixed" 'Typed = VarRef VarName
+
 type instance Select "LetParamName" 'Typed = Unique VarName
+
 type instance Select "InParens" 'Typed = DataConCantHappen
+
 type instance Select "BinaryOperator" 'Typed = DataConCantHappen
 
 type instance Select "PatternType" 'Typed = Type SourceRegion
+
 type instance Select "VarPat" 'Typed = Unique VarName
+
 type instance Select "ConPat" 'Typed = Qualified TypeName
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Typed = NoFieldValue
+
 type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the expression rather than declarations now
+
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
 
 -- Selections for 'Declaration'
@@ -49,39 +60,57 @@ type instance Select "DeclarationName" 'Typed = Qualified Name
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Typed = Unique LowerAlphaName
+
 type instance Select "UserDefinedType" 'Typed = Qualified TypeName
+
 type instance Select "ConstructorName" 'Typed = Qualified TypeName
 
 type TypedExpr = Generic.Expr 'Typed
+
 type TypedExpr' = Generic.Expr' 'Typed
 
 type TypedPattern = Generic.Pattern 'Typed
+
 type TypedPattern' = Generic.Pattern' 'Typed
 
 type TypedBinaryOperator = Generic.BinaryOperator 'Typed
+
 type TypedBinaryOperator' = Generic.BinaryOperator' 'Typed
 
 type TypedType = Generic.Type 'Typed
+
 type TypedType' = Generic.Type' 'Typed
 
 type TypedDeclaration = Generic.Declaration 'Typed
+
 type TypedDeclaration' = Generic.Declaration' 'Typed
 
 type TypedDeclarationBody = Generic.DeclarationBody 'Typed
+
 type TypedDeclarationBody' = Generic.DeclarationBody' 'Typed
 
 type TypedTypeDeclaration = Generic.TypeDeclaration 'Typed
 
 instance Plated TypedExpr
+
 instance Plated TypedExpr'
+
 instance Plated TypedType
+
 instance Plated TypedType'
 
 deriving instance Data TypedExpr'
+
 deriving instance Data TypedExpr
+
 deriving instance Data TypedBinaryOperator
+
 deriving instance Data TypedBinaryOperator'
+
 deriving instance Data TypedType
+
 deriving instance Data TypedType'
+
 deriving instance Data TypedPattern
+
 deriving instance Data TypedPattern'

@@ -10,14 +10,14 @@ import Test.Hspec
 
 diagShouldSucceed :: (MonadIO m) => (Diagnostic (Doc AnsiStyle), Maybe b) -> m b
 diagShouldSucceed (d, x) = liftIO $ do
-    when (hasReports d) $ assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
-    case x of
-        Just ok -> pure ok
-        Nothing -> assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+  when (hasReports d) $ assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+  case x of
+    Just ok -> pure ok
+    Nothing -> assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
 
 diagShouldFail :: (MonadIO m) => (Diagnostic (Doc AnsiStyle), Maybe b) -> m ()
 diagShouldFail (d, x) = liftIO $ do
-    unless (hasReports d) $ assertFailure "Expected diagnostic to fail, but succeeded."
-    case x of
-        Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
-        Nothing -> pass
+  unless (hasReports d) $ assertFailure "Expected diagnostic to fail, but succeeded."
+  case x of
+    Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
+    Nothing -> pass
