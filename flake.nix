@@ -38,23 +38,20 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc96;
+          basePackages = pkgs.haskell.packages.ghc94;
 
 
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
             megaparsec.source = inputs.megaparsec;
-            fourmolu.source = "0.13.0.0";
+
           };
 
           settings = {
 
-            elara = { name, pkgs, self, super, ... }: {
-              imports = [
-              ];
-            };
             fourmolu.check = false;
+
             diagnose = {
               extraBuildDepends = [
                 pkgs.haskellPackages.megaparsec_9_4_1
@@ -113,7 +110,6 @@
           programs.cabal-fmt.enable = false;
           programs.hlint.enable = true;
 
-          programs.ormolu.package = pkgs.haskellPackages.fourmolu_0_13_1_0;
 
         };
 
