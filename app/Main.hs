@@ -17,13 +17,11 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
-import Elara.Data.Kind.Infer
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 import Elara.Emit
-import Elara.Error
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Parse
@@ -34,17 +32,13 @@ import Elara.Rename (rename, runRenamePipeline)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
-import Elara.TypeInfer qualified as Infer
-import Elara.TypeInfer.Infer (Status, initialStatus)
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.JVMVersion
-import Polysemy (Members, Sem, runM)
-import Polysemy.Maybe (MaybeE, runMaybe)
+import Polysemy (Sem)
 import Polysemy.Reader
-import Polysemy.State
 import Prettyprinter.Render.Text
 import Print
 import System.CPUTime

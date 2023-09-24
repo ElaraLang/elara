@@ -4,32 +4,32 @@
 module Arbitrary.Names where
 
 import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Parse.Expression (reservedWords)
-
-import Data.Text qualified as Text
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 
 genLowerAlphaText :: Gen Text
 genLowerAlphaText =
-    Gen.filter
-        (`Set.notMember` reservedWords)
-        ( do
-            c <- Gen.lower
-            cs <- Gen.list (Range.linear 0 10) Gen.lower
-            pure $ fromString (c : cs)
-        )
+  Gen.filter
+    (`Set.notMember` reservedWords)
+    ( do
+        c <- Gen.lower
+        cs <- Gen.list (Range.linear 0 10) Gen.lower
+        pure $ fromString (c : cs)
+    )
+
 genUpperAlphaText :: Gen Text
 genUpperAlphaText =
-    Gen.filter
-        (`Set.notMember` reservedWords)
-        ( do
-            c <- Gen.upper
-            cs <- Gen.list (Range.linear 0 10) Gen.lower
-            pure $ fromString (c : cs)
-        )
+  Gen.filter
+    (`Set.notMember` reservedWords)
+    ( do
+        c <- Gen.upper
+        cs <- Gen.list (Range.linear 0 10) Gen.lower
+        pure $ fromString (c : cs)
+    )
 
 -- instance Arbitrary AlphaText where
 --     arbitrary =
@@ -63,9 +63,9 @@ genUpperAlphaText =
 
 genOpText :: Gen Text
 genOpText =
-    Gen.filter notReservedOp $
-        Gen.filter notComment $
-            Gen.text (Range.linear 1 4) (Gen.choice opChars)
+  Gen.filter notReservedOp $
+    Gen.filter notComment $
+      Gen.text (Range.linear 1 4) (Gen.choice opChars)
   where
     notReservedOp = (`Set.notMember` ["@", "=", ".", "\\", "=>", "->", "<-", "|"])
     notComment = not . Text.isPrefixOf "--"
@@ -113,9 +113,9 @@ genModuleName = ModuleName <$> Gen.nonEmpty (Range.linear 1 3) genUpperAlphaText
 
 genMaybeQualified :: Gen a -> Gen (MaybeQualified a)
 genMaybeQualified gen = do
-    qual <- Gen.choice [pure Nothing, Just <$> genModuleName]
-    name <- gen
-    pure (MaybeQualified name qual)
+  qual <- Gen.choice [pure Nothing, Just <$> genModuleName]
+  name <- gen
+  pure (MaybeQualified name qual)
 
 -- arbitraryOpVarName = OperatorVarName <$> arbitrary
 

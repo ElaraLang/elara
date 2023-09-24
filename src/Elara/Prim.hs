@@ -8,14 +8,13 @@ import Elara.AST.Name (ModuleName (..), Name (..), Qualified (..), TypeName (..)
 import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Unique (UniqueGen, makeUnique, makeUniqueId)
+import Elara.Data.Unique (UniqueGen)
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
-import Elara.TypeInfer.Unique (makeUniqueTyVar, makeUniqueTyVarWith)
+import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
 import Polysemy
-import Print (debugPretty)
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"

@@ -5,4 +5,4 @@ let add2 x = x + 2
 
 
 def main : IO ()
-let main = println (toString (add2 1))
+let main = println (toString ("hello"))

@@ -25,25 +25,21 @@ module Elara.TypeInfer.Context
 where
 
 import Control.Monad qualified as Monad
-import Control.Monad.State.Strict qualified as State
 import Elara.AST.Name (Name)
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..))
 import Elara.Data.Pretty.Styles (label, operator, punctuation)
-import Elara.Data.Unique (Unique, UniqueGen, unsafeMkUnique)
+import Elara.Data.Unique (UniqueGen)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential (Existential)
-import Elara.TypeInfer.Existential qualified as Existential
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
 import Polysemy
-import Polysemy.Internal.TH.Common (makeUnambiguousSend)
 import Prettyprinter qualified as Pretty
-import Print (debugPretty)
 
 -- $setup
 --

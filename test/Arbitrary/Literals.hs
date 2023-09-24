@@ -7,18 +7,18 @@ import Text.Printf
 import Text.Show qualified as TS (Show (..))
 
 newtype IntLiteral = IntLiteral {unIntLiteral :: Text}
-    deriving (Show)
+  deriving (Show)
 
 newtype FloatLiteral = FloatLiteral {unFloatLiteral :: Text}
-    deriving (Show)
+  deriving (Show)
 
 newtype StringLiteral = StringLiteral {unStringLiteral :: Text}
 
 instance Show StringLiteral where
-    show = toString . unStringLiteral
+  show = toString . unStringLiteral
 
 newtype CharLiteral = CharLiteral {unCharLiteral :: Text}
-    deriving (Show)
+  deriving (Show)
 
 genInteger :: Gen Integer
 genInteger = Gen.integral_ (Range.linear (-100000000) 100000000)
@@ -48,16 +48,16 @@ genFloatLiteral = FloatLiteral <$> Gen.choice [normalFloat, scientificIntFloat, 
   where
     normalFloat = show <$> Gen.double (Range.linearFracFrom 0 (-100000000) 100000000)
     scientificIntFloat = do
-        p1 <- genInteger
-        p2 <- Gen.integral_ (Range.linear (0 :: Integer) 100000000)
-        p3 <- genInteger
+      p1 <- genInteger
+      p2 <- Gen.integral_ (Range.linear (0 :: Integer) 100000000)
+      p3 <- genInteger
 
-        pure (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3)
+      pure (safelyPrintInt p1 <> "." <> show p2 <> "e" <> show p3)
 
     scientificFloat = do
-        p1 <- genInteger
-        p2 <- genInteger
-        pure (safelyPrintInt p1 <> "e" <> show p2)
+      p1 <- genInteger
+      p2 <- genInteger
+      pure (safelyPrintInt p1 <> "e" <> show p2)
 
 genStringLiteral :: Gen StringLiteral
 genStringLiteral = StringLiteral . show <$> Gen.list (Range.linear 0 10) Gen.unicode

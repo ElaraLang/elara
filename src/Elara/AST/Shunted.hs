@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Shunted AST Type
 -- This is very similar to 'Elara.AST.Renamed.Expr' except:

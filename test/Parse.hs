@@ -7,23 +7,22 @@ import Elara.Parse.Expression (exprParser)
 import Hedgehog
 import Orphans ()
 import Parse.Common
-import Print (showPrettyUnannotated)
-
 import Parse.Patterns qualified as Patterns
+import Print (showPrettyUnannotated)
 import Test.Hspec
 import Test.Hspec.Hedgehog (hedgehog)
 
 spec :: Spec
 spec = parallel $ do
-    Patterns.spec
-    arbitraryExpr
-    pass
+  Patterns.spec
+  arbitraryExpr
+  pass
 
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
-    expr <- forAll genExpr
-    let parsePretty s = fmap (removeInParens . stripExprLocation) <$> lexAndParse exprParser s
-    trippingParse (removeInParens expr) (showPrettyUnannotated . removeInParens) parsePretty
+  expr <- forAll genExpr
+  let parsePretty s = fmap (removeInParens . stripExprLocation) <$> lexAndParse exprParser s
+  trippingParse (removeInParens expr) (showPrettyUnannotated . removeInParens) parsePretty
   where
     -- The AST needs to have the 'InParens' element for operator shunting later, but its presence messes up the pretty printing & parsing equality
     -- This just removes any 'InParens' elements from the AST

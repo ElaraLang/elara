@@ -132,7 +132,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              ghcid -c "stack repl --ghc-options='-g -ferror-spans -fdiagnostics-color=always'" --warnings -T ':main --dump-shunted --dump-typed --dump-core' --colour=always --restart=source.elr
+              stack build --file-watch --fast --ghc-options='-O0 -fbyte-code' --exec elara
             '';
             category = "Primary";
           };

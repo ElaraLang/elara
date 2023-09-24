@@ -7,7 +7,7 @@ import Data.List.NonEmpty qualified as NE
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef (VarRef' (..), varRefVal)
 import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule, declarations)
+import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Operator (translateOperatorName)
