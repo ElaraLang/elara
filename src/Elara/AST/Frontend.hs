@@ -29,6 +29,8 @@ type instance Select "InParens" 'Frontend = FrontendExpr
 
 type instance Select "BinaryOperator" 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
 
+type instance Select "TypeApplication" 'Frontend = FrontendType
+
 -- Selections for 'BinaryOperator'
 type instance Select "SymOp" 'Frontend = MaybeQualified OpName
 

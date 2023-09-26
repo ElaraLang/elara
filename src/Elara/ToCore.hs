@@ -25,13 +25,10 @@ import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
-import Elara.TypeInfer.Unique
 import Error.Diagnose (Report (..))
-import Polysemy (Member, Members, Sem)
+import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.State
-import Polysemy.State.Extra (scoped)
-import Print (debugPretty, printPretty, showPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -227,14 +224,14 @@ desugarMatch e pats = do
       AST.VarPattern (Located _ vn) -> do
         t' <- typeToCore t
         pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t'], branch')
-      AST.ConstructorPattern cn pats -> do
+      AST.ConstructorPattern cn _ -> do
         c <- lookupCtor cn
         pure (Core.DataAlt c, [], branch')
       -- todo: bind the pattern variables
       AST.ListPattern [] -> do
         t' <- typeToCore t
         pure (Core.DataAlt (Core.DataCon emptyListCtorName t'), [], branch')
-      AST.ConsPattern (Pattern (Located _ p1, _)) (Pattern (Located _ p2, _)) -> do
+      AST.ConsPattern (Pattern (Located _ _, _)) (Pattern (Located _ _, _)) -> do
         c <- lookupPrimCtor consCtorName
         pure (Core.DataAlt c, [], branch')
       other -> error "TODO: pattern "
@@ -253,5 +250,5 @@ mkBindName (AST.Expr (_, t)) = do
   pure (Core.Id (mkLocalRef unique) t')
 
 desugarBlock :: (ToCoreC r) => NonEmpty TypedExpr -> Sem r CoreExpr
-desugarBlock (one :| []) = toCore one
+desugarBlock (a :| []) = toCore a
 desugarBlock _ = error "todo"

@@ -34,7 +34,7 @@ import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocate
 import Elara.AST.Shunted
 import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
-import Elara.Data.Pretty (Pretty (..), prettyToText, (<+>))
+import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.Data.Unique
 import Elara.Prim (primRegion, primitiveTCContext)
 import Elara.TypeInfer.Context (Context, Entry)
@@ -52,7 +52,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -64,11 +64,11 @@ data Status = Status
 
 initialStatus :: (Member UniqueGen r) => Sem r Status
 initialStatus = do
-  primitiveTCContext <- primitiveTCContext
+  primitiveTCContext' <- primitiveTCContext
   pure
     Status
-      { context = primitiveTCContext,
-        writeOnlyContext = primitiveTCContext
+      { context = primitiveTCContext',
+        writeOnlyContext = primitiveTCContext'
       }
 
 orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
@@ -1269,7 +1269,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                 ( Expr (Located primRegion (TypeApplication _A ((Type.stripForAll resultType))), resultType)
                 )
                 typedArgument
-      o -> do
+      _ -> do
         pure $ FunctionCall _A typedArgument
 
     pure $ Expr (Located location e, resultType)

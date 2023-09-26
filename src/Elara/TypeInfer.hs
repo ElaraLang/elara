@@ -27,11 +27,9 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
-import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -41,7 +39,6 @@ import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
-import Elara.TypeInfer.Unique
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
@@ -211,7 +208,7 @@ completeExpression ::
   Context SourceRegion ->
   TypedExpr ->
   Sem r TypedExpr
-completeExpression ctx e@(Expr (y', t)) = do
+completeExpression ctx (Expr (y', t)) = do
   completed <- quantify <$> complete ctx t
   unify t completed
 
@@ -229,7 +226,7 @@ completeExpression ctx e@(Expr (y', t)) = do
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
     quantify :: Type SourceRegion -> Type SourceRegion
-    quantify t@(Infer.Forall {}) = t
+    quantify fa@(Infer.Forall {}) = fa
     quantify x = do
       let ftvs = Infer.freeTypeVars x
 
@@ -248,7 +245,6 @@ completeExpression ctx e@(Expr (y', t)) = do
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     unify unsolved solved = do
-      -- debugPretty ("Unify" :: Text, unsolved, solved)
       case (stripForAlls unsolved, stripForAlls solved) of
         (Infer.Function {input = unsolvedInput, output = unsolvedOutput}, Infer.Function {input = solvedInput, output = solvedOutput}) -> do
           subst unsolvedInput solvedInput
@@ -268,11 +264,10 @@ completeExpression ctx e@(Expr (y', t)) = do
       other -> other
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    subst s@Infer.UnsolvedType {existential} solved = do
-      -- debugPretty ("Subst" :: Text, s, solved)
+    subst Infer.UnsolvedType {existential} solved = do
       let annotation = SolvedType existential (toMonoType solved)
       push annotation
-    subst a b = pass
+    subst _ _ = pass
 
     toMonoType :: Type SourceRegion -> Mono.Monotype
     toMonoType = \case
