@@ -69,7 +69,7 @@ data Expr' (ast :: a)
       (ASTLocate ast (Select "LambdaPattern" ast))
       (Expr ast)
   | FunctionCall (Expr ast) (Expr ast)
-  | TypeApplication (Expr ast) (Select "ExprType" ast)
+  | TypeApplication (Expr ast) ((Select "TypeApplication" ast))
   | If (Expr ast) (Expr ast) (Expr ast)
   | BinaryOperator !(Select "BinaryOperator" ast)
   | List [Expr ast]

@@ -52,6 +52,8 @@ type instance Select "VarPat" 'Shunted = Unique LowerAlphaName
 
 type instance Select "ConPat" 'Shunted = Qualified TypeName
 
+type instance Select "TypeApplication" 'Shunted = ShuntedType
+
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Shunted = NoFieldValue
 

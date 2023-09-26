@@ -220,7 +220,7 @@ completeExpression ctx e@(Expr (y', t)) = do
     traverseOf
       unlocated
       ( \case
-          TypeApplication f t' -> TypeApplication f <$> complete ctx' t'
+          TypeApplication f t' -> TypeApplication f <$> (complete ctx') t'
           o -> pure o
       )
       y'

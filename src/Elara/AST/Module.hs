@@ -19,7 +19,6 @@ import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
-import Print (debugPretty)
 import Unsafe.Coerce
 import Prelude hiding (Text)
 
@@ -57,6 +56,7 @@ data Exposition ast
   | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
   deriving (Generic)
 
+traverseModule :: (_) => (a4 -> f (Declaration ast)) -> s1 -> f t
 traverseModule traverseDecl =
   traverseOf
     (_Unwrapped . unlocated)
@@ -116,10 +116,7 @@ traverseModuleRevTopologically traverseDecl =
     )
 
 instance
-  ( Pretty (ASTLocate ast ModuleName),
-    Pretty (ASTLocate ast (Import' ast)),
-    Pretty (ASTLocate ast (Exposing ast)),
-    Pretty (ASTLocate ast (Module' ast))
+  ( Pretty (ASTLocate ast (Module' ast))
   ) =>
   Pretty (Module ast)
   where
@@ -127,8 +124,6 @@ instance
 
 instance
   ( Pretty (ASTLocate ast ModuleName),
-    Pretty (ASTLocate ast (Import' ast)),
-    Pretty (ASTLocate ast (Exposing ast)),
     Pretty (Exposing ast),
     Pretty (Import ast),
     Pretty (Declaration ast)

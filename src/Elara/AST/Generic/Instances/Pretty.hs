@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -81,6 +82,7 @@ instance
     lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast),
     Pretty (ASTLocate ast (Select "ConRef" ast)),
     Pretty (ASTLocate ast (Select "VarRef" ast)),
+    Pretty ((Select "TypeApplication" ast)),
     (Pretty (Select "InParens" ast)),
     (Pretty (ASTLocate ast (Select "LetParamName" ast))),
     Pretty letPatterns,
@@ -113,6 +115,7 @@ prettyExpr ::
     lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast),
     Pretty (ASTLocate ast (Select "ConRef" ast)),
     Pretty (ASTLocate ast (Select "VarRef" ast)),
+    Pretty ((Select "TypeApplication" ast)),
     (Pretty (Select "InParens" ast)),
     (Pretty (ASTLocate ast (Select "LetParamName" ast))),
     Pretty letPatterns,
@@ -140,8 +143,10 @@ prettyExpr (Expr (e, t)) = group (flatAlt long short)
     short = align (pretty pe <+> pretty te)
 
 instance
+  forall ast letPatterns lambdaPatterns.
   ( Pretty (ASTLocate ast (Select "ConRef" ast)),
     Pretty (ASTLocate ast (Select "VarRef" ast)),
+    Pretty ((Select "TypeApplication" ast)),
     (Pretty (Select "InParens" ast)),
     (Pretty (ASTLocate ast (Select "LetParamName" ast))),
     Pretty letPatterns,
@@ -173,8 +178,9 @@ prettyExpr' ::
     letPatterns ~ UnwrapList (Select "LetPattern" ast),
     ?contextFree :: Bool,
     ?withType :: Bool,
-    Pretty (ASTLocate ast (Select "ConRef" ast)),
     Pretty (ASTLocate ast (Select "VarRef" ast)),
+    Pretty (ASTLocate ast (Select "ConRef" ast)),
+    Pretty ((Select "TypeApplication" ast)),
     (Pretty (Select "InParens" ast)),
     (Pretty (ASTLocate ast (Select "LetParamName" ast))),
     Pretty letPatterns,
@@ -276,3 +282,28 @@ instance
     ListType a -> "[" <+> pretty a <+> "]"
     where
       prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
+
+-- type CommonPrettyExprConstraints ast lambdaPatterns letPatterns =
+--     ( lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
+--     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
+--     , Pretty letPatterns
+--     , Pretty lambdaPatterns
+--     , Pretty (ASTLocate ast (Select "ConRef" ast))
+--     , Pretty (ASTLocate ast (Type' ast))
+--     , Pretty (ASTLocate ast (Select "VarRef" ast))
+--     , Pretty (ASTLocate ast (Select "TypeApplication" ast))
+--     , Pretty (Select "InParens" ast)
+--     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
+--     , (Pretty (UnwrapMaybe (Select "ExprType" ast)))
+--     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
+--     , (Pretty (ASTLocate ast (BinaryOperator' ast)))
+--     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
+--     , (Pretty (Select "ExprType" ast))
+--     , (ToList (Select "LetPattern" ast) [letPatterns])
+--     , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
+--     , (ToMaybe (Select "ExprType" ast) (Maybe (UnwrapMaybe (Select "ExprType" ast))))
+--     , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
+--     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
+--     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+--     , (ToList (Select "LetPattern" ast) [letPatterns])
+--     )

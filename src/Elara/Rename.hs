@@ -234,7 +234,7 @@ addDeclarationToContext _ decl = do
 
   case decl ^. _Unwrapped . unlocated . field @"body" . _Unwrapped . unlocated of
     -- Add all the constructor names to field' context
-    TypeDeclaration _ (Located _ (ADT constructors)) -> todo
+    TypeDeclaration _ (Located _ (ADT _)) -> todo
     --     traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) constructors
     _ -> pass
 
@@ -356,6 +356,10 @@ renameExpr (Expr le) =
       e1' <- renameExpr e1
       e2' <- renameExpr e2
       pure $ FunctionCall e1' e2'
+    renameExpr' (TypeApplication e1 t1) = do
+      e1' <- renameExpr e1
+      t1' <- traverseOf (_Unwrapped . unlocated) (renameType False) t1
+      pure $ TypeApplication e1' t1'
     renameExpr' (If e1 e2 e3) = do
       e1' <- renameExpr e1
       e2' <- renameExpr e2
@@ -477,7 +481,7 @@ patternToMatch pat body = do
 -- This is a little bit special because patterns have to be converted to match expressions
 --
 -- For example,
---   @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
+--  @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 renameLambda :: (Rename r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
 renameLambda p e = do
   (arg, match) <- patternToMatch p e

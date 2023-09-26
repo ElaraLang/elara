@@ -6,8 +6,6 @@
 -- - Everything has a type!
 module Elara.AST.Typed where
 
-import Control.Lens (Plated)
-import Data.Data (Data)
 import Elara.AST.Generic (ASTLocate', ASTQual, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
@@ -48,6 +46,8 @@ type instance Select "PatternType" 'Typed = Type SourceRegion
 type instance Select "VarPat" 'Typed = Unique VarName
 
 type instance Select "ConPat" 'Typed = Qualified TypeName
+
+type instance Select "TypeApplication" Typed = Type SourceRegion
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Typed = NoFieldValue

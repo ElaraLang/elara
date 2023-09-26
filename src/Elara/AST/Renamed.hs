@@ -42,6 +42,8 @@ type instance Select "VarPat" 'Renamed = Unique LowerAlphaName
 
 type instance Select "ConPat" 'Renamed = Qualified TypeName
 
+type instance Select "TypeApplication" 'Renamed = RenamedType
+
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Renamed = NoFieldValue
 

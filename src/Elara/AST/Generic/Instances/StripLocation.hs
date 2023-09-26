@@ -16,52 +16,22 @@ instance
     ASTLocate' ast2 ~ Unlocated,
     (StripLocation (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2)),
     (StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2)),
+    StripLocation (Select "TypeApplication" ast1) (Select "TypeApplication" ast2),
     (ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2)),
     (ApplyAsFunctorish (Select "PatternType" ast1) (Select "PatternType" ast2) (Type ast1) (Type ast2)),
-    ( StripLocation
-        (Select "Infixed" ast1)
-        (Select "Infixed" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "SymOp" ast1)))
-        (Select "SymOp" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "TypeVar" ast1)))
-        (Select "TypeVar" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "VarRef" ast1)))
-        (Select "VarRef" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "VarPat" ast1)))
-        (Select "VarPat" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "ConPat" ast1)))
-        (Select "ConPat" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "ConRef" ast1)))
-        (Select "ConRef" ast2)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "LambdaPattern" ast1)))
-        (Select "LambdaPattern" ast1)
-    ),
-    ( StripLocation
-        (CleanupLocated (Located (Select "LetParamName" ast1)))
-        (Select "LetParamName" ast2)
-    ),
-    ( DataConAs
-        (Select "BinaryOperator" ast1)
-        (BinaryOperator ast1, Expr ast1, Expr ast1)
-    ),
-    ( DataConAs
-        (Select "BinaryOperator" ast2)
-        (BinaryOperator ast2, Expr ast2, Expr ast2)
-    ),
+    (StripLocation (Select "Infixed" ast1) (Select "Infixed" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "SymOp" ast1))) (Select "SymOp" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "VarRef" ast1))) (Select "VarRef" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "VarPat" ast1))) (Select "VarPat" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "ConPat" ast1))) (Select "ConPat" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "ConRef" ast1))) (Select "ConRef" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "LambdaPattern" ast1))) (Select "LambdaPattern" ast1)),
+    (StripLocation (CleanupLocated (Located (Select "LetParamName" ast1))) (Select "LetParamName" ast2)),
+    (StripLocation (CleanupLocated (Located (Select "TypeApplication" ast1))) (Select "TypeApplication" ast1)),
+    (StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)),
+    (DataConAs (Select "BinaryOperator" ast1) (BinaryOperator ast1, Expr ast1, Expr ast1)),
+    (DataConAs (Select "BinaryOperator" ast2) (BinaryOperator ast2, Expr ast2, Expr ast2)),
     (DataConAs (Select "InParens" ast1) (Expr ast1)),
     (DataConAs (Select "InParens" ast2) (Expr ast2))
   ) =>
@@ -74,11 +44,10 @@ stripExprLocation ::
   ( ASTLocate' ast1 ~ Located,
     ASTLocate' ast2 ~ Unlocated,
     StripLocation (Select "LambdaPattern" ast1) (Select "LambdaPattern" ast2),
+    StripLocation (Select "TypeApplication" ast1) (Select "TypeApplication" ast2),
     StripLocation (Select "LetPattern" ast1) (Select "LetPattern" ast2),
     ApplyAsFunctorish (Select "ExprType" ast1) (Select "ExprType" ast2) (Type ast1) (Type ast2),
-    ( DataConAs
-        (Select "BinaryOperator" ast1)
-        (BinaryOperator ast1, Expr ast1, Expr ast1)
+    ( DataConAs (Select "BinaryOperator" ast1) (BinaryOperator ast1, Expr ast1, Expr ast1)
     ),
     _
   ) =>
@@ -108,10 +77,12 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
               ps'
        in Lambda ps'' (stripExprLocation e)
     stripExprLocation' (FunctionCall e1 e2) = FunctionCall (stripExprLocation e1) (stripExprLocation e2)
-    stripExprLocation' (TypeApplication e1 e2) =
-      TypeApplication
-        (stripExprLocation e1)
-        (applyAsFunctorish @(Select "ExprType" ast1) @(Select "ExprType" ast2) @(Type ast1) @(Type ast2) stripTypeLocation e2)
+    stripExprLocation' (TypeApplication e1 t1) =
+      let t1' = stripLocation t1
+          t1'' = stripLocation @(Select "TypeApplication" ast1) @(Select "TypeApplication" ast2) t1'
+       in TypeApplication
+            (stripExprLocation e1)
+            t1''
     stripExprLocation' (If e1 e2 e3) = If (stripExprLocation e1) (stripExprLocation e2) (stripExprLocation e3)
     stripExprLocation' (BinaryOperator b) =
       let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast1) @(BinaryOperator ast1, Expr ast1, Expr ast1) b
@@ -155,7 +126,8 @@ instance
     ( StripLocation
         (CleanupLocated (Located (Select "ConPat" ast1)))
         (Select "ConPat" ast2)
-    )
+    ),
+    (StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2))
   ) =>
   StripLocation (Pattern ast1) (Pattern ast2)
   where
@@ -192,9 +164,7 @@ instance
   forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
   ( ASTLocate' ast1 ~ Located,
     ASTLocate' ast2 ~ Unlocated,
-    ( StripLocation
-        (Select "Infixed" ast1)
-        (Select "Infixed" ast2)
+    ( StripLocation (Select "Infixed" ast1) (Select "Infixed" ast2)
     ),
     ( StripLocation
         (CleanupLocated (Located (Select "SymOp" ast1)))
@@ -239,3 +209,7 @@ stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1))) =
     stripTypeLocation' (FunctionType a b) = FunctionType (stripTypeLocation a) (stripTypeLocation b)
     stripTypeLocation' UnitType = UnitType
     stripTypeLocation' (TypeConstructorApplication a b) = TypeConstructorApplication (stripTypeLocation a) (stripTypeLocation b)
+    stripTypeLocation' (ListType a) = ListType (stripTypeLocation a)
+    stripTypeLocation' (TupleType a) = TupleType (stripTypeLocation <$> a)
+    stripTypeLocation' (UserDefinedType n) = UserDefinedType (stripLocation n)
+    stripTypeLocation' (RecordType r) = RecordType (bimapF stripLocation stripTypeLocation r)
