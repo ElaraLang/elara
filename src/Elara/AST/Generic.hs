@@ -17,10 +17,12 @@ module Elara.AST.Generic where
 
 -- import Elara.AST.Frontend qualified as Frontend
 
-import Control.Lens (Plated, view, (^.))
+import Control.Lens (Each (each), Plated (plate), Traversal', traverseOf, view, (^.), _1, _2)
+import Control.Lens.Extras (template, uniplate)
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
+import Elara.AST.Generic.Utils
 import Elara.AST.Name (LowerAlphaName, ModuleName, VarName (..))
 import Elara.AST.Pretty
 import Elara.AST.Region (Located, unlocated)
@@ -30,26 +32,6 @@ import Elara.Data.Pretty
 import GHC.TypeLits
 import Relude.Extra (bimapF)
 import Prelude hiding (group)
-
-data DataConCantHappen deriving (Generic, Data, Show)
-
-instance Pretty DataConCantHappen where
-  pretty :: (HasCallStack) => DataConCantHappen -> Doc AnsiStyle
-  pretty _ = error "DataConCantHappen"
-
-instance Eq DataConCantHappen where
-  (==) :: (HasCallStack) => DataConCantHappen -> DataConCantHappen -> Bool
-  (==) = error "DataConCantHappen"
-
-dataConCantHappen :: DataConCantHappen -> a
-dataConCantHappen x = case x of {}
-
-data NoFieldValue = NoFieldValue
-  deriving (Generic, Data, Show, Eq)
-
-instance Pretty NoFieldValue where
-  pretty :: (HasCallStack) => NoFieldValue -> Doc AnsiStyle
-  pretty _ = error "This instance should never be used"
 
 -- | Used to select a field type for a given AST.
 --
@@ -93,12 +75,10 @@ data Expr' (ast :: a)
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
   deriving (Generic, Typeable)
 
--- instance (Typeable ast) => Plated (Expr ast)
-
 typeOf :: forall ast. Expr ast -> Select "ExprType" ast
 typeOf (Expr (_, t)) = t
 
-data Pattern' (ast :: a)
+data Pattern' ast
   = VarPattern (ASTLocate ast (Select "VarPat" ast))
   | ConstructorPattern (ASTLocate ast (Select "ConPat" ast)) [Pattern ast]
   | ListPattern [Pattern ast]
@@ -111,7 +91,7 @@ data Pattern' (ast :: a)
   | UnitPattern
   deriving (Generic)
 
-newtype Pattern (ast :: a) = Pattern (ASTLocate ast (Pattern' ast), Select "PatternType" ast)
+newtype Pattern ast = Pattern (ASTLocate ast (Pattern' ast), Select "PatternType" ast)
   deriving (Generic)
 
 data BinaryOperator' (ast :: a)
@@ -186,13 +166,22 @@ class RUnlocate ast where
     ASTLocate ast a ->
     ASTLocate ast b
 
+  traverseUnlocated ::
+    forall f a b.
+    (Applicative f, CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
+    (a -> f b) ->
+    ASTLocate ast a ->
+    f (ASTLocate ast b)
+
 instance (ASTLocate' ast ~ Located) => RUnlocate (ast :: LocatedAST) where
   rUnlocate = view unlocated
   fmapUnlocated = fmap
+  traverseUnlocated = traverse
 
 instance (ASTLocate' ast ~ Unlocated) => RUnlocate (ast :: UnlocatedAST) where
   rUnlocate = identity
   fmapUnlocated f = f
+  traverseUnlocated f = f
 
 type ASTLocate :: a -> Kind.Type -> Kind.Type
 type ASTLocate ast a = CleanupLocated (ASTLocate' ast a)
@@ -300,80 +289,6 @@ instance
 
 instance Pretty (TypeDeclaration ast) where
   pretty _ = "TODO"
-
--- | When fields may be optional, we need a way of representing that generally. This class does that.
--- In short, it converts a type to a 'Maybe'. If the type is already a 'Maybe', it is left alone.
--- If it is not, it is wrapped in a 'Just'. If it is 'NoFieldValue', it is converted to 'Nothing'.
-class ToMaybe i o where
-  toMaybe :: i -> o
-
-instance {-# OVERLAPPING #-} ToMaybe NoFieldValue (Maybe a) where
-  toMaybe _ = Nothing
-
-instance ToMaybe (Maybe a) (Maybe a) where
-  toMaybe = identity
-
-instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
-  toMaybe = Just
-
-instance (ToMaybe a b) => ToMaybe (Located a) b where
-  toMaybe = toMaybe . view unlocated
-
--- | Like 'ToMaybe' but for lists. Useful when fields may be lists or single values.
-class ToList i o where
-  fieldToList :: i -> o
-
-instance {-# OVERLAPPING #-} ToList NoFieldValue [a] where
-  fieldToList _ = []
-
-instance ToList [a] [a] where
-  fieldToList = identity
-
-instance {-# INCOHERENT #-} ToList a [a] where
-  fieldToList = pure
-
-instance (ToList a b) => ToList (Located a) b where
-  fieldToList = fieldToList . view unlocated
-
--- Sometimes fields are wrapped in functors eg lists, we need a way of transcending them.
--- This class does that.
--- For example, let's say we have `cleanPattern :: Pattern ast1 -> Pattern ast2`, and `x :: Select ast1 "Pattern"`.
--- `x` could be `Pattern ast1`, `[Pattern ast1]`, `Maybe (Pattern ast1)`, or something else entirely.
--- `cleanPattern` will only work on the first of these, so we need a way of lifting it to the others. Obviously, this sounds like a Functor
--- but the problem is that `Pattern ast1` has the wrong kind.
-class ApplyAsFunctorish i o a b where
-  applyAsFunctorish :: (a -> b) -> i -> o
-
-instance (Functor f) => ApplyAsFunctorish (f a) (f b) a b where
-  applyAsFunctorish = fmap
-
-instance ApplyAsFunctorish a b a b where
-  applyAsFunctorish f = f
-
-instance ApplyAsFunctorish NoFieldValue NoFieldValue a b where
-  applyAsFunctorish _ = identity
-
-class DataConAs a b where
-  dataConAs :: a -> b
-  asDataCon :: b -> a
-
-instance DataConAs a a where
-  dataConAs = identity
-  asDataCon = identity
-
-instance DataConAs DataConCantHappen a where
-  dataConAs = dataConCantHappen
-  asDataCon = error "asDataCon: DataConCantHappen"
-
--- | Unwraps 1 level of 'Maybe' from a type. Useful when a type family returns Maybe
-type family UnwrapMaybe (a :: Kind.Type) = (k :: Kind.Type) where
-  UnwrapMaybe (Maybe a) = a
-  UnwrapMaybe a = a
-
--- | Unwraps 1 level of '[]' from a type. Useful when a type family returns []
-type family UnwrapList (a :: Kind.Type) = (k :: Kind.Type) where
-  UnwrapList [a] = a
-  UnwrapList a = a
 
 instance
   ( exprType ~ UnwrapMaybe (Select "ExprType" ast), -- This constraint fixes ambiguity errors
@@ -823,17 +738,6 @@ type ForAllExpr c ast =
     c (ASTLocate ast (Select "LetParamName" ast))
   )
 
--- Data instances
--- deriving instance
---     ( Typeable ast
---     , (Data (Select "InParens" ast))
---     , (Data (Select "LetPattern" ast))
---     , ForAllExpr Data ast
---     , Data (BinaryOperator ast)
---     , Data (Pattern ast)
---     ) =>
---     Data (Expr' ast)
-
 -- Eq instances
 
 deriving instance
@@ -966,3 +870,170 @@ deriving instance
     Ord (Select "Infixed" ast)
   ) =>
   Ord (BinaryOperator' ast)
+
+-- Data instances
+
+deriving instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Pattern' ast)),
+    Data (Select "PatternType" ast),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Data (Pattern ast)
+
+deriving instance
+  forall a (ast :: a).
+  ( Typeable a,
+    Typeable ast,
+    (Data (Pattern ast)),
+    (Data (ASTLocate ast (Select "VarPat" ast))),
+    (Data (ASTLocate ast (Select "ConPat" ast)))
+  ) =>
+  Data (Pattern' ast)
+
+deriving instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Expr' ast)),
+    Data (Select "ExprType" ast),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Data (Expr ast)
+
+deriving instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Expr' ast)),
+    Data ((Select "LetPattern" ast)),
+    Data ((Select "InParens" ast)),
+    Data ((Select "PatternType" ast)),
+    Data ((Select "BinaryOperator" ast)),
+    (Data (Select "ExprType" ast)),
+    Data (ASTLocate ast (Select "VarRef" ast)),
+    Data (ASTLocate ast (Select "ConRef" ast)),
+    Data (ASTLocate ast (Select "LetParamName" ast)),
+    Data (ASTLocate ast (Select "LambdaPattern" ast)),
+    Data (ASTLocate ast (Pattern' ast)),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Data (Expr' ast)
+
+deriving instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Type' ast)),
+    Data (Select "TypeVar" ast),
+    Data (Select "UserDefinedType" ast),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Data (Type ast)
+
+deriving instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Type' ast)),
+    Data (ASTLocate ast (Select "TypeVar" ast)),
+    Data ((Select "TypeVar" ast)),
+    Data (ASTLocate ast (Select "UserDefinedType" ast)),
+    Data (ASTLocate ast LowerAlphaName),
+    Data ((Select "UserDefinedType" ast)),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Data (Type' ast)
+
+-- Some of these 'Plated' instances could be derived with 'template', but I feel like it's more efficient to write them by hand
+
+instance
+  ( RUnlocate ast
+  ) =>
+  Plated (Pattern' ast)
+  where
+  plate f = \case
+    p@(VarPattern _) -> pure p
+    ConstructorPattern a b -> ConstructorPattern a <$> traverseOf (each . _Unwrapped . _1 . traverseUnlocated @_ @ast) f b
+    ListPattern a -> ListPattern <$> traverseOf (each . _Unwrapped . _1 . traverseUnlocated @_ @ast) f a
+    ConsPattern a b -> ConsPattern <$> traverseOf (_Unwrapped . _1 . traverseUnlocated @_ @ast) f a <*> traverseOf (_Unwrapped . _1 . traverseUnlocated @_ @ast) f b
+    WildcardPattern -> pure WildcardPattern
+    IntegerPattern a -> pure (IntegerPattern a)
+    FloatPattern a -> pure (FloatPattern a)
+    StringPattern a -> pure (StringPattern a)
+    CharPattern a -> pure (CharPattern a)
+    UnitPattern -> pure UnitPattern
+
+instance
+  forall a (ast :: a).
+  ( (Data (Select "PatternType" ast)),
+    (Data ((ASTLocate ast (Pattern' ast)))),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Plated (Pattern ast)
+  where
+  plate = template
+
+instance
+  ( RUnlocate ast,
+    (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast)),
+    (DataConAs (Select "InParens" ast) (Expr ast))
+  ) =>
+  Plated (Expr' ast)
+  where
+  plate f =
+    let traverseExpr = (_Unwrapped . _1 . traverseUnlocated @_ @ast)
+     in \case
+          Int i -> pure (Int i)
+          Float f -> pure (Float f)
+          String s -> pure (String s)
+          Char c -> pure (Char c)
+          Unit -> pure Unit
+          Var v -> pure (Var v)
+          Constructor c -> pure (Constructor c)
+          Lambda ps e -> (Lambda ps <$> traverseOf traverseExpr f e)
+          FunctionCall e1 e2 -> FunctionCall <$> traverseOf traverseExpr f e1 <*> traverseOf traverseExpr f e2
+          TypeApplication e1 e2 -> TypeApplication <$> traverseOf traverseExpr f e1 <*> pure e2
+          If e1 e2 e3 -> If <$> traverseOf traverseExpr f e1 <*> traverseOf traverseExpr f e2 <*> traverseOf traverseExpr f e3
+          List l -> List <$> traverseOf (each . traverseExpr) f l
+          Match e m -> Match <$> traverseOf traverseExpr f e <*> traverseOf (each . _2 . traverseExpr) (f) m
+          LetIn v p e1 e2 -> (LetIn v p <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2
+          Let v p e -> (Let v p <$> traverseOf traverseExpr f e)
+          Block b -> Block <$> traverseOf (each . traverseExpr) f b
+          InParens e ->
+            let e' = dataConAs @(Select "InParens" ast) @(Expr ast) e
+             in InParens . asDataCon <$> traverseOf traverseExpr f e'
+          Tuple t -> Tuple <$> traverseOf (each . traverseExpr) f t
+          BinaryOperator b ->
+            let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
+             in BinaryOperator . asDataCon <$> (((,,) op <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2)
+
+instance
+  forall a (ast :: a).
+  ( (Data (Select "ExprType" ast)),
+    (Data ((ASTLocate ast (Expr' ast)))),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Plated (Expr ast)
+  where
+  plate = template
+
+instance
+  forall a (ast :: a).
+  ( (Data (Type ast))
+  ) =>
+  Plated (Type ast)
+  where
+  plate = template
+
+instance
+  forall a (ast :: a).
+  ( Data (ASTLocate ast (Type' ast)),
+    Data (ASTLocate ast (Select "TypeVar" ast)),
+    Data ((Select "TypeVar" ast)),
+    Data (ASTLocate ast (Select "UserDefinedType" ast)),
+    Data (ASTLocate ast LowerAlphaName),
+    Data ((Select "UserDefinedType" ast)),
+    Typeable ast,
+    Typeable a
+  ) =>
+  Plated (Type' ast)

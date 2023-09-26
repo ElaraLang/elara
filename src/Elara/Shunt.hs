@@ -10,6 +10,7 @@ import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map (lookup)
 import Elara.AST.Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (Name (..), NameLike (fullNameText, nameText), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)

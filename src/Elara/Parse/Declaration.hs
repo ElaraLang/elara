@@ -4,6 +4,7 @@ import Control.Lens (view, (^.), _1)
 import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendDeclaration, FrontendExpr, FrontendPattern, FrontendTypeDeclaration)
 import Elara.AST.Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Name (ModuleName, Name (..), VarName)
 import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))

@@ -8,17 +8,17 @@
 
 -- | This module is based on the bidirectional type-checking algorithm from:
 --
---    Dunfield, Jana, and Neelakantan R. Krishnaswami. \"Complete and easy bidirectional typechecking for higher-rank polymorphism.\" ACM SIGPLAN Notices 48.9 (2013): 429-442.
+--   Dunfield, Jana, and Neelakantan R. Krishnaswami. \"Complete and easy bidirectional typechecking for higher-rank polymorphism.\" ACM SIGPLAN Notices 48.9 (2013): 429-442.
 --
---    The main differences from the original algorithm are:
+--   The main differences from the original algorithm are:
 --
---    * This uses `Control.Monad.State.Strict.StateT` to thread around
---      `Context`s and manipulate them instead of explicit `Context` passing as
---      in the original paper
+--   * This uses `Control.Monad.State.Strict.StateT` to thread around
+--     `Context`s and manipulate them instead of explicit `Context` passing as
+--     in the original paper
 --
---    * This algorithm adds support for existential quantification
+--   * This algorithm adds support for existential quantification
 --
---    * This algorithm adds support for row polymorphic and polymorphic variants
+--   * This algorithm adds support for row polymorphic and polymorphic variants
 module Elara.TypeInfer.Infer where
 
 import Control.Lens ((^.), _1, _2)
@@ -27,8 +27,9 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Generic (Expr (..), Expr' (..), NoFieldValue (..))
+import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic qualified as Syntax
+import Elara.AST.Generic.Common
 import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocated)
 import Elara.AST.Shunted
 import Elara.AST.Typed
@@ -97,8 +98,8 @@ set :: (Member (State Status) r) => Context SourceRegion -> Sem r ()
 set context = State.modify (\s -> s {context, writeOnlyContext = context <> writeOnlyContext s})
 
 -- | This is used to temporarily add a `Context` entry that is discarded at the
---    end of the entry's scope, along with any downstream entries that were
---    created within that same scope
+--   end of the entry's scope, along with any downstream entries that were
+--   created within that same scope
 scoped :: (Member (State Status) r) => Entry SourceRegion -> Sem r a -> Sem r a
 scoped entry k = do
   push entry
@@ -139,9 +140,9 @@ scopedUnsolvedAlternatives k = do
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ A
+--   > Γ ⊢ A
 --
---    … which checks that under context Γ, the type A is well-formed
+--   … which checks that under context Γ, the type A is well-formed
 wellFormedType ::
   (Member (Error TypeInferenceError) r) =>
   Context SourceRegion ->
@@ -199,10 +200,10 @@ wellFormedType _Γ type0 = case type0 of
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ A <: B ⊣ Δ
+--   > Γ ⊢ A <: B ⊣ Δ
 --
---    … which updates the context Γ to produce the new context Δ, given that the
---    type A is a subtype of type B.
+--   … which updates the context Γ to produce the new context Δ, given that the
+--   type A is a subtype of type B.
 subtype ::
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
   Type SourceRegion ->
@@ -688,14 +689,14 @@ subtype _A0 _B0 = do
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ α̂ :≦ A ⊣ Δ
+--   > Γ ⊢ α̂ :≦ A ⊣ Δ
 --
---    … which updates the context Γ to produce the new context Δ, by instantiating
---    α̂ such that α̂ <: A.
+--   … which updates the context Γ to produce the new context Δ, by instantiating
+--   α̂ such that α̂ <: A.
 --
---    The @instantiate*@ family of functions should really be called @solve*@
---    because their job is to solve an unsolved variable within the context.
---    However, for consistency with the paper we still name them @instantiate*@.
+--   The @instantiate*@ family of functions should really be called @solve*@
+--   because their job is to solve an unsolved variable within the context.
+--   However, for consistency with the paper we still name them @instantiate*@.
 instantiateTypeL ::
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
   Existential Monotype ->
@@ -842,10 +843,10 @@ instantiateTypeL a _A0 = do
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ A ≦: α̂ ⊣ Δ
+--   > Γ ⊢ A ≦: α̂ ⊣ Δ
 --
---    … which updates the context Γ to produce the new context Δ, by instantiating
---    α̂ such that A :< α̂.
+--   … which updates the context Γ to produce the new context Δ, by instantiating
+--   α̂ such that A :< α̂.
 instantiateTypeR ::
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
   Type SourceRegion ->
@@ -1185,10 +1186,10 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ e ⇒ A ⊣ Δ
+--   > Γ ⊢ e ⇒ A ⊣ Δ
 --
---    … which infers the type of e under input context Γ, producing an inferred
---    type of A and an updated context Δ.
+--   … which infers the type of e under input context Γ, producing an inferred
+--   type of A and an updated context Δ.
 infer ::
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
   ShuntedExpr ->
@@ -1822,10 +1823,10 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ e ⇐ A ⊣ Δ
+--   > Γ ⊢ e ⇐ A ⊣ Δ
 --
---    … which checks that e has type A under input context Γ, producing an updated
---    context Δ.
+--   … which checks that e has type A under input context Γ, producing an updated
+--   context Δ.
 check ::
   forall r.
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
@@ -1900,12 +1901,12 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 
 -- | This corresponds to the judgment:
 --
---    > Γ ⊢ A • e ⇒⇒ C ⊣ Δ
+--   > Γ ⊢ A • e ⇒⇒ C ⊣ Δ
 --
---    … which infers the result type C when a function of type A is applied to an
---    input argument e, under input context Γ, producing an updated context Δ.
+--   … which infers the result type C when a function of type A is applied to an
+--   input argument e, under input context Γ, producing an updated context Δ.
 --
---    This has been adjusted to return the typed argument as well as C
+--   This has been adjusted to return the typed argument as well as C
 inferApplication ::
   (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
   Type SourceRegion ->

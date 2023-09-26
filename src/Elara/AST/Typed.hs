@@ -8,8 +8,9 @@ module Elara.AST.Typed where
 
 import Control.Lens (Plated)
 import Data.Data (Data)
-import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, NoFieldValue, Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, Select)
 import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (..), SourceRegion)
 import Elara.AST.Select (LocatedAST (Typed))
@@ -93,11 +94,9 @@ type TypedTypeDeclaration = Generic.TypeDeclaration 'Typed
 
 instance Plated TypedExpr
 
-instance Plated TypedExpr'
+-- instance Plated TypedType
 
-instance Plated TypedType
-
-instance Plated TypedType'
+-- instance Plated TypedType'
 
 deriving instance Data TypedExpr'
 

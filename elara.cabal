@@ -30,7 +30,9 @@ library
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Generic
+      Elara.AST.Generic.Common
       Elara.AST.Generic.Pattern
+      Elara.AST.Generic.Utils
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Pretty

@@ -1,5 +1,4 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Shunted AST Type
 -- This is very similar to 'Elara.AST.Renamed.Expr' except:
@@ -9,12 +8,12 @@
 -- - The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
 module Elara.AST.Shunted where
 
-import Control.Lens (Plated, concatMapOf, cosmosOn, view, (^.), _1)
-import Data.Data (Data)
+import Control.Lens (concatMapOf, cosmosOn, view, (^.), _1)
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate', ASTQual, DataConCantHappen, Expr' (..), NoFieldValue, Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Select)
 import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Select (LocatedAST (Shunted))
@@ -95,30 +94,6 @@ type ShuntedDeclarationBody = Generic.DeclarationBody 'Shunted
 type ShuntedDeclarationBody' = Generic.DeclarationBody' 'Shunted
 
 type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
-
-instance Plated ShuntedExpr
-
-instance Plated ShuntedExpr'
-
-instance Plated ShuntedType
-
-instance Plated ShuntedType'
-
-deriving instance Data ShuntedExpr'
-
-deriving instance Data ShuntedExpr
-
-deriving instance Data ShuntedBinaryOperator
-
-deriving instance Data ShuntedBinaryOperator'
-
-deriving instance Data ShuntedType
-
-deriving instance Data ShuntedType'
-
-deriving instance Data ShuntedPattern
-
-deriving instance Data ShuntedPattern'
 
 instance HasDependencies ShuntedDeclaration where
   type Key ShuntedDeclaration = Qualified Name

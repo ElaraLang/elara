@@ -9,8 +9,10 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Traversable (for)
+import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)

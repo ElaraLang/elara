@@ -3,7 +3,7 @@ module Elara.Parse.Indents where
 import Control.Lens (view, _1)
 import Data.Generics.Wrapped
 import Elara.AST.Frontend
-import Elara.AST.Generic (Expr (Expr), Expr' (..), NoFieldValue (NoFieldValue))
+import Elara.AST.Generic (Expr (Expr), Expr' (..))
 import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))

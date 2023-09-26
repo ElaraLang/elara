@@ -124,6 +124,8 @@ positionToDiagnosePosition fp (Position ln cn) =
 data Located a = Located SourceRegion a
   deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
 
+instance Each (Located a) (Located b) a b
+
 makePrisms ''Located
 
 type family Unlocate g where

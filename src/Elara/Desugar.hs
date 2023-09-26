@@ -9,6 +9,7 @@ import Data.Map qualified as M
 import Elara.AST.Desugared
 import Elara.AST.Frontend
 import Elara.AST.Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region

@@ -8,6 +8,7 @@ import Data.Generics.Wrapped
 import Data.Map qualified as Map
 import Elara.AST.Desugared
 import Elara.AST.Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
@@ -476,7 +477,7 @@ patternToMatch pat body = do
 -- This is a little bit special because patterns have to be converted to match expressions
 --
 -- For example,
---    @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
+--   @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 renameLambda :: (Rename r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
 renameLambda p e = do
   (arg, match) <- patternToMatch p e

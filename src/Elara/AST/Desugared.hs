@@ -8,6 +8,7 @@ module Elara.AST.Desugared where
 
 import Elara.AST.Generic
 import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located)
 import Elara.AST.Select (LocatedAST (Desugared))
