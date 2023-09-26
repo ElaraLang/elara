@@ -13,7 +13,7 @@ module Elara.AST.Module where
 import Control.Lens (Each (each), toListOf, traverseOf, (^.))
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate, ASTLocate', Declaration, FullASTQual)
+import Elara.AST.Generic
 import Elara.AST.Name (ModuleName, OpName, TypeName, VarName)
 import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty

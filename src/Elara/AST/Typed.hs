@@ -91,25 +91,3 @@ type TypedDeclarationBody = Generic.DeclarationBody 'Typed
 type TypedDeclarationBody' = Generic.DeclarationBody' 'Typed
 
 type TypedTypeDeclaration = Generic.TypeDeclaration 'Typed
-
-instance Plated TypedExpr
-
--- instance Plated TypedType
-
--- instance Plated TypedType'
-
-deriving instance Data TypedExpr'
-
-deriving instance Data TypedExpr
-
-deriving instance Data TypedBinaryOperator
-
-deriving instance Data TypedBinaryOperator'
-
-deriving instance Data TypedType
-
-deriving instance Data TypedType'
-
-deriving instance Data TypedPattern
-
-deriving instance Data TypedPattern'

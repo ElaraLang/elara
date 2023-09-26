@@ -31,7 +31,13 @@ library
       Elara.AST.Frontend
       Elara.AST.Generic
       Elara.AST.Generic.Common
+      Elara.AST.Generic.Instances
+      Elara.AST.Generic.Instances.DataPlated
+      Elara.AST.Generic.Instances.Pretty
+      Elara.AST.Generic.Instances.Simple
+      Elara.AST.Generic.Instances.StripLocation
       Elara.AST.Generic.Pattern
+      Elara.AST.Generic.Types
       Elara.AST.Generic.Utils
       Elara.AST.Module
       Elara.AST.Name
