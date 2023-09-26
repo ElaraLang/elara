@@ -46,6 +46,7 @@ ghc-options:
   - -Wall
   - -W
   - -Wcompat
+  - -Wno-name-shadowing # Shadowing is good, actually
   # - -Weverything
   # - -Werror=incomplete-patterns
   - -Werror=incomplete-uni-patterns
