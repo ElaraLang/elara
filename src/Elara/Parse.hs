@@ -3,11 +3,10 @@ module Elara.Parse where
 import Elara.AST.Module (Module)
 import Elara.AST.Select
 import Elara.Error (runErrorOrReport)
-import Elara.Lexer.Pipeline (LexPipelineEffects, runLexPipeline)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Error
 import Elara.Parse.Module (module')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), Parser, toParsec)
+import Elara.Parse.Primitives (HParser, IsParser (fromParsec), toParsec)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Polysemy

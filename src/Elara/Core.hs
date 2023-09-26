@@ -2,11 +2,9 @@ module Elara.Core where
 
 import Control.Lens (Plated)
 import Data.Data
-import Data.Map qualified as Map
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Unique
 import Prelude hiding (Alt)
 

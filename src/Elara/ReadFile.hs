@@ -3,7 +3,7 @@ module Elara.ReadFile where
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline, PipelineResultEff)
+import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error
@@ -13,7 +13,7 @@ type ReadFilePipelineEffects = '[Embed IO, Error ReadFileError, DiagnosticWriter
 data ReadFileError = DecodeError FilePath UnicodeException
 
 instance ReportableError ReadFileError where
-  report (DecodeError path e) =
+  report (DecodeError path _) =
     writeReport $
       Err
         (Just Codes.fileReadError)

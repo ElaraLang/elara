@@ -2,11 +2,11 @@
 
 module Elara.AST.VarRef where
 
-import Control.Lens (Lens, Lens', Traversal, lens, view)
+import Control.Lens (Traversal, view)
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
-import Elara.AST.Name (HasName (name), Name, Qualified (Qualified), ToName (toName))
-import Elara.AST.Region (IgnoreLocation (..), Located (..), unlocated)
+import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
+import Elara.AST.Region (IgnoreLocation (..), Located (..))
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique

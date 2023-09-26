@@ -7,10 +7,9 @@ import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
-import Polysemy (Member, Sem, embed, interpret, makeSem, reinterpret)
+import Polysemy (Member, Sem, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
-import Print (debugPretty)
 import Text.Show (Show (show))
 
 data Unique a = Unique

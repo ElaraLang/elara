@@ -236,6 +236,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (Constructor v) = pure (Constructor v)
     shuntExpr' (Lambda n e) = Lambda n <$> shuntExpr e
     shuntExpr' (FunctionCall f x) = FunctionCall <$> shuntExpr f <*> shuntExpr x
+    shuntExpr' (TypeApplication e t) = TypeApplication <$> shuntExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
       -- turn the binary operator into 2 function calls
       -- (a `op` b) -> (op a) b

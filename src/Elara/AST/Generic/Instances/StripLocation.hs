@@ -28,7 +28,6 @@ instance
     (StripLocation (CleanupLocated (Located (Select "ConRef" ast1))) (Select "ConRef" ast2)),
     (StripLocation (CleanupLocated (Located (Select "LambdaPattern" ast1))) (Select "LambdaPattern" ast1)),
     (StripLocation (CleanupLocated (Located (Select "LetParamName" ast1))) (Select "LetParamName" ast2)),
-    (StripLocation (CleanupLocated (Located (Select "TypeApplication" ast1))) (Select "TypeApplication" ast1)),
     (StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)),
     (DataConAs (Select "BinaryOperator" ast1) (BinaryOperator ast1, Expr ast1, Expr ast1)),
     (DataConAs (Select "BinaryOperator" ast2) (BinaryOperator ast2, Expr ast2, Expr ast2)),
@@ -196,7 +195,9 @@ stripTypeLocation ::
   forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
   ( (ASTLocate' ast1 ~ Located),
     ASTLocate' ast2 ~ Unlocated,
-    _
+    ( StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2),
+      StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
+    )
   ) =>
   Type ast1 ->
   Type ast2

@@ -7,7 +7,6 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
-import Elara.Data.Unique
 import Elara.Error (ReportableError (report), writeReport)
 import Elara.TypeInfer.Context (Context)
 import Elara.TypeInfer.Existential

@@ -156,14 +156,14 @@ createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name
 generateCode :: JVMExpr -> Maybe Type -> InnerEmit [Instruction]
 generateCode (Var (JVMLocal 0)) _ = pure [ALoad0]
 -- Hardcode elaraPrimitive "println"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (String "println")))) _
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "println")))) _
   | v == fetchPrimitiveName =
       pure
         [ ALoad0,
           InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
         ]
 -- Hardcode elaraPrimitive "undefined"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) as) (Lit (String "undefined")))) (Just t)
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "undefined")))) (Just _)
   | v == fetchPrimitiveName =
       pure
         [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object"))),
@@ -186,7 +186,7 @@ generateCode (App (Var (Normal (Id {idVarName = Global (Identity (Qualified vn m
         )
 
   pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars] <> castInstrs
-generateCode (App f x) t = do
+generateCode (App f x) _ = do
   let fTypes = case f of
         Var (Normal (Id {idVarType = FuncTy i o})) -> Just (FuncTy i o, o)
         _ -> Nothing
