@@ -65,8 +65,13 @@ prettyFunctionCallExpr e1 e2 tyApp = prettyFunctionCall e1' e2'
 prettyIfExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
 prettyIfExpr e1 e2 e3 = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)
 
-prettyBinaryOperatorExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
-prettyBinaryOperatorExpr e1 o e2 = parens (pretty e1 <+> pretty o <+> pretty e2)
+prettyBinaryOperatorExpr :: (Pretty b, Pretty (Expr ast), RUnlocate ast) => Expr ast -> b -> Expr ast -> Doc AnsiStyle
+prettyBinaryOperatorExpr e1 o e2 =
+    parens
+        ( parensIf (shouldParen e1) (pretty e1)
+            <+> pretty o
+            <+> parensIf (shouldParen e2) (pretty e2)
+        )
 
 prettyTupleExpr :: (Pretty a) => NonEmpty a -> Doc AnsiStyle
 prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))

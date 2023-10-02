@@ -18,12 +18,12 @@ import Hedgehog.Internal.Property (failWith)
 import Polysemy
 import Print (showPretty)
 import Test.QuickCheck
-import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
+import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty)
 
 evalEitherParseError :: (ShowErrorComponent e, VisualStream s, TraversableStream s, MonadTest m) => Either (WParseErrorBundle s e) a -> m a
-evalEitherParseError = either (failWith Nothing . errorBundlePretty . unWParseErrorBundle) pure
+evalEitherParseError = withFrozenCallStack $ either (failWith Nothing . errorBundlePretty . unWParseErrorBundle) pure
 
-lexAndParse :: (MonadTest m, ToString a1) => HParser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
+lexAndParse :: (MonadTest m, ToString a1) => Parser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
 lexAndParse parser source = do
     let fp = "<tests>"
     tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
@@ -40,8 +40,8 @@ shouldParseExpr source expected = withFrozenCallStack $ do
     diff (stripLocation parsed) (==) expected
 
 shouldFailToParse :: (MonadTest m) => Text -> m ()
-shouldFailToParse source = do
-    parsed <- lexAndParse patParser source
+shouldFailToParse source = withFrozenCallStack $ do
+    parsed <- lexAndParse (patParser <* eof) source
     case parsed of
         Left _ -> pass
         Right ast -> failWith Nothing ("Expected to fail to parse, but parsed " <> toString (showPretty ast))

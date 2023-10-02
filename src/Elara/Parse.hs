@@ -6,7 +6,7 @@ import Elara.Error (runErrorOrReport)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Error
 import Elara.Parse.Module (module')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), toParsec)
+import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Polysemy
@@ -14,13 +14,13 @@ import Polysemy.Error
 import Text.Megaparsec (MonadParsec (eof), runParser)
 
 parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module 'Frontend)
-parseModule y = first WParseErrorBundle . runParser (toParsec module' <* eof) y
+parseModule y = first WParseErrorBundle . runParser (module' <* eof) y
 
-moduleParser :: HParser (Module 'Frontend)
-moduleParser = module' <* fromParsec eof
+moduleParser :: Parser (Module 'Frontend)
+moduleParser = module' <* eof
 
-parse :: (Members ParsePipelineEffects r) => HParser a -> FilePath -> TokenStream -> Sem r a
-parse p path = fromEither . first WParseErrorBundle . runParser (toParsec p <* eof) path
+parse :: (Members ParsePipelineEffects r) => Parser a -> FilePath -> TokenStream -> Sem r a
+parse p path = fromEither . first WParseErrorBundle . runParser p path
 
 type ParsePipelineEffects = '[Error (WParseErrorBundle TokenStream ElaraParseError)]
 
@@ -29,7 +29,7 @@ createTokenStream source lexemes = TokenStream source lexemes 0
 
 parsePipeline ::
     (Members ParsePipelineEffects r) =>
-    HParser a ->
+    Parser a ->
     FilePath ->
     [Lexeme] ->
     Sem r a

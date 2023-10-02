@@ -1,6 +1,5 @@
 module Main
-{ Main.add2 : Int -> Int
-    = \ (x_1 : Int) -> Prelude.+ x_1 2
-; 
-Main.main : IO ()
-    = Prelude.println (Prelude.toString @Int ((\ (x_2 : Int) -> Prelude.+ x_2 2) @Int @Int 3)) }
+{ Main.x : Int
+    = let a_1 : Int
+        = -93743664 in let a_2 : Int
+        = -96279960 in 1 }

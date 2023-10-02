@@ -11,11 +11,10 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), inBraces, inParens, inParens', located, locatedTokens', token_)
-import HeadedMegaparsec (endHead)
+import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
 import Text.Megaparsec (choice, customFailure)
 
-type' :: HParser FrontendType
+type' :: Parser FrontendType
 type' =
     makeExprParser
         typeTerm
@@ -23,23 +22,23 @@ type' =
         , [InfixR functionType]
         ]
 
-typeNotApplication :: HParser FrontendType
+typeNotApplication :: Parser FrontendType
 typeNotApplication =
     makeExprParser
         typeTerm
         [ [InfixR functionType]
         ]
 
-locatedType :: HParser FrontendType' -> HParser FrontendType
+locatedType :: Parser FrontendType' -> Parser FrontendType
 locatedType = (Type <$>) . located
 
-constructorApplication :: HParser (FrontendType -> FrontendType -> FrontendType)
+constructorApplication :: Parser (FrontendType -> FrontendType -> FrontendType)
 constructorApplication = liftedBinary pass (const TypeConstructorApplication) _Unwrapped
 
-functionType :: HParser (FrontendType -> FrontendType -> FrontendType)
+functionType :: Parser (FrontendType -> FrontendType -> FrontendType)
 functionType = liftedBinary (token_ TokenRightArrow) (const FunctionType) _Unwrapped
 
-typeTerm :: HParser FrontendType
+typeTerm :: Parser FrontendType
 typeTerm =
     choice @[]
         [ typeVar
@@ -52,47 +51,45 @@ typeTerm =
         , listType
         ]
 
-typeVar :: HParser FrontendType
+typeVar :: Parser FrontendType
 typeVar =
     locatedType $
         TypeVar <$> located varId
 
-unit :: HParser FrontendType
+unit :: Parser FrontendType
 unit =
     locatedType $
         UnitType <$ (token_ TokenLeftParen *> token_ TokenRightParen)
 
-namedType :: HParser FrontendType
+namedType :: Parser FrontendType
 namedType =
     locatedType $ UserDefinedType <$> located conName
 
-recordType :: HParser FrontendType
+recordType :: Parser FrontendType
 recordType = locatedType $ inBraces $ do
     fields <- sepBy1' recordField (token_ TokenComma)
     pure $ RecordType fields
   where
-    recordField :: HParser (Located LowerAlphaName, FrontendType)
+    recordField :: Parser (Located LowerAlphaName, FrontendType)
     recordField = do
         name <- located varId
         token_ TokenColon
         t <- type'
         pure (name, t)
 
-emptyRecordError :: HParser FrontendType
+emptyRecordError :: Parser FrontendType
 emptyRecordError = do
     sr <- locatedTokens' (TokenLeftBrace :| [TokenRightBrace])
-    endHead
-    fromParsec $ customFailure (EmptyRecord sr)
+    customFailure (EmptyRecord sr)
 
-tupleType :: HParser FrontendType
-tupleType = locatedType $ inParens' $ do
+tupleType :: Parser FrontendType
+tupleType = locatedType $ inParens $ do
     t <- type'
     token_ TokenComma
-    endHead
     ts <- sepBy1' type' (token_ TokenComma)
     pure $ TupleType (t <| ts)
 
-listType :: HParser FrontendType
+listType :: Parser FrontendType
 listType = locatedType $ do
     token_ TokenLeftBracket
     t <- type'

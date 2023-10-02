@@ -9,57 +9,56 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary)
 import Elara.Parse.Literal
 import Elara.Parse.Names (conName, varId)
-import Elara.Parse.Primitives (HParser, inParens, located, token_, (<??>))
-import HeadedMegaparsec (endHead)
-import Text.Megaparsec (choice, sepEndBy)
+import Elara.Parse.Primitives (Parser, inParens, located, token_)
+import Text.Megaparsec (choice, sepEndBy, try, (<?>))
 
-patParser :: HParser FrontendPattern
+patParser :: Parser FrontendPattern
 patParser =
     choice
-        [ varPattern
+        [ try literalPattern
+        , (inParens apat)
+        , varPattern
         , zeroArgConstructorPattern
-        , literalPattern
         , wildcardPattern
-        , inParens apat
         , listPattern
         ]
 
-apat :: HParser FrontendPattern
+apat :: Parser FrontendPattern
 apat = constructorPattern <|> rpat
 
-rpat :: HParser FrontendPattern
+rpat :: Parser FrontendPattern
 rpat =
     makeExprParser
         patParser
         [ [InfixR cons]
         ]
-        <??> "pattern"
+        <?> "pattern"
 
-unannotatedExpr :: Iso' FrontendPattern (Located FrontendPattern')
-unannotatedExpr = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
+unannotatedPattern :: Iso' FrontendPattern (Located FrontendPattern')
+unannotatedPattern = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
 
 -- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y
-cons :: HParser (FrontendPattern -> FrontendPattern -> FrontendPattern)
-cons = liftedBinary (token_ TokenDoubleColon) (const ConsPattern) unannotatedExpr
+cons :: Parser (FrontendPattern -> FrontendPattern -> FrontendPattern)
+cons = liftedBinary (token_ TokenDoubleColon) (const ConsPattern) unannotatedPattern
 
-locatedPattern :: HParser FrontendPattern' -> HParser FrontendPattern
+locatedPattern :: Parser FrontendPattern' -> Parser FrontendPattern
 locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located
 
-varPattern :: HParser FrontendPattern
+varPattern :: Parser FrontendPattern
 varPattern = locatedPattern (VarPattern <$> located varId)
 
-wildcardPattern :: HParser FrontendPattern
+wildcardPattern :: Parser FrontendPattern
 wildcardPattern = locatedPattern (WildcardPattern <$ token_ TokenUnderscore)
 
-listPattern :: HParser FrontendPattern
+listPattern :: Parser FrontendPattern
 listPattern = locatedPattern $ do
     token_ TokenLeftBracket
-    endHead
+
     elements <- sepEndBy patParser (token_ TokenComma)
     token_ TokenRightBracket
     pure $ ListPattern elements
 
--- consPattern :: HParser FrontendPattern
+-- consPattern :: Parser FrontendPattern
 -- consPattern i = locatedPattern $ do
 --     (head', tail') <- do
 --         head' <- pat' (i + 1)
@@ -71,19 +70,19 @@ listPattern = locatedPattern $ do
 --     pure $ ConsPattern head' tail'
 
 -- To prevent ambiguity between space-separated patterns and constructor patterns
-zeroArgConstructorPattern :: HParser FrontendPattern
+zeroArgConstructorPattern :: Parser FrontendPattern
 zeroArgConstructorPattern = locatedPattern $ do
     con <- located conName
     pure $ ConstructorPattern con []
 
-constructorPattern :: HParser FrontendPattern
+constructorPattern :: Parser FrontendPattern
 constructorPattern = locatedPattern $ do
     con <- located conName
-    endHead
+
     args <- many patParser
     pure $ ConstructorPattern con args
 
-literalPattern :: HParser FrontendPattern
+literalPattern :: Parser FrontendPattern
 literalPattern =
     locatedPattern $
         choice

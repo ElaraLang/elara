@@ -26,7 +26,6 @@ dependencies:
   - utf8-string
   - array
   - megaparsec
-  - headed-megaparsec
   - parser-combinators
   - pretty-simple
   - diagnose

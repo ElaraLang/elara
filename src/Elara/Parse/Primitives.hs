@@ -2,20 +2,16 @@
 
 module Elara.Parse.Primitives (
     Parser,
-    HParser,
     fmapLocated,
     located,
     optionallyInParens,
     inParens,
-    inParens',
     inBraces,
     commaSeparated,
     oneOrCommaSeparatedInParens,
     token,
     token_,
     withPredicate,
-    (<??>),
-    IsParser (..),
     satisfyMap,
     lexeme,
     locatedTokens',
@@ -27,41 +23,22 @@ import Elara.AST.Region
 import Elara.Lexer.Token
 import Elara.Parse.Error (ElaraParseError)
 import Elara.Parse.Stream (TokenStream (tokenStreamTokens))
-import HeadedMegaparsec (endHead)
-import HeadedMegaparsec qualified as H
 import Text.Megaparsec hiding (Token, token)
 import Text.Megaparsec qualified as MP (token)
 import Prelude hiding (many, some)
 
 type Parser = Parsec ElaraParseError TokenStream
 
-type HParser = H.HeadedParsec ElaraParseError TokenStream
-
-(<??>) :: HParser a -> String -> HParser a
-(<??>) = flip H.label
-
-class (Monad m) => IsParser m where
-    toParsec :: m a -> Parser a
-    fromParsec :: Parser a -> m a
-
-instance IsParser Parser where
-    toParsec = identity
-    fromParsec = identity
-
-instance IsParser HParser where
-    toParsec = H.toParsec
-    fromParsec = H.parse
-
 {- | A parser that records the location information of the tokens it consumes.
 TODO this is not going to perform very well as it's O(n) in the total number of input tokens
 A future solution will be to store the number of tokens consumed in the 'TokenStream' and use that to calculate
 the spanning region, but that's effort at the moment.
 -}
-located :: (IsParser m) => m a -> m (Located a)
+located :: Parser a -> Parser (Located a)
 located p = do
-    startTokens <- tokenStreamTokens . stateInput <$> fromParsec getParserState
+    startTokens <- tokenStreamTokens . stateInput <$> getParserState
     val <- p
-    endStream <- tokenStreamTokens . stateInput <$> fromParsec getParserState
+    endStream <- tokenStreamTokens . stateInput <$> getParserState
     let diff = length startTokens - length endStream
     let tokensDiff = take diff startTokens
     let tokensRegion = case tokensDiff of
@@ -69,14 +46,14 @@ located p = do
             x : xs -> spanningRegion' (view sourceRegion <$> x :| xs)
     pure $ Located tokensRegion val
 
-fmapLocated :: (IsParser f) => (Located a -> b) -> f a -> f b
+fmapLocated :: (Located a -> b) -> Parser a -> Parser b
 fmapLocated f = (f <$>) . located
 
-token :: (IsParser m) => Token -> m Token
+token :: Token -> Parser Token
 token = fmap (view unlocated) . lexeme
 
-lexeme :: (IsParser m) => Token -> m Lexeme
-lexeme = fromParsec . singleToken
+lexeme :: Token -> Parser Lexeme
+lexeme = singleToken
   where
     singleToken :: Token -> Parser Lexeme
     singleToken t = MP.token (test t) []
@@ -84,58 +61,39 @@ lexeme = fromParsec . singleToken
     test t l@(Located _ t2) | t == t2 = Just l
     test _ _ = Nothing
 
-satisfyMap :: forall m a. (IsParser m) => (Token -> Maybe a) -> m a
-satisfyMap f = fromParsec $ MP.token test []
+satisfyMap :: forall a. (Token -> Maybe a) -> Parser a
+satisfyMap f = MP.token test []
   where
     test :: Lexeme -> Maybe a
     test (Located _ t) = f t
 
-token_ :: (IsParser m) => Token -> m ()
+token_ :: Token -> Parser ()
 token_ = void . token
 
-locatedTokens' :: (IsParser m) => NonEmpty Token -> m SourceRegion
+locatedTokens' :: NonEmpty Token -> Parser SourceRegion
 locatedTokens' tokenList = do
     ts <- traverse lexeme tokenList
     pure $ spanningRegion' (view sourceRegion <$> ts)
 
-inParens :: HParser a -> HParser a
-inParens = surroundedBy (token_ TokenLeftParen) (token_ TokenRightParen)
+inParens :: Parser a -> Parser a
+inParens = between (token_ TokenLeftParen) (token_ TokenRightParen)
 
-optionallyInParens :: HParser a -> HParser a
+optionallyInParens :: Parser a -> Parser a
 optionallyInParens p = inParens p <|> p
 
--- | Greedy version of 'inParens', commits as soon as it sees the opening paren
-inParens' :: HParser a -> HParser a
-inParens' = surroundedBy' (token_ TokenLeftParen) (token_ TokenRightParen)
+inBraces :: Parser a -> Parser a
+inBraces = between (token_ TokenLeftBrace) (token_ TokenRightBrace)
 
-inBraces :: HParser a -> HParser a
-inBraces = surroundedBy (token_ TokenLeftBrace) (token_ TokenRightBrace)
-
-surroundedBy :: (Monad m) => m () -> m () -> m b -> m b
-surroundedBy before after p = do
-    _ <- before
-    x <- p
-    _ <- after
-    pure x
-
-surroundedBy' :: HParser () -> HParser () -> HParser a -> HParser a
-surroundedBy' before after p = do
-    _ <- before
-    endHead
-    x <- p
-    _ <- after
-    pure x
-
-commaSeparated :: HParser a -> HParser [a]
+commaSeparated :: Parser a -> Parser [a]
 commaSeparated p = p `sepBy` token_ TokenComma
 
-oneOrCommaSeparatedInParens :: HParser a -> HParser [a]
+oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
 oneOrCommaSeparatedInParens p = inParens (p `sepBy` token_ TokenComma) <|> one <$> p
 
-withPredicate :: (IsParser m) => (t -> Bool) -> (t -> ElaraParseError) -> m t -> m t
+withPredicate :: (t -> Bool) -> (t -> ElaraParseError) -> Parser t -> Parser t
 withPredicate f msg p = do
-    o <- fromParsec getOffset
+    o <- getOffset
     r <- p
     if f r
         then pure r
-        else fromParsec $ region (setErrorOffset o) (fromParsec $ customFailure (msg r))
+        else region (setErrorOffset o) (customFailure (msg r))

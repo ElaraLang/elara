@@ -8,31 +8,28 @@ import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
-import Elara.Parse.Primitives (HParser, IsParser (fromParsec), optionallyInParens, token_)
-import Elara.Parse.Stream (TokenStream (..))
-import HeadedMegaparsec
-import Text.Megaparsec (MonadParsec (updateParserState), State (stateInput))
+import Elara.Parse.Primitives (Parser, token_)
 
-indentToken :: HParser ()
+import Text.Megaparsec (try)
+
+indentToken :: Parser ()
 indentToken = token_ TokenIndent <|> token_ TokenLeftBrace
 
-dedentToken :: HParser ()
+dedentToken :: Parser ()
 dedentToken = token_ TokenDedent <|> token_ TokenRightBrace
 
-block :: (NonEmpty a -> b) -> (a -> b) -> HParser a -> HParser b
-block mergeFunction single exprParser = wrapToHead (singleBlock <|> wholeBlock)
+block :: (NonEmpty a -> b) -> (a -> b) -> Parser a -> Parser b
+block mergeFunction single exprParser = (try singleBlock <|> wholeBlock)
   where
     singleBlock = single <$> exprParser
     wholeBlock = do
         indentToken
-        endHead
         exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
         dedentToken
-
         pure $ mergeFunction exprs
 
-exprBlock :: HParser FrontendExpr -> HParser FrontendExpr
-exprBlock = wrapToHead . block merge identity
+exprBlock :: Parser FrontendExpr -> Parser FrontendExpr
+exprBlock = block merge identity
   where
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
@@ -44,23 +41,3 @@ exprBlock = wrapToHead . block merge identity
                     single :| [] -> Expr single
                     o -> Expr (Located region (Block $ Expr <$> o), Nothing)
             asBlock expressions'
-
-ignoreFollowingIndents :: (IsParser m) => Int -> m ()
-ignoreFollowingIndents n =
-    fromParsec
-        ( updateParserState
-            ( \s ->
-                s
-                    { stateInput =
-                        (stateInput s)
-                            { tokenStreamIgnoringIndents = tokenStreamIgnoringIndents (stateInput s) + n
-                            }
-                    }
-            )
-        )
-
--- | Ignores a certain number of indents
-ignoringIndent :: (IsParser m) => Int -> m b -> m b
-ignoringIndent n p = do
-    ignoreFollowingIndents n
-    p

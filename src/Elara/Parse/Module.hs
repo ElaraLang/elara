@@ -11,14 +11,13 @@ import Elara.Parse.Declaration (declaration)
 import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-import HeadedMegaparsec (endHead)
+
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
-module' :: HParser (Module 'Frontend)
+module' :: Parser (Module 'Frontend)
 module' = fmapLocated Module $ do
     mHeader <- optional (header <* optional (token_ TokenSemicolon))
-    endHead
-    thisFile <- sourceName . pstateSourcePos . statePosState <$> fromParsec getParserState
+    thisFile <- sourceName . pstateSourcePos . statePosState <$> getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
     imports <- sepEndBy import' (token_ TokenSemicolon)
     _ <- optional (token_ TokenSemicolon)
@@ -33,15 +32,15 @@ module' = fmapLocated Module $ do
             }
 
 -- | module Name exposing (..)
-header :: HParser (Located ModuleName, Exposing 'Frontend)
+header :: Parser (Located ModuleName, Exposing 'Frontend)
 header = do
     token_ TokenModule
-    endHead
+
     moduleName' <- located Parse.moduleName
     mExposing <- exposing'
     pure (moduleName', mExposing)
 
-exposing' :: HParser (Exposing 'Frontend)
+exposing' :: Parser (Exposing 'Frontend)
 exposing' =
     fromMaybe ExposingAll
         <$> optional
@@ -50,17 +49,17 @@ exposing' =
                 ExposingSome <$> oneOrCommaSeparatedInParens exposition
             )
 
-exposition :: HParser (Exposition 'Frontend)
+exposition :: Parser (Exposition 'Frontend)
 exposition = exposedValue <|> exposedOp
   where
-    exposedValue, exposedOp :: HParser (Exposition 'Frontend)
+    exposedValue, exposedOp :: Parser (Exposition 'Frontend)
     exposedValue = ExposedValue <$> located varName
     exposedOp = ExposedOp <$> located (inParens opName)
 
-import' :: HParser (Import 'Frontend)
+import' :: Parser (Import 'Frontend)
 import' = fmapLocated Import $ do
     token_ TokenImport
-    endHead
+
     moduleName' <- located Parse.moduleName
     isQualified <- isJust <$> optional (token_ TokenQualified)
     as <- optional . located $ do

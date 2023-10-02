@@ -9,7 +9,7 @@ import Test.Hspec
 (<=>) = shouldBe
 
 diagShouldSucceed :: (MonadIO m) => (Diagnostic (Doc AnsiStyle), Maybe b) -> m b
-diagShouldSucceed (d, x) = liftIO $ do
+diagShouldSucceed (d, x) = withFrozenCallStack $ liftIO $ do
     when (hasReports d) $ assertFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
     case x of
         Just ok -> pure ok

@@ -151,7 +151,6 @@ library
     , generic-lens
     , h2jvm
     , hashable
-    , headed-megaparsec
     , lens
     , megaparsec
     , mtl
@@ -203,7 +202,6 @@ executable elara
     , generic-lens
     , h2jvm
     , hashable
-    , headed-megaparsec
     , lens
     , megaparsec
     , mtl
@@ -258,7 +256,6 @@ test-suite doctest
     , generic-lens
     , h2jvm
     , hashable
-    , headed-megaparsec
     , lens
     , megaparsec
     , mtl
@@ -329,7 +326,6 @@ test-suite elara-test
     , generic-lens
     , h2jvm
     , hashable
-    , headed-megaparsec
     , hedgehog
     , hspec ==2.*
     , hspec-hedgehog

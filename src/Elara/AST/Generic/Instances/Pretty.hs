@@ -218,7 +218,7 @@ prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
 prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)
 prettyExpr' (BinaryOperator b) =
     let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
-     in prettyBinaryOperatorExpr (prettyExpr e1) op (prettyExpr e2)
+     in prettyBinaryOperatorExpr e1 op e2
 
 instance
     ( Pretty a1
