@@ -14,9 +14,9 @@ extra-source-files:
   - src/Elara/Lexer/Lexer.x
 
 dependencies:
-  - name: base  
-    mixin: 
-      - hiding (Prelude) 
+  - name: base
+    mixin:
+      - hiding (Prelude)
   - relude
   - aeson
   - lens
@@ -68,7 +68,6 @@ ghc-options:
   - -flate-specialise
   - -fspecialise-aggressively
   - -fplugin=Polysemy.Plugin
-  
 
 default-extensions:
   - OverloadedStrings
@@ -84,9 +83,9 @@ default-extensions:
 
 library:
   source-dirs: src
+
   build-tools:
     - alex
-    
 
 executables:
   elara:
