@@ -1,9 +1,10 @@
--- |
--- This is the second main AST stage, which is very similar to the `Elara.AST.Desugared.Expr` AST, with a few key differences:
---
---   * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
---   * Let bindings have no patterns, they are desugared into lambdas
---   * Def and Let declarations are merged into a single entity
+{- |
+This is the second main AST stage, which is very similar to the `Elara.AST.Desugared.Expr` AST, with a few key differences:
+
+  * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
+  * Let bindings have no patterns, they are desugared into lambdas
+  * Def and Let declarations are merged into a single entity
+-}
 module Elara.AST.Desugared where
 
 import Elara.AST.Generic

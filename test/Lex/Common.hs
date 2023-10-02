@@ -15,9 +15,9 @@ import Test.Hspec
 
 lex' :: Text -> [Lexeme]
 lex' contents = do
-  case run $ runLexPipelinePure (readTokensWith "<tests>" (toString contents)) of
-    Left e -> error $ toText ("lex fail: " ++ show e)
-    Right tokens -> tokens
+    case run $ runLexPipelinePure (readTokensWith "<tests>" (toString contents)) of
+        Left e -> error $ toText ("lex fail: " ++ show e)
+        Right tokens -> tokens
 
 lexUL :: Text -> [Token]
 lexUL = fmap (view unlocated) . lex'

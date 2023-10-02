@@ -1,9 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Typed AST Type
--- This is very similar to 'Elara.AST.Shunted.Expr' except:
---
--- - Everything has a type!
+{- | Typed AST Type
+This is very similar to 'Elara.AST.Shunted.Expr' except:
+
+- Everything has a type!
+-}
 module Elara.AST.Typed where
 
 import Elara.AST.Generic (ASTLocate', ASTQual, Select)

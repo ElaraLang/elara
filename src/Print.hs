@@ -7,12 +7,12 @@ module Print where
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
 import Prettyprinter.Render.Terminal (putDoc)
-import Text.Pretty.Simple
-  ( CheckColorTty (NoCheckColorTty),
+import Text.Pretty.Simple (
+    CheckColorTty (NoCheckColorTty),
     defaultOutputOptionsDarkBg,
     pPrintOpt,
     pShow,
-  )
+ )
 
 printColored :: (Show a, MonadIO m) => a -> m ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg

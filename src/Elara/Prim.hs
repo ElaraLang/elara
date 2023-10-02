@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedLists #-}
 
--- | Stores information about the primitive functions of Elara. These are still written in the source code, with a special name and value.
--- The compiler will then replace these with the actual primitive functions.
+{- | Stores information about the primitive functions of Elara. These are still written in the source code, with a special name and value.
+The compiler will then replace these with the actual primitive functions.
+-}
 module Elara.Prim where
 
 import Elara.AST.Name (ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (NormalVarName))
@@ -54,31 +55,31 @@ primitiveTypes = [stringName, charName, intName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
-  -- assume all primitive types are kind Type
-  fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
-    <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
+    -- assume all primitive types are kind Type
+    fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
+        <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
 
 primitiveTCContext :: (Member UniqueGen r) => Sem r (Context SourceRegion)
 primitiveTCContext = do
-  let easies =
-        [ Annotation
-            (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
-            (Scalar primRegion Text),
-          Annotation
-            (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
-            (Scalar primRegion Integer),
-          Annotation
-            (Global (IgnoreLocation $ mkPrimVarRef (NTypeName charName)))
-            (Scalar primRegion Char),
-          Annotation
-            (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-            (Custom primRegion "IO" [])
-        ]
+    let easies =
+            [ Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
+                (Scalar primRegion Text)
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
+                (Scalar primRegion Integer)
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName charName)))
+                (Scalar primRegion Char)
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
+                (Custom primRegion "IO" [])
+            ]
 
-  primTyVarName <- makeUniqueTyVarWith "a"
-  let elaraPrimitive =
-        Annotation -- elaraPrimitive :: forall a. String -> a
-          (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-          (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion primTyVarName)))
+    primTyVarName <- makeUniqueTyVarWith "a"
+    let elaraPrimitive =
+            Annotation -- elaraPrimitive :: forall a. String -> a
+                (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
+                (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion primTyVarName)))
 
-  pure (elaraPrimitive : easies)
+    pure (elaraPrimitive : easies)

@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 
-module Main
-  ( main,
-  )
+module Main (
+    main,
+)
 where
 
 import Control.Exception as E
@@ -56,55 +56,55 @@ main = run `finally` cleanup
   where
     run :: IO ()
     run = do
-      hSetBuffering stdout NoBuffering
-      putTextLn "\n"
-      args <- getArgs
-      env <- getEnvironment
-      let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
-      let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
-      let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
-      s <- runElara dumpShunted dumpTyped dumpCore
-      printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
-      pass
+        hSetBuffering stdout NoBuffering
+        putTextLn "\n"
+        args <- getArgs
+        env <- getEnvironment
+        let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
+        let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
+        let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
+        s <- runElara dumpShunted dumpTyped dumpCore
+        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
+        pass
 
 dumpGraph :: (Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
-  let dump m = do
-        let contents = pretty m
-        let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
-        fileHandle <- openFile fileName WriteMode
-        hPutDoc fileHandle contents
-        hFlush fileHandle
+    let dump m = do
+            let contents = pretty m
+            let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
+            fileHandle <- openFile fileName WriteMode
+            hPutDoc fileHandle contents
+            hFlush fileHandle
 
-  traverseGraph_ dump graph
+    traverseGraph_ dump graph
 
 runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
 runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
-  start <- liftIO getCPUTime
-  liftIO (createDirectoryIfMissing True outDirName)
+    start <- liftIO getCPUTime
+    liftIO (createDirectoryIfMissing True outDirName)
 
-  source <- loadModule "source.elr"
-  prelude <- loadModule "prelude.elr"
+    source <- loadModule "source.elr"
+    prelude <- loadModule "prelude.elr"
 
-  let graph = createGraph [source, prelude]
-  coreGraph <- processModules graph (dumpShunted, dumpTyped)
+    let graph = createGraph [source, prelude]
+    coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
-  when dumpCore $ do
-    liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
+    when dumpCore $ do
+        liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
-  classes <- runReader java8 (emitGraph coreGraph)
-  for_ classes $ \(mn, class') -> do
-    putTextLn ("Compiling " <> showPretty mn <> "...")
-    let converted = convert class'
-    let bs = runPut (writeBinary converted)
-    let fp = "build/" <> suitableFilePath (ClassFile.name class')
-    liftIO $ writeFileLBS fp bs
-    putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
+    classes <- runReader java8 (emitGraph coreGraph)
+    for_ classes $ \(mn, class') -> do
+        putTextLn ("Compiling " <> showPretty mn <> "...")
+        let converted = convert class'
+        let bs = runPut (writeBinary converted)
+        let fp = "build/" <> suitableFilePath (ClassFile.name class')
+        liftIO $ writeFileLBS fp bs
+        putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
 
-  end <- liftIO getCPUTime
-  let t :: Double
-      t = fromIntegral (end - start) * 1e-9
-  putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    end <- liftIO getCPUTime
+    let t :: Double
+        t = fromIntegral (end - start) * 1e-9
+    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
 -- typedGraph <- inferModules shuntedGraph
 
@@ -162,28 +162,28 @@ cleanup = resetGlobalUniqueSupply
 
 loadModule :: (IsPipeline r) => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
-  source <- readFileString fp
-  tokens <- readTokensWith fp source
-  -- printColored (stripLocation @(Located Token) @Token <$> tokens)
-  parsed <- parsePipeline moduleParser fp tokens
-  runDesugarPipeline $ runDesugar $ desugar parsed
+    source <- readFileString fp
+    tokens <- readTokensWith fp source
+    -- printColored (stripLocation @(Located Token) @Token <$> tokens)
+    parsed <- parsePipeline moduleParser fp tokens
+    runDesugarPipeline $ runDesugar $ desugar parsed
 
 processModules :: (IsPipeline r) => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
 processModules graph (dumpShunted, dumpTyped) =
-  runToCorePipeline $
-    runInferPipeline $
-      runShuntPipeline mempty $
-        runRenamePipeline
-          graph
-          primitiveRenameState
-          ( traverseGraph rename
-              >=> traverseGraph shunt
-              >=> dumpIf dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
-              >=> traverseGraphRevTopologically inferModule
-              >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
-              >=> traverseGraph moduleToCore
-              >=> pure . mapGraph coreToCore
-              $ graph
-          )
+    runToCorePipeline $
+        runInferPipeline $
+            runShuntPipeline mempty $
+                runRenamePipeline
+                    graph
+                    primitiveRenameState
+                    ( traverseGraph rename
+                        >=> traverseGraph shunt
+                        >=> dumpIf dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
+                        >=> traverseGraphRevTopologically inferModule
+                        >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
+                        >=> traverseGraph moduleToCore
+                        >=> pure . mapGraph coreToCore
+                        $ graph
+                    )
   where
     dumpIf cond f p = if cond then (\x -> liftIO (dumpGraph x f p) $> x) else pure

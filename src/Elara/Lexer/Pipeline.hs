@@ -15,8 +15,8 @@ type LexPipelineEffects = '[Error LexerError]
 
 runLexPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf LexPipelineEffects r) a -> Sem r a
 runLexPipeline =
-  runErrorOrReport @LexerError
+    runErrorOrReport @LexerError
 
 runLexPipelinePure :: Sem (EffectsAsPrefixOf LexPipelineEffects r) a -> Sem r (Either LexerError a)
 runLexPipelinePure =
-  runError @LexerError
+    runError @LexerError

@@ -14,17 +14,17 @@ createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name
 generateMethodDescriptor :: (HasCallStack) => Type -> MethodDescriptor
 generateMethodDescriptor (ForAllTy _ t) = generateMethodDescriptor t
 generateMethodDescriptor f@(FuncTy _ _) = do
-  -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)
-  let splitUpFunction :: Type -> NonEmpty Type
-      splitUpFunction (FuncTy i o) = i <| splitUpFunction o
-      splitUpFunction other = pure other
+    -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)
+    let splitUpFunction :: Type -> NonEmpty Type
+        splitUpFunction (FuncTy i o) = i <| splitUpFunction o
+        splitUpFunction other = pure other
 
-      allParts = splitUpFunction f
+        allParts = splitUpFunction f
 
-      inputs = init allParts
-      output = last allParts
+        inputs = init allParts
+        output = last allParts
 
-  MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
+    MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
 generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
 
 generateReturnDescriptor :: Type -> ReturnDescriptor

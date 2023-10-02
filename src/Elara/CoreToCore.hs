@@ -1,5 +1,6 @@
--- | Entrypoint for the Core to Core stage of compilation
--- This stage performs optimisations and transformations on the Core AST
+{- | Entrypoint for the Core to Core stage of compilation
+This stage performs optimisations and transformations on the Core AST
+-}
 module Elara.CoreToCore where
 
 import Control.Lens (transform)

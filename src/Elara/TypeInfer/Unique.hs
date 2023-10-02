@@ -4,8 +4,8 @@ import Elara.Data.Unique (Unique, UniqueGen, UniqueId (UniqueId), makeUniqueId)
 import Polysemy
 
 type UniqueTyVar =
-  Unique
-    (Maybe Text) -- Optional name for the type variable. Improves error messages
+    Unique
+        (Maybe Text) -- Optional name for the type variable. Improves error messages
 
 uniqueIdToTyVar :: UniqueId -> UniqueTyVar
 uniqueIdToTyVar (UniqueId c) = fmap (const Nothing) c

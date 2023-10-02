@@ -1,5 +1,6 @@
--- | Renamed AST Type
--- This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
+{- | Renamed AST Type
+This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
+-}
 module Elara.AST.Renamed where
 
 import Elara.AST.Generic (ASTLocate', ASTQual, Select)

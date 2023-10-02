@@ -1,11 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Shunted AST Type
--- This is very similar to 'Elara.AST.Renamed.Expr' except:
---
--- - Operators are re-shunted to match their defined precedence and associativity
--- - This means there's no need for an 'InParens' token anymore so that's also gone :D
--- - The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
+{- | Shunted AST Type
+This is very similar to 'Elara.AST.Renamed.Expr' except:
+
+- Operators are re-shunted to match their defined precedence and associativity
+- This means there's no need for an 'InParens' token anymore so that's also gone :D
+- The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
+-}
 module Elara.AST.Shunted where
 
 import Control.Lens (concatMapOf, cosmosOn, view, (^.), _1)
@@ -98,15 +99,15 @@ type ShuntedDeclarationBody' = Generic.DeclarationBody' 'Shunted
 type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
 
 instance HasDependencies ShuntedDeclaration where
-  type Key ShuntedDeclaration = Qualified Name
-  key = view (_Unwrapped . unlocated . field' @"name" . unlocated)
-  dependencies decl = case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
-    Generic.Value e _ _ -> valueDependencies e
-    Generic.TypeDeclaration _ _ -> []
+    type Key ShuntedDeclaration = Qualified Name
+    key = view (_Unwrapped . unlocated . field' @"name" . unlocated)
+    dependencies decl = case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
+        Generic.Value e _ _ -> valueDependencies e
+        Generic.TypeDeclaration _ _ -> []
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =
-  concatMapOf (cosmosOn (_Unwrapped . _1 . unlocated)) names
+    concatMapOf (cosmosOn (_Unwrapped . _1 . unlocated)) names
   where
     names :: ShuntedExpr' -> [Qualified Name]
     names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]

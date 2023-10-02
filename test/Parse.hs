@@ -7,5 +7,5 @@ import Test.Hspec
 
 spec :: Spec
 spec = parallel $ do
-  Patterns.spec
-  Expressions.spec
+    Patterns.spec
+    Expressions.spec

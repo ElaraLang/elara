@@ -109,6 +109,8 @@
           programs.cabal-fmt.enable = false;
           programs.hlint.enable = true;
 
+          # Use fourmolu
+          programs.ormolu.package = pkgs.haskellPackages.fourmolu;
 
         };
 

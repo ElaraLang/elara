@@ -8,38 +8,38 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  letIndents
+    letIndents
 
 letIndents :: Spec
 letIndents = describe "Lexes indented let declarations" $ do
-  it "Should lex indentation as expected" $ do
-    [text|
+    it "Should lex indentation as expected" $ do
+        [text|
         let x =
                 1|]
-      <~!~> "let x = { 1 }"
+            <~!~> "let x = { 1 }"
 
-    [text|
+        [text|
         let x =
                 1
                 2|]
-      <~!~> "let x = { 1; 2 }"
+            <~!~> "let x = { 1; 2 }"
 
-    [text|
+        [text|
         let x =
                 1
                 2
                 3|]
-      <~!~> "let x = { 1; 2; 3 }"
+            <~!~> "let x = { 1; 2; 3 }"
 
-    [text|
+        [text|
         let x = 
             1
                     2
             3|]
-      <~!~> "let x = { 1 { 2 }; 3}"
-    [text|
+            <~!~> "let x = { 1 { 2 }; 3}"
+        [text|
         let x = 
             1
             2
                 3|]
-      <~!~> "let x = { 1 ; 2 { 3 } }"
+            <~!~> "let x = { 1 ; 2 { 3 } }"

@@ -45,42 +45,42 @@ pattern Tuple' ts = Type.Tuple () ts
 
 completeInference :: (Member (State Infer.Status) r, Member UniqueGen r) => TypedExpr -> Sem r TypedExpr
 completeInference x = do
-  ctx <- Infer.getAll
-  completeExpression ctx x
+    ctx <- Infer.getAll
+    completeExpression ctx x
 
 inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline mempty . runParsePipeline . runLexPipeline $ do
-  let fp = "<tests>"
-  tokens <- readTokensWith fp (toString source)
-  parsed <- parsePipeline exprParser fp tokens
-  desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
-  renamed <- runRenamePipeline (createGraph []) primitiveRenameState (renameExpr desugared)
-  shunted <- shuntExpr renamed
-  inferExpression shunted Nothing >>= completeInference
+    let fp = "<tests>"
+    tokens <- readTokensWith fp (toString source)
+    parsed <- parsePipeline exprParser fp tokens
+    desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
+    renamed <- runRenamePipeline (createGraph []) primitiveRenameState (renameExpr desugared)
+    shunted <- shuntExpr renamed
+    inferExpression shunted Nothing >>= completeInference
 
 errorToIOFinal' :: forall e r a. (Member (Final IO) r, Exception e) => Sem (Error e ': r) a -> Sem r a
 errorToIOFinal' sem = do
-  res <- errorToIOFinal sem
-  case res of
-    Left e -> embedFinal $ throwIO e
-    Right a -> pure a
+    res <- errorToIOFinal sem
+    case res of
+        Left e -> embedFinal $ throwIO e
+        Right a -> pure a
 
 typeOf' :: (MonadIO m) => Text -> m (Type ())
 typeOf' msg = do
-  x <- liftIO $ inferFully msg
-  y <- liftIO $ diagShouldSucceed x
-  pure $ stripLocation $ typeOf y
+    x <- liftIO $ inferFully msg
+    y <- liftIO $ diagShouldSucceed x
+    pure $ stripLocation $ typeOf y
 
 failTypeMismatch :: (Pretty a1) => String -> String -> a1 -> IO a2
 failTypeMismatch name expected actual =
-  assertFailure
-    ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
+    assertFailure
+        ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
 
 inferSpec :: (MonadIO m, Pretty a1) => Text -> String -> m (Type (), a1 -> IO a2)
 inferSpec code expected = do
-  t' <- typeOf' code
-  pure (t', failTypeMismatch (toString code) expected)
+    t' <- typeOf' code
+    pure (t', failTypeMismatch (toString code) expected)
 
 inferShouldFail :: (MonadIO m) => Text -> m ()
 inferShouldFail code = do
-  x <- liftIO $ inferFully code
-  diagShouldFail x
+    x <- liftIO $ inferFully code
+    diagShouldFail x

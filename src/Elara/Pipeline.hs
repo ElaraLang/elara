@@ -3,8 +3,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Each stage of AST processing can be interpreted as part of an overall pipeline of effects in the 'Sem' monad.
--- This acts as the entrypoint to the stage, bringing each stage into a common abstraction
+{- | Each stage of AST processing can be interpreted as part of an overall pipeline of effects in the 'Sem' monad.
+This acts as the entrypoint to the stage, bringing each stage into a common abstraction
+-}
 module Elara.Pipeline where
 
 import Elara.Data.Pretty
@@ -21,12 +22,12 @@ type IsPipeline r = Members PipelineResultEff r
 type PipelineRes a = IO (Diagnostic (Doc AnsiStyle), Maybe a)
 
 type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] where
-  EffectsAsPrefixOf '[] ys = ys
-  EffectsAsPrefixOf (x ': xs) ys = x ': EffectsAsPrefixOf xs ys
+    EffectsAsPrefixOf '[] ys = ys
+    EffectsAsPrefixOf (x ': xs) ys = x ': EffectsAsPrefixOf xs ys
 
 -- | Finalise a pipeline, returning the final diagnostic and the result of the pipeline.
 finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
 finalisePipeline =
-  runM @IO
-    . runDiagnosticWriter
-    . runMaybe
+    runM @IO
+        . runDiagnosticWriter
+        . runMaybe

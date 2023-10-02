@@ -12,41 +12,41 @@ import Elara.Data.Pretty
 import Prelude hiding (Alt)
 
 class PrettyVar v where
-  prettyVar ::
-    -- | With type
-    Bool ->
-    -- | With parens
-    Bool ->
-    -- | Variable
-    v ->
-    Doc AnsiStyle
+    prettyVar ::
+        -- | With type
+        Bool ->
+        -- | With parens
+        Bool ->
+        -- | Variable
+        v ->
+        Doc AnsiStyle
 
-  prettyVarArg :: v -> Doc AnsiStyle
+    prettyVarArg :: v -> Doc AnsiStyle
 
 instance PrettyVar Var where
-  prettyVar withType withParens = \case
-    TyVar tv -> prettyTypeVariable withType tv
-    Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
+    prettyVar withType withParens = \case
+        TyVar tv -> prettyTypeVariable withType tv
+        Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
 
-  prettyVarArg = \case
-    TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
-    v -> prettyVar True True v
+    prettyVarArg = \case
+        TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        v -> prettyVar True True v
 
 instance PrettyVar Type where
-  prettyVar withType withParens = \case
-    TyVarTy tv -> prettyTypeVariable withType tv
-    ConTy name -> pretty name
-    other -> prettyVar withType withParens other
+    prettyVar withType withParens = \case
+        TyVarTy tv -> prettyTypeVariable withType tv
+        ConTy name -> pretty name
+        other -> prettyVar withType withParens other
 
-  prettyVarArg = \case
-    TyVarTy (TypeVariable tv _) -> parens ("@" <> pretty tv)
-    v -> prettyVar True True v
+    prettyVarArg = \case
+        TyVarTy (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        v -> prettyVar True True v
 
 instance (PrettyVar v, Show v) => Pretty (Expr v) where
-  pretty = prettyExpr
+    pretty = prettyExpr
 
 instance {-# OVERLAPPABLE #-} (PrettyVar v) => Pretty v where
-  pretty = prettyVar True True
+    pretty = prettyVar True True
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2, Show v2) => v1 -> Expr v2 -> Doc AnsiStyle
 prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
@@ -90,17 +90,17 @@ prettyAlts alts = let ?contextFree = True in prettyBlockExpr (prettyAlt <$> alts
     prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e
 
 instance Pretty Literal where
-  pretty :: Literal -> Doc AnsiStyle
-  pretty = \case
-    Int i -> pretty i
-    String s -> prettyStringExpr s
-    Char c -> "'" <> pretty c <> "'"
-    Double d -> pretty d
-    Unit -> "()"
+    pretty :: Literal -> Doc AnsiStyle
+    pretty = \case
+        Int i -> pretty i
+        String s -> prettyStringExpr s
+        Char c -> "'" <> pretty c <> "'"
+        Double d -> pretty d
+        Unit -> "()"
 
 instance Pretty Type where
-  pretty :: Type -> Doc AnsiStyle
-  pretty = prettyTy
+    pretty :: Type -> Doc AnsiStyle
+    pretty = prettyTy
 
 prettyTy :: Type -> Doc AnsiStyle
 prettyTy (FuncTy t1 t2) = prettyTy1 t1 <+> "->" <+> prettyTy t2
@@ -117,17 +117,17 @@ prettyTy2 (ConTy name) = pretty (name ^. unqualified)
 prettyTy2 e = parens (prettyTy e)
 
 instance Pretty AltCon where
-  pretty :: AltCon -> Doc AnsiStyle
-  pretty = \case
-    DataAlt d -> pretty d
-    LitAlt l -> pretty l
-    DEFAULT -> "DEFAULT"
+    pretty :: AltCon -> Doc AnsiStyle
+    pretty = \case
+        DataAlt d -> pretty d
+        LitAlt l -> pretty l
+        DEFAULT -> "DEFAULT"
 
 instance Pretty DataCon where
-  pretty :: DataCon -> Doc AnsiStyle
-  pretty = \case
-    DataCon name _ -> (pretty name)
+    pretty :: DataCon -> Doc AnsiStyle
+    pretty = \case
+        DataCon name _ -> (pretty name)
 
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case
-  TypeVariable name kind -> if withKind then parens (pretty name <+> ":" <+> pretty kind) else pretty name
+    TypeVariable name kind -> if withKind then parens (pretty name <+> ":" <+> pretty kind) else pretty name

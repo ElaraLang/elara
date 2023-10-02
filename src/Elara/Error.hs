@@ -11,7 +11,7 @@ import Polysemy.Maybe (MaybeE, justE, nothingE)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where
-  report :: (Member (DiagnosticWriter (Doc AnsiStyle)) r) => e -> Sem r ()
+    report :: (Member (DiagnosticWriter (Doc AnsiStyle)) r) => e -> Sem r ()
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
@@ -22,24 +22,24 @@ concatDiagnostics :: Diagnostic msg -> Diagnostic msg -> Diagnostic msg
 concatDiagnostics diag = (<> diag)
 
 runErrorOrReport ::
-  forall e r a.
-  (Members '[DiagnosticWriter (Doc AnsiStyle), MaybeE] r, ReportableError e) =>
-  Sem (Error e ': r) a ->
-  Sem r a
+    forall e r a.
+    (Members '[DiagnosticWriter (Doc AnsiStyle), MaybeE] r, ReportableError e) =>
+    Sem (Error e ': r) a ->
+    Sem r a
 runErrorOrReport e = do
-  x <- subsume_ (runError e)
-  case x of
-    Left err -> report err *> nothingE
-    Right a -> justE a
+    x <- subsume_ (runError e)
+    case x of
+        Left err -> report err *> nothingE
+        Right a -> justE a
 
 reportMaybe ::
-  (Member MaybeE r) =>
-  (Member (DiagnosticWriter (Doc AnsiStyle)) r) =>
-  (ReportableError e) =>
-  Sem r (Either e a) ->
-  Sem r a
+    (Member MaybeE r) =>
+    (Member (DiagnosticWriter (Doc AnsiStyle)) r) =>
+    (ReportableError e) =>
+    Sem r (Either e a) ->
+    Sem r a
 reportMaybe x = do
-  x' <- x
-  case x' of
-    Left err -> report err *> nothingE
-    Right a -> justE a
+    x' <- x
+    case x' of
+        Left err -> report err *> nothingE
+        Right a -> justE a

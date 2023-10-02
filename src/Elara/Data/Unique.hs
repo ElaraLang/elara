@@ -14,10 +14,10 @@ import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
 
 data Unique a = Unique
-  { _uniqueVal :: !a,
-    _uniqueId :: !Int
-  }
-  deriving (Show, Functor, Data, Generic, Traversable, Foldable)
+    { _uniqueVal :: !a
+    , _uniqueId :: !Int
+    }
+    deriving (Show, Functor, Data, Generic, Traversable, Foldable)
 
 pattern Unique' :: a -> Unique a
 pattern Unique' a <- Unique a _
@@ -35,17 +35,17 @@ instance (ToJSON c) => ToJSON (Unique c)
 instance ToJSON UniqueId
 
 instance Show UniqueId where
-  show (UniqueId u) = Text.Show.show (_uniqueId u)
+    show (UniqueId u) = Text.Show.show (_uniqueId u)
 
 instance Eq (Unique a) where
-  (==) = (==) `on` _uniqueId
+    (==) = (==) `on` _uniqueId
 
 instance Ord (Unique a) where
-  compare = compare `on` _uniqueId
+    compare = compare `on` _uniqueId
 
 newtype UniqueSupply = UniqueSupply
-  { _uniqueSupplyUniques :: [Int]
-  }
+    { _uniqueSupplyUniques :: [Int]
+    }
 
 freshUniqueSupply :: UniqueSupply
 freshUniqueSupply = UniqueSupply [0 ..]
@@ -58,30 +58,30 @@ resetGlobalUniqueSupply :: IO ()
 resetGlobalUniqueSupply = writeIORef globalUniqueSupply freshUniqueSupply
 
 data UniqueGen m a where
-  NewUniqueNum :: UniqueGen m Int
+    NewUniqueNum :: UniqueGen m Int
 
 runFreshUniqueSupply :: Sem (UniqueGen ': r) a -> Sem r a
 runFreshUniqueSupply = evalState freshUniqueSupply . uniqueGenToState
 
 uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (State UniqueSupply : r) a
 uniqueGenToState = reinterpret $ \case
-  NewUniqueNum -> do
-    (UniqueSupply us) <- get
-    case us of
-      [] -> error "Ran out of unique IDs! Should be impossible."
-      (i : is) -> do
-        put (UniqueSupply is)
-        pure i
+    NewUniqueNum -> do
+        (UniqueSupply us) <- get
+        case us of
+            [] -> error "Ran out of unique IDs! Should be impossible."
+            (i : is) -> do
+                put (UniqueSupply is)
+                pure i
 
 uniqueGenToIO :: (Member (Embed IO) r) => Sem (UniqueGen ': r) a -> Sem r a
 uniqueGenToIO = interpret $ \case
-  NewUniqueNum -> do
-    us <- liftIO (readIORef globalUniqueSupply)
-    case _uniqueSupplyUniques us of
-      [] -> error "Ran out of unique IDs! Should be impossible."
-      (i : is) -> do
-        liftIO (writeIORef globalUniqueSupply (UniqueSupply is))
-        pure i
+    NewUniqueNum -> do
+        us <- liftIO (readIORef globalUniqueSupply)
+        case _uniqueSupplyUniques us of
+            [] -> error "Ran out of unique IDs! Should be impossible."
+            (i : is) -> do
+                liftIO (writeIORef globalUniqueSupply (UniqueSupply is))
+                pure i
 
 makeSem ''UniqueGen
 makeLenses ''UniqueSupply
@@ -100,10 +100,10 @@ uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i
 
 instance (Pretty a) => Pretty (Unique a) where
-  pretty (Unique a i) = pretty a <> "_" <> pretty i
+    pretty (Unique a i) = pretty a <> "_" <> pretty i
 
 instance Pretty UniqueId where
-  pretty (UniqueId (Unique _ i)) = pretty i
+    pretty (UniqueId (Unique _ i)) = pretty i
 
 instance (Hashable b) => Hashable (Unique b)
 
