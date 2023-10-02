@@ -83,3 +83,5 @@ deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Uniq
 instance (Generic (VarRef' c n), ToJSON (c (Unique n)), ToJSON (c (Qualified n))) => ToJSON (VarRef' c n) where
   toJSON (Global n) = toJSON n
   toJSON (Local n) = toJSON n
+
+instance (Hashable (c (Qualified n)), Hashable (c (Unique n))) => Hashable (VarRef' c n)

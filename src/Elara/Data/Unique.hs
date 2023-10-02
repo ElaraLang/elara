@@ -98,3 +98,7 @@ instance (Pretty a) => Pretty (Unique a) where
 
 instance Pretty UniqueId where
   pretty (UniqueId (Unique _ i)) = pretty i
+
+instance (Hashable b) => Hashable (Unique b)
+
+instance Hashable UniqueId

@@ -3,6 +3,5 @@ import Prelude
 def add2 : Int -> Int
 let add2 x = x + 2
 
-
 def main : IO ()
-let main = println (toString ("hello"))
+let main = println "hello"

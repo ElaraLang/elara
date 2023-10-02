@@ -41,6 +41,7 @@ dependencies:
   - filepath
   - safe-exceptions
   - terminal-size
+  - hashable
 
 ghc-options:
   - -Wall

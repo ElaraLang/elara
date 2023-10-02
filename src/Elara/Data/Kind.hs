@@ -22,3 +22,5 @@ instance Pretty ElaraKind where
   pretty (VarKind v) = Style.varName ("k" <> pretty v)
 
 instance ToJSON ElaraKind
+
+instance Hashable ElaraKind

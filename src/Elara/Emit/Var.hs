@@ -5,10 +5,13 @@ module Elara.Emit.Var where
 
 import Control.Lens (transform)
 import Data.Data (Data)
+import Elara.AST.Name
+import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
+import Elara.Data.Unique
 
 data JVMBinder
   = JVMLocal Int
@@ -29,6 +32,11 @@ toJVMExpr = fmap Normal
 replaceVar :: JVMBinder -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar old new = transform $ \case
   Core.Var old' | old == old' -> Core.Var new
+  x -> x
+
+replaceVar' :: UnlocatedVarRef Text -> JVMBinder -> JVMExpr -> JVMExpr
+replaceVar' old new = transform $ \case
+  Core.Var (Normal (Core.Id old' _)) | old == old' -> Core.Var new
   x -> x
 
 -- | We end up with redundant top-level lambdas a lot, that can be converted into normal methods instead.

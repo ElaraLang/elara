@@ -12,7 +12,7 @@ data TypeVariable = TypeVariable
   { tvName :: UniqueTyVar,
     tvKind :: ElaraKind
   }
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq, Data, Generic)
 
 data Var
   = TyVar TypeVariable
@@ -20,7 +20,7 @@ data Var
       { idVarName :: UnlocatedVarRef Text,
         idVarType :: Type
       }
-  deriving (Show, Data, Eq)
+  deriving (Show, Data, Eq, Generic)
 
 data Expr b
   = Var b
@@ -31,7 +31,7 @@ data Expr b
   | TyLam Type (Expr b)
   | Let (Bind b) (Expr b)
   | Match (Expr b) (Maybe b) [Alt b]
-  deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable)
+  deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
 
 instance (Data b) => Plated (Expr b)
 
@@ -44,7 +44,7 @@ type CoreBind = Bind Var
 data Bind b
   = Recursive [(b, Expr b)]
   | NonRecursive (b, Expr b)
-  deriving (Show, Eq, Data, Functor, Foldable, Traversable)
+  deriving (Show, Eq, Data, Functor, Foldable, Traversable, Generic)
 
 binds :: Bind b -> [(b, Expr b)]
 binds = \case
@@ -57,14 +57,14 @@ data AltCon
   = DataAlt DataCon
   | LitAlt Literal
   | DEFAULT
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq, Data, Generic)
 
 -- | A data constructor.
 data DataCon = DataCon
   { name :: Qualified Text,
     dataConType :: Type
   }
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq, Data, Generic)
 
 data Type
   = TyVarTy TypeVariable
@@ -73,7 +73,7 @@ data Type
   | -- | A type constructor
     ConTy (Qualified Text)
   | ForAllTy TypeVariable Type
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq, Data, Generic)
 
 data Literal
   = Int Integer
@@ -81,4 +81,20 @@ data Literal
   | Char Char
   | Double Double
   | Unit
-  deriving (Show, Eq, Data)
+  deriving (Show, Eq, Data, Generic)
+
+instance (Hashable b) => Hashable (Expr b)
+
+instance (Hashable b) => Hashable (Bind b)
+
+instance Hashable Literal
+
+instance Hashable AltCon
+
+instance Hashable DataCon
+
+instance Hashable Type
+
+instance Hashable TypeVariable
+
+instance Hashable Var

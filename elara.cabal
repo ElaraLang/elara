@@ -62,6 +62,9 @@ library
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Emit
+      Elara.Emit.Expr
+      Elara.Emit.Lambda
+      Elara.Emit.Method
       Elara.Emit.Operator
       Elara.Emit.Var
       Elara.Error
@@ -144,6 +147,7 @@ library
     , filepath
     , generic-lens
     , h2jvm
+    , hashable
     , headed-megaparsec
     , lens
     , megaparsec
@@ -195,6 +199,7 @@ executable elara
     , filepath
     , generic-lens
     , h2jvm
+    , hashable
     , headed-megaparsec
     , lens
     , megaparsec
@@ -249,6 +254,7 @@ test-suite doctest
     , filepath
     , generic-lens
     , h2jvm
+    , hashable
     , headed-megaparsec
     , lens
     , megaparsec
@@ -318,6 +324,7 @@ test-suite elara-test
     , filepath
     , generic-lens
     , h2jvm
+    , hashable
     , headed-megaparsec
     , hedgehog
     , hspec ==2.*

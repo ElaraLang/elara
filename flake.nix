@@ -63,12 +63,11 @@
             type-errors = {
               extraSetupDepends = [ pkgs.haskellPackages.doctest ];
               extraBuildDepends = [ pkgs.haskellPackages.doctest ];
-
               check = false;
             };
 
             h2jvm = {
-              # Skip the tests for now
+              # Skip the tests due to conflicting base version
               check = false;
             };
 

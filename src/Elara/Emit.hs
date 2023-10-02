@@ -12,15 +12,20 @@ import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
-import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon)
+import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon, unitCon)
 import Elara.Utils (uncurry3)
-import JVM.Data.Abstract.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
+-- import JVM.Data.Abstract.ClassFile.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.ClassFile
+-- import JVM.Data.Abstract.ClassFile.Field (ClassFileField (ClassFileField))
+
+-- import JVM.Data.Abstract.ClassFile.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
+
+import JVM.Data.Abstract.ClassFile.AccessFlags
+import JVM.Data.Abstract.ClassFile.Field
+import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor
-import JVM.Data.Abstract.Field (ClassFileField (ClassFileField))
 import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCInt, LDCString))
-import JVM.Data.Abstract.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
 import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType, PrimitiveFieldType))
 import JVM.Data.Abstract.Type qualified as JVM (PrimitiveType (..))
@@ -153,7 +158,7 @@ generateMainMethod m =
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
-generateCode :: JVMExpr -> Maybe Type -> InnerEmit [Instruction]
+generateCode :: (HasCallStack, Monad m) => JVMExpr -> Maybe Type -> m [Instruction]
 generateCode (Var (JVMLocal 0)) _ = pure [ALoad0]
 -- Hardcode elaraPrimitive "println"
 generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "println")))) _
@@ -251,5 +256,5 @@ generateMethodDescriptor f@(FuncTy _ _) = do
 generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
 
 generateReturnDescriptor :: Type -> ReturnDescriptor
--- generateReturnDescriptor (Scalar _ Unit) = VoidReturn
+generateReturnDescriptor u | u == unitCon = VoidReturn
 generateReturnDescriptor other = TypeReturn (generateFieldType other)

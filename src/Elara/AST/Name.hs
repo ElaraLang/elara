@@ -245,3 +245,7 @@ instance ToJSON TypeName
 instance ToJSON LowerAlphaName
 
 instance ToJSON Name
+
+instance (Hashable b) => Hashable (Qualified b)
+
+instance Hashable ModuleName
