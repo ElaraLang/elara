@@ -6,6 +6,7 @@ module Elara.Data.Pretty (
     escapeChar,
     indentDepth,
     parensIf,
+    blockParensIf,
     Pretty (..),
     module Pretty,
     module Prettyprinter.Render.Terminal,
@@ -33,6 +34,10 @@ indentDepth = 4
 parensIf :: Bool -> Doc ann -> Doc ann
 parensIf True = parens
 parensIf False = identity
+
+blockParensIf :: Bool -> Doc ann -> Doc ann
+blockParensIf True = braces
+blockParensIf False = identity
 
 listToText :: (Pretty a) => [a] -> Doc AnsiStyle
 listToText elements =

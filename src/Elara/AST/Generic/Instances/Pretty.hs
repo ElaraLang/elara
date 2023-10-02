@@ -99,6 +99,7 @@ instance
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , RUnlocate ast
     ) =>
     Pretty (Expr ast)
     where
@@ -130,6 +131,7 @@ prettyExpr ::
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (?contextFree :: Bool, ?withType :: Bool)
+    , RUnlocate ast
     ) =>
     Expr ast ->
     Doc AnsiStyle
@@ -161,6 +163,7 @@ instance
     , (StripLocation (CleanupLocated (ASTLocate' ast (Expr' ast))) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , RUnlocate ast
     ) =>
     Pretty (Expr' ast)
     where
@@ -192,6 +195,7 @@ prettyExpr' ::
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , RUnlocate ast
     ) =>
     Expr' ast ->
     Doc AnsiStyle
@@ -203,13 +207,13 @@ prettyExpr' Unit = "()"
 prettyExpr' (Var v) = pretty v
 prettyExpr' (Constructor c) = pretty c
 prettyExpr' (Lambda ps e) = prettyLambdaExpr (fieldToList @(ASTLocate ast (Select "LambdaPattern" ast)) ps :: [lambdaPatterns]) (prettyExpr e)
-prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr (prettyExpr e1) (prettyExpr e2)
-prettyExpr' (TypeApplication e1 e2) = prettyFunctionCallExpr (prettyExpr e1) ("@" <> parens (pretty e2))
+prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2 False
+prettyExpr' (TypeApplication e1 e2) = prettyFunctionCall e1 ("@" <> pretty e2)
 prettyExpr' (If e1 e2 e3) = prettyIfExpr (prettyExpr e1) (prettyExpr e2) (prettyExpr e3)
 prettyExpr' (List l) = prettyList (prettyExpr <$> l)
 prettyExpr' (Match e m) = prettyMatchExpr (prettyExpr e) (prettyMatchBranch . second prettyExpr <$> m)
-prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) (prettyExpr e1) (prettyExpr e2)
-prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) (prettyExpr e)
+prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) (e1) (e2)
+prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e
 prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
 prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)
 prettyExpr' (BinaryOperator b) =

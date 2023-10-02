@@ -28,6 +28,7 @@ block mergeFunction single exprParser = wrapToHead (singleBlock <|> wholeBlock)
         endHead
         exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
         dedentToken
+
         pure $ mergeFunction exprs
 
 exprBlock :: HParser FrontendExpr -> HParser FrontendExpr

@@ -5,6 +5,9 @@ This includes functions for pretty printing in both context-free and context-sen
 -}
 module Elara.AST.Pretty where
 
+import Control.Lens (to, (^.), _1)
+import Data.Generics.Wrapped
+import Elara.AST.Generic.Types
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Prelude hiding (group)
@@ -46,11 +49,18 @@ prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr el
                 ( "\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
                 )
 
-prettyFunctionCallExpr :: (Pretty a, Pretty b, ?contextFree :: Bool) => a -> b -> Doc AnsiStyle
-prettyFunctionCallExpr e1 e2 = parens (if ?contextFree then short else group (flatAlt long short))
+prettyFunctionCall :: (?contextFree :: Bool, Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
+prettyFunctionCall e1' e2' = parens (if ?contextFree then short else group (flatAlt long short))
   where
-    short = pretty e1 <+> pretty e2
-    long = pretty e1 <> hardline <> indent indentDepth (pretty e2)
+    short = pretty e1' <+> pretty e2'
+    long = pretty e1' <> hardline <> indent indentDepth (pretty e2')
+
+prettyFunctionCallExpr :: (?contextFree :: Bool, RUnlocate ast, Pretty (Expr ast)) => Expr ast -> Expr ast -> Bool -> Doc AnsiStyle
+prettyFunctionCallExpr e1 e2 tyApp = prettyFunctionCall e1' e2'
+  where
+    e1' = parensIf (?contextFree && shouldParen e1) (pretty e1)
+    e2' = tyApp' <> parensIf (?contextFree && shouldParen e2) (pretty e2)
+    tyApp' = if tyApp then "@" else ""
 
 prettyIfExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
 prettyIfExpr e1 e2 e3 = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)
@@ -67,25 +77,43 @@ prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExp
 prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
 prettyMatchBranch (p, e) = pretty p <+> "->" <+> pretty e
 
-prettyLetInExpr :: (Pretty a1, Pretty a2, Pretty a3, Pretty a4, ?contextFree :: Bool) => a1 -> [a2] -> a3 -> a4 -> Doc AnsiStyle
+prettyLetInExpr ::
+    (Pretty a1, Pretty a2, ?contextFree :: Bool, RUnlocate ast, Pretty (Expr ast)) =>
+    a1 ->
+    [a2] ->
+    Expr ast ->
+    Expr ast ->
+    Doc AnsiStyle
 prettyLetInExpr v ps e1 e2 =
-    parens
-        ( "let"
-            <+> pretty v
-            <+> hsep (pretty <$> ps)
-            <+> "="
-            <+> parensIf ?contextFree (pretty e1)
-            <+> "in"
-            <+> parensIf ?contextFree (pretty e2)
-        )
+    ( "let"
+        <+> pretty v
+        <+> hsep (pretty <$> ps)
+        <+> "="
+        <+> blockParensIf (?contextFree && shouldBrace e1) (pretty e1)
+        <+> "in"
+        <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
+    )
 
-prettyLetExpr :: (Pretty a1, Pretty a2, Pretty a3, ?contextFree :: Bool) => a1 -> [a2] -> a3 -> Doc AnsiStyle
+shouldBrace :: forall astK (ast :: astK). (RUnlocate ast) => Expr ast -> Bool
+shouldBrace x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
+    Block _ -> False
+    Let{} -> True
+    _ -> False
+
+shouldParen :: forall astK (ast :: astK). (RUnlocate ast) => Expr ast -> Bool
+shouldParen x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
+    Block _ -> True
+    Let{} -> True
+    LetIn{} -> True
+    _ -> False
+
+prettyLetExpr :: (Pretty a1, Pretty a2, RUnlocate ast, ?contextFree :: Bool, Pretty (Expr ast)) => a1 -> [a2] -> Expr ast -> Doc AnsiStyle
 prettyLetExpr v ps e =
     "let"
         <+> pretty v
         <+> hsep (pretty <$> ps)
         <+> "="
-        <+> parensIf ?contextFree (pretty e)
+        <+> blockParensIf (?contextFree && shouldBrace e) (pretty e)
 
 prettyBlockExpr :: (Pretty a, Foldable t, ?contextFree :: Bool) => t a -> Doc AnsiStyle
 prettyBlockExpr b = do

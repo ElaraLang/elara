@@ -45,12 +45,12 @@
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
             megaparsec.source = inputs.megaparsec;
-
           };
 
           settings = {
 
             fourmolu.check = false;
+
 
             diagnose = {
               extraBuildDepends = [

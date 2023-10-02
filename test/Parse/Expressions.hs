@@ -51,5 +51,5 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
     expr <- forAll genExpr
-    let parsePretty s = fmap (stripLocation) <$> lexAndParse exprParser s
-    trippingParse (expr) (showPrettyUnannotated) parsePretty
+    let parsePretty s = fmap stripLocation <$> lexAndParse exprParser s
+    trippingParse expr showPrettyUnannotated parsePretty
