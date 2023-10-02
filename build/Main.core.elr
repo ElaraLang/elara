@@ -1,6 +1,0 @@
-module Main
-{ Main.add2 : Int -> Int
-    = \ (x_1 : Int) -> Prelude.+ x_1 2
-; 
-Main.main : IO ()
-    = Prelude.println "hello" }

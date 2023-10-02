@@ -96,8 +96,9 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     putTextLn ("Compiling " <> showPretty mn <> "...")
     let converted = convert class'
     let bs = runPut (writeBinary converted)
-    liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
-    putTextLn ("Compiled " <> showPretty mn <> "!")
+    let fp = "build/" <> suitableFilePath (ClassFile.name class')
+    liftIO $ writeFileLBS fp bs
+    putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
 
   end <- liftIO getCPUTime
   let t :: Double

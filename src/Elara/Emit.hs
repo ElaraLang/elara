@@ -1,37 +1,36 @@
 -- | Emits JVM bytecode from Elara AST.
 -- Conventions:
 -- * We always uncurry functions, so a function of type a -> b -> c is compiled to a JVM function c f(a, b).
---  This means that currying can be avoided in a lot of cases (through arity analysis),
---    skipping the overhead of creating a lambda and calling repeated invoke() functions
+-- This means that currying can be avoided in a lot of cases (through arity analysis),
+--   skipping the overhead of creating a lambda and calling repeated invoke() functions
 module Elara.Emit where
 
 import Control.Lens hiding (List)
 import Data.Generics.Product
-import Data.List.NonEmpty qualified as NE
-import Elara.AST.Name (ModuleName (..), Qualified (..))
-import Elara.AST.VarRef (VarRef' (..), varRefVal)
-import Elara.Core (Bind (..), Expr (..), Literal (..), Type (..), Var (..))
+import Elara.AST.Name (ModuleName (..))
+import Elara.AST.VarRef (varRefVal)
+import Elara.Core (Bind (..), Expr (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
+import Elara.Emit.Expr
 import Elara.Emit.Operator (translateOperatorName)
+import Elara.Emit.Utils
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
-import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon, unitCon)
-import Elara.Utils (uncurry3)
+import Elara.Prim.Core (intCon, ioCon, stringCon)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor
-import JVM.Data.Abstract.Instruction (Instruction (..), LDCEntry (LDCInt, LDCString))
-import JVM.Data.Abstract.Name (ClassName (ClassName), PackageName (PackageName), QualifiedClassName (QualifiedClassName))
-import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType, PrimitiveFieldType))
-import JVM.Data.Abstract.Type qualified as JVM (PrimitiveType (..))
+import JVM.Data.Abstract.Instruction (Instruction (..))
+import JVM.Data.Abstract.Name (QualifiedClassName)
+import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
-import Polysemy.Writer
+import Polysemy.Writer (Writer, runWriter, tell)
 import Print (showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
@@ -85,12 +84,12 @@ addClinit code = do
 
 generateCodeAttribute :: JVMExpr -> Maybe Type -> ([Instruction] -> [Instruction]) -> InnerEmit MethodAttribute
 generateCodeAttribute e expected codeMod = do
-  code <- codeMod <$> generateCode e expected
+  code <- codeMod <$> embed (generateInstructions e)
   pure $
     Code $
       CodeAttributeData
-        { maxStack = 2, -- TODO: calculate this
-          maxLocals = 2, -- TODO: calculate this too
+        { maxStack = 10, -- TODO: calculate this
+          maxLocals = 3, -- TODO: calculate this too
           code = code,
           exceptionTable = [],
           codeAttributes = []
@@ -125,7 +124,7 @@ isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 -- | Adds an initialiser for a static field to <clinit>
 addStaticFieldInitialiser :: ClassFileField -> JVMExpr -> Type -> InnerEmit ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e t = do
-  code <- generateCode e (Just t)
+  code <- embed $ generateInstructions e
   tell code
   cn <- ask @QualifiedClassName
   tell [PutStatic (ClassInfoType cn) name fieldType]
@@ -142,8 +141,8 @@ generateMainMethod m =
     )
     [ Code $
         CodeAttributeData
-          { maxStack = 2, -- TODO: calculate this
-            maxLocals = 2, -- TODO: calculate this too
+          { maxStack = 10, -- TODO: calculate this
+            maxLocals = 10, -- TODO: calculate this too
             code =
               [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "elara.IO"),
                 InvokeVirtual (ClassInfoType "elara.IO") "run" (MethodDescriptor [] VoidReturn),
@@ -154,87 +153,6 @@ generateMainMethod m =
           }
     ]
 
-createModuleName :: ModuleName -> QualifiedClassName
-createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
-
-generateCode :: (HasCallStack, Monad m) => JVMExpr -> Maybe Type -> m [Instruction]
-generateCode (Var (JVMLocal 0)) _ = pure [ALoad0]
--- Hardcode elaraPrimitive "println"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "println")))) _
-  | v == fetchPrimitiveName =
-      pure
-        [ ALoad0,
-          InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
-        ]
--- Hardcode elaraPrimitive "toString"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "toString")))) _
-  | v == fetchPrimitiveName =
-      pure
-        [ ALoad0,
-          InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
-        ]
--- Hardcode elaraPrimitive "+"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "+")))) _
-  | v == fetchPrimitiveName =
-      pure
-        [ -- sum 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Int.add
-          GetStatic (ClassInfoType "elara.Prelude") "add" (ObjectFieldType "elara.Func")
-        ]
--- Hardcode elaraPrimitive "undefined"
-generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "undefined")))) (Just _)
-  | v == fetchPrimitiveName =
-      pure
-        [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object"))),
-          AConstNull
-        ]
-generateCode ((Var (Normal (Id {idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType})))) _ | typeIsValue idVarType = do
-  -- load static var
-  let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateFieldType idVarType)
-  pure [uncurry3 GetStatic invokeStaticVars]
-generateCode (App (Var (Normal (Id {idVarName = Global (Identity (Qualified vn mn)), idVarType = idVarType}))) arg) expectedType = do
-  -- static function application
-  let invokeStaticVars = (ClassInfoType $ createModuleName mn, vn, generateMethodDescriptor idVarType)
-
-  x' <- generateCode arg Nothing
-
-  let castInstrs =
-        ( case generateFieldType <$> expectedType of
-            Just (ObjectFieldType a) -> [CheckCast (ClassInfoType a)]
-            _ -> []
-        )
-
-  pure $ x' <> [uncurry3 InvokeStatic invokeStaticVars] <> castInstrs
-generateCode (App f x) _ = do
-  let fTypes = case f of
-        Var (Normal (Id {idVarType = FuncTy i o})) -> Just (FuncTy i o, o)
-        _ -> Nothing
-
-  -- function application
-  x' <- generateCode x Nothing
-  f' <- generateCode f (fst <$> fTypes)
-  pure $
-    x'
-      <> f'
-      <> [ InvokeVirtual
-             (ClassInfoType "elara.Func")
-             "apply"
-             ( MethodDescriptor
-                 [ObjectFieldType "java.lang.Object"]
-                 (TypeReturn (maybe (ObjectFieldType "java.lang.Object") (generateFieldType . snd) fTypes))
-             )
-         ]
-generateCode (TyApp a t) t' = generateCode a (t' <|> Just t)
-generateCode (Lit (String s)) _ =
-  pure
-    [ LDC (LDCString s)
-    ]
-generateCode (Lit (Int i)) _ =
-  pure
-    [ LDC (LDCInt (fromIntegral i)),
-      InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
-    ]
-generateCode e t = error (showPretty (e, t))
-
 -- | Determines if a type is a value type.
 -- That is, a type that can be compiled to a field rather than a method.
 typeIsValue :: Type -> Bool
@@ -242,32 +160,3 @@ typeIsValue (AppTy con _) | con == ioCon = True
 typeIsValue c | c == stringCon = True
 typeIsValue c | c == intCon = True
 typeIsValue _ = False
-
-generateFieldType :: Type -> FieldType
-generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
-generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
-generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
-generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
-generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
-generateFieldType (FuncTy _ _) = ObjectFieldType "elara.Func"
-generateFieldType o = error $ "generateFieldType: " <> show o
-
-generateMethodDescriptor :: (HasCallStack) => Type -> MethodDescriptor
-generateMethodDescriptor (ForAllTy _ t) = generateMethodDescriptor t
-generateMethodDescriptor f@(FuncTy _ _) = do
-  -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)
-  let splitUpFunction :: Type -> NonEmpty Type
-      splitUpFunction (FuncTy i o) = i `NE.cons` splitUpFunction o
-      splitUpFunction other = pure other
-
-      allParts = splitUpFunction f
-
-      inputs = init allParts
-      output = last allParts
-
-  MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
-generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
-
-generateReturnDescriptor :: Type -> ReturnDescriptor
-generateReturnDescriptor u | u == unitCon = VoidReturn
-generateReturnDescriptor other = TypeReturn (generateFieldType other)

@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.VarRef where
@@ -22,6 +23,12 @@ type VarRef n = VarRef' Located n
 type IgnoreLocVarRef n = VarRef' IgnoreLocation n
 
 type UnlocatedVarRef n = VarRef' Identity n
+
+pattern Global' :: Qualified n -> VarRef' Identity n
+pattern Global' n = Global (Identity n)
+
+pattern Local' :: Unique n -> VarRef' Identity n
+pattern Local' n = Local (Identity n)
 
 varRefVal :: (Functor c) => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n

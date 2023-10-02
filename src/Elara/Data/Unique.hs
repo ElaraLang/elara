@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Elara.Data.Unique where
@@ -17,6 +18,11 @@ data Unique a = Unique
     _uniqueId :: !Int
   }
   deriving (Show, Functor, Data, Generic, Traversable, Foldable)
+
+pattern Unique' :: a -> Unique a
+pattern Unique' a <- Unique a _
+
+{-# COMPLETE Unique' #-}
 
 unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique

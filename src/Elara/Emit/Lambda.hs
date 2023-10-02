@@ -6,7 +6,6 @@ import Data.Map qualified as M
 import Elara.AST.Name (VarName)
 import Elara.Core
 import Elara.Data.Unique
-import Elara.Emit (generateCode)
 import Elara.Emit.Method
 import JVM.Data.Abstract.Builder (ClassBuilder, addMethod)
 import JVM.Data.Abstract.ClassFile.Method (ClassFileMethod (ClassFileMethod))

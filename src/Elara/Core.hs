@@ -75,6 +75,26 @@ data Type
   | ForAllTy TypeVariable Type
   deriving (Show, Eq, Data, Generic)
 
+-- | The arity of a function type
+typeArity :: Type -> Int
+typeArity = \case
+  FuncTy _ b -> 1 + typeArity b
+  _ -> 0
+
+instantiate :: Type -> Type -> Type
+instantiate (ForAllTy tv t) t' = instantiate t (substTypeVar tv t')
+instantiate t _ = t
+
+substTypeVar :: TypeVariable -> Type -> Type
+substTypeVar tv = \case
+  TyVarTy tv' | tv == tv' -> TyVarTy tv
+  FuncTy a b -> FuncTy (substTypeVar tv a) (substTypeVar tv b)
+  AppTy a b -> AppTy (substTypeVar tv a) (substTypeVar tv b)
+  ConTy n -> ConTy n
+  ForAllTy tv' t | tv /= tv' -> ForAllTy tv' (substTypeVar tv t)
+  ForAllTy tv' t | tv == tv' -> ForAllTy tv' t
+  other -> error $ "substTypeVar: " <> show other
+
 data Literal
   = Int Integer
   | String Text

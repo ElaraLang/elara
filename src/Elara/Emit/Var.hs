@@ -11,7 +11,6 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
-import Elara.Data.Unique
 
 data JVMBinder
   = JVMLocal Int

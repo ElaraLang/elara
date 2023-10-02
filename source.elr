@@ -4,4 +4,4 @@ def add2 : Int -> Int
 let add2 x = x + 2
 
 def main : IO ()
-let main = println "hello"
+let main = println (toString (add2 3))
