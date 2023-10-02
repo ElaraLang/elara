@@ -6,6 +6,7 @@ import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
+import Relude.Extra (bimapF)
 import Prelude hiding (Alt)
 
 data TypeVariable = TypeVariable
@@ -50,6 +51,11 @@ binds :: Bind b -> [(b, Expr b)]
 binds = \case
   Recursive bs -> bs
   NonRecursive b -> [b]
+
+mapBind :: (b -> b') -> (Expr b -> Expr b') -> Bind b -> Bind b'
+mapBind f g = \case
+  Recursive bs -> Recursive (bimapF f g bs)
+  NonRecursive (b, e) -> NonRecursive (f b, g e)
 
 type Alt b = (AltCon, [b], Expr b)
 

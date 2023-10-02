@@ -40,7 +40,7 @@ approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty ot
 -- This function performs arity "analysis" to avoid redundant currying when a function is "fully applied" (i.e. all arguments are provided)
 --
 -- For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying is necessary,
---    but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
+--   but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
 generateAppInstructions :: (Monad m) => JVMExpr -> JVMExpr -> ClassBuilderT m [Instruction]
 generateAppInstructions f x = do
   let (f', args) = collectArgs f [x]

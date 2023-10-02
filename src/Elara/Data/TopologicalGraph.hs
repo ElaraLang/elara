@@ -25,6 +25,9 @@ data TopologicalGraph a = TopologicalGraph
 
 makeLenses ''TopologicalGraph
 
+mapGraph :: (HasDependencies m) => (a -> m) -> TopologicalGraph a -> TopologicalGraph m
+mapGraph f = runIdentity . traverseGraph (pure . f)
+
 -- | Traverse a graph. Due to the 'HasDependencies m' constraint we can't derive 'Traversable'
 traverseGraph :: (HasDependencies m, Applicative f) => (a -> f m) -> TopologicalGraph a -> f (TopologicalGraph m)
 traverseGraph = genericGraphTraverse vertices

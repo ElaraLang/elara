@@ -17,8 +17,9 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
+import Elara.CoreToCore
 import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 import Elara.Emit
@@ -181,6 +182,7 @@ processModules graph (dumpShunted, dumpTyped) =
               >=> traverseGraphRevTopologically inferModule
               >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
               >=> traverseGraph moduleToCore
+              >=> pure . mapGraph coreToCore
               $ graph
           )
   where

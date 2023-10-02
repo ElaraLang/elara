@@ -53,6 +53,7 @@ library
       Elara.Core
       Elara.Core.Module
       Elara.Core.Pretty
+      Elara.CoreToCore
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
