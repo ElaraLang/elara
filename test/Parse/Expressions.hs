@@ -51,14 +51,5 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
   expr <- forAll genExpr
-  let parsePretty s = fmap (removeInParens . stripLocation) <$> lexAndParse exprParser s
-  trippingParse (removeInParens expr) (showPrettyUnannotated . removeInParens) parsePretty
-  where
-    -- The AST needs to have the 'InParens' element for operator shunting later, but its presence messes up the pretty printing & parsing equality
-    -- This just removes any 'InParens' elements from the AST
-    removeInParens :: Expr 'UnlocatedFrontend -> Expr 'UnlocatedFrontend
-    removeInParens = transformOn (_Unwrapped . _1) go
-      where
-        go :: Expr' 'UnlocatedFrontend -> Expr' 'UnlocatedFrontend
-        go (InParens e) = e ^. _Unwrapped . _1
-        go e = e
+  let parsePretty s = fmap (stripLocation) <$> lexAndParse exprParser s
+  trippingParse (expr) (showPrettyUnannotated) parsePretty

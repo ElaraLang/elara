@@ -124,7 +124,6 @@ fixOperators opTable = reassoc
     withLocationOf' s repl = over (_Unwrapped . _1) (repl <$) s
 
     reassoc :: RenamedExpr -> Sem r RenamedExpr
-    -- reassoc e@(InExpr (InParens e2)) = withLocationOf' e . InParens <$> reassoc e2
     reassoc e@(InExpr' loc (BinaryOperator (operator, l, r))) = do
       l' <- reassoc l
       r' <- reassoc r
@@ -132,7 +131,6 @@ fixOperators opTable = reassoc
     reassoc e = pure e
 
     reassoc' :: SourceRegion -> RenamedBinaryOperator -> RenamedExpr -> RenamedExpr -> Sem r RenamedExpr'
-    -- reassoc' sr operator l (InExpr (InParens r)) = reassoc' sr operator l r
     reassoc' sr o1 e1 r@(InExpr (BinaryOperator (o2, e2, e3))) = do
       info1 <- getInfoOrWarn o1
       info2 <- getInfoOrWarn o2
@@ -147,7 +145,7 @@ fixOperators opTable = reassoc
         assocLeft = do
           reassociated' <- reassoc' sr o1 e1 e2
           let reassociated = Expr (Located sr reassociated', Nothing)
-          pure (BinaryOperator (o2, withLocationOf' reassociated (InParens reassociated), e3))
+          pure (BinaryOperator (o2, reassociated, e3))
 
         assocRight = do
           pure (BinaryOperator (o1, e1, r))
@@ -279,7 +277,6 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (If cond then' else') = If <$> shuntExpr cond <*> shuntExpr then' <*> shuntExpr else'
     shuntExpr' (Let vn _ e) = Let vn NoFieldValue <$> shuntExpr e
     shuntExpr' (LetIn vn _ e body) = (LetIn vn NoFieldValue <$> shuntExpr e) <*> shuntExpr body
-    shuntExpr' (InParens e) = view unlocated <$> traverse shuntExpr' (e ^. _Unwrapped . _1)
     shuntExpr' (Block e) = Block <$> traverse shuntExpr e
     shuntExpr' (Match e cases) = do
       e' <- shuntExpr e

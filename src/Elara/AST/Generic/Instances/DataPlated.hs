@@ -40,8 +40,7 @@ instance
 
 instance
   ( RUnlocate ast,
-    (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast)),
-    (DataConAs (Select "InParens" ast) (Expr ast))
+    (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
   ) =>
   Plated (Expr' ast)
   where
@@ -64,9 +63,6 @@ instance
           LetIn v p e1 e2 -> (LetIn v p <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2
           Let v p e -> (Let v p <$> traverseOf traverseExpr f e)
           Block b -> Block <$> traverseOf (each . traverseExpr) f b
-          InParens e ->
-            let e' = dataConAs @(Select "InParens" ast) @(Expr ast) e
-             in InParens . asDataCon <$> traverseOf traverseExpr f e'
           Tuple t -> Tuple <$> traverseOf (each . traverseExpr) f t
           BinaryOperator b ->
             let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b

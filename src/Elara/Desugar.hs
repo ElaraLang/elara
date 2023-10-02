@@ -236,7 +236,6 @@ desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desug
       body' <- desugarExpr body
       pure (LetIn n NoFieldValue (foldLambda pats' e') body')
     desugarExpr' (Block e) = Block <$> traverse desugarExpr e
-    desugarExpr' (InParens e) = InParens <$> desugarExpr e
     desugarExpr' (Tuple e) = Tuple <$> traverse desugarExpr e
 
 desugarBinaryOperator :: FrontendBinaryOperator -> Desugar DesugaredBinaryOperator

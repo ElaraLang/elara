@@ -23,7 +23,6 @@ deriving instance
   ( (Eq (Select "LetPattern" ast)),
     ForAllExpr Eq ast,
     (Eq (ASTLocate ast (BinaryOperator' ast))),
-    (Eq (Select "InParens" ast)),
     (Eq (Select "ExprType" ast)),
     (Eq (Select "PatternType" ast)),
     (Eq (Select "BinaryOperator" ast)),
@@ -75,7 +74,6 @@ deriving instance
     (Show (ASTLocate ast (Select "LetParamName" ast))),
     (Show ((Select "TypeApplication" ast))),
     (Show (ASTLocate ast (BinaryOperator' ast))),
-    (Show (Select "InParens" ast)),
     (Show (Select "ExprType" ast)),
     (Show (Select "PatternType" ast)),
     Show (Select "BinaryOperator" ast),
@@ -188,7 +186,6 @@ deriving instance
   forall a (ast :: a).
   ( Data (ASTLocate ast (Expr' ast)),
     Data ((Select "LetPattern" ast)),
-    Data ((Select "InParens" ast)),
     Data ((Select "PatternType" ast)),
     Data ((Select "BinaryOperator" ast)),
     (Data (Select "ExprType" ast)),

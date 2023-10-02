@@ -387,7 +387,6 @@ renameExpr (Expr le) =
       cases' <- traverse (bitraverse renamePattern renameExpr) cases
       pure $ Match e' cases'
     renameExpr' (Block es) = Block <$> traverse renameExpr es
-    renameExpr' (InParens es) = InParens <$> renameExpr es
     renameExpr' (Tuple es) = Tuple <$> traverse renameExpr es
 
 renameBinaryOperator :: (Rename r) => DesugaredBinaryOperator -> Sem r RenamedBinaryOperator

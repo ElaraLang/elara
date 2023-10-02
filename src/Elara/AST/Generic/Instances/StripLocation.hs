@@ -30,9 +30,7 @@ instance
     (StripLocation (CleanupLocated (Located (Select "LetParamName" ast1))) (Select "LetParamName" ast2)),
     (StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)),
     (DataConAs (Select "BinaryOperator" ast1) (BinaryOperator ast1, Expr ast1, Expr ast1)),
-    (DataConAs (Select "BinaryOperator" ast2) (BinaryOperator ast2, Expr ast2, Expr ast2)),
-    (DataConAs (Select "InParens" ast1) (Expr ast1)),
-    (DataConAs (Select "InParens" ast2) (Expr ast2))
+    (DataConAs (Select "BinaryOperator" ast2) (BinaryOperator ast2, Expr ast2, Expr ast2))
   ) =>
   StripLocation (Expr ast1) (Expr ast2)
   where
@@ -99,9 +97,6 @@ stripExprLocation (Expr (e :: ASTLocate ast1 (Expr' ast1), t)) =
       let p' = stripLocation @(Select "LetPattern" ast1) @(Select "LetPattern" ast2) p
        in Let (stripLocation v) p' (stripExprLocation e)
     stripExprLocation' (Block b) = Block (stripExprLocation <$> b)
-    stripExprLocation' (InParens e) =
-      let e' = dataConAs @(Select "InParens" ast1) @(Expr ast1) e
-       in InParens $ asDataCon (stripExprLocation e')
     stripExprLocation' (Tuple t) = Tuple (stripExprLocation <$> t)
 
 instance
