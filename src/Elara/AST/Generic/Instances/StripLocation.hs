@@ -191,6 +191,18 @@ stripBinaryOperatorLocation (MkBinaryOperator (op :: ASTLocate ast1 (BinaryOpera
     stripBinaryOperatorLocation' (SymOp name) = SymOp (stripLocation name)
     stripBinaryOperatorLocation' (Infixed name) = Infixed (stripLocation name)
 
+instance
+  forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
+  ( (ASTLocate' ast1 ~ Located),
+    ASTLocate' ast2 ~ Unlocated,
+    ( StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2),
+      StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
+    )
+  ) =>
+  StripLocation (Type ast1) (Type ast2)
+  where
+  stripLocation = stripTypeLocation @ast1 @ast2
+
 stripTypeLocation ::
   forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
   ( (ASTLocate' ast1 ~ Located),

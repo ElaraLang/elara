@@ -122,6 +122,7 @@ mkGlobalRef = Global . Identity
 toCore :: (HasCallStack) => (ToCoreC r) => TypedExpr -> Sem r CoreExpr
 toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
   where
+    -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
     moveTypeApplications :: CoreExpr -> CoreExpr
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
     moveTypeApplications x = x
@@ -150,7 +151,6 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
 
         Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
       AST.FunctionCall e1 e2 -> do
-        -- If the function is polymorphic we need to add the type arguments
         e1' <- toCore e1
         e2' <- toCore e2
         pure (App e1' e2')

@@ -52,7 +52,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -1221,8 +1221,12 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
       check body output
 
     let t = Type.Function {..}
-
-    pure $ Syntax.Expr (Located location (Lambda name body'), t)
+    -- if input is unsolved, we need to create a type lambda, i.e. \(@a : Type) -> blah
+    let actualLam = Syntax.Expr (Located location (Lambda name body'), t)
+    case input of
+      Type.UnsolvedType {} -> do
+        pure actualLam
+      _ -> pure actualLam
 
   -- →E
   Syntax.FunctionCall function argument -> do

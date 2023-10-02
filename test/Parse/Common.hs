@@ -1,7 +1,8 @@
 module Parse.Common where
 
-import Elara.AST.Generic (Pattern, stripPatternLocation)
+import Elara.AST.Generic (Pattern)
 import Elara.AST.Select (UnlocatedAST (..))
+import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
 import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader (readTokensWith)
@@ -26,7 +27,7 @@ lexAndParse parser source = do
 shouldParsePattern :: (MonadTest m) => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = do
   parsed <- lexAndParse patParser source >>= evalEither
-  diff (stripPatternLocation parsed) (==) expected
+  diff (stripLocation parsed) (==) expected
 
 shouldFailToParse :: (MonadTest m) => Text -> m ()
 shouldFailToParse source = do

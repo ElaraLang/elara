@@ -5,6 +5,7 @@ import Arbitrary.Literals (genDouble, genInteger)
 import Arbitrary.Names (genLowerAlphaText)
 import Elara.AST.Generic
 import Elara.AST.Name
+import Elara.AST.StripLocation
 import Elara.Parse.Pattern (patParser)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
@@ -17,7 +18,7 @@ import Test.Hspec.Hedgehog
 arbitraryPattern :: Spec
 arbitraryPattern = it "Arbitrary patterns parse prettyPrinted" $ hedgehog $ do
   expr <- forAll genPattern
-  let parsePretty s = fmap stripPatternLocation <$> lexAndParse patParser s
+  let parsePretty s = fmap stripLocation <$> lexAndParse patParser s
   trippingParse expr showPrettyUnannotated parsePretty
 
 spec :: Spec

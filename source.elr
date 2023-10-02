@@ -1,7 +1,6 @@
 import Prelude 
 
-def add2 : Int -> Int
-let add2 x = x + 2
+let y = (\x -> x + 2) 3
 
 def main : IO ()
-let main = println (toString ((\x -> x + 2) 3))
+let main = println (toString y)

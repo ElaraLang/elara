@@ -2,6 +2,7 @@ module Shunt where
 
 import Common (diagShouldSucceed)
 import Elara.AST.Generic
+import Elara.AST.Generic.Instances ()
 import Elara.AST.Generic.Pattern (functionCall, int, var)
 import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
 import Elara.AST.Region (generatedLocated)
@@ -69,7 +70,7 @@ fakeOperatorTable =
 shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do
   y <- liftIO (loadExpr code >>= diagShouldSucceed)
-  let z :: Expr 'UnlocatedShunted = stripExprLocation @'Shunted @'UnlocatedShunted y
+  let z :: Expr 'UnlocatedShunted = stripLocation y
   z === x
 
 spec :: Spec
