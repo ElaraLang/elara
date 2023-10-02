@@ -1,4 +1,8 @@
 -- | Emits JVM bytecode from Elara AST.
+-- Conventions:
+-- * We always uncurry functions, so a function of type a -> b -> c is compiled to a JVM function c f(a, b).
+--  This means that currying can be avoided in a lot of cases (through arity analysis),
+--    skipping the overhead of creating a lambda and calling repeated invoke() functions
 module Elara.Emit where
 
 import Control.Lens hiding (List)
@@ -14,13 +18,8 @@ import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (fetchPrimitiveName, intCon, ioCon, listCon, stringCon, unitCon)
 import Elara.Utils (uncurry3)
--- import JVM.Data.Abstract.ClassFile.AccessFlags (FieldAccessFlag (FPublic, FStatic), MethodAccessFlag (MPublic, MStatic))
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.ClassFile
--- import JVM.Data.Abstract.ClassFile.Field (ClassFileField (ClassFileField))
-
--- import JVM.Data.Abstract.ClassFile.Method (ClassFileMethod (ClassFileMethod), CodeAttributeData (..), MethodAttribute (..))
-
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
 import JVM.Data.Abstract.ClassFile.Method

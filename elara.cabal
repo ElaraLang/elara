@@ -66,6 +66,7 @@ library
       Elara.Emit.Lambda
       Elara.Emit.Method
       Elara.Emit.Operator
+      Elara.Emit.State
       Elara.Emit.Var
       Elara.Error
       Elara.Error.Codes
