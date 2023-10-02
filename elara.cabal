@@ -292,6 +292,7 @@ test-suite elara-test
       Orphans
       Parse
       Parse.Common
+      Parse.Expressions
       Parse.Patterns
       Shunt
       Paths_elara

@@ -1,6 +1,6 @@
 module Parse.Common where
 
-import Elara.AST.Generic (Pattern)
+import Elara.AST.Generic (Expr, Pattern)
 import Elara.AST.Select (UnlocatedAST (..))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
@@ -8,6 +8,8 @@ import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Parse (parsePipeline, runParsePipelinePure)
 import Elara.Parse.Error
+import Elara.Parse.Expression (element, exprParser)
+import Elara.Parse.Indents
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
@@ -18,6 +20,9 @@ import Print (showPretty)
 import Test.QuickCheck
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, errorBundlePretty)
 
+evalEitherParseError :: (ShowErrorComponent e, VisualStream s, TraversableStream s, MonadTest m) => Either (WParseErrorBundle s e) a -> m a
+evalEitherParseError = either (failWith Nothing . errorBundlePretty . unWParseErrorBundle) pure
+
 lexAndParse :: (MonadTest m, ToString a1) => HParser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
 lexAndParse parser source = do
   let fp = "<tests>"
@@ -25,8 +30,13 @@ lexAndParse parser source = do
   pure $ run $ runParsePipelinePure $ parsePipeline parser fp tokens
 
 shouldParsePattern :: (MonadTest m) => Text -> Pattern 'UnlocatedFrontend -> m ()
-shouldParsePattern source expected = do
-  parsed <- lexAndParse patParser source >>= evalEither
+shouldParsePattern source expected = withFrozenCallStack $ do
+  parsed <- lexAndParse patParser source >>= evalEitherParseError
+  diff (stripLocation parsed) (==) expected
+
+shouldParseExpr :: (MonadTest m) => Text -> Expr 'UnlocatedFrontend -> m ()
+shouldParseExpr source expected = withFrozenCallStack $ do
+  parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError
   diff (stripLocation parsed) (==) expected
 
 shouldFailToParse :: (MonadTest m) => Text -> m ()

@@ -92,9 +92,7 @@ reservedWords :: Set Text
 reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
 parensExpr :: HParser FrontendExpr
-parensExpr = do
-  e@(Expr (le, t)) <- inParens exprParser
-  pure (Expr (InParens e <$ le, t))
+parensExpr = inParens exprParser
 
 variable :: HParser FrontendExpr
 variable =

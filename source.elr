@@ -1,6 +1,3 @@
 import Prelude 
 
-let y = (\x -> x + 2) 3
-
-def main : IO ()
-let main = println (toString y)
+let x = let a  = -98236127 in (let a  = (-98097150 ) )

@@ -31,7 +31,7 @@ block mergeFunction single exprParser = wrapToHead (singleBlock <|> wholeBlock)
       pure $ mergeFunction exprs
 
 exprBlock :: HParser FrontendExpr -> HParser FrontendExpr
-exprBlock = optionallyInParens . wrapToHead . block merge identity
+exprBlock = wrapToHead . block merge identity
   where
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
