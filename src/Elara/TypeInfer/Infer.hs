@@ -1244,7 +1244,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
 
         let isVar = \case Type.VariableType{} -> True; Type.UnsolvedType{} -> True; _ -> False
-        e <- case Type.stripForAll (Syntax.typeOf _A) of
+        ctx <- get
+        _A' <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
+        e <- case _A' of
             Type.Function{input, output}
                 | isVar input && isVar output ->
                     pure $
@@ -1260,7 +1262,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                                             , resultType
                                             )
                                         )
-                                        ((Type.stripForAll resultType))
+                                        (Type.stripForAll resultType)
                                     )
                                 , resultType
                                 )

@@ -1,10 +1,5 @@
 module Prelude
 
-def println : String -> IO ()
-let println = elaraPrimitive "println"
 
 def (+) : Int -> Int -> Int
 let (+) = elaraPrimitive "+"
-
-def toString : a -> String
-let toString = elaraPrimitive "toString"

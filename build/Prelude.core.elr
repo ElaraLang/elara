@@ -1,9 +1,3 @@
 module Prelude
-{ Prelude.println : String -> IO ()
-    = Elara.Prim.elaraPrimitive @(String -> IO ()) "println"
-; 
-Prelude.toString : forall (a_3 : Type). a_3 -> String
-    = Elara.Prim.elaraPrimitive @(a_3 -> String) "toString"
-; 
-Prelude.+ : Int -> Int -> Int
+{ Prelude.+ : Int -> Int -> Int
     = Elara.Prim.elaraPrimitive @(Int -> Int -> Int) "+" }
