@@ -167,6 +167,20 @@ generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (S
         [ ALoad0,
           InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
         ]
+-- Hardcode elaraPrimitive "toString"
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "toString")))) _
+  | v == fetchPrimitiveName =
+      pure
+        [ ALoad0,
+          InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
+        ]
+-- Hardcode elaraPrimitive "+"
+generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "+")))) _
+  | v == fetchPrimitiveName =
+      pure
+        [ -- sum 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Int.add
+          GetStatic (ClassInfoType "elara.Prelude") "add" (ObjectFieldType "elara.Func")
+        ]
 -- Hardcode elaraPrimitive "undefined"
 generateCode ((App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String "undefined")))) (Just _)
   | v == fetchPrimitiveName =

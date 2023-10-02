@@ -4,10 +4,7 @@ module Prelude exposing (..)
 
 def Prelude.println : Text -> IO Unit 
 let Prelude.println =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Text ->
-                                                                       IO Unit
-                                                                          ) : Text ->
-                                                                                IO Unit
+    ((Elara.Prim.elaraPrimitive @Text -> IO Unit) : Text -> IO Unit
                                                                                     "println" : Text) : Text ->
                                                                                                           IO Unit
 
