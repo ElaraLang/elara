@@ -1,0 +1,2 @@
+module Main
+{ Main.x : Int     = 3 }
