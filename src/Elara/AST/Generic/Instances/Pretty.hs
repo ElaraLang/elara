@@ -82,7 +82,7 @@ instance
     , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
     , Pretty (ASTLocate ast (Select "ConRef" ast))
     , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty ((Select "TypeApplication" ast))
+    , Pretty (Select "TypeApplication" ast)
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty letPatterns
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
@@ -115,7 +115,7 @@ prettyExpr ::
     , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
     , Pretty (ASTLocate ast (Select "ConRef" ast))
     , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty ((Select "TypeApplication" ast))
+    , Pretty (Select "TypeApplication" ast)
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty letPatterns
     , (ToList (Select "LetPattern" ast) [letPatterns])
@@ -146,7 +146,7 @@ instance
     forall ast letPatterns lambdaPatterns.
     ( Pretty (ASTLocate ast (Select "ConRef" ast))
     , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty ((Select "TypeApplication" ast))
+    , Pretty (Select "TypeApplication" ast)
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty letPatterns
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
@@ -180,7 +180,7 @@ prettyExpr' ::
     , ?withType :: Bool
     , Pretty (ASTLocate ast (Select "VarRef" ast))
     , Pretty (ASTLocate ast (Select "ConRef" ast))
-    , Pretty ((Select "TypeApplication" ast))
+    , Pretty (Select "TypeApplication" ast)
     , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
     , Pretty letPatterns
     , (ToList (Select "LetPattern" ast) [letPatterns])
@@ -212,7 +212,7 @@ prettyExpr' (TypeApplication e1 e2) = prettyFunctionCall e1 ("@" <> pretty e2)
 prettyExpr' (If e1 e2 e3) = prettyIfExpr (prettyExpr e1) (prettyExpr e2) (prettyExpr e3)
 prettyExpr' (List l) = prettyList (prettyExpr <$> l)
 prettyExpr' (Match e m) = prettyMatchExpr (prettyExpr e) (prettyMatchBranch . second prettyExpr <$> m)
-prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) (e1) (e2)
+prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e1 e2
 prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e
 prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
 prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)

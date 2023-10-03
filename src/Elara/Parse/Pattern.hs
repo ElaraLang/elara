@@ -16,7 +16,7 @@ patParser :: Parser FrontendPattern
 patParser =
     choice
         [ try literalPattern
-        , (inParens apat)
+        , inParens apat
         , varPattern
         , zeroArgConstructorPattern
         , wildcardPattern

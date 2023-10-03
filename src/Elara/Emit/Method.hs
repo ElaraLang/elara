@@ -18,14 +18,14 @@ type NamedMethodDescriptor = ([(Unique Text, FieldType)], FieldType)
 
 transformMethodParameters :: [UnlocatedVarRef Text] -> CoreExpr -> Expr JVMBinder
 transformMethodParameters params body =
-    let jvm = toJVMExpr body in foldr (\(name, idx) e -> replaceVar' (name) (JVMLocal idx) e) jvm (zip (params) [0 ..])
+    let jvm = toJVMExpr body in foldr (\(name, idx) e -> replaceVar' name (JVMLocal idx) e) jvm (zip params [0 ..])
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
 createMethod :: (Monad m) => NamedMethodDescriptor -> Text -> CoreExpr -> ClassBuilderT m ()
 createMethod descriptor name body = do
-    let body' = transformMethodParameters ((Local . Identity . fst) <$> fst descriptor) body
+    let body' = transformMethodParameters (Local . Identity . fst <$> fst descriptor) body
     code <- generateInstructions body'
     let maxStack = analyseMaxStack code
 
@@ -37,7 +37,7 @@ createMethod descriptor name body = do
             [ Code $
                 CodeAttributeData
                     maxStack
-                    (2 {- TODO -})
+                    2 {- TODO -}
                     code
                     []
                     []
@@ -50,10 +50,10 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (InvokeDynamic{}) = 1
     stackChange (InvokeStatic{}) = 1
     stackChange (InvokeVirtual{}) = 1
-    stackChange (AConstNull) = 1
-    stackChange (ALoad0) = 1
-    stackChange (AReturn) = -1
-    stackChange (AThrow) = -1
+    stackChange AConstNull = 1
+    stackChange ALoad0 = 1
+    stackChange AReturn = -1
+    stackChange AThrow = -1
     stackChange (CheckCast _) = 0
     stackChange (LDC _) = 1
     stackChange (GetStatic{}) = 1

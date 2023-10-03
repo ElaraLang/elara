@@ -26,7 +26,7 @@ deriving instance
     , (Eq (Select "ExprType" ast))
     , (Eq (Select "PatternType" ast))
     , (Eq (Select "BinaryOperator" ast))
-    , Eq ((Select "TypeApplication" ast))
+    , Eq (Select "TypeApplication" ast)
     , Eq (ASTLocate ast (Expr' ast))
     , Eq (ASTLocate ast (Pattern' ast))
     , Eq (Type ast)
@@ -72,7 +72,7 @@ deriving instance
     , (Show (ASTLocate ast (Select "LambdaPattern" ast)))
     , (Show (ASTLocate ast (Select "ConRef" ast)))
     , (Show (ASTLocate ast (Select "LetParamName" ast)))
-    , (Show ((Select "TypeApplication" ast)))
+    , (Show (Select "TypeApplication" ast))
     , (Show (ASTLocate ast (BinaryOperator' ast)))
     , (Show (Select "ExprType" ast))
     , (Show (Select "PatternType" ast))
@@ -185,15 +185,15 @@ deriving instance
 deriving instance
     forall a (ast :: a).
     ( Data (ASTLocate ast (Expr' ast))
-    , Data ((Select "LetPattern" ast))
-    , Data ((Select "PatternType" ast))
-    , Data ((Select "BinaryOperator" ast))
+    , Data (Select "LetPattern" ast)
+    , Data (Select "PatternType" ast)
+    , Data (Select "BinaryOperator" ast)
     , (Data (Select "ExprType" ast))
     , Data (ASTLocate ast (Select "VarRef" ast))
     , Data (ASTLocate ast (Select "ConRef" ast))
     , Data (ASTLocate ast (Select "LetParamName" ast))
     , Data (ASTLocate ast (Select "LambdaPattern" ast))
-    , Data ((Select "TypeApplication" ast))
+    , Data (Select "TypeApplication" ast)
     , Data (ASTLocate ast (Pattern' ast))
     , Typeable ast
     , Typeable a
@@ -214,10 +214,10 @@ deriving instance
     forall a (ast :: a).
     ( Data (ASTLocate ast (Type' ast))
     , Data (ASTLocate ast (Select "TypeVar" ast))
-    , Data ((Select "TypeVar" ast))
+    , Data (Select "TypeVar" ast)
     , Data (ASTLocate ast (Select "UserDefinedType" ast))
     , Data (ASTLocate ast LowerAlphaName)
-    , Data ((Select "UserDefinedType" ast))
+    , Data (Select "UserDefinedType" ast)
     , Typeable ast
     , Typeable a
     ) =>

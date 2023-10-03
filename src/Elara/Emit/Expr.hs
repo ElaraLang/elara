@@ -22,12 +22,19 @@ generateInstructions (Var (JVMLocal 1)) = pure [ALoad1]
 generateInstructions (Var (JVMLocal 2)) = pure [ALoad2]
 generateInstructions (Var (JVMLocal 3)) = pure [ALoad3]
 generateInstructions (Lit s) = generateLitInstructions s
-generateInstructions (Var (Normal (Id (Global (Identity v)) _)))
+generateInstructions (Var (Normal (Id (Global' v) _)))
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
-generateInstructions (App ((Var (Normal (Id (Global (Identity v)) _)))) (Lit (String primName)))
+generateInstructions (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName)))
     | v == fetchPrimitiveName = generatePrimInstructions primName
 generateInstructions (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName)))
     | v == fetchPrimitiveName = generatePrimInstructions primName
+generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) =
+    pure
+        [ GetStatic
+            (ClassInfoType $ createModuleName mn)
+            (translateOperatorName n)
+            (generateFieldType t)
+        ]
 generateInstructions (App f x) = generateAppInstructions f x
 generateInstructions other = error $ "Not implemented: " <> showPretty other
 

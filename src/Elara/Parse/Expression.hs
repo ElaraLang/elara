@@ -21,7 +21,7 @@ import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
 
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
-locatedExpr = fmap (\x -> Expr (x, Nothing)) . (located)
+locatedExpr = fmap (\x -> Expr (x, Nothing)) . located
 
 exprParser :: Parser FrontendExpr
 exprParser =
@@ -137,7 +137,7 @@ match = locatedExpr $ do
     token_ TokenWith
 
     cases <-
-        (try (toList <$> block identity one matchCase))
+        try (toList <$> block identity one matchCase)
             <|> (token_ TokenLeftBrace *> token_ TokenRightBrace $> []) -- allow empty match blocks
     pure $ Match expr cases
   where
@@ -158,10 +158,10 @@ lambda = locatedExpr $ do
 
     let emptyLambdaLoc = spanningRegion' (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
     let failEmptyBody =
-            ( eof
+            eof
                 *> customFailure
                     (EmptyLambda emptyLambdaLoc)
-            )
+
     res <- failEmptyBody <|> exprBlock element
     pure (Lambda args res)
 
@@ -182,10 +182,10 @@ letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
 letPreamble = do
     token_ TokenLet
     name <- located unqualifiedVarName
-    patterns <- many (patParser)
+    patterns <- many patParser
     token_ TokenEquals
 
-    e <- (exprBlock (element))
+    e <- exprBlock element
     pure (name, patterns, e)
 
 letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing

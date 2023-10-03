@@ -19,7 +19,7 @@ dedentToken :: Parser ()
 dedentToken = token_ TokenDedent <|> token_ TokenRightBrace
 
 block :: (NonEmpty a -> b) -> (a -> b) -> Parser a -> Parser b
-block mergeFunction single exprParser = (try singleBlock <|> wholeBlock)
+block mergeFunction single exprParser = try singleBlock <|> wholeBlock
   where
     singleBlock = single <$> exprParser
     wholeBlock = do

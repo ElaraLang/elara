@@ -59,7 +59,7 @@ instance
                 TypeApplication e1 e2 -> TypeApplication <$> traverseOf traverseExpr f e1 <*> pure e2
                 If e1 e2 e3 -> If <$> traverseOf traverseExpr f e1 <*> traverseOf traverseExpr f e2 <*> traverseOf traverseExpr f e3
                 List l -> List <$> traverseOf (each . traverseExpr) f l
-                Match e m -> Match <$> traverseOf traverseExpr f e <*> traverseOf (each . _2 . traverseExpr) (f) m
+                Match e m -> Match <$> traverseOf traverseExpr f e <*> traverseOf (each . _2 . traverseExpr) f m
                 LetIn v p e1 e2 -> (LetIn v p <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2
                 Let v p e -> (Let v p <$> traverseOf traverseExpr f e)
                 Block b -> Block <$> traverseOf (each . traverseExpr) f b
@@ -70,7 +70,7 @@ instance
 
 instance
     forall a (ast :: a).
-    ( (Data (Expr ast))
+    ( Data (Expr ast)
     ) =>
     Plated (Expr ast)
     where
@@ -78,7 +78,7 @@ instance
 
 instance
     forall a (ast :: a).
-    ( (Data (Type ast))
+    ( Data (Type ast)
     ) =>
     Plated (Type ast)
     where
@@ -88,10 +88,10 @@ instance
     forall a (ast :: a).
     ( Data (ASTLocate ast (Type' ast))
     , Data (ASTLocate ast (Select "TypeVar" ast))
-    , Data ((Select "TypeVar" ast))
+    , Data (Select "TypeVar" ast)
     , Data (ASTLocate ast (Select "UserDefinedType" ast))
     , Data (ASTLocate ast LowerAlphaName)
-    , Data ((Select "UserDefinedType" ast))
+    , Data (Select "UserDefinedType" ast)
     , Typeable ast
     , Typeable a
     , (Data (Type' ast))

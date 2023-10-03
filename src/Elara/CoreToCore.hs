@@ -14,7 +14,7 @@ type CoreExprPass = CoreExpr -> CoreExpr
 constantFold :: CoreExprPass
 constantFold = transform f
   where
-    f (App (App (Var (Id (Global' (Qualified "+" (ModuleName ("Prelude" :| [])))) _)) (Lit (Int a))) (Lit (Int b))) = Lit (Int ((a + b)))
+    f (App (App (Var (Id (Global' (Qualified "+" (ModuleName ("Prelude" :| [])))) _)) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a + b))
     f other = other
 
 -- | Performs beta reduction on the Core AST to reduce redundant lambdas

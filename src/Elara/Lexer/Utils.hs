@@ -250,7 +250,7 @@ splitQualName t = do
             -- >>> ["Prelude", "T", ""] = ("Prelude.T", ".")
             -- >>> ["A", "!", ""] = ("A", "!.")
             let isAlphaNumeric = T.all (\c -> isAlpha c || isDigit c)
-                (modPart, namePart) = span (liftA2 (&&) (isAlphaNumeric) (not . T.null)) (fromList xs)
+                (modPart, namePart) = span (liftA2 (&&) isAlphaNumeric (not . T.null)) (fromList xs)
              in if null namePart
                     then -- TODO: this isn't very efficient
                         (ModuleName $ fromList (init (fromList modPart)), last (fromList modPart))

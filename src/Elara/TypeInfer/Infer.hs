@@ -1258,7 +1258,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                                         ( Expr
                                             ( Located
                                                 primRegion
-                                                (TypeApplication _A ((Syntax.typeOf typedArgument)))
+                                                (TypeApplication _A (Syntax.typeOf typedArgument))
                                             , resultType
                                             )
                                         )
@@ -1272,14 +1272,14 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                 | isVar input ->
                     pure $
                         FunctionCall
-                            ( Expr (Located primRegion (TypeApplication _A ((Syntax.typeOf typedArgument))), resultType)
+                            ( Expr (Located primRegion (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
                             )
                             typedArgument
             Type.Function{output}
                 | isVar output ->
                     pure $
                         FunctionCall
-                            ( Expr (Located primRegion (TypeApplication _A ((Type.stripForAll resultType))), resultType)
+                            ( Expr (Located primRegion (TypeApplication _A (Type.stripForAll resultType)), resultType)
                             )
                             typedArgument
             _ -> do

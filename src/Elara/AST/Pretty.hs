@@ -90,14 +90,13 @@ prettyLetInExpr ::
     Expr ast ->
     Doc AnsiStyle
 prettyLetInExpr v ps e1 e2 =
-    ( "let"
+    "let"
         <+> pretty v
         <+> hsep (pretty <$> ps)
         <+> "="
         <+> blockParensIf (?contextFree && shouldBrace e1) (pretty e1)
         <+> "in"
         <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
-    )
 
 shouldBrace :: forall astK (ast :: astK). (RUnlocate ast) => Expr ast -> Bool
 shouldBrace x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of

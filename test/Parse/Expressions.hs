@@ -26,20 +26,17 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
             `shouldParseExpr` Expr
                 ( FunctionCall
                     ( Expr
-                        ( ( ( Lambda
-                                [Pattern (VarPattern (LowerAlphaName "x"), Nothing)]
-                                ( Expr
-                                    ( BinaryOperator
-                                        ( ( MkBinaryOperator (SymOp "+")
-                                          , Expr (Var (MaybeQualified "x" Nothing), Nothing)
-                                          , Expr (Int 2, Nothing)
-                                          )
-                                        )
-                                    , Nothing
+                        ( Lambda
+                            [Pattern (VarPattern (LowerAlphaName "x"), Nothing)]
+                            ( Expr
+                                ( BinaryOperator
+                                    ( MkBinaryOperator (SymOp "+")
+                                    , Expr (Var (MaybeQualified "x" Nothing), Nothing)
+                                    , Expr (Int 2, Nothing)
                                     )
+                                , Nothing
                                 )
                             )
-                          )
                         , Nothing
                         )
                     )

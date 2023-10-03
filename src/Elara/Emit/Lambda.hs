@@ -65,8 +65,7 @@ createLambda params returnType thisClassName body = do
                             ( MethodRef
                                 (ClassInfoType thisClassName)
                                 lambdaMethodName
-                                ( lambdaMethodDescriptor
-                                )
+                                lambdaMethodDescriptor
                             )
                         )
                     , BMMethodArg lambdaMethodDescriptor
