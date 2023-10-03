@@ -15,7 +15,7 @@ import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Parse (parsePipeline, runParsePipeline)
 import Elara.Parse.Expression (exprParser)
-import Elara.Pipeline (finalisePipeline)
+import Elara.Pipeline (PipelineRes, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (renameExpr, runRenamePipeline)
 import Elara.Shunt (runShuntPipeline, shuntExpr)
@@ -27,6 +27,7 @@ import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
+import Polysemy.Reader (runReader)
 import Polysemy.State (State)
 import Print (showPretty)
 import Test.HUnit (assertFailure)
@@ -48,12 +49,13 @@ completeInference x = do
     ctx <- Infer.getAll
     completeExpression ctx x
 
+inferFully :: (ToString a) => a -> PipelineRes TypedExpr
 inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline mempty . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp tokens
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
-    renamed <- runRenamePipeline (createGraph []) primitiveRenameState (renameExpr desugared)
+    renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ renameExpr desugared)
     shunted <- shuntExpr renamed
     inferExpression shunted Nothing >>= completeInference
 

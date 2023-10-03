@@ -5,7 +5,7 @@
 
 module Elara.Shunt where
 
-import Control.Lens (over, to, traverseOf, view, (^.), _1)
+import Control.Lens (over, to, traverseOf, (^.), _1)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map (lookup)
