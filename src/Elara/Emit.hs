@@ -15,7 +15,7 @@ import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Expr
-import Elara.Emit.Method (createMethod)
+import Elara.Emit.Method (createMethod, createMethodWith)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
@@ -52,12 +52,11 @@ type InnerEmit r =
 newtype CLInitState = CLInitState MethodCreationState
 
 liftState :: (Member (State CLInitState) r) => Sem (State MethodCreationState : r) a -> Sem r a
-liftState = interpret $ \case
-    Get -> do
-        CLInitState s <- get
-        pure s
-    Put s -> do
-        put $ CLInitState s
+liftState act = do
+    (CLInitState s) <- get @CLInitState
+    (s', x) <- runState s act
+    put $ CLInitState s'
+    pure x
 
 emitGraph :: forall r. (Emit r) => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
@@ -74,7 +73,7 @@ emitModule m = do
                 . runM
                 . runReader name
                 . runReader version
-                . runState (CLInitState initialMethodCreationState)
+                . evalState (CLInitState initialMethodCreationState)
 
     let (_, clazz) = runInnerEmit $ do
             (clinit, _) <- runWriter @[Instruction] $ do
@@ -82,34 +81,15 @@ emitModule m = do
                 when (isMainModule m) (embed $ addMethod (generateMainMethod m))
 
             addClinit clinit
-
     pure
         ( m ^. field @"name"
         , clazz
         )
 
-addClinit :: (Member (Embed ClassBuilder) r) => [Instruction] -> Sem r ()
+addClinit :: (Member (Embed ClassBuilder) r, Member (State CLInitState) r) => [Instruction] -> Sem r ()
 addClinit code = do
-    embed $
-        addMethod $
-            ClassFileMethod
-                [MPublic, MStatic]
-                "<clinit>"
-                (MethodDescriptor [] VoidReturn)
-                [Code $ CodeAttributeData 255 255 (code <> [Return]) [] []]
-
-generateCodeAttribute :: (Member (State MethodCreationState) r) => JVMExpr -> ([Instruction] -> [Instruction]) -> Sem r MethodAttribute
-generateCodeAttribute e codeMod = do
-    code <- codeMod <$> (generateInstructions e)
-    pure $
-        Code $
-            CodeAttributeData
-                { maxStack = 10 -- TODO: calculate this
-                , maxLocals = 3 -- TODO: calculate this too
-                , code = code
-                , exceptionTable = []
-                , codeAttributes = []
-                }
+    (CLInitState s) <- get @CLInitState
+    embed $ createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" s code
 
 addDeclaration :: (InnerEmit r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
@@ -120,7 +100,7 @@ addDeclaration declBody = case declBody of
                 let field = ClassFileField [FPublic, FStatic] declName (generateFieldType type') []
                 embed $ addField field
                 let e' = transformTopLevelLambdas e
-                liftState $ addStaticFieldInitialiser field e' type'
+                addStaticFieldInitialiser field e'
             else do
                 let descriptor = generateMethodDescriptor type'
                 let y = transformTopLevelLambdas e
@@ -131,9 +111,10 @@ isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (InnerEmit r, Member (State MethodCreationState) r) => ClassFileField -> JVMExpr -> Type -> Sem r ()
-addStaticFieldInitialiser (ClassFileField _ name fieldType _) e t = do
-    code <- generateInstructions e
+addStaticFieldInitialiser :: (InnerEmit r) => ClassFileField -> JVMExpr -> Sem r ()
+addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
+    code <- liftState $ generateInstructions e
+    CLInitState s <- get
     tell code
     cn <- ask @QualifiedClassName
     tell [PutStatic (ClassInfoType cn) name fieldType]
@@ -150,8 +131,8 @@ generateMainMethod m =
         )
         [ Code $
             CodeAttributeData
-                { maxStack = 10 -- TODO: calculate this
-                , maxLocals = 10 -- TODO: calculate this too
+                { maxStack = 1 -- TODO: calculate this
+                , maxLocals = 1 -- TODO: calculate this too
                 , code =
                     [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "elara.IO")
                     , InvokeVirtual (ClassInfoType "elara.IO") "run" (MethodDescriptor [] VoidReturn)

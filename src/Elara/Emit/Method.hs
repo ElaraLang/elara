@@ -16,14 +16,18 @@ import Polysemy.State (runState)
 This handles the calculation of messiness like max stack and locals
 -}
 createMethod :: (Monad m) => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
-createMethod descriptor@(MethodDescriptor args return_) name body = do
+createMethod descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args)
     (mcState, code) <-
         runM $
             runState initialState $
                 generateInstructions body
+    createMethodWith descriptor name mcState code
+
+createMethodWith :: (Monad m) => MethodDescriptor -> Text -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
+createMethodWith descriptor@(MethodDescriptor _ return_) name mcState code = do
     let maxStack = analyseMaxStack code
-    let maxLocals = mcState.maxLocalVariables
+    let maxLocals = 1 + mcState.maxLocalVariables
 
     addMethod $
         ClassFileMethod

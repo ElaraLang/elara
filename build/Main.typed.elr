@@ -19,10 +19,14 @@ let Main.main =
     let y_2  = ((Prelude.(+) : Integer ->
                                Integer ->
                                  Integer Main.x : Integer) : Integer ->
-                                                               Integer 1 : Integer) : Integer in (Prelude.println : Text ->
-                                                                                                                      IO Unit
-                                                                                                                          ((Prelude.toString : forall (a_3 : Type) .
-                                                                                                                                                 a_3 ->
-                                                                                                                                                   Text @Integer) : Text y_2 : Integer) : Text) : IO Unit
-                                                                                                                                                                                                      : IO Unit
+                                                               Integer 1 : Integer) : Integer in let z_3  = ((Prelude.(+) : Integer ->
+                                                                                                                            Integer ->
+                                                                                                                              Integer y_2 : Integer) : Integer ->
+                                                                                                                                                         Integer 1 : Integer) : Integer in (Prelude.println : Text ->
+                                                                                                                                                                                                                IO Unit
+                                                                                                                                                                                                                    ((Prelude.toString : forall (a_4 : Type) .
+                                                                                                                                                                                                                                           a_4 ->
+                                                                                                                                                                                                                                             Text @Integer) : Text z_3 : Integer) : Text) : IO Unit
+                                                                                                                                                                                                                                                                                                : IO Unit
+                                                                                                                                                                                                                                                                                                      : IO Unit
 

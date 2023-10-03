@@ -5,7 +5,7 @@ import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Unique
 import Elara.Emit.Operator
-import Elara.Emit.State (MethodCreationState (localVariables), findLocalVariable, withLocalVariableScope)
+import Elara.Emit.State (MethodCreationState, findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
@@ -17,7 +17,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r) => Expr JVMBinder -> Sem r [Instruction]
 generateInstructions (Var (JVMLocal 0)) = pure [ALoad0]
