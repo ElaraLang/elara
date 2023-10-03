@@ -6,4 +6,5 @@ Main.x : Int
     = Main.add2 1
 ; 
 Main.main : IO ()
-    = Prelude.println (Prelude.toString @Int Main.x) }
+    = let y_2 : Int
+        = Prelude.+ Main.x 1 in Prelude.println (Prelude.toString @Int y_2) }

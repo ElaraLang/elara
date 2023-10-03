@@ -7,6 +7,7 @@ import Data.Generics.Wrapped
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST
+import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
@@ -183,12 +184,12 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
-        AST.LetIn (Located _ vn) _ e1 e2 -> do
+        AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
             let isRecursive = False -- todo
             let ref = mkLocalRef (nameText <$> vn)
-            t' <- typeToCore t
+            t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
                     ( if isRecursive then Core.Recursive [(Core.Id ref t', e1')] else Core.NonRecursive (Core.Id ref t', e1')

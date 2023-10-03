@@ -7,8 +7,6 @@ import Elara.AST.Region (unlocated)
 import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
-import Elara.Lexer.Utils
-import Elara.Pipeline (finalisePipeline)
 import Polysemy
 import Polysemy.Error (runError)
 import Test.Hspec

@@ -1,0 +1,28 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+
+def Main.add2 : Integer -> Integer
+let Main.add2 =
+    (\ x_1 -> (((Prelude.(+) : Integer ->
+                               Integer ->
+                                 Integer x_1 : Integer) : Integer ->
+                                                            Integer 2 : Integer) : Integer)) : Integer ->
+                                                                                                 Integer
+
+def Main.x : Integer
+let Main.x =
+    (Main.add2 : Integer -> Integer 1 : Integer) : Integer
+
+def Main.main : IO Unit 
+let Main.main =
+    let y_2  = ((Prelude.(+) : Integer ->
+                               Integer ->
+                                 Integer Main.x : Integer) : Integer ->
+                                                               Integer 1 : Integer) : Integer in (Prelude.println : Text ->
+                                                                                                                      IO Unit
+                                                                                                                          ((Prelude.toString : forall (a_3 : Type) .
+                                                                                                                                                 a_3 ->
+                                                                                                                                                   Text @Integer) : Text y_2 : Integer) : Text) : IO Unit
+                                                                                                                                                                                                      : IO Unit
+
