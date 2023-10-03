@@ -35,6 +35,7 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
+import Print (debugPretty)
 import TODO (todo)
 
 data RenameError
@@ -515,11 +516,12 @@ desugarBlock (e@(Expr' (Let{})) :| []) = do
     throw (BlockEndsWithLet e (fmap (view (_Unwrapped . unlocated . the @"body")) decl))
 desugarBlock (e :| []) = renameExpr e
 desugarBlock (Expr (Located l (Let n p val), a) :| xs) = do
-    xs' <- desugarBlock (fromList xs)
+    val' <- renameExpr val
     a' <- (traverse (traverseOf (_Unwrapped . unlocated) (renameType False))) a
     n' <- uniquify n
-    modify (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n'))
-    val' <- renameExpr val
+
+    xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
+        desugarBlock (fromList xs)
     pure $ Expr (Located l (LetIn n' p val' xs'), a')
 desugarBlock xs = do
     let loc = spanningRegion' (xs <&> (^. _Unwrapped . _1 . sourceRegion))
