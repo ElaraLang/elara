@@ -1,8 +1,15 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 
+{- | Renaming stage of compilation
+This stage handles:
+1. Renaming all variables, types, and type variables, adding module qualification or unique suffixes to avoid name clashes
+2. Desugaring any "first-class" pattern matches into normal match expressions (eg '\[] -> 1' to '\x -> match x with [] -> 1')
+3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
+    Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
+-}
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, over, to, traverseOf, traverseOf_, (%~), (^.), (^..), _1, _2)
+import Control.Lens (Each (each), Getter, filteredBy, folded, over, to, traverseOf, traverseOf_, view, (%~), (^.), (^..), _1, _2)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
@@ -11,7 +18,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
+import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
@@ -21,8 +28,8 @@ import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
 import Elara.Pipeline
-import Error.Diagnose (Marker (This), Report (Err))
-import Polysemy (Members, Sem)
+import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
+import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, note, throw)
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
@@ -37,6 +44,7 @@ data RenameError
     | UnknownTypeVariable LowerAlphaName
     | UnknownName (Located Name)
     | NativeDefUnsupported (Located DesugaredDeclaration')
+    | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
     deriving (Show)
 
 instance Exception RenameError
@@ -85,6 +93,17 @@ instance ReportableError RenameError where
                 "Native definitions are not supported"
                 []
                 []
+    report (BlockEndsWithLet l decl) =
+        writeReport $
+            Err
+                Nothing
+                "Block ends with let"
+                ( (l ^. _Unwrapped . _1 . sourceRegion . to sourceRegionToDiagnosePosition, This "let occurs here")
+                    : maybe [] (\d -> [(d ^. _Unwrapped . sourceRegion . to sourceRegionToDiagnosePosition, Where "as part of this declaration")]) decl
+                )
+                [ Note "Blocks cannot end with let statements, as they are not expressions."
+                , Hint "Perhaps you meant to use a let ... in construct?"
+                ]
 
 data RenameState = RenameState
     { varNames :: Map VarName (VarRef VarName)
@@ -100,7 +119,12 @@ instance Semigroup RenameState where
 instance Monoid RenameState where
     mempty = RenameState mempty mempty mempty
 
-type RenamePipelineEffects = '[State RenameState, Error RenameError, Reader (TopologicalGraph (Module 'Desugared)), UniqueGen]
+type RenamePipelineEffects =
+    '[ State RenameState
+     , Error RenameError
+     , Reader (TopologicalGraph (Module 'Desugared))
+     , UniqueGen
+     ]
 
 type Rename r = Members RenamePipelineEffects r
 
@@ -265,20 +289,20 @@ isExposingAndExists m n =
     isExposition _ _ _ = False
 
 renameDeclaration :: (Rename r) => DesugaredDeclaration -> Sem r RenamedDeclaration
-renameDeclaration (Declaration ld) = Declaration <$> traverseOf unlocated renameDeclaration' ld
+renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated renameDeclaration' ld
   where
     renameDeclaration' :: (Rename r) => DesugaredDeclaration' -> Sem r RenamedDeclaration'
     renameDeclaration' fd = do
         -- qualify the name with the module name
         let name' = sequenceA (traverseOf unlocated (`Qualified` (fd ^. field' @"moduleName" . unlocated)) (fd ^. field' @"name"))
-        body' <- renameDeclarationBody (fd ^. field' @"body")
+        body' <- runReader (Just decl) $ renameDeclarationBody (fd ^. field' @"body")
 
         pure $ Declaration' (fd ^. field' @"moduleName") name' body'
 
-    renameDeclarationBody :: (Rename r) => DesugaredDeclarationBody -> Sem r RenamedDeclarationBody
+    renameDeclarationBody :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody -> Sem r RenamedDeclarationBody
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
 
-    renameDeclarationBody' :: (Rename r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
+    renameDeclarationBody' :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
     renameDeclarationBody' (Value val _ ty) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType True)) ty
         val' <- renameExpr val
@@ -335,7 +359,9 @@ renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 . _Unw
 renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped . unlocated) (renameType antv)) ts
 renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t
 
-renameExpr :: (Rename r) => DesugaredExpr -> Sem r RenamedExpr
+renameExpr :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredExpr -> Sem r RenamedExpr
+renameExpr (Expr' (Block es)) = desugarBlock es
+renameExpr e@(Expr' (Let{})) = desugarBlock (e :| [])
 renameExpr (Expr le) =
     Expr
         <$> bitraverse
@@ -343,7 +369,6 @@ renameExpr (Expr le) =
             (traverse (traverseOf (_Unwrapped . unlocated) (renameType False)))
             le
   where
-    renameExpr' :: (Rename r) => DesugaredExpr' -> Sem r RenamedExpr'
     renameExpr' (Int i) = pure $ Int i
     renameExpr' (Float i) = pure $ Float i
     renameExpr' (String i) = pure $ String i
@@ -371,11 +396,6 @@ renameExpr (Expr le) =
         right' <- renameExpr right
         pure $ BinaryOperator (op', left', right')
     renameExpr' (List es) = List <$> traverse renameExpr es
-    renameExpr' (Let vn _ e) = do
-        vn' <- uniquify vn
-        modify (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local vn'))
-        exp' <- renameExpr e
-        pure $ Let vn' NoFieldValue exp'
     renameExpr' (LetIn vn _ e body) = do
         vn' <- uniquify vn
         withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local vn')) $ do
@@ -386,8 +406,9 @@ renameExpr (Expr le) =
         e' <- renameExpr e
         cases' <- traverse (bitraverse renamePattern renameExpr) cases
         pure $ Match e' cases'
-    renameExpr' (Block es) = Block <$> traverse renameExpr es
     renameExpr' (Tuple es) = Tuple <$> traverse renameExpr es
+    renameExpr' (Let{}) = error "renameExpr': Let should be handled by renameExpr"
+    renameExpr' (Block{}) = error "renameExpr': Block should be handled by renameExpr"
 
 renameBinaryOperator :: (Rename r) => DesugaredBinaryOperator -> Sem r RenamedBinaryOperator
 renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unlocated renameBinaryOperator' op
@@ -455,7 +476,7 @@ patternToVarName (Pattern (Located _ p, _)) =
             ConsPattern _ _ -> mn "cons"
             UnitPattern -> "unit"
 
-patternToMatch :: (Rename r) => DesugaredPattern -> DesugaredExpr -> Sem r (Located (Unique VarName), RenamedExpr)
+patternToMatch :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r (Located (Unique VarName), RenamedExpr)
 -- Special case, no match needed
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
@@ -483,7 +504,24 @@ This is a little bit special because patterns have to be converted to match expr
 For example,
  @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
-renameLambda :: (Rename r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
+renameLambda :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
 renameLambda p e = do
     (arg, match) <- patternToMatch p e
     pure (Lambda arg match)
+
+desugarBlock :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => NonEmpty DesugaredExpr -> Sem r RenamedExpr
+desugarBlock (e@(Expr' (Let{})) :| []) = do
+    decl <- ask @(Maybe DesugaredDeclaration)
+    throw (BlockEndsWithLet e (fmap (view (_Unwrapped . unlocated . the @"body")) decl))
+desugarBlock (e :| []) = renameExpr e
+desugarBlock (Expr (Located l (Let n p val), a) :| xs) = do
+    xs' <- desugarBlock (fromList xs)
+    a' <- (traverse (traverseOf (_Unwrapped . unlocated) (renameType False))) a
+    n' <- uniquify n
+    modify (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n'))
+    val' <- renameExpr val
+    pure $ Expr (Located l (LetIn n' p val' xs'), a')
+desugarBlock xs = do
+    let loc = spanningRegion' (xs <&> (^. _Unwrapped . _1 . sourceRegion))
+    xs' <- traverse renameExpr xs
+    pure $ Expr (Located loc (Block xs'), Nothing)

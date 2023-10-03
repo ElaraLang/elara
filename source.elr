@@ -4,4 +4,5 @@ let add2 = \x -> x + 2
 
 let x = add2 1
 
-let main = println (toString x)
+let main = 
+    let f = 3

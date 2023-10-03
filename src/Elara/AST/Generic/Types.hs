@@ -5,11 +5,13 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE IncoherentInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RoleAnnotations #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Elara.AST.Generic.Types (
@@ -38,14 +40,18 @@ module Elara.AST.Generic.Types (
     coerceType,
     coerceType',
     coerceTypeDeclaration,
+    pattern Expr',
 )
 where
 
-import Control.Lens (view)
+import Control.Lens (view, _1, _2)
+import Data.Generics.Internal.Wrapped
+import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Select (LocatedAST, UnlocatedAST)
+import GHC.Generics
 import GHC.TypeLits
 import Prelude hiding (group)
 
@@ -90,6 +96,14 @@ data Expr' (ast :: a)
 
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
     deriving (Generic, Typeable)
+
+pattern Expr' ::
+    forall astK (ast :: astK).
+    ( RUnlocate ast
+    ) =>
+    Expr' ast ->
+    Expr ast
+pattern Expr' e' <- Expr (rUnlocate @astK @ast -> e', _)
 
 typeOf :: forall ast. Expr ast -> Select "ExprType" ast
 typeOf (Expr (_, t)) = t
