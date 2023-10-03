@@ -5,6 +5,7 @@ module Elara.Lexer.Utils where
 
 import Codec.Binary.UTF8.String (encodeChar)
 import Control.Lens (makeLenses, to, view, (^.))
+import Data.Char
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
@@ -231,6 +232,9 @@ Examples:
 
 >>> splitQualName "Prelude..+"
 (ModuleName ("Prelude" :| []),".+")
+
+>>> splitQualName "A.!."
+(ModuleName ("A" :| []),"!.")
 -}
 splitQualName :: Text -> (ModuleName, Text)
 splitQualName t = do
@@ -244,7 +248,9 @@ splitQualName t = do
             -- >>> ["Prelude", "", "+"] = ("Prelude", ".+")
             -- >>> ["Prelude", "T"] = ("Prelude", "T")
             -- >>> ["Prelude", "T", ""] = ("Prelude.T", ".")
-            let (modPart, namePart) = span (not . T.null) (fromList xs)
+            -- >>> ["A", "!", ""] = ("A", "!.")
+            let isAlphaNumeric = T.all (\c -> isAlpha c || isDigit c)
+                (modPart, namePart) = span (liftA2 (&&) (isAlphaNumeric) (not . T.null)) (fromList xs)
              in if null namePart
                     then -- TODO: this isn't very efficient
                         (ModuleName $ fromList (init (fromList modPart)), last (fromList modPart))

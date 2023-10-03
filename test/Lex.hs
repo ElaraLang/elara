@@ -3,6 +3,7 @@ module Lex where
 import Arbitrary.Literals
 import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Common
+import Elara.AST.Name (ModuleName (..))
 import Elara.Lexer.Token
 import Lex.Common
 import Lex.Indents qualified as Indents
@@ -179,6 +180,7 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL "<$-" <=> [TokenOperatorIdentifier "<$-"]
         lexUL "+--" <=> [TokenOperatorIdentifier "+--"]
         lexUL ".=" <=> [TokenOperatorIdentifier ".="]
+        lexUL "A.!." <=> [TokenQOperatorIdentifier (ModuleName (pure "A"), "!.")]
 
     it "Lexes arbitrary operator identifiers" $ hedgehog $ do
         i <- forAll genOpText

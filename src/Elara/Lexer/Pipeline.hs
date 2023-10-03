@@ -3,11 +3,8 @@
 module Elara.Lexer.Pipeline where
 
 import Elara.Error (runErrorOrReport)
-import Elara.Lexer.Reader (readTokens, readTokensWith)
-import Elara.Lexer.Token (Lexeme)
-import Elara.Lexer.Utils (LexerError, initialState)
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline, PipelineResultEff)
-import Elara.ReadFile
+import Elara.Lexer.Utils (LexerError)
+import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Polysemy
 import Polysemy.Error
 

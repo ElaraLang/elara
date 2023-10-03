@@ -1,2 +1,9 @@
 module Main
-{ Main.x : Int     = 3 }
+{ Main.add2 : Int -> Int
+    = \ (x_1 : Int) -> Prelude.+ x_1 2
+; 
+Main.x : Int
+    = Main.add2 1
+; 
+Main.main : IO ()
+    = Prelude.println (Prelude.toString @Int Main.x) }
