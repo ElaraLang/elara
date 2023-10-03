@@ -22,6 +22,7 @@ import Elara.Rename (RenameState (..), renameExpr, runRenamePipeline)
 import Elara.Shunt (Associativity (..), OpInfo (OpInfo), OpTable, fixExpr, mkPrecedence, runShuntPipeline)
 import Hedgehog hiding (Var)
 import Orphans ()
+import Polysemy.Reader (runReader)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 
@@ -32,7 +33,7 @@ loadExpr source = finalisePipeline . runShuntPipeline fakeOperatorTable . runRen
     parsed <- parsePipeline exprParser fp tokens
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
-    renamed <- renameExpr desugared
+    renamed <- runReader Nothing $ renameExpr desugared
     fixExpr renamed
 
 mkFakeVar :: OpName -> VarRef VarName
