@@ -44,8 +44,7 @@ module Elara.AST.Generic.Types (
 )
 where
 
-import Control.Lens (view, _1, _2)
-import Data.Generics.Wrapped
+import Control.Lens (view)
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Region (Located, unlocated)
