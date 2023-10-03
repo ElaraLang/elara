@@ -7,4 +7,5 @@ Main.x : Int
 ; 
 Main.main : IO ()
     = let y_2 : Int
-        = Prelude.+ Main.x 1 in Prelude.println (Prelude.toString @Int y_2) }
+        = Prelude.+ Main.x 1 in let z_3 : Int
+        = Prelude.+ y_2 1 in Prelude.println (Prelude.toString @Int z_3) }
