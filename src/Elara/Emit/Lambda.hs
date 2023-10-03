@@ -3,10 +3,10 @@ module Elara.Emit.Lambda where
 
 import Data.Hashable (hash)
 import Data.Map qualified as M
-import Elara.AST.Name (VarName)
 import Elara.Core
 import Elara.Data.Unique
 import Elara.Emit.Method
+import Elara.Emit.Var
 import JVM.Data.Abstract.Builder (ClassBuilder, addMethod)
 import JVM.Data.Abstract.ClassFile.Method (ClassFileMethod (ClassFileMethod))
 import JVM.Data.Abstract.ConstantPool (BootstrapArgument (BMMethodArg, BMMethodHandleArg), BootstrapMethod (BootstrapMethod), MethodHandleEntry (..), MethodRef (MethodRef))
@@ -29,13 +29,13 @@ This involves a few steps:
 2. Creates a bootstrap method that calls the LambdaMetaFactory to create the lambda
 3. Returns an invokedynamic instruction that calls the bootstrap method
 -}
-createLambda :: [(Unique Text, FieldType)] -> FieldType -> QualifiedClassName -> CoreExpr -> ClassBuilder Instruction
+createLambda :: [(Unique Text, FieldType)] -> FieldType -> QualifiedClassName -> JVMExpr -> ClassBuilder Instruction
 createLambda params returnType thisClassName body = do
     let lambdaMethodName = "lambda$" <> show (hash body)
     let lambdaDescriptor = (params, returnType)
     let lambdaMethodDescriptor = MethodDescriptor (snd <$> fst lambdaDescriptor) (TypeReturn $ snd lambdaDescriptor)
 
-    createMethod lambdaDescriptor lambdaMethodName body
+    createMethod lambdaMethodDescriptor lambdaMethodName body
     let (functionalInterface, invoke, methodDescriptor) =
             fromMaybe (error "No functional interface for lambda") $
                 M.lookup (map snd params, Just returnType) functionalInterfaces

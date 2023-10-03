@@ -6,7 +6,6 @@ module Elara.Emit.Var where
 
 import Control.Lens (transform)
 import Data.Data (Data)
-import Elara.AST.Name
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
@@ -16,7 +15,9 @@ import Elara.Data.Pretty
 data JVMBinder
     = JVMLocal Int
     | Normal Var
-    deriving (Eq, Show, Data)
+    deriving (Eq, Show, Data, Generic)
+
+instance Hashable JVMBinder
 
 instance PrettyVar JVMBinder where
     prettyVar t p (Normal v) = prettyVar t p v
@@ -45,9 +46,10 @@ removing the need for allocating redundant closures.
 
 This function handles the transform, and renaming of Elara variables to @JVMBinder@s where applicable.
 -}
-transformTopLevelLambdas :: (Monad m) => CoreExpr -> m JVMExpr
-transformTopLevelLambdas (Core.Lam p1 x) = do
-    let e = toJVMExpr x
-    pure $ replaceVar (Normal p1) (JVMLocal 0) e
--- TODO more lambdas
-transformTopLevelLambdas x = pure $ toJVMExpr x
+transformTopLevelLambdas :: CoreExpr -> JVMExpr
+transformTopLevelLambdas = go 0
+  where
+    go c (Core.Lam p1 x) = do
+        let e = go (c + 1) x
+        replaceVar (Normal p1) (JVMLocal c) e
+    go _ x = toJVMExpr x

@@ -15,7 +15,9 @@ import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Emit.Expr
+import Elara.Emit.Method (createMethod)
 import Elara.Emit.Operator (translateOperatorName)
+import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, stringCon)
@@ -31,19 +33,31 @@ import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Reader
+import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
 import Print (showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 
-type InnerEmit a =
-    Sem
+type InnerEmit r =
+    Members
         '[ Writer [Instruction] -- <clinit> instructions
          , Reader JVMVersion
          , Reader QualifiedClassName
          , Embed ClassBuilder
+         , State CLInitState
          ]
-        a
+        r
+
+newtype CLInitState = CLInitState MethodCreationState
+
+liftState :: (Member (State CLInitState) r) => Sem (State MethodCreationState : r) a -> Sem r a
+liftState = interpret $ \case
+    Get -> do
+        CLInitState s <- get
+        pure s
+    Put s -> do
+        put $ CLInitState s
 
 emitGraph :: forall r. (Emit r) => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
@@ -60,6 +74,7 @@ emitModule m = do
                 . runM
                 . runReader name
                 . runReader version
+                . runState (CLInitState initialMethodCreationState)
 
     let (_, clazz) = runInnerEmit $ do
             (clinit, _) <- runWriter @[Instruction] $ do
@@ -83,9 +98,9 @@ addClinit code = do
                 (MethodDescriptor [] VoidReturn)
                 [Code $ CodeAttributeData 255 255 (code <> [Return]) [] []]
 
-generateCodeAttribute :: JVMExpr -> Maybe Type -> ([Instruction] -> [Instruction]) -> InnerEmit MethodAttribute
-generateCodeAttribute e expected codeMod = do
-    code <- codeMod <$> embed (generateInstructions e)
+generateCodeAttribute :: (Member (State MethodCreationState) r) => JVMExpr -> ([Instruction] -> [Instruction]) -> Sem r MethodAttribute
+generateCodeAttribute e codeMod = do
+    code <- codeMod <$> (generateInstructions e)
     pure $
         Code $
             CodeAttributeData
@@ -96,7 +111,7 @@ generateCodeAttribute e expected codeMod = do
                 , codeAttributes = []
                 }
 
-addDeclaration :: CoreDeclaration -> InnerEmit ()
+addDeclaration :: (InnerEmit r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
     CoreValue (NonRecursive (Id name type', e)) -> do
         let declName = translateOperatorName $ runIdentity (varRefVal name)
@@ -104,28 +119,21 @@ addDeclaration declBody = case declBody of
             then do
                 let field = ClassFileField [FPublic, FStatic] declName (generateFieldType type') []
                 embed $ addField field
-                e' <- transformTopLevelLambdas e
-                addStaticFieldInitialiser field e' type'
+                let e' = transformTopLevelLambdas e
+                liftState $ addStaticFieldInitialiser field e' type'
             else do
-                let descriptor@(MethodDescriptor _ returnType) = generateMethodDescriptor type'
-                y <- transformTopLevelLambdas e
-                code <- generateCodeAttribute y (Just type') (if returnType == VoidReturn then (<> [Return]) else (<> [AReturn]))
-                embed $
-                    addMethod $
-                        ClassFileMethod
-                            [MPublic, MStatic]
-                            declName
-                            descriptor
-                            [code]
+                let descriptor = generateMethodDescriptor type'
+                let y = transformTopLevelLambdas e
+                embed $ createMethod descriptor declName y
     e -> error (showPretty e)
 
 isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: ClassFileField -> JVMExpr -> Type -> InnerEmit ()
+addStaticFieldInitialiser :: (InnerEmit r, Member (State MethodCreationState) r) => ClassFileField -> JVMExpr -> Type -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e t = do
-    code <- embed $ generateInstructions e
+    code <- generateInstructions e
     tell code
     cn <- ask @QualifiedClassName
     tell [PutStatic (ClassInfoType cn) name fieldType]

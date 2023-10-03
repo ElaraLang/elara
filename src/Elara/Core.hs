@@ -13,7 +13,7 @@ data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
     , tvKind :: ElaraKind
     }
-    deriving (Show, Eq, Data, Generic)
+    deriving (Show, Eq, Data, Ord, Generic)
 
 data Var
     = TyVar TypeVariable
@@ -21,7 +21,7 @@ data Var
         { idVarName :: UnlocatedVarRef Text
         , idVarType :: Type
         }
-    deriving (Show, Data, Eq, Generic)
+    deriving (Show, Data, Eq, Ord, Generic)
 
 data Expr b
     = Var b
@@ -79,7 +79,7 @@ data Type
     | -- | A type constructor
       ConTy (Qualified Text)
     | ForAllTy TypeVariable Type
-    deriving (Show, Eq, Data, Generic)
+    deriving (Show, Eq, Data, Ord, Generic)
 
 -- | The arity of a function type
 typeArity :: Type -> Int

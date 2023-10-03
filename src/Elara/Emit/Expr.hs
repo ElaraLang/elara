@@ -5,18 +5,21 @@ import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Unique
 import Elara.Emit.Operator
+import Elara.Emit.State (MethodCreationState (localVariables), findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.Utils (uncurry3)
-import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type hiding (Int)
 import JVM.Data.Abstract.Type qualified as JVM
-import Print (showPretty)
+import JVM.Data.Raw.Types
+import Polysemy
+import Polysemy.State
+import Print (debugPretty, showPretty)
 
-generateInstructions :: (HasCallStack, Monad m) => Expr JVMBinder -> ClassBuilderT m [Instruction]
+generateInstructions :: (HasCallStack, Member (State MethodCreationState) r) => Expr JVMBinder -> Sem r [Instruction]
 generateInstructions (Var (JVMLocal 0)) = pure [ALoad0]
 generateInstructions (Var (JVMLocal 1)) = pure [ALoad1]
 generateInstructions (Var (JVMLocal 2)) = pure [ALoad2]
@@ -35,8 +38,22 @@ generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) =
             (translateOperatorName n)
             (generateFieldType t)
         ]
+generateInstructions (Var v) = do
+    idx <- localVariableId v
+    pure [ALoad idx]
 generateInstructions (App f x) = generateAppInstructions f x
+generateInstructions (Let (NonRecursive (n, val)) b) = withLocalVariableScope $ do
+    idx <- localVariableId n
+    valInsts <- generateInstructions val
+    bInsts <- generateInstructions b
+
+    pure $ valInsts <> [AStore idx] <> bInsts
 generateInstructions other = error $ "Not implemented: " <> showPretty other
+
+localVariableId :: (Member (State MethodCreationState) r) => JVMBinder -> Sem r U1
+localVariableId (JVMLocal i) = pure (fromIntegral i)
+localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
+localVariableId other = error $ "Not a local variable: " <> showPretty other
 
 approximateTypeAndNameOf :: Expr JVMBinder -> (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t))) = (n, t)
@@ -49,7 +66,7 @@ This function performs arity "analysis" to avoid redundant currying when a funct
 For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying is necessary,
   but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
 -}
-generateAppInstructions :: (Monad m) => JVMExpr -> JVMExpr -> ClassBuilderT m [Instruction]
+generateAppInstructions :: (Member (State MethodCreationState) r) => JVMExpr -> JVMExpr -> Sem r [Instruction]
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     let (fName, fType) = approximateTypeAndNameOf f'
@@ -73,9 +90,9 @@ invokeStaticVars (Global' (Qualified fName mn)) fType =
     , translateOperatorName fName
     , generateMethodDescriptor fType
     )
-invokeStaticVars (Local' (Unique' fn)) fType = _
+invokeStaticVars (Local' (Unique' fn)) fType = undefined
 
-generateLitInstructions :: (Monad m) => Literal -> ClassBuilderT m [Instruction]
+generateLitInstructions :: (Monad m) => Literal -> m [Instruction]
 generateLitInstructions (String s) =
     pure
         [ LDC (LDCString s)
@@ -87,7 +104,7 @@ generateLitInstructions (Int i) =
         ]
 generateLitInstructions other = error $ "Not implemented: " <> showPretty other
 
-generatePrimInstructions :: (Monad m) => Text -> ClassBuilderT m [Instruction]
+generatePrimInstructions :: (Monad m) => Text -> m [Instruction]
 generatePrimInstructions "println" =
     pure
         [ ALoad0

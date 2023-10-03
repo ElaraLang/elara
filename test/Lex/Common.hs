@@ -8,7 +8,6 @@ import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Polysemy
-import Polysemy.Error (runError)
 import Test.Hspec
 
 lex' :: Text -> [Lexeme]
