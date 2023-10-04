@@ -1335,6 +1335,18 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
         pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
+    Syntax.If cond then_ else_ -> do
+        cond' <- check cond Type.Scalar{scalar = Monotype.Bool, ..}
+
+        then' <- infer then_
+
+        _Γ <- get
+
+        let _L1 = Context.solveType _Γ (Syntax.typeOf then')
+
+        else' <- check else_ _L1
+
+        pure $ Expr (Located location (If cond' (then') else'), _L1)
     other -> error $ "infer: " <> showPretty other
 
 -- -- Anno
@@ -1459,19 +1471,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 --         }
 
 --     return Type.UnsolvedType{ location = fieldLocation, ..}
-
--- Syntax.If{..} -> do
---     check predicate Type.Scalar{ scalar = Monotype.Bool, .. }
-
---     _L0 <- infer ifTrue
-
---     _Γ  <- get
-
---     let _L1 = Context.solveType _Γ _L0
-
---     check ifFalse _L1
-
---     return _L1
 
 -- -- All the type inference rules for scalars go here.  This part is
 -- -- pretty self-explanatory: a scalar literal returns the matching

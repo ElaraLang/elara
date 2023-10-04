@@ -29,6 +29,9 @@ stringName = TypeName "String"
 intName :: TypeName
 intName = TypeName "Int"
 
+boolName :: TypeName
+boolName = TypeName "Bool"
+
 charName :: TypeName
 charName = TypeName "Char"
 
@@ -51,7 +54,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName]
+primitiveTypes = [stringName, charName, intName, boolName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
@@ -71,6 +74,9 @@ primitiveTCContext = do
             , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName charName)))
                 (Scalar primRegion Char)
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName boolName)))
+                (Scalar primRegion Bool)
             , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
                 (Custom primRegion "IO" [])

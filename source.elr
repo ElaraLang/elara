@@ -1,10 +1,8 @@
 import Prelude 
 
-let add2 = \x -> x + 2
-
-let x = add2 1
+let fact n =
+    if n == 0 then 1 else n * fact (n - 1)
 
 let main = 
-    let y = x + 1
-    let z = y + 1
-    println (toString z)
+    let x = fact 5
+    println x
