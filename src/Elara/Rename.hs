@@ -519,7 +519,6 @@ desugarBlock (Expr (Located l (Let n p val), a) :| xs) = do
     val' <- renameExpr val
     a' <- (traverse (traverseOf (_Unwrapped . unlocated) (renameType False))) a
     n' <- uniquify n
-
     xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
         desugarBlock (fromList xs)
     pure $ Expr (Located l (LetIn n' p val' xs'), a')
