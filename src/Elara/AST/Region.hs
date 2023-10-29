@@ -159,7 +159,7 @@ merge fn l1 l2 =
 {- | Get the region that contains both of the given regions.
 This function will throw an error if the regions are in different files.
 -}
-enclosingRegion :: (HasCallStack) => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
+enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
 enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
 
@@ -167,7 +167,7 @@ enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion 
 This function will throw an error if the regions are in different files.
 If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
-enclosingRegion' :: (HasCallStack) => SourceRegion -> SourceRegion -> SourceRegion
+enclosingRegion' :: HasCallStack => SourceRegion -> SourceRegion -> SourceRegion
 enclosingRegion' a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
 enclosingRegion' (GeneratedRegion fp) _ = GeneratedRegion fp
 enclosingRegion' _ (GeneratedRegion fp) = GeneratedRegion fp
@@ -205,16 +205,16 @@ instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
     Located region f <*> Located region' x = Located (region <> region') (f x)
 
-instance (Pretty a) => Pretty (Located a) where
+instance Pretty a => Pretty (Located a) where
     pretty (Located _ x) = pretty x
 
-instance (Eq a) => Eq (IgnoreLocation a) where
+instance Eq a => Eq (IgnoreLocation a) where
     IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
 
-instance (Ord a) => Ord (IgnoreLocation a) where
+instance Ord a => Ord (IgnoreLocation a) where
     IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
 
-instance (Show a) => Show (IgnoreLocation a) where
+instance Show a => Show (IgnoreLocation a) where
     show (IgnoreLocation (Located _ a)) = Text.Show.show a
 
 instance Pretty SourceRegion where
@@ -225,7 +225,7 @@ instance Pretty SourceRegion where
 instance Pretty RealPosition where
     pretty (Position ln cn) = pretty ln <> ":" <> pretty cn
 
-instance (ToJSON s) => ToJSON (Located s)
+instance ToJSON s => ToJSON (Located s)
 
 instance ToJSON SourceRegion
 

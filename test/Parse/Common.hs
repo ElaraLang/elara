@@ -29,17 +29,17 @@ lexAndParse parser source = do
     tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
     pure $ run $ runParsePipelinePure $ parsePipeline parser fp tokens
 
-shouldParsePattern :: (MonadTest m) => Text -> Pattern 'UnlocatedFrontend -> m ()
+shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = withFrozenCallStack $ do
     parsed <- lexAndParse patParser source >>= evalEitherParseError
     diff (stripLocation parsed) (==) expected
 
-shouldParseExpr :: (MonadTest m) => Text -> Expr 'UnlocatedFrontend -> m ()
+shouldParseExpr :: MonadTest m => Text -> Expr 'UnlocatedFrontend -> m ()
 shouldParseExpr source expected = withFrozenCallStack $ do
     parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError
     diff (stripLocation parsed) (==) expected
 
-shouldFailToParse :: (MonadTest m) => Text -> m ()
+shouldFailToParse :: MonadTest m => Text -> m ()
 shouldFailToParse source = withFrozenCallStack $ do
     parsed <- lexAndParse (patParser <* eof) source
     case parsed of

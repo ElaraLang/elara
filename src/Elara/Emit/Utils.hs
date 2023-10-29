@@ -11,7 +11,7 @@ import JVM.Data.Abstract.Type
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
-generateMethodDescriptor :: (HasCallStack) => Type -> MethodDescriptor
+generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor
 generateMethodDescriptor (ForAllTy _ t) = generateMethodDescriptor t
 generateMethodDescriptor f@(FuncTy _ _) = do
     -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)

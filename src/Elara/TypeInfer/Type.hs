@@ -113,7 +113,7 @@ data Type s
 instance (Show c, ToJSON c) => ToJSON (Type c) where
     toJSON s = String (showPrettyUnannotated s)
 
-instance (Show s) => Pretty (Type s) where
+instance Show s => Pretty (Type s) where
     pretty = prettyQuantifiedType
 
 instance Plated (Type s) where
@@ -163,7 +163,7 @@ data Record s = Fields [(UniqueTyVar, Type s)] RemainingFields
 
 instance (Show s, ToJSON s) => ToJSON (Record s)
 
-instance (Show s) => Pretty (Record s) where
+instance Show s => Pretty (Record s) where
     pretty = prettyRecordType
 
 -- | A potentially polymorphic union type
@@ -172,7 +172,7 @@ data Union s = Alternatives [(UniqueTyVar, Type s)] RemainingAlternatives
 
 instance (Show s, ToJSON s) => ToJSON (Union s)
 
-instance (Show s) => Pretty (Union s) where
+instance Show s => Pretty (Union s) where
     pretty = prettyUnionType
 
 {- | This function should not be exported or generally used because it does not
@@ -447,10 +447,10 @@ data PreviousQuantifier
     | ExistsQuantifier
     deriving (Eq)
 
-instance (StripLocation a b) => StripLocation (Type a) (Type b) where
+instance StripLocation a b => StripLocation (Type a) (Type b) where
     stripLocation = fmap (stripLocation @a @b)
 
-prettyQuantifiedType :: (Show s) => Type s -> Doc AnsiStyle
+prettyQuantifiedType :: Show s => Type s -> Doc AnsiStyle
 prettyQuantifiedType type0
     | isQuantified type0 = Pretty.group (Pretty.flatAlt long short)
     | otherwise = prettyFunctionType type0
@@ -531,7 +531,7 @@ prettyQuantifiedType type0
     prettyLong _A =
         "  " <> prettyFunctionType _A
 
-prettyFunctionType :: (Show s) => Type s -> Doc AnsiStyle
+prettyFunctionType :: Show s => Type s -> Doc AnsiStyle
 prettyFunctionType type_@Function{} = Pretty.group (Pretty.flatAlt long short)
   where
     long = Pretty.align (prettyLong type_)
@@ -558,7 +558,7 @@ prettyFunctionType type_@Function{} = Pretty.group (Pretty.flatAlt long short)
 prettyFunctionType other =
     prettyApplicationType other
 
-prettyApplicationType :: (Show s) => Type s -> Doc AnsiStyle
+prettyApplicationType :: Show s => Type s -> Doc AnsiStyle
 prettyApplicationType Optional{..} = Pretty.group (Pretty.flatAlt long short)
   where
     short = builtin "Optional" <> " " <> prettyPrimitiveType type_
@@ -584,7 +584,7 @@ prettyApplicationType List{..} = Pretty.group (Pretty.flatAlt long short)
 prettyApplicationType other =
     prettyPrimitiveType other
 
-prettyPrimitiveType :: (Show s) => Type s -> Doc AnsiStyle
+prettyPrimitiveType :: Show s => Type s -> Doc AnsiStyle
 prettyPrimitiveType VariableType{..} =
     label (pretty name)
 prettyPrimitiveType UnsolvedType{..} =
@@ -639,7 +639,7 @@ prettyPrimitiveType other =
                 <> punctuation ")"
             )
 
-prettyRecordType :: (Show s) => Record s -> Doc AnsiStyle
+prettyRecordType :: Show s => Record s -> Doc AnsiStyle
 prettyRecordType (Fields [] fields) =
     punctuation "{"
         <> ( case fields of
@@ -690,14 +690,14 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
                             <> punctuation "}"
             )
 
-    prettyShortFieldType :: (Show s) => (UniqueTyVar, Type s) -> Doc AnsiStyle
+    prettyShortFieldType :: Show s => (UniqueTyVar, Type s) -> Doc AnsiStyle
     prettyShortFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
             <> " "
             <> prettyQuantifiedType type_
 
-    prettyLongFieldType :: (Show s) => (UniqueTyVar, Type s) -> Doc AnsiStyle
+    prettyLongFieldType :: Show s => (UniqueTyVar, Type s) -> Doc AnsiStyle
     prettyLongFieldType (key, type_) =
         prettyRecordLabel False key
             <> operator ":"
@@ -705,7 +705,7 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
             <> prettyQuantifiedType type_
             <> Pretty.hardline
 
-prettyUnionType :: (Show s) => Union s -> Doc AnsiStyle
+prettyUnionType :: Show s => Union s -> Doc AnsiStyle
 prettyUnionType (Alternatives [] alternatives) =
     punctuation "<"
         <> ( case alternatives of

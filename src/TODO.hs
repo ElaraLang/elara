@@ -5,5 +5,5 @@ module TODO where
 type TODO = Void
 
 {-# WARNING todo "TODO" #-}
-todo :: (HasCallStack) => a
+todo :: HasCallStack => a
 todo = error "TODO"

@@ -31,8 +31,8 @@ instance Pretty CoreModule where
     pretty (CoreModule name decls) =
         "module"
             <+> pretty name
-                <> hardline
-                <> nest indentDepth (bracedBlock decls)
+            <> hardline
+            <> nest indentDepth (bracedBlock decls)
 
 instance Pretty CoreDeclaration where
     pretty (CoreValue v) = prettyVdefg v

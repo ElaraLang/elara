@@ -30,7 +30,7 @@ pattern Global' n = Global (Identity n)
 pattern Local' :: Unique n -> VarRef' Identity n
 pattern Local' n = Local (Identity n)
 
-varRefVal :: (Functor c) => VarRef' c n -> c n
+varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
 
@@ -38,29 +38,29 @@ varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
 varRefVal' f (Global n) = let n' = traverse (traverse f) n in Global <$> n'
 varRefVal' f (Local n) = let n' = traverse (traverse f) n in Local <$> n'
 
-mkLocal :: (ToName n) => Located (Unique n) -> VarRef Name
+mkLocal :: ToName n => Located (Unique n) -> VarRef Name
 mkLocal n = Local (toName <<$>> n)
 
-mkLocal' :: (ToName n) => Located (Unique n) -> IgnoreLocVarRef Name
+mkLocal' :: ToName n => Located (Unique n) -> IgnoreLocVarRef Name
 mkLocal' n = Local (toName <<$>> IgnoreLocation n)
 
-mkGlobal :: (ToName n) => Located (Qualified n) -> VarRef Name
+mkGlobal :: ToName n => Located (Qualified n) -> VarRef Name
 mkGlobal n = Global (toName <<$>> n)
 
-mkGlobal' :: (ToName n) => Located (Qualified n) -> IgnoreLocVarRef Name
+mkGlobal' :: ToName n => Located (Qualified n) -> IgnoreLocVarRef Name
 mkGlobal' n = Global (toName <<$>> IgnoreLocation n)
 
-mkGlobalUnlocated :: (ToName n) => Qualified n -> UnlocatedVarRef Name
+mkGlobalUnlocated :: ToName n => Qualified n -> UnlocatedVarRef Name
 mkGlobalUnlocated n = Global (Identity (toName <$> n))
 
-mkLocalUnlocated :: (ToName n) => Unique n -> UnlocatedVarRef Name
+mkLocalUnlocated :: ToName n => Unique n -> UnlocatedVarRef Name
 mkLocalUnlocated n = Local (Identity (toName <$> n))
 
-withName :: (ToName n) => VarRef n -> VarRef Name
+withName :: ToName n => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)
 withName (Local n) = Local (toName <<$>> n)
 
-withName' :: (ToName n) => VarRef n -> IgnoreLocVarRef Name
+withName' :: ToName n => VarRef n -> IgnoreLocVarRef Name
 withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
 withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 

@@ -130,7 +130,7 @@ data Entry s
       MarkerAlternatives (Existential Monotype.Union)
     deriving stock (Eq, Show, Ord)
 
-instance (Show s) => Pretty (Entry s) where
+instance Show s => Pretty (Entry s) where
     pretty = prettyEntry
 
 {- | A `Context` is an ordered list of `Entry`s
@@ -162,7 +162,7 @@ instance (Show s) => Pretty (Entry s) where
 -}
 type Context s = [Entry s]
 
-prettyEntry :: (Show s) => Entry s -> Doc AnsiStyle
+prettyEntry :: Show s => Entry s -> Doc AnsiStyle
 prettyEntry (Variable domain a) =
     label (pretty a) <> operator ":" <> " " <> pretty domain
 prettyEntry (UnsolvedType a) =
@@ -290,7 +290,7 @@ solveUnion context oldAlternatives = newAlternatives
 
    * Adding universal quantifiers for all unsolved entries in the `Context`
 -}
-complete :: (Member UniqueGen r) => Context s -> Type s -> Sem r (Type s)
+complete :: Member UniqueGen r => Context s -> Type s -> Sem r (Type s)
 complete context type0 = Monad.foldM snoc type0 context
   where
     snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
@@ -414,7 +414,7 @@ lookup x0 (Annotation x1 _A : _Γ) = if x0 == x1 then Just _A else lookup x0 _Γ
 lookup x (_ : _Γ) = lookup x _Γ
 
 -- | Discard all entries from a `Context` up to and including the given `Entry`
-discardUpTo :: (Eq s) => Entry s -> Context s -> Context s
+discardUpTo :: Eq s => Entry s -> Context s -> Context s
 discardUpTo entry0 (entry1 : _Γ)
     | entry0 == entry1 = _Γ
     | otherwise = discardUpTo entry0 _Γ

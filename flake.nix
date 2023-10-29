@@ -51,7 +51,7 @@
 
             fourmolu.check = false;
 
-            
+
             diagnose = {
               extraBuildDepends = [
                 pkgs.haskellPackages.megaparsec_9_5_0
@@ -70,7 +70,7 @@
               # Skip the tests due to conflicting base version
               check = false;
 
-          
+
             };
 
             ghcid = {

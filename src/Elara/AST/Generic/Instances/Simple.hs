@@ -54,7 +54,7 @@ deriving instance
     ) =>
     Eq (Type' ast)
 
-deriving instance (Eq (ASTLocate ast (Type' ast))) => Eq (Type ast)
+deriving instance Eq (ASTLocate ast (Type' ast)) => Eq (Type ast)
 
 deriving instance
     ( Eq (ASTLocate ast (Select "SymOp" ast))
@@ -62,7 +62,7 @@ deriving instance
     ) =>
     Eq (BinaryOperator' ast)
 
-deriving instance (Eq (ASTLocate ast (BinaryOperator' ast))) => Eq (BinaryOperator ast)
+deriving instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
 
 -- Show instances
 
@@ -104,7 +104,7 @@ deriving instance
     ) =>
     Show (Type' ast)
 
-deriving instance (Show (ASTLocate ast (Type' ast))) => Show (Type ast)
+deriving instance Show (ASTLocate ast (Type' ast)) => Show (Type ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "SymOp" ast))
@@ -112,7 +112,7 @@ deriving instance
     ) =>
     Show (BinaryOperator' ast)
 
-deriving instance (Show (ASTLocate ast (BinaryOperator' ast))) => Show (BinaryOperator ast)
+deriving instance Show (ASTLocate ast (BinaryOperator' ast)) => Show (BinaryOperator ast)
 
 deriving instance
     ( Show (DeclarationBody ast)
@@ -121,7 +121,7 @@ deriving instance
     ) =>
     Show (Declaration' ast)
 
-deriving instance (Show (ASTLocate ast (Declaration' ast))) => Show (Declaration ast)
+deriving instance Show (ASTLocate ast (Declaration' ast)) => Show (Declaration ast)
 
 deriving instance
     ( (Show (Select "ValueTypeDef" ast))
@@ -134,7 +134,7 @@ deriving instance
     ) =>
     Show (DeclarationBody' ast)
 
-deriving instance (Show (ASTLocate ast (DeclarationBody' ast))) => Show (DeclarationBody ast)
+deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (DeclarationBody ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "ConstructorName" ast))
@@ -144,7 +144,7 @@ deriving instance
 
 -- Ord instances
 
-deriving instance (Ord (ASTLocate ast (BinaryOperator' ast))) => Ord (BinaryOperator ast)
+deriving instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
 
 deriving instance
     ( Ord (ASTLocate ast (Select "SymOp" ast))

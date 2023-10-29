@@ -4,7 +4,7 @@ module Elara.AST.Generic.Pattern where
 
 import Elara.AST.Generic
 
-pattern FunctionCall' :: (ASTLocate ast1 (Expr' ast1) ~ Expr' ast2) => Expr ast2 -> Expr ast2 -> Expr ast1
+pattern FunctionCall' :: ASTLocate ast1 (Expr' ast1) ~ Expr' ast2 => Expr ast2 -> Expr ast2 -> Expr ast1
 pattern FunctionCall' a b <- Expr (FunctionCall a b, _)
 
 functionCall ::

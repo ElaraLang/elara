@@ -51,7 +51,7 @@ data KindInferError
     | NotFunctionKind ElaraKind
     deriving (Eq, Show)
 
-freshKindVar :: (Member UniqueGen r) => Sem r ElaraKind
+freshKindVar :: Member UniqueGen r => Sem r ElaraKind
 freshKindVar = VarKind <$> makeUniqueId
 
 lookupKind :: (Member (State InferState) r, Member (Error KindInferError) r) => Qualified TypeName -> Sem r ElaraKind
@@ -75,7 +75,7 @@ inferKind tName args t = do
             traverseOf_ (each . _2 . each . _Unwrapped . unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
             pure TypeKind
 
-    let funcKind = foldr FunctionKind t' (VarKind <$> args')
+    let funcKind = foldr (FunctionKind . VarKind) t' args'
     InferState{..} <- get
     put
         InferState
@@ -103,14 +103,14 @@ inferTypeKind (TypeConstructorApplication ctor a) = do
         e -> throw (NotFunctionKind e)
 inferTypeKind (RecordType _) = todo
 inferTypeKind (TupleType fields) = do
-    traverse_ (unifyKinds TypeKind <=< inferTypeKind) (fmap (view (_Unwrapped . unlocated)) fields)
+    traverse_ ((unifyKinds TypeKind <=< inferTypeKind) . view (_Unwrapped . unlocated)) fields
     pure TypeKind
 inferTypeKind (ListType a) = do
     a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
     unifyKinds a' TypeKind
     pure TypeKind
 
-unifyKinds :: (Member (Error KindInferError) r) => ElaraKind -> ElaraKind -> Sem r ()
+unifyKinds :: Member (Error KindInferError) r => ElaraKind -> ElaraKind -> Sem r ()
 unifyKinds (VarKind _) (VarKind _) = pass
 unifyKinds TypeKind (VarKind _) = pass -- type vars are always kind * atm
 unifyKinds (VarKind v) v' = unifyKinds v' (VarKind v)

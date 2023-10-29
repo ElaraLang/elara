@@ -117,7 +117,7 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
-fixOperators :: forall r. (Members ShuntPipelineEffects r) => OpTable -> RenamedExpr -> Sem r RenamedExpr
+fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
 fixOperators opTable = reassoc
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
@@ -160,7 +160,7 @@ fixOperators opTable = reassoc
 
 type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
-runShuntPipeline :: (IsPipeline r) => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
+runShuntPipeline :: IsPipeline r => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
 runShuntPipeline opTable s =
     do
         (warnings, a) <-
@@ -173,16 +173,14 @@ runShuntPipeline opTable s =
 
 shunt ::
     forall r.
-    ( Members ShuntPipelineEffects r
-    ) =>
+    Members ShuntPipelineEffects r =>
     Module 'Renamed ->
     Sem r (Module 'Shunted)
 shunt = traverseModule shuntDeclaration
 
 shuntDeclaration ::
     forall r.
-    ( Members ShuntPipelineEffects r
-    ) =>
+    Members ShuntPipelineEffects r =>
     RenamedDeclaration ->
     Sem r ShuntedDeclaration
 shuntDeclaration (Declaration decl) =
@@ -197,8 +195,7 @@ shuntDeclaration (Declaration decl) =
 
 shuntDeclarationBody ::
     forall r.
-    ( Members ShuntPipelineEffects r
-    ) =>
+    Members ShuntPipelineEffects r =>
     RenamedDeclarationBody ->
     Sem r ShuntedDeclarationBody
 shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
@@ -210,7 +207,7 @@ shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlo
         pure (Value shunted NoFieldValue ty')
     shuntDeclarationBody' (TypeDeclaration vars ty) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty))
 
-fixExpr :: (Members ShuntPipelineEffects r) => RenamedExpr -> Sem r ShuntedExpr
+fixExpr :: Members ShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
 fixExpr e = do
     opTable <- ask
     fixed <- fixOperators opTable e
@@ -218,8 +215,7 @@ fixExpr e = do
 
 shuntExpr ::
     forall r.
-    ( Members ShuntPipelineEffects r
-    ) =>
+    Members ShuntPipelineEffects r =>
     RenamedExpr ->
     Sem r ShuntedExpr
 shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le

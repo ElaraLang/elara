@@ -105,7 +105,7 @@ instance TraversableStream TokenStream where
                 Just nePre -> tokensLength (Proxy @TokenStream) nePre
         restOfLine = takeWhile (/= '\n') postStr
 
-sourceRegionToSourcePos :: (HasPath a1) => Located a2 -> Lens' (Located a2) a1 -> Lens' RealSourceRegion RealPosition -> SourcePos
+sourceRegionToSourcePos :: HasPath a1 => Located a2 -> Lens' (Located a2) a1 -> Lens' RealSourceRegion RealPosition -> SourcePos
 sourceRegionToSourcePos sr l which = do
     let fp = view (l . path) sr
     case preview (sourceRegion . _RealSourceRegion . which) sr of

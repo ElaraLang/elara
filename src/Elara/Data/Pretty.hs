@@ -39,20 +39,20 @@ blockParensIf :: Bool -> Doc ann -> Doc ann
 blockParensIf True = braces
 blockParensIf False = identity
 
-listToText :: (Pretty a) => [a] -> Doc AnsiStyle
+listToText :: Pretty a => [a] -> Doc AnsiStyle
 listToText elements =
     vsep (fmap prettyEntry elements)
   where
     prettyEntry entry = "• " <> align (pretty entry)
 
-prettyToText :: (Pretty a) => a -> Text
+prettyToText :: Pretty a => a -> Text
 prettyToText = renderStrict True Width.defaultWidth
 
-prettyToUnannotatedText :: (Pretty a) => a -> Text
+prettyToUnannotatedText :: Pretty a => a -> Text
 prettyToUnannotatedText = renderStrictUnannotated Width.defaultWidth
 
 renderStrict ::
-    (Pretty a) =>
+    Pretty a =>
     -- | `True` enable syntax highlighting
     Bool ->
     -- | Available columns
@@ -68,7 +68,7 @@ renderStrict highlight columns =
             else Pretty.Text.renderStrict
 
 renderStrictUnannotated ::
-    (Pretty a) =>
+    Pretty a =>
     -- | Available columns
     Int ->
     a ->
@@ -87,7 +87,7 @@ layoutOptions columns =
 >>> bracedBlock ["foo", "bar"]
 { foo; bar }
 -}
-bracedBlock :: (Pretty a) => [a] -> Doc AnsiStyle
+bracedBlock :: Pretty a => [a] -> Doc AnsiStyle
 bracedBlock [] = "{}"
 bracedBlock b = do
     let open = "{ "
@@ -98,7 +98,7 @@ bracedBlock b = do
 
 class Pretty a where
     pretty :: a -> Doc AnsiStyle
-    default pretty :: (Show a) => a -> Doc AnsiStyle
+    default pretty :: Show a => a -> Doc AnsiStyle
     pretty = pretty @Text . show
 
 instance Pretty (Doc (Annotation AnsiStyle)) where
@@ -131,7 +131,7 @@ instance Pretty Float where
 instance Pretty Char where
     pretty = PP.pretty
 
-instance (Pretty a) => Pretty (Maybe a) where
+instance Pretty a => Pretty (Maybe a) where
     pretty = maybe mempty pretty
 
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
@@ -146,7 +146,7 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d) => Pretty (a, b, c, d) where
 -- instance {-# OVERLAPPABLE #-} (PP.Pretty a) => Pretty a where
 --     pretty = PP.pretty
 
-escapeChar :: (IsString s) => Char -> s
+escapeChar :: IsString s => Char -> s
 escapeChar c = case c of
     '\a' -> "\\a"
     '\b' -> "\\b"
@@ -163,10 +163,10 @@ escapeChar c = case c of
 instance {-# INCOHERENT #-} Pretty String where
     pretty = pretty . toText
 
-instance {-# OVERLAPPABLE #-} (Pretty i) => Pretty [i] where
+instance {-# OVERLAPPABLE #-} Pretty i => Pretty [i] where
     pretty = align . list . map pretty
 
-instance (Pretty i) => Pretty (NonEmpty i) where
+instance Pretty i => Pretty (NonEmpty i) where
     pretty = pretty . toList
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
@@ -175,5 +175,5 @@ instance (Pretty a, Pretty b) => Pretty (a, b) where
 instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)
 
-instance (Pretty s) => Pretty (Set s) where
+instance Pretty s => Pretty (Set s) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList

@@ -11,7 +11,7 @@ import Polysemy.Maybe (MaybeE, justE, nothingE)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where
-    report :: (Member (DiagnosticWriter (Doc AnsiStyle)) r) => e -> Sem r ()
+    report :: Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
@@ -33,9 +33,9 @@ runErrorOrReport e = do
         Right a -> justE a
 
 reportMaybe ::
-    (Member MaybeE r) =>
-    (Member (DiagnosticWriter (Doc AnsiStyle)) r) =>
-    (ReportableError e) =>
+    Member MaybeE r =>
+    Member (DiagnosticWriter (Doc AnsiStyle)) r =>
+    ReportableError e =>
     Sem r (Either e a) ->
     Sem r a
 reportMaybe x = do

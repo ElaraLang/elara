@@ -17,7 +17,7 @@ import Prelude hiding (Op)
 mkPat :: Pattern' 'UnlocatedFrontend -> Pattern 'UnlocatedFrontend
 mkPat p = Pattern (p, Nothing)
 
-mkExpr :: (Applicative m) => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
+mkExpr :: Applicative m => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
 mkExpr e = pure (Expr (e, Nothing))
 
 genPattern :: Gen (Pattern 'UnlocatedFrontend)

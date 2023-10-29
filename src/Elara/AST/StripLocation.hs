@@ -23,11 +23,11 @@ instance {-# INCOHERENT #-} StripLocation SourceRegion () where
 instance {-# OVERLAPPABLE #-} (StripLocation a a', StripLocation b b') => StripLocation (a, b) (a', b') where
     stripLocation (a, b) = (stripLocation a, stripLocation b)
 
-instance {-# OVERLAPPABLE #-} (StripLocation a a') => StripLocation (Maybe a) (Maybe a') where
+instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (Maybe a) (Maybe a') where
     stripLocation = fmap stripLocation
 
-instance {-# OVERLAPPABLE #-} (StripLocation a a') => StripLocation [a] [a'] where
+instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation [a] [a'] where
     stripLocation = fmap stripLocation
 
-instance {-# OVERLAPPABLE #-} (StripLocation a a') => StripLocation (NonEmpty a) (NonEmpty a') where
+instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (NonEmpty a) (NonEmpty a') where
     stripLocation = fmap stripLocation

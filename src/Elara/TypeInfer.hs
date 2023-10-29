@@ -30,6 +30,7 @@ import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unif
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
+import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -43,11 +44,10 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
-import Elara.Prim (primRegion)
 
 type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
-runInferPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
+runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
     s <- uniqueGenToIO initialStatus
 
@@ -59,7 +59,7 @@ runInferPipeline e = do
 
 inferModule ::
     forall r.
-    (Members InferPipelineEffects r) =>
+    Members InferPipelineEffects r =>
     Module 'Shunted ->
     Sem r (Module 'Typed)
 inferModule = traverseModuleRevTopologically inferDeclaration
@@ -88,7 +88,7 @@ inferDeclaration (Declaration ld) =
             ld
   where
     inferDeclarationBody' ::
-        (HasCallStack) =>
+        HasCallStack =>
         Located (Qualified Name) ->
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
@@ -108,8 +108,6 @@ inferDeclaration (Declaration ld) =
                 push (Annotation (mkGlobal' declName) y)
                 pure y
 
-        
-
         e' <- inferExpression e (Just maybeExpected')
 
         ctx <- Infer.getAll
@@ -120,7 +118,7 @@ inferDeclaration (Declaration ld) =
         pure $ Value completed NoFieldValue NoFieldValue
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
 
-inferExpression :: (Members InferPipelineEffects r) => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
+inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
     ctx <- Infer.get
@@ -191,7 +189,7 @@ astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInf
     universallyQuantify [] x = x
     universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
-astTypeToInferType :: forall r. (HasCallStack) => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
+astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)

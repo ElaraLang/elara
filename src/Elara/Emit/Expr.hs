@@ -18,7 +18,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (showPretty, debugColored)
+import Print (debugColored, showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit ALoad0
@@ -43,7 +43,7 @@ generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) =
 generateInstructions (Var v) = do
     idx <- localVariableId v
     embed $ emit $ ALoad idx
-generateInstructions (App f x) = generateAppInstructions f x 
+generateInstructions (App f x) = generateAppInstructions f x
 generateInstructions (Let (NonRecursive (n, val)) b) = withLocalVariableScope $ do
     idx <- localVariableId n
     generateInstructions val
@@ -98,7 +98,7 @@ generateAppInstructions f x = do
         do
             let insts = invokeStaticVars fName fType
             traverse_ generateInstructions args
-            embed $ emit  $ uncurry3 InvokeStatic insts
+            embed $ emit $ uncurry3 InvokeStatic insts
         else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for " <> showPretty f <> " " <> showPretty x <> " " <> showPretty f'
   where
     collectArgs :: JVMExpr -> [JVMExpr] -> (JVMExpr, [JVMExpr])

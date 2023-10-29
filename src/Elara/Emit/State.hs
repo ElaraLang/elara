@@ -26,7 +26,7 @@ createMethodCreationState args =
         (Map.fromList $ zip (UnknownName <$> [0 .. args]) [0 ..])
         (fromIntegral args)
 
-findLocalVariable :: (Member (State MethodCreationState) r) => Unique Text -> Sem r U1
+findLocalVariable :: Member (State MethodCreationState) r => Unique Text -> Sem r U1
 findLocalVariable v = do
     s <- get
     let lvs = s.localVariables
@@ -38,7 +38,7 @@ findLocalVariable v = do
             put $ MethodCreationState{localVariables = newLvs, maxLocalVariables = fromIntegral (length newLvs)}
             pure new
 
-withLocalVariableScope :: (Member (State MethodCreationState) r) => Sem r a -> Sem r a
+withLocalVariableScope :: Member (State MethodCreationState) r => Sem r a -> Sem r a
 withLocalVariableScope act = do
     cur <- get
     x <- act

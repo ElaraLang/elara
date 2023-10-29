@@ -14,8 +14,7 @@ import Elara.AST.Name
 -- Some of these 'Plated' instances could be derived with 'template', but I feel like it's more efficient to write them by hand
 
 instance
-    ( RUnlocate ast
-    ) =>
+    RUnlocate ast =>
     Plated (Pattern' ast)
     where
     plate f = \case
@@ -32,8 +31,7 @@ instance
 
 instance
     forall a (ast :: a).
-    ( Data (Pattern ast)
-    ) =>
+    Data (Pattern ast) =>
     Plated (Pattern ast)
     where
     plate = template
@@ -70,16 +68,14 @@ instance
 
 instance
     forall a (ast :: a).
-    ( Data (Expr ast)
-    ) =>
+    Data (Expr ast) =>
     Plated (Expr ast)
     where
     plate = template
 
 instance
     forall a (ast :: a).
-    ( Data (Type ast)
-    ) =>
+    Data (Type ast) =>
     Plated (Type ast)
     where
     plate = template

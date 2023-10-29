@@ -12,7 +12,7 @@ import Elara.Utils (uncurry3)
 import Relude.Extra (firstF)
 import Text.Show qualified as Show
 
-class (Ord (Key a)) => HasDependencies a where
+class Ord (Key a) => HasDependencies a where
     type Key a
     key :: a -> Key a
     dependencies :: a -> [Key a]
@@ -25,14 +25,14 @@ data TopologicalGraph a = TopologicalGraph
 
 makeLenses ''TopologicalGraph
 
-mapGraph :: (HasDependencies m) => (a -> m) -> TopologicalGraph a -> TopologicalGraph m
+mapGraph :: HasDependencies m => (a -> m) -> TopologicalGraph a -> TopologicalGraph m
 mapGraph f = runIdentity . traverseGraph (pure . f)
 
 -- | Traverse a graph. Due to the 'HasDependencies m' constraint we can't derive 'Traversable'
 traverseGraph :: (HasDependencies m, Applicative f) => (a -> f m) -> TopologicalGraph a -> f (TopologicalGraph m)
 traverseGraph = genericGraphTraverse vertices
 
-traverseGraph_ :: (Applicative f) => (a -> f b) -> TopologicalGraph a -> f ()
+traverseGraph_ :: Applicative f => (a -> f b) -> TopologicalGraph a -> f ()
 traverseGraph_ = genericGraphTraverse_ vertices
 
 -- | Traverse a graph in topological order
@@ -40,7 +40,7 @@ traverseGraphTopologically :: (HasDependencies m, Applicative f) => (a -> f m) -
 traverseGraphTopologically = genericGraphTraverse topSort
 
 -- | Traverse a graph in topological order, ignoring the results
-traverseGraphTopologically_ :: (Applicative f) => (a -> f m) -> TopologicalGraph a -> f ()
+traverseGraphTopologically_ :: Applicative f => (a -> f m) -> TopologicalGraph a -> f ()
 traverseGraphTopologically_ = genericGraphTraverse_ topSort
 
 -- | Traverse a graph in rev topological order
@@ -48,7 +48,7 @@ traverseGraphRevTopologically :: (HasDependencies m, Applicative f) => (a -> f m
 traverseGraphRevTopologically = genericGraphTraverse reverseTopSort
 
 -- | Traverse a graph in reverse topological order, ignoring the results
-traverseGraphRevTopologically_ :: (Applicative f) => (a -> f m) -> TopologicalGraph a -> f ()
+traverseGraphRevTopologically_ :: Applicative f => (a -> f m) -> TopologicalGraph a -> f ()
 traverseGraphRevTopologically_ = genericGraphTraverse_ reverseTopSort
 
 genericGraphTraverse :: (HasDependencies a, Applicative f) => (Graph -> [Vertex]) -> (m -> f a) -> TopologicalGraph m -> f (TopologicalGraph a)
@@ -57,18 +57,18 @@ genericGraphTraverse f f' g = do
     let sortedNodes = fmap ((^. _1) . (g ^. nodeFromVertex)) sorted
     createGraph <$> traverse f' sortedNodes
 
-genericGraphTraverse_ :: (Applicative f) => (Graph -> [Vertex]) -> (m -> f a) -> TopologicalGraph m -> f ()
+genericGraphTraverse_ :: Applicative f => (Graph -> [Vertex]) -> (m -> f a) -> TopologicalGraph m -> f ()
 genericGraphTraverse_ f f' g = do
     let sorted = f (g ^. moduleGraph)
     let sortedNodes = fmap ((^. _1) . (g ^. nodeFromVertex)) sorted
     traverse_ f' sortedNodes
 
-createGraph :: (HasDependencies a) => [a] -> TopologicalGraph a
+createGraph :: HasDependencies a => [a] -> TopologicalGraph a
 createGraph = uncurry3 TopologicalGraph . graphFromEdges . fmap createEdge
 
 createEdge ::
     forall a.
-    (HasDependencies a) =>
+    HasDependencies a =>
     a ->
     (a, Key a, [Key a])
 createEdge m = do
@@ -110,7 +110,7 @@ instance (Show a, Show (Key a)) => Show (TopologicalGraph a) where
             assocs' = assocs nodes
          in Show.show (firstF mnFromVertex assocs')
 
-instance (Pretty (Key a)) => Pretty (TopologicalGraph a) where
+instance Pretty (Key a) => Pretty (TopologicalGraph a) where
     pretty g =
         let gArr = g ^. moduleGraph
             nodeFromVertex' = g ^. nodeFromVertex

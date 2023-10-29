@@ -30,7 +30,7 @@ unsafeMkUnique = Unique
 -- | A @Unique@ where the value is not important.
 newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 
-instance (ToJSON c) => ToJSON (Unique c)
+instance ToJSON c => ToJSON (Unique c)
 
 instance ToJSON UniqueId
 
@@ -73,7 +73,7 @@ uniqueGenToState = reinterpret $ \case
                 put (UniqueSupply is)
                 pure i
 
-uniqueGenToIO :: (Member (Embed IO) r) => Sem (UniqueGen ': r) a -> Sem r a
+uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
 uniqueGenToIO = interpret $ \case
     NewUniqueNum -> do
         us <- liftIO (readIORef globalUniqueSupply)
@@ -90,21 +90,21 @@ makeLenses ''Unique
 getUniqueId :: Unique a -> UniqueId
 getUniqueId = UniqueId . void
 
-makeUniqueId :: (Member UniqueGen r) => Sem r UniqueId
+makeUniqueId :: Member UniqueGen r => Sem r UniqueId
 makeUniqueId = UniqueId <$> makeUnique ()
 
-makeUnique :: (Member UniqueGen r) => a -> Sem r (Unique a)
+makeUnique :: Member UniqueGen r => a -> Sem r (Unique a)
 makeUnique a = Unique a <$> newUniqueNum
 
 uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i
 
-instance (Pretty a) => Pretty (Unique a) where
+instance Pretty a => Pretty (Unique a) where
     pretty (Unique a i) = pretty a <> "_" <> pretty i
 
 instance Pretty UniqueId where
     pretty (UniqueId (Unique _ i)) = pretty i
 
-instance (Hashable b) => Hashable (Unique b)
+instance Hashable b => Hashable (Unique b)
 
 instance Hashable UniqueId

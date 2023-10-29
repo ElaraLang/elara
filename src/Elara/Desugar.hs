@@ -59,7 +59,7 @@ type DesugarPipelineEffects = '[State DesugarState, Error DesugarError]
 runDesugar :: Desugar a -> Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a
 runDesugar = subsume_
 
-runDesugarPipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
+runDesugarPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
 runDesugarPipeline =
     runErrorOrReport @DesugarError
         . evalState (DesugarState M.empty)
@@ -85,10 +85,10 @@ to create a 'Both' declaration, which is then resolved to a 'Desugared.Declarati
 data PartialDeclaration
     = -- | A partial declaration with just a def line
       JustDef
+        -- | Name of the declaration
         Name
-        -- ^ Name of the declaration
+        -- | The *overall* region of the declaration, not just the body!
         SourceRegion
-        -- ^ The *overall* region of the declaration, not just the body!
         DesugaredType
     | JustLet
         Name

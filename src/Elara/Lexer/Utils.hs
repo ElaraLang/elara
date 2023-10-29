@@ -63,14 +63,14 @@ mkIndentInfo i = do
 data LexerError
     = -- | When an element is indented more than expected
       TooMuchIndentation
+        -- | The expected indentation
         IndentInfo
-        -- ^ The expected indentation
+        -- | The potential further indentation
         (Maybe IndentInfo)
-        -- ^ The potential further indentation
+        -- | The actual indentation
         Int
-        -- ^ The actual indentation
+        -- | The current state of the lexer
         ParseState
-        -- ^ The current state of the lexer
     | UnterminatedStringLiteral ParseState
     deriving (Show)
 

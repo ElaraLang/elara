@@ -97,8 +97,7 @@ newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast
 
 pattern Expr' ::
     forall astK (ast :: astK).
-    ( RUnlocate ast
-    ) =>
+    RUnlocate ast =>
     Expr' ast ->
     Expr ast
 pattern Expr' e' <- Expr (rUnlocate @astK @ast -> e', _)
@@ -183,7 +182,7 @@ type RUnlocate :: ast -> Kind.Constraint
 class RUnlocate ast where
     rUnlocate ::
         forall a.
-        (CleanupLocated (Located a) ~ Located a) =>
+        CleanupLocated (Located a) ~ Located a =>
         ASTLocate ast a ->
         a
 
@@ -201,12 +200,12 @@ class RUnlocate ast where
         ASTLocate ast a ->
         f (ASTLocate ast b)
 
-instance (ASTLocate' ast ~ Located) => RUnlocate (ast :: LocatedAST) where
+instance ASTLocate' ast ~ Located => RUnlocate (ast :: LocatedAST) where
     rUnlocate = view unlocated
     fmapUnlocated = fmap
     traverseUnlocated = traverse
 
-instance (ASTLocate' ast ~ Unlocated) => RUnlocate (ast :: UnlocatedAST) where
+instance ASTLocate' ast ~ Unlocated => RUnlocate (ast :: UnlocatedAST) where
     rUnlocate = identity
     fmapUnlocated f = f
     traverseUnlocated f = f
@@ -238,14 +237,14 @@ type family ASTQual (ast :: a) :: Kind.Type -> Kind.Type
 
 -- Coercions
 
-coerceTypeDeclaration :: (_) => TypeDeclaration ast1 -> TypeDeclaration ast2
+coerceTypeDeclaration :: _ => TypeDeclaration ast1 -> TypeDeclaration ast2
 coerceTypeDeclaration (Alias a) = Alias (coerceType a)
 coerceTypeDeclaration (ADT a) = ADT (fmap coerceType <<$>> a)
 
-coerceType :: (_) => Type ast1 -> Type ast2
+coerceType :: _ => Type ast1 -> Type ast2
 coerceType (Type a) = Type (coerceType' <$> a)
 
-coerceType' :: (_) => Type' ast1 -> Type' ast2
+coerceType' :: _ => Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
 coerceType' (FunctionType a b) = FunctionType (coerceType a) (coerceType b)
 coerceType' UnitType = UnitType

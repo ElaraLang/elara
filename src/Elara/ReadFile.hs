@@ -21,7 +21,7 @@ instance ReportableError ReadFileError where
                 []
                 []
 
-readFileString :: (Members ReadFilePipelineEffects r) => FilePath -> Sem r String
+readFileString :: Members ReadFilePipelineEffects r => FilePath -> Sem r String
 readFileString path = do
     contentsBS <- readFileBS path
     case decodeUtf8Strict contentsBS of
@@ -30,6 +30,6 @@ readFileString path = do
             addFile path contents -- add the file to the diagnostic writer for nicer error messages
             pure contents
 
-runReadFilePipeline :: (IsPipeline r) => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
+runReadFilePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
 runReadFilePipeline =
     runErrorOrReport @ReadFileError . subsume_

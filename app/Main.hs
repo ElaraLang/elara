@@ -23,6 +23,7 @@ import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, tra
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 import Elara.Emit
+import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Parse
@@ -33,12 +34,14 @@ import Elara.Rename (rename, runRenamePipeline)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
-import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic', Report (..))
+import Error.Diagnose (Diagnostic, Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
+import JVM.Data.Convert.Monad
 import JVM.Data.JVMVersion
 import Polysemy (Sem)
+import Polysemy.Error (fromEither)
 import Polysemy.Reader
 import Prettyprinter.Render.Text
 import Print
@@ -47,23 +50,18 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.IO (openFile)
 import Text.Printf
-import Elara.Error (runErrorOrReport, ReportableError (report), writeReport)
-import Polysemy.Error (fromEither)
-import JVM.Data.Convert.Monad
 
-outDirName :: (IsString s) => s
+outDirName :: IsString s => s
 outDirName = "build"
 
 instance ReportableError CodeConverterError where
-    report x = writeReport $
+    report x =
+        writeReport $
             Err
                 (Nothing)
                 (show x)
-                [
-                
-                ]
-                [
-                ]
+                []
+                []
 
 main :: IO ()
 main = run `finally` cleanup
@@ -81,7 +79,7 @@ main = run `finally` cleanup
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
-dumpGraph :: (Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
@@ -174,7 +172,7 @@ cleanup = resetGlobalUniqueSupply
 --             traverse_ report warnings
 --             justE shunted
 
-loadModule :: (IsPipeline r) => FilePath -> Sem r (Module 'Desugared)
+loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
@@ -182,7 +180,7 @@ loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runRead
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 
-processModules :: (IsPipeline r) => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
 processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $
@@ -196,7 +194,8 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> traverseGraphRevTopologically inferModule
                         >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
                         >=> traverseGraph moduleToCore
-                        >=> pure . mapGraph coreToCore
+                        >=> pure
+                        . mapGraph coreToCore
                         $ graph
                     )
   where

@@ -91,9 +91,9 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
                 (if isError error then Err code msg else Warn code msg)
                 (errorHints error)
                 if
-                        | [m] <- msgs -> [(source, This m)]
-                        | [m1, m2] <- msgs -> [(source, This m1), (source, Where m2)]
-                        | otherwise -> [(source, This $ fromString "<<Unknown error>>")]
+                    | [m] <- msgs -> [(source, This m)]
+                    | [m1, m2] <- msgs -> [(source, This m1), (source, Where m2)]
+                    | otherwise -> [(source, This $ fromString "<<Unknown error>>")]
 
     errorRegion :: MP.ParseError s ElaraParseError -> [SourceRegion]
     errorRegion (MP.TrivialError _ (Just (Tokens ts)) _) = toList $ view sourceRegion <$> ts

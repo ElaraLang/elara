@@ -58,7 +58,7 @@ data Exposition ast
     | ExposedTypeAndAllConstructors (FullASTQual ast TypeName) -- exposing Foo(..)
     deriving (Generic)
 
-traverseModule :: (_) => (a4 -> f (Declaration ast)) -> s1 -> f t
+traverseModule :: _ => (a4 -> f (Declaration ast)) -> s1 -> f t
 traverseModule traverseDecl =
     traverseOf
         (_Unwrapped . unlocated)
@@ -101,12 +101,12 @@ coerceImport ::
 coerceImport = unsafeCoerce
 
 -- Module Graph functions
-instance (ASTLocate' ast ~ Located) => HasDependencies (Module ast) where
+instance ASTLocate' ast ~ Located => HasDependencies (Module ast) where
     type Key (Module ast) = ModuleName
     key m = m ^. _Unwrapped . unlocated . field' @"name" . unlocated
     dependencies = toListOf (_Unwrapped . unlocated . field' @"imports" . each . _Unwrapped . unlocated . field' @"importing" . unlocated)
 
-traverseModuleRevTopologically :: (_) => (Declaration ast -> f (Declaration ast')) -> Module ast1 -> f (Module ast2)
+traverseModuleRevTopologically :: _ => (Declaration ast -> f (Declaration ast')) -> Module ast1 -> f (Module ast2)
 traverseModuleRevTopologically traverseDecl =
     traverseOf
         (_Unwrapped . unlocated)
@@ -119,8 +119,7 @@ traverseModuleRevTopologically traverseDecl =
         )
 
 instance
-    ( Pretty (ASTLocate ast (Module' ast))
-    ) =>
+    Pretty (ASTLocate ast (Module' ast)) =>
     Pretty (Module ast)
     where
     pretty (Module m) = pretty m
@@ -142,7 +141,7 @@ instance
             , vsep (pretty <$> d)
             ]
 
-instance (Pretty (Exposition ast)) => Pretty (Exposing ast) where
+instance Pretty (Exposition ast) => Pretty (Exposing ast) where
     pretty ExposingAll = "(..)"
     pretty (ExposingSome e) = parens (hsep (punctuate comma (pretty <$> e)))
 
@@ -158,7 +157,7 @@ instance
     pretty (ExposedTypeAndAllConstructors tn) = pretty tn <> "(..)"
     pretty (ExposedOp o) = pretty o
 
-instance (Pretty (ASTLocate ast (Import' ast))) => Pretty (Import ast) where
+instance Pretty (ASTLocate ast (Import' ast)) => Pretty (Import ast) where
     pretty (Import i) = pretty i
 
 instance

@@ -23,7 +23,7 @@ instance ToMaybe (Maybe a) (Maybe a) where
 instance {-# INCOHERENT #-} ToMaybe a (Maybe a) where
     toMaybe = Just
 
-instance (ToMaybe a b) => ToMaybe (Located a) b where
+instance ToMaybe a b => ToMaybe (Located a) b where
     toMaybe = toMaybe . view unlocated
 
 -- | Like 'ToMaybe' but for lists. Useful when fields may be lists or single values.
@@ -39,7 +39,7 @@ instance ToList [a] [a] where
 instance {-# INCOHERENT #-} ToList a [a] where
     fieldToList = pure
 
-instance (ToList a b) => ToList (Located a) b where
+instance ToList a b => ToList (Located a) b where
     fieldToList = fieldToList . view unlocated
 
 {- | Sometimes fields are wrapped in functors eg lists, we need a way of transcending them.
@@ -53,7 +53,7 @@ This class half-solves that problem by allowing us to lift a function to a funct
 class ApplyAsFunctorish i o a b where
     applyAsFunctorish :: (a -> b) -> i -> o
 
-instance (Functor f) => ApplyAsFunctorish (f a) (f b) a b where
+instance Functor f => ApplyAsFunctorish (f a) (f b) a b where
     applyAsFunctorish = fmap
 
 instance ApplyAsFunctorish a b a b where

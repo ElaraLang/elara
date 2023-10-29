@@ -49,8 +49,8 @@ data TypeInferenceError
     | UnboundFields SourceRegion UniqueTyVar
     | UnboundTypeVariable SourceRegion UniqueTyVar (Context SourceRegion)
     | UnboundVariable
+        -- | Location of the variable that caused the error
         SourceRegion
-        -- ^ Location of the variable that caused the error
         (IgnoreLocVarRef Name)
         (Context SourceRegion)
     | UnboundConstructor (IgnoreLocVarRef Name) (Context SourceRegion)

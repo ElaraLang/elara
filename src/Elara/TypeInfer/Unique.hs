@@ -10,8 +10,8 @@ type UniqueTyVar =
 uniqueIdToTyVar :: UniqueId -> UniqueTyVar
 uniqueIdToTyVar (UniqueId c) = fmap (const Nothing) c
 
-makeUniqueTyVar :: (Member UniqueGen r) => Sem r UniqueTyVar
+makeUniqueTyVar :: Member UniqueGen r => Sem r UniqueTyVar
 makeUniqueTyVar = uniqueIdToTyVar <$> makeUniqueId
 
-makeUniqueTyVarWith :: (Member UniqueGen r) => Text -> Sem r UniqueTyVar
+makeUniqueTyVarWith :: Member UniqueGen r => Text -> Sem r UniqueTyVar
 makeUniqueTyVarWith name = const (Just name) <<$>> makeUniqueTyVar

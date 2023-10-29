@@ -1,6 +1,7 @@
 module Elara.Core where
 
 import Control.Lens (Plated)
+import Control.Monad.State hiding (StateT)
 import Data.Data
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
@@ -8,7 +9,6 @@ import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
 import Relude.Extra (bimapF)
 import Prelude hiding (Alt)
-import Control.Monad.State hiding (StateT)
 
 data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
@@ -35,7 +35,7 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
 
-instance (Data b) => Plated (Expr b)
+instance Data b => Plated (Expr b)
 
 type CoreExpr = Expr Var
 
@@ -59,9 +59,6 @@ mapBind f g = \case
     NonRecursive (b, e) -> NonRecursive (f b, g e)
 
 type Alt b = (AltCon, [b], Expr b)
-
-
-
 
 data AltCon
     = DataAlt DataCon
@@ -113,9 +110,9 @@ data Literal
     | Unit
     deriving (Show, Eq, Data, Generic)
 
-instance (Hashable b) => Hashable (Expr b)
+instance Hashable b => Hashable (Expr b)
 
-instance (Hashable b) => Hashable (Bind b)
+instance Hashable b => Hashable (Bind b)
 
 instance Hashable Literal
 

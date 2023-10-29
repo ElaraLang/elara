@@ -23,10 +23,10 @@ printPretty p = liftIO (putDoc (pretty p) *> putStrLn "")
 showColored :: (Show a, IsString s) => a -> s
 showColored = fromString . toString . pShow
 
-showPretty :: (Pretty a) => a -> Text
+showPretty :: Pretty a => a -> Text
 showPretty = prettyToText
 
-showPrettyUnannotated :: (Pretty a) => a -> Text
+showPrettyUnannotated :: Pretty a => a -> Text
 showPrettyUnannotated = prettyToUnannotatedText
 
 {-# WARNING debugColored "Debug is still in code" #-}
@@ -34,7 +34,7 @@ debugColored :: (Show a, Applicative f) => a -> f ()
 debugColored = pTraceShowOptM NoCheckColorTty defaultOutputOptionsDarkBg
 
 {-# WARNING debugColoredStr "Debug is still in code" #-}
-debugColoredStr :: (Applicative f) => String -> f ()
+debugColoredStr :: Applicative f => String -> f ()
 debugColoredStr = pTraceOptM NoCheckColorTty defaultOutputOptionsDarkBg
 
 {-# WARNING debugPretty "debugPretty is still in code" #-}

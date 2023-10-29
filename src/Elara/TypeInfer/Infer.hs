@@ -63,7 +63,7 @@ data Status = Status
     -- ^ A write-only context that logs every entry that is added to the main context
     }
 
-initialStatus :: (Member UniqueGen r) => Sem r Status
+initialStatus :: Member UniqueGen r => Sem r Status
 initialStatus = do
     primitiveTCContext' <- primitiveTCContext
     pure
@@ -72,37 +72,37 @@ initialStatus = do
             , writeOnlyContext = primitiveTCContext'
             }
 
-orDie :: (Member (Error e) r) => Maybe a -> e -> Sem r a
+orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
 Just x `orDie` _ = pure x
 Nothing `orDie` e = throw e
 
 -- | Generate a fresh existential variable (of any type)
-fresh :: (Member UniqueGen r) => Sem r (Existential a)
+fresh :: Member UniqueGen r => Sem r (Existential a)
 fresh = UnsafeExistential <$> makeUniqueTyVar
 
 -- Unlike the original paper, we don't explicitly thread the `Context` around.
 -- Instead, we modify the ambient state using the following utility functions:
 
 -- | Push a new `Context` `Entry` onto the stack
-push :: (Member (State Status) r) => Entry SourceRegion -> Sem r ()
+push :: Member (State Status) r => Entry SourceRegion -> Sem r ()
 push entry = State.modify (\s -> s{context = entry : context s, writeOnlyContext = entry : writeOnlyContext s})
 
 -- | Retrieve the current `Context`
-get :: (Member (State Status) r) => Sem r (Context SourceRegion)
+get :: Member (State Status) r => Sem r (Context SourceRegion)
 get = State.gets context
 
-getAll :: (Member (State Status) r) => Sem r (Context SourceRegion)
+getAll :: Member (State Status) r => Sem r (Context SourceRegion)
 getAll = State.gets writeOnlyContext
 
 -- | Set the `Context` to a new value
-set :: (Member (State Status) r) => Context SourceRegion -> Sem r ()
+set :: Member (State Status) r => Context SourceRegion -> Sem r ()
 set context = State.modify (\s -> s{context, writeOnlyContext = context <> writeOnlyContext s})
 
 {- | This is used to temporarily add a `Context` entry that is discarded at the
  end of the entry's scope, along with any downstream entries that were
  created within that same scope
 -}
-scoped :: (Member (State Status) r) => Entry SourceRegion -> Sem r a -> Sem r a
+scoped :: Member (State Status) r => Entry SourceRegion -> Sem r a -> Sem r a
 scoped entry k = do
     push entry
 
@@ -147,7 +147,7 @@ scopedUnsolvedAlternatives k = do
  … which checks that under context Γ, the type A is well-formed
 -}
 wellFormedType ::
-    (Member (Error TypeInferenceError) r) =>
+    Member (Error TypeInferenceError) r =>
     Context SourceRegion ->
     Type SourceRegion ->
     Sem r ()
@@ -361,13 +361,13 @@ subtype _A0 _B0 = do
             -- For example, `{ x: Bool }` can never be a subtype of
             -- `{ y: Text }`
             if
-                    | not okayA && not okayB -> do
-                        throw (RecordTypeMismatch _A0 _B0 extraA extraB)
-                    | not okayA -> do
-                        throw (RecordTypeMismatch _A0 _B0 extraA mempty)
-                    | not okayB -> do
-                        throw (RecordTypeMismatch _A0 _B0 mempty extraB)
-                    | otherwise -> pass
+                | not okayA && not okayB -> do
+                    throw (RecordTypeMismatch _A0 _B0 extraA extraB)
+                | not okayA -> do
+                    throw (RecordTypeMismatch _A0 _B0 extraA mempty)
+                | not okayB -> do
+                    throw (RecordTypeMismatch _A0 _B0 mempty extraB)
+                | otherwise -> pass
 
             -- If record A is a subtype of record B, then all fields in A
             -- must be a subtype of the matching fields in record B
@@ -546,13 +546,13 @@ subtype _A0 _B0 = do
                         || flexible alternatives0 && alternatives0 /= alternatives1
 
             if
-                    | not okayA && not okayB -> do
-                        throw (UnionTypeMismatch _A0 _B0 extraA extraB)
-                    | not okayA && okayB -> do
-                        throw (UnionTypeMismatch _A0 _B0 extraA mempty)
-                    | okayA && not okayB -> do
-                        throw (UnionTypeMismatch _A0 _B0 mempty extraB)
-                    | otherwise -> pass
+                | not okayA && not okayB -> do
+                    throw (UnionTypeMismatch _A0 _B0 extraA extraB)
+                | not okayA && okayB -> do
+                    throw (UnionTypeMismatch _A0 _B0 extraA mempty)
+                | okayA && not okayB -> do
+                    throw (UnionTypeMismatch _A0 _B0 mempty extraB)
+                | otherwise -> pass
 
             let process (_A1, _B1) = do
                     _Θ <- get
@@ -945,7 +945,7 @@ instantiateTypeR _A0 a = do
 
             set (_ΓR <> (Context.SolvedType a (Monotype.Custom conName (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
 
-            for_ (zip typeArguments a1s) \(typeArgument, a1) -> instantiateTypeR typeArgument a1
+            for_ (zip typeArguments a1s) (uncurry instantiateTypeR)
 
 {- The following `equateFields` / `instantiateFieldsL` / `instantiateFieldsR`,
    `equateAlternatives` / `instantiateAlternativesL` /
@@ -1355,7 +1355,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         else' <- check else_ _L1
 
-        pure $ Expr (Located location (If cond' (then') else'), _L1)
+        pure $ Expr (Located location (If cond' then' else'), _L1)
     other -> error $ "infer: " <> showPretty other
 
 -- -- Anno
@@ -1989,10 +1989,10 @@ inferApplication _A _ = throw (NotFunctionType (location _A) _A)
 
 -- Helper functions for displaying errors
 
-insert :: (Pretty a) => a -> String
+insert :: Pretty a => a -> String
 insert a = toString (prettyToText ("  " <> Pretty.align (pretty a)))
 
-listToText :: (Pretty a) => [a] -> String
+listToText :: Pretty a => [a] -> String
 listToText elements =
     toString (Text.intercalate "\n" (map prettyEntry elements))
   where

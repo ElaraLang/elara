@@ -115,7 +115,7 @@ instance NameLike OpName where
 instance NameLike ModuleName where
     nameText (ModuleName name) = T.intercalate "." (toList name)
 
-instance (NameLike n) => NameLike (MaybeQualified n) where
+instance NameLike n => NameLike (MaybeQualified n) where
     nameText (MaybeQualified name _) = nameText name
     fullNameText (MaybeQualified name modName) =
         maybe
@@ -125,14 +125,14 @@ instance (NameLike n) => NameLike (MaybeQualified n) where
 
     moduleName (MaybeQualified _ modName) = modName
 
-instance (NameLike n) => NameLike (Qualified n) where
+instance NameLike n => NameLike (Qualified n) where
     nameText (Qualified name _) = nameText name
     fullNameText (Qualified name modName) =
         nameText modName <> "." <> nameText name
 
     moduleName (Qualified _ modName) = Just modName
 
-instance (NameLike n) => NameLike (Unqualified n) where
+instance NameLike n => NameLike (Unqualified n) where
     nameText (Unqualified name) = nameText name
     fullNameText (Unqualified name) = nameText name
 
@@ -161,7 +161,7 @@ instance NameLike VarOrConName where
     moduleName (VarName name) = moduleName name
     moduleName (ConName name) = moduleName name
 
-instance (NameLike n) => NameLike (Located n) where
+instance NameLike n => NameLike (Located n) where
     nameText = nameText . view unlocated
     fullNameText = fullNameText . view unlocated
     moduleName = moduleName . view unlocated
@@ -194,14 +194,14 @@ makeFields ''Qualified
 makeFields ''Unqualified
 makePrisms ''Unqualified
 
-instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (MaybeQualified x) where
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     pretty (MaybeQualified n (Just m)) = pretty m <> "." <> pretty n
     pretty (MaybeQualified n Nothing) = pretty n
 
-instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (Qualified x) where
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Qualified x) where
     pretty (Qualified n m) = pretty m <> "." <> pretty n
 
-instance {-# OVERLAPPABLE #-} (Pretty x) => Pretty (Unqualified x) where
+instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
     pretty uq = pretty (uq ^. name)
 
 instance Pretty Name where
@@ -234,7 +234,7 @@ instance Pretty OpName where
 instance Pretty LowerAlphaName where
     pretty (LowerAlphaName n) = pretty n
 
-instance (ToJSON n) => ToJSON (Qualified n)
+instance ToJSON n => ToJSON (Qualified n)
 
 instance ToJSON ModuleName
 
@@ -248,6 +248,6 @@ instance ToJSON LowerAlphaName
 
 instance ToJSON Name
 
-instance (Hashable b) => Hashable (Qualified b)
+instance Hashable b => Hashable (Qualified b)
 
 instance Hashable ModuleName
