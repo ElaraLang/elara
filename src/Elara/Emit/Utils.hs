@@ -33,6 +33,7 @@ generateReturnDescriptor other = TypeReturn (generateFieldType other)
 
 generateFieldType :: Type -> FieldType
 generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
+generateFieldType c | c == boolCon = ObjectFieldType "java.lang.Boolean"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"

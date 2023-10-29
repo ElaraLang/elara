@@ -51,10 +51,10 @@
 
             fourmolu.check = false;
 
-
+            
             diagnose = {
               extraBuildDepends = [
-                pkgs.haskellPackages.megaparsec_9_4_1
+                pkgs.haskellPackages.megaparsec_9_5_0
               ];
               cabalFlags.megaparsec-compat = true;
               jailbreak = true;
@@ -69,6 +69,8 @@
             h2jvm = {
               # Skip the tests due to conflicting base version
               check = false;
+
+          
             };
 
             ghcid = {

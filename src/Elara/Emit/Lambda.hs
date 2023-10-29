@@ -11,7 +11,7 @@ import JVM.Data.Abstract.Builder (ClassBuilder, addMethod)
 import JVM.Data.Abstract.ClassFile.Method (ClassFileMethod (ClassFileMethod))
 import JVM.Data.Abstract.ConstantPool (BootstrapArgument (BMMethodArg, BMMethodHandleArg), BootstrapMethod (BootstrapMethod), MethodHandleEntry (..), MethodRef (MethodRef))
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (MethodDescriptor), ReturnDescriptor (..))
-import JVM.Data.Abstract.Instruction (Instruction (InvokeDynamic))
+import JVM.Data.Abstract.Instruction (Instruction' (InvokeDynamic), Instruction)
 import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type (ClassInfoType (ClassInfoType), FieldType (..))
 

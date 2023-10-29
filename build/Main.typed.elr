@@ -2,31 +2,28 @@ module Main exposing (..)
 
 import Prelude exposing (..)
 
-def Main.add2 : Integer -> Integer
-let Main.add2 =
-    (\ x_1 -> (((Prelude.(+) : Integer ->
-                               Integer ->
-                                 Integer x_1 : Integer) : Integer ->
-                                                            Integer 2 : Integer) : Integer)) : Integer ->
-                                                                                                 Integer
-
-def Main.x : Integer
-let Main.x =
-    (Main.add2 : Integer -> Integer 1 : Integer) : Integer
+def Main.fact : Integer -> Integer
+let Main.fact =
+    (\ n_1 -> ((if (((Prelude.(==) : forall (a_4 : Type) .
+                                       a_4 -> a_4 -> Bool @Integer) : Integer ->
+                                                                        Bool n_1 : Integer) : Integer ->
+                                                                                                Bool 0 : Integer) : Bool then 1 : Integer else ((Prelude.(*) : Integer ->
+                                                                                                                                                               Integer ->
+                                                                                                                                                                 Integer n_1 : Integer) : Integer ->
+                                                                                                                                                                                            Integer (Main.fact : Integer ->
+                                                                                                                                                                                                                   Integer ((Prelude.(-) : Integer ->
+                                                                                                                                                                                                                                           Integer ->
+                                                                                                                                                                                                                                             Integer n_1 : Integer) : Integer ->
+                                                                                                                                                                                                                                                                        Integer 1 : Integer) : Integer) : Integer) : Integer) : Integer)) : Integer ->
+                                                                                                                                                                                                                                                                                                                                              Integer
 
 def Main.main : IO Unit 
 let Main.main =
-    let y_2  = ((Prelude.(+) : Integer ->
-                               Integer ->
-                                 Integer Main.x : Integer) : Integer ->
-                                                               Integer 1 : Integer) : Integer in let z_3  = ((Prelude.(+) : Integer ->
-                                                                                                                            Integer ->
-                                                                                                                              Integer y_2 : Integer) : Integer ->
-                                                                                                                                                         Integer 1 : Integer) : Integer in (Prelude.println : Text ->
-                                                                                                                                                                                                                IO Unit
-                                                                                                                                                                                                                    ((Prelude.toString : forall (a_4 : Type) .
-                                                                                                                                                                                                                                           a_4 ->
-                                                                                                                                                                                                                                             Text @Integer) : Text z_3 : Integer) : Text) : IO Unit
-                                                                                                                                                                                                                                                                                                : IO Unit
-                                                                                                                                                                                                                                                                                                      : IO Unit
+    let x_2  = (Main.fact : Integer ->
+                              Integer 5 : Integer) : Integer in (Prelude.println : Text ->
+                                                                                     IO Unit
+                                                                                         ((Prelude.toString : forall (a_3 : Type) .
+                                                                                                                a_3 ->
+                                                                                                                  Text @Integer) : Text x_2 : Integer) : Text) : IO Unit
+                                                                                                                                                                     : IO Unit
 

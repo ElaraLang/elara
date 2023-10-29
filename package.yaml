@@ -7,7 +7,7 @@ maintainer: Alexander Wood <alexljwood24@hotmail.co.uk>
 copyright: 2022 Alexander Wood
 license: MIT
 github: ElaraLang/elara
-tested-with: ghc ==9.4.4
+tested-with: ghc ==9.4.7
 language: GHC2021
 
 extra-source-files:

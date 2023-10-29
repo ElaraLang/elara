@@ -4,7 +4,6 @@ import Arbitrary.AST (genExpr)
 import Data.Generics.Wrapped
 import Elara.AST.Generic
 import Elara.AST.Name
-import Elara.AST.Select
 import Elara.AST.StripLocation
 import Elara.Parse.Expression (exprParser)
 import Hedgehog hiding (Var)

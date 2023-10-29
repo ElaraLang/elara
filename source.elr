@@ -5,4 +5,4 @@ let fact n =
 
 let main = 
     let x = fact 5
-    println x
+    println (toString x)

@@ -43,6 +43,7 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
+import Elara.Prim (primRegion)
 
 type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
@@ -92,13 +93,24 @@ inferDeclaration (Declaration ld) =
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType)) = do
-        maybeExpected' <- for maybeExpected $
-            \expected' -> do
+        maybeExpected' <- case maybeExpected of
+            Just expected' -> do
                 kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped . unlocated))
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
                 astTypeToInferPolyType expected'
+            Nothing -> do
+                -- if no expected type is given, we create a fresh type variable
+                -- this is useful for top-level declarations, where we don't know the type yet
+                -- but we still want to infer it
+                f <- fresh
+                let y = Infer.UnsolvedType primRegion f
+                push (UnsolvedType f)
+                push (Annotation (mkGlobal' declName) y)
+                pure y
 
-        e' <- inferExpression e maybeExpected'
+        
+
+        e' <- inferExpression e (Just maybeExpected')
 
         ctx <- Infer.getAll
 
@@ -112,7 +124,7 @@ inferExpression :: (Members InferPipelineEffects r) => ShuntedExpr -> Maybe (Typ
 inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
     ctx <- Infer.get
-    wellFormedType ctx expectedType
+    -- wellFormedType ctx expectedType
     check e expectedType
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do

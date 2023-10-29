@@ -33,7 +33,7 @@ import Elara.Rename (rename, runRenamePipeline)
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
-import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
+import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic', Report (..))
 import JVM.Data.Abstract.ClassFile qualified as ClassFile
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
@@ -47,9 +47,23 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.IO (openFile)
 import Text.Printf
+import Elara.Error (runErrorOrReport, ReportableError (report), writeReport)
+import Polysemy.Error (fromEither)
+import JVM.Data.Convert.Monad
 
 outDirName :: (IsString s) => s
 outDirName = "build"
+
+instance ReportableError CodeConverterError where
+    report x = writeReport $
+            Err
+                (Nothing)
+                (show x)
+                [
+                
+                ]
+                [
+                ]
 
 main :: IO ()
 main = run `finally` cleanup
@@ -95,7 +109,7 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
         putTextLn ("Compiling " <> showPretty mn <> "...")
-        let converted = convert class'
+        converted <- runErrorOrReport $ fromEither $ convert class'
         let bs = runPut (writeBinary converted)
         let fp = "build/" <> suitableFilePath (ClassFile.name class')
         liftIO $ writeFileLBS fp bs

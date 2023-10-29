@@ -937,6 +937,15 @@ instantiateTypeR _A0 a = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Union (Monotype.Alternatives [] (Monotype.UnsolvedAlternatives p))) : Context.UnsolvedAlternatives p : _ΓL))
 
             instantiateAlternativesR (Type.location _A0) alternatives p
+        Type.Custom{..} -> do
+            let _ΓL = _Γ
+            let _ΓR = _Γ'
+
+            a1s <- for typeArguments (const fresh)
+
+            set (_ΓR <> (Context.SolvedType a (Monotype.Custom conName (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType a1s <> _ΓL))
+
+            for_ (zip typeArguments a1s) \(typeArgument, a1) -> instantiateTypeR typeArgument a1
 
 {- The following `equateFields` / `instantiateFieldsL` / `instantiateFieldsR`,
    `equateAlternatives` / `instantiateAlternativesL` /

@@ -7,6 +7,9 @@ This means that currying can be avoided in a lot of cases (through arity analysi
 module Elara.Emit where
 
 import Control.Lens hiding (List)
+import Control.Monad.State qualified as State
+import Control.Monad.State.Lazy qualified as State
+import Control.Monad.Writer qualified as Writer
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)
@@ -22,16 +25,18 @@ import Elara.Emit.Utils
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, stringCon)
 import JVM.Data.Abstract.Builder
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilder, runCodeBuilder', runCodeBuilderT, runCodeBuilderT')
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor
-import JVM.Data.Abstract.Instruction (Instruction (..))
+import JVM.Data.Abstract.Instruction (Instruction, Instruction' (..))
 import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
 import JVM.Data.JVMVersion
 import Polysemy
+import Polysemy.Embed (runEmbedded)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
@@ -41,8 +46,7 @@ type Emit r = Members '[Reader JVMVersion] r
 
 type InnerEmit r =
     Members
-        '[ Writer [Instruction] -- <clinit> instructions
-         , Reader JVMVersion
+        '[ Reader JVMVersion
          , Reader QualifiedClassName
          , Embed ClassBuilder
          , State CLInitState
@@ -51,36 +55,68 @@ type InnerEmit r =
 
 newtype CLInitState = CLInitState MethodCreationState
 
-liftState :: (Member (State CLInitState) r) => Sem (State MethodCreationState : r) a -> Sem r a
+liftState :: Member (State CLInitState) r => Sem (State MethodCreationState : r) a -> Sem r a
 liftState act = do
     (CLInitState s) <- get @CLInitState
     (s', x) <- runState s act
     put $ CLInitState s'
     pure x
 
-emitGraph :: forall r. (Emit r) => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
+emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
     let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-emitModule :: (Emit r) => CoreModule -> Sem r (ModuleName, ClassFile)
+s :: forall s a m. Monad m => State.StateT s (Writer.WriterT [Instruction] Identity) a -> State.StateT s (Writer.WriterT [Instruction] m) a
+s x = do
+    state <- State.get
+    let s' = State.runStateT x state
+    fmap fst $ lift $ Writer.writer $ Writer.runWriter s'
+
+liftClassBuilder :: CodeBuilder a -> CodeBuilderT ClassBuilder a
+liftClassBuilder =
+    CodeBuilder . s . unCodeBuilder
+
+runInnerEmit ::
+    QualifiedClassName ->
+    JVMVersion ->
+    Sem
+        ( State CLInitState
+            : Reader JVMVersion
+            : Reader (QualifiedClassName)
+            : Embed ClassBuilder
+            : Embed CodeBuilder
+            : '[]
+        )
+        a ->
+    Sem (State CLInitState : Embed ClassBuilder : '[]) (a, [Instruction])
+runInnerEmit name version x = do
+    ((s, a), inst) <-
+        embed
+            . runCodeBuilderT'
+            . runM
+            . runEmbedded @ClassBuilder @(CodeBuilderT ClassBuilder) lift
+            . runEmbedded @CodeBuilder @(CodeBuilderT ClassBuilder) liftClassBuilder
+            . subsume_
+            . runReader name
+            . runReader version
+            . runState @CLInitState (CLInitState initialMethodCreationState)
+            $ x
+    put s
+    pure (a, inst)
+
+emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
     let name = createModuleName (m ^. field' @"name")
     version <- ask
 
-    let runInnerEmit =
-            runClassBuilder name version
-                . runM
-                . runReader name
-                . runReader version
-                . evalState (CLInitState initialMethodCreationState)
-
-    let (_, clazz) = runInnerEmit $ do
-            (clinit, _) <- runWriter @[Instruction] $ do
+    let (_, clazz) = runClassBuilder name version $ runM $ evalState undefined $ do
+            (_, clinit) <- runInnerEmit name version $ do
                 traverse_ addDeclaration (m ^. field @"declarations")
                 when (isMainModule m) (embed $ addMethod (generateMainMethod m))
 
             addClinit clinit
+
     pure
         ( m ^. field @"name"
         , clazz
@@ -91,7 +127,7 @@ addClinit code = do
     (CLInitState s) <- get @CLInitState
     embed $ createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" s code
 
-addDeclaration :: (InnerEmit r) => CoreDeclaration -> Sem r ()
+addDeclaration :: (InnerEmit r, Member (Embed CodeBuilder) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
     CoreValue (NonRecursive (Id name type', e)) -> do
         let declName = translateOperatorName $ runIdentity (varRefVal name)
@@ -111,13 +147,12 @@ isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (InnerEmit r) => ClassFileField -> JVMExpr -> Sem r ()
+addStaticFieldInitialiser :: (InnerEmit r, Member (Embed CodeBuilder) r) => ClassFileField -> JVMExpr -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
-    code <- liftState $ generateInstructions e
-    CLInitState s <- get
-    tell code
+    liftState $ generateInstructions e
+
     cn <- ask @QualifiedClassName
-    tell [PutStatic (ClassInfoType cn) name fieldType]
+    embed $ emit $ PutStatic (ClassInfoType cn) name fieldType
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
 generateMainMethod :: CoreModule -> ClassFileMethod

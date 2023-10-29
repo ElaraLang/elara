@@ -7,11 +7,11 @@ flags:
   diagnose:
     megaparsec-compat: true
 
-allow-newer: true
+allow-newer: false
 
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
-  commit: 2c1f718b91ea3f7ce05566377dad1966355c7041
+  commit: 659c3553c2bc27450e3a41cce9a17dcf0dc850c1
 - git: git@github.com:knightzmc/diagnose.git
   commit: 4e4155e3e2153c11b825a6a58c5cb5af817128c9
 - aeson-2.2.0.0@sha256:deeab33f7f2a235c9e9ea76168f27a3669ad51bbdb363e830015352a3b2874ec,6217
@@ -81,8 +81,6 @@ extra-deps:
 - th-abstraction-0.5.0.0@sha256:4351cadf6bf0ca80c90225bae0b12f4cfdd550f30c333b050186af5a8bc19457,2236
 - these-1.2@sha256:69206d92ed38c45da07a34a86b8fafbefc7cec511ca7003ba18736a61639d03b,2844
 - time-compat-1.9.6.1@sha256:dd4de1fa0d6b7108982efc7ac41938569e4c9b06230bb87d34aae007c52ddb67,5062
-- transformers-base-0.4.6@sha256:6f18f320e371c8954c4b6b211e2fdd5d15a6d6310bd605b9d640f47ede408961,1643
-- transformers-compat-0.7.2@sha256:044fb9955f63ee138fcebedfdcbe54afe741f2d5892a2d0bdf3a8052bd342643,5601
 - type-errors-0.2.0.2@sha256:afd6b33bb582730a90ea58fd23d5b32a38b5b6c8b2f18e3250936bdc0487dfab,2513
 - unagi-chan-0.4.1.4@sha256:e9a282689a65fc66260557222789d14dcb7d299be0ab2d4e8e414b0d9f2ef459,8813
 - uuid-types-1.0.5@sha256:e4662609522f093b86c5ae86aa9781afc69338cf102d42e5b5c196c320d95621,2636
@@ -102,4 +100,3 @@ extra-deps:
 - th-compat-0.1.4@sha256:3e7d1b8f9c72cab04c8dfdfd26589dd7f31e015ad640a207aca3b654577532ff,3224
 - semigroups-0.20@sha256:925341e6f7eb104cb490bef06eab93bb7995c7c67c51ee938185a2ddefa7aaf2,6333
 - void-0.7.3@sha256:13d30f62fcdf065e595d679d4ac8b4b0c1bb1a1b73db7b5b5a8f857cb5c8a546,1857
-

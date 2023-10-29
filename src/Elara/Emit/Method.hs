@@ -5,26 +5,29 @@ import Elara.Emit.Expr
 import Elara.Emit.State
 import Elara.Emit.Var (JVMExpr)
 import JVM.Data.Abstract.Builder (ClassBuilderT, addMethod)
+import JVM.Data.Abstract.Builder.Code (runCodeBuilder, runCodeBuilder')
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
+import JVM.Data.Convert.Instruction (fullyRunCodeConverter)
 import Polysemy (runM)
 import Polysemy.State (runState)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
-createMethod :: (Monad m) => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
+createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
 createMethod descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args)
-    (mcState, code) <-
-        runM $
-            runState initialState $
-                generateInstructions body
-    createMethodWith descriptor name mcState code
+    let ((mcState, _), instructions) =
+            runCodeBuilder' $
+                runM $
+                    runState initialState $
+                        generateInstructions body
+    createMethodWith descriptor name mcState instructions
 
-createMethodWith :: (Monad m) => MethodDescriptor -> Text -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
+createMethodWith :: Monad m => MethodDescriptor -> Text -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
 createMethodWith descriptor@(MethodDescriptor _ return_) name mcState code = do
     let maxStack = analyseMaxStack code
     let maxLocals = 1 + mcState.maxLocalVariables

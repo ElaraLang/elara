@@ -1,11 +1,7 @@
 module Main
-{ Main.add2 : Int -> Int
-    = \ (x_1 : Int) -> Prelude.+ x_1 2
-; 
-Main.x : Int
-    = Main.add2 1
+{ Main.fact : Int -> Int
+    = \ (n_1 : Int) -> case (Prelude.== @Int n_1 0)  { Elara.Prim.True -> 1; Elara.Prim.False -> Prelude.* n_1 (Main.fact (Prelude.- n_1 1))}
 ; 
 Main.main : IO ()
-    = let y_2 : Int
-        = Prelude.+ Main.x 1 in let z_3 : Int
-        = Prelude.+ y_2 1 in Prelude.println (Prelude.toString @Int z_3) }
+    = let x_2 : Int
+        = Main.fact 5 in Prelude.println (Prelude.toString @Int x_2) }
