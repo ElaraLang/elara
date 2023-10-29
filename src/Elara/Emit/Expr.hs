@@ -60,10 +60,10 @@ generateCaseInstructions ::
     Sem r ()
 generateCaseInstructions scrutinee _ [(_, _, ifTrue), (_, _, ifFalse)] = do
     generateInstructions scrutinee
-    ifTrueLabel <- embed newLabel
     ifFalseLabel <- embed newLabel
     endLabel <- embed newLabel
 
+    embed $ emit (InvokeVirtual (ClassInfoType "java.lang.Boolean") "booleanValue" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean))))
     embed $ emit' [IfEq ifFalseLabel]
     generateInstructions ifTrue
     embed $ emit' [Goto endLabel, Label ifFalseLabel]
@@ -150,5 +150,31 @@ generatePrimInstructions "+" =
         , ALoad1
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
+        ]
+generatePrimInstructions "-" =
+    pure
+        [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
+          GetStatic (ClassInfoType "elara.Prelude") "minus" (ObjectFieldType "elara.Func")
+        , ALoad0
+        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , ALoad1
+        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , CheckCast (ClassInfoType "java.lang.Integer")
+        ]
+generatePrimInstructions "*" =
+    pure
+        [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
+          GetStatic (ClassInfoType "elara.Prelude") "times" (ObjectFieldType "elara.Func")
+        , ALoad0
+        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , ALoad1
+        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , CheckCast (ClassInfoType "java.lang.Integer")
+        ]
+generatePrimInstructions "==" =
+    pure
+        [ ALoad0
+        , ALoad1
+        , InvokeStatic (ClassInfoType "java.util.Objects") "equals" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
         ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other

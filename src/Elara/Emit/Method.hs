@@ -75,3 +75,12 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (GetStatic{}) = 1
     stackChange (PutStatic{}) = -1
     stackChange Return = -1
+    stackChange IfEq{} = -1
+    stackChange IfNe{} = -1
+    stackChange IfLt{} = -1
+    stackChange IfGe{} = -1
+    stackChange IfGt{} = -1
+    stackChange IfLe{} = -1
+    stackChange Goto{} = 0
+    stackChange Label{} = 0 -- labels have no representation in the bytecode
+
