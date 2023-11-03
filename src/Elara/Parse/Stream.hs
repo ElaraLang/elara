@@ -29,8 +29,6 @@ instance Stream TokenStream where
     chunkEmpty Proxy = null
     take1_ :: TokenStream -> Maybe (Text.Megaparsec.Token TokenStream, TokenStream)
     take1_ (TokenStream _ []) = Nothing
-    
-    take1_ (TokenStream str ((L TokenDedent) : ts)) = take1_ (TokenStream str ts) -- ignore dedent token and decrement depth
     take1_ (TokenStream str (t : ts)) = Just (t, TokenStream (drop (tokensLength (Proxy @TokenStream) (t :| [])) str) ts)
     takeN_ n (TokenStream str s)
         | n <= 0 = Just ([], TokenStream str s)
