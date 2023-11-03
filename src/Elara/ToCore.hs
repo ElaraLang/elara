@@ -33,10 +33,10 @@ import Polysemy.State
 import TODO (todo)
 
 data ToCoreError
-    = LetInTopLevel TypedExpr
-    | UnknownConstructor (Located (Qualified TypeName))
-    | UnknownPrimConstructor (Qualified Text)
-    | UnknownLambdaType (Type.Type SourceRegion)
+    = LetInTopLevel !TypedExpr
+    | UnknownConstructor !(Located (Qualified TypeName))
+    | UnknownPrimConstructor !(Qualified Text)
+    | UnknownLambdaType !(Type.Type SourceRegion)
 
 instance ReportableError ToCoreError where
     report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []

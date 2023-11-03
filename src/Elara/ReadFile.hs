@@ -10,7 +10,7 @@ import Polysemy.Error
 
 type ReadFilePipelineEffects = '[Embed IO, Error ReadFileError, DiagnosticWriter (Doc AnsiStyle)]
 
-data ReadFileError = DecodeError FilePath UnicodeException
+data ReadFileError = DecodeError !FilePath !UnicodeException
 
 instance ReportableError ReadFileError where
     report (DecodeError path _) =

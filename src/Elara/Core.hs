@@ -79,7 +79,7 @@ data Type
     | AppTy Type Type
     | -- | A type constructor
       ConTy (Qualified Text)
-    | ForAllTy TypeVariable Type
+    | ForAllTy !TypeVariable !Type
     deriving (Show, Eq, Data, Ord, Generic)
 
 -- | The arity of a function type
@@ -103,10 +103,10 @@ substTypeVar tv = \case
     other -> error $ "substTypeVar: " <> show other
 
 data Literal
-    = Int Integer
-    | String Text
-    | Char Char
-    | Double Double
+    = Int !Integer
+    | String !Text
+    | Char !Char
+    | Double !Double
     | Unit
     deriving (Show, Eq, Data, Generic)
 

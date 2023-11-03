@@ -1,3 +1,4 @@
+{-# LANGUAGE StrictData #-}
 module Elara.TypeInfer.Error where
 
 import Data.Map qualified as Map

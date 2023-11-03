@@ -68,6 +68,8 @@ ghc-options:
   - -flate-specialise
   - -fspecialise-aggressively
   - -fplugin=Polysemy.Plugin
+  - -fwrite-ide-info
+  - -hiedir=.hie
 
 default-extensions:
   - OverloadedStrings

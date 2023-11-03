@@ -13,8 +13,8 @@ import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
 
 data JVMBinder
-    = JVMLocal Int
-    | Normal Var
+    = JVMLocal !Int
+    | Normal !Var
     deriving (Eq, Show, Data, Generic)
 
 instance Hashable JVMBinder

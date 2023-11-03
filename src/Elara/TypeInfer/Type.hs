@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StrictData #-}
 -- The Pretty Monotype instance kinda has to be here without big refactors
 {-# OPTIONS_GHC -Wno-orphans #-}
 -- TODO: remove this
@@ -9,10 +10,10 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..), view, (^.))
+import Control.Lens (Plated (..), view)
 import Control.Lens qualified as Lens
 import Data.Aeson (ToJSON (..), Value (String))
-import Data.Containers.ListUtils (nubOrd, nubOrdOn)
+import Data.Containers.ListUtils (nubOrdOn)
 import Data.Data (Data)
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
@@ -21,9 +22,7 @@ import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
-import Elara.Data.Unique (Unique, uniqueVal)
 import Elara.TypeInfer.Domain (Domain)
-import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Monotype (
     Monotype,

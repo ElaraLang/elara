@@ -45,8 +45,8 @@ mkPrecedence i
     | otherwise = Precedence i
 
 data OpInfo = OpInfo
-    { precedence :: Precedence
-    , associativity :: Associativity
+    { precedence :: !Precedence
+    , associativity :: !Associativity
     }
     deriving (Show)
 
@@ -59,7 +59,7 @@ data Associativity
     deriving (Show)
 
 data ShuntError
-    = SamePrecedenceError (RenamedBinaryOperator, Associativity) (RenamedBinaryOperator, Associativity)
+    = SamePrecedenceError !(RenamedBinaryOperator, Associativity) !(RenamedBinaryOperator, Associativity)
     deriving (Show)
 
 instance Exception ShuntError

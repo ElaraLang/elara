@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Elara.Lexer.Utils where
@@ -14,8 +15,6 @@ import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion 
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenDedent, TokenIndent, TokenSemicolon))
-import Elara.Pipeline (PipelineResultEff)
-import Elara.ReadFile (readFileString)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error

@@ -7,14 +7,14 @@ import Polysemy (Member, Sem)
 import Polysemy.State
 
 data MethodCreationState = MethodCreationState
-    { localVariables :: Map LVKey U1
-    , maxLocalVariables :: U1
+    { localVariables :: !(Map LVKey U1)
+    , maxLocalVariables :: !U1
     }
     deriving (Show)
 
 data LVKey
-    = UnknownName Int
-    | KnownName (Unique Text)
+    = UnknownName !Int
+    | KnownName !(Unique Text)
     deriving (Eq, Show, Ord)
 
 initialMethodCreationState :: MethodCreationState

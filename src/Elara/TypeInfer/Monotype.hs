@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData #-}
 
 {- | This module stores the `Monotype` type representing monomorphic types and
    utilites for operating on `Monotype`s
@@ -19,7 +20,6 @@ where
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
-import Elara.Data.Unique
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Unique
 

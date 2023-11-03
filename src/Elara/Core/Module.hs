@@ -13,8 +13,8 @@ import Elara.Data.Pretty (Pretty (pretty), bracedBlock, hardline, indentDepth, n
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 
 data CoreModule = CoreModule
-    { name :: ModuleName
-    , declarations :: [CoreDeclaration]
+    { name :: !ModuleName
+    , declarations :: ![CoreDeclaration]
     }
     deriving (Generic)
 

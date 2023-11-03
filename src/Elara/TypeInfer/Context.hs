@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StrictData #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- | A `Context` is an ordered list of `Entry`s used as the state for the
