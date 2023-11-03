@@ -8,7 +8,6 @@ module Elara.Emit where
 
 import Control.Lens hiding (List)
 import Control.Monad.State qualified as State
-import Control.Monad.State.Lazy qualified as State
 import Control.Monad.Writer qualified as Writer
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
@@ -25,7 +24,7 @@ import Elara.Emit.Utils
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, stringCon)
 import JVM.Data.Abstract.Builder
-import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilder, runCodeBuilder', runCodeBuilderT, runCodeBuilderT')
+import JVM.Data.Abstract.Builder.Code (unCodeBuilderT, CodeBuilder, CodeBuilderT (..), emit, runCodeBuilder, runCodeBuilder', runCodeBuilderT, runCodeBuilderT')
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
@@ -75,7 +74,7 @@ s x = do
 
 liftClassBuilder :: CodeBuilder a -> CodeBuilderT ClassBuilder a
 liftClassBuilder =
-    CodeBuilder . s . unCodeBuilder
+    CodeBuilder . s . unCodeBuilderT
 
 runInnerEmit ::
     QualifiedClassName ->
@@ -89,9 +88,9 @@ runInnerEmit ::
             : '[]
         )
         a ->
-    Sem (State CLInitState : Embed ClassBuilder : '[]) (a, [Instruction])
+    Sem (State CLInitState : Embed ClassBuilder : '[]) (a, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
-    ((s, a), inst) <-
+    ((s, a), attrs, inst) <-
         embed
             . runCodeBuilderT'
             . runM
@@ -103,29 +102,29 @@ runInnerEmit name version x = do
             . runState @CLInitState (CLInitState initialMethodCreationState)
             $ x
     put s
-    pure (a, inst)
+    pure (a, attrs, inst)
 
 emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
     let name = createModuleName (m ^. field' @"name")
     version <- ask
 
-    let (_, clazz) = runClassBuilder name version $ runM $ evalState undefined $ do
-            (_, clinit) <- runInnerEmit name version $ do
+    let (_, clazz) = runClassBuilder name version $ runM $ evalState (error "Should not be evaluated") $ do
+            (_, attrs, clinit) <- runInnerEmit name version $ do
                 traverse_ addDeclaration (m ^. field @"declarations")
                 when (isMainModule m) (embed $ addMethod (generateMainMethod m))
 
-            addClinit clinit
+            addClinit attrs clinit
 
     pure
         ( m ^. field @"name"
         , clazz
         )
 
-addClinit :: (Member (Embed ClassBuilder) r, Member (State CLInitState) r) => [Instruction] -> Sem r ()
-addClinit code = do
+addClinit :: (Member (Embed ClassBuilder) r, Member (State CLInitState) r) => [CodeAttribute] -> [Instruction] -> Sem r ()
+addClinit attrs code = do
     (CLInitState s) <- get @CLInitState
-    embed $ createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" s code
+    embed $ createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s code
 
 addDeclaration :: (InnerEmit r, Member (Embed CodeBuilder) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of

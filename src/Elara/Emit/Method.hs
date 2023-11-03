@@ -10,7 +10,6 @@ import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
-import JVM.Data.Convert.Instruction (fullyRunCodeConverter)
 import Polysemy (runM)
 import Polysemy.State (runState)
 
@@ -20,15 +19,15 @@ This handles the calculation of messiness like max stack and locals
 createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
 createMethod descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args)
-    let ((mcState, _), instructions) =
+    let ((mcState, _), codeAttrs,instructions) =
             runCodeBuilder' $
                 runM $
                     runState initialState $
                         generateInstructions body
-    createMethodWith descriptor name mcState instructions
+    createMethodWith descriptor name codeAttrs mcState instructions
 
-createMethodWith :: Monad m => MethodDescriptor -> Text -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
-createMethodWith descriptor@(MethodDescriptor _ return_) name mcState code = do
+createMethodWith :: Monad m => MethodDescriptor -> Text -> [CodeAttribute] -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
+createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState code = do
     let maxStack = analyseMaxStack code
     let maxLocals = 1 + mcState.maxLocalVariables
 
@@ -43,7 +42,7 @@ createMethodWith descriptor@(MethodDescriptor _ return_) name mcState code = do
                     (fromIntegral maxLocals)
                     (code <> [if return_ == VoidReturn then Return else AReturn])
                     []
-                    []
+                    codeAttrs
             ]
 
 analyseMaxStack :: [Instruction] -> Int
