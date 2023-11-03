@@ -10,7 +10,7 @@ import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.Utils (uncurry3)
-import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel, addCodeAttribute, appendStackMapFrame)
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type hiding (Int)
@@ -19,6 +19,8 @@ import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
 import Print (debugColored, showPretty)
+import JVM.Data.Abstract.ClassFile.Method (CodeAttribute(StackMapTable, LineNumberTable), StackMapFrame (..), LineNumberTableEntry (LineNumberTableEntry), VerificationTypeInfo (..))
+
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit ALoad0
@@ -67,6 +69,8 @@ generateCaseInstructions scrutinee _ [(_, _, ifTrue), (_, _, ifFalse)] = do
     embed $ emit' [IfEq ifFalseLabel]
     generateInstructions ifTrue
     embed $ emit' [Goto endLabel, Label ifFalseLabel]
+    embed $ appendStackMapFrame $ SameFrame  ifFalseLabel
+    embed $ appendStackMapFrame $ SameLocals1StackItemFrame (ObjectVariableInfo (ClassInfoType "java.lang.Integer")) endLabel
     generateInstructions ifFalse
     embed $ emit' [Label endLabel]
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty scrutinee
@@ -176,5 +180,7 @@ generatePrimInstructions "==" =
         [ ALoad0
         , ALoad1
         , InvokeStatic (ClassInfoType "java.util.Objects") "equals" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
+        , InvokeStatic (ClassInfoType "java.lang.Boolean") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Boolean] (TypeReturn (ObjectFieldType "java.lang.Boolean")))
+    
         ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other

@@ -1,12 +1,16 @@
 
 class Square {
 
-static boolean x = true;
     public static int fact(int n ) {
         if (n == 0) {
-            return 0;
+            if (n % 2 == 0) {
+                return 1;
+            }
+            else {
+                return 2;
+            }
         } else {
-        return n + 1;
+        return n * fact (n - 1);
         }
     }
 
