@@ -5,9 +5,7 @@ The compiler will then replace these with the actual primitive functions.
 -}
 module Elara.Prim where
 
-import Elara.AST.Frontend
-import Elara.AST.Module
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), OpName (..), Qualified (..), TypeName (..), VarName (NormalVarName))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (NormalVarName), VarOrConName (..))
 import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
@@ -18,13 +16,12 @@ import Elara.TypeInfer.Monotype (Scalar (..))
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
 import Polysemy
-import Elara.AST.Generic.Types (ASTLocate')
 
 consName :: VarName
 consName = NormalVarName "::"
 
-cons :: MaybeQualified OpName
-cons = MaybeQualified (OpName "::") (Just primModuleName)
+cons :: MaybeQualified VarOrConName
+cons = MaybeQualified (VarName "cons") (Just primModuleName)
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"
@@ -49,17 +46,6 @@ ioName = TypeName "IO"
 
 primModuleName :: ModuleName
 primModuleName = ModuleName ["Elara", "Prim"]
-
-primModule :: forall ast. (ASTLocate' ast ~ Located) => Module ast
-primModule =
-    Module $
-        primLocated
-            ( Module'
-                (primLocated primModuleName)
-                ExposingAll
-                []
-                []
-            )
 
 primRegion :: SourceRegion
 primRegion = generatedSourceRegion (Just "<primitive>")

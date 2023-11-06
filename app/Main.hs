@@ -28,6 +28,7 @@ import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Parse
 import Elara.Pipeline (IsPipeline, finalisePipeline)
+import Elara.Prim
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.ReadFile (readFileString, runReadFilePipeline)
 import Elara.Rename (rename, runRenamePipeline)
@@ -51,7 +52,6 @@ import System.Environment (getEnvironment)
 import System.IO (openFile)
 import System.Process
 import Text.Printf
-import Elara.Prim (primModule)
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -98,10 +98,11 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
+    prim <- loadModule "prim.elr"
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
 
-    let graph = createGraph [primModule, source, prelude]
+    let graph = createGraph [prim, source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
