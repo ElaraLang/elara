@@ -118,65 +118,15 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
         t = fromIntegral (end - start) * 1e-9
     putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
--- typedGraph <- inferModules shuntedGraph
-
--- when dumpTyped $ do
---     liftIO
---         ( dumpGraph
---             typedGraph
---             (view (_Unwrapped . unlocated . field' @"name" . to nameText))
---             ".typed.elr"
---         )
-
--- coreGraph <- reportMaybe $ subsume $ uniqueGenToIO $ runToCoreC (traverseGraph moduleToCore typedGraph)
-
--- when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
-
--- classes <- runReader java8 (emitGraph coreGraph)
-
--- for_ classes $ \(mn, class') -> do
---     putTextLn ("Compiling " <> showPretty mn <> "...")
---     let converted = convert class'
---     let bs = runPut (writeBinary converted)
---     liftIO $ writeFileLBS ("build/" <> suitableFilePath (ClassFile.name class')) bs
---     putTextLn ("Compiled " <> showPretty mn <> "!")
-
--- end <- liftIO getCPUTime
--- let t :: Double
---     t = fromIntegral (end - start) * 1e-9
--- putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
-
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
--- renameModule ::
---     (Members MainMembers r, Member (Embed IO) r) =>
---     TopologicalGraph (Module 'Desugared) ->
---     Module 'Desugared ->
---     Sem r (Module 'Renamed)
--- renameModule mp m = do
---     y <- subsume $ runRenamer primitiveRenameState mp (rename m)
---     case y of
---         Left err -> report err *> nothingE
---         Right renamed -> justE renamed
-
--- shuntModule :: (Members MainMembers r) => Module 'Renamed -> Sem r (Module 'Shunted)
--- shuntModule m = do
---     x <-
---         runError $
---             runWriter $
---                 runReader (fromList []) (shunt m)
---     case x of
---         Left err -> report err *> nothingE
---         Right (warnings, shunted) -> do
---             traverse_ report warnings
---             justE shunted
 
 loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
-    -- printColored (stripLocation @(Located Token) @Token <$> tokens)
+    
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 
