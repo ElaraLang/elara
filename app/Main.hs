@@ -49,6 +49,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.IO (openFile)
+import System.Process
 import Text.Printf
 
 outDirName :: IsString s => s
@@ -75,7 +76,8 @@ main = run `finally` cleanup
         let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
-        s <- runElara dumpShunted dumpTyped dumpCore
+        let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
+        s <- runElara dumpShunted dumpTyped dumpCore run
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
@@ -90,8 +92,8 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-runElara :: Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
+runElara :: Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
+runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
@@ -118,15 +120,19 @@ runElara dumpShunted dumpTyped dumpCore = fmap fst <$> finalisePipeline $ do
         t = fromIntegral (end - start) * 1e-9
     putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
 
+    when run $ liftIO $ do
+        -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
+        x <- readCreateProcess ((shell "java -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
+        putStrLn x
+
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
-
 
 loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
 loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
-    
+
     parsed <- parsePipeline moduleParser fp tokens
     runDesugarPipeline $ runDesugar $ desugar parsed
 

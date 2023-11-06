@@ -160,6 +160,7 @@ library
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , process
     , relude
     , safe-exceptions
     , terminal-size
@@ -211,6 +212,7 @@ executable elara
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , process
     , relude
     , safe-exceptions
     , terminal-size
@@ -265,6 +267,7 @@ test-suite doctest
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , process
     , relude
     , safe-exceptions
     , terminal-size
@@ -340,6 +343,7 @@ test-suite elara-test
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , process
     , relude
     , safe-exceptions
     , terminal-size
