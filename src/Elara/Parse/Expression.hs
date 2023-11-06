@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Elara.Parse.Expression where
 
 import Control.Lens (Iso', iso, (^.))
@@ -7,7 +8,7 @@ import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
 import Elara.AST.Name (VarName, nameText)
-import Elara.AST.Region (Located (..), sourceRegion, spanningRegion')
+import Elara.AST.Region (Located (..), sourceRegion, spanningRegion', withLocationOf)
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
@@ -19,6 +20,8 @@ import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
 import Elara.Utils (curry3)
 import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
+import qualified Elara.Prim as Prim
+import Elara.AST.Select (LocatedAST(Frontend))
 
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
 locatedExpr = fmap (\x -> Expr (x, Nothing)) . located
@@ -28,6 +31,7 @@ exprParser =
     makeExprParser
         expression
         [ [InfixL functionCall]
+        , [InfixL cons]
         , [InfixR binOp]
         ]
         <?> "expression"
@@ -51,8 +55,14 @@ statement =
 unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
 unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
 
-binOp, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
+binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 binOp = liftedBinary operator (curry3 BinaryOperator) unannotatedExpr
+cons = liftedBinary consName (curry3 BinaryOperator) unannotatedExpr
+    where consName :: Parser FrontendBinaryOperator
+          consName = do 
+                l <- located (token_ TokenDoubleColon)
+                let y = (SymOp (Prim.cons `withLocationOf` l)) :: BinaryOperator' Frontend
+                pure $ MkBinaryOperator (y `withLocationOf`l)
 functionCall = liftedBinary pass (const FunctionCall) unannotatedExpr
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
@@ -168,7 +178,6 @@ lambda = locatedExpr $ do
 ifElse :: Parser FrontendExpr
 ifElse = locatedExpr $ do
     token_ TokenIf
-
     condition <- exprParser
     _ <- optional (token_ TokenSemicolon)
     token_ TokenThen

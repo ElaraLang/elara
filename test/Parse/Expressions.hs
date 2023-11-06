@@ -1,7 +1,6 @@
 module Parse.Expressions where
 
 import Arbitrary.AST (genExpr)
-import Data.Generics.Wrapped
 import Elara.AST.Generic
 import Elara.AST.Name
 import Elara.AST.StripLocation

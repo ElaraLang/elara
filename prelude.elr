@@ -1,4 +1,5 @@
 module Prelude
+import Elara.Prim
 
 def println : String -> IO ()
 let println = elaraPrimitive "println"
@@ -14,3 +15,15 @@ let (==) = elaraPrimitive "=="
 
 def toString : a -> String
 let toString = elaraPrimitive "toString"
+
+def (++) : [a] -> [a] -> [a]
+let (++) a b = 
+    match a with
+      [] -> b
+      (x::xs) -> x :: (xs ++ b)
+
+def reverse : [a] -> [a]
+let reverse x = 
+    match x with
+      [] -> []
+      (x::xs) -> reverse xs ++ [x]

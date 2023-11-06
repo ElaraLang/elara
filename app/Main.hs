@@ -51,6 +51,7 @@ import System.Environment (getEnvironment)
 import System.IO (openFile)
 import System.Process
 import Text.Printf
+import Elara.Prim (primModule)
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -100,7 +101,7 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
     source <- loadModule "source.elr"
     prelude <- loadModule "prelude.elr"
 
-    let graph = createGraph [source, prelude]
+    let graph = createGraph [primModule, source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
