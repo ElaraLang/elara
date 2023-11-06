@@ -10,6 +10,7 @@ import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
+import JVM.Data.Analyse.Instruction (analyseStackMapTable, calculateStackMapFrames)
 import Polysemy (runM)
 import Polysemy.State (runState)
 
@@ -19,7 +20,7 @@ This handles the calculation of messiness like max stack and locals
 createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
 createMethod descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args)
-    let ((mcState, _), codeAttrs,instructions) =
+    let ((mcState, _), codeAttrs, instructions) =
             runCodeBuilder' $
                 runM $
                     runState initialState $
@@ -29,6 +30,7 @@ createMethod descriptor@(MethodDescriptor args _) name body = do
 createMethodWith :: Monad m => MethodDescriptor -> Text -> [CodeAttribute] -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
 createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState code = do
     let maxStack = analyseMaxStack code
+
     let maxLocals = 1 + mcState.maxLocalVariables
 
     addMethod $
@@ -42,7 +44,7 @@ createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState 
                     (fromIntegral maxLocals)
                     (code <> [if return_ == VoidReturn then Return else AReturn])
                     []
-                    codeAttrs
+                    (StackMapTable (calculateStackMapFrames descriptor code) : codeAttrs)
             ]
 
 analyseMaxStack :: [Instruction] -> Int
@@ -57,18 +59,9 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (InvokeVirtual _ _ desc) = stackChangeOf desc
     stackChange (InvokeInterface _ _ desc) = stackChangeOf desc
     stackChange AConstNull = 1
-    stackChange ALoad0 = 1
-    stackChange ALoad1 = 1
-    stackChange ALoad2 = 1
-    stackChange ALoad3 = 1
     stackChange (ALoad _) = 1
     stackChange (AStore _) = -1
-    stackChange AStore0 = -1
-    stackChange AStore1 = -1
-    stackChange AStore2 = -1
-    stackChange AStore3 = -1
     stackChange AReturn = -1
-    stackChange AThrow = -1
     stackChange (CheckCast _) = 0
     stackChange (LDC _) = 1
     stackChange (GetStatic{}) = 1
@@ -82,4 +75,3 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange IfLe{} = -1
     stackChange Goto{} = 0
     stackChange Label{} = 0 -- labels have no representation in the bytecode
-

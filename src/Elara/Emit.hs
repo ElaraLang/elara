@@ -12,7 +12,7 @@ import Control.Monad.Writer qualified as Writer
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)
-import Elara.Core (Bind (..), Expr (..), Type (..), Var (..))
+import Elara.Core (Bind (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
@@ -21,10 +21,10 @@ import Elara.Emit.Method (createMethod, createMethodWith)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
-import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
+import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, stringCon)
 import JVM.Data.Abstract.Builder
-import JVM.Data.Abstract.Builder.Code (unCodeBuilderT, CodeBuilder, CodeBuilderT (..), emit, runCodeBuilder, runCodeBuilder', runCodeBuilderT, runCodeBuilderT')
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilderT', unCodeBuilderT)
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
@@ -66,15 +66,10 @@ emitGraph g = do
     let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-s :: forall s a m. Monad m => State.StateT s (Writer.WriterT [Instruction] Identity) a -> State.StateT s (Writer.WriterT [Instruction] m) a
-s x = do
-    state <- State.get
-    let s' = State.runStateT x state
-    fmap fst $ lift $ Writer.writer $ Writer.runWriter s'
 
 liftClassBuilder :: CodeBuilder a -> CodeBuilderT ClassBuilder a
 liftClassBuilder =
-    CodeBuilder . s . unCodeBuilderT
+    CodeBuilder . State.state . State.runState . unCodeBuilderT
 
 runInnerEmit ::
     QualifiedClassName ->

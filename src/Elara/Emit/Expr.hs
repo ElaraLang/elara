@@ -10,7 +10,7 @@ import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.Utils (uncurry3)
-import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel, addCodeAttribute, appendStackMapFrame)
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type hiding (Int)
@@ -18,15 +18,13 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (debugColored, showPretty)
-import JVM.Data.Abstract.ClassFile.Method (CodeAttribute(StackMapTable, LineNumberTable), StackMapFrame (..), LineNumberTableEntry (LineNumberTableEntry), VerificationTypeInfo (..))
-
+import Print (showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
-generateInstructions (Var (JVMLocal 0)) = embed $ emit ALoad0
-generateInstructions (Var (JVMLocal 1)) = embed $ emit ALoad1
-generateInstructions (Var (JVMLocal 2)) = embed $ emit ALoad2
-generateInstructions (Var (JVMLocal 3)) = embed $ emit ALoad3
+generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
+generateInstructions (Var (JVMLocal 1)) = embed $ emit $ ALoad 1
+generateInstructions (Var (JVMLocal 2)) = embed $ emit $ ALoad 2
+generateInstructions (Var (JVMLocal 3)) = embed $ emit $ ALoad 3
 generateInstructions (Lit s) = generateLitInstructions s >>= embed . emit'
 generateInstructions (Var (Normal (Id (Global' v) _)))
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
@@ -69,8 +67,6 @@ generateCaseInstructions scrutinee _ [(_, _, ifTrue), (_, _, ifFalse)] = do
     embed $ emit' [IfEq ifFalseLabel]
     generateInstructions ifTrue
     embed $ emit' [Goto endLabel, Label ifFalseLabel]
-    embed $ appendStackMapFrame $ SameFrame  ifFalseLabel
-    embed $ appendStackMapFrame $ SameLocals1StackItemFrame (ObjectVariableInfo (ClassInfoType "java.lang.Integer")) endLabel
     generateInstructions ifFalse
     embed $ emit' [Label endLabel]
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty scrutinee
@@ -132,12 +128,12 @@ generateLitInstructions other = error $ "Not implemented: " <> showPretty other
 generatePrimInstructions :: Monad m => Text -> m [Instruction]
 generatePrimInstructions "println" =
     pure
-        [ ALoad0
+        [ ALoad 0
         , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
         ]
 generatePrimInstructions "toString" =
     pure
-        [ ALoad0
+        [ ALoad 0
         , InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
         ]
 generatePrimInstructions "undefined" =
@@ -149,9 +145,9 @@ generatePrimInstructions "+" =
     pure
         [ -- sum 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Int.add
           GetStatic (ClassInfoType "elara.Prelude") "add" (ObjectFieldType "elara.Func")
-        , ALoad0
+        , ALoad 0
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
-        , ALoad1
+        , ALoad 1
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
@@ -159,9 +155,9 @@ generatePrimInstructions "-" =
     pure
         [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
           GetStatic (ClassInfoType "elara.Prelude") "minus" (ObjectFieldType "elara.Func")
-        , ALoad0
+        , ALoad 0
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
-        , ALoad1
+        , ALoad 1
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
@@ -169,18 +165,17 @@ generatePrimInstructions "*" =
     pure
         [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
           GetStatic (ClassInfoType "elara.Prelude") "times" (ObjectFieldType "elara.Func")
-        , ALoad0
+        , ALoad 0
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
-        , ALoad1
+        , ALoad 1
         , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
 generatePrimInstructions "==" =
     pure
-        [ ALoad0
-        , ALoad1
+        [ ALoad 0
+        , ALoad 1
         , InvokeStatic (ClassInfoType "java.util.Objects") "equals" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
         , InvokeStatic (ClassInfoType "java.lang.Boolean") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Boolean] (TypeReturn (ObjectFieldType "java.lang.Boolean")))
-    
         ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
