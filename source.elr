@@ -7,4 +7,4 @@ let fact n =
 let main = 
     let x = fact 5
     println (toString x)
-    println ([1] ++ [2])
+    println (toString ([1] ++ [2]))

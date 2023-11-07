@@ -1505,6 +1505,15 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
 
         pure $ Expr (Located location (Syntax.List exprs'), t)
+    Syntax.Block exprs -> do
+        let process expr = do
+                _Γ <- get
+
+                infer expr
+
+        exprTypes <- traverse process exprs
+
+        pure $ Expr (Located location (Syntax.Block exprTypes), Syntax.typeOf $ last exprTypes)
     other -> error $ "infer: " <> showPretty other
 
 {- | This corresponds to the judgment:
