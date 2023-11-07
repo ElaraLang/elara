@@ -2,8 +2,11 @@
 module Elara.Prim.Core where
 
 import Elara.AST.Name (ModuleName (..), Qualified (..))
-import Elara.Core (DataCon (..), Type (..))
+import Elara.Core (DataCon (..), Type (..), TypeVariable (TypeVariable))
+import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Data.Unique
 import Elara.Prim (mkPrimQual)
+import Polysemy
 
 trueCtorName :: Qualified Text
 trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
@@ -17,6 +20,11 @@ emptyListCtorName = Qualified "[]" (ModuleName ("Elara" :| ["Prim"]))
 consCtorName :: Qualified Text
 consCtorName = Qualified "::" (ModuleName ("Elara" :| ["Prim"]))
 
+consType :: Member UniqueGen r => Sem r Type
+consType = do
+    a <- makeUnique (Just "a")
+    let tv = TypeVariable a TypeKind
+    pure $ ForAllTy tv (FuncTy (AppTy listCon (TyVarTy tv)) ((AppTy listCon (TyVarTy tv))))
 
 tuple2CtorName :: Qualified Text
 tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))

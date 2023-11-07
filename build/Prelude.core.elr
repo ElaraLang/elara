@@ -1,0 +1,6 @@
+module Prelude
+{ Prelude.++ : forall (a_10 : Type). [] a_10 -> [] a_10 -> [] a_10
+    = \ (a_11 : [] a_10) (b_12 : [] a_10) -> case a_11 of (a_59 : forall (a_10 : Type). [] a_10) { Elara.Prim.[] -> b_12; Elara.Prim.:: -> Elara.Prim.cons @a_10 x_13 (Prelude.++ xs_14 b_12)}
+; 
+Prelude.reverse : forall (a_6 : Type). [] a_6 -> [] a_6
+    = \ (x_7 : [] a_6) -> case x_7 of (x_60 : forall (a_6 : Type). [] a_6) { Elara.Prim.[] -> Elara.Prim.[]; Elara.Prim.:: -> Prelude.++ (Prelude.reverse xs_9) (Elara.Prim.:: x_8 Elara.Prim.[])} }

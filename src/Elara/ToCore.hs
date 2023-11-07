@@ -31,6 +31,7 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.State
 import TODO (todo)
+import Print (debugPretty)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -138,7 +139,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.Unit -> pure $ Lit Core.Unit
         AST.Var (Located _ v) -> do
             t' <- typeToCore t
-            pure $ Core.Var (Core.Id (nameText <$> stripLocation @(VarRef VarName) @(UnlocatedVarRef VarName) v) t')
+            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
             pure $ Core.Var (conToVar ctor)
@@ -179,9 +180,10 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             x' <- toCore x
             xs' <- toCore' (AST.List xs)
             let ref = mkGlobalRef consCtorName
+            consType' <- consType
             pure $
                 Core.App
-                    (Core.App (Core.Var $ Core.Id ref todo) x') -- x
+                    (Core.App (Core.Var $ Core.Id ref consType') x') -- x
                     xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
@@ -209,7 +211,7 @@ stripForAll :: Core.Type -> Core.Type
 stripForAll (Core.ForAllTy _ t) = stripForAll t
 stripForAll t = t
 
-desugarMatch :: ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
+desugarMatch :: HasCallStack => ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
     e' <- toCore e
     bind' <- mkBindName e
