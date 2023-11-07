@@ -5,6 +5,4 @@ let fact n =
     if n == 0 then 1 else n * fact (n - 1)
 
 let main = 
-    let x = fact 5
-    println (toString x)
     println (toString ([1] ++ [2]))

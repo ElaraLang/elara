@@ -21,7 +21,7 @@ import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
-import Elara.Prim.Core (intCon, ioCon, stringCon)
+import Elara.Prim.Core (intCon, ioCon, stringCon, listCon)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilderT', unCodeBuilderT)
 import JVM.Data.Abstract.ClassFile
@@ -175,7 +175,9 @@ generateMainMethod m =
 That is, a type that can be compiled to a field rather than a method.
 -}
 typeIsValue :: Type -> Bool
+typeIsValue (ForAllTy _ x) = typeIsValue x
 typeIsValue (AppTy con _) | con == ioCon = True
+typeIsValue (AppTy con _) | con == listCon = True
 typeIsValue c | c == stringCon = True
 typeIsValue c | c == intCon = True
 typeIsValue _ = False

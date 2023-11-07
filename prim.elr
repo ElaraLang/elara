@@ -18,3 +18,6 @@ let toString = elaraPrimitive "toString"
 
 def cons : a -> [a] -> [a]
 let cons = elaraPrimitive "cons"
+
+def empty : [a]
+let empty = elaraPrimitive "empty"

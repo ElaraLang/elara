@@ -15,10 +15,10 @@ falseCtorName :: Qualified Text
 falseCtorName = Qualified "False" (ModuleName ("Elara" :| ["Prim"]))
 
 emptyListCtorName :: Qualified Text
-emptyListCtorName = Qualified "[]" (ModuleName ("Elara" :| ["Prim"]))
+emptyListCtorName = Qualified "empty" (ModuleName ("Elara" :| ["Prim"]))
 
 consCtorName :: Qualified Text
-consCtorName = Qualified "::" (ModuleName ("Elara" :| ["Prim"]))
+consCtorName = Qualified "cons" (ModuleName ("Elara" :| ["Prim"]))
 
 consType :: Member UniqueGen r => Sem r Type
 consType = do

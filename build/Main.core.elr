@@ -1,7 +1,6 @@
 module Main
 { Main.fact : Int -> Int
-    = \ (n_4 : Int) -> case (Elara.Prim.== @Int n_4 0)  { Elara.Prim.True -> 1; Elara.Prim.False -> Elara.Prim.* n_4 (Main.fact (Elara.Prim.- n_4 1))}
+    = \ (n_5 : Int) -> case (Elara.Prim.== @Int n_5 0)  { Elara.Prim.True -> 1; Elara.Prim.False -> Elara.Prim.* n_5 (Main.fact (Elara.Prim.- n_5 1))}
 ; 
 Main.main : IO ()
-    = let x_5 : Int
-        = Main.fact 5 in Elara.Prim.println (Elara.Prim.toString @Int x_5) }
+    = Elara.Prim.println (Elara.Prim.toString @([] Int) (Prelude.++ (Elara.Prim.cons 1 Elara.Prim.empty) (Elara.Prim.cons 2 Elara.Prim.empty))) }
