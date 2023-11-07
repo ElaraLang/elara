@@ -178,5 +178,10 @@ generatePrimInstructions "==" =
         , InvokeStatic (ClassInfoType "java.util.Objects") "equals" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
         , InvokeStatic (ClassInfoType "java.lang.Boolean") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Boolean] (TypeReturn (ObjectFieldType "java.lang.Boolean")))
         ]
-
+generatePrimInstructions "cons" = pure
+    [
+        ALoad 0,
+        ALoad 1,
+        InvokeStatic (ClassInfoType "elara.EList") "cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "elara.EList")))
+    ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other

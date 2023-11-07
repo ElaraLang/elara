@@ -52,6 +52,7 @@ import System.Environment (getEnvironment)
 import System.IO (openFile)
 import System.Process
 import Text.Printf
+import System.FilePath
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -114,7 +115,7 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
         converted <- runErrorOrReport $ fromEither $ convert class'
         let bs = runPut (writeBinary converted)
         let fp = "build/" <> suitableFilePath (class'.name)
-        liftIO $ writeFileLBS fp bs
+        liftIO $ createAndWriteFile fp bs
         putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
 
     end <- liftIO getCPUTime
@@ -126,6 +127,12 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
         -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
         x <- readCreateProcess ((shell "java -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
         putStrLn x
+
+createAndWriteFile :: FilePath -> LByteString -> IO ()
+createAndWriteFile path content = do
+  createDirectoryIfMissing True $ takeDirectory path
+
+  writeFileLBS path content
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
