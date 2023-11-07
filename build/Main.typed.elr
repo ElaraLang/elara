@@ -32,11 +32,11 @@ let Main.main =
                                                                                                             List
                                                                                                               a_6 ->
                                                                                                               List
-                                                                                                                a_6 [ 1 : Integer ] : List
-                                                                                                                                        Integer) : List
-                                                                                                                                                     Integer ->
-                                                                                                                                                     List
-                                                                                                                                                       Integer [ 2 : Integer ] : List
-                                                                                                                                                                                   Integer) : List
-                                                                                                                                                                                                Integer) : Text) : IO Unit
+                                                                                                                a_6 [ 1 : Integer, 2 : Integer, 3 : Integer ] : List
+                                                                                                                                                                  Integer) : List
+                                                                                                                                                                               Integer ->
+                                                                                                                                                                               List
+                                                                                                                                                                                 Integer [ 4 : Integer, 5 : Integer, 6 : Integer ] : List
+                                                                                                                                                                                                                                       Integer) : List
+                                                                                                                                                                                                                                                    Integer) : Text) : IO Unit
 

@@ -2,6 +2,7 @@
 
 module Elara.Emit.Expr where
 
+import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core
@@ -21,7 +22,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (debugPretty, showPretty)
+import Print (debugPretty, showPretty, debugColored)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
@@ -80,7 +81,7 @@ generateCaseInstructions -- hardcode if/else impl
             embed $ emit' [Label endLabel]
 generateCaseInstructions
     scrutinee
-    x -- hardcode cons/empty imp
+    as -- hardcode cons/empty imp
     [ (DataAlt (DataCon emptyCtorName' (AppTy listCon' _)), _, ifEmpty)
         , (DataAlt (DataCon consCtorName' listCon2'), [headBind, tailBind], ifCons)
         ]
@@ -91,16 +92,32 @@ generateCaseInstructions
             do
                 generateInstructions scrutinee
                 embed $ emit $ CheckCast (ClassInfoType "elara.EList")
+                -- store the scrutinee into the as, if it exists
+                debugPretty as
+            
+                as' <- for as $ \as' -> do
+                    idx <- localVariableId as'
+                    debugColored idx
+                    embed $ emit Dup
+                    embed $ emit $ AStore idx
+                    pure idx
+                let referenceScrutinee = case as' of
+                        Just as' -> do
+                            embed $ emit $ ALoad as'
+                        Nothing -> generateInstructions scrutinee
+
                 ifEmptyLabel <- embed newLabel
                 endLabel <- embed newLabel
 
                 embed $ emit $ InvokeVirtual (ClassInfoType "elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
                 embed $ emit $ IfNe ifEmptyLabel
                 -- store the cons binds into locals
+                referenceScrutinee
                 embed $ emit $ GetField (ClassInfoType "elara.EList") "head" (ObjectFieldType "java.lang.Object")
                 headIdx <- localVariableId headBind
                 embed $ emit $ AStore headIdx
 
+                referenceScrutinee
                 embed $ emit $ GetField (ClassInfoType "elara.EList") "tail" (ObjectFieldType "elara.EList")
                 tailIdx <- localVariableId tailBind
                 embed $ emit $ AStore tailIdx
@@ -113,7 +130,7 @@ generateCaseInstructions
                 embed $ emit $ Label endLabel
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
-localVariableId :: Member (State MethodCreationState) r => JVMBinder -> Sem r U1
+localVariableId :: HasCallStack => Member (State MethodCreationState) r => JVMBinder -> Sem r U1
 localVariableId (JVMLocal i) = pure (fromIntegral i)
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other

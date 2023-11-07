@@ -23,4 +23,13 @@ public class EList<T> {
     public boolean isEmpty() {
         return head == null && tail == null;
     }
+
+    @Override
+    public String toString() {
+        if (isEmpty()) {
+            return "[]";
+        } else {
+            return head + ":" + tail;
+        }
+    }
 }

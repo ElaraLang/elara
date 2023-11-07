@@ -254,7 +254,6 @@ mkBindName :: ToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
-
     pure (Core.Id (mkLocalRef unique) t')
 mkBindName (AST.Expr (_, t)) = do
     t' <- typeToCore t

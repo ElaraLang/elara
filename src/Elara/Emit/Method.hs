@@ -13,12 +13,14 @@ import JVM.Data.Abstract.Instruction
 import JVM.Data.Analyse.Instruction (calculateStackMapFrames)
 import Polysemy (runM)
 import Polysemy.State (runState)
+import Print (debugPretty, debugColored)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
 createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
 createMethod descriptor@(MethodDescriptor args _) name body = do
+    debugColored args
     let initialState = createMethodCreationState (length args)
     let ((mcState, _), codeAttrs, instructions) =
             runCodeBuilder' $
@@ -62,6 +64,7 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (ALoad _) = 1
     stackChange (AStore _) = -1
     stackChange AReturn = -1
+    stackChange Dup = 1
     stackChange (CheckCast _) = 0
     stackChange (LDC _) = 1
     stackChange (GetStatic{}) = 1

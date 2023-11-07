@@ -11,7 +11,7 @@ allow-newer: false
 
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
-  commit: b1c9cdfb6ead7f8619c8bb8c1b096acb8e986a99
+  commit: da7b8c009541400d514bc8f07b0606b3a47ff1ec
 - git: git@github.com:knightzmc/diagnose.git
   commit: 4e4155e3e2153c11b825a6a58c5cb5af817128c9
 - aeson-2.1.2.1
