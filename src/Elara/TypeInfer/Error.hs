@@ -1,4 +1,5 @@
 {-# LANGUAGE StrictData #-}
+
 module Elara.TypeInfer.Error where
 
 import Data.Map qualified as Map
@@ -20,49 +21,138 @@ import Error.Diagnose (Marker (Where), Note (..), Report (Err))
 import Print
 
 -- | A data type holding all errors related to type inference
-data TypeInferenceError
-    = IllFormedAlternatives SourceRegion (Existential Monotype.Union) (Context SourceRegion)
-    | IllFormedFields SourceRegion (Existential Monotype.Record) (Context SourceRegion)
-    | IllFormedType SourceRegion (Type SourceRegion) (Context SourceRegion)
-    | --
-      InvalidOperands SourceRegion (Type SourceRegion)
-    | --
-      MergeConcreteRecord SourceRegion (Type SourceRegion)
-    | MergeInvalidHandler SourceRegion (Type SourceRegion)
-    | MergeRecord SourceRegion (Type SourceRegion)
-    | --
-      MissingAllAlternatives (Existential Monotype.Union) (Context SourceRegion)
-    | MissingAllFields (Existential Monotype.Record) (Context SourceRegion)
-    | MissingOneOfAlternatives [SourceRegion] (Existential Monotype.Union) (Existential Monotype.Union) (Context SourceRegion)
-    | MissingOneOfFields [SourceRegion] (Existential Monotype.Record) (Existential Monotype.Record) (Context SourceRegion)
-    | MissingVariable (Existential Monotype) (Context SourceRegion)
-    | --
-      NotFunctionType SourceRegion (Type SourceRegion)
-    | NotNecessarilyFunctionType SourceRegion UniqueTyVar
-    | --
-      NotAlternativesSubtype SourceRegion (Existential Monotype.Union) (Type.Union SourceRegion)
-    | NotFieldsSubtype SourceRegion (Existential Monotype.Record) (Type.Record SourceRegion)
-    | NotRecordSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | NotUnionSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | NotSubtype SourceRegion (Type SourceRegion) SourceRegion (Type SourceRegion)
-    | --
-      UnboundAlternatives SourceRegion UniqueTyVar
-    | UnboundFields SourceRegion UniqueTyVar
-    | UnboundTypeVariable SourceRegion UniqueTyVar (Context SourceRegion)
-    | UnboundVariable
-        -- | Location of the variable that caused the error
-        SourceRegion
-        (IgnoreLocVarRef Name)
-        (Context SourceRegion)
-    | UnboundConstructor (IgnoreLocVarRef Name) (Context SourceRegion)
-    | --
-      RecordTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
-    | UnionTypeMismatch (Type SourceRegion) (Type SourceRegion) (Map.Map UniqueTyVar (Type SourceRegion)) (Map.Map UniqueTyVar (Type SourceRegion))
-    | CustomTypeMismatch (Type SourceRegion) (Type SourceRegion) Text Text
-    | --
-      UserDefinedTypeNotInContext SourceRegion ShuntedType (Context SourceRegion)
-    | KindInferError KindInferError
-    deriving (Show)
+data TypeInferenceError where
+    IllFormedAlternatives ::
+        SourceRegion ->
+        (Existential Monotype.Union) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    IllFormedFields ::
+        SourceRegion ->
+        (Existential Monotype.Record) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    IllFormedType :: HasCallStack => SourceRegion -> (Type SourceRegion) -> (Context SourceRegion) -> TypeInferenceError
+    InvalidOperands ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    MergeConcreteRecord ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    MergeInvalidHandler ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    MergeRecord ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    MissingAllAlternatives ::
+        (Existential Monotype.Union) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    MissingAllFields ::
+        (Existential Monotype.Record) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    MissingOneOfAlternatives ::
+        [SourceRegion] ->
+        (Existential Monotype.Union) ->
+        (Existential Monotype.Union) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    MissingOneOfFields ::
+        [SourceRegion] ->
+        (Existential Monotype.Record) ->
+        (Existential Monotype.Record) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    MissingVariable ::
+        HasCallStack =>
+        (Existential Monotype) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    NotFunctionType ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    NotNecessarilyFunctionType ::
+        SourceRegion ->
+        UniqueTyVar ->
+        TypeInferenceError
+    NotAlternativesSubtype ::
+        SourceRegion ->
+        (Existential Monotype.Union) ->
+        (Type.Union SourceRegion) ->
+        TypeInferenceError
+    NotFieldsSubtype ::
+        SourceRegion ->
+        (Existential Monotype.Record) ->
+        (Type.Record SourceRegion) ->
+        TypeInferenceError
+    NotRecordSubtype ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    NotUnionSubtype ::
+        SourceRegion ->
+        (Type SourceRegion) ->
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    NotSubtype ::
+        HasCallStack =>
+        SourceRegion ->
+        (Type SourceRegion) ->
+        SourceRegion ->
+        (Type SourceRegion) ->
+        TypeInferenceError
+    UnboundAlternatives ::
+        SourceRegion ->
+        UniqueTyVar ->
+        TypeInferenceError
+    UnboundFields :: SourceRegion -> UniqueTyVar -> TypeInferenceError
+    UnboundTypeVariable ::
+        SourceRegion ->
+        UniqueTyVar ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    UnboundVariable ::
+        HasCallStack => SourceRegion -> (IgnoreLocVarRef Name) -> (Context SourceRegion) -> TypeInferenceError
+    UnboundConstructor ::
+        (IgnoreLocVarRef Name) ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    RecordTypeMismatch ::
+        (Type SourceRegion) ->
+        (Type SourceRegion) ->
+        (Map.Map UniqueTyVar (Type SourceRegion)) ->
+        (Map.Map UniqueTyVar (Type SourceRegion)) ->
+        TypeInferenceError
+    UnionTypeMismatch ::
+        (Type SourceRegion) ->
+        (Type SourceRegion) ->
+        (Map.Map UniqueTyVar (Type SourceRegion)) ->
+        (Map.Map UniqueTyVar (Type SourceRegion)) ->
+        TypeInferenceError
+    CustomTypeMismatch ::
+        (Type SourceRegion) ->
+        (Type SourceRegion) ->
+        Text ->
+        Text ->
+        TypeInferenceError
+    UserDefinedTypeNotInContext ::
+        SourceRegion ->
+        ShuntedType ->
+        (Context SourceRegion) ->
+        TypeInferenceError
+    KindInferError :: KindInferError -> TypeInferenceError
+
+deriving instance Show TypeInferenceError
 
 instance Exception TypeInferenceError
 
@@ -76,6 +166,7 @@ instance ReportableError TypeInferenceError where
                     , pretty a
                     , "cannot be solved because the variable is missing from the context"
                     , listToText _Γ
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
                 []
@@ -89,6 +180,7 @@ instance ReportableError TypeInferenceError where
                     , pretty v
                     , "The following variables are bound in the current context:"
                     , listToText _Γ
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
@@ -115,9 +207,12 @@ instance ReportableError TypeInferenceError where
                     , pretty t1
                     , "is not a subtype of"
                     , pretty t2
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
-                [(sourceRegionToDiagnosePosition p1, Where (pretty t1)), (sourceRegionToDiagnosePosition p2, Where (pretty t2))]
+                [ (sourceRegionToDiagnosePosition p1, Where ("Has type" <+> pretty t1))
+                , (sourceRegionToDiagnosePosition p2, Where ("Has type" <+> pretty t2))
+                ]
                 []
     report (UnboundTypeVariable location a _Γ) =
         writeReport $
@@ -154,6 +249,7 @@ instance ReportableError TypeInferenceError where
                     , pretty _A
                     , "within the current context:"
                     , listToText _Γ
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]

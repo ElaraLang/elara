@@ -7,8 +7,9 @@ let (++) a b =
       [] -> b
       (x::xs) -> x :: (xs ++ b)
 
+
 def reverse : [a] -> [a]
-let reverse x = 
+let reverse x =
     match x with
       [] -> []
       (x::xs) -> reverse xs ++ [x]

@@ -1,6 +1,6 @@
 module Elara.Emit.Method where
 
-import Data.List ( maximum )
+import Data.List (maximum)
 import Elara.Emit.Expr
 import Elara.Emit.State
 import Elara.Emit.Var (JVMExpr)

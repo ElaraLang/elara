@@ -97,7 +97,9 @@ inferDeclaration (Declaration ld) =
             Just expected' -> do
                 kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped . unlocated))
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
-                astTypeToInferPolyType expected'
+                expectedPoly <- astTypeToInferPolyType expected'
+                push (Annotation (mkGlobal' declName) expectedPoly)
+                pure expectedPoly
             Nothing -> do
                 -- if no expected type is given, we create a fresh type variable
                 -- this is useful for top-level declarations, where we don't know the type yet
@@ -266,6 +268,7 @@ completeExpression ctx (Expr (y', t)) = do
             (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
             (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
             (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
+            (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
             other -> error (showPretty other)
 
     stripForAlls :: Type SourceRegion -> Type SourceRegion

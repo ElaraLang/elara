@@ -66,7 +66,6 @@ emitGraph g = do
     let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-
 liftClassBuilder :: CodeBuilder a -> CodeBuilderT ClassBuilder a
 liftClassBuilder =
     CodeBuilder . State.state . State.runState . unCodeBuilderT

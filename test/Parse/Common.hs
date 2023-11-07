@@ -34,8 +34,6 @@ shouldParsePattern source expected = withFrozenCallStack $ do
     parsed <- lexAndParse patParser source >>= evalEitherParseError
     diff (stripLocation parsed) (==) expected
 
-
-
 shouldParseExpr :: MonadTest m => Text -> Expr 'UnlocatedFrontend -> m ()
 shouldParseExpr source expected = withFrozenCallStack $ do
     parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError

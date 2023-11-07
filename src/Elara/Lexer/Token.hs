@@ -1,4 +1,5 @@
 {-# LANGUAGE StrictData #-}
+
 module Elara.Lexer.Token where
 
 import Elara.AST.Name (ModuleName, nameText)
@@ -147,8 +148,6 @@ tokenRepr = \case
     TokenIndent -> "<INDENT>"
     TokenDedent -> "<DEDENT>"
     TokenEOF -> "<EOF>"
-
-
 
 unsafeTokenText :: Token -> Text
 unsafeTokenText = \case

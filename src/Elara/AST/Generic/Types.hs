@@ -30,6 +30,7 @@ module Elara.AST.Generic.Types (
     Declaration (..),
     Declaration' (..),
     typeOf,
+    patternTypeOf,
     RUnlocate (..),
     ASTLocate,
     ASTLocate',
@@ -104,6 +105,9 @@ pattern Expr' e' <- Expr (rUnlocate @astK @ast -> e', _)
 
 typeOf :: forall ast. Expr ast -> Select "ExprType" ast
 typeOf (Expr (_, t)) = t
+
+patternTypeOf :: forall ast. Pattern ast -> Select "PatternType" ast
+patternTypeOf (Pattern (_, t)) = t
 
 data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))
