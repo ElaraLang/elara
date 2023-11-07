@@ -425,6 +425,6 @@ discardUpTo _ [] = []
 -- | Discard all entries from a `Context` up to the given `Entry`
 discardUpToExcluding :: Eq s => Entry s -> Context s -> Context s
 discardUpToExcluding entry0 (entry1 : _Γ)
-    | entry0 == entry1 = entry1 : _Γ
-    | otherwise = discardUpTo entry0 _Γ
+    | entry0 == entry1 = []
+    | otherwise = entry1 : discardUpToExcluding entry0 _Γ
 discardUpToExcluding _ [] = []

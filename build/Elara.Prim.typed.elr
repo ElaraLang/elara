@@ -1,0 +1,71 @@
+module Elara.Prim exposing (..)
+
+
+
+def Elara.Prim.cons : forall (a_1 : Type) . a_1 -> List a_1 -> List a_1
+let Elara.Prim.cons =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_1 ->
+                                                                     List a_1 ->
+                                                                       List
+                                                                         a_1) : forall (a_1 : Type) .
+                                                                                  a_1 ->
+                                                                                  List
+                                                                                    a_1 ->
+                                                                                    List
+                                                                                      a_1 "cons" : Text) : forall (a_1 : Type) .
+                                                                                                             a_1 ->
+                                                                                                             List
+                                                                                                               a_1 ->
+                                                                                                               List
+                                                                                                                 a_1
+
+def Elara.Prim.println : Text -> IO Unit 
+let Elara.Prim.println =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Text ->
+                                                                       IO Unit
+                                                                          ) : Text ->
+                                                                                IO Unit
+                                                                                    "println" : Text) : Text ->
+                                                                                                          IO Unit
+
+
+def Elara.Prim.toString : forall (a_2 : Type) . a_2 -> Text
+let Elara.Prim.toString =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_2 ->
+                                                                       Text) : forall (a_2 : Type) .
+                                                                                 a_2 ->
+                                                                                   Text "toString" : Text) : forall (a_2 : Type) .
+                                                                                                               a_2 ->
+                                                                                                                 Text
+
+def Elara.Prim.(*) : Integer -> Integer -> Integer
+let Elara.Prim.(*) =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
+                                                                     Integer ->
+                                                                       Integer) : Integer ->
+                                                                                  Integer ->
+                                                                                    Integer "*" : Text) : Integer ->
+                                                                                                          Integer ->
+                                                                                                            Integer
+
+def Elara.Prim.(-) : Integer -> Integer -> Integer
+let Elara.Prim.(-) =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
+                                                                     Integer ->
+                                                                       Integer) : Integer ->
+                                                                                  Integer ->
+                                                                                    Integer "-" : Text) : Integer ->
+                                                                                                          Integer ->
+                                                                                                            Integer
+
+def Elara.Prim.(==) : forall (a_3 : Type) . a_3 -> a_3 -> Bool
+let Elara.Prim.(==) =
+    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_3 ->
+                                                                     a_3 ->
+                                                                       Bool) : forall (a_3 : Type) .
+                                                                                 a_3 ->
+                                                                                 a_3 ->
+                                                                                   Bool "==" : Text) : forall (a_3 : Type) .
+                                                                                                         a_3 ->
+                                                                                                         a_3 ->
+                                                                                                           Bool

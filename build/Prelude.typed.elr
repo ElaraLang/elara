@@ -1,54 +1,95 @@
 module Prelude exposing (..)
 
+import Elara.Prim exposing (..)
 
+def Prelude.(++) : forall (a_10 : Type) . List a_10 -> List a_10 -> List a_10
+let Prelude.(++) =
+    (\ a_11 -> ((\ b_12 -> ((match a_11 : forall (a_10 : Type) .
+                                            List a_10 with { [  ] : List
+                                                                      a_10 -> b_12 : forall (a_10 : Type) .
+                                                                                       List
+                                                                                         a_10; (x_13 : a_10 :: xs_14 : List
+                                                                                                                         a_10) : List
+                                                                                                                                   a_10 -> (((Elara.Prim.cons : forall (a_1 : Type) .
+                                                                                                                                                                  a_1 ->
+                                                                                                                                                                  List
+                                                                                                                                                                    a_1 ->
+                                                                                                                                                                    List
+                                                                                                                                                                      a_1 @a_10) : forall (a_10 : Type) .
+                                                                                                                                                                                     List
+                                                                                                                                                                                       a_10 ->
+                                                                                                                                                                                       List
+                                                                                                                                                                                         a_10 x_13 : forall (a_10 : Type) .
+                                                                                                                                                                                                       a_10) : forall (a_10 : Type) .
+                                                                                                                                                                                                                 List
+                                                                                                                                                                                                                   a_10 ->
+                                                                                                                                                                                                                   List
+                                                                                                                                                                                                                     a_10 ((Prelude.(++) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                             List
+                                                                                                                                                                                                                                               a_10 ->
+                                                                                                                                                                                                                                             List
+                                                                                                                                                                                                                                               a_10 ->
+                                                                                                                                                                                                                                               List
+                                                                                                                                                                                                                                                 a_10 xs_14 : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                List
+                                                                                                                                                                                                                                                                  a_10) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                            List
+                                                                                                                                                                                                                                                                              a_10 ->
+                                                                                                                                                                                                                                                                              List
+                                                                                                                                                                                                                                                                                a_10 b_12 : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                              List
+                                                                                                                                                                                                                                                                                                a_10) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                                          List
+                                                                                                                                                                                                                                                                                                            a_10) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                                                      List
+                                                                                                                                                                                                                                                                                                                        a_10}) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                                                                   List
+                                                                                                                                                                                                                                                                                                                                     a_10)) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                                                                                List
+                                                                                                                                                                                                                                                                                                                                                  a_10 ->
+                                                                                                                                                                                                                                                                                                                                                  List
+                                                                                                                                                                                                                                                                                                                                                    a_10)) : forall (a_10 : Type) .
+                                                                                                                                                                                                                                                                                                                                                               List
+                                                                                                                                                                                                                                                                                                                                                                 a_10 ->
+                                                                                                                                                                                                                                                                                                                                                               List
+                                                                                                                                                                                                                                                                                                                                                                 a_10 ->
+                                                                                                                                                                                                                                                                                                                                                                 List
+                                                                                                                                                                                                                                                                                                                                                                   a_10
 
-def Prelude.println : Text -> IO Unit 
-let Prelude.println =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Text ->
-                                                                       IO Unit
-                                                                          ) : Text ->
-                                                                                IO Unit
-                                                                                    "println" : Text) : Text ->
-                                                                                                          IO Unit
-
-
-def Prelude.toString : forall (a_3 : Type) . a_3 -> Text
-let Prelude.toString =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_3 ->
-                                                                       Text) : forall (a_3 : Type) .
-                                                                                 a_3 ->
-                                                                                   Text "toString" : Text) : forall (a_3 : Type) .
-                                                                                                               a_3 ->
-                                                                                                                 Text
-
-def Prelude.(*) : Integer -> Integer -> Integer
-let Prelude.(*) =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
-                                                                     Integer ->
-                                                                       Integer) : Integer ->
-                                                                                  Integer ->
-                                                                                    Integer "*" : Text) : Integer ->
-                                                                                                          Integer ->
-                                                                                                            Integer
-
-def Prelude.(-) : Integer -> Integer -> Integer
-let Prelude.(-) =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @Integer ->
-                                                                     Integer ->
-                                                                       Integer) : Integer ->
-                                                                                  Integer ->
-                                                                                    Integer "-" : Text) : Integer ->
-                                                                                                          Integer ->
-                                                                                                            Integer
-
-def Prelude.(==) : forall (a_4 : Type) . a_4 -> a_4 -> Bool
-let Prelude.(==) =
-    ((Elara.Prim.elaraPrimitive : forall (a_0 : Type) . Text -> a_0 @a_4 ->
-                                                                     a_4 ->
-                                                                       Bool) : forall (a_4 : Type) .
-                                                                                 a_4 ->
-                                                                                 a_4 ->
-                                                                                   Bool "==" : Text) : forall (a_4 : Type) .
-                                                                                                         a_4 ->
-                                                                                                         a_4 ->
-                                                                                                           Bool
+def Prelude.reverse : forall (a_6 : Type) . List a_6 -> List a_6
+let Prelude.reverse =
+    (\ x_7 -> ((match x_7 : forall (a_6 : Type) . List a_6 with { [  ] : List
+                                                                           a_6 -> [  ] : forall (a_6 : Type) .
+                                                                                           List
+                                                                                             a_6; (x_8 : a_6 :: xs_9 : List
+                                                                                                                         a_6) : List
+                                                                                                                                  a_6 -> ((Prelude.(++) : forall (a_10 : Type) .
+                                                                                                                                                            List
+                                                                                                                                                              a_10 ->
+                                                                                                                                                            List
+                                                                                                                                                              a_10 ->
+                                                                                                                                                              List
+                                                                                                                                                                a_10 (Prelude.reverse : forall (a_6 : Type) .
+                                                                                                                                                                                          List
+                                                                                                                                                                                            a_6 ->
+                                                                                                                                                                                            List
+                                                                                                                                                                                              a_6 xs_9 : forall (a_6 : Type) .
+                                                                                                                                                                                                           List
+                                                                                                                                                                                                             a_6) : forall (a_6 : Type) .
+                                                                                                                                                                                                                      List
+                                                                                                                                                                                                                        a_6) : forall (a_6 : Type) .
+                                                                                                                                                                                                                                 List
+                                                                                                                                                                                                                                   a_6 ->
+                                                                                                                                                                                                                                   List
+                                                                                                                                                                                                                                     a_6 [ x_8 : forall (a_6 : Type) .
+                                                                                                                                                                                                                                                   a_6 ] : forall (a_6 : Type) .
+                                                                                                                                                                                                                                                             List
+                                                                                                                                                                                                                                                               a_6) : forall (a_6 : Type) .
+                                                                                                                                                                                                                                                                        List
+                                                                                                                                                                                                                                                                          a_6}) : forall (a_6 : Type) .
+                                                                                                                                                                                                                                                                                    List
+                                                                                                                                                                                                                                                                                      a_6)) : forall (a_6 : Type) .
+                                                                                                                                                                                                                                                                                                List
+                                                                                                                                                                                                                                                                                                  a_6 ->
+                                                                                                                                                                                                                                                                                                  List
+                                                                                                                                                                                                                                                                                                    a_6

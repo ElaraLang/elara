@@ -115,7 +115,7 @@ scoped entry k = do
 
     pure r
 
-scopedMany :: Member (State Status) r => NonEmpty (Entry SourceRegion) -> Sem r a -> Sem r a
+scopedMany :: Member (State Status) r => NonEmpty (Entry SourceRegion) -> (Sem r a) -> (Sem r a)
 scopedMany entries k = do
     traverse_ push entries
 
@@ -125,7 +125,7 @@ scopedMany entries k = do
 
     pure r
 
-scoped' :: HasCallStack => Member (State Status) r => (HasCallStack => Sem r a) -> Sem r a
+scoped' :: Member (State Status) r => (Sem r a) -> Sem r a
 scoped' k = do
     cur <- State.get
     r <- k
@@ -134,11 +134,10 @@ scoped' k = do
 
     pure r
 
-listening :: HasCallStack => Member (State Status) r => (HasCallStack => Sem r a) -> Sem r (a, Context SourceRegion)
+listening :: Member (State Status) r => (Sem r a) -> Sem r (a, Context SourceRegion)
 listening k = do
     cur <- State.get
     r <- k
-
     cur' <- State.get
 
     pure
@@ -148,7 +147,7 @@ listening k = do
             (x : xs) -> Context.discardUpToExcluding (head (x :| xs)) cur'.context
         )
 
-scopedListening :: HasCallStack => Member (State Status) r => (HasCallStack => Sem r a) -> Sem r (a, Context SourceRegion)
+scopedListening :: Member (State Status) r => (Sem r a) -> Sem r (a, Context SourceRegion)
 scopedListening k = do
     cur <- State.get
     r <- k
@@ -164,7 +163,7 @@ scopedListening k = do
             (x : xs) -> Context.discardUpToExcluding (head (x :| xs)) cur'.context
         )
 
-scopedUnsolvedType :: HasCallStack => (Member (State Status) r, Member UniqueGen r) => s -> (HasCallStack => Type.Type s -> Sem r a) -> Sem r a
+scopedUnsolvedType :: (Member (State Status) r, Member UniqueGen r) => s -> (Type.Type s -> Sem r a) -> Sem r a
 scopedUnsolvedType location k = do
     existential <- fresh
 
@@ -1472,26 +1471,25 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         pure $ Expr (Located location (If cond' then' else'), _L1)
     Syntax.Match e branches -> do
+
         e' <- infer e
 
-        _Γ <- get
-
-        let _A = Context.solveType _Γ (Syntax.typeOf e')
+    
 
         returnType <- fresh -- create a monotype for the return of the match
         push (Context.UnsolvedType returnType)
 
-        let process (pattern, branch) =
-                scoped' $ do
-                    pattern' <- checkPattern pattern (Syntax.typeOf e')
+        let process (pattern, branch) = do
+                (pattern') <- checkPattern pattern (Syntax.typeOf e')
 
+                (branch') <-
                     -- check that the branch type matches the return type of the match
-                    branch' <- check branch (Type.UnsolvedType primRegion returnType)
-                    pure (pattern', branch')
+                    check branch (Type.UnsolvedType primRegion returnType)
+                pure (pattern', branch')
 
         branches' <- traverse process branches
 
-        pure $ Expr (Located location (Match e' branches'), _A)
+        pure $ Expr (Located location (Match e' branches'), Syntax.typeOf e')
     Syntax.List exprs -> do
         a <- fresh
         push (Context.UnsolvedType a)
@@ -1589,28 +1587,20 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 
         pure $ Expr (Located exprLoc (Syntax.List y), t)
     check' (Syntax.Match e branches) t = do
-        e' <- check e t
-
-        _Γ <- get
-
-        let _A = Context.solveType _Γ (Syntax.typeOf e')
-
-        returnType <- fresh -- create a monotype for the return of the match
-        push (Context.UnsolvedType returnType)
-
+        e' <- infer e
+    
         let process (pattern, branch) = do
-                (pattern', patternCtx) <- scopedListening $ do
+                (pattern') <-
                     checkPattern pattern (Syntax.typeOf e')
 
-                (branch', branchInference) <- maybe identity scopedMany (nonEmpty patternCtx) $ listening $ do
-                    -- check that the branch type matches the return type of the match
-                    check branch (Type.UnsolvedType primRegion returnType)
-                traverse_ push branchInference
+                -- check that the branch type matches the return type of the match
+                branch' <- check branch t
+
                 pure (pattern', branch')
 
         branches' <- traverse process branches
 
-        pure $ Expr (Located exprLoc (Match e' branches'), _A)
+        pure $ Expr (Located exprLoc (Match e' branches'), t)
 
     -- Sub
     check' _ _B = do
@@ -1644,15 +1634,14 @@ checkPattern pattern@(Pattern (Located exprLoc _, _)) t = do
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
     check' (Syntax.WildcardPattern) t = do
         pure $ Pattern (Located exprLoc (Syntax.WildcardPattern), t) -- wildcard patterns always match
-    check' (Syntax.ConstructorPattern _ _) _ = do
-        todo
+    check' (Syntax.ConstructorPattern _ _) _ = todo
     check' (Syntax.ListPattern patterns) Type.List{..} = do
-        let process (element, type_) = do
+        let process (element) = do
                 _Γ <- get
 
                 checkPattern element (Context.solveType _Γ type_)
 
-        y <- traverse process (zip patterns (fromList (repeat type_)))
+        y <- traverse process (patterns)
 
         pure $ Pattern (Located exprLoc (Syntax.ListPattern y), t)
     check' (Syntax.ConsPattern x xs) Type.List{..} = do

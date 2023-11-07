@@ -248,7 +248,7 @@ instance ReportableError TypeInferenceError where
                     [ "Type error: The following type is ill-formed:"
                     , pretty _A
                     , "within the current context:"
-                    , listToText _Γ
+                    , listToText $ ordNub _Γ
                     , pretty $ prettyCallStack callStack
                     ]
                 )

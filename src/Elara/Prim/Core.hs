@@ -2,7 +2,7 @@
 module Elara.Prim.Core where
 
 import Elara.AST.Name (ModuleName (..), Qualified (..))
-import Elara.Core (DataCon (..), Type (ConTy))
+import Elara.Core (DataCon (..), Type (..))
 import Elara.Prim (mkPrimQual)
 
 trueCtorName :: Qualified Text
@@ -16,6 +16,7 @@ emptyListCtorName = Qualified "[]" (ModuleName ("Elara" :| ["Prim"]))
 
 consCtorName :: Qualified Text
 consCtorName = Qualified "::" (ModuleName ("Elara" :| ["Prim"]))
+
 
 tuple2CtorName :: Qualified Text
 tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
