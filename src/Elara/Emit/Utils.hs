@@ -31,7 +31,7 @@ generateReturnDescriptor :: Type -> ReturnDescriptor
 generateReturnDescriptor u | u == unitCon = VoidReturn
 generateReturnDescriptor other = TypeReturn (generateFieldType other)
 
-generateFieldType :: Type -> FieldType
+generateFieldType :: HasCallStack => Type -> FieldType
 generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
 generateFieldType c | c == boolCon = ObjectFieldType "java.lang.Boolean"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
@@ -39,4 +39,5 @@ generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
 generateFieldType (FuncTy _ _) = ObjectFieldType "elara.Func"
+generateFieldType (ForAllTy _ x) = generateFieldType x
 generateFieldType o = error $ "generateFieldType: " <> show o

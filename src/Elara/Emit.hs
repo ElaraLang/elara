@@ -8,7 +8,6 @@ module Elara.Emit where
 
 import Control.Lens hiding (List)
 import Control.Monad.State qualified as State
-import Control.Monad.Writer qualified as Writer
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)
@@ -104,6 +103,7 @@ emitModule m = do
     version <- ask
 
     let (_, clazz) = runClassBuilder name version $ runM $ evalState (error "Should not be evaluated") $ do
+            embed $ addAccessFlag Public
             (_, attrs, clinit) <- runInnerEmit name version $ do
                 traverse_ addDeclaration (m ^. field @"declarations")
                 when (isMainModule m) (embed $ addMethod (generateMainMethod m))
