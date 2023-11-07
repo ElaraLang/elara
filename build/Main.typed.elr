@@ -26,17 +26,17 @@ let Main.main =
                             IO Unit
                                 ((Elara.Prim.toString : forall (a_3 : Type) .
                                                           a_3 -> Text @List
-                                                                         Integer) : Text ((Prelude.(++) : forall (a_10 : Type) .
+                                                                         Integer) : Text ((Prelude.(++) : forall (a_6 : Type) .
                                                                                                             List
-                                                                                                              a_10 ->
+                                                                                                              a_6 ->
                                                                                                             List
-                                                                                                              a_10 ->
+                                                                                                              a_6 ->
                                                                                                               List
-                                                                                                                a_10 [ 1 : Integer ] : List
-                                                                                                                                         Integer) : List
-                                                                                                                                                      Integer ->
-                                                                                                                                                      List
-                                                                                                                                                        Integer [ 2 : Integer ] : List
-                                                                                                                                                                                    Integer) : List
-                                                                                                                                                                                                 Integer) : Text) : IO Unit
+                                                                                                                a_6 [ 1 : Integer ] : List
+                                                                                                                                        Integer) : List
+                                                                                                                                                     Integer ->
+                                                                                                                                                     List
+                                                                                                                                                       Integer [ 2 : Integer ] : List
+                                                                                                                                                                                   Integer) : List
+                                                                                                                                                                                                Integer) : Text) : IO Unit
 

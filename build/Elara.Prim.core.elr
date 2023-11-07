@@ -1,9 +1,9 @@
 module Elara.Prim
-{ Elara.Prim.cons : forall (a_1 : Type). a_1 -> [] a_1 -> [] a_1
-    = Elara.Prim.elaraPrimitive @(a_1 -> [] a_1 -> [] a_1) "cons"
+{ Elara.Prim.cons : forall (a_1 : Type). a_1 -> [a_1] -> [a_1]
+    = Elara.Prim.elaraPrimitive @(a_1 -> [a_1] -> [a_1]) "cons"
 ; 
-Elara.Prim.empty : forall (a_2 : Type). [] a_2
-    = Elara.Prim.elaraPrimitive @([] a_2) "empty"
+Elara.Prim.empty : forall (a_2 : Type). [a_2]
+    = Elara.Prim.elaraPrimitive @([a_2]) "empty"
 ; 
 Elara.Prim.println : String -> IO ()
     = Elara.Prim.elaraPrimitive @(String -> IO ()) "println"

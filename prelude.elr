@@ -6,10 +6,3 @@ let (++) a b =
     match a with
       [] -> b
       (x::xs) -> x :: (xs ++ b)
-
-
-def reverse : [a] -> [a]
-let reverse x =
-    match x with
-      [] -> []
-      (x::xs) -> reverse xs ++ [x]

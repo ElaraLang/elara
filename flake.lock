@@ -163,11 +163,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1699293555,
-        "narHash": "sha256-Y1+ecMhvwZ8JLf7I7XDVewckWDb4n6XtTL8B9p7Ejng=",
+        "lastModified": 1699359412,
+        "narHash": "sha256-GlqQMpucviYLhutBuW4XnY9gyWkHYoFYqNQr5F4faBg=",
         "owner": "ElaraLang",
         "repo": "h2jvm",
-        "rev": "b71200bdb975b64ee7e8bf188d9a721627f27f86",
+        "rev": "b1c9cdfb6ead7f8619c8bb8c1b096acb8e986a99",
         "type": "github"
       },
       "original": {

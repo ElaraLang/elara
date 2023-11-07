@@ -12,17 +12,21 @@ import Polysemy (Member, Sem, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
+import Control.Lens
 
-data Unique a = Unique
-    { _uniqueVal :: !a
-    , _uniqueId :: !Int
-    }
+data Unique a = Unique !a !Int
     deriving (Show, Functor, Data, Generic, Traversable, Foldable)
 
 pattern Unique' :: a -> Unique a
 pattern Unique' a <- Unique a _
 
 {-# COMPLETE Unique' #-}
+
+uniqueId :: Lens' (Unique a) Int
+uniqueId = lens (\(Unique _ i ) -> i) (\(Unique a _) i -> Unique a i)
+
+uniqueVal :: Lens' (Unique a) a
+uniqueVal = lens (\(Unique a _) -> a) (\(Unique _ i) a -> Unique a i)
 
 unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique
@@ -35,13 +39,13 @@ instance ToJSON c => ToJSON (Unique c)
 instance ToJSON UniqueId
 
 instance Show UniqueId where
-    show (UniqueId u) = Text.Show.show (_uniqueId u)
+    show (UniqueId (Unique uniqueId _)) = Text.Show.show uniqueId
 
 instance Eq (Unique a) where
-    (==) = (==) `on` _uniqueId
+    (==) = (==) `on` (view uniqueId)
 
 instance Ord (Unique a) where
-    compare = compare `on` _uniqueId
+    compare = compare `on` (view uniqueId)
 
 newtype UniqueSupply = UniqueSupply
     { _uniqueSupplyUniques :: [Int]

@@ -172,6 +172,9 @@
             [
               stack-wrapped
               pkgs.haskellPackages.haskell-debug-adapter
+              pkgs.haskellPackages.ghci-dap
+              pkgs.haskellPackages.hpack
+
             ];
         };
 

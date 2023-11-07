@@ -65,6 +65,7 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (CheckCast _) = 0
     stackChange (LDC _) = 1
     stackChange (GetStatic{}) = 1
+    stackChange (GetField{}) = 1
     stackChange (PutStatic{}) = -1
     stackChange Return = -1
     stackChange IfEq{} = -1

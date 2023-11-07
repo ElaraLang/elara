@@ -21,7 +21,7 @@ import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
-import Elara.Prim.Core (intCon, ioCon, stringCon, listCon)
+import Elara.Prim.Core (intCon, ioCon, listCon, stringCon)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilderT', unCodeBuilderT)
 import JVM.Data.Abstract.ClassFile
@@ -38,7 +38,7 @@ import Polysemy.Embed (runEmbedded)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 type Emit r = Members '[Reader JVMVersion] r
 

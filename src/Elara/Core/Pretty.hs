@@ -9,6 +9,7 @@ import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.Core
 import Elara.Data.Pretty
+import Elara.Prim.Core (listCon)
 import Prelude hiding (Alt)
 
 class PrettyVar v where
@@ -61,7 +62,11 @@ prettyExpr :: (Pretty (Expr v), PrettyVar v, Show v, HasCallStack) => Expr v -> 
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (TyLam b e) = prettyTLLam b e
 prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
-prettyExpr (Match e of' alts) = "case" <+> prettyExpr2 e <+> pretty (("of" <+>) . prettyVBind <$> of') <+> prettyAlts alts
+prettyExpr (Match e of' alts) =
+    vsep
+        [ "case" <+> prettyExpr e <+> pretty (("of" <+>) . prettyVBind <$> of')
+        , indent indentDepth (prettyAlts alts)
+        ]
 prettyExpr other = prettyExpr1 other
 
 prettyExpr1 :: (Pretty (Expr v), PrettyVar v, Show v, HasCallStack) => Expr v -> Doc AnsiStyle
@@ -87,7 +92,7 @@ prettyVBind = prettyVar True True
 prettyAlts :: (PrettyVar v, Show v) => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = let ?contextFree = True in prettyBlockExpr (prettyAlt <$> alts)
   where
-    prettyAlt (con, _, e) = pretty con <+> "->" <+> prettyExpr e
+    prettyAlt (con, vars, e) = pretty con <+> hsep (prettyVarArg <$> vars) <+> "->" <+> prettyExpr e
 
 instance Pretty Literal where
     pretty :: Literal -> Doc AnsiStyle
@@ -108,6 +113,7 @@ prettyTy (ForAllTy tv t) = "forall" <+> prettyTypeVariable True tv <> "." <+> pr
 prettyTy other = prettyTy1 other
 
 prettyTy1 :: Type -> Doc AnsiStyle
+prettyTy1 (AppTy l t2) | l == listCon = brackets (prettyTy2 t2)
 prettyTy1 (AppTy t1 t2) = prettyTy1 t1 <+> prettyTy2 t2
 prettyTy1 e = prettyTy2 e
 
@@ -126,7 +132,7 @@ instance Pretty AltCon where
 instance Pretty DataCon where
     pretty :: DataCon -> Doc AnsiStyle
     pretty = \case
-        DataCon name _ -> (pretty name)
+        DataCon name t -> (pretty name <+> ":" <+> pretty t)
 
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case

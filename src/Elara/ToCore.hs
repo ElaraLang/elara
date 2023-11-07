@@ -30,8 +30,8 @@ import Error.Diagnose (Report (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.State
-import TODO (todo)
 import Print (debugPretty)
+import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -216,31 +216,39 @@ desugarMatch e pats = do
     e' <- toCore e
     bind' <- mkBindName e
 
-    pats' <- for pats $ \(AST.Pattern (Located _ p, t), branch) -> do
+    pats' <- for pats $ \(p, branch) -> do
+        (con, vars) <- patternToCore p
         branch' <- toCore branch
-        case p of
-            AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [], branch')
-            AST.FloatPattern f -> pure (Core.LitAlt $ Core.Double f, [], branch')
-            AST.StringPattern s -> pure (Core.LitAlt $ Core.String s, [], branch')
-            AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [], branch')
-            AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [], branch')
-            AST.WildcardPattern -> pure (Core.DEFAULT, [], branch')
-            AST.VarPattern (Located _ vn) -> do
-                t' <- typeToCore t
-                pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t'], branch')
-            AST.ConstructorPattern cn _ -> do
-                c <- lookupCtor cn
-                pure (Core.DataAlt c, [], branch')
-            -- todo: bind the pattern variables
-            AST.ListPattern [] -> do
-                t' <- typeToCore t
-                pure (Core.DataAlt (Core.DataCon emptyListCtorName t'), [], branch')
-            AST.ConsPattern (Pattern (Located _ _, _)) (Pattern (Located _ _, _)) -> do
-                c <- lookupPrimCtor consCtorName
-                pure (Core.DataAlt c, [], branch')
-            other -> error "TODO: pattern "
+        pure (con, vars, branch')
 
     pure $ Core.Match e' (Just bind') pats'
+  where
+    patternToCore :: HasCallStack => ToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
+    patternToCore (Pattern (Located _ p, t)) = do
+        t' <- typeToCore t
+        case p of
+            AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])
+            AST.FloatPattern f -> pure (Core.LitAlt $ Core.Double f, [])
+            AST.StringPattern s -> pure (Core.LitAlt $ Core.String s, [])
+            AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
+            AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
+            AST.WildcardPattern -> pure (Core.DEFAULT, [])
+            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t'])
+            AST.ConstructorPattern cn pats -> do
+                c <- lookupCtor cn
+                pats' <- for pats patternToCore
+                pure (Core.DataAlt c, snd =<< pats')
+            AST.ListPattern [] -> do
+                t' <- typeToCore t
+                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy listCon t'), [])
+            AST.ListPattern (x : xs) -> do
+                (_, vars) <- patternToCore x
+                (vars') <- (snd =<<) <$> traverse patternToCore xs
+                pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
+            AST.ConsPattern x xs -> do
+                (_, vars) <- patternToCore x
+                (vars') <- (snd) <$> patternToCore xs
+                pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
 
 mkBindName :: ToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do

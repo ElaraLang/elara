@@ -49,10 +49,10 @@ import Print
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
+import System.FilePath
 import System.IO (openFile)
 import System.Process
 import Text.Printf
-import System.FilePath
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -130,9 +130,9 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do
-  createDirectoryIfMissing True $ takeDirectory path
+    createDirectoryIfMissing True $ takeDirectory path
 
-  writeFileLBS path content
+    writeFileLBS path content
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply

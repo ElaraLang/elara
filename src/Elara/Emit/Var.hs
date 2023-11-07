@@ -11,6 +11,7 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
+import Print (showPretty)
 
 data JVMBinder
     = JVMLocal !Int
@@ -32,6 +33,7 @@ toJVMExpr = fmap Normal
 
 replaceVar :: JVMBinder -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar old new = transform $ \case
+    Core.Var (Normal (Core.Id old' _)) | (Normal (Core.Id old'' _)) <- old, old' == old'' -> Core.Var new -- compare ignoring types
     Core.Var old' | old == old' -> Core.Var new
     x -> x
 
@@ -49,7 +51,7 @@ This function handles the transform, and renaming of Elara variables to @JVMBind
 transformTopLevelLambdas :: CoreExpr -> JVMExpr
 transformTopLevelLambdas = go 0
   where
-    go c (Core.Lam p1 x) = do
-        let e = go (c + 1) x
-        replaceVar (Normal p1) (JVMLocal c) e
+    go :: Int -> CoreExpr -> JVMExpr
+    go c (Core.Lam v@(Core.Id _ _) body) =
+         (replaceVar (Normal v) (JVMLocal c) (go (c + 1) body))
     go _ x = toJVMExpr x

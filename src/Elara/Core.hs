@@ -1,6 +1,6 @@
 module Elara.Core where
 
-import Control.Lens (Plated)
+import Control.Lens (Plated (plate))
 import Control.Monad.State hiding (StateT)
 import Data.Data
 import Elara.AST.Name (Qualified)
@@ -18,10 +18,7 @@ data TypeVariable = TypeVariable
 
 data Var
     = TyVar TypeVariable
-    | Id
-        { idVarName :: UnlocatedVarRef Text
-        , idVarType :: Type
-        }
+    | Id (UnlocatedVarRef Text) Type
     deriving (Show, Data, Eq, Ord, Generic)
 
 data Expr b
@@ -35,7 +32,17 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
 
-instance Data b => Plated (Expr b)
+instance Plated (Expr b) where
+    plate f = \case
+        Var b -> pure (Var b)
+        Lit l -> pure (Lit l)
+        App a b -> App <$> f a <*> f b
+        TyApp a b -> TyApp <$> f a <*> pure b
+        Lam b e -> (Lam b <$> f e)
+        TyLam t e -> TyLam t <$> f e
+        Let b e -> (Let b <$> f e)
+        Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
+            where traverse3 f (a, b, c) = ((,,) a b <$> f c)
 
 type CoreExpr = Expr Var
 

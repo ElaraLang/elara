@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Elara.Emit.Expr where
 
 import Elara.AST.Name
@@ -9,6 +11,7 @@ import Elara.Emit.State (MethodCreationState, findLocalVariable, withLocalVariab
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
+import Elara.ToCore (stripForAll)
 import Elara.Utils (uncurry3)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
 import JVM.Data.Abstract.Descriptor
@@ -18,7 +21,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (showPretty, debugPretty)
+import Print (debugPretty, showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
@@ -58,18 +61,57 @@ generateCaseInstructions ::
     Maybe JVMBinder ->
     [Elara.Core.Alt JVMBinder] ->
     Sem r ()
-generateCaseInstructions scrutinee _ [(_, _, ifTrue), (_, _, ifFalse)] = do
-    generateInstructions scrutinee
-    ifFalseLabel <- embed newLabel
-    endLabel <- embed newLabel
+generateCaseInstructions -- hardcode if/else impl
+    scrutinee
+    _
+    [ (DataAlt (DataCon trueCtorName' boolCon'), _, ifTrue)
+        , (DataAlt (DataCon falseCtorName' boolCon2'), _, ifFalse)
+        ]
+        | trueCtorName' == trueCtorName && falseCtorName' == falseCtorName && boolCon' == boolCon && boolCon2' == boolCon = do
+            generateInstructions scrutinee
+            ifFalseLabel <- embed newLabel
+            endLabel <- embed newLabel
 
-    embed $ emit (InvokeVirtual (ClassInfoType "java.lang.Boolean") "booleanValue" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean))))
-    embed $ emit' [IfEq ifFalseLabel]
-    generateInstructions ifTrue
-    embed $ emit' [Goto endLabel, Label ifFalseLabel]
-    generateInstructions ifFalse
-    embed $ emit' [Label endLabel]
-generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty scrutinee
+            embed $ emit (InvokeVirtual (ClassInfoType "java.lang.Boolean") "booleanValue" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean))))
+            embed $ emit' [IfEq ifFalseLabel]
+            generateInstructions ifTrue
+            embed $ emit' [Goto endLabel, Label ifFalseLabel]
+            generateInstructions ifFalse
+            embed $ emit' [Label endLabel]
+generateCaseInstructions
+    scrutinee
+    x -- hardcode cons/empty imp
+    [ (DataAlt (DataCon emptyCtorName' (AppTy listCon' _)), _, ifEmpty)
+        , (DataAlt (DataCon consCtorName' listCon2'), [headBind, tailBind], ifCons)
+        ]
+        | emptyCtorName' == emptyListCtorName
+        , listCon' == listCon
+        , consCtorName' == consCtorName
+        , listCon2' == listCon =
+            do
+                generateInstructions scrutinee
+                embed $ emit $ CheckCast (ClassInfoType "elara.EList")
+                ifEmptyLabel <- embed newLabel
+                endLabel <- embed newLabel
+
+                embed $ emit $ InvokeVirtual (ClassInfoType "elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
+                embed $ emit $ IfNe ifEmptyLabel
+                -- store the cons binds into locals
+                embed $ emit $ GetField (ClassInfoType "elara.EList") "head" (ObjectFieldType "java.lang.Object")
+                headIdx <- localVariableId headBind
+                embed $ emit $ AStore headIdx
+
+                embed $ emit $ GetField (ClassInfoType "elara.EList") "tail" (ObjectFieldType "elara.EList")
+                tailIdx <- localVariableId tailBind
+                embed $ emit $ AStore tailIdx
+
+                generateInstructions ifCons
+                embed $ emit $ Goto endLabel
+
+                embed $ emit $ Label ifEmptyLabel
+                generateInstructions ifEmpty
+                embed $ emit $ Label endLabel
+generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId :: Member (State MethodCreationState) r => JVMBinder -> Sem r U1
 localVariableId (JVMLocal i) = pure (fromIntegral i)
@@ -91,7 +133,7 @@ generateAppInstructions :: (Member (State MethodCreationState) r, Member (Embed 
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     let (fName, fType) = approximateTypeAndNameOf f'
-    
+
     let arity = typeArity fType
     if length args == arity
         then -- yippee, no currying necessary
@@ -178,14 +220,14 @@ generatePrimInstructions "==" =
         , InvokeStatic (ClassInfoType "java.util.Objects") "equals" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
         , InvokeStatic (ClassInfoType "java.lang.Boolean") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Boolean] (TypeReturn (ObjectFieldType "java.lang.Boolean")))
         ]
-generatePrimInstructions "cons" = pure
-    [
-        ALoad 0,
-        ALoad 1,
-        InvokeStatic (ClassInfoType "elara.EList") "cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "elara.EList")))
-    ]
-generatePrimInstructions "empty" = pure
-    [
-        InvokeStatic (ClassInfoType "elara.EList") "empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.EList")))
-    ]
+generatePrimInstructions "cons" =
+    pure
+        [ ALoad 0
+        , ALoad 1
+        , InvokeStatic (ClassInfoType "elara.EList") "Cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "elara.EList")))
+        ]
+generatePrimInstructions "empty" =
+    pure
+        [ InvokeStatic (ClassInfoType "elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.EList")))
+        ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
