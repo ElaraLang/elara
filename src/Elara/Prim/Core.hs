@@ -24,7 +24,7 @@ consType :: Member UniqueGen r => Sem r Type
 consType = do
     a <- makeUnique (Just "a")
     let tv = TypeVariable a TypeKind
-    pure $ ForAllTy tv (FuncTy (AppTy listCon (TyVarTy tv)) ((AppTy listCon (TyVarTy tv))))
+    pure $ ForAllTy tv (FuncTy (TyVarTy tv) (FuncTy (AppTy listCon (TyVarTy tv)) ((AppTy listCon (TyVarTy tv)))))
 
 tuple2CtorName :: Qualified Text
 tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))

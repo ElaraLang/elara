@@ -86,6 +86,7 @@ data Type
 typeArity :: Type -> Int
 typeArity = \case
     FuncTy _ b -> 1 + typeArity b
+    ForAllTy _ t -> typeArity t
     _ -> 0
 
 instantiate :: Type -> Type -> Type

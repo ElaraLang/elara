@@ -18,7 +18,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (showPretty)
+import Print (showPretty, debugPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
@@ -91,7 +91,7 @@ generateAppInstructions :: (Member (State MethodCreationState) r, Member (Embed 
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     let (fName, fType) = approximateTypeAndNameOf f'
-
+    
     let arity = typeArity fType
     if length args == arity
         then -- yippee, no currying necessary
@@ -99,7 +99,7 @@ generateAppInstructions f x = do
             let insts = invokeStaticVars fName fType
             traverse_ generateInstructions args
             embed $ emit $ uncurry3 InvokeStatic insts
-        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for " <> showPretty f <> " " <> showPretty x <> " " <> showPretty f'
+        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
   where
     collectArgs :: JVMExpr -> [JVMExpr] -> (JVMExpr, [JVMExpr])
     collectArgs (App f x) args = collectArgs f (x : args)
