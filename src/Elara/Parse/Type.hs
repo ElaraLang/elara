@@ -12,7 +12,7 @@ import Elara.Parse.Combinators (liftedBinary, sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
-import Text.Megaparsec (choice, customFailure, MonadParsec (try))
+import Text.Megaparsec (MonadParsec (try), choice, customFailure)
 
 type' :: Parser FrontendType
 type' =

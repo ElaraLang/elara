@@ -3,8 +3,6 @@
 module Elara.Emit.Method where
 
 import Data.List (maximum)
-import Data.TypeMergingList qualified as TML
-import Elara.Data.Pretty
 import Elara.Emit.Expr
 import Elara.Emit.State
 import Elara.Emit.Var (JVMExpr)
@@ -17,7 +15,6 @@ import JVM.Data.Abstract.Instruction
 import JVM.Data.Analyse.StackMap
 import Polysemy (runM)
 import Polysemy.State (runState)
-import Print (debugColored, debugPretty)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
