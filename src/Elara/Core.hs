@@ -42,7 +42,8 @@ instance Plated (Expr b) where
         TyLam t e -> TyLam t <$> f e
         Let b e -> (Let b <$> f e)
         Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
-            where traverse3 f (a, b, c) = ((,,) a b <$> f c)
+          where
+            traverse3 f (a, b, c) = ((,,) a b <$> f c)
 
 type CoreExpr = Expr Var
 

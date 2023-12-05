@@ -11,7 +11,6 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
-import Print (showPretty)
 
 data JVMBinder
     = JVMLocal !Int
@@ -20,6 +19,8 @@ data JVMBinder
 
 instance Hashable JVMBinder
 
+instance Pretty JVMBinder where
+    pretty = prettyVar True True
 instance PrettyVar JVMBinder where
     prettyVar t p (Normal v) = prettyVar t p v
     prettyVar _ _ (JVMLocal i) = "local_" <> pretty i
@@ -53,5 +54,5 @@ transformTopLevelLambdas = go 0
   where
     go :: Int -> CoreExpr -> JVMExpr
     go c (Core.Lam v@(Core.Id _ _) body) =
-         (replaceVar (Normal v) (JVMLocal c) (go (c + 1) body))
+        (replaceVar (Normal v) (JVMLocal c) (go (c + 1) body))
     go _ x = toJVMExpr x

@@ -1,8 +1,8 @@
+import Emit qualified
 import Infer qualified
 import Lex qualified
 import Parse qualified
 import Shunt qualified
-import Emit qualified
 import Test.Hspec
 
 main :: IO ()

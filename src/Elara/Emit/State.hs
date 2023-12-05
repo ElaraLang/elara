@@ -5,7 +5,6 @@ import Elara.Data.Unique (Unique)
 import JVM.Data.Raw.Types
 import Polysemy (Member, Sem)
 import Polysemy.State
-import Print (debugPretty, debugColored)
 
 data MethodCreationState = MethodCreationState
     { localVariables :: !(Map LVKey U1)
@@ -14,8 +13,10 @@ data MethodCreationState = MethodCreationState
     deriving (Show)
 
 data LVKey
-    = UnknownName !Int -- | A method argument that we don't know the name of
-    | KnownName !(Unique Text) -- | A local variable that we do know the name of
+    = -- | A method argument that we don't know the name of
+      UnknownName !Int
+    | -- | A local variable that we do know the name of
+      KnownName !(Unique Text)
     deriving (Eq, Show, Ord)
 
 initialMethodCreationState :: MethodCreationState
@@ -24,7 +25,7 @@ initialMethodCreationState = MethodCreationState Map.empty 0
 createMethodCreationState :: Int -> MethodCreationState
 createMethodCreationState argsCount =
     MethodCreationState
-        (Map.fromList $ zip (UnknownName <$> [0 .. argsCount -1]) [0 ..])
+        (Map.fromList $ zip (UnknownName <$> [0 .. argsCount - 1]) [0 ..])
         (fromIntegral argsCount)
 
 findLocalVariable :: Member (State MethodCreationState) r => Unique Text -> Sem r U1

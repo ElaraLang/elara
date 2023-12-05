@@ -1,6 +1,10 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Elara.Emit.Method where
 
 import Data.List (maximum)
+import Data.TypeMergingList qualified as TML
+import Elara.Data.Pretty
 import Elara.Emit.Expr
 import Elara.Emit.State
 import Elara.Emit.Var (JVMExpr)
@@ -10,17 +14,16 @@ import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
-import JVM.Data.Analyse.Instruction (calculateStackMapFrames)
+import JVM.Data.Analyse.StackMap
 import Polysemy (runM)
 import Polysemy.State (runState)
-import Print (debugPretty, debugColored)
+import Print (debugColored, debugPretty)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
 createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
 createMethod descriptor@(MethodDescriptor args _) name body = do
-    debugColored args
     let initialState = createMethodCreationState (length args)
     let ((mcState, _), codeAttrs, instructions) =
             runCodeBuilder' $
@@ -34,7 +37,7 @@ createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState 
     let maxStack = analyseMaxStack code
 
     let maxLocals = 1 + mcState.maxLocalVariables
-
+    let code' = (code <> [if return_ == VoidReturn then Return else AReturn])
     addMethod $
         ClassFileMethod
             [MPublic, MStatic]
@@ -44,9 +47,9 @@ createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState 
                 CodeAttributeData
                     (fromIntegral maxStack)
                     (fromIntegral maxLocals)
-                    (code <> [if return_ == VoidReturn then Return else AReturn])
+                    code'
                     []
-                    (StackMapTable (calculateStackMapFrames descriptor code) : codeAttrs)
+                    (StackMapTable (calculateStackMapFrames descriptor code') : codeAttrs)
             ]
 
 analyseMaxStack :: [Instruction] -> Int

@@ -1471,16 +1471,13 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         pure $ Expr (Located location (If cond' then' else'), _L1)
     Syntax.Match e branches -> do
-
         e' <- infer e
-
-    
 
         returnType <- fresh -- create a monotype for the return of the match
         push (Context.UnsolvedType returnType)
 
-        let process (pattern, branch) = do
-                (pattern') <- checkPattern pattern (Syntax.typeOf e')
+        let process (pattern_, branch) = do
+                (pattern') <- checkPattern pattern_ (Syntax.typeOf e')
 
                 (branch') <-
                     -- check that the branch type matches the return type of the match
@@ -1597,10 +1594,10 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         pure $ Expr (Located exprLoc (Syntax.List y), t)
     check' (Syntax.Match e branches) t = do
         e' <- infer e
-    
-        let process (pattern, branch) = do
+
+        let process (pattern_, branch) = do
                 (pattern') <-
-                    checkPattern pattern (Syntax.typeOf e')
+                    checkPattern pattern_ (Syntax.typeOf e')
 
                 -- check that the branch type matches the return type of the match
                 branch' <- check branch t
@@ -1633,8 +1630,8 @@ checkPattern ::
     ShuntedPattern ->
     Type SourceRegion ->
     Sem r (TypedPattern)
-checkPattern pattern@(Pattern (Located exprLoc _, _)) t = do
-    let x = pattern ^. _Unwrapped . _1 . unlocated
+checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
+    let x = pattern_ ^. _Unwrapped . _1 . unlocated
     check' x t
   where
     check' :: ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
@@ -1671,7 +1668,7 @@ checkPattern pattern@(Pattern (Located exprLoc _, _)) t = do
 
     -- Sub
     check' _ _B = do
-        _A@(Syntax.Pattern (_, _At)) <- inferPattern pattern
+        _A@(Syntax.Pattern (_, _At)) <- inferPattern pattern_
 
         _Θ <- get
 

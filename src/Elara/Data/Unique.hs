@@ -3,6 +3,7 @@
 
 module Elara.Data.Unique where
 
+import Control.Lens
 import Control.Lens.TH (makeLenses)
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
@@ -12,7 +13,6 @@ import Polysemy (Member, Sem, interpret, makeSem, reinterpret)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
-import Control.Lens
 
 data Unique a = Unique !a !Int
     deriving (Show, Functor, Data, Generic, Traversable, Foldable)
@@ -23,7 +23,7 @@ pattern Unique' a <- Unique a _
 {-# COMPLETE Unique' #-}
 
 uniqueId :: Lens' (Unique a) Int
-uniqueId = lens (\(Unique _ i ) -> i) (\(Unique a _) i -> Unique a i)
+uniqueId = lens (\(Unique _ i) -> i) (\(Unique a _) i -> Unique a i)
 
 uniqueVal :: Lens' (Unique a) a
 uniqueVal = lens (\(Unique a _) -> a) (\(Unique _ i) a -> Unique a i)

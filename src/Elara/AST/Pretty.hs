@@ -27,7 +27,7 @@ prettyStringExpr = dquotes . pretty
 prettyCharExpr :: Char -> Doc AnsiStyle
 prettyCharExpr = squotes . escapeChar
 
-prettyLambdaExpr :: (?contextFree :: Bool) => (Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
+prettyLambdaExpr :: (?contextFree :: Bool, Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
 prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr')
   where
     prettyCTFLambdaExpr =
@@ -73,7 +73,7 @@ prettyBinaryOperatorExpr e1 o e2 =
             <+> parensIf (shouldParen e2) (pretty e2)
         )
 
-prettyTupleExpr :: (Pretty a) => NonEmpty a -> Doc AnsiStyle
+prettyTupleExpr :: Pretty a => NonEmpty a -> Doc AnsiStyle
 prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))
 
 prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t, ?contextFree :: Bool) => a1 -> t a2 -> Doc AnsiStyle
@@ -98,13 +98,13 @@ prettyLetInExpr v ps e1 e2 =
         <+> "in"
         <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
 
-shouldBrace :: forall astK (ast :: astK). (RUnlocate ast) => Expr ast -> Bool
+shouldBrace :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
 shouldBrace x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
     Block _ -> False
     Let{} -> True
     _ -> False
 
-shouldParen :: forall astK (ast :: astK). (RUnlocate ast) => Expr ast -> Bool
+shouldParen :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
 shouldParen x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
     Block _ -> True
     Let{} -> True
@@ -126,10 +126,10 @@ prettyBlockExpr b = do
         separator = if ?contextFree then "; " else flatAlt "" "; "
         arrange = if ?contextFree then identity else group . align
 
-    arrange (encloseSep' open close separator (pretty <$> toList b))
+    arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
 
-encloseSep' :: (?contextFree :: Bool) => Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-encloseSep' = if ?contextFree then encloseSepUnarranged else encloseSep
+encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
+encloseSep' contextFree = if contextFree then encloseSepUnarranged else encloseSep
   where
     encloseSepUnarranged :: Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
     encloseSepUnarranged open close _ [] = open <> close
@@ -141,7 +141,7 @@ prettyConstructorPattern c p = parens (pretty c <+> hsep (pretty <$> p))
 prettyList :: (Pretty a, ?contextFree :: Bool) => [a] -> Doc AnsiStyle
 prettyList l =
     if ?contextFree
-        then encloseSep' "[ " " ]" ", " (pretty <$> l)
+        then encloseSep' ?contextFree "[ " " ]" ", " (pretty <$> l)
         else list (pretty <$> l)
 
 prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle

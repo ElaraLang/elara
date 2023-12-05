@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 {- | Emits JVM bytecode from Elara AST.
 Conventions:
 * We always uncurry functions, so a function of type a -> b -> c is compiled to a JVM function c f(a, b).

@@ -15,7 +15,7 @@ import Elara.AST.StripLocation
 import Elara.Data.Pretty
 import Prelude hiding (group)
 
-deriving instance (Pretty (ASTLocate ast (BinaryOperator' ast))) => Pretty (BinaryOperator ast)
+deriving instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
 
 instance
     ( Pretty (CleanupLocated (ASTLocate' ast (Select "SymOp" ast)))
@@ -26,16 +26,15 @@ instance
     pretty (SymOp op) = pretty op
     pretty (Infixed op) = "`" <> pretty op <> "`"
 
-deriving instance (Pretty (ASTLocate ast (Type' ast))) => Pretty (Type ast)
+deriving instance Pretty (ASTLocate ast (Type' ast)) => Pretty (Type ast)
 
 instance
-    ( Pretty (ASTLocate ast (Declaration' ast))
-    ) =>
+    Pretty (ASTLocate ast (Declaration' ast)) =>
     Pretty (Declaration ast)
     where
     pretty (Declaration ldb) = pretty ldb
 
-data UnknownPretty = forall a. (Pretty a) => UnknownPretty a
+data UnknownPretty = forall a. Pretty a => UnknownPretty a
 
 instance Pretty UnknownPretty where
     pretty (UnknownPretty a) = pretty a
@@ -68,8 +67,10 @@ instance
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
         prettyDB n (Value e@(Expr (_, t)) _ t') =
             let typeOfE =
-                    UnknownPretty <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
-                        <|> UnknownPretty <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
+                    UnknownPretty
+                        <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
+                            <|> UnknownPretty
+                        <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
              in prettyValueDeclaration n e typeOfE
         prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
 
@@ -247,8 +248,7 @@ instance
 
 prettyPattern ::
     forall ast.
-    (_) =>
-    (?contextFree :: Bool) =>
+    (?contextFree :: Bool, _) =>
     Pattern' ast ->
     Doc AnsiStyle
 prettyPattern (VarPattern v) = pretty v

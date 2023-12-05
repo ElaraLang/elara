@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Elara.Emit.Expr where
 
 import Data.Traversable (for)
@@ -22,7 +20,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (debugPretty, showPretty, debugColored)
+import Print (debugColored, debugPretty, showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
@@ -93,11 +91,9 @@ generateCaseInstructions
                 generateInstructions scrutinee
                 embed $ emit $ CheckCast (ClassInfoType "elara.EList")
                 -- store the scrutinee into the as, if it exists
-                debugPretty as
-            
+
                 as' <- for as $ \as' -> do
                     idx <- localVariableId as'
-                    debugColored idx
                     embed $ emit Dup
                     embed $ emit $ AStore idx
                     pure idx

@@ -54,7 +54,7 @@
 
             diagnose = {
               extraBuildDepends = [
-                pkgs.haskellPackages.megaparsec_9_5_0
+                pkgs.haskellPackages.megaparsec_9_6_1
               ];
               cabalFlags.megaparsec-compat = true;
               jailbreak = true;
@@ -69,8 +69,6 @@
             h2jvm = {
               # Skip the tests due to conflicting base version
               check = false;
-
-
             };
 
             ghcid = {
