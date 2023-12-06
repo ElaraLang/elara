@@ -1490,7 +1490,11 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         ys' <- traverse process ys
 
-        pure $ Expr (Located location (Syntax.List (y' : ys')), Syntax.typeOf y')
+        pure $
+            Expr
+                ( Located location (Syntax.List (y' : ys'))
+                , Type.List (Syntax.typeOf y').location (Syntax.typeOf y')
+                )
     Syntax.Block exprs -> do
         let process expr = do
                 _Γ <- get
