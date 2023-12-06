@@ -5,4 +5,4 @@ import Elara.Prim exposing (..)
 
 def Main.main : Text
 let Main.main =
-    Elara.Prim.undefined 
+    (Elara.Prim.undefined  @Text) 

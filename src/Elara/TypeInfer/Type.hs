@@ -10,7 +10,7 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..), view)
+import Control.Lens (Plated (..), view, (^.))
 import Control.Lens qualified as Lens
 import Data.Aeson (ToJSON (..), Value (String))
 import Data.Containers.ListUtils (nubOrdOn)
@@ -212,6 +212,13 @@ stripForAll type_ =
             stripForAll type_'
         _ ->
             type_
+
+isMonoType :: Type s -> Bool
+isMonoType = Lens.hasn't (Lens.cosmos . _As @"Forall")
+
+instantiate :: Type s -> Type s -> Type s
+Forall{name, type_} `instantiate` typeArgument = substituteType name typeArgument type_
+type_ `instantiate` _ = type_
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free

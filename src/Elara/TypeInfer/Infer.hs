@@ -1362,11 +1362,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         ctx <- get
         completedFunctionType <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
         let isFreeTypeVariable = \case Type.VariableType _ x -> not (Type.occurs x completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
-        debugPretty ("complete" :: Text, completedFunctionType)
         e <- case Type.stripForAll completedFunctionType of
             Type.Function{input, output}
                 | isFreeTypeVariable input && isFreeTypeVariable output -> do
-                    debugPretty ("Both" :: Text, input, output)
                     pure $
                         FunctionCall
                             ( Expr
@@ -1613,7 +1611,11 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         _Θ <- get
 
         subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
-        pure _A
+        case _At of
+            Type.Forall{} | Type.isMonoType t -> do
+                -- insert type application from instantiating the forall
+                pure $ Expr (Located exprLoc (TypeApplication _A t), _At `Type.instantiate` t)
+            _ -> pure _A
 
 {- | This corresponds to the judgment:
 

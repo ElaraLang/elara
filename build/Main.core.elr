@@ -1,2 +1,2 @@
 module Main
-{ Main.main : String     = Elara.Prim.undefined }
+{ Main.main : String     = Elara.Prim.undefined @String }
