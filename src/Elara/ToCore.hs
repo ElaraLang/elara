@@ -26,6 +26,7 @@ import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Error.Diagnose (Report (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
@@ -38,12 +39,14 @@ data ToCoreError
     | UnknownConstructor !(Located (Qualified TypeName))
     | UnknownPrimConstructor !(Qualified Text)
     | UnknownLambdaType !(Type.Type SourceRegion)
+    | UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
 
 instance ReportableError ToCoreError where
     report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
+    report (UnsolvedTypeSnuckIn t) = writeReport $ Err (Just "UnsolvedTypeSnuckIn") (pretty t) [] []
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 
@@ -111,7 +114,8 @@ typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
     let con = Core.ConTy (mkPrimQual n)
     pure (foldl' Core.AppTy con args')
-typeToCore other = error ("TODO: typeToCore " <> show other)
+typeToCore unsolved@(Type.UnsolvedType{}) = do
+    throw (UnsolvedTypeSnuckIn (unsolved))
 
 conToVar :: DataCon -> Core.Var
 conToVar (Core.DataCon n t) = Core.Id (Global $ Identity n) t
@@ -154,6 +158,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
 
             Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
         AST.FunctionCall e1 e2 -> do
+            -- debugPretty (typeOf e1, typeOf e2, t)
             e1' <- toCore e1
             e2' <- toCore e2
             pure (App e1' e2')
