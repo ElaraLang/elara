@@ -15,15 +15,19 @@ import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.ToCore (stripForAll)
 import Elara.Utils (uncurry3)
+import GHC.Records (HasField)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
-import JVM.Data.Abstract.Descriptor
+import JVM.Data.Abstract.Descriptor (
+    MethodDescriptor (..),
+    ReturnDescriptor (..),
+ )
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type hiding (Int)
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.State
-import Print (debugColored, debugPretty, showPretty)
+import Print (showPretty)
 
 generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions v = generateInstructions' v []
@@ -170,6 +174,7 @@ generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     case approximateTypeAndNameOf f' of
         Left local -> do
+            generateInstructions x
             embed $ emit $ ALoad local
             embed $ emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
             pass
@@ -179,11 +184,10 @@ generateAppInstructions f x = do
                 then -- yippee, no currying necessary
                 do
                     let insts = invokeStaticVars fName fType
-                    debugPretty (insts, args)
                     traverse_ generateInstructions args
                     embed $ emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
-                    case insts ^. _3 . to (.return) of
+                    case insts ^. _3 . to (.returnDesc) of
                         TypeReturn ft -> embed $ emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
                 else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args

@@ -1,15 +1,12 @@
 module Prelude
-{ Prelude.map : forall (a_7 : Type). forall (b_8 : Type). (a_7 -> b_8) -> [a_7] -> [b_8]
-    = \ (f_9 : a_7 -> b_8) (a_10 : [a_7]) -> case a_10 of (a_90 : forall (a_7 : Type). [a_7])
-        { Elara.Prim.empty : [([a_7])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_11 : a_7) (xs_12 : [a_7]) -> Elara.Prim.cons (f_9 x_11) (Prelude.map f_9 xs_12)}
+{ Prelude.map : forall (a_11 : Type). forall (b_12 : Type). (a_11 -> b_12) -> [a_11] -> [b_12]
+    = \ (f_13 : a_11 -> b_12) (a_14 : [a_11]) -> case a_14 of (a_79 : forall (a_11 : Type). [a_11])
+        { Elara.Prim.empty : [([a_11])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_15 : a_11) (xs_16 : [a_11]) -> Elara.Prim.cons (f_13 x_15) (Prelude.map f_13 xs_16)}
 ; 
-Prelude.++ : forall (a_17 : Type). [a_17] -> [a_17] -> [a_17]
-    = \ (a_18 : [a_17]) (b_19 : [a_17]) -> case a_18 of (a_91 : forall (a_17 : Type). [a_17])
-        { Elara.Prim.empty : [([a_17])]  -> b_19; Elara.Prim.cons : [] (x_20 : a_17) (xs_21 : [a_17]) -> Elara.Prim.cons x_20 (Prelude.++ xs_21 b_19)}
+Prelude.++ : forall (a_21 : Type). [a_21] -> [a_21] -> [a_21]
+    = \ (a_22 : [a_21]) (b_23 : [a_21]) -> case a_22 of (a_80 : forall (a_21 : Type). [a_21])
+        { Elara.Prim.empty : [([a_21])]  -> b_23; Elara.Prim.cons : [] (x_24 : a_21) (xs_25 : [a_21]) -> Elara.Prim.cons x_24 (Prelude.++ xs_25 b_23)}
 ; 
-Prelude.reverse : forall (a_13 : Type). [a_13] -> [a_13]
-    = \ (a_14 : [a_13]) -> case a_14 of (a_92 : forall (a_13 : Type). [a_13])
-        { Elara.Prim.empty : [([a_13])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_15 : a_13) (xs_16 : [a_13]) -> Prelude.++ (Prelude.reverse xs_16) (Elara.Prim.cons x_15 Elara.Prim.empty)}
-; 
-Prelude.|> : forall (a_22 : Type). forall (b_23 : Type). a_22 -> (a_22 -> b_23) -> b_23
-    = \ (a_24 : a_22) (f_25 : a_22 -> b_23) -> f_25 a_24 }
+Prelude.reverse : forall (a_17 : Type). [a_17] -> [a_17]
+    = \ (a_18 : [a_17]) -> case a_18 of (a_81 : forall (a_17 : Type). [a_17])
+        { Elara.Prim.empty : [([a_17])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_19 : a_17) (xs_20 : [a_17]) -> Prelude.++ (Prelude.reverse xs_20) (Elara.Prim.cons x_19 Elara.Prim.empty)} }

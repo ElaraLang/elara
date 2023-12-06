@@ -23,3 +23,6 @@ let cons = elaraPrimitive "cons"
 
 def empty : [a]
 let empty = elaraPrimitive "empty"
+
+def (|>) : a -> (a -> b) -> b
+let (|>) a f = f a

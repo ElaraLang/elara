@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 {- | Entrypoint for the Core to Core stage of compilation
 This stage performs optimisations and transformations on the Core AST
 -}
@@ -11,15 +13,19 @@ import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 
 type CoreExprPass = CoreExpr -> CoreExpr
 
+pattern Infix :: NonEmpty Text -> Text -> CoreExpr -> CoreExpr -> CoreExpr
+pattern Infix mn op a b <-
+    App
+        ( App
+                (Var (Id (Global' (Qualified op (ModuleName mn))) _))
+                a
+            )
+        b
+
 constantFold :: CoreExprPass
 constantFold = transform f
   where
-    f
-        ( ( (Var (Id (Global' (Qualified "+" (ModuleName ("Prelude" :| [])))) _))
-                    `App` (Lit (Int a))
-                )
-                `App` (Lit (Int b))
-            ) = Lit (Int (a + b))
+    f (Infix ("Prelude" :| []) "+" (Lit (Int a)) (Lit (Int b))) = Lit (Int (a + b))
     f other = other
 
 -- | Performs beta reduction on the Core AST to reduce redundant lambdas
@@ -32,12 +38,7 @@ betaReduce = transform f
 pipeInline :: CoreExprPass
 pipeInline = transform f
   where
-    f
-        ( ( (Var (Id (Global' (Qualified "|>" (ModuleName ("Prelude" :| [])))) _))
-                    `App` x
-                )
-                `App` f
-            ) = f `App` x
+    f (Infix ("Elara" :| ["Prim"]) "|>" a b) = App b a
     f other = other
 
 subst :: Var -> Expr Var -> Expr Var -> CoreExpr

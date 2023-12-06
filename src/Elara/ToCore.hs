@@ -192,7 +192,6 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     ]
         AST.List [] -> do
             t' <- typeToCore t
-            debugPretty t'
             let ref = mkGlobalRef emptyListCtorName
             pure $ Core.Var (Core.Id ref t')
         AST.List (x : xs) -> do

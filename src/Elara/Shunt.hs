@@ -48,7 +48,7 @@ data OpInfo = OpInfo
     { precedence :: !Precedence
     , associativity :: !Associativity
     }
-    deriving (Show)
+    deriving (Show, Eq, Ord)
 
 instance Pretty OpInfo
 
@@ -56,7 +56,7 @@ data Associativity
     = LeftAssociative
     | RightAssociative
     | NonAssociative
-    deriving (Show)
+    deriving (Show, Eq, Ord)
 
 data ShuntError
     = SamePrecedenceError !(RenamedBinaryOperator, Associativity) !(RenamedBinaryOperator, Associativity)
@@ -67,7 +67,7 @@ instance Exception ShuntError
 prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
 prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
     SymOp opName -> pretty (fullNameText (opName ^. unlocated . to varRefVal))
-    Infixed vn -> "`" <> pretty (nameText (vn ^. to varRefVal)) <> "`"
+    Infixed vn -> "`" <> pretty (fullNameText (vn ^. to varRefVal)) <> "`"
 
 instance ReportableError ShuntError where
     report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
@@ -80,20 +80,22 @@ instance ReportableError ShuntError where
                 [(op1Src, This (show a1)), (op2Src, This (show a2))]
                 [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
-newtype ShuntWarning
-    = UnknownPrecedence RenamedBinaryOperator
+data ShuntWarning
+    = UnknownPrecedence OpTable RenamedBinaryOperator
     deriving (Eq, Ord, Show)
 
 instance ReportableError ShuntWarning where
-    report (UnknownPrecedence (MkBinaryOperator lOperator)) = do
+    report (UnknownPrecedence opTable lop@(MkBinaryOperator lOperator)) = do
         let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
-        let operatorName o = case o of
-                SymOp opName -> nameText $ varRefVal (opName ^. unlocated)
-                Infixed vn -> "`" <> nameText (varRefVal vn) <> "`"
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
-                ("Unknown precedence/associativity for operator" <+> pretty (operatorName (lOperator ^. unlocated)) <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. ")
+                ( vcat
+                    [ "Unknown precedence/associativity for operator" <+> prettyOp lop
+                        <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. "
+                    , "Known Operators:" <+> pretty opTable
+                    ]
+                )
                 [(opSrc, This "operator")]
                 [Hint "Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol"]
 
@@ -154,7 +156,7 @@ fixOperators opTable = reassoc
         getInfoOrWarn operator = case opInfo opTable operator of
             Just info -> pure info
             Nothing -> do
-                tell (fromList [UnknownPrecedence operator])
+                tell (fromList [UnknownPrecedence opTable operator])
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 

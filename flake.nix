@@ -133,7 +133,7 @@
           run = {
             description = "Run the project with ghcid auto-recompile";
             exec = ''
-              stack build --file-watch --fast --ghc-options='-O0 -fbyte-code' --exec "elara --dump-core --dump-typed --run"
+              stack build --file-watch --fast --ghc-options='-O0 -fbyte-code' --exec "elara --dump-shunted --dump-core --dump-typed --run"
             '';
             category = "Primary";
           };

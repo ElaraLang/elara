@@ -1611,7 +1611,6 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         case _At of
             Type.Forall{} | Type.isMonoType t -> do
                 -- insert type application from instantiating the forall
-                debugPretty ("Inserted monotype" :: Text, _At, t)
                 pure $ Expr (Located exprLoc (TypeApplication _A t), _At `Type.instantiate` t)
             _ -> pure _A
 

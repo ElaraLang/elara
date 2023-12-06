@@ -19,6 +19,3 @@ let map f a =
     match a with
       [] -> []
       (x::xs) -> f x :: map f xs
-
-def (|>) : a -> (a -> b) -> b
-let (|>) a f = f a

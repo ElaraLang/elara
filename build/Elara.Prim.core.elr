@@ -21,4 +21,7 @@ Elara.Prim.- : Int -> Int -> Int
     = Elara.Prim.elaraPrimitive "-"
 ; 
 Elara.Prim.== : forall (a_5 : Type). a_5 -> a_5 -> Bool
-    = Elara.Prim.elaraPrimitive "==" }
+    = Elara.Prim.elaraPrimitive "=="
+; 
+Elara.Prim.|> : forall (a_6 : Type). forall (b_7 : Type). a_6 -> (a_6 -> b_7) -> b_7
+    = \ (a_8 : a_6) (f_9 : a_6 -> b_7) -> f_9 a_8 }

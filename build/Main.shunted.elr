@@ -1,0 +1,11 @@
+module Main exposing (..)
+
+import Prelude exposing (..)
+import Elara.Prim exposing (..)
+
+def Main.fact : (Elara.Prim.Int -> Elara.Prim.Int)
+let Main.fact =
+    ((\ n_10 -> (((if (((((Elara.Prim.(==) ) (n_10 )) ) (0 )) ) then (1 ) else (((((Elara.Prim.(*) ) (n_10 )) ) (((Main.fact ) (((((Elara.Prim.(-) ) (n_10 )) ) (1 )) )) )) )) ))) )
+
+let Main.main =
+    (((((Elara.Prim.(|>) ) (((((Elara.Prim.(|>) ) ([ (1 ), (2 ), (3 ) ] )) ) (Elara.Prim.toString )) )) ) (Elara.Prim.println )) )

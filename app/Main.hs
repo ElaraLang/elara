@@ -7,6 +7,7 @@ module Main (
 where
 
 import Control.Exception as E
+
 import Control.Lens (to, view)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
@@ -149,7 +150,7 @@ processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool,
 processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $
-            runShuntPipeline mempty $
+            runShuntPipeline primOpTable $
                 runRenamePipeline
                     graph
                     primitiveRenameState
@@ -164,5 +165,4 @@ processModules graph (dumpShunted, dumpTyped) =
                         $ graph
                     )
   where
-    -- dumpIf :: Monad m => (a -> b) -> Bool -> (b -> Text) -> Text -> a -> m a
     dumpIf acc cond f p = if cond then (\x -> liftIO (dumpGraph (mapGraph acc x) f p) $> x) else pure

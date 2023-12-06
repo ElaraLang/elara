@@ -68,3 +68,25 @@ let Elara.Prim.(==) =
                                                                     a_5 ->
                                                                     a_5 ->
                                                                       Bool))
+
+def Elara.Prim.(|>) : forall (a_6 : Type) .
+                      forall (b_7 : Type) .
+                        a_6 -> (a_6 -> b_7) -> b_7
+let Elara.Prim.(|>) =
+    ((\ a_8 -> (((\ f_9 -> ((((f_9 : (forall (a_6 : Type) .
+                                      forall (b_7 : Type) .
+                                        a_6 ->
+                                          b_7)) (a_8 : (forall (a_6 : Type) .
+                                                          a_6))) : (forall (b_7 : Type) .
+                                                                      b_7)))) : (forall (a_6 : Type) .
+                                                                                 forall (b_7 : Type) .
+                                                                                   ( a_6 ->
+                                                                                       b_7
+                                                                                   ) ->
+                                                                                     b_7)))) : (forall (a_6 : Type) .
+                                                                                                forall (b_7 : Type) .
+                                                                                                  a_6 ->
+                                                                                                  ( a_6 ->
+                                                                                                      b_7
+                                                                                                  ) ->
+                                                                                                    b_7))

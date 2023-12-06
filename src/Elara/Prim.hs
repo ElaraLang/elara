@@ -10,6 +10,7 @@ import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion,
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Unique (UniqueGen)
+import Elara.Shunt
 import Elara.TypeInfer.Context (Context, Entry (Annotation))
 import Elara.TypeInfer.Domain (Domain (..))
 import Elara.TypeInfer.Monotype (Scalar (..))
@@ -70,6 +71,12 @@ primKindCheckContext =
     -- assume all primitive types are kind Type
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
         <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
+
+primOpTable :: OpTable
+primOpTable =
+    fromList
+        [ (Global (mkPrimVarRef $ NVarName "|>"), OpInfo (mkPrecedence 1) LeftAssociative)
+        ]
 
 primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
 primitiveTCContext = do

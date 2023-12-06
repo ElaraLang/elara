@@ -1,0 +1,39 @@
+module Elara.Prim exposing (..)
+
+
+
+def Elara.Prim.cons : (a_1 -> ([ a_1 ] -> [ a_1 ]))
+let Elara.Prim.cons =
+    (((Elara.Prim.elaraPrimitive ) ("cons" )) )
+
+def Elara.Prim.empty : [ a_2 ]
+let Elara.Prim.empty =
+    (((Elara.Prim.elaraPrimitive ) ("empty" )) )
+
+def Elara.Prim.println : (Elara.Prim.String -> Elara.Prim.IO ())
+let Elara.Prim.println =
+    (((Elara.Prim.elaraPrimitive ) ("println" )) )
+
+def Elara.Prim.toString : (a_3 -> Elara.Prim.String)
+let Elara.Prim.toString =
+    (((Elara.Prim.elaraPrimitive ) ("toString" )) )
+
+def Elara.Prim.undefined : a_4
+let Elara.Prim.undefined =
+    (((Elara.Prim.elaraPrimitive ) ("undefined" )) )
+
+def Elara.Prim.(*) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
+let Elara.Prim.(*) =
+    (((Elara.Prim.elaraPrimitive ) ("*" )) )
+
+def Elara.Prim.(-) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
+let Elara.Prim.(-) =
+    (((Elara.Prim.elaraPrimitive ) ("-" )) )
+
+def Elara.Prim.(==) : (a_5 -> (a_5 -> Elara.Prim.Bool))
+let Elara.Prim.(==) =
+    (((Elara.Prim.elaraPrimitive ) ("==" )) )
+
+def Elara.Prim.(|>) : (a_6 -> ((a_6 -> b_7) -> b_7))
+let Elara.Prim.(|>) =
+    ((\ a_8 -> (((\ f_9 -> ((((f_9 ) (a_8 )) ))) ))) )
