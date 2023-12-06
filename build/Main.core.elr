@@ -3,5 +3,5 @@ module Main
     = \ (n_6 : Int) -> case Elara.Prim.== n_6 0 
         { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_6 (Main.fact (Elara.Prim.- n_6 1))}
 ; 
-Main.main : Int
-    = Elara.Prim.cons 1 (Elara.Prim.cons 2 Elara.Prim.empty) }
+Main.main : IO ()
+    = Elara.Prim.println (Elara.Prim.toString @([Int] -> String) (Prelude.reverse @([Int] -> [Int]) (Prelude.map Main.fact (Elara.Prim.cons 1 (Elara.Prim.cons 2 (Elara.Prim.cons 3 Elara.Prim.empty)))))) }

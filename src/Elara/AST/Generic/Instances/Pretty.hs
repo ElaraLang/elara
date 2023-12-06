@@ -105,7 +105,7 @@ instance
     Pretty (Expr ast)
     where
     pretty =
-        let ?withType = False
+        let ?withType = True
             ?contextFree = True
          in prettyExpr @ast @exprType @letPatterns @lambdaPatterns
 
@@ -138,10 +138,11 @@ prettyExpr ::
     Doc AnsiStyle
 prettyExpr (Expr (e, t)) = group (flatAlt long short)
   where
-    te = if ?withType then (":" <+>) . pretty <$> (toMaybe t :: Maybe exprType) else Nothing
+    te = if ?withType then (":" <+>) . pf . pretty <$> (toMaybe t :: Maybe exprType) else Nothing
     pe = prettyExpr' (stripLocation @(ASTLocate ast (Expr' ast)) @(Expr' ast) e)
-    long = pe <+> pretty te
-    short = align (pretty pe <+> pretty te)
+    pf = if ?contextFree then parens else identity
+    long = pf (pe <+> pretty te)
+    short = pf (align (pretty pe <+> pretty te))
 
 instance
     forall ast letPatterns lambdaPatterns.

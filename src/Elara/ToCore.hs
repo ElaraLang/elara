@@ -32,6 +32,7 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
+import Print (debugPretty, showPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -151,8 +152,9 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             t <- case M.lookup (NVarName <$> v) vt of
                 Just t -> typeToCore t
                 Nothing -> throw (UnknownVariable (NVarName <<$>> l))
+
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t)
-        AST.Var (Located _ v) -> do
+        AST.Var (Located _ v@(Local _)) -> do
             t' <- typeToCore t
 
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t')
@@ -170,7 +172,6 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
 
             Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
         AST.FunctionCall e1 e2 -> do
-            -- debugPretty (typeOf e1, typeOf e2, t)
             e1' <- toCore e1
             e2' <- toCore e2
             pure (App e1' e2')
@@ -191,6 +192,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     ]
         AST.List [] -> do
             t' <- typeToCore t
+            debugPretty t'
             let ref = mkGlobalRef emptyListCtorName
             pure $ Core.Var (Core.Id ref t')
         AST.List (x : xs) -> do

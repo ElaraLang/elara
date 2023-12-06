@@ -142,7 +142,7 @@ isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (InnerEmit r, Member (Embed CodeBuilder) r) => ClassFileField -> JVMExpr -> Sem r ()
+addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member (Embed CodeBuilder) r) => ClassFileField -> JVMExpr -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
     liftState $ generateInstructions e
 

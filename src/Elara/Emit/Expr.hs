@@ -25,6 +25,7 @@ import Polysemy
 import Polysemy.State
 import Print (debugColored, debugPretty, showPretty)
 
+generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
 generateInstructions v = generateInstructions' v []
 
 generateInstructions' :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> [Type] -> Sem r ()
@@ -164,7 +165,7 @@ This function performs arity "analysis" to avoid redundant currying when a funct
 For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying is necessary,
   but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
 -}
-generateAppInstructions :: (Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => JVMExpr -> JVMExpr -> Sem r ()
+generateAppInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => JVMExpr -> JVMExpr -> Sem r ()
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     case approximateTypeAndNameOf f' of
@@ -178,6 +179,7 @@ generateAppInstructions f x = do
                 then -- yippee, no currying necessary
                 do
                     let insts = invokeStaticVars fName fType
+                    debugPretty (insts, args)
                     traverse_ generateInstructions args
                     embed $ emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
