@@ -61,7 +61,7 @@ instance ReportableError CodeConverterError where
     report x =
         writeReport $
             Err
-                (Nothing)
+                Nothing
                 (show x)
                 []
                 []
@@ -155,13 +155,14 @@ processModules graph (dumpShunted, dumpTyped) =
                     primitiveRenameState
                     ( traverseGraph rename
                         >=> traverseGraph shunt
-                        >=> dumpIf dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
+                        >=> dumpIf identity dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
-                        >=> dumpIf dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
-                        >=> traverseGraph moduleToCore
+                        >=> dumpIf fst dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
+                        >=> traverseGraph (\(a, b) -> moduleToCore b a)
                         >=> pure
                         . mapGraph coreToCore
                         $ graph
                     )
   where
-    dumpIf cond f p = if cond then (\x -> liftIO (dumpGraph x f p) $> x) else pure
+    -- dumpIf :: Monad m => (a -> b) -> Bool -> (b -> Text) -> Text -> a -> m a
+    dumpIf acc cond f p = if cond then (\x -> liftIO (dumpGraph (mapGraph acc x) f p) $> x) else pure

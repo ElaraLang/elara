@@ -37,14 +37,26 @@ generateInstructions (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primN
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
 generateInstructions (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName)))
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
-generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) =
-    embed $
-        emit
-            ( GetStatic
-                (ClassInfoType $ createModuleName mn)
-                (translateOperatorName n)
-                (generateFieldType t)
-            )
+generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) = do
+    debugPretty (n, t)
+    if typeIsValue t
+        then
+            embed $
+                emit
+                    ( GetStatic
+                        (ClassInfoType $ createModuleName mn)
+                        (translateOperatorName n)
+                        (generateFieldType t)
+                    )
+        else -- it's a no-args method
+
+            embed $
+                emit
+                    ( InvokeStatic
+                        (ClassInfoType $ createModuleName mn)
+                        (translateOperatorName n)
+                        (generateMethodDescriptor t)
+                    )
 generateInstructions (Var v) = do
     idx <- localVariableId v
     embed $ emit $ ALoad idx
@@ -101,8 +113,7 @@ generateCaseInstructions
                     embed $ emit $ AStore idx
                     pure idx
                 let referenceScrutinee = case as' of
-                        Just as' -> do
-                            embed $ emit $ ALoad as'
+                        Just as' -> embed $ emit $ ALoad as'
                         Nothing -> generateInstructions scrutinee
 
                 ifEmptyLabel <- embed newLabel
@@ -130,14 +141,14 @@ generateCaseInstructions
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId :: HasCallStack => Member (State MethodCreationState) r => JVMBinder -> Sem r U1
-localVariableId (JVMLocal i) = pure (fromIntegral i)
+localVariableId (JVMLocal i) = pure i
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
 approximateTypeAndNameOf :: HasCallStack => Expr JVMBinder -> Either Word8 (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
-approximateTypeAndNameOf (Var (JVMLocal i)) = Left ((i))
-approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> (approximateTypeAndNameOf e)
+approximateTypeAndNameOf (Var (JVMLocal i)) = Left i
+approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
 approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty other
 
 {- | Generate instructions for function application

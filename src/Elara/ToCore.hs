@@ -9,7 +9,7 @@ import Data.Traversable (for)
 import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
@@ -30,8 +30,8 @@ import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Error.Diagnose (Report (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
+import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
-import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -40,6 +40,7 @@ data ToCoreError
     | UnknownPrimConstructor !(Qualified Text)
     | UnknownLambdaType !(Type.Type SourceRegion)
     | UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
+    | UnknownVariable !(Located (Qualified Name))
 
 instance ReportableError ToCoreError where
     report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
@@ -75,9 +76,14 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
+type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
+
 type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
 
+type InnerToCoreEffects = [State CtorSymbolTable, Reader VariableTable, Error ToCoreError, UniqueGen]
+
 type ToCoreC r = (Members ToCoreEffects r)
+type InnerToCoreC r = (Members InnerToCoreEffects r)
 
 runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
 runToCorePipeline =
@@ -85,8 +91,8 @@ runToCorePipeline =
         . runErrorOrReport
         . evalState primCtorSymbolTable
 
-moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Sem r CoreModule
-moduleToCore (Module (Located _ m)) = do
+moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
+moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" . unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do
         (body', var) <- case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
@@ -98,7 +104,7 @@ moduleToCore (Module (Located _ m)) = do
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
 
-typeToCore :: HasCallStack => ToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
+typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
     t' <- typeToCore t
     pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
@@ -114,8 +120,7 @@ typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
     let con = Core.ConTy (mkPrimQual n)
     pure (foldl' Core.AppTy con args')
-typeToCore unsolved@(Type.UnsolvedType{}) = do
-    throw (UnsolvedTypeSnuckIn (unsolved))
+typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
 
 conToVar :: DataCon -> Core.Var
 conToVar (Core.DataCon n t) = Core.Id (Global $ Identity n) t
@@ -126,7 +131,7 @@ mkLocalRef = Local . Identity
 mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
-toCore :: HasCallStack => ToCoreC r => TypedExpr -> Sem r CoreExpr
+toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Sem r CoreExpr
 toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
@@ -134,15 +139,22 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
     moveTypeApplications x = x
 
-    toCore' :: ToCoreC r => TypedExpr' -> Sem r CoreExpr
+    toCore' :: InnerToCoreC r => TypedExpr' -> Sem r CoreExpr
     toCore' = \case
         AST.Int i -> pure $ Lit (Core.Int i)
         AST.Float f -> pure $ Lit (Core.Double f)
         AST.String s -> pure $ Lit (Core.String s)
         AST.Char c -> pure $ Lit (Core.Char c)
         AST.Unit -> pure $ Lit Core.Unit
+        AST.Var (Located _ vr@((Global l@(Located _ v)))) -> do
+            vt <- ask @VariableTable
+            t <- case M.lookup (NVarName <$> v) vt of
+                Just t -> typeToCore t
+                Nothing -> throw (UnknownVariable (NVarName <<$>> l))
+            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t)
         AST.Var (Located _ v) -> do
             t' <- typeToCore t
+
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v
@@ -216,7 +228,7 @@ stripForAll :: Core.Type -> Core.Type
 stripForAll (Core.ForAllTy _ t) = stripForAll t
 stripForAll t = t
 
-desugarMatch :: HasCallStack => ToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
+desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
     e' <- toCore e
     bind' <- mkBindName e
@@ -228,7 +240,7 @@ desugarMatch e pats = do
 
     pure $ Core.Match e' (Just bind') pats'
   where
-    patternToCore :: HasCallStack => ToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
+    patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
     patternToCore (Pattern (Located _ p, t)) = do
         t' <- typeToCore t
         case p of
@@ -248,14 +260,14 @@ desugarMatch e pats = do
                 pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy listCon t'), [])
             AST.ListPattern (x : xs) -> do
                 (_, vars) <- patternToCore x
-                (vars') <- (snd =<<) <$> traverse patternToCore xs
+                vars' <- (snd =<<) <$> traverse patternToCore xs
                 pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
             AST.ConsPattern x xs -> do
                 (_, vars) <- patternToCore x
-                (vars') <- (snd) <$> patternToCore xs
+                vars' <- snd <$> patternToCore xs
                 pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
 
-mkBindName :: ToCoreC r => TypedExpr -> Sem r Var
+mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
@@ -265,6 +277,6 @@ mkBindName (AST.Expr (_, t)) = do
     unique <- makeUnique "bind"
     pure (Core.Id (mkLocalRef unique) t')
 
-desugarBlock :: ToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
+desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (a :| []) = toCore a
 desugarBlock _ = error "todo"

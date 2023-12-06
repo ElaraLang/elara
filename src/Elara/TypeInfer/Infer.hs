@@ -115,7 +115,7 @@ scoped entry k = do
 
     pure r
 
-scopedMany :: Member (State Status) r => NonEmpty (Entry SourceRegion) -> (Sem r a) -> (Sem r a)
+scopedMany :: Member (State Status) r => NonEmpty (Entry SourceRegion) -> Sem r a -> Sem r a
 scopedMany entries k = do
     traverse_ push entries
 
@@ -125,7 +125,7 @@ scopedMany entries k = do
 
     pure r
 
-scoped' :: Member (State Status) r => (Sem r a) -> Sem r a
+scoped' :: Member (State Status) r => Sem r a -> Sem r a
 scoped' k = do
     cur <- State.get
     r <- k
@@ -134,7 +134,7 @@ scoped' k = do
 
     pure r
 
-listening :: Member (State Status) r => (Sem r a) -> Sem r (a, Context SourceRegion)
+listening :: Member (State Status) r => Sem r a -> Sem r (a, Context SourceRegion)
 listening k = do
     cur <- State.get
     r <- k
@@ -147,7 +147,7 @@ listening k = do
             (x : xs) -> Context.discardUpToExcluding (head (x :| xs)) cur'.context
         )
 
-scopedListening :: Member (State Status) r => (Sem r a) -> Sem r (a, Context SourceRegion)
+scopedListening :: Member (State Status) r => Sem r a -> Sem r (a, Context SourceRegion)
 scopedListening k = do
     cur <- State.get
     r <- k
@@ -1263,7 +1263,7 @@ instantiateAlternativesR location alternatives@(Type.Alternatives kAs rest) p0 =
 inferPattern ::
     (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedPattern ->
-    Sem r (TypedPattern)
+    Sem r TypedPattern
 inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
     Syntax.VarPattern v -> do
         a <- fresh
@@ -1275,26 +1275,20 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
         a <- fresh
 
         pure (Pattern (Located location Syntax.WildcardPattern, Type.UnsolvedType location a))
-    Syntax.IntegerPattern i -> do
-        pure (Pattern (Located location (Syntax.IntegerPattern i), Type.Scalar{scalar = Monotype.Integer, ..}))
-    Syntax.FloatPattern f -> do
-        pure (Pattern (Located location (Syntax.FloatPattern f), Type.Scalar{scalar = Monotype.Real, ..}))
-    Syntax.StringPattern s -> do
-        pure (Pattern (Located location (Syntax.StringPattern s), Type.Scalar{scalar = Monotype.Text, ..}))
-    Syntax.CharPattern c -> do
-        pure (Pattern (Located location (Syntax.CharPattern c), Type.Scalar{scalar = Monotype.Char, ..}))
-    Syntax.UnitPattern -> do
-        pure (Pattern (Located location Syntax.UnitPattern, Type.Scalar{scalar = Monotype.Unit, ..}))
+    Syntax.IntegerPattern i -> pure (Pattern (Located location (Syntax.IntegerPattern i), Type.Scalar{scalar = Monotype.Integer, ..}))
+    Syntax.FloatPattern f -> pure (Pattern (Located location (Syntax.FloatPattern f), Type.Scalar{scalar = Monotype.Real, ..}))
+    Syntax.StringPattern s -> pure (Pattern (Located location (Syntax.StringPattern s), Type.Scalar{scalar = Monotype.Text, ..}))
+    Syntax.CharPattern c -> pure (Pattern (Located location (Syntax.CharPattern c), Type.Scalar{scalar = Monotype.Char, ..}))
+    Syntax.UnitPattern -> pure (Pattern (Located location Syntax.UnitPattern, Type.Scalar{scalar = Monotype.Unit, ..}))
     Syntax.ConstructorPattern{} -> todo
-    Syntax.ListPattern ps -> do
-        scopedUnsolvedType location \a -> do
-            let t = Type.List{location, type_ = a, ..}
+    Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
+        let t = Type.List{location, type_ = a, ..}
 
-            ps <- traverse inferPattern ps
+        ps <- traverse inferPattern ps
 
-            traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
+        traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
 
-            pure (Pattern (Located location (Syntax.ListPattern ps), t))
+        pure (Pattern (Located location (Syntax.ListPattern ps), t))
     Syntax.ConsPattern p0 p1 -> do
         a <- fresh
 
@@ -1354,8 +1348,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         -- if input is unsolved, we need to create a type lambda, i.e. \(@a : Type) -> blah
         let actualLam = Syntax.Expr (Located location (Lambda name body'), t)
         case input of
-            Type.UnsolvedType{} -> do
-                pure actualLam
+            Type.UnsolvedType{} -> pure actualLam
             _ -> pure actualLam
 
     -- →E
@@ -1482,9 +1475,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         push (Context.UnsolvedType returnType)
 
         let process (pattern_, branch) = do
-                (pattern') <- checkPattern pattern_ (Syntax.typeOf e')
+                pattern' <- checkPattern pattern_ (Syntax.typeOf e')
 
-                (branch') <-
+                branch' <-
                     -- check that the branch type matches the return type of the match
                     check branch (Type.UnsolvedType primRegion returnType)
                 pure (pattern', branch')
@@ -1601,7 +1594,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         e' <- infer e
 
         let process (pattern_, branch) = do
-                (pattern') <-
+                pattern' <-
                     checkPattern pattern_ (Syntax.typeOf e')
 
                 -- check that the branch type matches the return type of the match
@@ -1634,7 +1627,7 @@ checkPattern ::
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedPattern ->
     Type SourceRegion ->
-    Sem r (TypedPattern)
+    Sem r TypedPattern
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     let x = pattern_ ^. _Unwrapped . _1 . unlocated
     check' x t
@@ -1643,16 +1636,15 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     check' (Syntax.VarPattern vn) t = do
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
-    check' (Syntax.WildcardPattern) t = do
-        pure $ Pattern (Located exprLoc (Syntax.WildcardPattern), t) -- wildcard patterns always match
+    check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match
     check' (Syntax.ConstructorPattern _ _) _ = todo
     check' (Syntax.ListPattern patterns) Type.List{..} = do
-        let process (element) = do
+        let process element = do
                 _Γ <- get
 
                 checkPattern element (Context.solveType _Γ type_)
 
-        y <- traverse process (patterns)
+        y <- traverse process patterns
 
         pure $ Pattern (Located exprLoc (Syntax.ListPattern y), t)
     check' (Syntax.ConsPattern x xs) Type.List{..} = do
@@ -1660,17 +1652,11 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
         xs' <- checkPattern xs (Type.List{..})
 
         pure $ Pattern (Located exprLoc (Syntax.ConsPattern x' xs'), t)
-    check' (Syntax.IntegerPattern x) Type.Scalar{scalar = Monotype.Integer} = do
-        pure $ Pattern (Located exprLoc (Syntax.IntegerPattern x), t)
-    check' (Syntax.FloatPattern x) Type.Scalar{scalar = Monotype.Real} = do
-        pure $ Pattern (Located exprLoc (Syntax.FloatPattern x), t)
-    check' (Syntax.CharPattern x) Type.Scalar{scalar = Monotype.Char} = do
-        pure $ Pattern (Located exprLoc (Syntax.CharPattern x), t)
-    check' (Syntax.StringPattern x) Type.Scalar{scalar = Monotype.Text} = do
-        pure $ Pattern (Located exprLoc (Syntax.StringPattern x), t)
-    check' Syntax.UnitPattern Type.Scalar{scalar = Monotype.Unit} = do
-        pure $ Pattern (Located exprLoc Syntax.UnitPattern, t)
-
+    check' (Syntax.IntegerPattern x) Type.Scalar{scalar = Monotype.Integer} = pure $ Pattern (Located exprLoc (Syntax.IntegerPattern x), t)
+    check' (Syntax.FloatPattern x) Type.Scalar{scalar = Monotype.Real} = pure $ Pattern (Located exprLoc (Syntax.FloatPattern x), t)
+    check' (Syntax.CharPattern x) Type.Scalar{scalar = Monotype.Char} = pure $ Pattern (Located exprLoc (Syntax.CharPattern x), t)
+    check' (Syntax.StringPattern x) Type.Scalar{scalar = Monotype.Text} = pure $ Pattern (Located exprLoc (Syntax.StringPattern x), t)
+    check' Syntax.UnitPattern Type.Scalar{scalar = Monotype.Unit} = pure $ Pattern (Located exprLoc Syntax.UnitPattern, t)
     -- Sub
     check' _ _B = do
         _A@(Syntax.Pattern (_, _At)) <- inferPattern pattern_

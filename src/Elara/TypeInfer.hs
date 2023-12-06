@@ -15,7 +15,7 @@ import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified)
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -24,7 +24,7 @@ import Elara.AST.Select (
  )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.AST.VarRef (mkGlobal')
+import Elara.AST.VarRef (VarRef' (..), mkGlobal')
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
@@ -61,8 +61,17 @@ inferModule ::
     forall r.
     Members InferPipelineEffects r =>
     Module 'Shunted ->
-    Sem r (Module 'Typed)
-inferModule = traverseModuleRevTopologically inferDeclaration
+    Sem r (Module 'Typed, Map (Qualified Name) (Type SourceRegion))
+inferModule m = do
+    m' <- traverseModuleRevTopologically inferDeclaration m
+    ctx <- Infer.get
+    let annotations =
+            fromList
+                ( flip mapMaybe ctx $ \case
+                    Annotation (Global (IgnoreLocation (Located _ n))) t -> Just (n, t)
+                    _ -> Nothing
+                )
+    pure (m', annotations)
 
 inferDeclaration ::
     forall r.
@@ -125,7 +134,9 @@ inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
     ctx <- Infer.get
     -- wellFormedType ctx expectedType
-    check e expectedType
+    (Expr (l, t)) <- check e expectedType
+    debugPretty l
+    pure (Expr (l, expectedType))
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
 --     ty' <-

@@ -2,5 +2,6 @@ import Prelude
 import Elara.Prim
 
 
+def main : String
 let main = 
-    "hello" |> println
+    undefined

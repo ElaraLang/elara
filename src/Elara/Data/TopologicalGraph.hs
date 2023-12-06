@@ -17,6 +17,11 @@ class Ord (Key a) => HasDependencies a where
     key :: a -> Key a
     dependencies :: a -> [Key a]
 
+instance HasDependencies a => HasDependencies (a, b) where
+    type Key (a, b) = Key a
+    key = key . fst
+    dependencies = dependencies . fst
+
 data TopologicalGraph a = TopologicalGraph
     { _moduleGraph :: Graph
     , _nodeFromVertex :: Vertex -> (a, Key a, [Key a])

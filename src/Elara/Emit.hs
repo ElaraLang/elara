@@ -77,7 +77,7 @@ runInnerEmit ::
     Sem
         ( State CLInitState
             : Reader JVMVersion
-            : Reader (QualifiedClassName)
+            : Reader QualifiedClassName
             : Embed ClassBuilder
             : Embed CodeBuilder
             : '[]
@@ -172,14 +172,3 @@ generateMainMethod m =
                 , codeAttributes = []
                 }
         ]
-
-{- | Determines if a type is a value type.
-That is, a type that can be compiled to a field rather than a method.
--}
-typeIsValue :: Type -> Bool
-typeIsValue (ForAllTy _ x) = typeIsValue x
-typeIsValue (AppTy con _) | con == ioCon = True
-typeIsValue (AppTy con _) | con == listCon = True
-typeIsValue c | c == stringCon = True
-typeIsValue c | c == intCon = True
-typeIsValue _ = False
