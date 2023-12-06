@@ -79,7 +79,6 @@ class NameLike name where
 
     -- | Get the full name, including qualification, if present
     fullNameText :: name -> Text
-    fullNameText = nameText
 
     moduleName :: name -> Maybe ModuleName
     moduleName _ = Nothing
@@ -102,18 +101,23 @@ instance ToName Name where
 instance NameLike VarName where
     nameText (NormalVarName name) = nameText name
     nameText (OperatorVarName name) = nameText name
+    fullNameText = nameText
 
 instance NameLike LowerAlphaName where
     nameText (LowerAlphaName name) = name
+    fullNameText = nameText
 
 instance NameLike TypeName where
     nameText (TypeName name) = name
+    fullNameText = nameText
 
 instance NameLike OpName where
     nameText (OpName name) = name
+    fullNameText = nameText
 
 instance NameLike ModuleName where
     nameText (ModuleName name) = T.intercalate "." (toList name)
+    fullNameText = nameText
 
 instance NameLike n => NameLike (MaybeQualified n) where
     nameText (MaybeQualified name _) = nameText name
@@ -229,7 +233,7 @@ instance Pretty TypeName where
     pretty (TypeName n) = pretty n
 
 instance Pretty OpName where
-    pretty (OpName n) = pretty n
+    pretty (OpName n) = Style.operator (pretty n)
 
 instance Pretty LowerAlphaName where
     pretty (LowerAlphaName n) = pretty n

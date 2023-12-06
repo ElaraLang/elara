@@ -5,49 +5,39 @@ import Elara.Prim exposing (..)
 
 def Main.fact : Integer -> Integer
 let Main.fact =
-    ((\ n_10 -> (((if (((((Elara.Prim.(==) : (forall (a_5 : Type) .
-                                                a_5 ->
-                                                a_5 ->
-                                                  Bool)) (n_10 : (Integer))) : (Integer ->
-                                                                                  Bool)) (0 : (Integer))) : (Bool)) then (1 : (Integer)) else (((((Elara.Prim.(*) : (Integer ->
-                                                                                                                                                                     Integer ->
-                                                                                                                                                                       Integer)) (n_10 : (Integer))) : (Integer ->
-                                                                                                                                                                                                          Integer)) (((Main.fact : (Integer ->
-                                                                                                                                                                                                                                      Integer)) (((((Elara.Prim.(-) : (Integer ->
-                                                                                                                                                                                                                                                                       Integer ->
-                                                                                                                                                                                                                                                                         Integer)) (n_10 : (Integer))) : (Integer ->
-                                                                                                                                                                                                                                                                                                            Integer)) (1 : (Integer))) : (Integer))) : (Integer))) : (Integer))) : (Integer)))) : (Integer ->
-                                                                                                                                                                                                                                                                                                                                                                                                     Integer))
+    (\ n_10 -> ((if ((Elara.Prim.(==) : (forall (a_5 : Type) .
+                                           a_5 ->
+                                           a_5 ->
+                                             Bool) n_10 : (Integer)) : (Integer ->
+                                                                          Bool) 0 : (Integer)) : (Bool) then 1 : (Integer) else ((Elara.Prim.(*) : (Integer ->
+                                                                                                                                                    Integer ->
+                                                                                                                                                      Integer) n_10 : (Integer)) : (Integer ->
+                                                                                                                                                                                      Integer) (Main.fact : (Integer ->
+                                                                                                                                                                                                               Integer) ((Elara.Prim.(-) : (Integer ->
+                                                                                                                                                                                                                                            Integer ->
+                                                                                                                                                                                                                                              Integer) n_10 : (Integer)) : (Integer ->
+                                                                                                                                                                                                                                                                              Integer) 1 : (Integer)) : (Integer)) : (Integer)) : (Integer)) : (Integer))) : (Integer ->
+                                                                                                                                                                                                                                                                                                                                                                Integer)
 
 def Main.main : IO Unit 
 let Main.main =
-    (((((Elara.Prim.(|>) : (forall (a_6 : Type) .
-                            forall (b_7 : Type) .
-                              a_6 ->
-                              (a_6 -> b_7) ->
-                                b_7)) (((((Elara.Prim.(|>) : (forall (a_6 : Type) .
-                                                              forall (b_7 : Type) .
-                                                                a_6 ->
-                                                                (a_6 -> b_7) ->
-                                                                  b_7)) ([ (1 : (Integer)), (2 : (Integer)), (3 : (Integer)) ] : (List
-                                                                                                                                    Integer))) : (( List
-                                                                                                                                                      Integer ->
-                                                                                                                                                      Text
-                                                                                                                                                  ) ->
-                                                                                                                                                    Text)) (((Elara.Prim.toString : (forall (a_3 : Type) .
-                                                                                                                                                                                       a_3 ->
-                                                                                                                                                                                         Text)) @List
-                                                                                                                                                                                                   Integer ->
-                                                                                                                                                                                                   Text) : (( List
-                                                                                                                                                                                                                Integer ->
-                                                                                                                                                                                                                Text
-                                                                                                                                                                                                            ) ->
-                                                                                                                                                                                                              Text))) : (Text))) : (( Text ->
-                                                                                                                                                                                                                                        IO Unit
-
-                                                                                                                                                                                                                                    ) ->
-                                                                                                                                                                                                                                      IO Unit
-                                                                                                                                                                                                                                         )) (Elara.Prim.println : (Text ->
-                                                                                                                                                                                                                                                                     IO Unit
-                                                                                                                                                                                                                                                                        ))) : (IO Unit
-                                                                                                                                                                                                                                                                                  ))
+    (Elara.Prim.println : (Text ->
+                             IO Unit
+                                ) (Elara.Prim.toString : (forall (a_3 : Type) .
+                                                            a_3 ->
+                                                              Text) ((Prelude.map : (forall (a_11 : Type) .
+                                                                                     forall (b_12 : Type) .
+                                                                                       ( a_11 ->
+                                                                                           b_12
+                                                                                       ) ->
+                                                                                       List
+                                                                                         a_11 ->
+                                                                                         List
+                                                                                           b_12) Main.fact : (Integer ->
+                                                                                                                Integer)) : (List
+                                                                                                                               Integer ->
+                                                                                                                               List
+                                                                                                                                 Integer) [ 1 : (Integer), 2 : (Integer), 3 : (Integer) ] : (List
+                                                                                                                                                                                               Integer)) : (List
+                                                                                                                                                                                                              Integer)) : (Text)) : (IO Unit
+                                                                                                                                                                                                                                        )

@@ -38,6 +38,10 @@ varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
 varRefVal' f (Global n) = let n' = traverse (traverse f) n in Global <$> n'
 varRefVal' f (Local n) = let n' = traverse (traverse f) n in Local <$> n'
 
+ignoreLocation :: VarRef n -> IgnoreLocVarRef n
+ignoreLocation (Global n) = Global (IgnoreLocation n)
+ignoreLocation (Local n) = Local (IgnoreLocation n)
+
 mkLocal :: ToName n => Located (Unique n) -> VarRef Name
 mkLocal n = Local (toName <<$>> n)
 

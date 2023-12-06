@@ -4,12 +4,12 @@ import Elara.Prim exposing (..)
 
 def Prelude.map : ((a_11 -> b_12) -> ([ a_11 ] -> [ b_12 ]))
 let Prelude.map =
-    ((\ f_13 -> (((\ a_14 -> (((match (a_14 ) with { [  ]  -> ([  ] ); (x_15  :: xs_16 )  -> (((((Elara.Prim.cons ) (((f_13 ) (x_15 )) )) ) (((((Prelude.map ) (f_13 )) ) (xs_16 )) )) )}) ))) ))) )
+    (\ f_13 -> ((\ a_14 -> ((match a_14  with { [  ]  -> [  ] ; (x_15  :: xs_16 )  -> ((Elara.Prim.cons  (f_13  x_15 ) )  ((Prelude.map  f_13 )  xs_16 ) ) }) )) )) 
 
 def Prelude.reverse : ([ a_17 ] -> [ a_17 ])
 let Prelude.reverse =
-    ((\ a_18 -> (((match (a_18 ) with { [  ]  -> ([  ] ); (x_19  :: xs_20 )  -> (((((Prelude.(++) ) (((Prelude.reverse ) (xs_20 )) )) ) ([ (x_19 ) ] )) )}) ))) )
+    (\ a_18 -> ((match a_18  with { [  ]  -> [  ] ; (x_19  :: xs_20 )  -> ((Prelude.(++)  (Prelude.reverse  xs_20 ) )  [ x_19  ] ) }) )) 
 
 def Prelude.(++) : ([ a_21 ] -> ([ a_21 ] -> [ a_21 ]))
 let Prelude.(++) =
-    ((\ a_22 -> (((\ b_23 -> (((match (a_22 ) with { [  ]  -> (b_23 ); (x_24  :: xs_25 )  -> (((((Elara.Prim.cons ) (x_24 )) ) (((((Prelude.(++) ) (xs_25 )) ) (b_23 )) )) )}) ))) ))) )
+    (\ a_22 -> ((\ b_23 -> ((match a_22  with { [  ]  -> b_23 ; (x_24  :: xs_25 )  -> ((Elara.Prim.cons  x_24 )  ((Prelude.(++)  xs_25 )  b_23 ) ) }) )) )) 

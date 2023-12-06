@@ -13,7 +13,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (Name (..), NameLike (fullNameText, nameText), Qualified (..), VarName (..), VarOrConName (..))
-import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed
 import Elara.AST.Select
@@ -33,7 +33,7 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.Writer
 import Prelude hiding (modify')
 
-type OpTable = Map (VarRef Name) OpInfo
+type OpTable = Map (IgnoreLocVarRef Name) OpInfo
 
 newtype Precedence = Precedence Int
     deriving (Show, Eq, Ord)
@@ -66,8 +66,8 @@ instance Exception ShuntError
 
 prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
 prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
-    SymOp opName -> pretty (fullNameText (opName ^. unlocated . to varRefVal))
-    Infixed vn -> "`" <> pretty (fullNameText (vn ^. to varRefVal)) <> "`"
+    SymOp opName -> pretty (opName ^. unlocated)
+    Infixed vn -> "`" <> pretty vn <> "`"
 
 instance ReportableError ShuntError where
     report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
@@ -101,8 +101,8 @@ instance ReportableError ShuntWarning where
 
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
 opInfo table operator = case operator ^. _Unwrapped . unlocated of
-    SymOp opName -> lookup (NOpName <$> opName ^. unlocated) table
-    Infixed vn -> lookup (toName <$> vn) table
+    SymOp opName -> lookup (ignoreLocation (NOpName <$> opName ^. unlocated)) table
+    Infixed vn -> lookup (ignoreLocation (toName <$> vn)) table
       where
         toName (VarName n) = NVarName (NormalVarName n)
         toName (ConName n) = NTypeName n
@@ -149,8 +149,7 @@ fixOperators opTable = reassoc
             let reassociated = Expr (Located sr reassociated', Nothing)
             pure (BinaryOperator (o2, reassociated, e3))
 
-        assocRight = do
-            pure (BinaryOperator (o1, e1, r))
+        assocRight = pure (BinaryOperator (o1, e1, r))
 
         getInfoOrWarn :: RenamedBinaryOperator -> Sem r OpInfo
         getInfoOrWarn operator = case opInfo opTable operator of
@@ -274,7 +273,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (List es) = List <$> traverse shuntExpr es
     shuntExpr' (If cond then' else') = If <$> shuntExpr cond <*> shuntExpr then' <*> shuntExpr else'
     shuntExpr' (Let vn _ e) = Let vn NoFieldValue <$> shuntExpr e
-    shuntExpr' (LetIn vn _ e body) = (LetIn vn NoFieldValue <$> shuntExpr e) <*> shuntExpr body
+    shuntExpr' (LetIn vn _ e body) = LetIn vn NoFieldValue <$> shuntExpr e <*> shuntExpr body
     shuntExpr' (Block e) = Block <$> traverse shuntExpr e
     shuntExpr' (Match e cases) = do
         e' <- shuntExpr e

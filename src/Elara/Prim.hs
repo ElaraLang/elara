@@ -7,7 +7,7 @@ module Elara.Prim where
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (NormalVarName), VarOrConName (..))
 import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
-import Elara.AST.VarRef (VarRef, VarRef' (Global))
+import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Unique (UniqueGen)
 import Elara.Shunt
@@ -75,7 +75,7 @@ primKindCheckContext =
 primOpTable :: OpTable
 primOpTable =
     fromList
-        [ (Global (mkPrimVarRef $ NVarName "|>"), OpInfo (mkPrecedence 1) LeftAssociative)
+        [ (ignoreLocation $ Global (mkPrimVarRef $ NOpName "|>"), OpInfo (mkPrecedence 1) LeftAssociative)
         ]
 
 primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
