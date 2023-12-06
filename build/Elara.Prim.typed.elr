@@ -2,6 +2,34 @@ module Elara.Prim exposing (..)
 
 
 
-def Elara.Prim.undefined : forall (a_1 : Type) . a_1
+def Elara.Prim.cons : forall (a_1 : Type) . a_1 -> List a_1 -> List a_1
+let Elara.Prim.cons =
+    (Elara.Prim.elaraPrimitive  "cons" ) 
+
+def Elara.Prim.empty : forall (a_2 : Type) . List a_2
+let Elara.Prim.empty =
+    (Elara.Prim.elaraPrimitive  "empty" ) 
+
+def Elara.Prim.println : Text -> IO Unit 
+let Elara.Prim.println =
+    (Elara.Prim.elaraPrimitive  "println" ) 
+
+def Elara.Prim.toString : forall (a_3 : Type) . a_3 -> Text
+let Elara.Prim.toString =
+    (Elara.Prim.elaraPrimitive  "toString" ) 
+
+def Elara.Prim.undefined : forall (a_4 : Type) . a_4
 let Elara.Prim.undefined =
     (Elara.Prim.elaraPrimitive  "undefined" ) 
+
+def Elara.Prim.(*) : Integer -> Integer -> Integer
+let Elara.Prim.(*) =
+    (Elara.Prim.elaraPrimitive  "*" ) 
+
+def Elara.Prim.(-) : Integer -> Integer -> Integer
+let Elara.Prim.(-) =
+    (Elara.Prim.elaraPrimitive  "-" ) 
+
+def Elara.Prim.(==) : forall (a_5 : Type) . a_5 -> a_5 -> Bool
+let Elara.Prim.(==) =
+    (Elara.Prim.elaraPrimitive  "==" ) 

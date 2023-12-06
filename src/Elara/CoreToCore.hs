@@ -29,6 +29,17 @@ betaReduce = transform f
     f (App (Lam param body) arg) = subst param arg body
     f other = other
 
+pipeInline :: CoreExprPass
+pipeInline = transform f
+  where
+    f
+        ( ( (Var (Id (Global' (Qualified "|>" (ModuleName ("Prelude" :| [])))) _))
+                    `App` x
+                )
+                `App` f
+            ) = f `App` x
+    f other = other
+
 subst :: Var -> Expr Var -> Expr Var -> CoreExpr
 subst v e = transform f
   where
@@ -36,7 +47,7 @@ subst v e = transform f
     f other = other
 
 coreToCoreExpr :: CoreExprPass
-coreToCoreExpr = betaReduce . constantFold
+coreToCoreExpr = betaReduce . constantFold . pipeInline
 
 fullCoreToCoreExpr :: CoreExprPass
 fullCoreToCoreExpr = fix' coreToCoreExpr

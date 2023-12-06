@@ -1,7 +1,9 @@
 import Prelude 
 import Elara.Prim
 
+def fact : Int -> Int
+let fact n = 
+    if n == 0 then 1 else n * fact (n - 1)
 
-def main : String
 let main = 
-    undefined
+    toString [1]

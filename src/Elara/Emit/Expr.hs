@@ -40,7 +40,6 @@ generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String prim
 generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
 generateInstructions' (Var (Normal (Id (Global' (Qualified n mn)) t))) tApps = do
-    debugPretty (n, t, tApps)
     if typeIsValue t
         then do
             embed $
@@ -182,7 +181,6 @@ generateAppInstructions f x = do
                     traverse_ generateInstructions args
                     embed $ emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
-                    debugPretty (f', args)
                     case insts ^. _3 . to (.return) of
                         TypeReturn ft -> embed $ emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass

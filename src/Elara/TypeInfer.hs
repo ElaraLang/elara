@@ -134,8 +134,7 @@ inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
     ctx <- Infer.get
     -- wellFormedType ctx expectedType
-    (Expr (l, t)) <- check e expectedType
-    debugPretty l
+    (Expr (l, _)) <- check e expectedType
     pure (Expr (l, expectedType))
 
 -- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do

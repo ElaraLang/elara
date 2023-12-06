@@ -3,6 +3,10 @@ module Main exposing (..)
 import Prelude exposing (..)
 import Elara.Prim exposing (..)
 
-def Main.main : Text
+def Main.fact : Integer -> Integer
+let Main.fact =
+    (\ n_6 -> ((if ((Elara.Prim.(==)  n_6 )  0 )  then 1  else ((Elara.Prim.(*)  n_6 )  (Main.fact  ((Elara.Prim.(-)  n_6 )  1 ) ) ) ) )) 
+
+def Main.main : Integer
 let Main.main =
-    (Elara.Prim.undefined  @Text) 
+    [ 1 , 2  ] 

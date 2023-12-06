@@ -2,3 +2,24 @@ module Elara.Prim
 
 def undefined : a
 let undefined = elaraPrimitive "undefined"
+
+def println : String -> IO ()
+let println = elaraPrimitive "println"
+
+def (-) : Int -> Int -> Int
+let (-) = elaraPrimitive "-"
+
+def (*) : Int -> Int -> Int
+let (*) = elaraPrimitive "*"
+
+def (==) : a -> a -> Bool
+let (==) = elaraPrimitive "=="
+
+def toString : a -> String
+let toString = elaraPrimitive "toString"
+
+def cons : a -> [a] -> [a]
+let cons = elaraPrimitive "cons"
+
+def empty : [a]
+let empty = elaraPrimitive "empty"

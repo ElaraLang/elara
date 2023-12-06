@@ -1,2 +1,7 @@
 module Main
-{ Main.main : String     = Elara.Prim.undefined @String }
+{ Main.fact : Int -> Int
+    = \ (n_6 : Int) -> case Elara.Prim.== n_6 0 
+        { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_6 (Main.fact (Elara.Prim.- n_6 1))}
+; 
+Main.main : Int
+    = Elara.Prim.cons 1 (Elara.Prim.cons 2 Elara.Prim.empty) }

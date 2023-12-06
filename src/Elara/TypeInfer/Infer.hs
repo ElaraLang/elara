@@ -1386,7 +1386,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{input}
                 | isFreeTypeVariable input -> do
-                    debugPretty ("Input" :: Text, input)
                     pure $
                         FunctionCall
                             ( Expr (Located primRegion (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
@@ -1394,14 +1393,12 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{output}
                 | isFreeTypeVariable output -> do
-                    debugPretty ("Output" :: Text, output)
                     pure $
                         FunctionCall
                             ( Expr (Located primRegion (TypeApplication _A (Type.stripForAll resultType)), resultType)
                             )
                             typedArgument
             o -> do
-                debugPretty ("other" :: Text, o, completedFunctionType)
                 pure $ FunctionCall _A typedArgument
 
         pure $ Expr (Located location e, resultType)
@@ -1483,21 +1480,17 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         branches' <- traverse process branches
 
         pure $ Expr (Located location (Match e' branches'), Syntax.typeOf e')
-    Syntax.List exprs -> do
-        a <- fresh
-        push (Context.UnsolvedType a)
+    Syntax.List (y : ys) -> do
+        y'@(Expr (_, type_)) <- infer y
 
-        let t = Type.List{location, type_ = Type.UnsolvedType{existential = a, ..}, ..}
+        let process element = do
+                _Γ <- get
 
-        exprs' <- traverse infer exprs
+                check element (Context.solveType _Γ type_)
 
-        traverse_ ((`subtype` Type.UnsolvedType{existential = a, ..}) . Syntax.typeOf) exprs'
+        ys' <- traverse process ys
 
-        _Θ <- get
-
-        instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
-
-        pure $ Expr (Located location (Syntax.List exprs'), t)
+        pure $ Expr (Located location (Syntax.List (y' : ys')), Syntax.typeOf y')
     Syntax.Block exprs -> do
         let process expr = do
                 _Γ <- get
@@ -1614,6 +1607,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         case _At of
             Type.Forall{} | Type.isMonoType t -> do
                 -- insert type application from instantiating the forall
+                debugPretty ("Inserted monotype" :: Text, _At, t)
                 pure $ Expr (Located exprLoc (TypeApplication _A t), _At `Type.instantiate` t)
             _ -> pure _A
 
