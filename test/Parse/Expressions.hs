@@ -41,6 +41,23 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
                     (Expr (Int 3, Nothing))
                 , Nothing
                 )
+    it "Parses the weird let-in thing properly" $ hedgehog $ do
+        "(let a  = 0 in {let a  = (-98905857 )} )"
+            `shouldParseExpr` Expr
+                ( LetIn
+                    "a"
+                    []
+                    (Expr (Int 0, Nothing))
+                    ( Expr
+                        ( Let
+                            (NormalVarName (LowerAlphaName "a"))
+                            []
+                            (Expr (Int (-98905857), Nothing))
+                        , Nothing
+                        )
+                    )
+                , Nothing
+                )
 
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do

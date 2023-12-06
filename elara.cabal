@@ -221,61 +221,6 @@ executable elara
       base hiding (Prelude)
   default-language: GHC2021
 
-test-suite doctest
-  type: exitcode-stdio-1.0
-  main-is: Main.hs
-  other-modules:
-      Paths_elara
-  autogen-modules:
-      Paths_elara
-  hs-source-dirs:
-      doctest
-  default-extensions:
-      OverloadedStrings
-      OverloadedRecordDot
-      TypeFamilies
-      LambdaCase
-      ImportQualifiedPost
-      DeriveDataTypeable
-      DataKinds
-      DeriveFunctor
-      TypeApplications
-      PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
-  build-depends:
-      Glob
-    , aeson
-    , array
-    , base
-    , binary
-    , bytestring
-    , containers
-    , diagnose
-    , directory
-    , doctest-parallel
-    , elara
-    , filepath
-    , generic-lens
-    , h2jvm
-    , hashable
-    , lens
-    , megaparsec
-    , mtl
-    , parser-combinators
-    , polysemy
-    , polysemy-plugin
-    , pretty-simple
-    , prettyprinter
-    , prettyprinter-ansi-terminal
-    , process
-    , relude
-    , safe-exceptions
-    , terminal-size
-    , utf8-string
-  mixins:
-      base hiding (Prelude)
-  default-language: GHC2021
-
 test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs

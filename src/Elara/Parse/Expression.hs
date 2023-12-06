@@ -63,7 +63,7 @@ cons = liftedBinary consName (curry3 BinaryOperator) unannotatedExpr
     consName :: Parser FrontendBinaryOperator
     consName = do
         l <- located (token_ TokenDoubleColon)
-        let y = (Infixed (Prim.cons `withLocationOf` l)) :: BinaryOperator' Frontend
+        let y = Infixed (Prim.cons `withLocationOf` l) :: BinaryOperator' Frontend
         pure $ MkBinaryOperator (y `withLocationOf` l)
 functionCall = liftedBinary pass (const FunctionCall) unannotatedExpr
 
