@@ -5,17 +5,13 @@ import Elara.Prim exposing (..)
 
 def Main.main : IO Unit 
 let Main.main =
-    (((Prelude.(|>) : forall (a_5 : Type) .
-                      forall (b_6 : Type) .
-                        a_5 -> (a_5 -> b_6) -> b_6 @Text) : ( Text -> IO Unit 
-                                                            ) ->
-                                                              IO Unit
-                                                                  "hello" : Text) : ( Text ->
-                                                                                        IO Unit
-
-                                                                                    ) ->
-                                                                                      IO Unit
-                                                                                          Elara.Prim.println : Text ->
-                                                                                                                 IO Unit
-                                                                                                                    ) : IO Unit
+    ((Prelude.(|>) : forall (a_5 : Type) .
+                     forall (b_6 : Type) .
+                       a_5 -> (a_5 -> b_6) -> b_6 "hello" : Text) : ( Text ->
+                                                                        IO Unit 
+                                                                    ) ->
+                                                                      IO Unit
+                                                                          Elara.Prim.println : Text ->
+                                                                                                 IO Unit
+                                                                                                    ) : IO Unit
 

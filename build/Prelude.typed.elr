@@ -4,21 +4,19 @@ import Elara.Prim exposing (..)
 
 def Prelude.(|>) : forall (a_5 : Type) (b_6 : Type) . a_5 -> (a_5 -> b_6) -> b_6
 let Prelude.(|>) =
-    (\ a_7 -> ((\ f_8 -> ((((f_8 : forall (a_5 : Type) .
-                                   forall (b_6 : Type) .
-                                     a_5 -> b_6 @a_5) : forall (b_6 : Type) .
-                                                          b_6 @b_6) : forall (b_6 : Type) .
-                                                                        b_6 a_7 : forall (a_5 : Type) .
-                                                                                    a_5) : forall (b_6 : Type) .
-                                                                                             b_6)) : forall (a_5 : Type) .
-                                                                                                     forall (b_6 : Type) .
-                                                                                                       ( a_5 ->
-                                                                                                           b_6
-                                                                                                       ) ->
-                                                                                                         b_6)) : forall (a_5 : Type) .
-                                                                                                                 forall (b_6 : Type) .
-                                                                                                                   a_5 ->
-                                                                                                                   ( a_5 ->
-                                                                                                                       b_6
-                                                                                                                   ) ->
-                                                                                                                     b_6
+    (\ a_7 -> ((\ f_8 -> ((f_8 : forall (a_5 : Type) .
+                                 forall (b_6 : Type) .
+                                   a_5 -> b_6 a_7 : forall (a_5 : Type) .
+                                                      a_5) : forall (b_6 : Type) .
+                                                               b_6)) : forall (a_5 : Type) .
+                                                                       forall (b_6 : Type) .
+                                                                         ( a_5 ->
+                                                                             b_6
+                                                                         ) ->
+                                                                           b_6)) : forall (a_5 : Type) .
+                                                                                   forall (b_6 : Type) .
+                                                                                     a_5 ->
+                                                                                     ( a_5 ->
+                                                                                         b_6
+                                                                                     ) ->
+                                                                                       b_6

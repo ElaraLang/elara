@@ -1366,12 +1366,14 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
 
-        let isVar = \case Type.VariableType{} -> True; Type.UnsolvedType{} -> True; _ -> False
         ctx <- get
-        _A' <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
-        e <- case _A' of
+        completedFunctionType <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
+        let isFreeTypeVariable = \case Type.VariableType _ x -> not (Type.occurs x completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
+        debugPretty ("complete" :: Text, completedFunctionType)
+        e <- case Type.stripForAll completedFunctionType of
             Type.Function{input, output}
-                | isVar input && isVar output ->
+                | isFreeTypeVariable input && isFreeTypeVariable output -> do
+                    debugPretty ("Both" :: Text, input, output)
                     pure $
                         FunctionCall
                             ( Expr
@@ -1392,20 +1394,23 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             )
                             typedArgument
             Type.Function{input}
-                | isVar input ->
+                | isFreeTypeVariable input -> do
+                    debugPretty ("Input" :: Text, input)
                     pure $
                         FunctionCall
                             ( Expr (Located primRegion (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
                             )
                             typedArgument
             Type.Function{output}
-                | isVar output ->
+                | isFreeTypeVariable output -> do
+                    debugPretty ("Output" :: Text, output)
                     pure $
                         FunctionCall
                             ( Expr (Located primRegion (TypeApplication _A (Type.stripForAll resultType)), resultType)
                             )
                             typedArgument
-            _ -> do
+            o -> do
+                debugPretty ("other" :: Text, o, completedFunctionType)
                 pure $ FunctionCall _A typedArgument
 
         pure $ Expr (Located location e, resultType)

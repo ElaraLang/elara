@@ -1,21 +1,21 @@
 module Elara.Prim
 { Elara.Prim.cons : forall (a_1 : Type). a_1 -> [a_1] -> [a_1]
-    = Elara.Prim.elaraPrimitive @(a_1 -> [a_1] -> [a_1]) "cons"
+    = Elara.Prim.elaraPrimitive "cons"
 ; 
 Elara.Prim.empty : forall (a_2 : Type). [a_2]
-    = Elara.Prim.elaraPrimitive @([a_2]) "empty"
+    = Elara.Prim.elaraPrimitive "empty"
 ; 
 Elara.Prim.println : String -> IO ()
-    = Elara.Prim.elaraPrimitive @(String -> IO ()) "println"
+    = Elara.Prim.elaraPrimitive "println"
 ; 
 Elara.Prim.toString : forall (a_3 : Type). a_3 -> String
-    = Elara.Prim.elaraPrimitive @(a_3 -> String) "toString"
+    = Elara.Prim.elaraPrimitive "toString"
 ; 
 Elara.Prim.* : Int -> Int -> Int
-    = Elara.Prim.elaraPrimitive @(Int -> Int -> Int) "*"
+    = Elara.Prim.elaraPrimitive "*"
 ; 
 Elara.Prim.- : Int -> Int -> Int
-    = Elara.Prim.elaraPrimitive @(Int -> Int -> Int) "-"
+    = Elara.Prim.elaraPrimitive "-"
 ; 
 Elara.Prim.== : forall (a_4 : Type). a_4 -> a_4 -> Bool
-    = Elara.Prim.elaraPrimitive @(a_4 -> a_4 -> Bool) "==" }
+    = Elara.Prim.elaraPrimitive "==" }

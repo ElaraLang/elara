@@ -221,6 +221,9 @@ freeTypeVars t = nubOrdOn (view unlocated) (Lens.concatMapOf Lens.cosmos names t
         VariableType sr l -> [Located sr l]
         _ -> []
 
+occurs :: UniqueTyVar -> Type SourceRegion -> Bool
+occurs tv t = tv `elem` (view unlocated <$> freeTypeVars t)
+
 {- | Substitute a `Type` by replacing all occurrences of the given unsolved
    variable with a `Monotype`
 -}

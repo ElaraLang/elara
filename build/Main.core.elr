@@ -1,2 +1,2 @@
 module Main
-{ Main.main : IO ()     = Prelude.|> @String "hello" Elara.Prim.println }
+{ Main.main : IO ()     = Prelude.|> "hello" Elara.Prim.println }
