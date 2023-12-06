@@ -1,8 +1,6 @@
 import Prelude 
 import Elara.Prim
 
-let fact n =
-    if n == 0 then 1 else n * fact (n - 1)
 
 let main = 
-    ([1, 2, 3] ++ [4, 5, 6]) |> reverse |> toString |> println
+    "hello" |> println

@@ -13,7 +13,7 @@ import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
 
 data JVMBinder
-    = JVMLocal !Int
+    = JVMLocal !Word8
     | Normal !Var
     deriving (Eq, Show, Data, Generic)
 
@@ -52,7 +52,7 @@ This function handles the transform, and renaming of Elara variables to @JVMBind
 transformTopLevelLambdas :: CoreExpr -> JVMExpr
 transformTopLevelLambdas = go 0
   where
-    go :: Int -> CoreExpr -> JVMExpr
+    go :: Word8 -> CoreExpr -> JVMExpr
     go c (Core.Lam v@(Core.Id _ _) body) =
         (replaceVar (Normal v) (JVMLocal c) (go (c + 1) body))
     go _ x = toJVMExpr x

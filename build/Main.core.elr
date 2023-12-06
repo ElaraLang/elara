@@ -1,7 +1,2 @@
 module Main
-{ Main.fact : Int -> Int
-    = \ (n_5 : Int) -> case Elara.Prim.== @Int n_5 0 
-        { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_5 (Main.fact (Elara.Prim.- n_5 1))}
-; 
-Main.main : IO ()
-    = Prelude.|> @String (Prelude.|> @([Int]) (Prelude.|> @([Int]) (Prelude.++ (Elara.Prim.cons 1 (Elara.Prim.cons 2 (Elara.Prim.cons 3 Elara.Prim.empty))) (Elara.Prim.cons 4 (Elara.Prim.cons 5 (Elara.Prim.cons 6 Elara.Prim.empty)))) Prelude.reverse) Elara.Prim.toString) Elara.Prim.println }
+{ Main.main : IO ()     = Prelude.|> @String "hello" Elara.Prim.println }

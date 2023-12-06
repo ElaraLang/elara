@@ -1,5 +1,8 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module Elara.Emit.Expr where
 
+import Control.Lens
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
@@ -131,9 +134,10 @@ localVariableId (JVMLocal i) = pure (fromIntegral i)
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
-approximateTypeAndNameOf :: Expr JVMBinder -> (UnlocatedVarRef Text, Type)
-approximateTypeAndNameOf (Var (Normal (Id n t))) = (n, t)
-approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) (approximateTypeAndNameOf e)
+approximateTypeAndNameOf :: HasCallStack => Expr JVMBinder -> Either Word8 (UnlocatedVarRef Text, Type)
+approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
+approximateTypeAndNameOf (Var (JVMLocal i)) = Left ((i))
+approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> (approximateTypeAndNameOf e)
 approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty other
 
 {- | Generate instructions for function application
@@ -145,16 +149,25 @@ For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying
 generateAppInstructions :: (Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => JVMExpr -> JVMExpr -> Sem r ()
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
-    let (fName, fType) = approximateTypeAndNameOf f'
-
-    let arity = typeArity fType
-    if length args == arity
-        then -- yippee, no currying necessary
-        do
-            let insts = invokeStaticVars fName fType
-            traverse_ generateInstructions args
-            embed $ emit $ uncurry3 InvokeStatic insts
-        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
+    case approximateTypeAndNameOf f' of
+        Left local -> do
+            embed $ emit $ ALoad local
+            embed $ emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+            pass
+        Right (fName, fType) -> do
+            let arity = typeArity fType
+            if length args == arity
+                then -- yippee, no currying necessary
+                do
+                    let insts = invokeStaticVars fName fType
+                    traverse_ generateInstructions args
+                    embed $ emit $ uncurry3 InvokeStatic insts
+                    -- After calling any function we always checkcast it otherwise generic functions will die
+                    debugPretty (f', args)
+                    case insts ^. _3 . to (.return) of
+                        TypeReturn ft -> embed $ emit $ CheckCast (fieldTypeToClassInfoType ft)
+                        VoidReturn -> pass
+                else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
   where
     collectArgs :: JVMExpr -> [JVMExpr] -> (JVMExpr, [JVMExpr])
     collectArgs (App f x) args = collectArgs f (x : args)
