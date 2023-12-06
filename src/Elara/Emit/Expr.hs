@@ -25,22 +25,24 @@ import Polysemy
 import Polysemy.State
 import Print (debugColored, debugPretty, showPretty)
 
-generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
-generateInstructions (Var (JVMLocal 0)) = embed $ emit $ ALoad 0
-generateInstructions (Var (JVMLocal 1)) = embed $ emit $ ALoad 1
-generateInstructions (Var (JVMLocal 2)) = embed $ emit $ ALoad 2
-generateInstructions (Var (JVMLocal 3)) = embed $ emit $ ALoad 3
-generateInstructions (Lit s) = generateLitInstructions s >>= embed . emit'
-generateInstructions (Var (Normal (Id (Global' v) _)))
+generateInstructions v = generateInstructions' v []
+
+generateInstructions' :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> [Type] -> Sem r ()
+generateInstructions' (Var (JVMLocal 0)) _ = embed $ emit $ ALoad 0
+generateInstructions' (Var (JVMLocal 1)) _ = embed $ emit $ ALoad 1
+generateInstructions' (Var (JVMLocal 2)) _ = embed $ emit $ ALoad 2
+generateInstructions' (Var (JVMLocal 3)) _ = embed $ emit $ ALoad 3
+generateInstructions' (Lit s) _ = generateLitInstructions s >>= embed . emit'
+generateInstructions' (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
-generateInstructions (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName)))
+generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
-generateInstructions (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName)))
+generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
-generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) = do
-    debugPretty (n, t)
+generateInstructions' (Var (Normal (Id (Global' (Qualified n mn)) t))) tApps = do
+    debugPretty (n, t, tApps)
     if typeIsValue t
-        then
+        then do
             embed $
                 emit
                     ( GetStatic
@@ -57,17 +59,23 @@ generateInstructions (Var (Normal (Id (Global' (Qualified n mn)) t))) = do
                         (translateOperatorName n)
                         (generateMethodDescriptor t)
                     )
-generateInstructions (Var v) = do
+    case tApps of
+        [] -> pass
+        [t] -> embed $ emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
+        _ -> error "Multiple tApps for a single value... curious..."
+generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     embed $ emit $ ALoad idx
-generateInstructions (App f x) = generateAppInstructions f x
-generateInstructions (Let (NonRecursive (n, val)) b) = withLocalVariableScope $ do
+generateInstructions' (App f x) _ = generateAppInstructions f x
+generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
-    generateInstructions val
+    generateInstructions' val tApps
     embed $ emit $ AStore idx
-    generateInstructions b
-generateInstructions (Match a b c) = generateCaseInstructions a b c
-generateInstructions other = error $ "Not implemented: " <> showPretty other
+    generateInstructions' b tApps
+generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
+generateInstructions' (TyApp f t) tApps =
+    generateInstructions' f (t : tApps) -- TODO
+generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
     (Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) =>
