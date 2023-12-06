@@ -143,6 +143,9 @@ instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
 instance (Pretty a, Pretty b, Pretty c, Pretty d) => Pretty (a, b, c, d) where
     pretty (a, b, c, d) = tupled [pretty a, pretty b, pretty c, pretty d]
 
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => Pretty (a, b, c, d, e) where
+    pretty (a, b, c, d, e) = tupled [pretty a, pretty b, pretty c, pretty d, pretty e]
+
 instance {-# OVERLAPS #-} PP.Pretty a => Pretty a where
     pretty = PP.pretty
 

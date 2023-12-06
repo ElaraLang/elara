@@ -105,7 +105,7 @@ instance
     Pretty (Expr ast)
     where
     pretty =
-        let ?withType = True
+        let ?withType = False
             ?contextFree = True
          in prettyExpr @ast @exprType @letPatterns @lambdaPatterns
 
