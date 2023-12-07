@@ -1,0 +1,37 @@
+module Prelude
+{ Prelude.charToInt : Char -> Int
+    = \ (c_13 : Char) -> case Elara.Prim.== c_13 '0' 
+        { Elara.Prim.True : Bool  -> 0; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '1' 
+            { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '2' 
+                { Elara.Prim.True : Bool  -> 2; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '3' 
+                    { Elara.Prim.True : Bool  -> 3; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '4' 
+                        { Elara.Prim.True : Bool  -> 4; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '5' 
+                            { Elara.Prim.True : Bool  -> 5; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '6' 
+                                { Elara.Prim.True : Bool  -> 6; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '7' 
+                                    { Elara.Prim.True : Bool  -> 7; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '8' 
+                                        { Elara.Prim.True : Bool  -> 8; Elara.Prim.False : Bool  -> case Elara.Prim.== c_13 '9' 
+                                            { Elara.Prim.True : Bool  -> 9; Elara.Prim.False : Bool  -> -1}}}}}}}}}}
+; 
+Prelude.head : forall (a_14 : Type). [a_14] -> a_14
+    = \ (a_15 : [a_14]) -> case a_15 of (a_117 : forall (a_14 : Type). [a_14])
+        { Elara.Prim.empty : [([a_14])]  -> Elara.Prim.undefined @a_14; Elara.Prim.cons : [] (x_16 : a_14) (xs_17 : [a_14]) -> x_16}
+; 
+Prelude.last : forall (a_18 : Type). [a_18] -> a_18
+    = \ (a_19 : [a_18]) -> case a_19 of (a_118 : forall (a_18 : Type). [a_18])
+        { Elara.Prim.empty : [([a_18])]  -> Elara.Prim.undefined @a_18; Elara.Prim.cons : [] (x_20 : a_18) (xs_21 : [a_18]) -> case Elara.Prim.== xs_21 Elara.Prim.empty 
+            { Elara.Prim.True : Bool  -> x_20; Elara.Prim.False : Bool  -> Prelude.last xs_21}}
+; 
+Prelude.map : forall (a_22 : Type). forall (b_23 : Type). (a_22 -> b_23) -> [a_22] -> [b_23]
+    = \ (f_24 : a_22 -> b_23) (a_25 : [a_22]) -> case a_25 of (a_119 : forall (a_22 : Type). [a_22])
+        { Elara.Prim.empty : [([a_22])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_26 : a_22) (xs_27 : [a_22]) -> Elara.Prim.cons (f_24 x_26) (Prelude.map f_24 xs_27)}
+; 
+Prelude.print : forall (a_28 : Type). a_28 -> IO ()
+    = \ (a_29 : a_28) -> Elara.Prim.println (Elara.Prim.toString a_29)
+; 
+Prelude.++ : forall (a_34 : Type). [a_34] -> [a_34] -> [a_34]
+    = \ (a_35 : [a_34]) (b_36 : [a_34]) -> case a_35 of (a_120 : forall (a_34 : Type). [a_34])
+        { Elara.Prim.empty : [([a_34])]  -> b_36; Elara.Prim.cons : [] (x_37 : a_34) (xs_38 : [a_34]) -> Elara.Prim.cons x_37 (Prelude.++ xs_38 b_36)}
+; 
+Prelude.reverse : forall (a_30 : Type). [a_30] -> [a_30]
+    = \ (a_31 : [a_30]) -> case a_31 of (a_121 : forall (a_30 : Type). [a_30])
+        { Elara.Prim.empty : [([a_30])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_32 : a_30) (xs_33 : [a_30]) -> Prelude.++ (Prelude.reverse xs_33) (Elara.Prim.cons x_32 Elara.Prim.empty)} }

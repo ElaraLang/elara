@@ -8,6 +8,7 @@ import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Map qualified as Map
 import Data.Traversable (for)
 import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
@@ -65,11 +66,12 @@ inferModule m = do
     m' <- traverseModuleRevTopologically inferDeclaration m
     ctx <- Infer.get
     let annotations =
-            fromList
-                ( flip mapMaybe ctx $ \case
-                    Annotation (Global (IgnoreLocation (Located _ n))) t -> Just (n, t)
-                    _ -> Nothing
-                )
+            Map.fromList $
+                reverse
+                    ( flip mapMaybe ctx $ \case
+                        Annotation (Global (IgnoreLocation (Located _ n))) t -> Just (n, t)
+                        _ -> Nothing
+                    )
     pure (m', annotations)
 
 inferDeclaration ::

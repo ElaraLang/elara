@@ -5,7 +5,6 @@ import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-import Elara.ReadFile (readFileString)
 import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.State

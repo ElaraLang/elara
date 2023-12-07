@@ -1,0 +1,11 @@
+module Main
+{ Main.fact : Int -> Int
+    = \ (n_10 : Int) -> case Elara.Prim.== n_10 0 
+        { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_10 (Main.fact (Elara.Prim.- n_10 1))}
+; 
+Main.part1 : String -> Int
+    = \ (input_11 : String) -> let chars_12 : [Int]
+        = Elara.Prim.|> (Elara.Prim.stringToList input_11) (Prelude.map Prelude.charToInt) in Prelude.head chars_12
+; 
+Main.main : IO ()
+    = Prelude.print (Main.part1 "1234") }
