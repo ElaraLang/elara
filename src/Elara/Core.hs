@@ -40,7 +40,11 @@ instance Plated (Expr b) where
         TyApp a b -> TyApp <$> f a <*> pure b
         Lam b e -> (Lam b <$> f e)
         TyLam t e -> TyLam t <$> f e
-        Let b e -> (Let b <$> f e)
+        Let b e -> (Let <$> f' b <*> f e)
+          where
+            f' = \case
+                Recursive bs -> Recursive <$> traverse (traverse f) bs
+                NonRecursive (b, e) -> NonRecursive <$> ((,) b <$> f e)
         Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
           where
             traverse3 f (a, b, c) = ((,,) a b <$> f c)

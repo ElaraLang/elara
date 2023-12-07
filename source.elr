@@ -6,8 +6,8 @@ let fact n =
     if n == 0 then 1 else n * fact (n - 1)
 
 let part1 input = 
-    let chars = stringToList input |> (map charToInt) in head chars
+    let chars = stringToList input |> (map charToInt)
+    head chars
 
-def main : IO ()
 let main = 
-    print (part1 "1234")
+    print (part1 "hello")

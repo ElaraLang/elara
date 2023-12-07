@@ -5,7 +5,7 @@ module Main
 ; 
 Main.part1 : String -> Int
     = \ (input_11 : String) -> let chars_12 : [Int]
-        = Elara.Prim.|> (Elara.Prim.stringToList input_11) (Prelude.map Prelude.charToInt) in Prelude.head chars_12
+        = Prelude.map Prelude.charToInt (Elara.Prim.stringToList input_11) in Prelude.head chars_12
 ; 
 Main.main : IO ()
-    = Prelude.print (Main.part1 "1234") }
+    = Prelude.print (Main.part1 "hello") }

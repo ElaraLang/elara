@@ -125,7 +125,6 @@ inferDeclaration (Declaration ld) =
         ctx <- Infer.getAll
 
         completed <- completeExpression ctx e'
-        debugPretty (declName, typeOf e', typeOf completed)
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2))
 
         pure $ Value completed NoFieldValue NoFieldValue

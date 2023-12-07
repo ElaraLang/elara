@@ -58,5 +58,5 @@ def Main.main : IO Unit
 let Main.main =
     (Prelude.print : (forall (a_28 : Type) .
                         a_28 -> IO Unit ) (Main.part1 : (Text ->
-                                                           Integer) "1234" : (Text)) : (Integer)) : (IO Unit
-                                                                                                        )
+                                                           Integer) "hello" : (Text)) : (Integer)) : (IO Unit
+                                                                                                         )
