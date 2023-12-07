@@ -5,11 +5,11 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Instances ()
 import Elara.AST.Generic.Pattern (functionCall, int, var)
 import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
-import Elara.AST.Region (generatedLocated)
+import Elara.AST.Region (IgnoreLocation (..), generatedLocated)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedShunted))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
-import Elara.AST.VarRef (VarRef, VarRef' (Global), withName)
+import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation, withName)
 import Elara.Data.TopologicalGraph
 import Elara.Desugar (desugarExpr, runDesugar, runDesugarPipeline)
 import Elara.Lexer.Pipeline (runLexPipeline)
@@ -60,7 +60,7 @@ operatorRenameState =
 
 fakeOperatorTable :: OpTable
 fakeOperatorTable =
-    let mkFakeVarP name info = (withName $ mkFakeOp name, info)
+    let mkFakeVarP name info = (ignoreLocation $ withName $ mkFakeOp name, info)
      in fromList
             [ mkFakeVarP "+" (OpInfo (mkPrecedence 6) LeftAssociative)
             , mkFakeVarP "-" (OpInfo (mkPrecedence 6) LeftAssociative)
