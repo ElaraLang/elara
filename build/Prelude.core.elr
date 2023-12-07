@@ -1,12 +1,12 @@
 module Prelude
-{ Prelude.map : forall (a_13 : Type). forall (b_14 : Type). (a_13 -> b_14) -> [a_13] -> [b_14]
-    = \ (f_15 : a_13 -> b_14) (a_16 : [a_13]) -> case a_16 of (a_87 : forall (a_13 : Type). [a_13])
-        { Elara.Prim.empty : [([a_13])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_17 : a_13) (xs_18 : [a_13]) -> Elara.Prim.cons (f_15 x_17) (Prelude.map f_15 xs_18)}
+{ Prelude.map : forall (a_12 : Type). forall (b_13 : Type). (a_12 -> b_13) -> [a_12] -> [b_13]
+    = \ (f_14 : a_12 -> b_13) (a_15 : [a_12]) -> case a_15 of (a_91 : forall (a_12 : Type). [a_12])
+        { Elara.Prim.empty : [([a_12])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_16 : a_12) (xs_17 : [a_12]) -> Elara.Prim.cons (f_14 x_16) (Prelude.map f_14 xs_17)}
 ; 
-Prelude.++ : forall (a_23 : Type). [a_23] -> [a_23] -> [a_23]
-    = \ (a_24 : [a_23]) (b_25 : [a_23]) -> case a_24 of (a_88 : forall (a_23 : Type). [a_23])
-        { Elara.Prim.empty : [([a_23])]  -> b_25; Elara.Prim.cons : [] (x_26 : a_23) (xs_27 : [a_23]) -> Elara.Prim.cons x_26 (Prelude.++ xs_27 b_25)}
+Prelude.++ : forall (a_22 : Type). [a_22] -> [a_22] -> [a_22]
+    = \ (a_23 : [a_22]) (b_24 : [a_22]) -> case a_23 of (a_92 : forall (a_22 : Type). [a_22])
+        { Elara.Prim.empty : [([a_22])]  -> b_24; Elara.Prim.cons : [] (x_25 : a_22) (xs_26 : [a_22]) -> Elara.Prim.cons x_25 (Prelude.++ xs_26 b_24)}
 ; 
-Prelude.reverse : forall (a_19 : Type). [a_19] -> [a_19]
-    = \ (a_20 : [a_19]) -> case a_20 of (a_89 : forall (a_19 : Type). [a_19])
-        { Elara.Prim.empty : [([a_19])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_21 : a_19) (xs_22 : [a_19]) -> Prelude.++ (Prelude.reverse xs_22) (Elara.Prim.cons x_21 Elara.Prim.empty)} }
+Prelude.reverse : forall (a_18 : Type). [a_18] -> [a_18]
+    = \ (a_19 : [a_18]) -> case a_19 of (a_93 : forall (a_18 : Type). [a_18])
+        { Elara.Prim.empty : [([a_18])]  -> Elara.Prim.empty; Elara.Prim.cons : [] (x_20 : a_18) (xs_21 : [a_18]) -> Prelude.++ (Prelude.reverse xs_21) (Elara.Prim.cons x_20 Elara.Prim.empty)} }

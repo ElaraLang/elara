@@ -195,8 +195,8 @@ generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     case approximateTypeAndNameOf f' of
         Left local -> do
-            generateInstructions x
             emit $ ALoad local
+            generateInstructions x
             emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
             pass
         Right (fName, fType) -> do
