@@ -49,8 +49,7 @@ createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState 
                     (fromIntegral maxLocals)
                     code'
                     []
-                    ( StackMapTable (calculateStackMapFrames descriptor code') : codeAttrs
-                    )
+                    codeAttrs
             ]
 
 analyseMaxStack :: [Instruction] -> Int
