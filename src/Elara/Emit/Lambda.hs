@@ -39,7 +39,7 @@ etaExpand funcName funcType@(FuncTy i o) thisClassName = do
             (Var $ Normal $ Id (Global' funcName) funcType) -- f
             (Var $ JVMLocal 0) -- x
         )
-etaExpand _ _ _ = error "etaExpand called on non-function type"
+etaExpand n t c = error $ "etaExpand called on non-function type: " <> show (n, t, c)
 
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:

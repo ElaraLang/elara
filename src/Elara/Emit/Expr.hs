@@ -6,7 +6,7 @@ import Control.Lens
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
-import Elara.Core
+import Elara.Core as Core
 import Elara.Data.Unique
 import Elara.Emit.Lambda
 import Elara.Emit.Operator
@@ -92,11 +92,20 @@ generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
                     (translateOperatorName n)
                     (generateFieldType t)
                 )
-        else do
-            -- it's a method, so we have to create a Func currying it
-            cName <- gets (.thisClassName)
-            inst <- etaExpand qn t cName
-            emit inst
+        else case t of
+            FuncTy{} -> do
+                -- it's a method function, so we have to create a Func currying it
+                cName <- gets (.thisClassName)
+                inst <- etaExpand qn t cName
+                emit inst
+            _ -> do
+                -- no args function (eg undefined)
+                emit
+                    ( InvokeStatic
+                        (ClassInfoType $ createModuleName mn)
+                        (translateOperatorName n)
+                        (generateMethodDescriptor t)
+                    )
 
     case tApps of
         [] -> pass
@@ -126,7 +135,7 @@ generateCaseInstructions ::
     (Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r, Member UniqueGen r) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
-    [Elara.Core.Alt JVMBinder] ->
+    [Core.Alt JVMBinder] ->
     Sem r ()
 generateCaseInstructions -- hardcode if/else impl
     scrutinee
@@ -261,6 +270,11 @@ generateLitInstructions (Int i) =
     pure
         [ LDC (LDCInt (fromIntegral i))
         , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
+        ]
+generateLitInstructions (Core.Char c) =
+    pure
+        [ LDC (LDCInt (fromEnum c))
+        , InvokeStatic (ClassInfoType "java.lang.Character") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Char] (TypeReturn (ObjectFieldType "java.lang.Character")))
         ]
 generateLitInstructions other = error $ "Not implemented: " <> showPretty other
 
