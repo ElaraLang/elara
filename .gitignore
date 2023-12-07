@@ -58,7 +58,7 @@ TAGS
 
 # Nix 
 .direnv
-result/
+result
 /.pre-commit-config.yaml
 
 # Elara! :D
