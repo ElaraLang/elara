@@ -30,7 +30,6 @@ import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unif
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Prim (primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -114,7 +113,7 @@ inferDeclaration (Declaration ld) =
                 -- this is useful for top-level declarations, where we don't know the type yet
                 -- but we still want to infer it
                 f <- fresh
-                let y = Infer.UnsolvedType primRegion f
+                let y = Infer.UnsolvedType (e ^. exprLocation) f
                 push (UnsolvedType f)
                 push (Annotation (mkGlobal' declName) y)
                 pure y
@@ -124,6 +123,7 @@ inferDeclaration (Declaration ld) =
         ctx <- Infer.getAll
 
         completed <- completeExpression ctx e'
+        debugPretty (declName, typeOf e', typeOf completed)
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2))
 
         pure $ Value completed NoFieldValue NoFieldValue

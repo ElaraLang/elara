@@ -10,6 +10,7 @@ import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Expr (..), Literal (..), Var (..), mapBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
+import Print (showPretty)
 
 type CoreExprPass = CoreExpr -> CoreExpr
 

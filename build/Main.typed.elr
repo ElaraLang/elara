@@ -19,11 +19,44 @@ let Main.fact =
                                                                                                                                                                                                                                                                               Integer) 1 : (Integer)) : (Integer)) : (Integer)) : (Integer)) : (Integer))) : (Integer ->
                                                                                                                                                                                                                                                                                                                                                                 Integer)
 
+def Main.part1 : Text -> Integer
+let Main.part1 =
+    (\ input_11 -> (let chars_12  = ((Elara.Prim.(|>) : (forall (a_6 : Type) .
+                                                         forall (b_7 : Type) .
+                                                           a_6 ->
+                                                           (a_6 -> b_7) ->
+                                                             b_7) (Elara.Prim.stringToList : (Text ->
+                                                                                                List
+                                                                                                  Char) input_11 : (Text)) : (List
+                                                                                                                                Char)) : (( List
+                                                                                                                                              Char ->
+                                                                                                                                              List
+                                                                                                                                                Integer
+                                                                                                                                          ) ->
+                                                                                                                                            List
+                                                                                                                                              Integer) (Prelude.map : (forall (a_22 : Type) .
+                                                                                                                                                                       forall (b_23 : Type) .
+                                                                                                                                                                         ( a_22 ->
+                                                                                                                                                                             b_23
+                                                                                                                                                                         ) ->
+                                                                                                                                                                         List
+                                                                                                                                                                           a_22 ->
+                                                                                                                                                                           List
+                                                                                                                                                                             b_23) Prelude.charToInt : (Char ->
+                                                                                                                                                                                                          Integer)) : (List
+                                                                                                                                                                                                                         Char ->
+                                                                                                                                                                                                                         List
+                                                                                                                                                                                                                           Integer)) : (List
+                                                                                                                                                                                                                                          Integer) in (Prelude.head : (forall (a_14 : Type) .
+                                                                                                                                                                                                                                                                         List
+                                                                                                                                                                                                                                                                           a_14 ->
+                                                                                                                                                                                                                                                                           a_14) chars_12 : (List
+                                                                                                                                                                                                                                                                                               Integer)) : (Integer) : (Integer))) : (Text ->
+                                                                                                                                                                                                                                                                                                                                        Integer)
+
 def Main.main : IO Unit 
 let Main.main =
-    (Prelude.print : (forall (a_17 : Type) .
-                        a_17 -> IO Unit ) (Elara.Prim.stringToList : (Text ->
-                                                                        List
-                                                                          Char) "hello" : (Text)) : (List
-                                                                                                       Char)) : (IO Unit
-                                                                                                                    )
+    (Prelude.print : (forall (a_28 : Type) .
+                        a_28 -> IO Unit ) (Main.part1 : (Text ->
+                                                           Integer) "1234" : (Text)) : (Integer)) : (IO Unit
+                                                                                                        )

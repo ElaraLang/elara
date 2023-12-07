@@ -5,5 +5,9 @@ def fact : Int -> Int
 let fact n = 
     if n == 0 then 1 else n * fact (n - 1)
 
+let part1 input = 
+    let chars = stringToList input |> (map charToInt) in head chars
+
+def main : IO ()
 let main = 
-    print (stringToList "hello")
+    print (part1 "1234")

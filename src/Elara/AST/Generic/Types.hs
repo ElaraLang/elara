@@ -42,13 +42,15 @@ module Elara.AST.Generic.Types (
     coerceType',
     coerceTypeDeclaration,
     pattern Expr',
+    exprLocation,
 )
 where
 
-import Control.Lens (view)
+import Control.Lens (Lens', view, _1)
+import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
-import Elara.AST.Region (Located, unlocated)
+import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST, UnlocatedAST)
 import GHC.Generics
 import GHC.TypeLits
@@ -108,6 +110,9 @@ typeOf (Expr (_, t)) = t
 
 patternTypeOf :: forall ast. Pattern ast -> Select "PatternType" ast
 patternTypeOf (Pattern (_, t)) = t
+
+exprLocation :: ASTLocate' ast ~ Located => Lens' (Expr ast) SourceRegion
+exprLocation = _Unwrapped . _1 . sourceRegion
 
 data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))

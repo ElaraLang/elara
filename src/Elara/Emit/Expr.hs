@@ -248,7 +248,13 @@ generateAppInstructions f x = do
                     case insts ^. _3 . to (.returnDesc) of
                         TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
-                else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
+                else -- if length args == arity - 1
+                --     then do
+                --         -- 1 layer of eta expansion required
+                --         cName <- gets (.thisClassName)
+                --         inst <- etaExpand qn t cName
+                --         emit inst
+                    error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
   where
     collectArgs :: JVMExpr -> [JVMExpr] -> (JVMExpr, [JVMExpr])
     collectArgs (App f x) args = collectArgs f (x : args)

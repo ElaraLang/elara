@@ -10,7 +10,7 @@ import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion, positionToDiagnosePosition, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
@@ -28,6 +28,7 @@ import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Error.Diagnose (Report (..))
+import Error.Diagnose.Report (Marker (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
@@ -48,7 +49,14 @@ instance ReportableError ToCoreError where
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
-    report (UnsolvedTypeSnuckIn t) = writeReport $ Err (Just "UnsolvedTypeSnuckIn") (pretty t) [] []
+    report (UnsolvedTypeSnuckIn t) = do
+        writeReport $
+            Err
+                (Just "UnsolvedTypeSnuckIn")
+                (pretty t)
+                [ (sourceRegionToDiagnosePosition t.location, Where "Type declared / created here")
+                ]
+                []
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 

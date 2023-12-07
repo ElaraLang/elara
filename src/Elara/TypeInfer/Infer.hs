@@ -29,17 +29,17 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Generic (Expr (..), Expr' (..), Pattern (..))
+import Elara.AST.Generic (Expr (..), Expr' (..), Pattern (..), exprLocation)
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Generic.Common
 import Elara.AST.Name
-import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, unlocated)
+import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, spanningRegion', unlocated)
 import Elara.AST.Shunted
 import Elara.AST.Typed
 import Elara.AST.VarRef (mkLocal', withName')
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.Data.Unique
-import Elara.Prim (primRegion, primitiveTCContext)
+import Elara.Prim (primitiveTCContext)
 import Elara.TypeInfer.Context (Context, Entry)
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -1362,6 +1362,8 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         ctx <- get
         completedFunctionType <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
         let isFreeTypeVariable = \case Type.VariableType _ x -> not (Type.occurs x completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
+        let argLoc = typedArgument ^. exprLocation
+        let resultLoc = resultType.location
         e <- case Type.stripForAll completedFunctionType of
             Type.Function{input, output}
                 | isFreeTypeVariable input && isFreeTypeVariable output -> do
@@ -1369,11 +1371,11 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                         FunctionCall
                             ( Expr
                                 ( Located
-                                    primRegion
+                                    resultLoc
                                     ( TypeApplication
                                         ( Expr
                                             ( Located
-                                                primRegion
+                                                argLoc
                                                 (TypeApplication _A (Syntax.typeOf typedArgument))
                                             , resultType
                                             )
@@ -1388,17 +1390,17 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                 | isFreeTypeVariable input -> do
                     pure $
                         FunctionCall
-                            ( Expr (Located primRegion (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
+                            ( Expr (Located argLoc (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
                             )
                             typedArgument
             Type.Function{output}
                 | isFreeTypeVariable output -> do
                     pure $
                         FunctionCall
-                            ( Expr (Located primRegion (TypeApplication _A (Type.stripForAll resultType)), resultType)
+                            ( Expr (Located resultLoc (TypeApplication _A (Type.stripForAll resultType)), resultType)
                             )
                             typedArgument
-            o -> do
+            _ -> do
                 pure $ FunctionCall _A typedArgument
 
         pure $ Expr (Located location e, resultType)
@@ -1426,8 +1428,9 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
         existential <- fresh
 
+        let span = spanningRegion' [name ^. sourceRegion, val ^. exprLocation, body ^. exprLocation]
         push (Context.UnsolvedType existential)
-        push (Context.Annotation (mkLocal' name) (Type.UnsolvedType primRegion existential))
+        push (Context.Annotation (mkLocal' name) (Type.UnsolvedType span existential))
 
         val'@(Expr (_, valType)) <-
             infer val
@@ -1474,7 +1477,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
                 branch' <-
                     -- check that the branch type matches the return type of the match
-                    check branch (Type.UnsolvedType primRegion returnType)
+                    check branch (Type.UnsolvedType (branch ^. exprLocation) returnType)
                 pure (pattern', branch')
 
         branches' <- traverse process branches
