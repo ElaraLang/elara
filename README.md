@@ -20,6 +20,8 @@ Elara is a multi-paradigm, primarily-functional programming language targeting t
 
 If you're interested in Elara or contributing to its development, join our [Discord server](https://discord.gg/xu5gSTV) to connect with the community.
 
+## Running / Compiling
+
 ## Library Acknowledgments
 
 Elara owes its existence to numerous open-source projects. We want to express our gratitude, especially to [Grace](https://github.com/Gabriella439/grace) for its invaluable contribution to type checking.
