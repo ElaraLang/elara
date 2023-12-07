@@ -36,6 +36,7 @@ generateFieldType :: HasCallStack => Type -> FieldType
 generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
 generateFieldType c | c == boolCon = ObjectFieldType "java.lang.Boolean"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
+generateFieldType c | c == charCon = ObjectFieldType "java.lang.Character"
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
