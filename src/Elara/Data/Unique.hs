@@ -42,10 +42,10 @@ instance Show UniqueId where
     show (UniqueId (Unique uniqueId _)) = Text.Show.show uniqueId
 
 instance Eq (Unique a) where
-    (==) = (==) `on` (view uniqueId)
+    (==) = (==) `on` view uniqueId
 
 instance Ord (Unique a) where
-    compare = compare `on` (view uniqueId)
+    compare = compare `on` view uniqueId
 
 newtype UniqueSupply = UniqueSupply
     { _uniqueSupplyUniques :: [Int]

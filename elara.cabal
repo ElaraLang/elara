@@ -229,7 +229,6 @@ test-suite elara-test
       Arbitrary.Literals
       Arbitrary.Names
       Common
-      Emit
       Infer
       Infer.Common
       Lex

@@ -5,7 +5,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Instances ()
 import Elara.AST.Generic.Pattern (functionCall, int, var)
 import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
-import Elara.AST.Region (IgnoreLocation (..), generatedLocated)
+import Elara.AST.Region (generatedLocated)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedShunted))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()

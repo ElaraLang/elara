@@ -19,7 +19,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion, spanningRegion', unlocated, withLocationOf)
+import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
@@ -517,7 +517,7 @@ desugarBlock (e@(Expr' (Let{})) :| []) = do
 desugarBlock (e :| []) = renameExpr e
 desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
     val' <- renameExpr val
-    a' <- (traverse (traverseOf (_Unwrapped . unlocated) (renameType False))) a
+    a' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType False)) a
     n' <- uniquify n
     xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
         desugarBlock (xs1 :| xs')
