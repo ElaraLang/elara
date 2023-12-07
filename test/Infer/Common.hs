@@ -25,6 +25,8 @@ import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
+import Hedgehog
+import Hedgehog.Internal.Property
 import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
 import Polysemy.Reader (runReader)
@@ -66,18 +68,19 @@ errorToIOFinal' sem = do
         Left e -> embedFinal $ throwIO e
         Right a -> pure a
 
-typeOf' :: MonadIO m => Text -> m (Type ())
+typeOf' :: (MonadIO m, MonadTest m) => Text -> m (Type ())
 typeOf' msg = do
     x <- liftIO $ inferFully msg
-    y <- liftIO $ diagShouldSucceed x
+    y <- diagShouldSucceed x
     pure $ stripLocation $ typeOf y
 
-failTypeMismatch :: Pretty a1 => String -> String -> a1 -> IO a2
+failTypeMismatch :: (Pretty a1, MonadTest m) => String -> String -> a1 -> m a2
 failTypeMismatch name expected actual =
-    assertFailure
+    failWith
+        Nothing
         ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
 
-inferSpec :: (MonadIO m, Pretty a1) => Text -> String -> m (Type (), a1 -> IO a2)
+inferSpec :: (MonadIO m, Pretty a1, MonadTest m) => Text -> String -> m (Type (), a1 -> m a2)
 inferSpec code expected = do
     t' <- typeOf' code
     pure (t', failTypeMismatch (toString code) expected)

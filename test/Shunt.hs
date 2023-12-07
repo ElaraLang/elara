@@ -53,6 +53,7 @@ operatorRenameState =
                         , mkFakeVarP "-"
                         , mkFakeVarP "*"
                         , mkFakeVarP "/"
+                        , mkFakeVarP "|>"
                         ]
                 , typeNames = fromList []
                 , typeVars = fromList []
@@ -66,30 +67,30 @@ fakeOperatorTable =
             , mkFakeVarP "-" (OpInfo (mkPrecedence 6) LeftAssociative)
             , mkFakeVarP "*" (OpInfo (mkPrecedence 7) LeftAssociative)
             , mkFakeVarP "/" (OpInfo (mkPrecedence 7) LeftAssociative)
+            , mkFakeVarP "|>" (OpInfo (mkPrecedence 1) RightAssociative)
             ]
 
 shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do
-    y <- liftIO (loadExpr code >>= diagShouldSucceed)
+    y <- liftIO (loadExpr code) >>= diagShouldSucceed
     let z :: Expr 'UnlocatedShunted = stripLocation y
     z === x
 
 spec :: Spec
 spec = describe "Shunts operators correctly" $ do
-    it "Shunts simple operators into prefix calls" $
-        hedgehog $ do
-            let res =
-                    functionCall
-                        ( functionCall
-                            (var (stripLocation $ mkFakeVar "+"))
-                            (int 1)
-                        )
-                        (int 2)
-            "1 + 2" `shouldShuntTo` res
-            "1 + (2)" `shouldShuntTo` res
-            "(1) + 2" `shouldShuntTo` res
-            "(1) + (2)" `shouldShuntTo` res
-            "(1 + 2)" `shouldShuntTo` res
+    it "Shunts simple operators into prefix calls" $ hedgehog $ do
+        let res =
+                functionCall
+                    ( functionCall
+                        (var (stripLocation $ mkFakeVar "+"))
+                        (int 1)
+                    )
+                    (int 2)
+        "1 + 2" `shouldShuntTo` res
+        "1 + (2)" `shouldShuntTo` res
+        "(1) + 2" `shouldShuntTo` res
+        "(1) + (2)" `shouldShuntTo` res
+        "(1 + 2)" `shouldShuntTo` res
 
     it "Correctly re-shunts operators with different precedences" $ hedgehog $ do
         let res =
@@ -126,3 +127,40 @@ spec = describe "Shunts operators correctly" $ do
         "(1 + 2) * 3" `shouldShuntTo` res -- becomes (1 * 2) + 3 which becomes (+) ((*) 1 2) 3
         "(1 + 2) * (3)" `shouldShuntTo` res
         "((1 + 2)) * (3)" `shouldShuntTo` res
+    it "Shunts the pipe operator properly" $ hedgehog $ do
+        {-
+            Given infixr 1 |>
+            @1 |> 2 |> 3@ should become @1 |> (2 |> 3)@ which is @(|>) 1 ((|>) 2 3)@
+            @1 |> (2 |> 3)@ should become @(|>) 1 ((|>) 2 3)@
+            @(1 |> 2) |> 3@ should become @(|>) ((|>) 1 2) 3@
+        -}
+        let res =
+                functionCall
+                    ( functionCall
+                        (var (stripLocation $ mkFakeVar "|>"))
+                        (int 1)
+                    )
+                    ( functionCall
+                        ( functionCall
+                            (var (stripLocation $ mkFakeVar "|>"))
+                            (functionCall (int 2) (int 3))
+                        )
+                        (functionCall (int 3) (int 4))
+                    )
+
+        "1 |> 2 3 |> (3 4)" `shouldShuntTo` res
+        "1 |> (2 3) |> 3 4" `shouldShuntTo` res
+        "1 |> (2 3 |> (3 4))" `shouldShuntTo` res
+        "(1 |> 2) |> 3"
+            `shouldShuntTo` functionCall
+                ( functionCall
+                    (var (stripLocation $ mkFakeVar "|>"))
+                    ( functionCall
+                        ( functionCall
+                            (var (stripLocation $ mkFakeVar "|>"))
+                            (int 1)
+                        )
+                        (int 2)
+                    )
+                )
+                (int 3)
