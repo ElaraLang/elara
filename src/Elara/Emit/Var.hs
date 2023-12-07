@@ -50,9 +50,11 @@ removing the need for allocating redundant closures.
 This function handles the transform, and renaming of Elara variables to @JVMBinder@s where applicable.
 -}
 transformTopLevelLambdas :: CoreExpr -> JVMExpr
-transformTopLevelLambdas = go 0
+transformTopLevelLambdas = transformTopLevelJVMLambdas . toJVMExpr
+
+transformTopLevelJVMLambdas :: JVMExpr -> JVMExpr
+transformTopLevelJVMLambdas = go 0
   where
-    go :: Word8 -> CoreExpr -> JVMExpr
-    go c (Core.Lam v@(Core.Id _ _) body) =
-        (replaceVar (Normal v) (JVMLocal c) (go (c + 1) body))
-    go _ x = toJVMExpr x
+    go :: Word8 -> JVMExpr -> JVMExpr
+    go c (Lam (Normal v@(Core.Id _ _)) body) = replaceVar (Normal v) (JVMLocal c) (go (c + 1) body)
+    go _ x = x

@@ -96,8 +96,9 @@ generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
 generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
-    inst <- createLambda [(v, generateFieldType binderType)] (ObjectFieldType "java/lang/Object") cName body
+    inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
     emit inst
+    pass
 generateInstructions' (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
@@ -300,3 +301,20 @@ generatePrimInstructions "empty" =
         [ InvokeStatic (ClassInfoType "elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.EList")))
         ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
+
+{-
+BootstrapMethods:
+  0: #40 REF_invokeStatic java/lang/invoke/LambdaMetafactory.metafactory:(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+    Method arguments:
+      #47 (Ljava/lang/Object;)Ljava/lang/Object;
+      #49 REF_invokeStatic Square.lambda$static$0:(Ljava/lang/Integer;)Ljava/lang/Integer;
+      #52 (Ljava/lang/Integer;)Ljava/lang/Integer;
+
+BootstrapMethods:
+  0: #18 REF_invokeStatic java/lang/invoke/LambdaMetafactory.metafactory:(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+    Method arguments:
+      #20 (Ljava/lang/Object;)Ljava/lang/Object;
+      #25 REF_invokeStatic Main.lambda$8490817582771559480:(Ljava/lang/Integer;)Ljava/lang/Object;
+      #26 (Ljava/lang/Integer;)Ljava/lang/Object;
+
+-}
