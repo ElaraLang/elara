@@ -251,7 +251,6 @@ invokeStaticVars (Global' (Qualified fName mn)) fType =
     , translateOperatorName fName
     , generateMethodDescriptor fType
     )
-invokeStaticVars (Local' (Unique' fn)) fType = undefined
 
 generateLitInstructions :: Monad m => Literal -> m [Instruction]
 generateLitInstructions (String s) =

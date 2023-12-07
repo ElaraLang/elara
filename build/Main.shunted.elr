@@ -8,4 +8,4 @@ let Main.fact =
     (\ n_10 -> ((if ((Elara.Prim.(==)  n_10 )  0 )  then 1  else ((Elara.Prim.(*)  n_10 )  (Main.fact  ((Elara.Prim.(-)  n_10 )  1 ) ) ) ) )) 
 
 let Main.main =
-    ((Elara.Prim.(|>)  ((Elara.Prim.(|>)  ((Elara.Prim.(|>)  [ 1 , 2 , 3  ] )  (Prelude.map  Main.fact ) ) )  Elara.Prim.toString ) )  Elara.Prim.println ) 
+    ((Elara.Prim.(|>)  ((Elara.Prim.(|>)  ((Elara.Prim.(|>)  ((Elara.Prim.(|>)  [ 1 , 2 , 3  ] )  (Prelude.map  Main.fact ) ) )  Prelude.reverse ) )  Elara.Prim.toString ) )  Elara.Prim.println ) 

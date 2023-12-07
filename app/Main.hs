@@ -115,7 +115,7 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
         putTextLn ("Compiling " <> showPretty mn <> "...")
         converted <- runErrorOrReport $ fromEither $ convert class'
         let bs = runPut (writeBinary converted)
-        let fp = "build/" <> suitableFilePath (class'.name)
+        let fp = "build/" <> suitableFilePath class'.name
         liftIO $ createAndWriteFile fp bs
         putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
 
@@ -126,7 +126,7 @@ runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
 
     when run $ liftIO $ do
         -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
-        x <- readCreateProcess ((shell "java -noverify -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
+        x <- readCreateProcess ((shell "java -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
         putStrLn x
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
