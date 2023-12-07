@@ -8,14 +8,16 @@ import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Unique
+import Elara.Emit.Lambda
 import Elara.Emit.Operator
-import Elara.Emit.State (MethodCreationState, findLocalVariable, withLocalVariableScope)
+import Elara.Emit.State (MethodCreationState (thisClassName), findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.ToCore (stripForAll)
 import Elara.Utils (uncurry3)
 import GHC.Records (HasField)
+import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
 import JVM.Data.Abstract.Descriptor (
     MethodDescriptor (..),
@@ -29,60 +31,78 @@ import Polysemy
 import Polysemy.State
 import Print (showPretty)
 
-generateInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> Sem r ()
+generateInstructions ::
+    ( HasCallStack
+    , Member (State MethodCreationState) r
+    , Member CodeBuilder r
+    , Member ClassBuilder r
+    ) =>
+    Expr JVMBinder ->
+    Sem r ()
 generateInstructions v = generateInstructions' v []
 
-generateInstructions' :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => Expr JVMBinder -> [Type] -> Sem r ()
-generateInstructions' (Var (JVMLocal 0)) _ = embed $ emit $ ALoad 0
-generateInstructions' (Var (JVMLocal 1)) _ = embed $ emit $ ALoad 1
-generateInstructions' (Var (JVMLocal 2)) _ = embed $ emit $ ALoad 2
-generateInstructions' (Var (JVMLocal 3)) _ = embed $ emit $ ALoad 3
-generateInstructions' (Lit s) _ = generateLitInstructions s >>= embed . emit'
+generateInstructions' ::
+    ( HasCallStack
+    , Member (State MethodCreationState) r
+    , Member CodeBuilder r
+    , Member ClassBuilder r
+    ) =>
+    Expr JVMBinder ->
+    [Type] ->
+    Sem r ()
+generateInstructions' (Var (JVMLocal 0)) _ = emit $ ALoad 0
+generateInstructions' (Var (JVMLocal 1)) _ = emit $ ALoad 1
+generateInstructions' (Var (JVMLocal 2)) _ = emit $ ALoad 2
+generateInstructions' (Var (JVMLocal 3)) _ = emit $ ALoad 3
+generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
 generateInstructions' (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
 generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
-    | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
+    | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
-    | v == fetchPrimitiveName = generatePrimInstructions primName >>= embed . emit'
+    | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' (Var (Normal (Id (Global' (Qualified n mn)) t))) tApps = do
     if typeIsValue t
-        then do
-            embed $
-                emit
-                    ( GetStatic
-                        (ClassInfoType $ createModuleName mn)
-                        (translateOperatorName n)
-                        (generateFieldType t)
-                    )
+        then
+            emit
+                ( GetStatic
+                    (ClassInfoType $ createModuleName mn)
+                    (translateOperatorName n)
+                    (generateFieldType t)
+                )
         else -- it's a no-args method
 
-            embed $
-                emit
-                    ( InvokeStatic
-                        (ClassInfoType $ createModuleName mn)
-                        (translateOperatorName n)
-                        (generateMethodDescriptor t)
-                    )
+            emit
+                ( InvokeStatic
+                    (ClassInfoType $ createModuleName mn)
+                    (translateOperatorName n)
+                    (generateMethodDescriptor t)
+                )
     case tApps of
         [] -> pass
-        [t] -> embed $ emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
+        [t] -> emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
         _ -> error "Multiple tApps for a single value... curious..."
 generateInstructions' (Var v) _ = do
     idx <- localVariableId v
-    embed $ emit $ ALoad idx
+    emit $ ALoad idx
 generateInstructions' (App f x) _ = generateAppInstructions f x
 generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
     generateInstructions' val tApps
-    embed $ emit $ AStore idx
+    emit $ AStore idx
     generateInstructions' b tApps
 generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
 generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
+generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
+    cName <- gets (.thisClassName)
+    inst <- createLambda [(v, generateFieldType binderType)] (ObjectFieldType "java/lang/Object") cName body
+    emit inst
+generateInstructions' (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
-    (Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) =>
+    (Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
     [Elara.Core.Alt JVMBinder] ->
@@ -95,15 +115,15 @@ generateCaseInstructions -- hardcode if/else impl
         ]
         | trueCtorName' == trueCtorName && falseCtorName' == falseCtorName && boolCon' == boolCon && boolCon2' == boolCon = do
             generateInstructions scrutinee
-            ifFalseLabel <- embed newLabel
-            endLabel <- embed newLabel
+            ifFalseLabel <- newLabel
+            endLabel <- newLabel
 
-            embed $ emit (InvokeVirtual (ClassInfoType "java.lang.Boolean") "booleanValue" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean))))
-            embed $ emit' [IfEq ifFalseLabel]
+            emit (InvokeVirtual (ClassInfoType "java.lang.Boolean") "booleanValue" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean))))
+            emit' [IfEq ifFalseLabel]
             generateInstructions ifTrue
-            embed $ emit' [Goto endLabel, Label ifFalseLabel]
+            emit' [Goto endLabel, Label ifFalseLabel]
             generateInstructions ifFalse
-            embed $ emit' [Label endLabel]
+            emit' [Label endLabel]
 generateCaseInstructions
     scrutinee
     as -- hardcode cons/empty imp
@@ -116,40 +136,40 @@ generateCaseInstructions
         , listCon2' == listCon =
             do
                 generateInstructions scrutinee
-                embed $ emit $ CheckCast (ClassInfoType "elara.EList")
+                emit $ CheckCast (ClassInfoType "elara.EList")
                 -- store the scrutinee into the as, if it exists
 
                 as' <- for as $ \as' -> do
                     idx <- localVariableId as'
-                    embed $ emit Dup
-                    embed $ emit $ AStore idx
+                    emit Dup
+                    emit $ AStore idx
                     pure idx
                 let referenceScrutinee = case as' of
-                        Just as' -> embed $ emit $ ALoad as'
+                        Just as' -> emit $ ALoad as'
                         Nothing -> generateInstructions scrutinee
 
-                ifEmptyLabel <- embed newLabel
-                endLabel <- embed newLabel
+                ifEmptyLabel <- newLabel
+                endLabel <- newLabel
 
-                embed $ emit $ InvokeVirtual (ClassInfoType "elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
-                embed $ emit $ IfNe ifEmptyLabel
+                emit $ InvokeVirtual (ClassInfoType "elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
+                emit $ IfNe ifEmptyLabel
                 -- store the cons binds into locals
                 referenceScrutinee
-                embed $ emit $ GetField (ClassInfoType "elara.EList") "head" (ObjectFieldType "java.lang.Object")
+                emit $ GetField (ClassInfoType "elara.EList") "head" (ObjectFieldType "java.lang.Object")
                 headIdx <- localVariableId headBind
-                embed $ emit $ AStore headIdx
+                emit $ AStore headIdx
 
                 referenceScrutinee
-                embed $ emit $ GetField (ClassInfoType "elara.EList") "tail" (ObjectFieldType "elara.EList")
+                emit $ GetField (ClassInfoType "elara.EList") "tail" (ObjectFieldType "elara.EList")
                 tailIdx <- localVariableId tailBind
-                embed $ emit $ AStore tailIdx
+                emit $ AStore tailIdx
 
                 generateInstructions ifCons
-                embed $ emit $ Goto endLabel
+                emit $ Goto endLabel
 
-                embed $ emit $ Label ifEmptyLabel
+                emit $ Label ifEmptyLabel
                 generateInstructions ifEmpty
-                embed $ emit $ Label endLabel
+                emit $ Label endLabel
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId :: HasCallStack => Member (State MethodCreationState) r => JVMBinder -> Sem r U1
@@ -169,14 +189,14 @@ This function performs arity "analysis" to avoid redundant currying when a funct
 For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying is necessary,
   but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
 -}
-generateAppInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member (Embed CodeBuilder) r) => JVMExpr -> JVMExpr -> Sem r ()
+generateAppInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r) => JVMExpr -> JVMExpr -> Sem r ()
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     case approximateTypeAndNameOf f' of
         Left local -> do
             generateInstructions x
-            embed $ emit $ ALoad local
-            embed $ emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+            emit $ ALoad local
+            emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
             pass
         Right (fName, fType) -> do
             let arity = typeArity fType
@@ -185,10 +205,10 @@ generateAppInstructions f x = do
                 do
                     let insts = invokeStaticVars fName fType
                     traverse_ generateInstructions args
-                    embed $ emit $ uncurry3 InvokeStatic insts
+                    emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
                     case insts ^. _3 . to (.returnDesc) of
-                        TypeReturn ft -> embed $ emit $ CheckCast (fieldTypeToClassInfoType ft)
+                        TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
                 else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
   where

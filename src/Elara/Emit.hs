@@ -25,7 +25,7 @@ import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
 import Elara.Prim.Core (intCon, ioCon, listCon, stringCon)
 import JVM.Data.Abstract.Builder
-import JVM.Data.Abstract.Builder.Code (CodeBuilder, CodeBuilderT (..), emit, runCodeBuilderT', unCodeBuilderT)
+import JVM.Data.Abstract.Builder.Code hiding (code)
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
@@ -36,7 +36,6 @@ import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
 import JVM.Data.JVMVersion
 import Polysemy
-import Polysemy.Embed (runEmbedded)
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
@@ -48,7 +47,7 @@ type InnerEmit r =
     Members
         '[ Reader JVMVersion
          , Reader QualifiedClassName
-         , Embed ClassBuilder
+         , ClassBuilder
          , State CLInitState
          ]
         r
@@ -67,87 +66,74 @@ emitGraph g = do
     let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
-liftClassBuilder :: CodeBuilder a -> CodeBuilderT ClassBuilder a
-liftClassBuilder =
-    CodeBuilder . State.state . State.runState . unCodeBuilderT
-
 runInnerEmit ::
     QualifiedClassName ->
-    JVMVersion ->
-    Sem
-        ( State CLInitState
-            : Reader JVMVersion
-            : Reader QualifiedClassName
-            : Embed ClassBuilder
-            : Embed CodeBuilder
-            : '[]
-        )
-        a ->
-    Sem (State CLInitState : Embed ClassBuilder : '[]) (a, [CodeAttribute], [Instruction])
+    i ->
+    Sem (State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
+    Sem r (a, CLInitState, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
-    ((s, a), attrs, inst) <-
-        embed
-            . runCodeBuilderT'
-            . runM
-            . runEmbedded @ClassBuilder @(CodeBuilderT ClassBuilder) lift
-            . runEmbedded @CodeBuilder @(CodeBuilderT ClassBuilder) liftClassBuilder
-            . subsume_
+    ((clinitState, a), attrs, inst) <-
+        runCodeBuilder
             . runReader name
             . runReader version
-            . runState @CLInitState (CLInitState initialMethodCreationState)
+            . runState @CLInitState (CLInitState (initialMethodCreationState name))
             $ x
-    put s
-    pure (a, attrs, inst)
+    pure (a, clinitState, attrs, inst)
 
-emitModule :: Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
+emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
     let name = createModuleName (m ^. field' @"name")
     version <- ask
 
-    let (_, clazz) = runClassBuilder name version $ runM $ evalState (error "Should not be evaluated") $ do
-            embed $ addAccessFlag Public
-            (_, attrs, clinit) <- runInnerEmit name version $ do
-                traverse_ addDeclaration (m ^. field @"declarations")
-                when (isMainModule m) (embed $ addMethod (generateMainMethod m))
+    (clazz, _) <- runClassBuilder @r name version $ do
+        addAccessFlag Public
+        (_, clinitState, attrs, clinit) <-
+            runInnerEmit name version $
+                addDeclarationsAndMain m
 
-            addClinit attrs clinit
+        addClinit clinitState attrs clinit
 
     pure
         ( m ^. field @"name"
         , clazz
         )
 
-addClinit :: (Member (Embed ClassBuilder) r, Member (State CLInitState) r) => [CodeAttribute] -> [Instruction] -> Sem r ()
-addClinit attrs code = do
-    (CLInitState s) <- get @CLInitState
-    embed $ createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s code
+addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r) => CoreModule -> Sem r ()
+addDeclarationsAndMain m = do
+    traverse_ addDeclaration (m ^. field @"declarations")
+    when (isMainModule m) (addMethod (generateMainMethod m))
 
-addDeclaration :: (InnerEmit r, Member (Embed CodeBuilder) r) => CoreDeclaration -> Sem r ()
+addClinit :: Member ClassBuilder r => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
+addClinit (CLInitState s) attrs code = do
+    createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s code
+
+addDeclaration :: (InnerEmit r, Member CodeBuilder r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
     CoreValue (NonRecursive (Id name type', e)) -> do
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'
             then do
                 let field = ClassFileField [FPublic, FStatic] declName (generateFieldType type') []
-                embed $ addField field
+                addField field
                 let e' = transformTopLevelLambdas e
                 addStaticFieldInitialiser field e'
             else do
                 let descriptor = generateMethodDescriptor type'
                 let y = transformTopLevelLambdas e
-                embed $ createMethod descriptor declName y
+                thisName <- ask @QualifiedClassName
+                createMethod thisName descriptor declName y
     e -> error (showPretty e)
 
 isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member (Embed CodeBuilder) r) => ClassFileField -> JVMExpr -> Sem r ()
+addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r) => ClassFileField -> JVMExpr -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
     liftState $ generateInstructions e
 
     cn <- ask @QualifiedClassName
-    embed $ emit $ PutStatic (ClassInfoType cn) name fieldType
+    emit $ PutStatic (ClassInfoType cn) name fieldType
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
 generateMainMethod :: CoreModule -> ClassFileMethod

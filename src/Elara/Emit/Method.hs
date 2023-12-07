@@ -3,38 +3,40 @@
 module Elara.Emit.Method where
 
 import Data.List (maximum)
-import Elara.Emit.Expr
+import {-# SOURCE #-} Elara.Emit.Expr
 import Elara.Emit.State
+import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr)
-import JVM.Data.Abstract.Builder (ClassBuilderT, addMethod)
-import JVM.Data.Abstract.Builder.Code (runCodeBuilder')
+import JVM.Data.Abstract.Builder
+import JVM.Data.Abstract.Builder.Code
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Analyse.StackMap
-import Polysemy (runM)
+
+import JVM.Data.Abstract.Name
+import Polysemy
 import Polysemy.State (runState)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
-createMethod :: Monad m => MethodDescriptor -> Text -> JVMExpr -> ClassBuilderT m ()
-createMethod descriptor@(MethodDescriptor args _) name body = do
-    let initialState = createMethodCreationState (length args)
-    let ((mcState, _), codeAttrs, instructions) =
-            runCodeBuilder' $
-                runM $
-                    runState initialState $
-                        generateInstructions body
+createMethod :: Member ClassBuilder r => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
+createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
+    let initialState = createMethodCreationState (length args) thisClassName
+    ((mcState, _), codeAttrs, instructions) <-
+        runCodeBuilder $
+            runState initialState $
+                generateInstructions body
     createMethodWith descriptor name codeAttrs mcState instructions
 
-createMethodWith :: Monad m => MethodDescriptor -> Text -> [CodeAttribute] -> MethodCreationState -> [Instruction] -> ClassBuilderT m ()
+createMethodWith :: Member ClassBuilder r => MethodDescriptor -> Text -> [CodeAttribute] -> MethodCreationState -> [Instruction] -> Sem r ()
 createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState code = do
     let maxStack = analyseMaxStack code
 
     let maxLocals = 1 + mcState.maxLocalVariables
-    let code' = (code <> [if return_ == VoidReturn then Return else AReturn])
+    let code' = code <> [if return_ == VoidReturn then Return else AReturn]
     addMethod $
         ClassFileMethod
             [MPublic, MStatic]

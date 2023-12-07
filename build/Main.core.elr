@@ -4,4 +4,4 @@ module Main
         { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_10 (Main.fact (Elara.Prim.- n_10 1))}
 ; 
 Main.main : IO ()
-    = Elara.Prim.println (Elara.Prim.toString @([Int] -> String) (Elara.Prim.cons 1 (Elara.Prim.cons 2 (Elara.Prim.cons 3 Elara.Prim.empty)))) }
+    = Elara.Prim.println (Elara.Prim.toString @([Int] -> String) (Prelude.map (\ (y_12 : Int) -> Main.fact y_12) (Elara.Prim.cons 1 (Elara.Prim.cons 2 (Elara.Prim.cons 3 Elara.Prim.empty))))) }
