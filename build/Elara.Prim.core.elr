@@ -5,8 +5,14 @@ module Elara.Prim
 Elara.Prim.empty : forall (a_2 : Type). [a_2]
     = Elara.Prim.elaraPrimitive "empty"
 ; 
+Elara.Prim.listToString : [Char] -> String
+    = Elara.Prim.elaraPrimitive "listToString"
+; 
 Elara.Prim.println : String -> IO ()
     = Elara.Prim.elaraPrimitive "println"
+; 
+Elara.Prim.stringToList : String -> [Char]
+    = Elara.Prim.elaraPrimitive "stringToList"
 ; 
 Elara.Prim.toString : forall (a_3 : Type). a_3 -> String
     = Elara.Prim.elaraPrimitive "toString"

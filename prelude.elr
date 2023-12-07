@@ -1,6 +1,8 @@
 module Prelude
 import Elara.Prim
 
+def print : a -> IO ()
+let print a = println (toString a)
 
 def (++) : [a] -> [a] -> [a]
 let (++) a b = 

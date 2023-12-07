@@ -18,12 +18,28 @@ let Elara.Prim.empty =
                                       a_0) "empty" : (Text)) : (forall (a_2 : Type) .
                                                                   List a_2)
 
+def Elara.Prim.listToString : List Char -> Text
+let Elara.Prim.listToString =
+    (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
+                                    Text ->
+                                      a_0) "listToString" : (Text)) : (List
+                                                                         Char ->
+                                                                         Text)
+
 def Elara.Prim.println : Text -> IO Unit 
 let Elara.Prim.println =
     (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
                                     Text -> a_0) "println" : (Text)) : (Text ->
                                                                           IO Unit
                                                                              )
+
+def Elara.Prim.stringToList : Text -> List Char
+let Elara.Prim.stringToList =
+    (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
+                                    Text ->
+                                      a_0) "stringToList" : (Text)) : (Text ->
+                                                                         List
+                                                                           Char)
 
 def Elara.Prim.toString : forall (a_3 : Type) . a_3 -> Text
 let Elara.Prim.toString =

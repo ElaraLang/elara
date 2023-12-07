@@ -6,4 +6,4 @@ let fact n =
     if n == 0 then 1 else n * fact (n - 1)
 
 let main = 
-    [1, 2, 3] |> map fact |> reverse |> toString |> println
+    print (stringToList "hello")

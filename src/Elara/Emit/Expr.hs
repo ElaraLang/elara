@@ -327,6 +327,16 @@ generatePrimInstructions "empty" =
     pure
         [ InvokeStatic (ClassInfoType "elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.EList")))
         ]
+generatePrimInstructions "listToString" =
+    pure
+        [ ALoad 0
+        , InvokeStatic (ClassInfoType "elara.EList") "listToString" (MethodDescriptor [ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "java.lang.String")))
+        ]
+generatePrimInstructions "stringToList" =
+    pure
+        [ ALoad 0
+        , InvokeStatic (ClassInfoType "elara.EList") "stringToList" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.EList")))
+        ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
 
 {-

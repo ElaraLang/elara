@@ -26,3 +26,9 @@ let empty = elaraPrimitive "empty"
 
 def (|>) : a -> (a -> b) -> b
 let (|>) a f = f a
+
+def stringToList : String -> [Char]
+let stringToList = elaraPrimitive "stringToList"
+
+def listToString : [Char] -> String
+let listToString = elaraPrimitive "listToString"

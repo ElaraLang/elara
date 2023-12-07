@@ -10,9 +10,17 @@ def Elara.Prim.empty : [ a_2 ]
 let Elara.Prim.empty =
     (Elara.Prim.elaraPrimitive  "empty" ) 
 
+def Elara.Prim.listToString : ([ Elara.Prim.Char ] -> Elara.Prim.String)
+let Elara.Prim.listToString =
+    (Elara.Prim.elaraPrimitive  "listToString" ) 
+
 def Elara.Prim.println : (Elara.Prim.String -> Elara.Prim.IO ())
 let Elara.Prim.println =
     (Elara.Prim.elaraPrimitive  "println" ) 
+
+def Elara.Prim.stringToList : (Elara.Prim.String -> [ Elara.Prim.Char ])
+let Elara.Prim.stringToList =
+    (Elara.Prim.elaraPrimitive  "stringToList" ) 
 
 def Elara.Prim.toString : (a_3 -> Elara.Prim.String)
 let Elara.Prim.toString =

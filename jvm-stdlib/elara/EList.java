@@ -38,4 +38,21 @@ public class EList<T> {
         s += "]";
         return s;
     }
+
+    public static EList<Character> stringToList(String s) {
+        EList<Character> list = EList.Empty();
+        for (int i = s.length() - 1; i >= 0; i--) {
+            list = EList.Cons((s.charAt(i)), list);
+        }
+        return list;
+    }
+
+    public static String listToString(EList<Character> list) {
+        String s = "";
+        while (!list.isEmpty()) {
+            s += list.head;
+            list = list.tail;
+        }
+        return s;
+    }
 }
