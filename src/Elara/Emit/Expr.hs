@@ -31,37 +31,59 @@ import Polysemy
 import Polysemy.State
 import Print (showPretty)
 
+data GenParams = GenParams
+    {
+    }
+
+defaultGenParams :: GenParams
+defaultGenParams = GenParams
+
 generateInstructions ::
     ( HasCallStack
     , Member (State MethodCreationState) r
     , Member CodeBuilder r
     , Member ClassBuilder r
+    , Member UniqueGen r
     ) =>
     Expr JVMBinder ->
     Sem r ()
-generateInstructions v = generateInstructions' v []
+generateInstructions v = generateInstructions' defaultGenParams v []
+
+generateInstructionsWith ::
+    ( HasCallStack
+    , Member (State MethodCreationState) r
+    , Member CodeBuilder r
+    , Member ClassBuilder r
+    , Member UniqueGen r
+    ) =>
+    GenParams ->
+    Expr JVMBinder ->
+    Sem r ()
+generateInstructionsWith p v = generateInstructions' p v []
 
 generateInstructions' ::
     ( HasCallStack
     , Member (State MethodCreationState) r
     , Member CodeBuilder r
     , Member ClassBuilder r
+    , Member UniqueGen r
     ) =>
+    GenParams ->
     Expr JVMBinder ->
     [Type] ->
     Sem r ()
-generateInstructions' (Var (JVMLocal 0)) _ = emit $ ALoad 0
-generateInstructions' (Var (JVMLocal 1)) _ = emit $ ALoad 1
-generateInstructions' (Var (JVMLocal 2)) _ = emit $ ALoad 2
-generateInstructions' (Var (JVMLocal 3)) _ = emit $ ALoad 3
-generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
-generateInstructions' (Var (Normal (Id (Global' v) _))) _
+generateInstructions' p (Var (JVMLocal 0)) _ = emit $ ALoad 0
+generateInstructions' p (Var (JVMLocal 1)) _ = emit $ ALoad 1
+generateInstructions' p (Var (JVMLocal 2)) _ = emit $ ALoad 2
+generateInstructions' p (Var (JVMLocal 3)) _ = emit $ ALoad 3
+generateInstructions' p (Lit s) _ = generateLitInstructions s >>= emit'
+generateInstructions' p (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
-generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
+generateInstructions' p (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
+generateInstructions' p (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' (Var (Normal (Id (Global' (Qualified n mn)) t))) tApps = do
+generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
     if typeIsValue t
         then
             emit
@@ -70,40 +92,38 @@ generateInstructions' (Var (Normal (Id (Global' (Qualified n mn)) t))) tApps = d
                     (translateOperatorName n)
                     (generateFieldType t)
                 )
-        else -- it's a no-args method
+        else do
+            -- it's a method, so we have to create a Func currying it
+            cName <- gets (.thisClassName)
+            inst <- etaExpand qn t cName
+            emit inst
 
-            emit
-                ( InvokeStatic
-                    (ClassInfoType $ createModuleName mn)
-                    (translateOperatorName n)
-                    (generateMethodDescriptor t)
-                )
     case tApps of
         [] -> pass
         [t] -> emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
         _ -> error "Multiple tApps for a single value... curious..."
-generateInstructions' (Var v) _ = do
+generateInstructions' p (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
-generateInstructions' (App f x) _ = generateAppInstructions f x
-generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
+generateInstructions' p (App f x) _ = generateAppInstructions f x
+generateInstructions' p (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
-    generateInstructions' val tApps
+    generateInstructions' p val tApps
     emit $ AStore idx
-    generateInstructions' b tApps
-generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
-generateInstructions' (TyApp f t) tApps =
-    generateInstructions' f (t : tApps) -- TODO
-generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
+    generateInstructions' p b tApps
+generateInstructions' p (Match a b c) _ = generateCaseInstructions a b c
+generateInstructions' p (TyApp f t) tApps =
+    generateInstructions' p f (t : tApps) -- TODO
+generateInstructions' p (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
     inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
-generateInstructions' (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
-generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
+generateInstructions' p (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
+generateInstructions' p other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
-    (Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r) =>
+    (Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r, Member UniqueGen r) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
     [Elara.Core.Alt JVMBinder] ->
@@ -190,7 +210,16 @@ This function performs arity "analysis" to avoid redundant currying when a funct
 For example, if we have `f : Int -> Int -> Int` and write `(f 3) 4`, no currying is necessary,
   but if we write `f 3`, we need to curry the function to get a function of type `Int -> Int`
 -}
-generateAppInstructions :: (HasCallStack, Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r) => JVMExpr -> JVMExpr -> Sem r ()
+generateAppInstructions ::
+    ( HasCallStack
+    , Member (State MethodCreationState) r
+    , Member CodeBuilder r
+    , Member ClassBuilder r
+    , Member UniqueGen r
+    ) =>
+    JVMExpr ->
+    JVMExpr ->
+    Sem r ()
 generateAppInstructions f x = do
     let (f', args) = collectArgs f [x]
     case approximateTypeAndNameOf f' of
@@ -198,7 +227,6 @@ generateAppInstructions f x = do
             emit $ ALoad local
             generateInstructions x
             emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
-            pass
         Right (fName, fType) -> do
             let arity = typeArity fType
             if length args == arity

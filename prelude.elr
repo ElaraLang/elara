@@ -1,19 +1,6 @@
 module Prelude
 import Elara.Prim
 
-
-def (++) : [a] -> [a] -> [a]
-let (++) a b = 
-    match a with
-      [] -> b
-      (x::xs) -> x :: (xs ++ b)
-
-def reverse : [a] -> [a]
-let reverse a = 
-    match a with
-      [] -> []
-      (x::xs) -> reverse xs ++ [x]
-
 def map : (a -> b) -> [a] -> [b]
 let map f a = 
     match a with

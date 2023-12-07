@@ -15,6 +15,7 @@ import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Analyse.StackMap
 
+import Elara.Data.Unique
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.State (runState)
@@ -22,7 +23,7 @@ import Polysemy.State (runState)
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
-createMethod :: Member ClassBuilder r => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
+createMethod :: (Member ClassBuilder r, Member UniqueGen r) => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
 createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args) thisClassName
     ((mcState, _), codeAttrs, instructions) <-

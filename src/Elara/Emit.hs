@@ -17,6 +17,7 @@ import Elara.Core (Bind (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
+import Elara.Data.Unique
 import Elara.Emit.Expr
 import Elara.Emit.Method (createMethod, createMethodWith)
 import Elara.Emit.Operator (translateOperatorName)
@@ -41,7 +42,7 @@ import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
 import Print (debugPretty, showPretty)
 
-type Emit r = Members '[Reader JVMVersion] r
+type Emit r = Members '[Reader JVMVersion, Embed IO] r
 
 type InnerEmit r =
     Members
@@ -49,6 +50,7 @@ type InnerEmit r =
          , Reader QualifiedClassName
          , ClassBuilder
          , State CLInitState
+         , UniqueGen
          ]
         r
 
@@ -63,13 +65,16 @@ liftState act = do
 
 emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
 emitGraph g = do
-    let tellMod = emitModule >=> tell . one :: CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
+    let tellMod =
+            emitModule >=> tell . one ::
+                CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
 runInnerEmit ::
+    Member (Embed IO) r =>
     QualifiedClassName ->
     i ->
-    Sem (State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
+    Sem (UniqueGen : State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
     Sem r (a, CLInitState, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
     ((clinitState, a), attrs, inst) <-
@@ -77,6 +82,7 @@ runInnerEmit name version x = do
             . runReader name
             . runReader version
             . runState @CLInitState (CLInitState (initialMethodCreationState name))
+            . uniqueGenToIO
             $ x
     pure (a, clinitState, attrs, inst)
 
