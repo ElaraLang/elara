@@ -26,10 +26,16 @@ public class EList<T> {
 
     @Override
     public String toString() {
-        if (isEmpty()) {
-            return "[]";
-        } else {
-            return head + ":" + tail;
+        String s = "[";
+        EList<T> list = this;
+        while (!list.isEmpty()) {
+            s += list.head.toString();
+            list = list.tail;
+            if (!list.isEmpty()) {
+                s += ", ";
+            }
         }
+        s += "]";
+        return s;
     }
 }
