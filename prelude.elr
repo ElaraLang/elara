@@ -49,3 +49,17 @@ let map f a =
     match a with
       [] -> []
       (x::xs) -> f x :: map f xs
+
+def filter : (a -> Bool) -> [a] -> [a]
+let filter f a = 
+    match a with
+      [] -> []
+      (x::xs) -> if f x then x :: filter f xs else filter f xs
+
+def not : Bool -> Bool
+let not a = 
+    if a then False else True
+
+def (/=) : a -> a -> Bool
+let (/=) a b = 
+    not (a == b)

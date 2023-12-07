@@ -18,6 +18,10 @@ def Elara.Prim.println : (Elara.Prim.String -> Elara.Prim.IO ())
 let Elara.Prim.println =
     (Elara.Prim.elaraPrimitive  "println" ) 
 
+def Elara.Prim.readFile : (Elara.Prim.String -> Elara.Prim.IO Elara.Prim.String)
+let Elara.Prim.readFile =
+    (Elara.Prim.elaraPrimitive  "readFile" ) 
+
 def Elara.Prim.stringToList : (Elara.Prim.String -> [ Elara.Prim.Char ])
 let Elara.Prim.stringToList =
     (Elara.Prim.elaraPrimitive  "stringToList" ) 
@@ -33,6 +37,10 @@ let Elara.Prim.undefined =
 def Elara.Prim.(*) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
 let Elara.Prim.(*) =
     (Elara.Prim.elaraPrimitive  "*" ) 
+
+def Elara.Prim.(+) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
+let Elara.Prim.(+) =
+    (Elara.Prim.elaraPrimitive  "+" ) 
 
 def Elara.Prim.(-) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
 let Elara.Prim.(-) =

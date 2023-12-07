@@ -33,6 +33,13 @@ let Elara.Prim.println =
                                                                           IO Unit
                                                                              )
 
+def Elara.Prim.readFile : Text -> IO Text 
+let Elara.Prim.readFile =
+    (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
+                                    Text -> a_0) "readFile" : (Text)) : (Text ->
+                                                                           IO Text
+                                                                              )
+
 def Elara.Prim.stringToList : Text -> List Char
 let Elara.Prim.stringToList =
     (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
@@ -60,6 +67,13 @@ def Elara.Prim.(*) : Integer -> Integer -> Integer
 let Elara.Prim.(*) =
     (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
                                     Text -> a_0) "*" : (Text)) : (Integer ->
+                                                                  Integer ->
+                                                                    Integer)
+
+def Elara.Prim.(+) : Integer -> Integer -> Integer
+let Elara.Prim.(+) =
+    (Elara.Prim.elaraPrimitive : (forall (a_0 : Type) .
+                                    Text -> a_0) "+" : (Text)) : (Integer ->
                                                                   Integer ->
                                                                     Integer)
 

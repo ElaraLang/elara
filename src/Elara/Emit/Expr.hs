@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 
 module Elara.Emit.Expr where
@@ -86,12 +87,16 @@ generateInstructions' p (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) 
 generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
     if typeIsValue t
         then
-            emit
-                ( GetStatic
-                    (ClassInfoType $ createModuleName mn)
-                    (translateOperatorName n)
-                    (generateFieldType t)
-                )
+            if
+                | qn == trueCtorName -> emit $ GetStatic (ClassInfoType "java.lang.Boolean") "TRUE" (ObjectFieldType "java.lang.Boolean")
+                | qn == falseCtorName -> emit $ GetStatic (ClassInfoType "java.lang.Boolean") "FALSE" (ObjectFieldType "java.lang.Boolean")
+                | otherwise ->
+                    emit
+                        ( GetStatic
+                            (ClassInfoType $ createModuleName mn)
+                            (translateOperatorName n)
+                            (generateFieldType t)
+                        )
         else case t of
             FuncTy{} -> do
                 -- it's a method function, so we have to create a Func currying it

@@ -6,6 +6,9 @@ let undefined = elaraPrimitive "undefined"
 def println : String -> IO ()
 let println = elaraPrimitive "println"
 
+def (+) : Int -> Int -> Int
+let (+) = elaraPrimitive "+"
+
 def (-) : Int -> Int -> Int
 let (-) = elaraPrimitive "-"
 
@@ -32,3 +35,6 @@ let stringToList = elaraPrimitive "stringToList"
 
 def listToString : [Char] -> String
 let listToString = elaraPrimitive "listToString"
+
+def readFile : String -> IO String
+let readFile = elaraPrimitive "readFile"

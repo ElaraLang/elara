@@ -33,10 +33,10 @@ import Elara.AST.Generic (Expr (..), Expr' (..), Pattern (..), exprLocation)
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Generic.Common
 import Elara.AST.Name
-import Elara.AST.Region (Located (..), SourceRegion (..), sourceRegion, spanningRegion', unlocated)
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), sourceRegion, spanningRegion', unlocated)
 import Elara.AST.Shunted
 import Elara.AST.Typed
-import Elara.AST.VarRef (mkLocal', withName')
+import Elara.AST.VarRef (VarRef' (..), mkLocal', withName')
 import Elara.Data.Pretty (Pretty (..), prettyToText)
 import Elara.Data.Unique
 import Elara.Prim (primitiveTCContext)
@@ -1328,6 +1328,14 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         t <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
 
         pure $ Expr (Located location (Var vn), t)
+    Syntax.Constructor (cn :: Located (Qualified TypeName)) -> do
+        _Γ <- get
+
+        let n = Global $ IgnoreLocation (NTypeName <<$>> cn)
+
+        t <- Context.lookup n _Γ `orDie` UnboundVariable (cn ^. sourceRegion) n _Γ
+
+        pure $ Expr (Located location (Constructor cn), t)
 
     -- →I⇒
     Syntax.Lambda name body -> do

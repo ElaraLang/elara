@@ -39,6 +39,12 @@ intName = TypeName "Int"
 boolName :: TypeName
 boolName = TypeName "Bool"
 
+trueName :: TypeName
+trueName = TypeName "True"
+
+falseName :: TypeName
+falseName = TypeName "False"
+
 charName :: TypeName
 charName = TypeName "Char"
 
@@ -64,7 +70,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName, consName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, boolName]
+primitiveTypes = [stringName, charName, intName, boolName, trueName, falseName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
@@ -75,7 +81,7 @@ primKindCheckContext =
 primOpTable :: OpTable
 primOpTable =
     fromList
-        [ (ignoreLocation $ Global (mkPrimVarRef $ NOpName "|>"), OpInfo (mkPrecedence 1) LeftAssociative)
+        [ (ignoreLocation $ Global (mkPrimVarRef $ NOpName "|>"), OpInfo (mkPrecedence 1) RightAssociative)
         ]
 
 primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
@@ -96,6 +102,12 @@ primitiveTCContext = do
             , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
                 (Custom primRegion "IO" [])
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName trueName)))
+                (Scalar primRegion Bool)
+            , Annotation
+                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName falseName)))
+                (Scalar primRegion Bool)
             ]
 
     primTyVarName <- makeUniqueTyVarWith "a"

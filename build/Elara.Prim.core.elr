@@ -11,6 +11,9 @@ Elara.Prim.listToString : [Char] -> String
 Elara.Prim.println : String -> IO ()
     = Elara.Prim.elaraPrimitive "println"
 ; 
+Elara.Prim.readFile : String -> IO String
+    = Elara.Prim.elaraPrimitive "readFile"
+; 
 Elara.Prim.stringToList : String -> [Char]
     = Elara.Prim.elaraPrimitive "stringToList"
 ; 
@@ -22,6 +25,9 @@ Elara.Prim.undefined : forall (a_4 : Type). a_4
 ; 
 Elara.Prim.* : Int -> Int -> Int
     = Elara.Prim.elaraPrimitive "*"
+; 
+Elara.Prim.+ : Int -> Int -> Int
+    = Elara.Prim.elaraPrimitive "+"
 ; 
 Elara.Prim.- : Int -> Int -> Int
     = Elara.Prim.elaraPrimitive "-"

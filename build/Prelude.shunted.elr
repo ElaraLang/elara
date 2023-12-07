@@ -4,28 +4,40 @@ import Elara.Prim exposing (..)
 
 def Prelude.charToInt : (Elara.Prim.Char -> Elara.Prim.Int)
 let Prelude.charToInt =
-    (\ c_13 -> ((if ((Elara.Prim.(==)  c_13 )  '0' )  then 0  else (if ((Elara.Prim.(==)  c_13 )  '1' )  then 1  else (if ((Elara.Prim.(==)  c_13 )  '2' )  then 2  else (if ((Elara.Prim.(==)  c_13 )  '3' )  then 3  else (if ((Elara.Prim.(==)  c_13 )  '4' )  then 4  else (if ((Elara.Prim.(==)  c_13 )  '5' )  then 5  else (if ((Elara.Prim.(==)  c_13 )  '6' )  then 6  else (if ((Elara.Prim.(==)  c_13 )  '7' )  then 7  else (if ((Elara.Prim.(==)  c_13 )  '8' )  then 8  else (if ((Elara.Prim.(==)  c_13 )  '9' )  then 9  else -1 ) ) ) ) ) ) ) ) ) ) )) 
+    (\ c_16 -> ((if ((Elara.Prim.(==)  c_16 )  '0' )  then 0  else (if ((Elara.Prim.(==)  c_16 )  '1' )  then 1  else (if ((Elara.Prim.(==)  c_16 )  '2' )  then 2  else (if ((Elara.Prim.(==)  c_16 )  '3' )  then 3  else (if ((Elara.Prim.(==)  c_16 )  '4' )  then 4  else (if ((Elara.Prim.(==)  c_16 )  '5' )  then 5  else (if ((Elara.Prim.(==)  c_16 )  '6' )  then 6  else (if ((Elara.Prim.(==)  c_16 )  '7' )  then 7  else (if ((Elara.Prim.(==)  c_16 )  '8' )  then 8  else (if ((Elara.Prim.(==)  c_16 )  '9' )  then 9  else -1 ) ) ) ) ) ) ) ) ) ) )) 
 
-def Prelude.head : ([ a_14 ] -> a_14)
+def Prelude.filter : ((a_17 -> Elara.Prim.Bool) -> ([ a_17 ] -> [ a_17 ]))
+let Prelude.filter =
+    (\ f_18 -> ((\ a_19 -> ((match a_19  with { [  ]  -> [  ] ; (x_20  :: xs_21 )  -> (if (f_18  x_20 )  then ((Elara.Prim.cons  x_20 )  ((Prelude.filter  f_18 )  xs_21 ) )  else ((Prelude.filter  f_18 )  xs_21 ) ) }) )) )) 
+
+def Prelude.head : ([ a_22 ] -> a_22)
 let Prelude.head =
-    (\ a_15 -> ((match a_15  with { [  ]  -> Elara.Prim.undefined ; (x_16  :: xs_17 )  -> x_16 }) )) 
+    (\ a_23 -> ((match a_23  with { [  ]  -> Elara.Prim.undefined ; (x_24  :: xs_25 )  -> x_24 }) )) 
 
-def Prelude.last : ([ a_18 ] -> a_18)
+def Prelude.last : ([ a_26 ] -> a_26)
 let Prelude.last =
-    (\ a_19 -> ((match a_19  with { [  ]  -> Elara.Prim.undefined ; (x_20  :: xs_21 )  -> (if ((Elara.Prim.(==)  xs_21 )  [  ] )  then x_20  else (Prelude.last  xs_21 ) ) }) )) 
+    (\ a_27 -> ((match a_27  with { [  ]  -> Elara.Prim.undefined ; (x_28  :: xs_29 )  -> (if ((Elara.Prim.(==)  xs_29 )  [  ] )  then x_28  else (Prelude.last  xs_29 ) ) }) )) 
 
-def Prelude.map : ((a_22 -> b_23) -> ([ a_22 ] -> [ b_23 ]))
+def Prelude.map : ((a_30 -> b_31) -> ([ a_30 ] -> [ b_31 ]))
 let Prelude.map =
-    (\ f_24 -> ((\ a_25 -> ((match a_25  with { [  ]  -> [  ] ; (x_26  :: xs_27 )  -> ((Elara.Prim.cons  (f_24  x_26 ) )  ((Prelude.map  f_24 )  xs_27 ) ) }) )) )) 
+    (\ f_32 -> ((\ a_33 -> ((match a_33  with { [  ]  -> [  ] ; (x_34  :: xs_35 )  -> ((Elara.Prim.cons  (f_32  x_34 ) )  ((Prelude.map  f_32 )  xs_35 ) ) }) )) )) 
 
-def Prelude.print : (a_28 -> Elara.Prim.IO ())
+def Prelude.not : (Elara.Prim.Bool -> Elara.Prim.Bool)
+let Prelude.not =
+    (\ a_36 -> ((if a_36  then Elara.Prim.False  else Elara.Prim.True ) )) 
+
+def Prelude.print : (a_37 -> Elara.Prim.IO ())
 let Prelude.print =
-    (\ a_29 -> ((Elara.Prim.println  (Elara.Prim.toString  a_29 ) ) )) 
+    (\ a_38 -> ((Elara.Prim.println  (Elara.Prim.toString  a_38 ) ) )) 
 
-def Prelude.reverse : ([ a_30 ] -> [ a_30 ])
+def Prelude.reverse : ([ a_39 ] -> [ a_39 ])
 let Prelude.reverse =
-    (\ a_31 -> ((match a_31  with { [  ]  -> [  ] ; (x_32  :: xs_33 )  -> ((Prelude.(++)  (Prelude.reverse  xs_33 ) )  [ x_32  ] ) }) )) 
+    (\ a_40 -> ((match a_40  with { [  ]  -> [  ] ; (x_41  :: xs_42 )  -> ((Prelude.(++)  (Prelude.reverse  xs_42 ) )  [ x_41  ] ) }) )) 
 
-def Prelude.(++) : ([ a_34 ] -> ([ a_34 ] -> [ a_34 ]))
+def Prelude.(++) : ([ a_43 ] -> ([ a_43 ] -> [ a_43 ]))
 let Prelude.(++) =
-    (\ a_35 -> ((\ b_36 -> ((match a_35  with { [  ]  -> b_36 ; (x_37  :: xs_38 )  -> ((Elara.Prim.cons  x_37 )  ((Prelude.(++)  xs_38 )  b_36 ) ) }) )) )) 
+    (\ a_44 -> ((\ b_45 -> ((match a_44  with { [  ]  -> b_45 ; (x_46  :: xs_47 )  -> ((Elara.Prim.cons  x_46 )  ((Prelude.(++)  xs_47 )  b_45 ) ) }) )) )) 
+
+def Prelude.(/=) : (a_48 -> (a_48 -> Elara.Prim.Bool))
+let Prelude.(/=) =
+    (\ a_49 -> ((\ b_50 -> ((Prelude.not  ((Elara.Prim.(==)  a_49 )  b_50 ) ) )) )) 

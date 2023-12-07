@@ -53,4 +53,5 @@ typeIsValue (AppTy con _) | con == ioCon = True
 typeIsValue (AppTy con _) | con == listCon = True
 typeIsValue c | c == stringCon = True
 typeIsValue c | c == intCon = True
+typeIsValue c | c == boolCon = True
 typeIsValue _ = False

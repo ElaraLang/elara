@@ -81,12 +81,16 @@ instance ReportableError RenameError where
                 []
                 []
     report (UnknownName n) =
-        writeReport $
-            Err
-                Nothing
-                ("Unknown name: " <> pretty n)
-                [(n ^. sourceRegion . to sourceRegionToDiagnosePosition, This "referenced here")]
-                []
+        let nameKind = case n of
+                Located _ (NVarName _) -> "variable"
+                Located _ (NOpName _) -> "operator"
+                Located _ (NTypeName _) -> "type"
+         in writeReport $
+                Err
+                    Nothing
+                    ("Unknown" <+> nameKind <+> "name: " <> pretty n)
+                    [(n ^. sourceRegion . to sourceRegionToDiagnosePosition, This "referenced here")]
+                    []
     report (NativeDefUnsupported _) =
         writeReport $
             Err
