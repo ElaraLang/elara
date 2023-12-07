@@ -63,3 +63,17 @@ let not a =
 def (/=) : a -> a -> Bool
 let (/=) a b = 
     not (a == b)
+
+
+def sum : [Int] -> Int
+let sum a = 
+    match a with
+      [] -> 0
+      (x::xs) -> x + sum xs
+
+def isEmpty : [a] -> Bool
+let isEmpty a = 
+    match a with
+      [] -> True
+      (x::xs) -> False
+      

@@ -5,22 +5,25 @@ module Elara.Prim
 Elara.Prim.empty : forall (a_2 : Type). [a_2]
     = Elara.Prim.elaraPrimitive "empty"
 ; 
+Elara.Prim.ioBind : forall (a_3 : Type). forall (b_4 : Type). IO a_3 -> (a_3 -> IO b_4) -> IO b_4
+    = Elara.Prim.elaraPrimitive "ioBind"
+; 
 Elara.Prim.listToString : [Char] -> String
     = Elara.Prim.elaraPrimitive "listToString"
 ; 
 Elara.Prim.println : String -> IO ()
     = Elara.Prim.elaraPrimitive "println"
 ; 
-Elara.Prim.readFile : String -> IO String
+Elara.Prim.readFile : String -> IO ([String])
     = Elara.Prim.elaraPrimitive "readFile"
 ; 
 Elara.Prim.stringToList : String -> [Char]
     = Elara.Prim.elaraPrimitive "stringToList"
 ; 
-Elara.Prim.toString : forall (a_3 : Type). a_3 -> String
+Elara.Prim.toString : forall (a_5 : Type). a_5 -> String
     = Elara.Prim.elaraPrimitive "toString"
 ; 
-Elara.Prim.undefined : forall (a_4 : Type). a_4
+Elara.Prim.undefined : forall (a_6 : Type). a_6
     = Elara.Prim.elaraPrimitive "undefined"
 ; 
 Elara.Prim.* : Int -> Int -> Int
@@ -32,8 +35,8 @@ Elara.Prim.+ : Int -> Int -> Int
 Elara.Prim.- : Int -> Int -> Int
     = Elara.Prim.elaraPrimitive "-"
 ; 
-Elara.Prim.== : forall (a_5 : Type). a_5 -> a_5 -> Bool
+Elara.Prim.== : forall (a_7 : Type). a_7 -> a_7 -> Bool
     = Elara.Prim.elaraPrimitive "=="
 ; 
-Elara.Prim.|> : forall (a_6 : Type). forall (b_7 : Type). a_6 -> (a_6 -> b_7) -> b_7
-    = \ (a_8 : a_6) (f_9 : a_6 -> b_7) -> f_9 a_8 }
+Elara.Prim.|> : forall (a_8 : Type). forall (b_9 : Type). a_8 -> (a_8 -> b_9) -> b_9
+    = \ (a_10 : a_8) (f_11 : a_8 -> b_9) -> f_11 a_10 }

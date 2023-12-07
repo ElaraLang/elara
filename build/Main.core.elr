@@ -1,13 +1,15 @@
 module Main
 { Main.fact : Int -> Int
-    = \ (n_10 : Int) -> case Elara.Prim.== n_10 0 
-        { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_10 (Main.fact (Elara.Prim.- n_10 1))}
+    = \ (n_12 : Int) -> case Elara.Prim.== n_12 0 
+        { Elara.Prim.True : Bool  -> 1; Elara.Prim.False : Bool  -> Elara.Prim.* n_12 (Main.fact (Elara.Prim.- n_12 1))}
 ; 
 Main.part1 : String -> Int
-    = \ (input_11 : String) -> let chars_13 : [Int]
-        = Prelude.filter (\ (x_12 : Int) -> Prelude./= x_12 -1) (Prelude.map Prelude.charToInt (Elara.Prim.stringToList input_11)) in let first_14 : Int
-        = Prelude.head chars_13 in let last_15 : Int
-        = Prelude.last chars_13 in Elara.Prim.* first_14 (Elara.Prim.+ 10 last_15)
+    = \ (input_15 : String) -> let chars_17 : [Int]
+        = Prelude.filter (\ (x_16 : Int) -> Prelude./= x_16 -1) (Prelude.map Prelude.charToInt (Elara.Prim.stringToList input_15)) in case Prelude.isEmpty chars_17 
+        { Elara.Prim.True : Bool  -> 0; Elara.Prim.False : Bool  -> let first_18 : Int
+            = Prelude.head chars_17 in let last_19 : Int
+            = Prelude.last chars_17 in Elara.Prim.+ (Elara.Prim.* first_18 10) last_19}
 ; 
 Main.main : IO ()
-    = Prelude.print (Main.part1 "1abc2") }
+    = let contents_13 : IO ([String])
+        = Elara.Prim.readFile "../input.txt" in Elara.Prim.ioBind contents_13 (\ (contents_14 : [String]) -> Prelude.print @(Int -> IO ()) (Prelude.sum (Prelude.map Main.part1 contents_14))) }

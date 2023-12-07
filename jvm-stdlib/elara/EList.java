@@ -39,6 +39,14 @@ public class EList<T> {
         return s;
     }
 
+    public static <T> EList<T> fromList(java.util.List<T> list) {
+        EList<T> elist = EList.Empty();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            elist = EList.Cons(list.get(i), elist);
+        }
+        return elist;
+    }
+
     public static EList<Character> stringToList(String s) {
         EList<Character> list = EList.Empty();
         for (int i = s.length() - 1; i >= 0; i--) {

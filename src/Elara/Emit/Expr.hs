@@ -362,21 +362,15 @@ generatePrimInstructions "stringToList" =
         [ ALoad 0
         , InvokeStatic (ClassInfoType "elara.EList") "stringToList" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.EList")))
         ]
+generatePrimInstructions "readFile" =
+    pure
+        [ ALoad 0
+        , InvokeStatic (ClassInfoType "elara.IO") "readFile" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
+        ]
+generatePrimInstructions "ioBind" =
+    pure
+        [ ALoad 0
+        , ALoad 1
+        , InvokeVirtual (ClassInfoType "elara.IO") "bind" (MethodDescriptor [ObjectFieldType "elara.Func"] (TypeReturn (ObjectFieldType "elara.IO")))
+        ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
-
-{-
-BootstrapMethods:
-  0: #40 REF_invokeStatic java/lang/invoke/LambdaMetafactory.metafactory:(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-    Method arguments:
-      #47 (Ljava/lang/Object;)Ljava/lang/Object;
-      #49 REF_invokeStatic Square.lambda$static$0:(Ljava/lang/Integer;)Ljava/lang/Integer;
-      #52 (Ljava/lang/Integer;)Ljava/lang/Integer;
-
-BootstrapMethods:
-  0: #18 REF_invokeStatic java/lang/invoke/LambdaMetafactory.metafactory:(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-    Method arguments:
-      #20 (Ljava/lang/Object;)Ljava/lang/Object;
-      #25 REF_invokeStatic Main.lambda$8490817582771559480:(Ljava/lang/Integer;)Ljava/lang/Object;
-      #26 (Ljava/lang/Integer;)Ljava/lang/Object;
-
--}

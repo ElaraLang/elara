@@ -10,6 +10,10 @@ def Elara.Prim.empty : [ a_2 ]
 let Elara.Prim.empty =
     (Elara.Prim.elaraPrimitive  "empty" ) 
 
+def Elara.Prim.ioBind : (Elara.Prim.IO a_3 -> ((a_3 -> Elara.Prim.IO b_4) -> Elara.Prim.IO b_4))
+let Elara.Prim.ioBind =
+    (Elara.Prim.elaraPrimitive  "ioBind" ) 
+
 def Elara.Prim.listToString : ([ Elara.Prim.Char ] -> Elara.Prim.String)
 let Elara.Prim.listToString =
     (Elara.Prim.elaraPrimitive  "listToString" ) 
@@ -18,7 +22,7 @@ def Elara.Prim.println : (Elara.Prim.String -> Elara.Prim.IO ())
 let Elara.Prim.println =
     (Elara.Prim.elaraPrimitive  "println" ) 
 
-def Elara.Prim.readFile : (Elara.Prim.String -> Elara.Prim.IO Elara.Prim.String)
+def Elara.Prim.readFile : (Elara.Prim.String -> Elara.Prim.IO [ Elara.Prim.String ])
 let Elara.Prim.readFile =
     (Elara.Prim.elaraPrimitive  "readFile" ) 
 
@@ -26,11 +30,11 @@ def Elara.Prim.stringToList : (Elara.Prim.String -> [ Elara.Prim.Char ])
 let Elara.Prim.stringToList =
     (Elara.Prim.elaraPrimitive  "stringToList" ) 
 
-def Elara.Prim.toString : (a_3 -> Elara.Prim.String)
+def Elara.Prim.toString : (a_5 -> Elara.Prim.String)
 let Elara.Prim.toString =
     (Elara.Prim.elaraPrimitive  "toString" ) 
 
-def Elara.Prim.undefined : a_4
+def Elara.Prim.undefined : a_6
 let Elara.Prim.undefined =
     (Elara.Prim.elaraPrimitive  "undefined" ) 
 
@@ -46,10 +50,10 @@ def Elara.Prim.(-) : (Elara.Prim.Int -> (Elara.Prim.Int -> Elara.Prim.Int))
 let Elara.Prim.(-) =
     (Elara.Prim.elaraPrimitive  "-" ) 
 
-def Elara.Prim.(==) : (a_5 -> (a_5 -> Elara.Prim.Bool))
+def Elara.Prim.(==) : (a_7 -> (a_7 -> Elara.Prim.Bool))
 let Elara.Prim.(==) =
     (Elara.Prim.elaraPrimitive  "==" ) 
 
-def Elara.Prim.(|>) : (a_6 -> ((a_6 -> b_7) -> b_7))
+def Elara.Prim.(|>) : (a_8 -> ((a_8 -> b_9) -> b_9))
 let Elara.Prim.(|>) =
-    (\ a_8 -> ((\ f_9 -> ((f_9  a_8 ) )) )) 
+    (\ a_10 -> ((\ f_11 -> ((f_11  a_10 ) )) )) 
