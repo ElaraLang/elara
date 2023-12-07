@@ -137,49 +137,6 @@ inferExpression e (Just expectedType) = do
     (Expr (l, _)) <- check e expectedType
     pure (Expr (l, expectedType))
 
--- inferDeclarationBody' n (Shunted.TypeDeclaration tvs ty) = do
---     ty' <-
---         traverseOf
---             unlocated
---             ( \case
---                 Renamed.Alias l -> do
---                     inferType <- astTypeToInferType l
---                     let vars' = createTypeVar <$> tvs
---                     push (Annotation (mkGlobal' n) (Infer.Alias (generatedSourceRegionFrom n) (showPretty n) vars' inferType))
---                     pure (Typed.Alias inferType)
---                 Renamed.ADT constructors -> do
---                     constructors' <- traverse (bitraverse pure (traverse astTypeToInferType)) constructors
---                     let adtType = Infer.Custom (n ^. sourceRegion) (n ^. unlocated . to nameText) (createTypeVar <$> tvs)
---                     traverse_ (\(c, b) -> addConstructorToContext tvs c b adtType) constructors'
---                     pure $ Typed.ADT constructors'
---             )
---             ty
---     kind <- mapError KindInferError (inferKind (fmap (^?! _NTypeName) (n ^. unlocated)) tvs (ty ^. unlocated))
---     pure $ Typed.TypeDeclaration tvs ty' kind
-
--- addConstructorToContext :: (Member (State Status) r) => [Located (Unique LowerAlphaName)] -> Located (Qualified TypeName) -> [Infer.Type SourceRegion] -> Infer.Type SourceRegion -> Sem r ()
--- addConstructorToContext typeVars ctorName ctorArgs adtType = do
---     let ctorType = foldr (\res acc -> Infer.Function (Infer.location acc) res acc) adtType ctorArgs
---     -- type Option a = Some a | None
---     -- Some : a -> Option a
---     -- None : Option a
---     let argsLoc = Infer.location <$> ctorArgs
-
---     -- universally quantify the type over the type variables
---     let forall' =
---             foldr
---                 ( \(Located sr u) acc ->
---                     Infer.Forall
---                         (sconcat (ctorName ^. sourceRegion :| argsLoc))
---                         sr
---                         (showPretty u)
---                         Domain.Type
---                         acc
---                 )
---                 ctorType
---                 typeVars
---     push (Annotation (mkGlobal' ctorName) forall')
-
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
