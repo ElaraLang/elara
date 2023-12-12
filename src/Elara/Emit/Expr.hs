@@ -124,7 +124,9 @@ generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
 generateInstructions' p (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
-generateInstructions' p (App f x) _ = generateAppInstructions f x
+generateInstructions' p (App f x) t = do
+    debugPretty t
+    generateAppInstructions f x
 generateInstructions' p (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
     generateInstructions' p val tApps
@@ -222,7 +224,10 @@ localVariableId (JVMLocal i) = pure i
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
-approximateTypeAndNameOf :: HasCallStack => Expr JVMBinder -> Either Word8 (UnlocatedVarRef Text, Type)
+approximateTypeAndNameOf ::
+    HasCallStack =>
+    Expr JVMBinder ->
+    Either Word8 (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
 approximateTypeAndNameOf (Var (JVMLocal i)) = Left i
 approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
@@ -246,7 +251,8 @@ generateAppInstructions ::
     JVMExpr ->
     Sem r ()
 generateAppInstructions f x = do
-    let (f', args) = collectArgs f [x]
+    let (f', typeArgs, args) = collectArgs f ([], [x])
+
     case approximateTypeAndNameOf f' of
         Left local -> do
             emit $ ALoad local
@@ -261,8 +267,9 @@ generateAppInstructions f x = do
                     traverse_ generateInstructions args
                     emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
-                    debugPretty (insts ^. _3)
-                    case insts ^. _3 . to (.returnDesc) of
+                    let instantiatedFType = foldr instantiate fType typeArgs
+                    instantiatedReturnType <- (^. _3 . to (.returnDesc)) <$> invokeStaticVars fName instantiatedFType
+                    case instantiatedReturnType of
                         TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
                 else -- if length args == arity - 1
@@ -273,9 +280,10 @@ generateAppInstructions f x = do
                 --         emit inst
                     error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
   where
-    collectArgs :: JVMExpr -> [JVMExpr] -> (JVMExpr, [JVMExpr])
-    collectArgs (App f x) args = collectArgs f (x : args)
-    collectArgs f args = (f, args)
+    collectArgs :: JVMExpr -> ([Type], [JVMExpr]) -> (JVMExpr, [Type], [JVMExpr])
+    collectArgs (App f x) (tArgs, args) = collectArgs f (tArgs, x : args)
+    collectArgs (TyApp f t) (tArgs, args) = collectArgs f (t : tArgs, args)
+    collectArgs f (tArgs, args) = (f, tArgs, args)
 
 invokeStaticVars :: Member (Error EmitError) r => UnlocatedVarRef Text -> Type -> Sem r (ClassInfoType, Text, MethodDescriptor)
 invokeStaticVars (Global' (Qualified fName mn)) fType =
