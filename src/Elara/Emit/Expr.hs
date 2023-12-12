@@ -97,11 +97,11 @@ generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
                             (translateOperatorName n)
                             (generateFieldType t)
                         )
-        else case t of
+        else case stripForAll t of
             FuncTy{} -> do
                 -- it's a method function, so we have to create a Func currying it
                 cName <- gets (.thisClassName)
-                inst <- etaExpand qn t cName
+                inst <- etaExpand qn (stripForAll t) cName
                 emit inst
             _ -> do
                 -- no args function (eg undefined)

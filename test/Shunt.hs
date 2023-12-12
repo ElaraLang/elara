@@ -91,6 +91,23 @@ spec = describe "Shunts operators correctly" $ do
         "(1) + 2" `shouldShuntTo` res
         "(1) + (2)" `shouldShuntTo` res
         "(1 + 2)" `shouldShuntTo` res
+    it "Shunts repeated operators into prefix calls" $ hedgehog $ do
+        let res =
+                functionCall
+                    ( functionCall
+                        ( functionCall
+                            (var (stripLocation $ mkFakeVar "+"))
+                            (int 1)
+                        )
+                        (int 2)
+                    )
+                    (int 3)
+        "1 + 2 + 3" `shouldShuntTo` res
+        "1 + (2) + 3" `shouldShuntTo` res
+        "(1) + 2 + 3" `shouldShuntTo` res
+        "(1) + (2) + (3)" `shouldShuntTo` res
+        "(1 + 2 + 3)" `shouldShuntTo` res
+        "(1 + (2 + 3))" `shouldShuntTo` res
 
     it "Correctly re-shunts operators with different precedences" $ hedgehog $ do
         let res =

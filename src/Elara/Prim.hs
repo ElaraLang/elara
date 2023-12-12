@@ -81,7 +81,7 @@ primKindCheckContext =
 primOpTable :: OpTable
 primOpTable =
     fromList
-        [ (ignoreLocation $ Global (mkPrimVarRef $ NOpName "|>"), OpInfo (mkPrecedence 1) RightAssociative)
+        [ (ignoreLocation $ Global (mkPrimVarRef $ NOpName "|>"), OpInfo (mkPrecedence 0) LeftAssociative)
         , (ignoreLocation $ Global (mkPrimVarRef $ NOpName "+"), OpInfo (mkPrecedence 6) LeftAssociative)
         , (ignoreLocation $ Global (mkPrimVarRef $ NOpName "-"), OpInfo (mkPrecedence 6) LeftAssociative)
         , (ignoreLocation $ Global (mkPrimVarRef $ NOpName "*"), OpInfo (mkPrecedence 7) LeftAssociative)

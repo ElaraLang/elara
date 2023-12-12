@@ -31,6 +31,7 @@ import Polysemy (Members, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader hiding (Local)
 import Polysemy.Writer
+import Print (debugPretty, showPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
@@ -233,8 +234,10 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (FunctionCall f x) = FunctionCall <$> shuntExpr f <*> shuntExpr x
     shuntExpr' (TypeApplication e t) = TypeApplication <$> shuntExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
+        -- error (showPretty (operator,l,r))
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
+        -- ((a `op` b) `op` c) -> (op (op a b)) c
         -- Semantics for type annotation shifting are as follows:
         -- (a : T) `op` b -> (op (a : T)) b
         -- a `op` (b : T) -> (op a) (b : T)
@@ -245,7 +248,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         let op' = case operator ^. _Unwrapped . unlocated of
                 SymOp lopName -> Var (OperatorVarName <<$>> lopName) `withLocationOf` lopName
                 Infixed inName -> do
-                    let z :: Expr' 'Shunted = case inName of
+                    let z = case inName of
                             Global (Located l' (Qualified (VarName n) m)) ->
                                 Var
                                     ( Located l' (Global (Located l' (Qualified (NormalVarName n) m)))
