@@ -63,6 +63,7 @@ library
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Emit
+      Elara.Emit.Error
       Elara.Emit.Expr
       Elara.Emit.Lambda
       Elara.Emit.Method

@@ -7,6 +7,7 @@ import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Unique
+import Elara.Emit.Error (EmitError)
 import Elara.Emit.Method
 import Elara.Emit.Utils (generateFieldType)
 import Elara.Emit.Var
@@ -17,6 +18,7 @@ import JVM.Data.Abstract.Instruction (Instruction, Instruction' (InvokeDynamic))
 import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type (ClassInfoType (ClassInfoType), FieldType (..))
 import Polysemy
+import Polysemy.Error
 import Print (debugPretty)
 
 functionalInterfaces :: Map ([FieldType], Maybe FieldType) (QualifiedClassName, Text, MethodDescriptor)
@@ -28,7 +30,7 @@ functionalInterfaces =
         ]
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
-etaExpand :: (Member ClassBuilder r, Member UniqueGen r) => Qualified Text -> Type -> QualifiedClassName -> Sem r Instruction
+etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r) => Qualified Text -> Type -> QualifiedClassName -> Sem r Instruction
 etaExpand funcName funcType@(FuncTy i o) thisClassName = do
     param <- makeUnique "x"
     createLambda
@@ -47,7 +49,7 @@ This involves a few steps:
 2. Creates a bootstrap method that calls the LambdaMetaFactory to create the lambda
 3. Returns an invokedynamic instruction that calls the bootstrap method
 -}
-createLambda :: (Member ClassBuilder r, Member UniqueGen r) => (Unique Text, FieldType) -> FieldType -> QualifiedClassName -> JVMExpr -> Sem r Instruction
+createLambda :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r) => (Unique Text, FieldType) -> FieldType -> QualifiedClassName -> JVMExpr -> Sem r Instruction
 createLambda params returnType thisClassName body = do
     let lambdaMethodName = "lambda$" <> show (hash body)
 

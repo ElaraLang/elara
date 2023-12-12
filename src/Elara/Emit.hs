@@ -16,14 +16,17 @@ import Elara.AST.VarRef (varRefVal)
 import Elara.Core (Bind (..), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
+import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Data.Unique
+import Elara.Emit.Error
 import Elara.Emit.Expr
 import Elara.Emit.Method (createMethod, createMethodWith)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
+import Elara.Error (DiagnosticWriter, runErrorOrReport)
 import Elara.Prim.Core (intCon, ioCon, listCon, stringCon)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code hiding (code)
@@ -37,12 +40,14 @@ import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
 import JVM.Data.JVMVersion
 import Polysemy
+import Polysemy.Error
+import Polysemy.Maybe
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
 import Print (debugPretty, showPretty)
 
-type Emit r = Members '[Reader JVMVersion, Embed IO] r
+type Emit r = Members '[Reader JVMVersion, Embed IO, MaybeE, DiagnosticWriter (Doc AnsiStyle)] r
 
 type InnerEmit r =
     Members
@@ -51,6 +56,7 @@ type InnerEmit r =
          , ClassBuilder
          , State CLInitState
          , UniqueGen
+         , Error EmitError
          ]
         r
 
@@ -71,10 +77,13 @@ emitGraph g = do
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
 runInnerEmit ::
-    Member (Embed IO) r =>
+    ( Member (Embed IO) r
+    , Member (DiagnosticWriter (Doc AnsiStyle)) r
+    , Member MaybeE r
+    ) =>
     QualifiedClassName ->
     i ->
-    Sem (UniqueGen : State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
+    Sem (Error EmitError : UniqueGen : State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
     Sem r (a, CLInitState, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
     ((clinitState, a), attrs, inst) <-
@@ -83,6 +92,7 @@ runInnerEmit name version x = do
             . runReader version
             . runState @CLInitState (CLInitState (initialMethodCreationState name))
             . uniqueGenToIO
+            . runErrorOrReport
             $ x
     pure (a, clinitState, attrs, inst)
 

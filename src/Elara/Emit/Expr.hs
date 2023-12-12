@@ -9,6 +9,7 @@ import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core as Core
 import Elara.Data.Unique
+import Elara.Emit.Error
 import Elara.Emit.Lambda
 import Elara.Emit.Operator
 import Elara.Emit.State (MethodCreationState (thisClassName), findLocalVariable, withLocalVariableScope)
@@ -29,8 +30,9 @@ import JVM.Data.Abstract.Type hiding (Int)
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
+import Polysemy.Error
 import Polysemy.State
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 data GenParams = GenParams
     {
@@ -45,6 +47,7 @@ generateInstructions ::
     , Member CodeBuilder r
     , Member ClassBuilder r
     , Member UniqueGen r
+    , Member (Error EmitError) r
     ) =>
     Expr JVMBinder ->
     Sem r ()
@@ -56,6 +59,7 @@ generateInstructionsWith ::
     , Member CodeBuilder r
     , Member ClassBuilder r
     , Member UniqueGen r
+    , Member (Error EmitError) r
     ) =>
     GenParams ->
     Expr JVMBinder ->
@@ -68,6 +72,7 @@ generateInstructions' ::
     , Member CodeBuilder r
     , Member ClassBuilder r
     , Member UniqueGen r
+    , Member (Error EmitError) r
     ) =>
     GenParams ->
     Expr JVMBinder ->
@@ -137,7 +142,12 @@ generateInstructions' p (Lam (JVMLocal v) body) _ = error "Lambda with local var
 generateInstructions' p other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
-    (Member (State MethodCreationState) r, Member CodeBuilder r, Member ClassBuilder r, Member UniqueGen r) =>
+    ( Member (State MethodCreationState) r
+    , Member CodeBuilder r
+    , Member ClassBuilder r
+    , Member UniqueGen r
+    , Member (Error EmitError) r
+    ) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
     [Core.Alt JVMBinder] ->
@@ -230,6 +240,7 @@ generateAppInstructions ::
     , Member CodeBuilder r
     , Member ClassBuilder r
     , Member UniqueGen r
+    , Member (Error EmitError) r
     ) =>
     JVMExpr ->
     JVMExpr ->
@@ -246,10 +257,11 @@ generateAppInstructions f x = do
             if length args == arity
                 then -- yippee, no currying necessary
                 do
-                    let insts = invokeStaticVars fName fType
+                    insts <- invokeStaticVars fName fType
                     traverse_ generateInstructions args
                     emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
+                    debugPretty (insts ^. _3)
                     case insts ^. _3 . to (.returnDesc) of
                         TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
@@ -265,12 +277,14 @@ generateAppInstructions f x = do
     collectArgs (App f x) args = collectArgs f (x : args)
     collectArgs f args = (f, args)
 
-invokeStaticVars :: UnlocatedVarRef Text -> Type -> (ClassInfoType, Text, MethodDescriptor)
+invokeStaticVars :: Member (Error EmitError) r => UnlocatedVarRef Text -> Type -> Sem r (ClassInfoType, Text, MethodDescriptor)
 invokeStaticVars (Global' (Qualified fName mn)) fType =
-    ( ClassInfoType $ createModuleName mn
-    , translateOperatorName fName
-    , generateMethodDescriptor fType
-    )
+    pure
+        ( ClassInfoType $ createModuleName mn
+        , translateOperatorName fName
+        , generateMethodDescriptor fType
+        )
+invokeStaticVars (Local' x) t = throw $ InvokeStaticLocal x t
 
 generateLitInstructions :: Monad m => Literal -> m [Instruction]
 generateLitInstructions (String s) =

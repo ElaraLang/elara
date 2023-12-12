@@ -14,6 +14,8 @@ The first digit signals the stage in which the error was thrown:
 - @0@: Lexer / Parser
 - @1@: Desugaring and Renaming stage
 - @2@: Operator Shunting Stage
+- @3@: Typechecking Stage
+- @4@: Code Generation Stage
 
 The remaining digits are arbitrary and should be incremented for each new error or warning.
    They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
@@ -67,3 +69,6 @@ samePrecedence = "E2001"
 
 unknownPrecedence :: ErrorCode
 unknownPrecedence = "W2001"
+
+invokeStaticLocal :: ErrorCode
+invokeStaticLocal = "E4001"
