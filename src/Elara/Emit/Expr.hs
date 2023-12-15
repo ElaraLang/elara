@@ -4,7 +4,6 @@
 module Elara.Emit.Expr where
 
 import Control.Lens
-import Data.Generics.Sum
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
@@ -260,7 +259,7 @@ generateAppInstructions f x = do
             emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         Right (fName, fType) -> do
             let arity = typeArity fType
-            if length (filter (isn't (_As @"TyApp")) args) == arity
+            if length args == arity
                 then -- yippee, no currying necessary
                 do
                     insts <- invokeStaticVars fName fType
@@ -278,7 +277,7 @@ generateAppInstructions f x = do
                 --         cName <- gets (.thisClassName)
                 --         inst <- etaExpand qn t cName
                 --         emit inst
-                    error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> " x=" <> showPretty x <> ", f'=" <> showPretty f' <> ", args=" <> showPretty args
+                    error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> "\n x=" <> showPretty x <> "\n f'=" <> showPretty f' <> "\n args=" <> showPretty args
   where
     collectArgs :: JVMExpr -> ([Type], [JVMExpr]) -> (JVMExpr, [Type], [JVMExpr])
     collectArgs (App f x) (tArgs, args) = collectArgs f (tArgs, x : args)
