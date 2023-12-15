@@ -30,15 +30,15 @@ functionalInterfaces =
         ]
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
-etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r) => Qualified Text -> Type -> QualifiedClassName -> Sem r Instruction
-etaExpand funcName funcType@(FuncTy i o) thisClassName = do
+etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r) => JVMExpr -> Type -> QualifiedClassName -> Sem r Instruction
+etaExpand funcCall (FuncTy i o) thisClassName = do
     param <- makeUnique "x"
     createLambda
         (param, generateFieldType i)
         (generateFieldType o)
         thisClassName
         ( App
-            (Var $ Normal $ Id (Global' funcName) funcType) -- f
+            funcCall -- f
             (Var $ JVMLocal 0) -- x
         )
 etaExpand n t c = error $ "etaExpand called on non-function type: " <> show (n, t, c)

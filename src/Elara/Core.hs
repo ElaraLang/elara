@@ -101,6 +101,16 @@ typeArity = \case
     ForAllTy _ t -> typeArity t
     _ -> 0
 
+functionTypeArgs :: Type -> [Type]
+functionTypeArgs = \case
+    FuncTy a b -> a : functionTypeArgs b
+    _ -> []
+
+functionTypeResult :: Type -> Type
+functionTypeResult = \case
+    FuncTy _ b -> functionTypeResult b
+    t -> t
+
 instantiate :: Type -> Type -> Type
 instantiate (ForAllTy tv t) t' = instantiate t (substTypeVar tv t')
 instantiate t _ = t

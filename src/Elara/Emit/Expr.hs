@@ -89,7 +89,7 @@ generateInstructions' p (App ((Var (Normal (Id (Global' v) _)))) (Lit (String pr
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' p (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
+generateInstructions' p v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
     if typeIsValue t
         then
             if
@@ -104,9 +104,9 @@ generateInstructions' p (Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
                         )
         else case stripForAll t of
             FuncTy{} -> do
-                -- it's a method function, so we have to create a Func currying it
+                -- it's a method function, so we have to eta-expand it
                 cName <- gets (.thisClassName)
-                inst <- etaExpand qn (stripForAll t) cName
+                inst <- etaExpand v (stripForAll t) cName
                 emit inst
             _ -> do
                 -- no args function (eg undefined)
@@ -271,13 +271,15 @@ generateAppInstructions f x = do
                     case instantiatedReturnType of
                         TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                         VoidReturn -> pass
-                else -- if length args == arity - 1
-                --     then do
-                --         -- 1 layer of eta expansion required
-                --         cName <- gets (.thisClassName)
-                --         inst <- etaExpand qn t cName
-                --         emit inst
-                    error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> "\n x=" <> showPretty x <> "\n f'=" <> showPretty f' <> "\n args=" <> showPretty args
+                else
+                    if length args == arity - 1
+                        then do
+                            -- 1 layer of eta expansion required
+                            cName <- gets (.thisClassName)
+                            let appWithArgs = foldl' App f' args
+                            inst <- etaExpand appWithArgs (FuncTy (last $ fromList (functionTypeArgs fType)) (functionTypeResult fType)) cName
+                            emit inst
+                        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> "\n x=" <> showPretty x <> "\n f'=" <> showPretty f' <> "\n args=" <> showPretty args
   where
     collectArgs :: JVMExpr -> ([Type], [JVMExpr]) -> (JVMExpr, [Type], [JVMExpr])
     collectArgs (App f x) (tArgs, args) = collectArgs f (tArgs, x : args)
