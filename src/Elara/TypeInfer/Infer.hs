@@ -1375,6 +1375,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         e <- case Type.stripForAll completedFunctionType of
             Type.Function{input, output}
                 | isFreeTypeVariable input && isFreeTypeVariable output -> do
+                    debugPretty ("BOTH" :: Text, Syntax.typeOf typedArgument, Type.stripForAll resultType)
                     pure $
                         FunctionCall
                             ( Expr
@@ -1396,6 +1397,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{input}
                 | isFreeTypeVariable input -> do
+                    debugPretty ("in" :: Text, Syntax.typeOf typedArgument)
                     pure $
                         FunctionCall
                             ( Expr (Located argLoc (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
@@ -1403,6 +1405,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{output}
                 | isFreeTypeVariable output -> do
+                    debugPretty ("out" :: Text, Type.stripForAll resultType)
                     pure $
                         FunctionCall
                             ( Expr (Located resultLoc (TypeApplication _A (Type.stripForAll resultType)), resultType)
@@ -1622,7 +1625,9 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         case _At of
             Type.Forall{} | Type.isMonoType t -> do
                 -- insert type application from instantiating the forall
-                pure $ Expr (Located exprLoc (TypeApplication _A t), _At `Type.instantiate` t)
+                debugPretty ("instantiate" :: Text, _At, t, _At `Type.instantiate` t)
+                debugPretty (Context.solveType _Θ _At, Context.solveType _Θ _B)
+                pure $ Expr (Located exprLoc (TypeApplication _A (_At `Type.applicableTyApp` t)), _At `Type.instantiate` t)
             _ -> pure _A
 
 {- | This corresponds to the judgment:

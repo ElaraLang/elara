@@ -10,7 +10,7 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..), view, (^.))
+import Control.Lens (Plated (..), view)
 import Control.Lens qualified as Lens
 import Data.Aeson (ToJSON (..), Value (String))
 import Data.Containers.ListUtils (nubOrdOn)
@@ -219,6 +219,19 @@ isMonoType = Lens.hasn't (Lens.cosmos . _As @"Forall")
 instantiate :: Type s -> Type s -> Type s
 Forall{name, type_} `instantiate` typeArgument = substituteType name typeArgument type_
 type_ `instantiate` _ = type_
+
+{- | In the inference algorithm, we check if a type application needs to be inserted in the 'check' function
+For example, suppose we are checking that @id : forall a. a -> a@ is a subtype of @List Integer -> x?@
+We know this is true if we instantiate @x?@ with @List Integer@ and instantiate @a@ with @List Integer@,
+thus this creates a type application - @id \@(List Integer)@. This function matches between the two arguments
+to determine the type of the type application, as naively we would instantiate it with @List Integer -> List Integer@,
+which is actually incorrect.
+-}
+applicableTyApp :: Show s => Type s -> Type s -> Type s
+applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = y
+applicableTyApp (Forall{name, type_ = Function{input = VariableType{name = n}}}) Function{input = sIn}
+    | name == n = sIn
+applicableTyApp x y = error $ "applicableTyApp: " <> showPrettyUnannotated x <> " & " <> showPrettyUnannotated y
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free

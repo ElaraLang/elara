@@ -125,7 +125,6 @@ generateInstructions' p (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
 generateInstructions' p (App f x) t = do
-    debugPretty t
     generateAppInstructions f x
 generateInstructions' p (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
