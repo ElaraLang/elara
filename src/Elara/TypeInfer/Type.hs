@@ -228,6 +228,7 @@ to determine the type of the type application, as naively we would instantiate i
 which is actually incorrect.
 -}
 applicableTyApp :: Show s => Type s -> Type s -> Type s
+applicableTyApp _ y@(UnsolvedType{}) = y
 applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = y
 applicableTyApp (Forall{name, type_ = Function{input = VariableType{name = n}}}) Function{input = sIn}
     | name == n = sIn

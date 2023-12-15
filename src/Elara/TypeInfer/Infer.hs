@@ -23,7 +23,7 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Control.Lens ((^.), _1, _2)
+import Control.Lens (view, (^.), _1, _2)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -1369,7 +1369,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         ctx <- get
         completedFunctionType <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
-        let isFreeTypeVariable = \case Type.VariableType _ x -> not (Type.occurs x completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
+        let isFreeTypeVariable = \case Type.VariableType _ x -> x `elem` (view unlocated <$> Type.freeTypeVars completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
         let argLoc = typedArgument ^. exprLocation
         let resultLoc = resultType.location
         e <- case Type.stripForAll completedFunctionType of
@@ -1405,10 +1405,11 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{output}
                 | isFreeTypeVariable output -> do
-                    debugPretty ("out" :: Text, Type.stripForAll resultType)
+                    _0 <- get
+                    let solved = Context.solveType _0 resultType
                     pure $
                         FunctionCall
-                            ( Expr (Located resultLoc (TypeApplication _A (Type.stripForAll resultType)), resultType)
+                            ( Expr (Located resultLoc (TypeApplication _A (Type.applicableTyApp completedFunctionType resultType)), resultType)
                             )
                             typedArgument
             _ -> do
@@ -1623,7 +1624,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 
         subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
         case _At of
-            Type.Forall{} | Type.isMonoType t -> do
+            Type.Forall{} | _At `Type.instantiate` t /= _At -> do
                 -- insert type application from instantiating the forall
                 debugPretty ("instantiate" :: Text, _At, t, _At `Type.instantiate` t)
                 debugPretty (Context.solveType _Θ _At, Context.solveType _Θ _B)
