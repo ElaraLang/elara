@@ -1,6 +1,6 @@
 module Elara.Core where
 
-import Control.Lens (Plated (plate))
+import Control.Lens (Plated (plate), transform)
 import Control.Monad.State hiding (StateT)
 import Data.Data
 import Elara.AST.Name (Qualified)
@@ -94,6 +94,14 @@ data Type
     | ForAllTy !TypeVariable !Type
     deriving (Show, Eq, Data, Ord, Generic)
 
+instance Plated Type where
+    plate f = \case
+        TyVarTy tv -> pure (TyVarTy tv)
+        FuncTy a b -> FuncTy <$> f a <*> f b
+        AppTy a b -> AppTy <$> f a <*> f b
+        ConTy n -> pure (ConTy n)
+        ForAllTy tv t -> ForAllTy tv <$> f t
+
 -- | The arity of a function type
 typeArity :: Type -> Int
 typeArity = \case
@@ -103,27 +111,26 @@ typeArity = \case
 
 functionTypeArgs :: Type -> [Type]
 functionTypeArgs = \case
+    ForAllTy _ t -> functionTypeArgs t
     FuncTy a b -> a : functionTypeArgs b
     _ -> []
 
 functionTypeResult :: Type -> Type
 functionTypeResult = \case
+    ForAllTy _ t -> functionTypeResult t
     FuncTy _ b -> functionTypeResult b
     t -> t
 
 instantiate :: Type -> Type -> Type
-instantiate (ForAllTy tv t) t' = instantiate t (substTypeVar tv t')
+instantiate (ForAllTy tv t) t' = substTypeVar tv t' t
 instantiate t _ = t
 
-substTypeVar :: TypeVariable -> Type -> Type
-substTypeVar tv = \case
-    TyVarTy tv' | tv == tv' -> TyVarTy tv
-    FuncTy a b -> FuncTy (substTypeVar tv a) (substTypeVar tv b)
-    AppTy a b -> AppTy (substTypeVar tv a) (substTypeVar tv b)
-    ConTy n -> ConTy n
-    ForAllTy tv' t | tv /= tv' -> ForAllTy tv' (substTypeVar tv t)
-    ForAllTy tv' t | tv == tv' -> ForAllTy tv' t
-    other -> error $ "substTypeVar: " <> show other
+substTypeVar :: TypeVariable -> Type -> Type -> Type
+substTypeVar tv replaceWith = transform f
+  where
+    f = \case
+        TyVarTy tv' | tv == tv' -> replaceWith
+        other -> other
 
 data Literal
     = Int !Integer
