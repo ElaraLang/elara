@@ -55,7 +55,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 import TODO
 
 -- | Type-checking state
@@ -1375,7 +1375,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         e <- case Type.stripForAll completedFunctionType of
             Type.Function{input, output}
                 | isFreeTypeVariable input && isFreeTypeVariable output -> do
-                    debugPretty ("BOTH" :: Text, Syntax.typeOf typedArgument, Type.stripForAll resultType)
                     pure $
                         FunctionCall
                             ( Expr
@@ -1397,7 +1396,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
                             typedArgument
             Type.Function{input}
                 | isFreeTypeVariable input -> do
-                    debugPretty ("in" :: Text, Syntax.typeOf typedArgument)
                     pure $
                         FunctionCall
                             ( Expr (Located argLoc (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
@@ -1406,7 +1404,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
             Type.Function{output}
                 | isFreeTypeVariable output -> do
                     _0 <- get
-                    let solved = Context.solveType _0 resultType
                     pure $
                         FunctionCall
                             ( Expr (Located resultLoc (TypeApplication _A (Type.applicableTyApp completedFunctionType resultType)), resultType)
@@ -1626,8 +1623,6 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         case _At of
             Type.Forall{} | _At `Type.instantiate` t /= _At -> do
                 -- insert type application from instantiating the forall
-                debugPretty ("instantiate" :: Text, _At, t, _At `Type.instantiate` t)
-                debugPretty (Context.solveType _Θ _At, Context.solveType _Θ _B)
                 pure $ Expr (Located exprLoc (TypeApplication _A (_At `Type.applicableTyApp` t)), _At `Type.instantiate` t)
             _ -> pure _A
 
