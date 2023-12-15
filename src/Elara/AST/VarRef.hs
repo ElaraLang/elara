@@ -30,6 +30,8 @@ pattern Global' n = Global (Identity n)
 pattern Local' :: Unique n -> VarRef' Identity n
 pattern Local' n = Local (Identity n)
 
+{-# COMPLETE Global', Local' #-}
+
 varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
