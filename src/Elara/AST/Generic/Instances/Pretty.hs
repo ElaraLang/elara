@@ -143,8 +143,8 @@ prettyExpr (Expr (e, t)) = group (flatAlt long short)
     te = if ?withType then (":" <+>) . pf . pretty <$> (toMaybe t :: Maybe exprType) else Nothing
     pe = prettyExpr' (stripLocation @(ASTLocate ast (Expr' ast)) @(Expr' ast) e)
     pf = if ?contextFree then parens else identity
-    long = pe <+> pretty te
-    short = align (pretty pe <+> pretty te)
+    long = pe <> pretty te
+    short = align (pretty pe <> pretty te)
 
 instance
     forall ast letPatterns lambdaPatterns.
