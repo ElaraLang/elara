@@ -23,6 +23,7 @@ import Elara.Emit.Error
 import Elara.Emit.Expr
 import Elara.Emit.Method (createMethod, createMethodWith)
 import Elara.Emit.Operator (translateOperatorName)
+import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
@@ -83,13 +84,14 @@ runInnerEmit ::
     ) =>
     QualifiedClassName ->
     i ->
-    Sem (Error EmitError : UniqueGen : State CLInitState : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
+    Sem (Error EmitError : UniqueGen : State CLInitState : Reader GenParams : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
     Sem r (a, CLInitState, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
     ((clinitState, a), attrs, inst) <-
         runCodeBuilder
             . runReader name
             . runReader version
+            . runReader defaultGenParams
             . runState @CLInitState (CLInitState (initialMethodCreationState name))
             . uniqueGenToIO
             . runErrorOrReport
@@ -114,7 +116,7 @@ emitModule m = do
         , clazz
         )
 
-addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r) => CoreModule -> Sem r ()
+addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreModule -> Sem r ()
 addDeclarationsAndMain m = do
     traverse_ addDeclaration (m ^. field @"declarations")
     when (isMainModule m) (addMethod (generateMainMethod m))
@@ -123,7 +125,7 @@ addClinit :: Member ClassBuilder r => CLInitState -> [CodeAttribute] -> [Instruc
 addClinit (CLInitState s) attrs code = do
     createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s code
 
-addDeclaration :: (InnerEmit r, Member CodeBuilder r) => CoreDeclaration -> Sem r ()
+addDeclaration :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
     CoreValue (NonRecursive (Id name type', e)) -> do
         let declName = translateOperatorName $ runIdentity (varRefVal name)
@@ -144,7 +146,7 @@ isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r) => ClassFileField -> JVMExpr -> Sem r ()
+addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => ClassFileField -> JVMExpr -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
     liftState $ generateInstructions e
 

@@ -4,6 +4,7 @@
 module Elara.Emit.Expr where
 
 import Control.Lens
+import Data.List (foldl)
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
@@ -12,6 +13,7 @@ import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Lambda
 import Elara.Emit.Operator
+import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState (thisClassName), findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
@@ -31,15 +33,9 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.Error
+import Polysemy.Reader
 import Polysemy.State
-import Print (debugPretty, showPretty)
-
-data GenParams = GenParams
-    {
-    }
-
-defaultGenParams :: GenParams
-defaultGenParams = GenParams
+import Print (debugColored, debugPretty, showPretty)
 
 generateInstructions ::
     ( HasCallStack
@@ -48,23 +44,11 @@ generateInstructions ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Error EmitError) r
+    , Member (Reader GenParams) r
     ) =>
     Expr JVMBinder ->
     Sem r ()
-generateInstructions v = generateInstructions' defaultGenParams v []
-
-generateInstructionsWith ::
-    ( HasCallStack
-    , Member (State MethodCreationState) r
-    , Member CodeBuilder r
-    , Member ClassBuilder r
-    , Member UniqueGen r
-    , Member (Error EmitError) r
-    ) =>
-    GenParams ->
-    Expr JVMBinder ->
-    Sem r ()
-generateInstructionsWith p v = generateInstructions' p v []
+generateInstructions v = generateInstructions' v []
 
 generateInstructions' ::
     ( HasCallStack
@@ -73,23 +57,23 @@ generateInstructions' ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Error EmitError) r
+    , Member (Reader GenParams) r
     ) =>
-    GenParams ->
     Expr JVMBinder ->
     [Type] ->
     Sem r ()
-generateInstructions' p (Var (JVMLocal 0)) _ = emit $ ALoad 0
-generateInstructions' p (Var (JVMLocal 1)) _ = emit $ ALoad 1
-generateInstructions' p (Var (JVMLocal 2)) _ = emit $ ALoad 2
-generateInstructions' p (Var (JVMLocal 3)) _ = emit $ ALoad 3
-generateInstructions' p (Lit s) _ = generateLitInstructions s >>= emit'
-generateInstructions' p (Var (Normal (Id (Global' v) _))) _
+generateInstructions' (Var (JVMLocal 0)) _ = emit $ ALoad 0
+generateInstructions' (Var (JVMLocal 1)) _ = emit $ ALoad 1
+generateInstructions' (Var (JVMLocal 2)) _ = emit $ ALoad 2
+generateInstructions' (Var (JVMLocal 3)) _ = emit $ ALoad 3
+generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
+generateInstructions' (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
-generateInstructions' p (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
+generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' p (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
+generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' p v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
+generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
     if typeIsValue t
         then
             if
@@ -106,7 +90,7 @@ generateInstructions' p v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tA
             FuncTy{} -> do
                 -- it's a method function, so we have to eta-expand it
                 cName <- gets (.thisClassName)
-                inst <- etaExpand v (stripForAll t) cName
+                inst <- etaExpand v (foldl' instantiate t tApps) cName
                 emit inst
             _ -> do
                 -- no args function (eg undefined)
@@ -116,31 +100,33 @@ generateInstructions' p v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tA
                         (translateOperatorName n)
                         (generateMethodDescriptor t)
                     )
-
+    params <- ask
     case tApps of
         [] -> pass
-        [t] -> emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
+        [t]
+            | params.checkCasts -> emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
+            | otherwise -> pass
         _ -> error "Multiple tApps for a single value... curious..."
-generateInstructions' p (Var v) _ = do
+generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
-generateInstructions' p (App f x) t = do
+generateInstructions' (App f x) t = do
     generateAppInstructions f x
-generateInstructions' p (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
+generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
-    generateInstructions' p val tApps
+    generateInstructions' val tApps
     emit $ AStore idx
-    generateInstructions' p b tApps
-generateInstructions' p (Match a b c) _ = generateCaseInstructions a b c
-generateInstructions' p (TyApp f t) tApps =
-    generateInstructions' p f (t : tApps) -- TODO
-generateInstructions' p (Lam (Normal (Id (Local' v) binderType)) body) _ = do
+    generateInstructions' b tApps
+generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
+generateInstructions' (TyApp f t) tApps =
+    generateInstructions' f (t : tApps) -- TODO
+generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
     inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
-generateInstructions' p (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
-generateInstructions' p other _ = error $ "Not implemented: " <> showPretty other
+generateInstructions' (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
+generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
     ( Member (State MethodCreationState) r
@@ -148,6 +134,7 @@ generateCaseInstructions ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Error EmitError) r
+    , Member (Reader GenParams) r
     ) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
@@ -245,6 +232,7 @@ generateAppInstructions ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Error EmitError) r
+    , Member (Reader GenParams) r
     ) =>
     JVMExpr ->
     JVMExpr ->
@@ -267,10 +255,12 @@ generateAppInstructions f x = do
                     emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
                     let instantiatedFType = foldr instantiate fType typeArgs
-                    instantiatedReturnType <- (^. _3 . to (.returnDesc)) <$> invokeStaticVars fName instantiatedFType
-                    case instantiatedReturnType of
-                        TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
-                        VoidReturn -> pass
+                    let instantiatedReturnType = generateReturnType instantiatedFType
+                    p <- ask @GenParams
+                    when p.checkCasts $
+                        case instantiatedReturnType of
+                            TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
+                            VoidReturn -> pass
                 else
                     if length args == arity - 1
                         then do
@@ -286,7 +276,7 @@ generateAppInstructions f x = do
     collectArgs (TyApp f t) (tArgs, args) = collectArgs f (t : tArgs, args)
     collectArgs f (tArgs, args) = (f, tArgs, args)
 
-invokeStaticVars :: Member (Error EmitError) r => UnlocatedVarRef Text -> Type -> Sem r (ClassInfoType, Text, MethodDescriptor)
+invokeStaticVars :: HasCallStack => Member (Error EmitError) r => UnlocatedVarRef Text -> Type -> Sem r (ClassInfoType, Text, MethodDescriptor)
 invokeStaticVars (Global' (Qualified fName mn)) fType =
     pure
         ( ClassInfoType $ createModuleName mn

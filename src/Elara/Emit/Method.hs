@@ -17,15 +17,17 @@ import JVM.Data.Analyse.StackMap
 
 import Elara.Data.Unique
 import Elara.Emit.Error
+import Elara.Emit.Params
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.Error
+import Polysemy.Reader
 import Polysemy.State (runState)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
-createMethod :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r) => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
+createMethod :: (Member ClassBuilder r, Member (Reader GenParams) r, Member UniqueGen r, Member (Error EmitError) r) => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
 createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
     let initialState = createMethodCreationState (length args) thisClassName
     ((mcState, _), codeAttrs, instructions) <-

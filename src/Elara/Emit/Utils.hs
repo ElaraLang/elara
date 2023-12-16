@@ -12,8 +12,13 @@ createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
 generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor
-generateMethodDescriptor (ForAllTy _ t) = generateMethodDescriptor t
-generateMethodDescriptor f@(FuncTy _ _) = do
+generateMethodDescriptor x = case generateMethodDescriptor' x of
+    Just y -> y
+    Nothing -> error $ "generateMethodDescriptor: " <> show x
+
+generateMethodDescriptor' :: HasCallStack => Type -> Maybe MethodDescriptor
+generateMethodDescriptor' (ForAllTy _ t) = generateMethodDescriptor' t
+generateMethodDescriptor' f@(FuncTy _ _) = do
     -- (a -> b) -> [a] -> [b] gets compiled to List<B> f(Func<A, B> f, List<A> l)
     let splitUpFunction :: Type -> NonEmpty Type
         splitUpFunction (FuncTy i o) = i <| splitUpFunction o
@@ -24,9 +29,15 @@ generateMethodDescriptor f@(FuncTy _ _) = do
         inputs = init allParts
         output = last allParts
 
-    MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
-generateMethodDescriptor t@(TyVarTy{}) = MethodDescriptor [] (TypeReturn $ generateFieldType t)
-generateMethodDescriptor o = error $ "generateMethodDescriptor: " <> show o
+    pure $ MethodDescriptor (generateFieldType <$> inputs) (generateReturnDescriptor output)
+generateMethodDescriptor' t@(TyVarTy{}) = Just $ MethodDescriptor [] (TypeReturn $ generateFieldType t)
+generateMethodDescriptor' _ = Nothing
+
+-- | Returns either the JVM type of the argument, or the JVM type of the return type, if it would compile to a method
+generateReturnType :: HasCallStack => Type -> ReturnDescriptor
+generateReturnType y = case generateMethodDescriptor' y of
+    Just (MethodDescriptor _ x) -> x
+    Nothing -> generateReturnDescriptor y
 
 generateReturnDescriptor :: Type -> ReturnDescriptor
 generateReturnDescriptor u | u == unitCon = VoidReturn
