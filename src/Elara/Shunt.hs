@@ -5,15 +5,15 @@
 
 module Elara.Shunt where
 
-import Control.Lens (over, to, traverseOf, (^.), _1)
+import Control.Lens (over, traverseOf, (^.), _1)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map (lookup)
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (Name (..), NameLike (fullNameText, nameText), Qualified (..), VarName (..), VarOrConName (..))
-import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
+import Elara.AST.Name (Name (..), Qualified (..), VarName (..), VarOrConName (..))
+import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed
 import Elara.AST.Select
@@ -31,7 +31,6 @@ import Polysemy (Members, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader hiding (Local)
 import Polysemy.Writer
-import Print (debugPretty, showPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
@@ -230,9 +229,9 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' Unit = pure Unit
     shuntExpr' (Var v) = pure (Var v)
     shuntExpr' (Constructor v) = pure (Constructor v)
-    shuntExpr' (Lambda n e) = Lambda n <$> shuntExpr e
-    shuntExpr' (FunctionCall f x) = FunctionCall <$> shuntExpr f <*> shuntExpr x
-    shuntExpr' (TypeApplication e t) = TypeApplication <$> shuntExpr e <*> pure (coerceType t)
+    shuntExpr' (Lambda n e) = Lambda n <$> fixExpr e
+    shuntExpr' (FunctionCall f x) = FunctionCall <$> fixExpr f <*> fixExpr x
+    shuntExpr' (TypeApplication e t) = TypeApplication <$> fixExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
         -- error (showPretty (operator,l,r))
         -- turn the binary operator into 2 function calls
@@ -243,8 +242,8 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         -- a `op` (b : T) -> (op a) (b : T)
         -- (a : T1) `op` (b : T2) -> (op (a : T1)) (b : T2)
 
-        l' <- shuntExpr l
-        r' <- shuntExpr r
+        l' <- fixExpr l
+        r' <- fixExpr r
         let op' = case operator ^. _Unwrapped . unlocated of
                 SymOp lopName -> Var (OperatorVarName <<$>> lopName) `withLocationOf` lopName
                 Infixed inName -> do
@@ -273,16 +272,16 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
                     , Nothing -- this will / can never have a type annotation
                     )
         pure (FunctionCall leftCall r')
-    shuntExpr' (List es) = List <$> traverse shuntExpr es
-    shuntExpr' (If cond then' else') = If <$> shuntExpr cond <*> shuntExpr then' <*> shuntExpr else'
-    shuntExpr' (Let vn _ e) = Let vn NoFieldValue <$> shuntExpr e
-    shuntExpr' (LetIn vn _ e body) = LetIn vn NoFieldValue <$> shuntExpr e <*> shuntExpr body
-    shuntExpr' (Block e) = Block <$> traverse shuntExpr e
+    shuntExpr' (List es) = List <$> traverse fixExpr es
+    shuntExpr' (If cond then' else') = If <$> fixExpr cond <*> fixExpr then' <*> fixExpr else'
+    shuntExpr' (Let vn _ e) = Let vn NoFieldValue <$> fixExpr e
+    shuntExpr' (LetIn vn _ e body) = LetIn vn NoFieldValue <$> fixExpr e <*> fixExpr body
+    shuntExpr' (Block e) = Block <$> traverse fixExpr e
     shuntExpr' (Match e cases) = do
-        e' <- shuntExpr e
-        cases' <- traverse (bitraverse shuntPattern shuntExpr) cases
+        e' <- fixExpr e
+        cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
-    shuntExpr' (Tuple es) = Tuple <$> traverse shuntExpr es
+    shuntExpr' (Tuple es) = Tuple <$> traverse fixExpr es
 
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
