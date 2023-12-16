@@ -1,7 +1,6 @@
 import Prelude 
 import Elara.Prim
 
-
 let part1 input = 
     let chars = input |> stringToList |> map charToInt |> filter (\x -> x /= -1)
     match chars with
