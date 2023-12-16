@@ -42,13 +42,15 @@ import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (
 import JVM.Data.JVMVersion
 import Polysemy
 import Polysemy.Error
+import Polysemy.Log (Log)
+import Polysemy.Log qualified as Log
 import Polysemy.Maybe
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
 import Print (debugPretty, showPretty)
 
-type Emit r = Members '[Reader JVMVersion, Embed IO, MaybeE, DiagnosticWriter (Doc AnsiStyle)] r
+type Emit r = Members '[Reader JVMVersion, Embed IO, MaybeE, DiagnosticWriter (Doc AnsiStyle), Log] r
 
 type InnerEmit r =
     Members
@@ -58,6 +60,7 @@ type InnerEmit r =
          , State CLInitState
          , UniqueGen
          , Error EmitError
+         , Log
          ]
         r
 
@@ -100,6 +103,7 @@ runInnerEmit name version x = do
 
 emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
 emitModule m = do
+    Log.debug $ "Emitting module " <> showPretty (m ^. field @"name") <> "..."
     let name = createModuleName (m ^. field' @"name")
     version <- ask
 
@@ -128,6 +132,7 @@ addClinit (CLInitState s) attrs code = do
 addDeclaration :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
     CoreValue (NonRecursive (Id name type', e)) -> do
+        Log.debug $ "Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "..."
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'
             then do

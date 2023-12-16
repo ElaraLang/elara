@@ -12,10 +12,11 @@ import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic)
 import Polysemy (Effect, Embed, Members, Sem, runM)
+import Polysemy.Log (DataLog, Log, interpretLogStdout')
 import Polysemy.Maybe (MaybeE, runMaybe)
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
-type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), Embed IO]
+type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), Log, Embed IO]
 
 type IsPipeline r = Members PipelineResultEff r
 
@@ -29,5 +30,6 @@ type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] 
 finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
 finalisePipeline =
     runM @IO
+        . interpretLogStdout'
         . runDiagnosticWriter
         . runMaybe
