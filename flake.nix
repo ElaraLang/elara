@@ -17,7 +17,6 @@
 
     megaparsec.url = "github:mrkkrp/megaparsec";
     megaparsec.flake = true;
-
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -45,6 +44,7 @@
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
             megaparsec.source = inputs.megaparsec;
+            polysemy-test.source = "0.9.0.0";
           };
 
           settings = {

@@ -10,6 +10,7 @@ flags:
 allow-newer: true
 allow-newer-deps:
   - polysemy-log
+  - hedgehog
 
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
