@@ -33,7 +33,7 @@ import Elara.TypeInfer.Monotype (
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Unique
 import Prettyprinter qualified as Pretty
-import Print (showPrettyUnannotated)
+import Print (showPretty, showPrettyUnannotated)
 
 {- $setup
 
@@ -109,6 +109,39 @@ data Type s
       Tuple {location :: s, tupleArguments :: NonEmpty (Type s)}
     deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
+class StructuralEq a where
+    structuralEq :: a -> a -> Bool
+
+instance StructuralEq s => StructuralEq [s] where
+    structuralEq :: [s] -> [s] -> Bool
+    structuralEq [] [] = True
+    structuralEq (x : xs) (y : ys) = x `structuralEq` y && xs `structuralEq` ys
+    structuralEq _ _ = False
+
+instance StructuralEq s => StructuralEq (NonEmpty s) where
+    structuralEq :: NonEmpty s -> NonEmpty s -> Bool
+    structuralEq (x :| xs) (y :| ys) = x `structuralEq` y && xs `structuralEq` ys
+
+instance StructuralEq (Type s) where
+    structuralEq :: Type s -> Type s -> Bool
+    structuralEq (VariableType _ name1) (VariableType _ name2) = name1 == name2
+    structuralEq (UnsolvedType _ existential1) (UnsolvedType _ existential2) = existential1 == existential2
+    structuralEq (Exists _ _ name1 domain1 type1) (Exists _ _ name2 domain2 type2) = name1 == name2 && domain1 == domain2 && structuralEq type1 type2
+    structuralEq (Forall _ _ name1 domain1 type1) (Forall _ _ name2 domain2 type2) = name1 == name2 && domain1 == domain2 && structuralEq type1 type2
+    structuralEq (Function _ input1 output1) (Function _ input2 output2) = structuralEq input1 input2 && structuralEq output1 output2
+    structuralEq (Optional _ type1) (Optional _ type2) = structuralEq type1 type2
+    structuralEq (List _ type1) (List _ type2) = structuralEq type1 type2
+    structuralEq (Record _ fields1) (Record _ fields2) = structuralEq fields1 fields2
+    structuralEq (Union _ alternatives1) (Union _ alternatives2) = structuralEq alternatives1 alternatives2
+    structuralEq (Scalar _ scalar1) (Scalar _ scalar2) = scalar1 == scalar2
+    structuralEq (Custom _ conName1 typeArguments1) (Custom _ conName2 typeArguments2) = conName1 == conName2 && typeArguments1 `structuralEq` typeArguments2
+    structuralEq (Tuple _ tupleArguments1) (Tuple _ tupleArguments2) = tupleArguments1 `structuralEq` tupleArguments2
+    structuralEq _ _ = False
+
+instance StructuralEq (Record s) where
+    structuralEq :: Record s -> Record s -> Bool
+    structuralEq (Fields fields1 remainingFields1) (Fields fields2 remainingFields2) = fields1 `structuralEq` fields2 && remainingFields1 == remainingFields2
+
 instance (Show c, ToJSON c) => ToJSON (Type c) where
     toJSON s = String (showPrettyUnannotated s)
 
@@ -169,6 +202,14 @@ instance Show s => Pretty (Record s) where
 data Union s = Alternatives [(UniqueTyVar, Type s)] RemainingAlternatives
     deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
+instance StructuralEq (Union s) where
+    structuralEq :: Union s -> Union s -> Bool
+    structuralEq (Alternatives alternatives1 remainingAlternatives1) (Alternatives alternatives2 remainingAlternatives2) = alternatives1 `structuralEq` alternatives2 && remainingAlternatives1 == remainingAlternatives2
+
+instance StructuralEq (UniqueTyVar, Type s) where
+    structuralEq :: (UniqueTyVar, Type s) -> (UniqueTyVar, Type s) -> Bool
+    structuralEq (name1, type1) (name2, type2) = name1 == name2 && structuralEq type1 type2
+
 instance (Show s, ToJSON s) => ToJSON (Union s)
 
 instance Show s => Pretty (Union s) where
@@ -227,11 +268,17 @@ thus this creates a type application - @id \@(List Integer)@. This function matc
 to determine the type of the type application, as naively we would instantiate it with @List Integer -> List Integer@,
 which is actually incorrect.
 -}
-applicableTyApp :: Show s => Type s -> Type s -> Type s
-applicableTyApp _ y@(UnsolvedType{}) = y
-applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = y
+applicableTyApp :: Show s => Type s -> Type s -> [Type s]
+applicableTyApp x y | x `structuralEq` y = []
+applicableTyApp _ y@(UnsolvedType{}) = [y]
+applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = [y]
 applicableTyApp (Forall{name, type_ = Function{input = VariableType{name = n}}}) Function{input = sIn}
-    | name == n = sIn
+    | name == n = [sIn]
+-- Instantiating forall x. y with forall z. y[x := z] doesn't create any instantiations
+applicableTyApp (Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
+    if type_ `structuralEq` substituteType name2 (VariableType{name = name, ..}) type2
+        then applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
+        else (VariableType{name = name2, ..}) : applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
 applicableTyApp x y = error $ "applicableTyApp: " <> showPrettyUnannotated x <> " & " <> showPrettyUnannotated y
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]

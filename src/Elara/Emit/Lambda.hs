@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 -- | Utility functions for creating JVM lambdas
 module Elara.Emit.Lambda where
 
@@ -9,6 +11,7 @@ import Elara.Emit.Error (EmitError)
 import Elara.Emit.Method
 import Elara.Emit.Utils (generateFieldType)
 import Elara.Emit.Var
+import Elara.ToCore
 import JVM.Data.Abstract.Builder (ClassBuilder)
 import JVM.Data.Abstract.ConstantPool (BootstrapArgument (BMMethodArg, BMMethodHandleArg), BootstrapMethod (BootstrapMethod), MethodHandleEntry (..), MethodRef (MethodRef))
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (MethodDescriptor), ReturnDescriptor (..))
@@ -34,7 +37,7 @@ functionalInterfaces =
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
 etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member Log r) => JVMExpr -> Type -> QualifiedClassName -> Sem r Instruction
-etaExpand funcCall (FuncTy i o) thisClassName = do
+etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = do
     Log.debug $ "Eta expanding " <> showPretty funcCall <> " into \\(x : " <> showPretty i <> ") -> " <> showPretty funcCall <> " x"
     param <- makeUnique "x"
     local (\x -> x{checkCasts = False}) $
@@ -46,7 +49,7 @@ etaExpand funcCall (FuncTy i o) thisClassName = do
                 funcCall -- f
                 (Var $ JVMLocal 0) -- x
             )
-etaExpand n t c = error $ "etaExpand called on non-function type: " <> show (n, t, c)
+etaExpand n t c = error $ "etaExpand called on non-function type: " <> showPretty (n, t, c)
 
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:

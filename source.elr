@@ -11,4 +11,4 @@ let part1 input =
 
 let main = 
     let contents = readFile "../input.txt"
-    contents `ioBind` (\contents -> contents |> map part1 |> sum |> print)
+    contents >>= (\contents -> contents |> map part1 |> sum |> print)

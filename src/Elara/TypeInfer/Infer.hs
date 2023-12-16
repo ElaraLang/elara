@@ -1404,11 +1404,14 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
             Type.Function{output}
                 | isFreeTypeVariable output -> do
                     _0 <- get
-                    pure $
-                        FunctionCall
-                            ( Expr (Located resultLoc (TypeApplication _A (Type.applicableTyApp completedFunctionType resultType)), resultType)
-                            )
-                            typedArgument
+                    case Type.applicableTyApp completedFunctionType resultType of
+                        [] -> pure $ FunctionCall _A typedArgument
+                        (tApp : _) ->
+                            pure $
+                                FunctionCall
+                                    ( Expr (Located resultLoc (TypeApplication _A tApp), resultType)
+                                    )
+                                    typedArgument
             _ -> do
                 pure $ FunctionCall _A typedArgument
 
@@ -1621,8 +1624,11 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
         case _At of
             Type.Forall{} | _At `Type.instantiate` t /= _At -> do
-                -- insert type application from instantiating the forall
-                pure $ Expr (Located exprLoc (TypeApplication _A (_At `Type.applicableTyApp` t)), _At `Type.instantiate` t)
+                case _At `Type.applicableTyApp` t of
+                    [] -> pure _A
+                    (tApp : _) ->
+                        -- insert type application from instantiating the forall
+                        pure $ Expr (Located exprLoc (TypeApplication _A tApp), _At `Type.instantiate` t)
             _ -> pure _A
 
 {- | This corresponds to the judgment:
