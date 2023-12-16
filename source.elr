@@ -7,7 +7,7 @@ let fact n =
 
 def part1 : String -> Int
 let part1 input = 
-    let chars = filter (\x -> x /= -1) (stringToList input |> (map charToInt))
+    let chars = input |> stringToList |> map charToInt |> filter (\x -> x /= -1)
     if isEmpty chars then 0 else
             let first = head chars
             let last = last chars
@@ -15,4 +15,4 @@ let part1 input =
 
 let main = 
     let contents = readFile "../input.txt"
-    contents `ioBind` (\contents -> sum (map part1 contents) |> print)
+    contents `ioBind` (\contents -> contents |> map part1 |> sum |> print)
