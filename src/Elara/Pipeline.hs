@@ -11,9 +11,10 @@ module Elara.Pipeline where
 import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, Members, Sem, runM)
-import Polysemy.Log (DataLog, Log, interpretLogStdout')
+import Polysemy (Effect, Embed, Members, Sem, raiseUnder, runM)
+import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel, setLogLevel)
 import Polysemy.Maybe (MaybeE, runMaybe)
+import Polysemy.Time.Interpreter.Ghc
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
 type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), Log, Embed IO]
@@ -30,6 +31,8 @@ type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] 
 finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
 finalisePipeline =
     runM @IO
-        . interpretLogStdout'
+        . interpretTimeGhc
+        . interpretLogStdoutLevel (Just Info)
+        . raiseUnder
         . runDiagnosticWriter
         . runMaybe

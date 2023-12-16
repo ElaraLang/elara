@@ -10,11 +10,11 @@ import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, positionToDiagnosePosition, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))

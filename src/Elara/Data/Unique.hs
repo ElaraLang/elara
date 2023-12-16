@@ -4,7 +4,6 @@
 module Elara.Data.Unique where
 
 import Control.Lens
-import Control.Lens.TH (makeLenses)
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
