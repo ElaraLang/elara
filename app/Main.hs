@@ -76,11 +76,12 @@ main = run `finally` cleanup
         putTextLn "\n"
         args <- getArgs
         env <- getEnvironment
+        let dumpParsed = "--dump-parsed" `elem` args || "ELARA_DUMP_PARSED" `elem` fmap fst env
         let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
-        s <- runElara dumpShunted dumpTyped dumpCore run
+        s <- runElara dumpParsed dumpShunted dumpTyped dumpCore run
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
@@ -95,14 +96,14 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-runElara :: Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
+runElara :: Bool -> Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
+runElara dumpParsed dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
-    prim <- loadModule "prim.elr"
-    source <- loadModule "source.elr"
-    prelude <- loadModule "prelude.elr"
+    prim <- loadModule dumpParsed "prim.elr"
+    source <- loadModule dumpParsed "source.elr"
+    prelude <- loadModule dumpParsed "prelude.elr"
 
     let graph = createGraph [prim, source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
@@ -138,12 +139,14 @@ createAndWriteFile path content = do
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
-loadModule :: IsPipeline r => FilePath -> Sem r (Module 'Desugared)
-loadModule fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
+loadModule :: IsPipeline r => Bool -> FilePath -> Sem r (Module 'Desugared)
+loadModule dumpParsed fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
 
     parsed <- parsePipeline moduleParser fp tokens
+    when dumpParsed $ do
+        liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".parsed.elr"
     runDesugarPipeline $ runDesugar $ desugar parsed
 
 processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
