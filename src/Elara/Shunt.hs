@@ -8,7 +8,7 @@ module Elara.Shunt where
 import Control.Lens (over, traverseOf, (^.), _1)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
-import Data.Map (lookup)
+import Data.Map qualified as Map
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
@@ -38,6 +38,9 @@ type OpTable = Map (IgnoreLocVarRef Name) OpInfo
 newtype Precedence = Precedence Int
     deriving (Show, Eq, Ord)
 
+instance Pretty Precedence where
+    pretty (Precedence i) = pretty i
+
 mkPrecedence :: Int -> Precedence
 mkPrecedence i
     | i < 0 = error "Precedence must be positive"
@@ -50,7 +53,10 @@ data OpInfo = OpInfo
     }
     deriving (Show, Eq, Ord)
 
-instance Pretty OpInfo
+instance Pretty OpInfo where
+    pretty (OpInfo p LeftAssociative) = Style.keyword "infixl" <+> pretty p
+    pretty (OpInfo p RightAssociative) = Style.keyword "infixr" <+> pretty p
+    pretty (OpInfo p NonAssociative) = Style.keyword "infix" <+> pretty p
 
 data Associativity
     = LeftAssociative
@@ -68,6 +74,13 @@ prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
 prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
     SymOp opName -> pretty (opName ^. unlocated)
     Infixed vn -> "`" <> pretty vn <> "`"
+
+prettyOpTable :: OpTable -> Doc AnsiStyle
+prettyOpTable table = brackets (vsep (map prettyOpInfo (Map.toList table)))
+  where
+    prettyOpInfo :: (IgnoreLocVarRef Name, OpInfo) -> Doc AnsiStyle
+    prettyOpInfo (opName, info) =
+        pretty info <+> pretty opName
 
 instance ReportableError ShuntError where
     report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
@@ -90,10 +103,10 @@ instance ReportableError ShuntWarning where
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
-                ( vcat
+                ( vsep
                     [ "Unknown precedence/associativity for operator" <+> prettyOp lop
                         <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. "
-                    , "Known Operators:" <+> pretty opTable
+                    , "Known Operators:" <+> prettyOpTable opTable
                     ]
                 )
                 [(opSrc, This "operator")]
@@ -101,8 +114,8 @@ instance ReportableError ShuntWarning where
 
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
 opInfo table operator = case operator ^. _Unwrapped . unlocated of
-    SymOp opName -> lookup (ignoreLocation (NOpName <$> opName ^. unlocated)) table
-    Infixed vn -> lookup (ignoreLocation (toName <$> vn)) table
+    SymOp opName -> Map.lookup (ignoreLocation (NOpName <$> opName ^. unlocated)) table
+    Infixed vn -> Map.lookup (ignoreLocation (toName <$> vn)) table
       where
         toName (VarName n) = NVarName (NormalVarName n)
         toName (ConName n) = NTypeName n
