@@ -5,6 +5,7 @@ module Elara.Emit.Expr where
 
 import Control.Lens
 import Data.List (foldl)
+import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
@@ -33,6 +34,8 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Raw.Types
 import Polysemy
 import Polysemy.Error
+import Polysemy.Log (Log)
+import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State
 import Print (debugColored, debugPretty, showPretty)
@@ -45,6 +48,7 @@ generateInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
+    , Member Log r
     ) =>
     Expr JVMBinder ->
     Sem r ()
@@ -58,6 +62,7 @@ generateInstructions' ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
+    , Member Log r
     ) =>
     Expr JVMBinder ->
     [Type] ->
@@ -74,6 +79,7 @@ generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String prim
 generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
+    Log.debug $ "Generating instructions for global variable: " <> showPretty v
     if typeIsValue t
         then
             if
@@ -100,13 +106,16 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
                         (translateOperatorName n)
                         (generateMethodDescriptor t)
                     )
-    params <- ask
-    case tApps of
-        [] -> pass
-        [t]
-            | params.checkCasts -> emit $ CheckCast (fieldTypeToClassInfoType (generateFieldType t))
-            | otherwise -> pass
-        _ -> error "Multiple tApps for a single value... curious..."
+                params <- ask
+                case tApps of
+                    [] -> pass
+                    [tApp]
+                        | params.checkCasts -> do
+                            let ft = fieldTypeToClassInfoType (generateFieldType tApp)
+                            emit $ CheckCast ft
+                            Log.debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
+                        | otherwise -> Log.debug $ "Skipping checkcast for " <> showPretty v
+                    _ -> error "Multiple tApps for a single value... curious..."
 generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
@@ -135,6 +144,7 @@ generateCaseInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
+    , Member Log r
     ) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
@@ -233,20 +243,26 @@ generateAppInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
+    , Member Log r
     ) =>
     JVMExpr ->
     JVMExpr ->
     Sem r ()
 generateAppInstructions f x = do
+    Log.debug $ "Generating instructions for function application: " <> showPretty f <> " " <> showPretty x
     let (f', typeArgs, args) = collectArgs f ([], [x])
+    Log.debug $ "Collected args: " <> showPretty args
+    Log.debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
         Left local -> do
+            Log.debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x
             emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         Right (fName, fType) -> do
             let arity = typeArity fType
+            Log.debug $ "Function is a global variable: " <> showPretty fName <> " with type " <> showPretty fType <> " and arity " <> show arity
             if length args == arity
                 then -- yippee, no currying necessary
                 do
@@ -254,13 +270,16 @@ generateAppInstructions f x = do
                     traverse_ generateInstructions args
                     emit $ uncurry3 InvokeStatic insts
                     -- After calling any function we always checkcast it otherwise generic functions will die
-                    let instantiatedFType = foldr instantiate fType typeArgs
+                    let instantiatedFType = foldl' instantiate fType typeArgs
                     let instantiatedReturnType = generateReturnType instantiatedFType
                     p <- ask @GenParams
-                    when p.checkCasts $
-                        case instantiatedReturnType of
-                            TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
-                            VoidReturn -> pass
+                    if p.checkCasts
+                        then do
+                            Log.debug $ "Checking cast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")" <> " with type " <> showPretty instantiatedReturnType
+                            case instantiatedReturnType of
+                                TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
+                                VoidReturn -> pass
+                        else Log.debug $ "Skipping checkcast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")"
                 else
                     if length args == arity - 1
                         then do

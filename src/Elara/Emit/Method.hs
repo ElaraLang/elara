@@ -21,14 +21,29 @@ import Elara.Emit.Params
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.Error
+import Polysemy.Log (Log)
+import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State (runState)
+import Print
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
 -}
-createMethod :: (Member ClassBuilder r, Member (Reader GenParams) r, Member UniqueGen r, Member (Error EmitError) r) => QualifiedClassName -> MethodDescriptor -> Text -> JVMExpr -> Sem r ()
+createMethod ::
+    ( Member ClassBuilder r
+    , Member (Reader GenParams) r
+    , Member Log r
+    , Member UniqueGen r
+    , Member (Error EmitError) r
+    ) =>
+    QualifiedClassName ->
+    MethodDescriptor ->
+    Text ->
+    JVMExpr ->
+    Sem r ()
 createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
+    Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor <> " and body " <> showPretty body
     let initialState = createMethodCreationState (length args) thisClassName
     ((mcState, _), codeAttrs, instructions) <-
         runCodeBuilder $

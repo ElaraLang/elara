@@ -12,6 +12,7 @@ import Polysemy.Error
 import Polysemy.State
 import Polysemy.Reader
 import Elara.Emit.Params
+import Polysemy.Log
 
 generateInstructions ::
     ( HasCallStack
@@ -20,7 +21,8 @@ generateInstructions ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Error EmitError) r
-    , Member (Reader GenParams) r
+    , Member (Reader GenParams) r,
+     Member Log r
     ) =>
     Expr JVMBinder ->
     Sem r ()

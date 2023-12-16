@@ -136,15 +136,19 @@ addDeclaration declBody = case declBody of
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'
             then do
-                let field = ClassFileField [FPublic, FStatic] declName (generateFieldType type') []
+                let fieldType = generateFieldType type'
+                let field = ClassFileField [FPublic, FStatic] declName fieldType []
+                Log.debug $ "Creating field " <> showPretty declName <> " of type " <> showPretty fieldType <> "..."
                 addField field
                 let e' = transformTopLevelLambdas e
                 addStaticFieldInitialiser field e'
             else do
                 let descriptor = generateMethodDescriptor type'
+                Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                 let y = transformTopLevelLambdas e
                 thisName <- ask @QualifiedClassName
                 createMethod thisName descriptor declName y
+        Log.debug $ "Emitted non-recursive declaration " <> showPretty name
     e -> error (showPretty e)
 
 isMainModule :: CoreModule -> Bool
@@ -153,10 +157,12 @@ isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 -- | Adds an initialiser for a static field to <clinit>
 addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => ClassFileField -> JVMExpr -> Sem r ()
 addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
+    Log.debug $ "Adding initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "..."
     liftState $ generateInstructions e
 
     cn <- ask @QualifiedClassName
     emit $ PutStatic (ClassInfoType cn) name fieldType
+    Log.debug $ "Added initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "."
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
 generateMainMethod :: CoreModule -> ClassFileMethod

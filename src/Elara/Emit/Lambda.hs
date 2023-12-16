@@ -19,7 +19,9 @@ import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type (ClassInfoType (ClassInfoType), FieldType (..))
 import Polysemy
 import Polysemy.Error
-import Print (debugPretty)
+import Polysemy.Log (Log)
+import Polysemy.Log qualified as Log
+import Print (debugPretty, showPretty)
 
 import Elara.Emit.Params
 import Polysemy.Reader
@@ -33,9 +35,9 @@ functionalInterfaces =
         ]
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
-etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r) => JVMExpr -> Type -> QualifiedClassName -> Sem r Instruction
+etaExpand :: (Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member Log r) => JVMExpr -> Type -> QualifiedClassName -> Sem r Instruction
 etaExpand funcCall (FuncTy i o) thisClassName = do
-    debugPretty ("Eta expanding" :: Text, funcCall, i, o)
+    Log.debug $ "Eta expanding " <> showPretty funcCall <> " into \\(x : " <> showPretty i <> ") -> " <> showPretty funcCall <> " x"
     param <- makeUnique "x"
     local (\x -> x{checkCasts = False}) $
         createLambda
@@ -54,12 +56,12 @@ This involves a few steps:
 2. Creates a bootstrap method that calls the LambdaMetaFactory to create the lambda
 3. Returns an invokedynamic instruction that calls the bootstrap method
 -}
-createLambda :: (Member ClassBuilder r, Member (Reader GenParams) r, Member UniqueGen r, Member (Error EmitError) r) => (Unique Text, FieldType) -> FieldType -> QualifiedClassName -> JVMExpr -> Sem r Instruction
+createLambda :: (Member ClassBuilder r, Member (Reader GenParams) r, Member UniqueGen r, Member (Error EmitError) r, Member Log r) => (Unique Text, FieldType) -> FieldType -> QualifiedClassName -> JVMExpr -> Sem r Instruction
 createLambda params returnType thisClassName body = do
     let lambdaMethodName = "lambda$" <> show (abs $ hash body)
-    debugPretty ("Creating lambda" :: Text, lambdaMethodName, body)
 
     let lambdaMethodDescriptor = MethodDescriptor [snd params] (TypeReturn returnType)
+    Log.debug $ "Creating lambda method " <> showPretty lambdaMethodName <> " with descriptor " <> showPretty lambdaMethodDescriptor
 
     let body' = replaceVar' (Local' $ fst params) (JVMLocal 0) body
 
@@ -101,4 +103,5 @@ createLambda params returnType thisClassName body = do
                 invoke
                 (MethodDescriptor [] (TypeReturn $ ObjectFieldType functionalInterface))
 
+    Log.debug $ "Created lambda " <> showPretty lambdaMethodName
     pure inst
