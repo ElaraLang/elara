@@ -59,7 +59,7 @@ ghc-options:
   - -Winaccessible-code
   - -Wincomplete-record-updates
   - -Wpartial-fields
-  - -Wnopartial-type-signatures 
+  - -Wno-partial-type-signatures 
   # - -Werror=missing-home-modules
   - -Widentities
   # - -Wmissing-export-lists
