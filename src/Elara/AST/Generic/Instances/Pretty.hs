@@ -44,6 +44,7 @@ instance
     , Pretty (CleanupLocated (ASTLocate' ast (Select "TypeVar" ast)))
     , Pretty (CleanupLocated (ASTLocate' ast (Select "DeclarationName" ast)))
     , Pretty (CleanupLocated (ASTLocate' ast (TypeDeclaration ast)))
+    , Pretty (Select "ValueTypeDef" ast)
     , Pretty valueType
     , ToMaybe (Select "ValueType" ast) (Maybe valueType)
     , valueType ~ UnwrapMaybe (Select "ValueType" ast)
@@ -73,6 +74,7 @@ instance
                         <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
              in prettyValueDeclaration n e typeOfE
         prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
+        prettyDB n (ValueTypeDef t) = prettyValueTypeDef n t
 
 instance Pretty (TypeDeclaration ast) where
     pretty _ = "TODO"

@@ -149,13 +149,16 @@ prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)
 
 prettyValueDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> a2 -> Maybe a3 -> Doc AnsiStyle
 prettyValueDeclaration name e expectedType =
-    let defLine = fmap (\t' -> "def" <+> pretty name <+> ":" <+> pretty t') expectedType
+    let defLine = prettyValueTypeDef name <$> expectedType
         rest =
             [ "let" <+> pretty name <+> "="
             , indent indentDepth (pretty e)
             , "" -- add a newline
             ]
      in vsep (maybeToList defLine <> rest)
+
+prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
+prettyValueTypeDef name t = "def" <+> pretty name <+> "=" <+> pretty t
 
 prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> Doc AnsiStyle
 prettyTypeDeclaration name vars t =
