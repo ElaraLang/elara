@@ -12,7 +12,7 @@ import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic)
 import Polysemy (Effect, Embed, Members, Sem, raiseUnder, runM)
-import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel, setLogLevel)
+import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel)
 import Polysemy.Maybe (MaybeE, runMaybe)
 import Polysemy.Time.Interpreter.Ghc
 

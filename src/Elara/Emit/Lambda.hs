@@ -2,8 +2,6 @@
 module Elara.Emit.Lambda where
 
 import Data.Hashable (hash)
-import Data.Map qualified as M
-import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Unique
@@ -11,7 +9,7 @@ import Elara.Emit.Error (EmitError)
 import Elara.Emit.Method
 import Elara.Emit.Utils (generateFieldType)
 import Elara.Emit.Var
-import JVM.Data.Abstract.Builder (ClassBuilder, addMethod)
+import JVM.Data.Abstract.Builder (ClassBuilder)
 import JVM.Data.Abstract.ConstantPool (BootstrapArgument (BMMethodArg, BMMethodHandleArg), BootstrapMethod (BootstrapMethod), MethodHandleEntry (..), MethodRef (MethodRef))
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (MethodDescriptor), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction (Instruction, Instruction' (InvokeDynamic))
@@ -21,7 +19,7 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 import Elara.Emit.Params
 import Polysemy.Reader

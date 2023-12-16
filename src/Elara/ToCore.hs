@@ -26,14 +26,12 @@ import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Error.Diagnose (Report (..))
 import Error.Diagnose.Report (Marker (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
-import Print (debugPretty, showPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -45,7 +43,7 @@ data ToCoreError
     | UnknownVariable !(Located (Qualified Name))
 
 instance ReportableError ToCoreError where
-    report (LetInTopLevel e) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
+    report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
@@ -57,6 +55,7 @@ instance ReportableError ToCoreError where
                 [ (sourceRegionToDiagnosePosition t.location, Where "Type declared / created here")
                 ]
                 []
+    report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
 
 type CtorSymbolTable = Map (Qualified Text) DataCon
 

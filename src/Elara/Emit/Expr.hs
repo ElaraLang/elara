@@ -4,7 +4,6 @@
 module Elara.Emit.Expr where
 
 import Control.Lens
-import Data.List (foldl)
 import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
@@ -21,7 +20,6 @@ import Elara.Emit.Var
 import Elara.Prim.Core
 import Elara.ToCore (stripForAll)
 import Elara.Utils (uncurry3)
-import GHC.Records (HasField)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
 import JVM.Data.Abstract.Descriptor (
@@ -38,7 +36,7 @@ import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State
-import Print (debugColored, debugPretty, showPretty)
+import Print (showPretty)
 
 generateInstructions ::
     ( HasCallStack

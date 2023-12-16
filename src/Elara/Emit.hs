@@ -9,11 +9,10 @@ This means that currying can be avoided in a lot of cases (through arity analysi
 module Elara.Emit where
 
 import Control.Lens hiding (List)
-import Control.Monad.State qualified as State
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)
-import Elara.Core (Bind (..), Type (..), Var (..))
+import Elara.Core (Bind (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
@@ -28,7 +27,6 @@ import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
 import Elara.Error (DiagnosticWriter, runErrorOrReport)
-import Elara.Prim.Core (intCon, ioCon, listCon, stringCon)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code hiding (code)
 import JVM.Data.Abstract.ClassFile
@@ -48,7 +46,7 @@ import Polysemy.Maybe
 import Polysemy.Reader
 import Polysemy.State
 import Polysemy.Writer (Writer, runWriter, tell)
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 type Emit r = Members '[Reader JVMVersion, Embed IO, MaybeE, DiagnosticWriter (Doc AnsiStyle), Log] r
 

@@ -5,7 +5,6 @@ module Elara.Emit.Method where
 import Data.List (maximum)
 import {-# SOURCE #-} Elara.Emit.Expr
 import Elara.Emit.State
-import Elara.Emit.Utils
 import Elara.Emit.Var (JVMExpr)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code
@@ -13,7 +12,6 @@ import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
-import JVM.Data.Analyse.StackMap
 
 import Elara.Data.Unique
 import Elara.Emit.Error
