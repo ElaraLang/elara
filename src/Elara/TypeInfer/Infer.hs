@@ -55,7 +55,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 import TODO
 
 -- | Type-checking state
@@ -1483,7 +1483,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         let process (pattern_, branch) = do
                 pattern' <- checkPattern pattern_ (Syntax.typeOf e')
-
                 branch' <-
                     -- check that the branch type matches the return type of the match
                     check branch (Type.UnsolvedType (branch ^. exprLocation) returnType)
@@ -1491,7 +1490,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         branches' <- traverse process branches
 
-        pure $ Expr (Located location (Match e' branches'), Syntax.typeOf e')
+        pure $ Expr (Located location (Match e' branches'), Type.UnsolvedType (e ^. exprLocation) returnType)
     Syntax.List (y : ys) -> do
         y'@(Expr (_, type_)) <- infer y
 
