@@ -5,7 +5,7 @@ let part1 input =
     let chars = input |> stringToList |> map charToInt |> filter (\x -> x /= -1)
     match chars with
         [] -> 0
-        (first::xs) ->
+        (first::forTechnicalReasonsThisCantBeAWildcard) ->
             let last = last chars
             (first * 10) + last
 
