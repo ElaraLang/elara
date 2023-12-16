@@ -93,16 +93,20 @@ spec = describe "Shunts operators correctly" $ do
         "(1 + 2)" `shouldShuntTo` res
     it "Shunts repeated operators into prefix calls" $ hedgehog $ do
         let res =
+                -- (+) (((+) 1) 2)) 3
                 functionCall
                     ( functionCall
+                        (var (stripLocation $ mkFakeVar "+"))
                         ( functionCall
-                            (var (stripLocation $ mkFakeVar "+"))
-                            (int 1)
+                            ( functionCall
+                                (var (stripLocation $ mkFakeVar "+"))
+                                (int 1)
+                            )
+                            (int 2)
                         )
-                        (int 2)
                     )
                     (int 3)
-        "1 + 2 + 3" `shouldShuntTo` res
+        "1 + 2 + 3" `shouldShuntTo` res -- becomes 1 + (2 + 3) which becomes (+) (((+) 1) 2)) 3
         "1 + (2) + 3" `shouldShuntTo` res
         "(1) + 2 + 3" `shouldShuntTo` res
         "(1) + (2) + (3)" `shouldShuntTo` res
