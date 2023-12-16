@@ -1,14 +1,12 @@
 import Prelude 
 import Elara.Prim
 
-def fact : Int -> Int
-let fact n = 
-    if n == 0 then 1 else n * fact (n - 1)
 
-def part1 : String -> Int
 let part1 input = 
     let chars = input |> stringToList |> map charToInt |> filter (\x -> x /= -1)
-    if isEmpty chars then 0 else
+    match chars with
+        [] -> 0
+        (x::xs) ->
             let first = head chars
             let last = last chars
             (first * 10) + last
