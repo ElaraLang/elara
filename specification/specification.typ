@@ -14,13 +14,12 @@
 Elara is a statically-typed multi-paradigm programming language targeting the JVM and based on the Hindley-Milner type system. It supports a succinct,
 Haskell-like syntax while preserving readability and ease of use.
 
-Elara focuses on the purely functional paradigm, but also supports Object Oriented
-programming and imperative programming.
+Elara focuses on the purely functional paradigm, with potential support for other paradigms in the future.
 
 Elara's notable features include:
 - Structural pattern matching with exhaustiveness checking
 - Type classes for polymorphism
-- Complete sound type inference with higher-kinded and higher-rank types
+- Complete sound type inference with (limited support for) higher-kinded and higher-rank types
 
 == Code Examples
 While all the following examples are syntactically correct, they may assume the existence of functions not provided in the examples in order to compile.
@@ -45,51 +44,119 @@ let main =
 
 === Custom Data Types
 Elara has a very flexible type system which allows for many different forms of data types to be defined. \
+==== Simple Type Aliases
+These are declared with the `type alias` keywords and simply provide a new name for an existing type.
 ```ocaml
-type Name = String // Simple type alias
+type alias Name = String
+```
 
-type Animal = Cat | Dog // Simple Discriminated Union
+Type aliases may have type parameters:
+```ocaml
+type alias Pair a b = (a, b)
+```
 
-type Person = { // Record Type
-    name : Name,
-    age : Int,
-}
+==== Algebraic Data Types
+Elara supports the 2 primary algebraic data types: sum types (discriminated unions) & product types (records).
 
-type RequestState = // Complex Discriminated Union with different constructor arities
-      Connected String
+===== Sum Types
+These are declared with the `type` keyword, followed by a list of constructors separated by `|` characters.
+
+```
+type Animal = Cat | Dog
+```
+This declares a sum type `Animal` with 2 constructors, `Cat` and `Dog`.
+
+Constructors may have parameters with different arities & signatures: 
+```ocaml
+type RequestState 
+    = Connected String
     | Pending
     | Failed Error
 
-type Option a = // Polymorphic (generic) data types
-      Some a
-    | None
-
-type Fix f = Fix (f (Fix f)) // Recursive, higher-kinded data types
-
-// Combination of multiple type features
-type JSONElement = 
-      JSONString String
-    | JSONNumber Int
-    | JSONNull
-    | JSONArray [JSONElement]
-    | JSONObject [{ // record syntax can be used anonymously
-        key : String,
-        value : JSONElement
-    }] 
 ```
 
-=== Pattern Matching on Data Types
+and like all types, may have type parameters: 
+```ocaml
+type Option a
+    = Some a
+    | None
+```
+
+===== Product Types
+Records are first-class and so require no special syntax to declare:
+```ocaml
+{ name: String, age: Int }
+```
+is a record type with 2 fields, `name` and `age`, of types `String` and `Int` respectively.
+
+It is often useful to assign `type alias`es to these types:
+```ocaml
+type alias Person = { // Record Type
+    name : Name,
+    age : Int,
+}
+```
+
+Instantiating records follows a very similar syntax, using `=` instead of `:`: 
+```ocaml
+def person : Person
+let person = { name = "Bob", age = 20 }
+```
+
+===== Building up Types
+By combining the two kinds of algebraic data types we may represent all kinds of complex data structures.
 
 ```ocaml
-type JSONElement =
-      JSONString String
+type Fix f = Fix (f (Fix f))
+```
+This defines a _higher-kinded type_ `Fix` as the fixed point of a functor. 
+For example, given a list type `List a`, `Fix List` is the same as writing `List (List (List ...))` infinitely many times.
+
+This is a slightly contrived example, but can be useful for representing recursive data structures such as trees.
+
+
+```ocaml
+type JSONElement
+    = JSONString String
     | JSONNumber Int
     | JSONNull
     | JSONArray [JSONElement]
     | JSONObject [{
         key : String,
         value : JSONElement
-    }]
+    }] 
+```
+This defines a type `JSONElement` which can represent any valid JSON value.
+
+For example, the JSON value ```json
+{
+    "foo": 1,
+    "bar": {
+        "baz": "hello"
+    }
+}
+``` would be represented as the following value:
+```ocaml
+def jsonObj : JSONElement
+let jsonObj =
+    JSONObject 
+        [ { key = "foo", value = JSONNumber 1 }
+        , { key = "bar", value = JSONObject [ { key = "baz", value = JSONString "hello" } ] }
+        ]
+```
+
+=== Pattern Matching on Data Types
+
+```ocaml
+type JSONElement
+    = JSONString String
+    | JSONNumber Int
+    | JSONNull
+    | JSONArray [JSONElement]
+    | JSONObject [{
+        key : String,
+        value : JSONElement
+    }] 
 
 let jsonToString elem = match elem with
     JSONNull -> "null"
@@ -104,7 +171,7 @@ let jsonToString elem = match elem with
 
 === Type Classes
 ```ocaml
-type String = [Char]
+type alias String = [Char]
 
 type class ToString a where
     toString : a -> String
@@ -116,7 +183,7 @@ instance ToString Char where
     toString c = [c]
 
 -- Impure function taking any s with an instance ToString s, returns Unit
-def print : ToString s => s -> IO () 
+def print : ToString s => s -> IO ()
 let print s = println (toString s)
 
 let main = 
