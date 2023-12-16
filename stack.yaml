@@ -7,7 +7,9 @@ flags:
   diagnose:
     megaparsec-compat: true
 
-allow-newer: false
+allow-newer: true
+allow-newer-deps:
+  - polysemy-log
 
 extra-deps:
 - git: git@github.com:ElaraLang/h2jvm.git
@@ -100,3 +102,7 @@ extra-deps:
 - th-compat-0.1.4@sha256:3e7d1b8f9c72cab04c8dfdfd26589dd7f31e015ad640a207aca3b654577532ff,3224
 - semigroups-0.20@sha256:925341e6f7eb104cb490bef06eab93bb7995c7c67c51ee938185a2ddefa7aaf2,6333
 - void-0.7.3@sha256:13d30f62fcdf065e595d679d4ac8b4b0c1bb1a1b73db7b5b5a8f857cb5c8a546,1857
+- polysemy-log-0.10.0.1@sha256:38be6ce94c82bd43d2dce7ebfe40be1a88fd4179f1ade1f6e652d8f373372b82,5700
+- polysemy-conc-0.13.0.1@sha256:6ef7737cce4a496bb5cdbda6a1a55cb89a2526c00e8c035a7d3b735c7d8ce9b5,5551
+- polysemy-time-0.6.0.2@sha256:0e719ae78639b5857835615b9d5423897111d5bdf084c6d0fcfc49b19cc0a143,3942
+- polysemy-resume-0.8.0.1@sha256:ede4c50bd8c84d01005e6e39c24a54c6a66b45198c47e99acc210d37eee6160d,3920

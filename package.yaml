@@ -33,6 +33,7 @@ dependencies:
   - prettyprinter-ansi-terminal
   - polysemy
   - polysemy-plugin
+  - polysemy-log
   - mtl
   - h2jvm
   - binary

@@ -158,6 +158,7 @@ library
     , mtl
     , parser-combinators
     , polysemy
+    , polysemy-log
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
@@ -210,6 +211,7 @@ executable elara
     , mtl
     , parser-combinators
     , polysemy
+    , polysemy-log
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
@@ -286,6 +288,7 @@ test-suite elara-test
     , neat-interpolation
     , parser-combinators
     , polysemy
+    , polysemy-log
     , polysemy-plugin
     , pretty-simple
     , prettyprinter
