@@ -111,7 +111,7 @@ spec = describe "Shunts operators correctly" $ do
         "(1) + 2 + 3" `shouldShuntTo` res
         "(1) + (2) + (3)" `shouldShuntTo` res
         "(1 + 2 + 3)" `shouldShuntTo` res
-        "(1 + (2 + 3))" `shouldShuntTo` res
+        "((1 + 2) + 3))" `shouldShuntTo` res
 
     it "Correctly re-shunts operators with different precedences" $ hedgehog $ do
         let res =

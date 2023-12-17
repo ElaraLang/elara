@@ -66,4 +66,4 @@ trippingParse x encode decode = do
         Left e -> do
             footnoteShow i
             withFrozenCallStack $ failWith Nothing $ errorBundlePretty (unWParseErrorBundle e)
-        Right y -> tripping x (const i) (const (Identity y))
+        Right y -> withFrozenCallStack $ tripping x (const i) (const (Identity y))

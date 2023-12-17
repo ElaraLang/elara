@@ -39,6 +39,7 @@ instance
 instance
     ( RUnlocate ast
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , (DataConAs (Select "InParens" ast) (Expr ast))
     ) =>
     Plated (Expr' ast)
     where
@@ -65,6 +66,9 @@ instance
                 BinaryOperator b ->
                     let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
                      in BinaryOperator . asDataCon <$> (((,,) op <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2)
+                InParens e ->
+                    let e' = dataConAs @(Select "InParens" ast) @(Expr ast) e
+                     in InParens . asDataCon <$> traverseOf traverseExpr f e'
 
 instance
     forall a (ast :: a).
@@ -93,3 +97,13 @@ instance
     , (Data (Type' ast))
     ) =>
     Plated (Type' ast)
+
+deriving instance
+    forall a (ast :: a).
+    (Typeable a, Typeable ast, Data (ASTLocate ast (BinaryOperator' ast))) =>
+    Data (BinaryOperator ast)
+
+deriving instance
+    forall a (ast :: a).
+    (Typeable a, Typeable ast, Data (Select "Infixed" ast), Data (ASTLocate ast (Select "SymOp" ast))) =>
+    Data (BinaryOperator' ast)
