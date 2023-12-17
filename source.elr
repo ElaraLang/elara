@@ -8,7 +8,9 @@ let part1 input =
         (first::forTechnicalReasonsThisCantBeAWildcard) ->
             let last = last chars
             (first * 10) + last
+def run : [String] -> Int
+let run = map part1 >> sum
 
 let main = 
     let contents = readFile "../input.txt"
-    contents >>= (\contents -> contents |> map part1 |> sum |> print)
+    contents >>= (run >> print)

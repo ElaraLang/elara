@@ -43,5 +43,6 @@ let readFile = elaraPrimitive "readFile"
 def ioBind : IO a -> (a -> IO b) -> IO b
 let ioBind = elaraPrimitive "ioBind"
 
+infixl 1 >>=
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) x y = ioBind x y

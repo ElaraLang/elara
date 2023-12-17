@@ -28,12 +28,13 @@ import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
-import Polysemy (Member, Members, Sem)
+import Polysemy (Member, Members, Sem, subsume_)
 import Polysemy.Error (Error, throw)
+import Polysemy.Log qualified as Log
 import Polysemy.Reader hiding (Local)
 import Polysemy.State (State, execState, modify)
 import Polysemy.Writer hiding (pass)
-import Print (debugColored, debugPretty)
+import Print (showPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
@@ -136,20 +137,23 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
 fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
-fixOperators opTable = reassoc
+fixOperators opTable o = do
+    Log.debug $ "fixOperators: " <> showPretty o
+    reassoc o
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
     withLocationOf' s repl = over (_Unwrapped . _1) (repl <$) s
 
     reassoc :: RenamedExpr -> Sem r RenamedExpr
     reassoc e@(InExpr' loc (BinaryOperator (operator, l, r))) = do
-        l' <- reassoc l
-        r' <- reassoc r
+        l' <- fixOperators opTable l
+        r' <- fixOperators opTable r
         withLocationOf' e <$> reassoc' loc operator l' r'
     reassoc e = pure e
 
     reassoc' :: SourceRegion -> RenamedBinaryOperator -> RenamedExpr -> RenamedExpr -> Sem r RenamedExpr'
     reassoc' sr o1 e1 r@(InExpr (BinaryOperator (o2, e2, e3))) = do
+        Log.debug $ "reassoc': " <> showPretty (o1, e1, r)
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
         case compare info1.precedence info2.precedence of
@@ -175,8 +179,8 @@ fixOperators opTable = reassoc
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
-type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
+type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Log.Log]
+type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable, Log.Log]
 
 runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
 runShuntPipeline s =
@@ -184,6 +188,7 @@ runShuntPipeline s =
         (warnings, a) <-
             runWriter
                 . runErrorOrReport
+                . subsume_
                 $ s
         traverse_ report warnings
         pure a
