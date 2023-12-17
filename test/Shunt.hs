@@ -27,14 +27,14 @@ import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
 
 loadExpr :: Text -> PipelineRes (Expr 'Shunted)
-loadExpr source = finalisePipeline . runShuntPipeline fakeOperatorTable . runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
+loadExpr source = finalisePipeline . runShuntPipeline . runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp tokens
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
     renamed <- runReader Nothing $ renameExpr desugared
-    fixExpr renamed
+    runReader fakeOperatorTable $ fixExpr renamed
 
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (generatedLocated Nothing (Qualified (OperatorVarName name) "ShuntTests"))

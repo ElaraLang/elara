@@ -52,13 +52,13 @@ completeInference x = do
     completeExpression ctx x
 
 inferFully :: ToString a => a -> PipelineRes TypedExpr
-inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline mempty . runParsePipeline . runLexPipeline $ do
+inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp tokens
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
     renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ renameExpr desugared)
-    shunted <- shuntExpr renamed
+    shunted <- runReader mempty $ shuntExpr renamed
     inferExpression shunted Nothing >>= completeInference
 
 errorToIOFinal' :: forall e r a. (Member (Final IO) r, Exception e) => Sem (Error e ': r) a -> Sem r a
