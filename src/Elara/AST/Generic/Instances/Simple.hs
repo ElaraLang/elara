@@ -28,7 +28,6 @@ deriving instance
     , (Eq (Select "PatternType" ast))
     , (Eq (Select "BinaryOperator" ast))
     , Eq (Select "TypeApplication" ast)
-    , Eq (Select "" ast)
     , Eq (ASTLocate ast (Expr' ast))
     , Eq (ASTLocate ast (Pattern' ast))
     , Eq (Type ast)
