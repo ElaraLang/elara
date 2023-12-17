@@ -130,6 +130,8 @@ deriving instance
     , Show (Select "ExprType" ast)
     , Show (ASTLocate ast (Select "TypeVar" ast))
     , Show (ASTLocate ast (Expr' ast))
+    , Show (ASTLocate ast Int)
+    , Show (ASTLocate ast AssociativityDecl)
     , Show (ASTLocate ast (TypeDeclaration ast))
     ) =>
     Show (DeclarationBody' ast)

@@ -5,13 +5,15 @@ import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendDeclaration, FrontendTypeDeclaration)
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (ModuleName, Name (..))
+import Elara.AST.Name (ModuleName, Name (..), ToName (..))
 import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Expression (letPreamble)
+import Elara.Parse.Error
+import Elara.Parse.Expression (letPreamble, operator)
+import Elara.Parse.Literal (integerLiteral)
 import Elara.Parse.Names
-import Elara.Parse.Primitives (Parser, fmapLocated, located, token_)
+import Elara.Parse.Primitives (Parser, fmapLocated, located, token, token_, withPredicate)
 import Elara.Parse.Type (type', typeNotApplication)
 import Text.Megaparsec (choice)
 
@@ -21,6 +23,7 @@ declaration n =
         [ letDec n
         , defDec n
         , typeDeclaration n
+        , infixDecl n
         ]
 
 defDec :: Located ModuleName -> Parser FrontendDeclaration
@@ -61,6 +64,22 @@ typeDeclaration modName = fmapLocated Declaration $ do
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
         value = DeclarationBody $ Located valueLocation (TypeDeclaration args body)
     pure (Declaration' modName (NTypeName <$> name) value)
+
+infixDecl :: Located ModuleName -> Parser FrontendDeclaration
+infixDecl modName = fmapLocated Declaration $ do
+    assoc <- located (LeftAssoc <$ token TokenInfixL <|> RightAssoc <$ token TokenInfixR <|> NonAssoc <$ token TokenInfix)
+    prec <-
+        withPredicate
+            (\prec -> (prec ^. unlocated) >= 0 && (prec ^. unlocated) <= 10)
+            InfixPrecTooHigh
+            (located integerLiteral)
+    name <- located operator
+    let valueLocation = sconcat (assoc ^. sourceRegion :| [prec ^. sourceRegion, name ^. sourceRegion])
+        value = DeclarationBody $ Located valueLocation (InfixDecl (fromInteger <$> prec) assoc)
+        declName = case name ^. unlocated of
+            MkBinaryOperator (Located _ (SymOp sym)) -> toName <$> sym
+            MkBinaryOperator (Located _ (Infixed x)) -> toName <$> x
+    pure (Declaration' modName declName value)
 
 -- | ADT declarations
 adt :: Parser FrontendTypeDeclaration

@@ -18,11 +18,14 @@ let charToInt c =
     else if c == '9' then 9
     else -1
 
+infixr 5 ++
 def (++) : [a] -> [a] -> [a]
 let (++) a b = 
     match a with
       [] -> b
       (x::xs) -> x :: (xs ++ b)
+
+
 
 def reverse : [a] -> [a]
 let reverse a = 

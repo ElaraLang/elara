@@ -29,6 +29,7 @@ module Elara.AST.Generic.Types (
     TypeDeclaration (..),
     Declaration (..),
     Declaration' (..),
+    AssociativityDecl (..),
     typeOf,
     patternTypeOf,
     RUnlocate (..),
@@ -94,6 +95,12 @@ data Expr' (ast :: a)
     | Block (NonEmpty (Expr ast))
     | Tuple (NonEmpty (Expr ast))
     deriving (Generic)
+
+data AssociativityDecl
+    = LeftAssoc
+    | RightAssoc
+    | NonAssoc
+    deriving (Generic, Show, Eq)
 
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
     deriving (Generic, Typeable)
@@ -164,6 +171,8 @@ data DeclarationBody' (ast :: a)
       TypeDeclaration
         [ASTLocate ast (Select "TypeVar" ast)]
         (ASTLocate ast (TypeDeclaration ast))
+    | -- | infix[l/r] <prec> <name>
+      InfixDecl (ASTLocate ast Int) (ASTLocate ast AssociativityDecl)
     deriving (Generic)
 
 data TypeDeclaration ast

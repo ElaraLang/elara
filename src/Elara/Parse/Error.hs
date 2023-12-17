@@ -26,6 +26,7 @@ data ElaraParseError
     = KeywordUsedAsName (Located (MaybeQualified VarName))
     | EmptyRecord SourceRegion
     | EmptyLambda SourceRegion
+    | InfixPrecTooHigh (Located Integer)
     deriving (Eq, Show, Ord)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]

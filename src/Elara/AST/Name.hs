@@ -86,6 +86,9 @@ class NameLike name where
 class ToName name where
     toName :: name -> Name
 
+instance ToName VarOrConName where
+    toName (VarName n) = NVarName (NormalVarName n)
+    toName (ConName n) = NTypeName n
 instance ToName VarName where
     toName = NVarName
 
@@ -97,6 +100,12 @@ instance ToName OpName where
 
 instance ToName Name where
     toName = identity
+
+instance ToName n => ToName (MaybeQualified n) where
+    toName (MaybeQualified n _) = toName n
+
+instance ToName n => ToName (Qualified n) where
+    toName (Qualified n _) = toName n
 
 instance NameLike VarName where
     nameText (NormalVarName name) = nameText name
