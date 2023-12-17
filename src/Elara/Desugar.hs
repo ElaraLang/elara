@@ -22,9 +22,8 @@ import Elara.Utils (curry3)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error (Error, throw)
-import Polysemy.State (State, evalState)
+import Polysemy.State (State, evalState, get)
 import Polysemy.State.Extra
-import Print (debugColored)
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
@@ -74,6 +73,7 @@ runDesugarPipeline =
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration
     }
+    deriving (Show, Pretty)
 
 {- | A partial declaration stores a desugared part of a declaration
 This allows merging of declarations with the same name
@@ -119,11 +119,11 @@ partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
 partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
 
 instance Pretty PartialDeclaration where
-    pretty (JustDef n _ _ _) = pretty n
-    pretty (JustLet n _ _ _) = pretty n
-    pretty (JustInfix n _ _) = pretty n
-    pretty (AllDecl n _ _ _ _) = pretty n
-    pretty (Immediate n _) = pretty n
+    pretty (JustDef n _ _ _) = "JustDef" <+> pretty n
+    pretty (JustLet n _ _ _) = "JustLet" <+> pretty n
+    pretty (JustInfix n _ _) = "JustInfix" <+> pretty n
+    pretty (AllDecl n _ _ _ _) = "All" <+> pretty n
+    pretty (Immediate n _) = "Immediate" <+> pretty n
 
 makeLenses ''DesugarState
 
@@ -164,6 +164,7 @@ assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 == n2 then pure n2 else throw 
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
 resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throw (DuplicateAnnotations a b)
+resolveDupeInfixes (Just (ValueDeclAnnotations a)) (Just (ValueDeclAnnotations b)) = pure (ValueDeclAnnotations (a <|> b))
 resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b))
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration

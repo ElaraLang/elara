@@ -62,6 +62,8 @@ type instance Select "ValueType" 'Shunted = Maybe ShuntedType
 
 type instance Select "ValueTypeDef" 'Shunted = DataConCantHappen
 
+type instance Select "InfixDecl" 'Shunted = DataConCantHappen
+
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Shunted = Qualified Name
 

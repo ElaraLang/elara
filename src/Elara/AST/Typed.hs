@@ -56,6 +56,7 @@ type instance Select "ValuePatterns" 'Typed = NoFieldValue
 type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the expression rather than declarations now
 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
+type instance Select "InfixDecl" 'Typed = DataConCantHappen
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name

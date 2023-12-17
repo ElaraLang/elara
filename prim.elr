@@ -21,6 +21,7 @@ let (==) = elaraPrimitive "=="
 def toString : a -> String
 let toString = elaraPrimitive "toString"
 
+infixr 5 `cons`
 def cons : a -> [a] -> [a]
 let cons = elaraPrimitive "cons"
 

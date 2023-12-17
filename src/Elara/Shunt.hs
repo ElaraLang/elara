@@ -13,7 +13,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
 import Elara.AST.Name (Name (..), Qualified (..), VarName (..), VarOrConName (..))
-import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated, withLocationOf)
 import Elara.AST.Region qualified as Located
 import Elara.AST.Renamed
 import Elara.AST.Select
@@ -21,16 +21,19 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (ReportableError (..), runErrorOrReport)
 import Elara.Error.Codes qualified as Codes
 import Elara.Error.Effect (writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
-import Polysemy (Members, Sem)
+import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, throw)
 import Polysemy.Reader hiding (Local)
-import Polysemy.Writer
+import Polysemy.State (State, execState, modify)
+import Polysemy.Writer hiding (pass)
+import Print (debugColored, debugPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
@@ -172,29 +175,62 @@ fixOperators opTable = reassoc
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
+type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
+type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
-runShuntPipeline :: IsPipeline r => OpTable -> Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
-runShuntPipeline opTable s =
+runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
+runShuntPipeline s =
     do
         (warnings, a) <-
-            runReader opTable
-                . runWriter
+            runWriter
                 . runErrorOrReport
                 $ s
         traverse_ report warnings
         pure a
 
+createOpTable :: IsPipeline r => Maybe OpTable -> TopologicalGraph (Module 'Renamed) -> Sem r OpTable
+createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
+    traverseGraph_ addDeclsToOpTable graph
+  where
+    addDeclsToOpTable :: Member (State OpTable) r => Module 'Renamed -> Sem r ()
+    addDeclsToOpTable = traverseModule_ addDeclsToOpTable'
+
+    addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Sem r ()
+    addDeclsToOpTable' (Declaration (Located _ decl)) = do
+        let declName = Global $ IgnoreLocation $ decl ^. field' @"name"
+        case decl ^. field' @"body" . _Unwrapped . unlocated of
+            Value{_valueAnnotations = (ValueDeclAnnotations (Just fixity))} -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
+            TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity)) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
+            _ -> pass
+
+infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
+infixDeclToOpInfo (InfixDeclaration prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+  where
+    convAssoc LeftAssoc = LeftAssociative
+    convAssoc RightAssoc = RightAssociative
+    convAssoc NonAssoc = NonAssociative
+
+shuntGraph ::
+    forall r.
+    IsPipeline r =>
+    Members ShuntPipelineEffects r =>
+    Maybe OpTable ->
+    TopologicalGraph (Module Renamed) ->
+    Sem r (TopologicalGraph (Module Shunted))
+shuntGraph prevOpTable graph = do
+    opTable <- createOpTable prevOpTable graph
+    runReader opTable $ traverseGraph shunt graph
+
 shunt ::
     forall r.
-    Members ShuntPipelineEffects r =>
+    Members InnerShuntPipelineEffects r =>
     Module 'Renamed ->
     Sem r (Module 'Shunted)
 shunt = traverseModule shuntDeclaration
 
 shuntDeclaration ::
     forall r.
-    Members ShuntPipelineEffects r =>
+    Members InnerShuntPipelineEffects r =>
     RenamedDeclaration ->
     Sem r ShuntedDeclaration
 shuntDeclaration (Declaration decl) =
@@ -209,7 +245,7 @@ shuntDeclaration (Declaration decl) =
 
 shuntDeclarationBody ::
     forall r.
-    Members ShuntPipelineEffects r =>
+    Members InnerShuntPipelineEffects r =>
     RenamedDeclarationBody ->
     Sem r ShuntedDeclarationBody
 shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
@@ -218,10 +254,10 @@ shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlo
     shuntDeclarationBody' (Value e _ ty ann) = do
         shunted <- fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value shunted NoFieldValue ty' _)
-    shuntDeclarationBody' (TypeDeclaration vars ty ann) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty) _)
+        pure (Value shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
+    shuntDeclarationBody' (TypeDeclaration vars ty ann) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
 
-fixExpr :: Members ShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
+fixExpr :: Members InnerShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
 fixExpr e = do
     opTable <- ask
     fixed <- fixOperators opTable e
@@ -229,7 +265,7 @@ fixExpr e = do
 
 shuntExpr ::
     forall r.
-    Members ShuntPipelineEffects r =>
+    Members InnerShuntPipelineEffects r =>
     RenamedExpr ->
     Sem r ShuntedExpr
 shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le

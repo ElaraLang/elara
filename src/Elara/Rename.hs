@@ -36,6 +36,7 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
+import Print (debugPretty)
 import TODO (todo)
 
 data RenameError

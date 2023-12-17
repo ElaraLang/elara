@@ -208,6 +208,9 @@ instance Applicative Located where
 instance Pretty a => Pretty (Located a) where
     pretty (Located _ x) = pretty x
 
+instance Pretty a => Pretty (IgnoreLocation a) where
+    pretty (IgnoreLocation x) = pretty x
+
 instance Eq a => Eq (IgnoreLocation a) where
     IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
 

@@ -55,6 +55,8 @@ type instance Select "ValueTypeDef" 'Renamed = DataConCantHappen
 type instance Select "ValueDeclAnnotations" 'Renamed = RenamedValueDeclAnnotations
 type instance Select "TypeDeclAnnotations" 'Renamed = RenamedTypeDeclAnnotations
 
+type instance Select "InfixDecl" 'Renamed = DataConCantHappen
+
 newtype RenamedValueDeclAnnotations = RenamedValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration Renamed)
     }

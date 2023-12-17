@@ -12,7 +12,7 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (Each (each), toListOf, traverseOf, (^.))
+import Control.Lens (Each (each), toListOf, traverseOf, traverseOf_, (^.))
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Generic
@@ -67,6 +67,14 @@ traverseModule traverseDecl =
             let imports' = coerceImport <$> (m' ^. field' @"imports")
             declarations' <- traverse traverseDecl (m' ^. field' @"declarations")
             pure (Module' (m' ^. field' @"name") exposing' imports' declarations')
+        )
+
+traverseModule_ :: _ => (a4 -> f ()) -> s1 -> f ()
+traverseModule_ traverseDecl =
+    traverseOf_
+        (_Unwrapped . unlocated)
+        ( \m' -> do
+            traverse_ traverseDecl (m' ^. field' @"declarations")
         )
 
 {- | "Safe" coercion between 'Exposition' types

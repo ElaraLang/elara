@@ -45,6 +45,7 @@ instance
     , Pretty (CleanupLocated (ASTLocate' ast (Select "DeclarationName" ast)))
     , Pretty (CleanupLocated (ASTLocate' ast (TypeDeclaration ast)))
     , Pretty (Select "ValueTypeDef" ast)
+    , Pretty (Select "InfixDecl" ast)
     , Pretty valueType
     , ToMaybe (Select "ValueType" ast) (Maybe valueType)
     , valueType ~ UnwrapMaybe (Select "ValueType" ast)
@@ -66,15 +67,16 @@ instance
         -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
         -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
-        prettyDB n (Value e@(Expr (_, t)) _ t' _) =
+        prettyDB n (Value e@(Expr (_, t)) _ t' ann) =
             let typeOfE =
                     UnknownPretty
                         <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
                             <|> UnknownPretty
                         <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
-             in prettyValueDeclaration n e typeOfE
-        prettyDB n (TypeDeclaration vars t _) = prettyTypeDeclaration n vars t
+             in prettyValueDeclaration n e typeOfE ann
+        prettyDB n (TypeDeclaration vars t ann) = prettyTypeDeclaration n vars t ann
         prettyDB n (ValueTypeDef t) = prettyValueTypeDef n t
+        prettyDB n (InfixDecl f) = pretty f <+> pretty n
 
 instance Pretty (TypeDeclaration ast) where
     pretty _ = "TODO"
