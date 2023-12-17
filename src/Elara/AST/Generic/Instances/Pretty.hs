@@ -104,6 +104,7 @@ instance
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , (DataConAs (Select "InParens" ast) (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr ast)
@@ -135,6 +136,7 @@ prettyExpr ::
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , (DataConAs (Select "InParens" ast) (Expr ast))
     , (?contextFree :: Bool, ?withType :: Bool)
     , RUnlocate ast
     ) =>
@@ -169,6 +171,7 @@ instance
     , (StripLocation (CleanupLocated (ASTLocate' ast (Expr' ast))) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , (DataConAs (Select "InParens" ast) (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr' ast)
@@ -201,6 +204,7 @@ prettyExpr' ::
     , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
+    , (DataConAs (Select "InParens" ast) (Expr ast))
     , RUnlocate ast
     ) =>
     Expr' ast ->
@@ -225,6 +229,9 @@ prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)
 prettyExpr' (BinaryOperator b) =
     let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
      in prettyBinaryOperatorExpr e1 op e2
+prettyExpr' (InParens e) =
+    let e' = dataConAs @(Select "InParens" ast) @(Expr ast) e
+     in parens (prettyExpr e')
 
 instance
     ( Pretty a1

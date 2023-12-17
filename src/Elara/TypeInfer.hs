@@ -9,7 +9,6 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Data.Traversable (for)
 import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic

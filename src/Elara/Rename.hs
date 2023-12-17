@@ -413,6 +413,7 @@ renameExpr (Expr le) =
         cases' <- traverse (bitraverse renamePattern renameExpr) cases
         pure $ Match e' cases'
     renameExpr' (Tuple es) = Tuple <$> traverse renameExpr es
+    renameExpr' (InParens e) = InParens <$> renameExpr e
     renameExpr' (Let{}) = error "renameExpr': Let should be handled by renameExpr"
     renameExpr' (Block{}) = error "renameExpr': Block should be handled by renameExpr"
 

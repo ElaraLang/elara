@@ -100,6 +100,7 @@ data Expr' (ast :: a)
         (Expr ast)
     | Block (NonEmpty (Expr ast))
     | Tuple (NonEmpty (Expr ast))
+    | InParens !(Select "InParens" ast)
     deriving (Generic)
 
 data InfixDeclaration ast = InfixDeclaration

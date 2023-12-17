@@ -22,7 +22,7 @@ import Elara.Utils (curry3)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error (Error, throw)
-import Polysemy.State (State, evalState, get)
+import Polysemy.State (State, evalState)
 import Polysemy.State.Extra
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
@@ -53,7 +53,7 @@ instance ReportableError DesugarError where
                 ]
     report (PartialNamesNotEqual a b) =
         writeReport $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
-    report (InfixWithoutDeclaration n sr l) =
+    report (InfixWithoutDeclaration n _ l) =
         writeReport $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
     report (DuplicateAnnotations a b) =
         writeReport $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
@@ -282,6 +282,7 @@ desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desug
         pure (LetIn n NoFieldValue (foldLambda pats' e') body')
     desugarExpr' (Block e) = Block <$> traverse desugarExpr e
     desugarExpr' (Tuple e) = Tuple <$> traverse desugarExpr e
+    desugarExpr' (InParens e) = InParens <$> desugarExpr e
 
 desugarBinaryOperator :: FrontendBinaryOperator -> Desugar DesugaredBinaryOperator
 desugarBinaryOperator (MkBinaryOperator lop) = MkBinaryOperator <$> traverseOf unlocated desugarBinaryOperator' lop

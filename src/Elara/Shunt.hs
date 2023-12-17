@@ -145,6 +145,9 @@ fixOperators opTable o = do
     withLocationOf' s repl = over (_Unwrapped . _1) (repl <$) s
 
     reassoc :: RenamedExpr -> Sem r RenamedExpr
+    reassoc (Expr (Located l (InParens e), t)) = do
+        e' <- reassoc e
+        pure (Expr (Located l (InParens e'), t))
     reassoc e@(InExpr' loc (BinaryOperator (operator, l, r))) = do
         l' <- fixOperators opTable l
         r' <- fixOperators opTable r
@@ -273,7 +276,8 @@ shuntExpr ::
     Members InnerShuntPipelineEffects r =>
     RenamedExpr ->
     Sem r ShuntedExpr
-shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le
+shuntExpr (Expr (le, t)) = do
+    (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le
   where
     shuntExpr' :: RenamedExpr' -> Sem r ShuntedExpr'
     shuntExpr' (Int l) = pure (Int l)
@@ -336,7 +340,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
     shuntExpr' (Tuple es) = Tuple <$> traverse fixExpr es
-
+    shuntExpr' (InParens e) = (^. _Unwrapped . _1 . unlocated) <$> fixExpr e
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
   where
