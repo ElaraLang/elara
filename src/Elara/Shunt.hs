@@ -69,7 +69,7 @@ data Associativity
     deriving (Show, Eq, Ord)
 
 data ShuntError
-    = SamePrecedenceError !(RenamedBinaryOperator, Associativity) !(RenamedBinaryOperator, Associativity)
+    = SamePrecedenceError !(RenamedBinaryOperator, OpInfo) !(RenamedBinaryOperator, OpInfo)
     deriving (Show)
 
 instance Exception ShuntError
@@ -94,7 +94,7 @@ instance ReportableError ShuntError where
             Err
                 (Just Codes.samePrecedence)
                 ("Cannot mix operators with same precedence " <> prettyOp op1 <> " and " <> prettyOp op2 <> " when both operators have different associativity.")
-                [(op1Src, This (show a1)), (op2Src, This (show a2))]
+                [(op1Src, This (pretty a1)), (op2Src, This (pretty a2))]
                 [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
 data ShuntWarning
@@ -165,7 +165,7 @@ fixOperators opTable o = do
             EQ -> case (info1.associativity, info2.associativity) of
                 (LeftAssociative, LeftAssociative) -> assocLeft
                 (RightAssociative, RightAssociative) -> assocRight
-                (a1, a2) -> throw (SamePrecedenceError (o1, a1) (o2, a2))
+                (_, _) -> throw (SamePrecedenceError (o1, info1) (o2, info2))
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
