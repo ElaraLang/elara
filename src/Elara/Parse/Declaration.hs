@@ -49,7 +49,8 @@ letDec :: Located ModuleName -> Parser FrontendDeclaration
 letDec modName = fmapLocated Declaration $ do
     (name, patterns, e) <- letPreamble
     let valueLocation = sconcat (e ^. _Unwrapped . _1 . sourceRegion :| (view (_Unwrapped . _1 . sourceRegion) <$> patterns))
-        value = DeclarationBody (Located valueLocation (Value e patterns NoFieldValue))
+        annotations = ValueDeclAnnotations Nothing
+        value = DeclarationBody (Located valueLocation (Value e patterns NoFieldValue annotations))
     pure (Declaration' modName (NVarName <$> name) value)
 
 typeDeclaration :: Located ModuleName -> Parser FrontendDeclaration
@@ -62,7 +63,8 @@ typeDeclaration modName = fmapLocated Declaration $ do
     token_ TokenEquals
     body <- located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
-        value = DeclarationBody $ Located valueLocation (TypeDeclaration args body)
+        annotations = TypeDeclAnnotations Nothing
+        value = DeclarationBody $ Located valueLocation (TypeDeclaration args body annotations)
     pure (Declaration' modName (NTypeName <$> name) value)
 
 infixDecl :: Located ModuleName -> Parser FrontendDeclaration
@@ -75,7 +77,7 @@ infixDecl modName = fmapLocated Declaration $ do
             (located integerLiteral)
     name <- located operator
     let valueLocation = sconcat (assoc ^. sourceRegion :| [prec ^. sourceRegion, name ^. sourceRegion])
-        value = DeclarationBody $ Located valueLocation (InfixDecl (fromInteger <$> prec) assoc)
+        value = DeclarationBody $ Located valueLocation (InfixDecl $ InfixDeclaration (fromInteger <$> prec) assoc)
         declName = case name ^. unlocated of
             MkBinaryOperator (Located _ (SymOp sym)) -> toName <$> sym
             MkBinaryOperator (Located _ (Infixed x)) -> toName <$> x

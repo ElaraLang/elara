@@ -1,6 +1,6 @@
 module Elara.AST.Frontend where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, InfixDeclaration, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
@@ -49,6 +49,11 @@ type instance Select "ValuePatterns" 'Frontend = [FrontendPattern]
 type instance Select "ValueType" 'Frontend = NoFieldValue
 
 type instance Select "ValueTypeDef" 'Frontend = FrontendType
+
+type instance Select "ValueDeclAnnotations" 'Frontend = NoFieldValue
+type instance Select "TypeDeclAnnotations" 'Frontend = NoFieldValue
+
+type instance Select "InfixDecl" 'Frontend = InfixDeclaration 'Frontend
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Frontend = Name

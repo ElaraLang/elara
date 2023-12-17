@@ -64,6 +64,12 @@ tooManyDeclarations = "E1008"
 nonExistentModuleDeclaration :: ErrorCode
 nonExistentModuleDeclaration = "E1009"
 
+infixDeclarationWithoutValue :: ErrorCode
+infixDeclarationWithoutValue = "E10010"
+
+duplicateFixityAnnotations :: ErrorCode
+duplicateFixityAnnotations = "E10011"
+
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
 

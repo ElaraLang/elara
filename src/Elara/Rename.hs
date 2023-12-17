@@ -18,7 +18,7 @@ import Elara.AST.Desugared
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NOpName, NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
@@ -82,8 +82,8 @@ instance ReportableError RenameError where
                 []
     report (UnknownName n) =
         let nameKind = case n of
-                Located _ (NVarName _) -> "variable"
-                Located _ (NOpName _) -> "operator"
+                Located _ (NVarName (NormalVarName _)) -> "variable"
+                Located _ (NVarName (OperatorVarName _)) -> "operator"
                 Located _ (NTypeName _) -> "type"
          in writeReport $
                 Err
@@ -259,11 +259,10 @@ addDeclarationToContext _ decl = do
     case decl ^. _Unwrapped . unlocated . field' @"name" . unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ Map.insert vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ Map.insert vn (global vn)
-        NOpName vn -> modify $ over (the @"varNames") $ Map.insert (OperatorVarName vn) (global (OperatorVarName vn))
 
     case decl ^. _Unwrapped . unlocated . field @"body" . _Unwrapped . unlocated of
         -- Add all the constructor names to field' context
-        TypeDeclaration _ (Located _ (ADT _)) -> todo
+        TypeDeclaration _ (Located _ (ADT _)) _ -> todo
         --     traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) constructors
         _ -> pass
 
@@ -288,7 +287,6 @@ isExposingAndExists m n =
   where
     isExposition :: ModuleName -> Name -> Exposition 'Desugared -> Bool
     isExposition mn (NVarName vn) (ExposedValue vn') = MaybeQualified vn (Just mn) == vn' ^. unlocated
-    isExposition mn (NOpName opn) (ExposedOp opn') = MaybeQualified opn (Just mn) == opn' ^. unlocated
     isExposition mn (NTypeName tn) (ExposedType tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
     isExposition mn (NTypeName tn) (ExposedTypeAndAllConstructors tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
     isExposition _ _ _ = False
@@ -308,11 +306,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
 
     renameDeclarationBody' :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
-    renameDeclarationBody' (Value val _ ty) = scoped $ do
+    renameDeclarationBody' (Value val _ ty ann) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType True)) ty
         val' <- renameExpr val
-        pure $ Value val' NoFieldValue ty'
-    renameDeclarationBody' (TypeDeclaration vars ty) = do
+        let ann' = coerceValueDeclAnnotations ann
+        pure $ Value val' NoFieldValue ty' ann'
+    renameDeclarationBody' (TypeDeclaration vars ty ann) = do
         vars' <- traverse uniquify vars
         let varAliases = zip vars vars' :: [(Located LowerAlphaName, Located (Unique LowerAlphaName))]
         let addAllVarAliases s =
@@ -323,7 +322,8 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         let declModuleName = ld ^. unlocated . field' @"moduleName" . unlocated
         withModified addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
-            pure $ TypeDeclaration vars' ty'
+            let ann' = coerceTypeDeclAnnotations ann
+            pure $ TypeDeclaration vars' ty' ann'
 
 renameTypeDeclaration :: Rename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do

@@ -29,7 +29,10 @@ module Elara.AST.Generic.Types (
     TypeDeclaration (..),
     Declaration (..),
     Declaration' (..),
-    AssociativityDecl (..),
+    AssociativityType (..),
+    InfixDeclaration (..),
+    ValueDeclAnnotations (..),
+    TypeDeclAnnotations (..),
     typeOf,
     patternTypeOf,
     RUnlocate (..),
@@ -42,8 +45,11 @@ module Elara.AST.Generic.Types (
     coerceType,
     coerceType',
     coerceTypeDeclaration,
+    coerceInfixDeclaration,
     pattern Expr',
     exprLocation,
+    coerceTypeDeclAnnotations,
+    coerceValueDeclAnnotations,
 )
 where
 
@@ -96,7 +102,12 @@ data Expr' (ast :: a)
     | Tuple (NonEmpty (Expr ast))
     deriving (Generic)
 
-data AssociativityDecl
+data InfixDeclaration ast = InfixDeclaration
+    { prec :: ASTLocate ast Int
+    , assoc :: ASTLocate ast AssociativityType
+    }
+
+data AssociativityType
     = LeftAssoc
     | RightAssoc
     | NonAssoc
@@ -164,6 +175,7 @@ data DeclarationBody' (ast :: a)
         { _expression :: Expr ast
         , _patterns :: Select "ValuePatterns" ast
         , _valueType :: Select "ValueType" ast
+        , _valueAnnotations :: ValueDeclAnnotations ast
         }
     | -- | def <name> : <type>.
       ValueTypeDef !(Select "ValueTypeDef" ast)
@@ -171,9 +183,18 @@ data DeclarationBody' (ast :: a)
       TypeDeclaration
         [ASTLocate ast (Select "TypeVar" ast)]
         (ASTLocate ast (TypeDeclaration ast))
+        (TypeDeclAnnotations ast)
     | -- | infix[l/r] <prec> <name>
-      InfixDecl (ASTLocate ast Int) (ASTLocate ast AssociativityDecl)
+      InfixDecl !(Select "InfixDecl" ast)
     deriving (Generic)
+
+newtype ValueDeclAnnotations ast = ValueDeclAnnotations
+    { infixValueDecl :: Maybe (InfixDeclaration ast)
+    }
+
+newtype TypeDeclAnnotations ast = TypeDeclAnnotations
+    { infixTypeDecl :: Maybe (InfixDeclaration ast)
+    }
 
 data TypeDeclaration ast
     = ADT (NonEmpty (ASTLocate ast (Select "ConstructorName" ast), [Type ast]))
@@ -271,3 +292,15 @@ coerceType' (UserDefinedType a) = UserDefinedType a
 coerceType' (RecordType a) = RecordType (fmap coerceType <$> a)
 coerceType' (TupleType a) = TupleType (coerceType <$> a)
 coerceType' (ListType a) = ListType (coerceType a)
+
+coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotations ast2
+coerceValueDeclAnnotations (ValueDeclAnnotations v) = ValueDeclAnnotations (coerceInfixDeclaration <$> v)
+
+coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
+coerceTypeDeclAnnotations (TypeDeclAnnotations v) = TypeDeclAnnotations (coerceInfixDeclaration <$> v)
+
+coerceInfixDeclaration ::
+    _ =>
+    InfixDeclaration ast1 ->
+    InfixDeclaration ast2
+coerceInfixDeclaration (InfixDeclaration a b) = InfixDeclaration a b

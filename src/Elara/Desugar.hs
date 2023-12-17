@@ -24,12 +24,15 @@ import Polysemy
 import Polysemy.Error (Error, throw)
 import Polysemy.State (State, evalState)
 import Polysemy.State.Extra
+import Print (debugColored)
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
 data DesugarError
     = DefWithoutLet DesugaredType
+    | InfixWithoutDeclaration Name SourceRegion (ValueDeclAnnotations Desugared)
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
+    | DuplicateAnnotations (ValueDeclAnnotations Desugared) (ValueDeclAnnotations Desugared)
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
     deriving (Typeable, Show)
 
@@ -51,6 +54,10 @@ instance ReportableError DesugarError where
                 ]
     report (PartialNamesNotEqual a b) =
         writeReport $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
+    report (InfixWithoutDeclaration n sr l) =
+        writeReport $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
+    report (DuplicateAnnotations a b) =
+        writeReport $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
 
 type Desugar a = Sem DesugarPipelineEffects a
 
@@ -90,37 +97,49 @@ data PartialDeclaration
         -- | The *overall* region of the declaration, not just the body!
         SourceRegion
         DesugaredType
+        (Maybe (ValueDeclAnnotations Desugared))
     | JustLet
         Name
         SourceRegion
         DesugaredExpr
-    | Both Name SourceRegion DesugaredType DesugaredExpr
+        (Maybe (ValueDeclAnnotations Desugared))
+    | JustInfix
+        Name
+        SourceRegion
+        (ValueDeclAnnotations Desugared)
+    | AllDecl Name SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
     | Immediate Name DesugaredDeclarationBody
     deriving (Typeable, Show)
 
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
-partialDeclarationSourceRegion (JustDef _ sr _) = sr
-partialDeclarationSourceRegion (JustLet _ sr _) = sr
-partialDeclarationSourceRegion (Both _ sr _ _) = sr
+partialDeclarationSourceRegion (JustDef _ sr _ _) = sr
+partialDeclarationSourceRegion (JustLet _ sr _ _) = sr
+partialDeclarationSourceRegion (JustInfix _ sr _) = sr
+partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
 partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
 
 instance Pretty PartialDeclaration where
-    pretty (JustDef n _ _) = pretty n
-    pretty (JustLet n _ _) = pretty n
-    pretty (Both n _ _ _) = pretty n
+    pretty (JustDef n _ _ _) = pretty n
+    pretty (JustLet n _ _ _) = pretty n
+    pretty (JustInfix n _ _) = pretty n
+    pretty (AllDecl n _ _ _ _) = pretty n
     pretty (Immediate n _) = pretty n
 
 makeLenses ''DesugarState
 
 resolvePartialDeclaration :: PartialDeclaration -> Desugar DesugaredDeclarationBody
 resolvePartialDeclaration (Immediate _ a) = pure a
-resolvePartialDeclaration ((JustDef _ _ ty)) = throw (DefWithoutLet ty)
-resolvePartialDeclaration ((JustLet _ sr e)) = pure (DeclarationBody (Located sr (Value e NoFieldValue Nothing)))
-resolvePartialDeclaration ((Both _ sr ty e)) =
+resolvePartialDeclaration ((JustDef _ _ ty _)) = throw (DefWithoutLet ty)
+resolvePartialDeclaration ((JustLet _ sr e ann)) = pure (DeclarationBody (Located sr (Value e NoFieldValue Nothing (resolveAnn ann))))
+resolvePartialDeclaration ((AllDecl _ sr ty e ann)) =
     pure
         ( DeclarationBody
-            (Located sr (Value e NoFieldValue (Just ty)))
+            (Located sr (Value e NoFieldValue (Just ty) ann))
         )
+resolvePartialDeclaration (JustInfix n sr v) = throw (InfixWithoutDeclaration n sr v)
+
+resolveAnn :: Maybe (ValueDeclAnnotations Desugared) -> ValueDeclAnnotations Desugared
+resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
 
 desugar ::
     Module 'Frontend ->
@@ -143,13 +162,31 @@ desugarDeclarations mn decls = do
 assertPartialNamesEqual :: (PartialDeclaration, Name) -> (PartialDeclaration, Name) -> Desugar Name
 assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 == n2 then pure n2 else throw (PartialNamesNotEqual p1 p2)
 
+resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
+resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throw (DuplicateAnnotations a b)
+resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b))
+
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
-mergePartials p1@(JustDef n sr ty) p2@(JustLet n' sr' e) = do
+mergePartials p1@(JustInfix n sr i) p2@(JustDef n' sr' ty Nothing) = do
     n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (Both n'' (sr <> sr') ty e)
-mergePartials p1@(JustLet n sr e) p2@(JustDef n' sr' ty) = do
+    pure (JustDef n'' (sr <> sr') ty (Just i))
+mergePartials p2@(JustDef n' sr' ty Nothing) p1@(JustInfix n sr i) = do
     n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (Both n'' (sr <> sr') ty e)
+    pure (JustDef n'' (sr <> sr') ty (Just i))
+mergePartials p1@(JustInfix n sr i) p2@(JustLet n' sr' ty Nothing) = do
+    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    pure (JustLet n'' (sr <> sr') ty (Just i))
+mergePartials p2@(JustLet n' sr' ty Nothing) p1@(JustInfix n sr i) = do
+    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    pure (JustLet n'' (sr <> sr') ty (Just i))
+mergePartials p1@(JustDef n sr ty mAnn) p2@(JustLet n' sr' e mAnn') = do
+    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    ann <- resolveDupeInfixes mAnn mAnn'
+    pure (AllDecl n'' (sr <> sr') ty e ann)
+mergePartials p1@(JustLet n sr e mAnn) p2@(JustDef n' sr' ty mAnn') = do
+    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    ann <- resolveDupeInfixes mAnn mAnn'
+    pure (AllDecl n'' (sr <> sr') ty e ann)
 mergePartials l r = throw (DuplicateDeclaration l r)
 
 genPartials :: [FrontendDeclaration] -> Desugar ()
@@ -166,21 +203,27 @@ genPartials = traverseOf_ (each . _Unwrapped) genPartial
             modifyM (traverseOf partialDeclarations f)
 
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
-        genPartial'' (Value e pats _) = do
+        genPartial'' (InfixDecl (InfixDeclaration p a)) = do
+            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration p a))
+
+            pure (JustInfix (decl ^. field' @"name" . unlocated) wholeDeclRegion infix'')
+        genPartial'' (Value e pats _ valueAnnotations) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
+            let ann = coerceValueDeclAnnotations @Frontend @Desugared valueAnnotations
 
-            pure (JustLet (decl ^. field' @"name" . unlocated :: Name) wholeDeclRegion body)
+            pure (JustLet (decl ^. field' @"name" . unlocated :: Name) wholeDeclRegion body (Just ann))
         genPartial'' (ValueTypeDef ty) = do
             ty' <- traverseOf (_Unwrapped . unlocated) desugarType ty
-            pure (JustDef (decl ^. field' @"name" . unlocated) wholeDeclRegion ty')
-        genPartial'' (TypeDeclaration vars typeDecl) = do
+            pure (JustDef (decl ^. field' @"name" . unlocated) wholeDeclRegion ty' Nothing)
+        genPartial'' (TypeDeclaration vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
                 traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped . unlocated) desugarType t
                 traverseDecl (ADT constructors) = ADT <$> traverseOf (each . _2 . each . _Unwrapped . unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
-            let decl' = TypeDeclaration vars typeDecl'
+            let ann = coerceTypeDeclAnnotations @Frontend @Desugared typeAnnotations
+            let decl' = TypeDeclaration vars typeDecl' ann
             let bodyLoc = decl ^. the @"body" . _Unwrapped . sourceRegion
             pure (Immediate (decl ^. field' @"name" . unlocated) (DeclarationBody (Located bodyLoc decl')))
 

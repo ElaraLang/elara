@@ -65,7 +65,6 @@ data VarOrConName
 data Name
     = NVarName VarName
     | NTypeName TypeName
-    | NOpName OpName
     deriving (Show, Eq, Ord, Data, Generic)
 
 type UniqueName = Unique Name
@@ -96,7 +95,7 @@ instance ToName TypeName where
     toName = NTypeName
 
 instance ToName OpName where
-    toName = NOpName
+    toName = NVarName . OperatorVarName
 
 instance ToName Name where
     toName = identity
@@ -154,15 +153,12 @@ instance NameLike n => NameLike (Unqualified n) where
 instance NameLike Name where
     nameText (NVarName name) = nameText name
     nameText (NTypeName name) = nameText name
-    nameText (NOpName name) = nameText name
 
     fullNameText (NVarName name) = fullNameText name
     fullNameText (NTypeName name) = fullNameText name
-    fullNameText (NOpName name) = fullNameText name
 
     moduleName (NVarName name) = moduleName name
     moduleName (NTypeName name) = moduleName name
-    moduleName (NOpName name) = moduleName name
 
 instance NameLike VarOrConName where
     nameText (VarName name) = nameText name
@@ -220,7 +216,6 @@ instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
 instance Pretty Name where
     pretty (NVarName n) = pretty n
     pretty (NTypeName n) = pretty n
-    pretty (NOpName n) = pretty n
 
 instance Pretty VarOrConName where
     pretty (VarName n) = pretty n

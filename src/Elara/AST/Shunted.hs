@@ -102,8 +102,8 @@ instance HasDependencies ShuntedDeclaration where
     type Key ShuntedDeclaration = Qualified Name
     key = view (_Unwrapped . unlocated . field' @"name" . unlocated)
     dependencies decl = case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
-        Generic.Value e _ _ -> valueDependencies e
-        Generic.TypeDeclaration _ _ -> []
+        Generic.Value e _ _ _ -> valueDependencies e
+        Generic.TypeDeclaration{} -> []
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =

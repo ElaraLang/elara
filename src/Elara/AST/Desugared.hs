@@ -62,6 +62,8 @@ type instance Select "ValueType" 'Desugared = Maybe DesugaredType
 
 type instance Select "ValueTypeDef" 'Desugared = DataConCantHappen
 
+type instance Select "InfixDecl" 'Desugared = DataConCantHappen
+
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Desugared = LowerAlphaName
 

@@ -3,7 +3,7 @@ This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed
 -}
 module Elara.AST.Renamed where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, InfixDeclaration, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName, VarOrConName)
@@ -51,6 +51,19 @@ type instance Select "ValuePatterns" 'Renamed = NoFieldValue
 type instance Select "ValueType" 'Renamed = Maybe RenamedType
 
 type instance Select "ValueTypeDef" 'Renamed = DataConCantHappen
+
+type instance Select "ValueDeclAnnotations" 'Renamed = RenamedValueDeclAnnotations
+type instance Select "TypeDeclAnnotations" 'Renamed = RenamedTypeDeclAnnotations
+
+newtype RenamedValueDeclAnnotations = RenamedValueDeclAnnotations
+    { infixValueDecl :: Maybe (InfixDeclaration Renamed)
+    }
+    deriving (Show)
+
+newtype RenamedTypeDeclAnnotations = RenamedTypeDeclAnnotations
+    { infixTypeDecl :: Maybe (InfixDeclaration Renamed)
+    }
+    deriving (Show)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Renamed = Qualified Name

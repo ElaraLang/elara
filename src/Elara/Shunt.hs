@@ -114,7 +114,7 @@ instance ReportableError ShuntWarning where
 
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
 opInfo table operator = case operator ^. _Unwrapped . unlocated of
-    SymOp opName -> Map.lookup (ignoreLocation (NOpName <$> opName ^. unlocated)) table
+    SymOp opName -> Map.lookup (ignoreLocation (NVarName . OperatorVarName <$> opName ^. unlocated)) table
     Infixed vn -> Map.lookup (ignoreLocation (toName <$> vn)) table
       where
         toName (VarName n) = NVarName (NormalVarName n)
@@ -215,11 +215,11 @@ shuntDeclarationBody ::
 shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
   where
     shuntDeclarationBody' :: RenamedDeclarationBody' -> Sem r ShuntedDeclarationBody'
-    shuntDeclarationBody' (Value e _ ty) = do
+    shuntDeclarationBody' (Value e _ ty ann) = do
         shunted <- fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value shunted NoFieldValue ty')
-    shuntDeclarationBody' (TypeDeclaration vars ty) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty))
+        pure (Value shunted NoFieldValue ty' _)
+    shuntDeclarationBody' (TypeDeclaration vars ty ann) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty) _)
 
 fixExpr :: Members ShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
 fixExpr e = do

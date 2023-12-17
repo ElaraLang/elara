@@ -127,16 +127,24 @@ deriving instance
     ( (Show (Select "ValueTypeDef" ast))
     , (Show (Select "ValuePatterns" ast))
     , (Show (Select "ValueType" ast))
+    , Show (Select "InfixDecl" ast)
     , Show (Select "ExprType" ast)
     , Show (ASTLocate ast (Select "TypeVar" ast))
     , Show (ASTLocate ast (Expr' ast))
     , Show (ASTLocate ast Int)
-    , Show (ASTLocate ast AssociativityDecl)
+    , Show (ASTLocate ast AssociativityType)
     , Show (ASTLocate ast (TypeDeclaration ast))
+    , Show (TypeDeclAnnotations ast)
+    , Show (ValueDeclAnnotations ast)
     ) =>
     Show (DeclarationBody' ast)
 
 deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (DeclarationBody ast)
+
+deriving instance (Show (ASTLocate ast Int), Show (ASTLocate ast AssociativityType)) => Show (InfixDeclaration ast)
+
+deriving instance Show (InfixDeclaration ast) => Show (TypeDeclAnnotations ast)
+deriving instance Show (InfixDeclaration ast) => Show (ValueDeclAnnotations ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "ConstructorName" ast))

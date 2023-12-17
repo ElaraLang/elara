@@ -102,7 +102,7 @@ inferDeclaration (Declaration ld) =
         Located (Qualified Name) ->
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
-    inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType)) = do
+    inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType) ann) = do
         maybeExpected' <- case maybeExpected of
             Just expected' -> do
                 kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped . unlocated))
@@ -127,7 +127,7 @@ inferDeclaration (Declaration ld) =
         completed <- completeExpression ctx e'
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2))
 
-        pure $ Value completed NoFieldValue NoFieldValue
+        pure $ Value completed NoFieldValue NoFieldValue (coerceValueDeclAnnotations ann)
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
 
 inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr

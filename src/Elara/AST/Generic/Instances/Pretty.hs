@@ -66,14 +66,14 @@ instance
         -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
         -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
-        prettyDB n (Value e@(Expr (_, t)) _ t') =
+        prettyDB n (Value e@(Expr (_, t)) _ t' _) =
             let typeOfE =
                     UnknownPretty
                         <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
                             <|> UnknownPretty
                         <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
              in prettyValueDeclaration n e typeOfE
-        prettyDB n (TypeDeclaration vars t) = prettyTypeDeclaration n vars t
+        prettyDB n (TypeDeclaration vars t _) = prettyTypeDeclaration n vars t
         prettyDB n (ValueTypeDef t) = prettyValueTypeDef n t
 
 instance Pretty (TypeDeclaration ast) where
@@ -284,3 +284,15 @@ instance
         ListType a -> "[" <+> pretty a <+> "]"
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
+
+instance (Show (ValueDeclAnnotations ast), RUnlocate ast) => Pretty (ValueDeclAnnotations ast) where
+    pretty (ValueDeclAnnotations v) = braces ("Operator fixity:" <+> maybe "None" pretty v)
+
+instance RUnlocate (ast :: b) => Pretty (InfixDeclaration ast) where
+    pretty (InfixDeclaration prec assoc) =
+        ( case rUnlocate @b @ast assoc of
+            LeftAssoc -> "infixl"
+            RightAssoc -> "infixr"
+            NonAssoc -> "infix"
+        )
+            <+> pretty @Int (rUnlocate @b @ast prec)
