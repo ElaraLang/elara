@@ -33,7 +33,7 @@ import Elara.TypeInfer.Monotype (
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Unique
 import Prettyprinter qualified as Pretty
-import Print (showPretty, showPrettyUnannotated)
+import Print (showPrettyUnannotated)
 
 {- $setup
 

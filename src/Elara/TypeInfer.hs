@@ -132,8 +132,6 @@ inferDeclaration (Declaration ld) =
 inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
-    ctx <- Infer.get
-    -- wellFormedType ctx expectedType
     (Expr (l, _)) <- check e expectedType
     pure (Expr (l, expectedType))
 
