@@ -5,6 +5,9 @@ infixr 1 >>
 def (>>) : (a -> b) -> (b -> c) -> (a -> c)
 let (>>) f g = \x -> g (f x)
 
+def identity : a -> a
+let identity a = a
+
 def print : a -> IO ()
 let print a = println (toString a)
 
