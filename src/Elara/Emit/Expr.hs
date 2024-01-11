@@ -123,7 +123,7 @@ generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableS
     idx <- localVariableId n
     generateInstructions' val tApps
     emit $ AStore idx
-    generateInstructions' b tApps
+    generateInstructions' (replaceVar n (JVMLocal idx) b) tApps
 generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
 generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
@@ -218,10 +218,13 @@ localVariableId (JVMLocal i) = pure i
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
+{- | Attempt to figure out the name and type of an expression, returning either a Local variable in @Left@ or a Global variable in @Right@
+This function is partial! (Sorry)
+-}
 approximateTypeAndNameOf ::
     HasCallStack =>
     Expr JVMBinder ->
-    Either Word8 (UnlocatedVarRef Text, Type)
+    Either U1 (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
 approximateTypeAndNameOf (Var (JVMLocal i)) = Left i
 approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
