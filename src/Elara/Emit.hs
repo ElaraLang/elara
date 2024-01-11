@@ -144,6 +144,7 @@ addDeclaration declBody = case declBody of
                 let descriptor = generateMethodDescriptor type'
                 Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                 let y = transformTopLevelLambdas e
+                Log.debug $ "Transformed lambda expression: " <> showPretty y
                 thisName <- ask @QualifiedClassName
                 createMethod thisName descriptor declName y
         Log.debug $ "Emitted non-recursive declaration " <> showPretty name
