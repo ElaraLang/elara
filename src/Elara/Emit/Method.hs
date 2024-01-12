@@ -19,6 +19,7 @@ import Elara.Emit.Params
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.Error
+import Polysemy.Internal.Union (Union)
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
@@ -29,7 +30,8 @@ import Print
 This handles the calculation of messiness like max stack and locals
 -}
 createMethod ::
-    ( Member ClassBuilder r
+    ( HasCallStack
+    , Member ClassBuilder r
     , Member (Reader GenParams) r
     , Member Log r
     , Member UniqueGen r
@@ -49,7 +51,31 @@ createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
                 generateInstructions body
     createMethodWith descriptor name codeAttrs mcState instructions
 
-createMethodWith :: Member ClassBuilder r => MethodDescriptor -> Text -> [CodeAttribute] -> MethodCreationState -> [Instruction] -> Sem r ()
+createMethodWithCodeBuilder ::
+    ( Member ClassBuilder r
+    , Member Log r
+    ) =>
+    QualifiedClassName ->
+    MethodDescriptor ->
+    Text ->
+    Sem (CodeBuilder : r) () ->
+    Sem r ()
+createMethodWithCodeBuilder thisClassName descriptor@(MethodDescriptor args _) name codeBuilder = do
+    Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor
+    let initialState = createMethodCreationState (length args) thisClassName
+    (_, codeAttrs, instructions) <-
+        subsume_ $
+            runCodeBuilder codeBuilder
+    createMethodWith descriptor name codeAttrs initialState instructions
+
+createMethodWith ::
+    Member ClassBuilder r =>
+    MethodDescriptor ->
+    Text ->
+    [CodeAttribute] ->
+    MethodCreationState ->
+    [Instruction] ->
+    Sem r ()
 createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState code = do
     let maxStack = analyseMaxStack code
 

@@ -12,7 +12,7 @@ import Control.Lens hiding (List)
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)
-import Elara.Core (Bind (..), Var (..))
+import Elara.Core (Bind (..), Expr (Var), Type (..), Var (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule)
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
@@ -20,13 +20,15 @@ import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologica
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Expr
-import Elara.Emit.Method (createMethod, createMethodWith)
+import Elara.Emit.Lambda (createLambda, etaExpand, etaExpandN)
+import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
-import Elara.Emit.Var (JVMExpr, transformTopLevelLambdas)
+import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
 import Elara.Error (DiagnosticWriter, runErrorOrReport)
+import Elara.ToCore (stripForAll)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code hiding (code)
 import JVM.Data.Abstract.ClassFile
@@ -129,7 +131,7 @@ addClinit (CLInitState s) attrs code = do
 
 addDeclaration :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
-    CoreValue (NonRecursive (Id name type', e)) -> do
+    CoreValue (NonRecursive (n@(Id name type'), e)) -> do
         Log.debug $ "Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "..."
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'
@@ -141,12 +143,32 @@ addDeclaration declBody = case declBody of
                 let e' = transformTopLevelLambdas e
                 addStaticFieldInitialiser field e'
             else do
-                let descriptor = generateMethodDescriptor type'
-                Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
-                let y = transformTopLevelLambdas e
-                Log.debug $ "Transformed lambda expression: " <> showPretty y
-                thisName <- ask @QualifiedClassName
-                createMethod thisName descriptor declName y
+                -- Whenever we have a function declaration we do 2 things
+                -- Turn it into a hidden method _name, doing the actual logic
+                -- Create a getter method name, which just returns _name wrapped into a Func
+                case stripForAll type' of
+                    FuncTy{} -> do
+                        let descriptor = generateMethodDescriptor type'
+                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
+                        let y = transformTopLevelLambdas e
+                        Log.debug $ "Transformed lambda expression: " <> showPretty y
+                        thisName <- ask @QualifiedClassName
+                        createMethod thisName descriptor ("_" <> declName) y
+                        let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.Func"))
+                        Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
+                        createMethodWithCodeBuilder thisName getterDescriptor declName $ do
+                            Log.debug $ "Getting static field " <> showPretty declName <> "..."
+                            inst <- etaExpandN (Var $ Normal n) type' thisName
+                            emit inst
+                            Log.debug $ "Returning static field " <> showPretty declName <> "..."
+                            emit AReturn
+                    _ -> do
+                        let descriptor = generateMethodDescriptor type'
+                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
+                        let y = transformTopLevelLambdas e
+                        Log.debug $ "Transformed lambda expression: " <> showPretty y
+                        thisName <- ask @QualifiedClassName
+                        createMethod thisName descriptor declName y
         Log.debug $ "Emitted non-recursive declaration " <> showPretty name
     e -> error (showPretty e)
 

@@ -94,7 +94,7 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
             FuncTy{} -> do
                 -- it's a method function, so we have to eta-expand it
                 cName <- gets (.thisClassName)
-                inst <- etaExpand v (foldl' instantiate t tApps) cName
+                inst <- etaExpandN v (foldl' instantiate t tApps) cName
                 emit inst
             _ -> do
                 -- no args function (eg undefined)
@@ -129,7 +129,7 @@ generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
 generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
-    inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
+    inst <- createLambda ((v, generateFieldType binderType) :| []) (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
 generateInstructions' (Lam (JVMLocal _) _) _ = error "Lambda with local variable as its binder"
@@ -300,7 +300,7 @@ invokeStaticVars :: HasCallStack => Member (Error EmitError) r => UnlocatedVarRe
 invokeStaticVars (Global' (Qualified fName mn)) fType =
     pure
         ( ClassInfoType $ createModuleName mn
-        , translateOperatorName fName
+        , "_" <> translateOperatorName fName
         , generateMethodDescriptor fType
         )
 invokeStaticVars (Local' x) t = throw $ InvokeStaticLocal x t

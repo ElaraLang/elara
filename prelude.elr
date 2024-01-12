@@ -11,79 +11,8 @@ let identity a = a
 def print : a -> IO ()
 let print a = println (toString a)
 
-def charToInt : Char -> Int
-let charToInt c = 
-    if c == '0' then 0
-    else if c == '1' then 1
-    else if c == '2' then 2
-    else if c == '3' then 3
-    else if c == '4' then 4
-    else if c == '5' then 5
-    else if c == '6' then 6
-    else if c == '7' then 7
-    else if c == '8' then 8
-    else if c == '9' then 9
-    else -1
-
-infixr 5 ++
-def (++) : [a] -> [a] -> [a]
-let (++) a b = 
-    match a with
-      [] -> b
-      (x::xs) -> x :: (xs ++ b)
-
-
-
-def reverse : [a] -> [a]
-let reverse a = 
-    match a with
-      [] -> []
-      (x::xs) -> reverse xs ++ [x]
-
-
-def head : [a] -> a
-let head a = 
-    match a with
-      [] -> undefined
-      (x::xs) -> x
-
-def last : [a] -> a
-let last a = 
-    match a with
-      [] -> undefined
-      (x::xs) -> if xs == [] then x else last xs
-
-
 def map : (a -> b) -> [a] -> [b]
-let map f a = 
-    match a with
+let map f l =
+    match l with
       [] -> []
-      (x::xs) -> f x :: map f xs
-
-def filter : (a -> Bool) -> [a] -> [a]
-let filter f a = 
-    match a with
-      [] -> []
-      (x::xs) -> if f x then x :: filter f xs else filter f xs
-
-def not : Bool -> Bool
-let not a = 
-    if a then False else True
-
-def (/=) : a -> a -> Bool
-let (/=) a b = 
-    not (a == b)
-
-
-def sum : [Int] -> Int
-let sum a = 
-    match a with
-      [] -> 0
-      (x::xs) -> x + sum xs
-
-def isEmpty : [a] -> Bool
-let isEmpty a = 
-    match a with
-      [] -> True
-      (x::xs) -> False
-      
+      (x :: xs) -> f x :: map f xs
