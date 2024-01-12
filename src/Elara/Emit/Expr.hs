@@ -132,7 +132,7 @@ generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
-generateInstructions' (Lam (JVMLocal v) body) _ = error "Lambda with local variable as its binder"
+generateInstructions' (Lam (JVMLocal _) _) _ = error "Lambda with local variable as its binder"
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
