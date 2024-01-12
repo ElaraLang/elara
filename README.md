@@ -62,6 +62,16 @@ Elara is released under the [MIT License](LICENSE).
 
 ## Technical Details
 
--   **Languages:** Primarily implemented in Haskell (95%), with contributions from Nix (1.3%) and Lex (1.3%).
-
+### How the compiler works
+The Elara compiler is fairly simple, composed of multiple passes on the source code. These are as follows:
+1. **Lexing:** The source code is converted into a list of tokens, layout rules are converted into braces and semicolons, and comments are removed.
+2. **Parsing:** The list of tokens is converted into the Frontend abstract syntax tree (AST). The Frontend AST almost directly mirrors the syntax of the language with very few transformations applied. The Parser checks for any syntax errors and reports them.
+3. **Desugaring:** The Frontend AST is converted into the Desugared AST. The Desugared AST is a bit misleading in that it is actually fairly conservative in its desugaring. The main differences are that multi-argument lambdas are converted into nested single-argument lambdas, let bindings have their parameters removed and are converted into lambdas, and declarations with identical names (i.e. `def` and `let`s) are converted into a single declaration.
+4. **Renaming:** Conversion to Renamed AST with name resolution and unique-ification. Every name is either resolved to a fully qualified name, or local variables are generated a unique name to avoid collisions.
+5. **Shunting:** Conversion to Shunted AST with operator precedence and associativity applied. A simple reassociation of the AST to match the precedence and associativity of operators. The notion of a "binary operator" is removed as they are all turned into prefix function calls. 
+6. **Type Checking:** The Shunted AST is converted into the Typed AST by inferring and checking the types of every expression.
+7. **ToCore:** The Typed AST is converted into the Core AST. The Core AST is a very simple AST that is essentially a typed lambda calculus, very similar to GHC's Core language. Very extensive desugaring is done here, converting the entire language to the 8 constructors of the Core AST.
+8. **CoreToCore:** Repeated transformations of the Core AST, mainly performing optimisations.
+9. **ToEmm**: Emm/E-- (Elara Minus Minus) is a very simple, imperative, stack based language that is used as an intermediate representation for the JVM. The Core AST is converted into Emm, which is then converted into JVM bytecode. This language has a lot more JVM-specific notions such as distinguishing between methods and fields.
+10. **Emitting:** The Emm AST is converted into JVM bytecode and written to a class file.
 ------
