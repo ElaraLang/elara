@@ -72,6 +72,5 @@ The Elara compiler is fairly simple, composed of multiple passes on the source c
 6. **Type Checking:** The Shunted AST is converted into the Typed AST by inferring and checking the types of every expression.
 7. **ToCore:** The Typed AST is converted into the Core AST. The Core AST is a very simple AST that is essentially a typed lambda calculus, very similar to GHC's Core language. Very extensive desugaring is done here, converting the entire language to the 8 constructors of the Core AST.
 8. **CoreToCore:** Repeated transformations of the Core AST, mainly performing optimisations.
-9. **ToEmm**: Emm/E-- (Elara Minus Minus) is a very simple, imperative, stack based language that is used as an intermediate representation for the JVM. The Core AST is converted into Emm, which is then converted into JVM bytecode. This language has a lot more JVM-specific notions such as distinguishing between methods and fields.
-10. **Emitting:** The Emm AST is converted into JVM bytecode and written to a class file.
+9.  **Emitting:** The Core AST is converted into JVM bytecode and written to a class file.
 ------
