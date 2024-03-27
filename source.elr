@@ -1,7 +1,6 @@
 import Prelude 
 import Elara.Prim
 
-let f = let g = identity in g
+let f = identity
 
-let main =
-    print (map f [1,2,3])
+let main = (f 3)
