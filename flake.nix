@@ -37,7 +37,7 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc94;
+          basePackages = pkgs.haskell.packages.ghc965;
 
 
           packages = {
@@ -50,7 +50,9 @@
           settings = {
 
             fourmolu.check = false;
-
+            polysemy-test.jailbreak = true;
+            polysemy-conc.jailbreak = true;
+            polysemy-log.jailbreak = true;
 
             diagnose = {
               extraBuildDepends = [
@@ -98,6 +100,8 @@
             };
           };
         };
+
+
 
 
         treefmt.config = {

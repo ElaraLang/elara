@@ -1,7 +1,9 @@
 packages:
   - .
 
-resolver: lts-21.25
+snapshot: lts-22.17 # GHC 9.6.4
+compiler: ghc-9.6.5 # Comes with Cabal-3.10.3.0
+
 
 flags:
   diagnose:
@@ -17,7 +19,7 @@ extra-deps:
   commit: 8e71345eac701c8bf3d7454a9987e3224aaa5768
 - git: git@github.com:knightzmc/diagnose.git
   commit: 4e4155e3e2153c11b825a6a58c5cb5af817128c9
-- aeson-2.1.2.1
+- aeson-2.2.1.0
 - alex-3.4.0.0@sha256:3c9e1e6b4f2f956623375dd15b904144dd3183b28f1ce1afcce11192f6d868dd,3900
 - data-default-0.7.1.1@sha256:2804e8d14f521a1edee88b68b66347448e7f3b685868290fdc55930e4471f5a9,645
 - dlist-1.0@sha256:55ff69d20ce638fc7727342ee67f2f868da61d3dcf3763f790bf9aa0b145e568,3812
