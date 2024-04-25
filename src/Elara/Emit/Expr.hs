@@ -118,6 +118,7 @@ generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
 generateInstructions' (App f x) t = do
+    Log.debug $ "Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x <> " with type args" <> showPretty t
     generateAppInstructions f x
 generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
@@ -289,7 +290,20 @@ generateAppInstructions f x = do
                             let appWithArgs = foldl' App f' args
                             inst <- etaExpand appWithArgs (FuncTy (last $ fromList (functionTypeArgs fType)) (functionTypeResult fType)) cName
                             emit inst
-                        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> "\n x=" <> showPretty x <> "\n f'=" <> showPretty f' <> "\n args=" <> showPretty args
+                        else
+                            error $
+                                "Arity mismatch. Expected: "
+                                    <> show arity
+                                    <> ", but got: "
+                                    <> show (length args)
+                                    <> " for f="
+                                    <> showPretty f
+                                    <> "\n x="
+                                    <> showPretty x
+                                    <> "\n f'="
+                                    <> showPretty f'
+                                    <> "\n args="
+                                    <> showPretty (args, typeArgs)
   where
     collectArgs :: JVMExpr -> ([Type], [JVMExpr]) -> (JVMExpr, [Type], [JVMExpr])
     collectArgs (App f x) (tArgs, args) = collectArgs f (tArgs, x : args)
