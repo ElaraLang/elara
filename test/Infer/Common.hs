@@ -5,21 +5,26 @@ module Infer.Common where
 import Common (diagShouldFail, diagShouldSucceed)
 import Control.Exception (throwIO)
 import Elara.AST.Generic hiding (Type)
+import Elara.AST.Module (Module)
+import Elara.AST.Name
+import Elara.AST.Region
+import Elara.AST.Select
 import Elara.AST.StripLocation
 import Elara.AST.Typed (TypedExpr)
 import Elara.Data.Pretty (Pretty)
 import Elara.Data.TopologicalGraph (createGraph)
 import Elara.Data.Unique
-import Elara.Desugar (desugarExpr, runDesugar, runDesugarPipeline)
+import Elara.Desugar (desugar, desugarExpr, runDesugar, runDesugarPipeline)
+import Elara.Error (addFile)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader (readTokensWith)
-import Elara.Parse (parsePipeline, runParsePipeline)
+import Elara.Parse (moduleParser, parsePipeline, runParsePipeline)
 import Elara.Parse.Expression (exprParser)
 import Elara.Pipeline (PipelineRes, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Rename (renameExpr, runRenamePipeline)
-import Elara.Shunt (runShuntPipeline, shuntExpr)
-import Elara.TypeInfer (completeExpression, inferExpression, runInferPipeline)
+import Elara.Rename (rename, renameExpr, runRenamePipeline)
+import Elara.Shunt (runShuntPipeline, shunt, shuntExpr)
+import Elara.TypeInfer (completeExpression, inferExpression, inferModule, runInferPipeline)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
@@ -54,12 +59,24 @@ completeInference x = do
 inferFully :: ToString a => a -> PipelineRes TypedExpr
 inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
+    addFile fp (toString source)
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp tokens
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
     renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ renameExpr desugared)
     shunted <- runReader mempty $ shuntExpr renamed
     inferExpression shunted Nothing >>= completeInference
+
+inferModuleFully :: ToString a => a -> PipelineRes (Module Typed, Map (Qualified Name) (Type SourceRegion))
+inferModuleFully source = finalisePipeline . runInferPipeline . runShuntPipeline . runParsePipeline . runLexPipeline $ do
+    let fp = "<tests>"
+    addFile fp (toString source)
+    tokens <- readTokensWith fp (toString source)
+    parsed <- parsePipeline moduleParser fp tokens
+    desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
+    renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ rename desugared)
+    shunted <- runReader mempty $ shunt renamed
+    inferModule shunted
 
 errorToIOFinal' :: forall e r a. (Member (Final IO) r, Exception e) => Sem (Error e ': r) a -> Sem r a
 errorToIOFinal' sem = do
@@ -76,9 +93,10 @@ typeOf' msg = do
 
 failTypeMismatch :: (Pretty a1, MonadTest m) => String -> String -> a1 -> m a2
 failTypeMismatch name expected actual =
-    failWith
-        Nothing
-        ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
+    withFrozenCallStack $
+        failWith
+            Nothing
+            ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
 
 inferSpec :: (MonadIO m, Pretty a1, MonadTest m) => Text -> String -> m (Type (), a1 -> m a2)
 inferSpec code expected = do

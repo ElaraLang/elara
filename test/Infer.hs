@@ -1,9 +1,22 @@
 module Infer where
 
+import Common (diagShouldSucceed)
+import Control.Lens (Each (each), Field1 (_1), Prism', filtered, foldOf, folded, mapped, preview, traverseOf, (^.), (^..), (^?))
+import Data.Generics.Product (HasField (field))
+import Data.Generics.Sum (AsAny (_As), AsConstructor (_Ctor), AsConstructor' (_Ctor'), AsType (_Typed))
+import Data.Generics.Wrapped (_Unwrapped)
+import Data.Map ((!))
+import Elara.AST.Generic.Common
+import Elara.AST.Generic.Types
+import Elara.AST.Region (unlocated)
+import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedTyped))
+import Elara.AST.StripLocation
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type (Type (..))
 import Infer.Common
+import Print (printPretty)
+import Relude.Unsafe ((!!))
 import Test.Hspec
 import Test.Hspec.Hedgehog
 import Prelude hiding (fail)
@@ -83,3 +96,32 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
         case t of
             Tuple' (Scalar () Scalar.Integer :| [Scalar () Scalar.Unit]) -> pass
             o -> fail o
+
+    it "Correctly adds type applications when referring to another polymorphic function" $ hedgehog $ do
+        (mod, _) <- liftIO (inferModuleFully @Text "let id_ x = x; let id = id_; def id2 : Int -> Int; let id2 = id_") >>= diagShouldSucceed
+        let decls =
+                mod
+                    ^.. _Unwrapped
+                        . unlocated
+                        . field @"declarations"
+                        . folded
+                        . _Unwrapped
+                        . unlocated
+                        . field @"body"
+                        . _Unwrapped
+                        . unlocated
+                        . (_Ctor' @"Value" @(DeclarationBody' Typed))
+                        . _1
+
+        let idDecl = decls !! 1 ^. _Unwrapped . _1 . unlocated
+        let id2Decl = decls !! 2 ^. _Unwrapped . _1 . unlocated
+
+        printPretty decls
+
+        case idDecl of
+            (Elara.AST.Generic.Types.Var _) -> pass
+            o -> failTypeMismatch "id" "Main.id @a" o
+
+        case id2Decl of
+            (TypeApplication x y) -> pass
+            o -> failTypeMismatch "id" "Main.id @Int" o

@@ -32,7 +32,7 @@ finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
 finalisePipeline =
     runM @IO
         . interpretTimeGhc
-        . interpretLogStdoutLevel (Just Debug)
+        . interpretLogStdoutLevel (Just Info)
         . raiseUnder
         . runDiagnosticWriter
         . runMaybe

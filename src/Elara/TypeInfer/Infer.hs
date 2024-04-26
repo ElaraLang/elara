@@ -1372,49 +1372,10 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         let isFreeTypeVariable = \case Type.VariableType _ x -> x `elem` (view unlocated <$> Type.freeTypeVars completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
         let argLoc = typedArgument ^. exprLocation
         let resultLoc = resultType.location
-        e <- case Type.stripForAll completedFunctionType of
-            Type.Function{input, output}
-                | isFreeTypeVariable input && isFreeTypeVariable output -> do
-                    pure $
-                        FunctionCall
-                            ( Expr
-                                ( Located
-                                    resultLoc
-                                    ( TypeApplication
-                                        ( Expr
-                                            ( Located
-                                                argLoc
-                                                (TypeApplication _A (Syntax.typeOf typedArgument))
-                                            , resultType
-                                            )
-                                        )
-                                        (Type.stripForAll resultType)
-                                    )
-                                , resultType
-                                )
-                            )
-                            typedArgument
-            Type.Function{input}
-                | isFreeTypeVariable input -> do
-                    pure $
-                        FunctionCall
-                            ( Expr (Located argLoc (TypeApplication _A (Syntax.typeOf typedArgument)), resultType)
-                            )
-                            typedArgument
-            Type.Function{output}
-                | isFreeTypeVariable output -> do
-                    _0 <- get
-                    case Type.applicableTyApp completedFunctionType resultType of
-                        [] -> pure $ FunctionCall _A typedArgument
-                        (tApp : _) ->
-                            pure $
-                                FunctionCall
-                                    ( Expr (Located resultLoc (TypeApplication _A tApp), resultType)
-                                    )
-                                    typedArgument
-            _ -> do
-                pure $ FunctionCall _A typedArgument
-
+        let e =
+                FunctionCall
+                    _A
+                    typedArgument
         pure $ Expr (Located location e, resultType)
 
     -- All the type inference rules for scalars go here.  This part is
@@ -1622,9 +1583,16 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         _Θ <- get
 
         subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
+        _1 <- get
+
+        {-
+        When checking that e:T, this can often provoke the creation of type applications.
+        for example, given id: forall a. a -> a, checking that id : Int -> Int will create a type application @Int
+        -}
+        -- debugPretty ("check'" :: Text, expr, _At, Context.solveType _1 _At, _B)
         case _At of
-            Type.Forall{} | _At `Type.instantiate` t /= _At -> do
-                case _At `Type.applicableTyApp` t of
+            Type.Forall{} -> do
+                case _At `Type.applicableTyApp` _B of
                     [] -> pure _A
                     (tApp : _) ->
                         -- insert type application from instantiating the forall
