@@ -12,10 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: cachix/install-nix-action@v24
+      - uses: DeterminateSystems/nix-installer-action@main
         name: Install Nix
         with:
-          nix_path: nixpkgs=channel:nixos-unstable
+          extra-conf: |
+            trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://cache.garnix.io?priority=41 https://cache.nixos.org/
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
@@ -24,6 +26,7 @@ jobs:
           name: elara
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Run CI
-        run: |
-          nix run github:srid/nixci
+      - uses: yaxitech/nix-install-pkgs-action@v3
+        with:
+          packages: "github:srid/nixci"
+      - run: nixci build
