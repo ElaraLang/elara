@@ -161,7 +161,7 @@ addDeclaration declBody = case declBody of
                             inst <- etaExpandN (Var $ Normal n) type' thisName
                             emit inst
                             Log.debug $ "Returning static field " <> showPretty declName <> "..."
-                            emit AReturn
+                        Log.debug "=="
                     _ -> do
                         let descriptor = generateMethodDescriptor type'
                         Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."

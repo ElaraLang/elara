@@ -43,7 +43,15 @@ createMethod ::
     JVMExpr ->
     Sem r ()
 createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
-    Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor <> " and body " <> showPretty body
+    Log.debug $
+        "Creating method "
+            <> showPretty thisClassName
+            <> "."
+            <> showPretty name
+            <> " with descriptor "
+            <> showPretty descriptor
+            <> " and body "
+            <> showPretty body
     let initialState = createMethodCreationState (length args) thisClassName
     ((mcState, _), codeAttrs, instructions) <-
         runCodeBuilder $
