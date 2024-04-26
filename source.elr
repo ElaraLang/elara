@@ -3,4 +3,4 @@ import Elara.Prim
 
 let f = identity
 
-let main = f 3
+let main = print (f 3)
