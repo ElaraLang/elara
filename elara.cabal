@@ -51,6 +51,7 @@ library
       Elara.AST.Unlocated
       Elara.AST.VarRef
       Elara.Core
+      Elara.Core.Analysis
       Elara.Core.Module
       Elara.Core.Pretty
       Elara.CoreToCore

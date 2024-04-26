@@ -21,12 +21,12 @@ import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Expr
 import Elara.Emit.Lambda (createLambda, etaExpand, etaExpandN)
-import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder)
+import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder, etaExpandNIntoMethod)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
-import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelLambdas)
+import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelJVMLambdas, transformTopLevelLambdas)
 import Elara.Error (DiagnosticWriter, runErrorOrReport)
 import Elara.ToCore (stripForAll)
 import JVM.Data.Abstract.Builder
@@ -126,8 +126,7 @@ addDeclarationsAndMain m = do
     when (isMainModule m) (addMethod (generateMainMethod m))
 
 addClinit :: Member ClassBuilder r => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
-addClinit (CLInitState s) attrs code = do
-    createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s code
+addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s
 
 addDeclaration :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
@@ -150,9 +149,9 @@ addDeclaration declBody = case declBody of
                     FuncTy{} -> do
                         let descriptor = generateMethodDescriptor type'
                         Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
-                        let y = transformTopLevelLambdas e
-                        Log.debug $ "Transformed lambda expression: " <> showPretty y
                         thisName <- ask @QualifiedClassName
+                        y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
+                        Log.debug $ "Transformed lambda expression: " <> showPretty y
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.Func"))
                         Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."

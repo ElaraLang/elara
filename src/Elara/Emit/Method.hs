@@ -5,7 +5,7 @@ module Elara.Emit.Method where
 import Data.List (maximum)
 import {-# SOURCE #-} Elara.Emit.Expr
 import Elara.Emit.State
-import Elara.Emit.Var (JVMExpr)
+import Elara.Emit.Var (JVMBinder (..), JVMExpr, toJVMExpr)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code
 import JVM.Data.Abstract.ClassFile.AccessFlags
@@ -13,9 +13,13 @@ import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..))
 import JVM.Data.Abstract.Instruction
 
+import Data.List.NonEmpty qualified as NE
+import Elara.Core (CoreExpr, Expr (..), Type, functionTypeArgs, functionTypeResult)
+import Elara.Core.Analysis (declaredLambdaArity, estimateArity)
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Params
+import Elara.Emit.Utils (generateFieldType)
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.Error
@@ -133,3 +137,31 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange IfLe{} = -1
     stackChange Goto{} = 0
     stackChange Label{} = 0 -- labels have no representation in the bytecode
+
+etaExpandNIntoMethod ::
+    ( HasCallStack
+    , Member UniqueGen r
+    , Member (Error EmitError) r
+    , Member (Reader GenParams) r
+    , Member Log r
+    ) =>
+    CoreExpr ->
+    Type ->
+    QualifiedClassName ->
+    Sem r JVMExpr
+etaExpandNIntoMethod funcCall exprType thisClassName = do
+    let arity = estimateArity funcCall - declaredLambdaArity funcCall
+    Log.debug $ "etaExpandNIntoMethod: " <> showPretty (funcCall, arity)
+    let args = NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
+            Just x -> x
+            Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
+    Log.debug $ "etaExpandNIntoMethod: " <> showPretty (funcCall, exprType, thisClassName, args)
+    params <- traverse (\_ -> makeUnique "param") args
+    let paramTypes = zip params (generateFieldType <$> args)
+
+    local (\x -> x{checkCasts = False}) $
+        pure $
+            flipfoldl'
+                (\(_, t) b -> App b (Var $ JVMLocal t))
+                (toJVMExpr funcCall)
+                (zip (fst <$> paramTypes) [0 ..])

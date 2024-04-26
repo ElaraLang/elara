@@ -163,7 +163,6 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t)
         AST.Var (Located _ v@(Local _)) -> do
             t' <- typeToCore t
-
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t')
         AST.Constructor v -> do
             ctor <- lookupCtor v

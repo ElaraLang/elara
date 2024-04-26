@@ -298,6 +298,8 @@ generateAppInstructions f x = do
                                     <> show (length args)
                                     <> " for f="
                                     <> showPretty f
+                                    <> " : "
+                                    <> showPretty fType
                                     <> "\n x="
                                     <> showPretty x
                                     <> "\n f'="
