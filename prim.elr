@@ -1,11 +1,11 @@
-module Elara.Prim	module Elara.Prim
+module Elara.Prim
 
 
 def undefined : a	
 let undefined = elaraPrimitive "undefined"	
 
-def println : String -> IO ()	def println : String -> IO ()
-let println = elaraPrimitive "println"	let println = elaraPrimitive "println"
+def println : String -> IO ()
+let println = elaraPrimitive "println"
 
 
 def (+) : Int -> Int -> Int	
@@ -21,8 +21,8 @@ def (==) : a -> a -> Bool
 let (==) = elaraPrimitive "=="	
 
 
-def toString : a -> String	def toString : a -> String
-let toString = elaraPrimitive "toString"	let toString = elaraPrimitive "toString"
+def toString : a -> String
+let toString = elaraPrimitive "toString"
 
 infixr 5 `cons`	
 def cons : a -> [a] -> [a]	
