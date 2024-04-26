@@ -98,9 +98,9 @@ createLambda params returnType thisClassName body = do
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, methodDescriptor) =
             case length params of
-                1 -> ("elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
-                2 -> ("elara/Func2", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
-                3 -> ("elara/Func3", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
+                1 -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
+                2 -> ("Elara/Func2", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
+                3 -> ("Elara/Func3", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
                 other -> error $ "createLambda: " <> show other <> " parameters not supported"
 
     let inst =

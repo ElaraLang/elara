@@ -1,4 +1,4 @@
-package elara;
+package Elara;
 
 public class Error {
     public static <T> T undefined() {

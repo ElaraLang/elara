@@ -1,4 +1,4 @@
-package elara;
+package Elara;
 
 public class Unit {
     private Unit() {}

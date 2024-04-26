@@ -1,4 +1,4 @@
-package elara;
+package Elara;
 
 import java.util.function.Supplier;
 import java.io.IOException;
@@ -20,10 +20,10 @@ public class IO<T> {
         return new IO<>(() -> f.run(this.run.get()).run.get());
     }
 
-    public static IO<Void> println(String s) {
+    public static IO<Unit> println(String s) {
         return new IO<>(() -> {
             System.out.println(s);
-            return null;
+            return Unit.unit;
         });
     }
 

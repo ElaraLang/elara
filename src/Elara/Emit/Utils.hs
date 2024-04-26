@@ -55,11 +55,11 @@ generateFieldType c | c == intCon = ObjectFieldType "java.lang.Integer"
 generateFieldType c | c == boolCon = ObjectFieldType "java.lang.Boolean"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType c | c == charCon = ObjectFieldType "java.lang.Character"
-generateFieldType c | c == unitCon = ObjectFieldType "elara.Unit"
-generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "elara.EList"
+generateFieldType c | c == unitCon = ObjectFieldType "Elara.Unit"
+generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "Elara.EList"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
-generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "elara.IO"
-generateFieldType (FuncTy _ _) = ObjectFieldType "elara.Func"
+generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "Elara.IO"
+generateFieldType (FuncTy _ _) = ObjectFieldType "Elara.Func"
 generateFieldType (ForAllTy _ x) = generateFieldType x
 generateFieldType o = error $ "generateFieldType: " <> show o
 

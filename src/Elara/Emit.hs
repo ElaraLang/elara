@@ -153,7 +153,7 @@ addDeclaration declBody = case declBody of
                         y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
                         Log.debug $ "Transformed lambda expression: " <> showPretty y
                         createMethod thisName descriptor ("_" <> declName) y
-                        let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.Func"))
+                        let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
                         Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
                         createMethodWithCodeBuilder thisName getterDescriptor declName $ do
                             Log.debug $ "Getting static field " <> showPretty declName <> "..."
@@ -199,8 +199,8 @@ generateMainMethod m =
                 { maxStack = 1 -- TODO: calculate this
                 , maxLocals = 1 -- TODO: calculate this too
                 , code =
-                    [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "elara.IO")
-                    , InvokeVirtual (ClassInfoType "elara.IO") "run" (MethodDescriptor [] VoidReturn)
+                    [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "Elara.IO")
+                    , InvokeVirtual (ClassInfoType "Elara.IO") "run" (MethodDescriptor [] VoidReturn)
                     , Return
                     ]
                 , exceptionTable = []

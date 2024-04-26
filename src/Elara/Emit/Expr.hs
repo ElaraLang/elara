@@ -178,7 +178,7 @@ generateCaseInstructions
         , listCon2' == listCon =
             do
                 generateInstructions scrutinee
-                emit $ CheckCast (ClassInfoType "elara.EList")
+                emit $ CheckCast (ClassInfoType "Elara.EList")
                 -- store the scrutinee into the as, if it exists
 
                 as' <- for as $ \as' -> do
@@ -193,16 +193,16 @@ generateCaseInstructions
                 ifEmptyLabel <- newLabel
                 endLabel <- newLabel
 
-                emit $ InvokeVirtual (ClassInfoType "elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
+                emit $ InvokeVirtual (ClassInfoType "Elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
                 emit $ IfNe ifEmptyLabel
                 -- store the cons binds into locals
                 referenceScrutinee
-                emit $ GetField (ClassInfoType "elara.EList") "head" (ObjectFieldType "java.lang.Object")
+                emit $ GetField (ClassInfoType "Elara.EList") "head" (ObjectFieldType "java.lang.Object")
                 headIdx <- localVariableId headBind
                 emit $ AStore headIdx
 
                 referenceScrutinee
-                emit $ GetField (ClassInfoType "elara.EList") "tail" (ObjectFieldType "elara.EList")
+                emit $ GetField (ClassInfoType "Elara.EList") "tail" (ObjectFieldType "Elara.EList")
                 tailIdx <- localVariableId tailBind
                 emit $ AStore tailIdx
 
@@ -261,7 +261,7 @@ generateAppInstructions f x = do
             Log.debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x
-            emit $ InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+            emit $ InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         Right (fName, fType) -> do
             let arity = typeArity fType
             Log.debug $ "Function is a global variable: " <> showPretty fName <> " with type " <> showPretty fType <> " and arity " <> show arity
@@ -342,7 +342,7 @@ generatePrimInstructions :: Monad m => Text -> m [Instruction]
 generatePrimInstructions "println" =
     pure
         [ ALoad 0
-        , InvokeStatic (ClassInfoType "elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
+        , InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
         ]
 generatePrimInstructions "toString" =
     pure
@@ -351,37 +351,37 @@ generatePrimInstructions "toString" =
         ]
 generatePrimInstructions "undefined" =
     pure
-        [ InvokeStatic (ClassInfoType "elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        [ InvokeStatic (ClassInfoType "Elara.Error") "undefined" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , AConstNull
         ]
 generatePrimInstructions "+" =
     pure
         [ -- sum 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Int.add
-          GetStatic (ClassInfoType "elara.Prelude") "add" (ObjectFieldType "elara.Func")
+          GetStatic (ClassInfoType "Elara.Prelude") "add" (ObjectFieldType "Elara.Func")
         , ALoad 0
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , ALoad 1
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
 generatePrimInstructions "-" =
     pure
         [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
-          GetStatic (ClassInfoType "elara.Prelude") "minus" (ObjectFieldType "elara.Func")
+          GetStatic (ClassInfoType "Elara.Prelude") "minus" (ObjectFieldType "Elara.Func")
         , ALoad 0
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , ALoad 1
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
 generatePrimInstructions "*" =
     pure
         [ -- minus 2 java.lang.Integers using Func<Integer, Func<Integer, Integer>> elara.Prelude.minus
-          GetStatic (ClassInfoType "elara.Prelude") "times" (ObjectFieldType "elara.Func")
+          GetStatic (ClassInfoType "Elara.Prelude") "times" (ObjectFieldType "Elara.Func")
         , ALoad 0
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , ALoad 1
-        , InvokeInterface (ClassInfoType "elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
+        , InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         , CheckCast (ClassInfoType "java.lang.Integer")
         ]
 generatePrimInstructions "==" =
@@ -395,31 +395,31 @@ generatePrimInstructions "cons" =
     pure
         [ ALoad 0
         , ALoad 1
-        , InvokeStatic (ClassInfoType "elara.EList") "Cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "elara.EList")))
+        , InvokeStatic (ClassInfoType "Elara.EList") "Cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "Elara.EList"] (TypeReturn (ObjectFieldType "Elara.EList")))
         ]
 generatePrimInstructions "empty" =
     pure
-        [ InvokeStatic (ClassInfoType "elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "elara.EList")))
+        [ InvokeStatic (ClassInfoType "Elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.EList")))
         ]
 generatePrimInstructions "listToString" =
     pure
         [ ALoad 0
-        , InvokeStatic (ClassInfoType "elara.EList") "listToString" (MethodDescriptor [ObjectFieldType "elara.EList"] (TypeReturn (ObjectFieldType "java.lang.String")))
+        , InvokeStatic (ClassInfoType "Elara.EList") "listToString" (MethodDescriptor [ObjectFieldType "Elara.EList"] (TypeReturn (ObjectFieldType "java.lang.String")))
         ]
 generatePrimInstructions "stringToList" =
     pure
         [ ALoad 0
-        , InvokeStatic (ClassInfoType "elara.EList") "stringToList" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.EList")))
+        , InvokeStatic (ClassInfoType "Elara.EList") "stringToList" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.EList")))
         ]
 generatePrimInstructions "readFile" =
     pure
         [ ALoad 0
-        , InvokeStatic (ClassInfoType "elara.IO") "readFile" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "elara.IO")))
+        , InvokeStatic (ClassInfoType "Elara.IO") "readFile" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
         ]
 generatePrimInstructions "ioBind" =
     pure
         [ ALoad 0
         , ALoad 1
-        , InvokeVirtual (ClassInfoType "elara.IO") "bind" (MethodDescriptor [ObjectFieldType "elara.Func"] (TypeReturn (ObjectFieldType "elara.IO")))
+        , InvokeVirtual (ClassInfoType "Elara.IO") "bind" (MethodDescriptor [ObjectFieldType "Elara.Func"] (TypeReturn (ObjectFieldType "Elara.IO")))
         ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other

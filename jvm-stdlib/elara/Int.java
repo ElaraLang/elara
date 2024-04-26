@@ -1,4 +1,4 @@
-package elara;
+package Elara;
 
 public class Int {
     private final int val;
