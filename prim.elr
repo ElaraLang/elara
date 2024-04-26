@@ -1,8 +1,51 @@
-module Elara.Prim
-
-def println : String -> IO ()
-let println = elaraPrimitive "println"
+module Elara.Prim	module Elara.Prim
 
 
-def toString : a -> String
-let toString = elaraPrimitive "toString"
+def undefined : a	
+let undefined = elaraPrimitive "undefined"	
+
+def println : String -> IO ()	def println : String -> IO ()
+let println = elaraPrimitive "println"	let println = elaraPrimitive "println"
+
+
+def (+) : Int -> Int -> Int	
+let (+) = elaraPrimitive "+"	
+
+def (-) : Int -> Int -> Int	
+let (-) = elaraPrimitive "-"	
+
+def (*) : Int -> Int -> Int	
+let (*) = elaraPrimitive "*"	
+
+def (==) : a -> a -> Bool	
+let (==) = elaraPrimitive "=="	
+
+
+def toString : a -> String	def toString : a -> String
+let toString = elaraPrimitive "toString"	let toString = elaraPrimitive "toString"
+
+infixr 5 `cons`	
+def cons : a -> [a] -> [a]	
+let cons = elaraPrimitive "cons"	
+
+def empty : [a]	
+let empty = elaraPrimitive "empty"	
+
+def (|>) : a -> (a -> b) -> b	
+let (|>) a f = f a	
+
+def stringToList : String -> [Char]	
+let stringToList = elaraPrimitive "stringToList"	
+
+def listToString : [Char] -> String	
+let listToString = elaraPrimitive "listToString"	
+
+def readFile : String -> IO [String]	
+let readFile = elaraPrimitive "readFile"	
+
+def ioBind : IO a -> (a -> IO b) -> IO b	
+let ioBind = elaraPrimitive "ioBind"	
+
+infixl 1 >>=	
+def (>>=) : IO a -> (a -> IO b) -> IO b	
+let (>>=) x y = ioBind x y	
