@@ -13,7 +13,7 @@ import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedTyped))
 import Elara.AST.StripLocation
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
-import Elara.TypeInfer.Type (Type (..))
+import Elara.TypeInfer.Type (Type (..), structuralEq)
 import Infer.Common
 import Print (printPretty)
 import Relude.Unsafe ((!!))
@@ -98,7 +98,12 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
             o -> fail o
 
     it "Correctly adds type applications when referring to another polymorphic function" $ hedgehog $ do
-        (mod, _) <- liftIO (inferModuleFully @Text "let id_ x = x; let id = id_; def id2 : Int -> Int; let id2 = id_") >>= diagShouldSucceed
+        (mod, _) <-
+            liftIO
+                ( inferModuleFully @Text
+                    "let id_ x = x; let id = id_; def id2 : Int -> Int; let id2 = id_; def id3: (a -> a) -> (a -> a); let id3 = id_;"
+                )
+                >>= diagShouldSucceed
         let decls =
                 mod
                     ^.. _Unwrapped
@@ -115,6 +120,7 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
 
         let idDecl = decls !! 1 ^. _Unwrapped . _1 . unlocated
         let id2Decl = decls !! 2 ^. _Unwrapped . _1 . unlocated
+        let id3Decl = decls !! 3 ^. _Unwrapped . _1 . unlocated
 
         printPretty decls
 
@@ -123,5 +129,9 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
             o -> failTypeMismatch "id" "Main.id @a" o
 
         case id2Decl of
-            (TypeApplication x y) -> pass
+            (TypeApplication{}) -> pass
             o -> failTypeMismatch "id" "Main.id @Int" o
+
+        case id3Decl of
+            (TypeApplication _ (Function _ a b)) | a `structuralEq` b -> pass
+            o -> failTypeMismatch "id" "Main.id @(a -> a)" o
