@@ -1,7 +1,7 @@
 import Prelude 
 import Elara.Prim
 
-let f = identity >> print
+let f x y = x + y
+let g = f
 
-let main = 
-    f 3
+let main = print (g 1 2)

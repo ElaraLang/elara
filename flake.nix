@@ -37,7 +37,7 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc94;
+          basePackages = pkgs.haskell.packages.ghc965;
 
 
           packages = {
@@ -50,7 +50,9 @@
           settings = {
 
             fourmolu.check = false;
-
+            polysemy-test.jailbreak = true;
+            polysemy-conc.jailbreak = true;
+            polysemy-log.jailbreak = true;
 
             diagnose = {
               extraBuildDepends = [
@@ -100,6 +102,8 @@
         };
 
 
+
+
         treefmt.config = {
           inherit (config.flake-root) projectRootFile;
           package = pkgs.treefmt;
@@ -134,6 +138,13 @@
             description = "Run the project with ghcid auto-recompile";
             exec = ''
               stack build --file-watch --fast --ghc-options='-O0 -fbyte-code' --exec "elara --dump-shunted --dump-core --dump-typed --run"
+            '';
+            category = "Primary";
+          };
+          test = {
+            description = "Run the project's tests with ghcid auto-recompile";
+            exec = ''
+              stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code" --test-arguments='--match "/Infer Test/Infers types correctly/Infers function types correctly/Correctly adds type applications when referring to another polymorphic function/"'
             '';
             category = "Primary";
           };

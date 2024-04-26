@@ -269,11 +269,16 @@ to determine the type of the type application, as naively we would instantiate i
 which is actually incorrect.
 -}
 applicableTyApp :: Show s => Type s -> Type s -> [Type s]
+-- applicableTyApp x y | traceShow ("ata", pretty x, pretty y) False = undefined
+-- If x and y are the same, there's no instantiation to be done
 applicableTyApp x y | x `structuralEq` y = []
-applicableTyApp _ y@(UnsolvedType{}) = [y]
+applicableTyApp _ y@(UnsolvedType{}) = []
+-- If x is forall a. a, and y is x, then we need to instantiate x with a
 applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = [y]
-applicableTyApp (Forall{name, type_ = Function{input = VariableType{name = n}}}) Function{input = sIn}
-    | name == n = [sIn]
+-- If x is forall a. a -> _, and y is c -> _, then we need to instantiate x with c
+applicableTyApp
+    (Forall{type_ = Function{input = VariableType{}}})
+    Function{input = sIn} = [sIn]
 -- Instantiating forall x. y with forall z. y[x := z] doesn't create any instantiations
 applicableTyApp (Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
     if type_ `structuralEq` substituteType name2 (VariableType{name = name, ..}) type2

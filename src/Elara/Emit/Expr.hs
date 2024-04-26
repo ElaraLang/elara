@@ -94,7 +94,7 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
             FuncTy{} -> do
                 -- it's a method function, so we have to eta-expand it
                 cName <- gets (.thisClassName)
-                inst <- etaExpand v (foldl' instantiate t tApps) cName
+                inst <- etaExpandN v (foldl' instantiate t tApps) cName
                 emit inst
             _ -> do
                 -- no args function (eg undefined)
@@ -118,6 +118,7 @@ generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
 generateInstructions' (App f x) t = do
+    Log.debug $ "Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x <> " with type args" <> showPretty t
     generateAppInstructions f x
 generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
@@ -129,7 +130,7 @@ generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
 generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
-    inst <- createLambda (v, generateFieldType binderType) (ObjectFieldType "java/lang/Object") cName body
+    inst <- createLambda ((v, generateFieldType binderType) :| []) (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
 generateInstructions' (Lam (JVMLocal _) _) _ = error "Lambda with local variable as its binder"
@@ -289,7 +290,22 @@ generateAppInstructions f x = do
                             let appWithArgs = foldl' App f' args
                             inst <- etaExpand appWithArgs (FuncTy (last $ fromList (functionTypeArgs fType)) (functionTypeResult fType)) cName
                             emit inst
-                        else error $ "Arity mismatch: " <> show arity <> " vs " <> show (length args) <> " for f=" <> showPretty f <> "\n x=" <> showPretty x <> "\n f'=" <> showPretty f' <> "\n args=" <> showPretty args
+                        else
+                            error $
+                                "Arity mismatch. Expected: "
+                                    <> show arity
+                                    <> ", but got: "
+                                    <> show (length args)
+                                    <> " for f="
+                                    <> showPretty f
+                                    <> " : "
+                                    <> showPretty fType
+                                    <> "\n x="
+                                    <> showPretty x
+                                    <> "\n f'="
+                                    <> showPretty f'
+                                    <> "\n args="
+                                    <> showPretty (args, typeArgs)
   where
     collectArgs :: JVMExpr -> ([Type], [JVMExpr]) -> (JVMExpr, [Type], [JVMExpr])
     collectArgs (App f x) (tArgs, args) = collectArgs f (tArgs, x : args)
@@ -300,7 +316,7 @@ invokeStaticVars :: HasCallStack => Member (Error EmitError) r => UnlocatedVarRe
 invokeStaticVars (Global' (Qualified fName mn)) fType =
     pure
         ( ClassInfoType $ createModuleName mn
-        , translateOperatorName fName
+        , "_" <> translateOperatorName fName
         , generateMethodDescriptor fType
         )
 invokeStaticVars (Local' x) t = throw $ InvokeStaticLocal x t

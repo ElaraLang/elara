@@ -11,6 +11,7 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
+import Print (debugPretty)
 
 data JVMBinder
     = JVMLocal !Word8
@@ -58,3 +59,34 @@ transformTopLevelJVMLambdas = go 0
     go :: Word8 -> JVMExpr -> JVMExpr
     go c (Lam (Normal v@(Core.Id _ _)) body) = replaceVar (Normal v) (JVMLocal c) (go (c + 1) body)
     go _ x = x
+
+{- | When we have a function let x = y, where y : A -> B,
+We have to convert this into public static B _x(A a) { return y(a); }
+This function adds the application of the function to the argument, i.e. turning it into let x = y local_0,
+meaning it will be compiled correctly.
+
+> addTopLevelLambdas (identity, a -> a) = identity local_0
+> addTopLevelLambdas (local_0, a -> a) = local_0
+-}
+
+{-
+let id = identity
+
+let add1 = add 1
+
+==>
+
+let id : a -> a = identity
+
+let add1 : Int -> Int = add 1
+
+==>
+
+public static Object _id(Object x) {
+    return _identity(x)
+}
+
+public static Int _add1(Int x) {
+    return _add(1, x)
+}
+-}
