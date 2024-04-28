@@ -42,6 +42,7 @@ etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = do
     local (\x -> x{checkCasts = False}) $
         createLambda
             ((param, generateFieldType i) :| [])
+            []
             (generateFieldType o)
             thisClassName
             ( App
@@ -67,12 +68,13 @@ etaExpandN funcCall exprType thisClassName = do
     params <- traverse (\_ -> makeUnique "param") args
     let paramTypes = NE.zip params (generateFieldType <$> args)
 
-    local (\x -> x{checkCasts = False}) $
-        createLambda paramTypes (generateFieldType $ functionTypeResult exprType) thisClassName $
-            flipfoldl'
-                (\(_, t) b -> App b (Var $ JVMLocal t))
-                funcCall
-                (NE.zip (fst <$> paramTypes) [0 ..])
+    local (\x -> x{checkCasts = False}) $ do
+        let body =
+                flipfoldl'
+                    (\(_, t) b -> App b (Var $ JVMLocal t))
+                    funcCall
+                    (NE.zip (fst <$> paramTypes) [0 ..])
+        createLambda paramTypes [] (generateFieldType $ functionTypeResult exprType) thisClassName body
 
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:
@@ -84,6 +86,8 @@ createLambda ::
     (HasCallStack, Members [ClassBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r) =>
     -- | The names and parameters of the lambda
     NonEmpty (Unique Text, FieldType) ->
+    -- | Extra capture params. These are used to pass in the values of variables that are captured by the lambda
+    [(Unique Text, FieldType)] ->
     -- | The return type of the lambda
     FieldType ->
     -- | The class name the lambda will be created in
@@ -91,8 +95,9 @@ createLambda ::
     -- | The body of the lambda
     JVMExpr ->
     Sem r Instruction
-createLambda params returnType thisClassName body = do
+createLambda baseParams captureParams returnType thisClassName body = do
     lamSuffix <- makeUniqueId
+    let params = baseParams `NE.appendList` captureParams
     let lambdaMethodName = "lambda$" <> show lamSuffix
 
     let lambdaMethodDescriptor = MethodDescriptor (toList $ snd <$> params) (TypeReturn returnType)
@@ -103,12 +108,18 @@ createLambda params returnType thisClassName body = do
             <> showPretty lambdaMethodDescriptor
             <> " and body "
             <> showPretty body
+            <> "\n"
+            <> fromString (prettyCallStack callStack)
 
-    let body' = foldr (\(n, i) b -> replaceVar' (Local' n) (JVMLocal i) b) body (zip (fst <$> toList params) [0 ..])
+    let body' =
+            foldr
+                (\(n, i) b -> replaceVar' (Local' n) (JVMLocal i) b)
+                body
+                (zip (fst <$> toList params) [0 ..])
 
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, methodDescriptor) =
-            case length params of
+            case length baseParams of
                 1 -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
                 2 -> ("Elara/Func2", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))
                 3 -> ("Elara/Func3", "run", MethodDescriptor [ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object", ObjectFieldType "java/lang/Object"] (TypeReturn $ ObjectFieldType "java/lang/Object"))

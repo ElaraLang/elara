@@ -130,7 +130,7 @@ generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
 generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
-    inst <- createLambda ((v, generateFieldType binderType) :| []) (ObjectFieldType "java/lang/Object") cName body
+    inst <- createLambda ((v, generateFieldType binderType) :| []) [] (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
 generateInstructions' (Lam (JVMLocal _) _) _ = error "Lambda with local variable as its binder"
