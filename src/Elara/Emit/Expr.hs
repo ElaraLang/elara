@@ -430,4 +430,9 @@ generatePrimInstructions "ioBind" =
         , ALoad 1
         , InvokeVirtual (ClassInfoType "Elara.IO") "bind" (MethodDescriptor [ObjectFieldType "Elara.Func"] (TypeReturn (ObjectFieldType "Elara.IO")))
         ]
+generatePrimInstructions "pure" =
+    pure
+        [ ALoad 0
+        , InvokeVirtual (ClassInfoType "Elara.IO") "pure" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "Elara.IO")))
+        ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other

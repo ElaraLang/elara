@@ -16,6 +16,10 @@ public class IO<T> {
         this.run.get();
     }
 
+    public static <T> IO<T> pure(T t) {
+        return new IO<>(() -> t);
+    }
+
     public <B> IO<B> bind(Func<T, IO<B>> f) {
         return new IO<>(() -> f.run(this.run.get()).run.get());
     }

@@ -4,10 +4,15 @@ import Elara.Prim
 def (*>) : IO a -> IO b -> IO b
 let (*>) a b = a >>= \x -> b
 
-
 infixr 1 >>
 def (>>) : (a -> b) -> (b -> c) -> (a -> c)
 let (>>) f g = \x -> g (f x)
+
+def sequence : [IO a] -> IO [a]
+let sequence a = 
+    match a with
+      [] -> pure []
+      (x::xs) -> x *> sequence xs
 
 def identity : a -> a
 let identity a = a
