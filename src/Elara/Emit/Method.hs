@@ -151,11 +151,10 @@ etaExpandNIntoMethod ::
     Sem r JVMExpr
 etaExpandNIntoMethod funcCall exprType thisClassName = do
     let arity = estimateArity funcCall - declaredLambdaArity funcCall
-    Log.debug $ "etaExpandNIntoMethod: " <> showPretty (funcCall, arity)
     let args = NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
             Just x -> x
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
-    Log.debug $ "etaExpandNIntoMethod: " <> showPretty (funcCall, exprType, thisClassName, args)
+    Log.debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
     params <- traverse (\_ -> makeUnique "param") args
     let paramTypes = zip params (generateFieldType <$> args)
 

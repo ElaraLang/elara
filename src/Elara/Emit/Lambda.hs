@@ -82,16 +82,27 @@ This involves a few steps:
 -}
 createLambda ::
     (HasCallStack, Members [ClassBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r) =>
+    -- | The names and parameters of the lambda
     NonEmpty (Unique Text, FieldType) ->
+    -- | The return type of the lambda
     FieldType ->
+    -- | The class name the lambda will be created in
     QualifiedClassName ->
+    -- | The body of the lambda
     JVMExpr ->
     Sem r Instruction
 createLambda params returnType thisClassName body = do
-    let lambdaMethodName = "lambda$" <> show (abs $ hash body)
+    lamSuffix <- makeUniqueId
+    let lambdaMethodName = "lambda$" <> show lamSuffix
 
     let lambdaMethodDescriptor = MethodDescriptor (toList $ snd <$> params) (TypeReturn returnType)
-    Log.debug $ "Creating lambda method " <> showPretty lambdaMethodName <> " with descriptor " <> showPretty lambdaMethodDescriptor
+    Log.debug $
+        "Creating lambda method "
+            <> showPretty lambdaMethodName
+            <> " with descriptor "
+            <> showPretty lambdaMethodDescriptor
+            <> " and body "
+            <> showPretty body
 
     let body' = foldr (\(n, i) b -> replaceVar' (Local' n) (JVMLocal i) b) body (zip (fst <$> toList params) [0 ..])
 
