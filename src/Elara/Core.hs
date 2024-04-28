@@ -1,7 +1,6 @@
 module Elara.Core where
 
 import Control.Lens (Plated (plate), transform)
-import Control.Monad.State hiding (StateT)
 import Data.Data
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)

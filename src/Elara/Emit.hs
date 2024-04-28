@@ -20,7 +20,7 @@ import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologica
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Expr
-import Elara.Emit.Lambda (createLambda, etaExpand, etaExpandN)
+import Elara.Emit.Lambda (etaExpandN)
 import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder, etaExpandNIntoMethod)
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Params

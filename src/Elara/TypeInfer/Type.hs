@@ -272,7 +272,7 @@ applicableTyApp :: Show s => Type s -> Type s -> [Type s]
 -- applicableTyApp x y | traceShow ("ata", pretty x, pretty y) False = undefined
 -- If x and y are the same, there's no instantiation to be done
 applicableTyApp x y | x `structuralEq` y = []
-applicableTyApp _ y@(UnsolvedType{}) = []
+applicableTyApp _ (UnsolvedType{}) = []
 -- If x is forall a. a, and y is x, then we need to instantiate x with a
 applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = [y]
 -- If x is forall a. a -> _, and y is c -> _, then we need to instantiate x with c

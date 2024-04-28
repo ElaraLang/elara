@@ -294,7 +294,7 @@ instance
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
 
-instance (Show (ValueDeclAnnotations ast), RUnlocate ast) => Pretty (ValueDeclAnnotations ast) where
+instance RUnlocate ast => Pretty (ValueDeclAnnotations ast) where
     pretty (ValueDeclAnnotations v) = braces ("Operator fixity:" <+> maybe "None" pretty v)
 
 instance RUnlocate (ast :: b) => Pretty (InfixDeclaration ast) where

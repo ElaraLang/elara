@@ -33,6 +33,7 @@ parseErrorSources :: ElaraParseError -> [SourceRegion]
 parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
+parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
@@ -46,11 +47,14 @@ instance HasHints ElaraParseError (Doc AnsiStyle) where
         ]
     hints (EmptyLambda _) =
         [Note "Lambda expressions cannot be empty."]
+    hints (InfixPrecTooHigh _) =
+        [Note "The precedence of an infix operator must be between 0 and 9."]
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
     showErrorComponent (EmptyRecord _) = "Empty record"
     showErrorComponent (EmptyLambda _) = "Empty lambda"
+    showErrorComponent (InfixPrecTooHigh l) = "Infix precedence too high: " <> show l
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 

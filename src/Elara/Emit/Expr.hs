@@ -3,7 +3,6 @@
 
 module Elara.Emit.Expr where
 
-import Control.Lens
 import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
@@ -265,7 +264,7 @@ generateAppInstructions f x = do
     Log.debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
-        Left (local, localType) -> do
+        Left (local, _) -> do
             Log.debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x

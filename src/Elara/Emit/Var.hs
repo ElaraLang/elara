@@ -13,7 +13,6 @@ import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
 import Elara.Emit.Utils (generateFieldType)
 import JVM.Data.Abstract.Type (FieldType)
-import Print (debugPretty)
 
 data JVMBinder
     = JVMLocal !Word8 (Maybe JVMLocalType)

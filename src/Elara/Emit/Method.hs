@@ -14,16 +14,14 @@ import JVM.Data.Abstract.Descriptor (MethodDescriptor (..), ReturnDescriptor (..
 import JVM.Data.Abstract.Instruction
 
 import Data.List.NonEmpty qualified as NE
-import Elara.Core (CoreExpr, Expr (..), Type, functionTypeArgs, functionTypeResult)
+import Elara.Core (CoreExpr, Expr (..), Type, functionTypeArgs)
 import Elara.Core.Analysis (declaredLambdaArity, estimateArity)
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Params
-import Elara.Emit.Utils (generateFieldType)
 import JVM.Data.Abstract.Name
 import Polysemy
 import Polysemy.Error
-import Polysemy.Internal.Union (Union)
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
@@ -136,12 +134,13 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange IfGt{} = -1
     stackChange IfLe{} = -1
     stackChange Goto{} = 0
+    stackChange ILoad{} = 1
+    stackChange IStore{} = -1
     stackChange Label{} = 0 -- labels have no representation in the bytecode
 
 etaExpandNIntoMethod ::
     ( HasCallStack
     , Member UniqueGen r
-    , Member (Error EmitError) r
     , Member (Reader GenParams) r
     , Member Log r
     ) =>
@@ -155,7 +154,7 @@ etaExpandNIntoMethod funcCall exprType thisClassName = do
             Just x -> x
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
     Log.debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
-    params <- traverse (\_ -> makeUnique "param") args
+    params <- traverse (\_ -> makeUnique ("param" :: Text)) args
     let paramTypes = zip params args
 
     local (\x -> x{checkCasts = False}) $

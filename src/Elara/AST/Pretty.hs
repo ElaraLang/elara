@@ -166,7 +166,7 @@ prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyValueTypeDef name t = "def" <+> pretty name <+> "=" <+> pretty t
 
 prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> TypeDeclAnnotations ast -> Doc AnsiStyle
-prettyTypeDeclaration name vars t ann =
+prettyTypeDeclaration name vars t _ =
     vsep
         [ keyword "type" <+> typeName (pretty name)
         , keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)

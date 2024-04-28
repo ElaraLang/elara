@@ -5,7 +5,6 @@
 -- | Utility functions for creating JVM lambdas
 module Elara.Emit.Lambda where
 
-import Data.Hashable (hash)
 import Data.List.NonEmpty qualified as NE
 import Elara.AST.VarRef
 import Elara.Core
@@ -25,9 +24,9 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
-import Control.Lens (Field1 (_1), Field2 (_2), cosmos, filtered, filteredBy, to, (^..), _Just)
+import Control.Lens (Field2 (_2), cosmos, filtered, (^..), _Just)
 import Control.Lens qualified as Lens
 import Data.Generics.Sum (AsAny (_As))
 import Data.Traversable (for)
@@ -133,9 +132,9 @@ createLambda baseParams returnType thisClassName body = do
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, baseMethodDescriptor, methodDescriptor) =
             case baseParams of
-                (n1, t) :| [] -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t] (TypeReturn returnType))
-                (n1, t1) :| [(n2, t2)] -> ("Elara/Func2", "run", MethodDescriptor (replicate 2 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2] (TypeReturn returnType))
-                (n1, t1) :| [(n2, t2), (n3, t3)] -> ("Elara/Func3", "run", MethodDescriptor (replicate 3 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2, t3] (TypeReturn returnType))
+                (_, t) :| [] -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t] (TypeReturn returnType))
+                (_, t1) :| [(_, t2)] -> ("Elara/Func2", "run", MethodDescriptor (replicate 2 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2] (TypeReturn returnType))
+                (_, t1) :| [(_, t2), (_, t3)] -> ("Elara/Func3", "run", MethodDescriptor (replicate 3 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2, t3] (TypeReturn returnType))
                 other -> error $ "createLambda: " <> show other <> " parameters not supported"
 
     let inst =
