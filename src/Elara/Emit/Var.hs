@@ -11,20 +11,27 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
+import JVM.Data.Abstract.Type (FieldType)
 import Print (debugPretty)
 
 data JVMBinder
-    = JVMLocal !Word8
+    = JVMLocal !Word8 (Maybe JVMLocalType)
     | Normal !Var
     deriving (Eq, Show, Data, Generic)
 
-instance Hashable JVMBinder
+jvmBinderType :: JVMBinder -> Maybe JVMLocalType
+jvmBinderType (JVMLocal _ t) = t
+jvmBinderType (Normal (Core.Id _ t)) = Just $ JVMLType t
+jvmBinderType _ = Nothing
+
+data JVMLocalType = JVMLFieldType FieldType | JVMLType Core.Type
+    deriving (Eq, Show, Data, Generic)
 
 instance Pretty JVMBinder where
     pretty = prettyVar True True
 instance PrettyVar JVMBinder where
     prettyVar t p (Normal v) = prettyVar t p v
-    prettyVar _ _ (JVMLocal i) = "local_" <> pretty i
+    prettyVar _ _ (JVMLocal i _) = "local_" <> pretty i
 
     prettyVarArg = prettyVar True True
 
@@ -57,7 +64,7 @@ transformTopLevelJVMLambdas :: JVMExpr -> JVMExpr
 transformTopLevelJVMLambdas = go 0
   where
     go :: Word8 -> JVMExpr -> JVMExpr
-    go c (Lam (Normal v@(Core.Id _ _)) body) = replaceVar (Normal v) (JVMLocal c) (go (c + 1) body)
+    go c (Lam (Normal v@(Core.Id _ t)) body) = replaceVar (Normal v) (JVMLocal c (Just $ JVMLType t)) (go (c + 1) body)
     go _ x = x
 
 {- | When we have a function let x = y, where y : A -> B,

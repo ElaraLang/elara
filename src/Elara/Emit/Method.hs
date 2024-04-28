@@ -5,7 +5,7 @@ module Elara.Emit.Method where
 import Data.List (maximum)
 import {-# SOURCE #-} Elara.Emit.Expr
 import Elara.Emit.State
-import Elara.Emit.Var (JVMBinder (..), JVMExpr, toJVMExpr)
+import Elara.Emit.Var (JVMBinder (..), JVMExpr, JVMLocalType (..), toJVMExpr)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code
 import JVM.Data.Abstract.ClassFile.AccessFlags
@@ -156,11 +156,11 @@ etaExpandNIntoMethod funcCall exprType thisClassName = do
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
     Log.debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
     params <- traverse (\_ -> makeUnique "param") args
-    let paramTypes = zip params (generateFieldType <$> args)
+    let paramTypes = zip params args
 
     local (\x -> x{checkCasts = False}) $
         pure $
             flipfoldl'
-                (\(_, t) b -> App b (Var $ JVMLocal t))
+                (\((_, pt), t) b -> App b (Var $ JVMLocal t (Just $ JVMLType pt)))
                 (toJVMExpr funcCall)
-                (zip (fst <$> paramTypes) [0 ..])
+                (zip paramTypes [0 ..])

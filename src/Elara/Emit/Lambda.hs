@@ -47,7 +47,7 @@ etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = do
             thisClassName
             ( App
                 funcCall -- f
-                (Var $ JVMLocal 0) -- x
+                (Var $ JVMLocal 0 (Just $ JVMLType i)) -- x
             )
 etaExpand n t c = error $ "etaExpand called on non-function type: " <> showPretty (n, t, c)
 
@@ -71,9 +71,9 @@ etaExpandN funcCall exprType thisClassName = do
     local (\x -> x{checkCasts = False}) $ do
         let body =
                 flipfoldl'
-                    (\(_, t) b -> App b (Var $ JVMLocal t))
+                    (\((_, pt), t) b -> App b (Var $ JVMLocal t (Just $ JVMLFieldType pt)))
                     funcCall
-                    (NE.zip (fst <$> paramTypes) [0 ..])
+                    (NE.zip paramTypes [0 ..])
         createLambda paramTypes [] (generateFieldType $ functionTypeResult exprType) thisClassName body
 
 {- | Creates the bytecode for a lambda expression
@@ -113,9 +113,9 @@ createLambda baseParams captureParams returnType thisClassName body = do
 
     let body' =
             foldr
-                (\(n, i) b -> replaceVar' (Local' n) (JVMLocal i) b)
+                (\((n, pt), i) b -> replaceVar' (Local' n) (JVMLocal i (Just $ JVMLFieldType pt)) b)
                 body
-                (zip (fst <$> toList params) [0 ..])
+                (zip (toList params) [0 ..])
 
     Log.debug $ "Body: " <> showPretty body <> " -> " <> showPretty body'
 

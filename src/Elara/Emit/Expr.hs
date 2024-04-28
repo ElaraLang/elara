@@ -65,7 +65,7 @@ generateInstructions' ::
     Expr JVMBinder ->
     [Type] ->
     Sem r ()
-generateInstructions' (Var v@(JVMLocal _)) _ = localVariableId v >>= emit . ALoad
+generateInstructions' (Var v@(JVMLocal _ _)) _ = localVariableId v >>= emit . ALoad
 generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
 generateInstructions' (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
@@ -121,7 +121,7 @@ generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableS
     idx <- localVariableId n
     generateInstructions' val tApps
     emit $ AStore idx
-    generateInstructions' (replaceVar n (JVMLocal idx) b) tApps
+    generateInstructions' (replaceVar n (JVMLocal idx (jvmBinderType n)) b) tApps
 generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
 generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
@@ -130,7 +130,7 @@ generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     inst <- createLambda ((v, generateFieldType binderType) :| []) [] (ObjectFieldType "java/lang/Object") cName body
     emit inst
     pass
-generateInstructions' (Lam (JVMLocal _) _) _ = error "Lambda with local variable as its binder"
+generateInstructions' (Lam (JVMLocal _ _) _) _ = error "Lambda with local variable as its binder"
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
@@ -215,7 +215,7 @@ localVariableId ::
     (HasCallStack, Member (Error EmitError) r, Member (State MethodCreationState) r) =>
     JVMBinder ->
     Sem r U1
-localVariableId (JVMLocal i) = do
+localVariableId (JVMLocal i _) = do
     s <- get
     if i < maxLocalVariables s
         then pure i
@@ -229,9 +229,9 @@ This function is partial! (Sorry)
 approximateTypeAndNameOf ::
     HasCallStack =>
     Expr JVMBinder ->
-    Either U1 (UnlocatedVarRef Text, Type)
+    Either (U1, Maybe JVMLocalType) (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
-approximateTypeAndNameOf (Var (JVMLocal i)) = Left i
+approximateTypeAndNameOf (Var (JVMLocal i t)) = Left (i, t)
 approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
 approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty other
 
@@ -261,7 +261,7 @@ generateAppInstructions f x = do
     Log.debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
-        Left local -> do
+        Left (local, localType) -> do
             Log.debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x
