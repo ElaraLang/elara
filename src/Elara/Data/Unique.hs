@@ -38,7 +38,7 @@ instance ToJSON c => ToJSON (Unique c)
 instance ToJSON UniqueId
 
 instance Show UniqueId where
-    show (UniqueId (Unique uniqueId _)) = Text.Show.show uniqueId
+    show (UniqueId (Unique _ uniqueId)) = Text.Show.show uniqueId
 
 instance Eq (Unique a) where
     (==) = (==) `on` view uniqueId
