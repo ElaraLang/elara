@@ -1,4 +1,4 @@
 import Prelude 
 import Elara.Prim
 
-let main = print "hello" *> print "world"
+let main = sequence (map print ["hello", "world"])
