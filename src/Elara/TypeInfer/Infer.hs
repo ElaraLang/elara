@@ -1367,11 +1367,6 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
 
-        ctx <- get
-        completedFunctionType <- Context.complete ctx (Type.stripForAll (Syntax.typeOf _A)) -- I don't like that this is necessary but we get redundant type applications otherwise
-        let isFreeTypeVariable = \case Type.VariableType _ x -> x `elem` (view unlocated <$> Type.freeTypeVars completedFunctionType); Type.UnsolvedType{} -> True; _ -> False
-        let argLoc = typedArgument ^. exprLocation
-        let resultLoc = resultType.location
         let e =
                 FunctionCall
                     _A
