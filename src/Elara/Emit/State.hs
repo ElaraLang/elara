@@ -1,6 +1,7 @@
 module Elara.Emit.State where
 
 import Data.Map qualified as Map
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import JVM.Data.Abstract.Name
 import JVM.Data.Raw.Types
@@ -14,12 +15,28 @@ data MethodCreationState = MethodCreationState
     }
     deriving (Show)
 
+instance Pretty MethodCreationState where
+    pretty MethodCreationState{localVariables, maxLocalVariables, thisClassName} =
+        vcat
+            [ "MethodCreationState"
+            , bracedBlock
+                [ "localVariables:" <+> pretty localVariables
+                , "maxLocalVariables:" <+> pretty maxLocalVariables
+                , "thisClassName:" <+> pretty thisClassName
+                ]
+            ]
+
 data LVKey
     = -- | A method argument that we don't know the name of
       UnknownName !Int
     | -- | A local variable that we do know the name of
       KnownName !(Unique Text)
     deriving (Eq, Show, Ord)
+
+instance Pretty LVKey where
+    pretty = \case
+        UnknownName i -> "UnknownName" <+> pretty i
+        KnownName u -> "KnownName" <+> pretty u
 
 initialMethodCreationState :: QualifiedClassName -> MethodCreationState
 initialMethodCreationState = MethodCreationState Map.empty 0

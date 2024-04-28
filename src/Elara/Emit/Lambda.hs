@@ -117,6 +117,8 @@ createLambda baseParams captureParams returnType thisClassName body = do
                 body
                 (zip (fst <$> toList params) [0 ..])
 
+    Log.debug $ "Body: " <> showPretty body <> " -> " <> showPretty body'
+
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, methodDescriptor) =
             case length baseParams of

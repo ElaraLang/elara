@@ -14,7 +14,7 @@ import Elara.Emit.Error
 import Elara.Emit.Lambda
 import Elara.Emit.Operator
 import Elara.Emit.Params
-import Elara.Emit.State (MethodCreationState (thisClassName), findLocalVariable, withLocalVariableScope)
+import Elara.Emit.State (MethodCreationState (..), findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
@@ -65,10 +65,7 @@ generateInstructions' ::
     Expr JVMBinder ->
     [Type] ->
     Sem r ()
-generateInstructions' (Var (JVMLocal 0)) _ = emit $ ALoad 0
-generateInstructions' (Var (JVMLocal 1)) _ = emit $ ALoad 1
-generateInstructions' (Var (JVMLocal 2)) _ = emit $ ALoad 2
-generateInstructions' (Var (JVMLocal 3)) _ = emit $ ALoad 3
+generateInstructions' (Var v@(JVMLocal _)) _ = localVariableId v >>= emit . ALoad
 generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
 generateInstructions' (Var (Normal (Id (Global' v) _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
@@ -214,8 +211,15 @@ generateCaseInstructions
                 emit $ Label endLabel
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
-localVariableId :: HasCallStack => Member (State MethodCreationState) r => JVMBinder -> Sem r U1
-localVariableId (JVMLocal i) = pure i
+localVariableId ::
+    (HasCallStack, Member (Error EmitError) r, Member (State MethodCreationState) r) =>
+    JVMBinder ->
+    Sem r U1
+localVariableId (JVMLocal i) = do
+    s <- get
+    if i < maxLocalVariables s
+        then pure i
+        else throw $ LocalVariableNotFound i s
 localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 

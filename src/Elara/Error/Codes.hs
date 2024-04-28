@@ -78,3 +78,6 @@ unknownPrecedence = "W2001"
 
 invokeStaticLocal :: ErrorCode
 invokeStaticLocal = "E4001"
+
+localVariableNotFound :: ErrorCode
+localVariableNotFound = "E4002"
