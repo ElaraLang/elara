@@ -1455,6 +1455,16 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         branches' <- traverse process branches
 
         pure $ Expr (Located location (Match e' branches'), Type.UnsolvedType (e ^. exprLocation) returnType)
+    Syntax.List [] -> do
+        existential <- fresh
+
+        push (Context.UnsolvedType existential)
+
+        pure $
+            Expr
+                ( Located location (Syntax.List [])
+                , Type.List{location, type_ = Type.UnsolvedType location existential, ..}
+                )
     Syntax.List (y : ys) -> do
         y'@(Expr (_, type_)) <- infer y
 
