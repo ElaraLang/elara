@@ -113,8 +113,6 @@ createLambda baseParams returnType thisClassName body = do
             <> showPretty lambdaMethodDescriptor
             <> " and body "
             <> showPretty body
-            <> "\n"
-            <> fromString (prettyCallStack callStack)
 
     let paramOffset = fromIntegral $ length captureParams
     let offsetBody =
@@ -187,10 +185,7 @@ getCapturedParams params expr =
                     ^.. cosmos
                         . _As @"Var"
                         . _As @"JVMLocal"
-                        . filtered (\(a, b) -> a >= len)
-        -- . (_2 . _Just)
-
-        debugPretty (params, locals)
+                        . filtered (\(a, _) -> a >= len)
 
         let locals' = locals ^.. traverse . _2 . _Just
         for locals' $ \t -> do
