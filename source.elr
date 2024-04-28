@@ -1,7 +1,4 @@
 import Prelude 
 import Elara.Prim
 
-let f x y = x + y
-let g = f
-
-let main = print (g 1 2) *> print "hello"
+let main = print "hello" *> print "world"

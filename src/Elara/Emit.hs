@@ -158,7 +158,7 @@ addDeclaration declBody = case declBody of
                         createMethodWithCodeBuilder thisName getterDescriptor declName $ do
                             Log.debug $ "Getting static field " <> showPretty declName <> "..."
                             inst <- etaExpandN (Var $ Normal n) type' thisName
-                            emit inst
+                            emit' inst
                             Log.debug $ "Returning static field " <> showPretty declName <> "..."
                         Log.debug "=="
                     _ -> do

@@ -11,6 +11,7 @@ import Elara.Core (CoreExpr, Expr (..), Var)
 import Elara.Core qualified as Core
 import Elara.Core.Pretty (PrettyVar (prettyVarArg), prettyVar)
 import Elara.Data.Pretty
+import Elara.Emit.Utils (generateFieldType)
 import JVM.Data.Abstract.Type (FieldType)
 import Print (debugPretty)
 
@@ -24,8 +25,18 @@ jvmBinderType (JVMLocal _ t) = t
 jvmBinderType (Normal (Core.Id _ t)) = Just $ JVMLType t
 jvmBinderType _ = Nothing
 
+jvmLocalTypeToFieldType :: JVMLocalType -> FieldType
+jvmLocalTypeToFieldType = \case
+    JVMLFieldType t -> t
+    JVMLType t -> generateFieldType t
+
 data JVMLocalType = JVMLFieldType FieldType | JVMLType Core.Type
     deriving (Eq, Show, Data, Generic)
+
+instance Pretty JVMLocalType where
+    pretty = \case
+        JVMLFieldType t -> pretty t
+        JVMLType t -> pretty t
 
 instance Pretty JVMBinder where
     pretty = prettyVar True True

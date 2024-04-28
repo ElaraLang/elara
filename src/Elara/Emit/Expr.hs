@@ -92,7 +92,7 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApp
                 -- it's a method function, so we have to eta-expand it
                 cName <- gets (.thisClassName)
                 inst <- etaExpandN v (foldl' instantiate t tApps) cName
-                emit inst
+                emit' inst
             _ -> do
                 -- no args function (eg undefined)
                 emit
@@ -127,8 +127,12 @@ generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
 generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
     cName <- gets (.thisClassName)
-    inst <- createLambda ((v, generateFieldType binderType) :| []) [] (ObjectFieldType "java/lang/Object") cName body
-    emit inst
+    returnType <- case approximateTypeAndNameOf body of
+        Right (_, t) -> pure $ generateFieldType t
+        Left (_, Just t) -> pure $ jvmLocalTypeToFieldType t
+        Left (_, Nothing) -> error "Lambda with no return type"
+    inst <- createLambda ((v, generateFieldType binderType) :| []) returnType cName body
+    emit' inst
     pass
 generateInstructions' (Lam (JVMLocal _ _) _) _ = error "Lambda with local variable as its binder"
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
@@ -293,7 +297,7 @@ generateAppInstructions f x = do
                             cName <- gets (.thisClassName)
                             let appWithArgs = foldl' App f' args
                             inst <- etaExpand appWithArgs (FuncTy (last $ fromList (functionTypeArgs fType)) (functionTypeResult fType)) cName
-                            emit inst
+                            emit' inst
                         else
                             error $
                                 "Arity mismatch. Expected: "
