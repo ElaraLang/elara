@@ -69,7 +69,7 @@ etaExpandN funcCall exprType thisClassName = do
 
     local (\x -> x{checkCasts = False}) $
         createLambda paramTypes (generateFieldType $ functionTypeResult exprType) thisClassName $
-            foldr
+            flipfoldl'
                 (\(_, t) b -> App b (Var $ JVMLocal t))
                 funcCall
                 (NE.zip (fst <$> paramTypes) [0 ..])
