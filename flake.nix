@@ -142,9 +142,9 @@
             category = "Primary";
           };
           test = {
-            description = "Run the project's tests with ghcid auto-recompile";
+            description = "Run the project tests with ghcid auto-recompile";
             exec = ''
-              stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code" --test-arguments='--match "/Infer Test/Infers types correctly/Infers function types correctly/Correctly adds type applications when referring to another polymorphic function/"'
+              stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code"
             '';
             category = "Primary";
           };
