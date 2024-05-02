@@ -3,8 +3,7 @@
 
 module Elara.AST.Generic.Instances.DataPlated where
 
-import Control.Lens (Each (each), Field1 (_1), Field2 (_2), Plated (..), traverseOf)
-import Control.Lens.Extras (template)
+
 import Data.Data
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
@@ -17,11 +16,11 @@ instance
     RUnlocate ast =>
     Plated (Pattern' ast)
     where
-    plate f = \case
+    plate = traversalVL $ \f -> \case
         p@(VarPattern _) -> pure p
-        ConstructorPattern a b -> ConstructorPattern a <$> traverseOf (each . _Unwrapped . _1 . traverseUnlocated @_ @ast) f b
-        ListPattern a -> ListPattern <$> traverseOf (each . _Unwrapped . _1 . traverseUnlocated @_ @ast) f a
-        ConsPattern a b -> ConsPattern <$> traverseOf (_Unwrapped . _1 . traverseUnlocated @_ @ast) f a <*> traverseOf (_Unwrapped . _1 . traverseUnlocated @_ @ast) f b
+        ConstructorPattern a b -> ConstructorPattern a <$> traverseOf (each % _Unwrapped % _1 % traverseUnlocated @_ @ast) f b
+        ListPattern a -> ListPattern <$> traverseOf (each % _Unwrapped % _1 % traverseUnlocated @_ @ast) f a
+        ConsPattern a b -> ConsPattern <$> traverseOf (_Unwrapped % _1 % traverseUnlocated @_ @ast) f a <*> traverseOf (_Unwrapped . _1 . traverseUnlocated @_ @ast) f b
         WildcardPattern -> pure WildcardPattern
         IntegerPattern a -> pure (IntegerPattern a)
         FloatPattern a -> pure (FloatPattern a)

@@ -10,8 +10,6 @@
 
 module Elara.TypeInfer.Type where
 
-import Control.Lens (Plated (..), view)
-import Control.Lens qualified as Lens
 import Data.Aeson (ToJSON (..), Value (String))
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Data (Data)
@@ -32,6 +30,8 @@ import Elara.TypeInfer.Monotype (
  )
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Unique
+import Optics (cosmosOf, has, hasn't, only)
+import Optics qualified as Lens
 import Prettyprinter qualified as Pretty
 import Print (showPrettyUnannotated)
 
@@ -149,7 +149,7 @@ instance Show s => Pretty (Type s) where
     pretty = prettyQuantifiedType
 
 instance Plated (Type s) where
-    plate onType type_ =
+    plate = traversalVL $ \onType type_ ->
         case type_ of
             VariableType{..} -> pure VariableType{..}
             UnsolvedType{..} -> pure UnsolvedType{..}
@@ -255,7 +255,7 @@ stripForAll type_ =
             type_
 
 isMonoType :: Type s -> Bool
-isMonoType = Lens.hasn't (Lens.cosmos . _As @"Forall")
+isMonoType = hasn't (cosmosOf plate % _As @"Forall")
 
 instantiate :: Type s -> Type s -> Type s
 Forall{name, type_} `instantiate` typeArgument = substituteType name typeArgument type_
@@ -288,7 +288,7 @@ applicableTyApp x y = error $ "applicableTyApp: " <> showPrettyUnannotated x <> 
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free
-freeTypeVars t = nubOrdOn (view unlocated) (Lens.concatMapOf Lens.cosmos names t)
+freeTypeVars t = nubOrdOn (view unlocated) (concatMapOf cosmos names t)
   where
     names = \case
         VariableType sr l -> [Located sr l]
@@ -301,7 +301,7 @@ occurs tv t = tv `elem` (view unlocated <$> freeTypeVars t)
    variable with a `Monotype`
 -}
 solveType :: Existential Monotype -> Monotype -> Type s -> Type s
-solveType unsolved monotype = Lens.transform transformType
+solveType unsolved monotype = transform transformType
   where
     transformType UnsolvedType{..}
         | unsolved == existential = location <$ fromMonotype monotype
@@ -314,7 +314,7 @@ solveType unsolved monotype = Lens.transform transformType
 solveFields ::
     Existential Monotype.Record -> Monotype.Record -> Type s -> Type s
 solveFields unsolved (Monotype.Fields fieldMonotypes fields) =
-    Lens.transform transformType
+    transform transformType
   where
     transformType Record{fields = Fields fieldTypes (UnsolvedFields existential), ..}
         | unsolved == existential =
@@ -334,7 +334,7 @@ solveFields unsolved (Monotype.Fields fieldMonotypes fields) =
 solveAlternatives ::
     Existential Monotype.Union -> Monotype.Union -> Type s -> Type s
 solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternatives) =
-    Lens.transform transformType
+    transform transformType
   where
     transformType Union{alternatives = Alternatives alternativeTypes (UnsolvedAlternatives existential), ..}
         | unsolved == existential =
@@ -482,10 +482,10 @@ substituteAlternatives ρ0 r@(Alternatives kτs ρ1) type_ =
 typeFreeIn :: Existential Monotype -> Type s -> Bool
 typeFreeIn unsolved =
     Lens.has
-        ( Lens.cosmos
-            . _As @"UnsolvedType"
-            . the @2
-            . Lens.only unsolved
+        ( cosmos
+            % _As @"UnsolvedType"
+            % the @2
+            % Lens.only unsolved
         )
 
 {- | Count how many times the given `Existential` t`Monotype.Record` variable
@@ -494,12 +494,12 @@ typeFreeIn unsolved =
 fieldsFreeIn :: Existential Monotype.Record -> Type s -> Bool
 fieldsFreeIn unsolved =
     Lens.has
-        ( Lens.cosmos
-            . _As @"Record"
-            . the @2
-            . the @2
-            . _As @"UnsolvedFields"
-            . Lens.only unsolved
+        ( cosmos
+            % _As @"Record"
+            % the @2
+            % the @2
+            % _As @"UnsolvedFields"
+            % Lens.only unsolved
         )
 
 {- | Count how many times the given `Existential` t`Monotype.Union` variable
@@ -508,12 +508,12 @@ fieldsFreeIn unsolved =
 alternativesFreeIn :: Existential Monotype.Union -> Type s -> Bool
 alternativesFreeIn unsolved =
     Lens.has
-        ( Lens.cosmos
-            . _As @"Union"
-            . the @2
-            . the @2
-            . _As @"UnsolvedAlternatives"
-            . Lens.only unsolved
+        ( cosmos
+            % _As @"Union"
+            % the @2
+            % the @2
+            % _As @"UnsolvedAlternatives"
+            % Lens.only unsolved
         )
 
 data PreviousQuantifier

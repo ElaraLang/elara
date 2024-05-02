@@ -4,13 +4,15 @@
 
 module Elara.AST.Region where
 
-import Control.Lens
+import Control.Lens (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex)
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
+import Optics (maximumOf, minimumOf)
 import Print (showPretty)
+import Relude.Unsafe (fromJust)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
 import Text.Show (Show (show))
 
@@ -124,7 +126,13 @@ positionToDiagnosePosition fp (Position ln cn) =
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
 
-instance Each (Located a) (Located b) a b
+instance FoldableWithIndex Int Located
+instance TraversableWithIndex Int Located
+instance FunctorWithIndex Int Located
+
+-- itraverse f (Located region x) = Located region <$> f 0 x
+
+instance Each Int (Located a) (Located b) a b
 
 makePrisms ''Located
 
@@ -139,13 +147,13 @@ newtype IgnoreLocation a = IgnoreLocation (Located a)
 makePrisms ''IgnoreLocation
 
 generatedSourceRegionFrom :: Located a -> SourceRegion
-generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion . path)
+generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 
 sourceRegion :: Lens' (Located a) SourceRegion
-sourceRegion f (Located region x) = fmap (`Located` x) (f region)
+sourceRegion = lensVL $ \f (Located region x) -> fmap (`Located` x) (f region)
 
 unlocated :: Lens (Located a) (Located b) a b
-unlocated f (Located region x) = fmap (Located region) (f x)
+unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
 
 withLocationOf :: a -> Located b -> Located a
 withLocationOf a (Located region _) = Located region a
@@ -175,9 +183,9 @@ enclosingRegion' (RealSourceRegion a) (RealSourceRegion b) = RealSourceRegion $ 
 
 spanningRegion :: NonEmpty RealSourceRegion -> RealSourceRegion
 spanningRegion regions = do
-    let file = the $ catMaybes $ regions ^.. traverse . path
-    let start = minimum1Of (traverse1 . startPos) regions
-    let end = maximum1Of (traverse1 . endPos) regions
+    let file = the $ catMaybes $ regions ^.. traversed % path
+    let start = fromJust $ minimumOf (traversed % startPos) regions
+    let end = fromJust $ maximumOf (traversed % endPos) regions
     SourceRegion (Just file) start end
 
 {- | Get the region that contains all of the given regions.
@@ -186,8 +194,8 @@ spanningRegion regions = do
 -}
 spanningRegion' :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion' regions = do
-    let file = the $ catMaybes $ regions ^.. traverse . path
-    let realRegions = regions ^.. traverse . _RealSourceRegion
+    let file = the $ catMaybes $ regions ^.. traversed % path
+    let realRegions = regions ^.. traversed % _RealSourceRegion
     case nonEmpty realRegions of
         Nothing -> GeneratedRegion file
         Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'

@@ -10,7 +10,7 @@
 
 module Elara.AST.Name where
 
-import Control.Lens (Lens', lens, makeFields, makeLenses, makePrisms, view, (^.))
+
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)

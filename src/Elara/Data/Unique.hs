@@ -3,7 +3,7 @@
 
 module Elara.Data.Unique where
 
-import Control.Lens
+
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty

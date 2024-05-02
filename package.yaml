@@ -20,7 +20,8 @@ dependencies:
   - relude
   - aeson
   - lens
-  - generic-lens
+  - optics
+  - generic-optics
   - containers
   - bytestring
   - utf8-string

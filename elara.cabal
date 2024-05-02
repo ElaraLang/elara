@@ -151,12 +151,13 @@ library
     , diagnose
     , directory
     , filepath
-    , generic-lens
+    , generic-optics
     , h2jvm
     , hashable
     , lens
     , megaparsec
     , mtl
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -205,12 +206,13 @@ executable elara
     , directory
     , elara
     , filepath
-    , generic-lens
+    , generic-optics
     , h2jvm
     , hashable
     , lens
     , megaparsec
     , mtl
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -278,7 +280,7 @@ test-suite elara-test
     , directory
     , elara
     , filepath
-    , generic-lens
+    , generic-optics
     , h2jvm
     , hashable
     , hedgehog
@@ -289,6 +291,7 @@ test-suite elara-test
     , megaparsec
     , mtl
     , neat-interpolation
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
