@@ -53,7 +53,6 @@ module Elara.AST.Generic.Types (
 )
 where
 
-
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)

@@ -10,7 +10,6 @@
 
 module Elara.AST.Name where
 
-
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Text qualified as T (intercalate)

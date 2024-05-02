@@ -3,7 +3,6 @@
 
 module Elara.AST.Generic.Instances.DataPlated where
 
-
 import Data.Data
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types

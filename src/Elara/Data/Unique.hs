@@ -3,7 +3,6 @@
 
 module Elara.Data.Unique where
 
-
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
