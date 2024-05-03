@@ -32,7 +32,6 @@ import Optics (traverseOf_)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
-import TODO (todo)
 
 newtype InferState = InferState
     { kinds :: Map (Qualified TypeName) ElaraKind
@@ -101,7 +100,9 @@ inferTypeKind (TypeConstructorApplication ctor a) = do
             unifyKinds a' a''
             pure b
         e -> throw (NotFunctionKind e)
-inferTypeKind (RecordType _) = todo
+inferTypeKind (RecordType fields) = do
+    traverse_ ((unifyKinds TypeKind <=< inferTypeKind) . view (_2 % _Unwrapped % unlocated)) fields
+    pure TypeKind
 inferTypeKind (TupleType fields) = do
     traverse_ ((unifyKinds TypeKind <=< inferTypeKind) . view (_Unwrapped % unlocated)) fields
     pure TypeKind

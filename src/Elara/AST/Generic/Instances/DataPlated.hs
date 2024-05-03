@@ -7,7 +7,6 @@ import Data.Data
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
 import Elara.AST.Generic.Utils
-import Elara.AST.Name (LowerAlphaName)
 
 -- Some of these 'Plated' instances could be derived with 'template', but I feel like it's more efficient to write them by hand
 
