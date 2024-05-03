@@ -14,13 +14,15 @@ import Elara.AST.Name (MaybeQualified, VarName)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
+import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Stream (TokenStream)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
+import Text.Megaparsec (unPos)
 import Text.Megaparsec qualified as MP
 import Text.Megaparsec.Error
-import Prelude hiding (error, lines)
+import Prelude hiding (lines)
 
 data ElaraParseError
     = KeywordUsedAsName (Located (MaybeQualified VarName))
@@ -65,7 +67,7 @@ deriving instance (Eq s, Eq (MP.Token s), Eq e) => Eq (WParseErrorBundle s e)
 instance ReportableError (WParseErrorBundle TokenStream ElaraParseError) where
     report (WParseErrorBundle e) =
         writeDiagnostic $
-            diagnosticFromBundle (const True) (Just "E0001") "Parse error" Nothing e
+            diagnosticFromBundle (const True) (Just Codes.genericParseError) (pretty $ errorBundlePretty e) Nothing e
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
 It adds the ability to highlight a region of the source code rather than a single point for error highlighting.
@@ -102,7 +104,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
 
     errorRegion :: MP.ParseError s ElaraParseError -> [SourceRegion]
     errorRegion (MP.TrivialError _ (Just (Tokens ts)) _) = toList $ view sourceRegion <$> ts
-    errorRegion (MP.TrivialError{}) = []
+    errorRegion (MP.TrivialError{}) = error "Impossible: TrivialError without tokens"
     errorRegion (MP.FancyError _ errs) =
         Set.toList errs >>= \case
             MP.ErrorFail _ -> []
@@ -115,7 +117,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
 
     errorLength' :: MP.ErrorFancy e -> Int
     errorLength' (MP.ErrorFail _) = 1
-    errorLength' (MP.ErrorIndentation{}) = 1
+    errorLength' (MP.ErrorIndentation _ a b) = unPos b - unPos a
     errorLength' (MP.ErrorCustom _) = 1
 
     fromSourcePos :: Int -> MP.SourcePos -> Position

@@ -31,10 +31,10 @@ parsePipeline ::
     Members ParsePipelineEffects r =>
     Parser a ->
     FilePath ->
-    [Lexeme] ->
+    (String, [Lexeme]) ->
     Sem r a
-parsePipeline parser fp lexemes =
-    parse parser fp $ createTokenStream fp lexemes
+parsePipeline parser fp (fileContents, lexemes) =
+    parse parser fp $ createTokenStream fileContents lexemes
 
 -- | Interpret a result of 'parsePipeline' in terms of the common effects
 runParsePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ParsePipelineEffects r) a -> Sem r a
