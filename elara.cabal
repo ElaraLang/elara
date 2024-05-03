@@ -169,6 +169,7 @@ library
     , process
     , relude
     , safe-exceptions
+    , stringsearch
     , terminal-size
     , utf8-string
   mixins:
@@ -224,6 +225,7 @@ executable elara
     , process
     , relude
     , safe-exceptions
+    , stringsearch
     , terminal-size
     , utf8-string
   mixins:
@@ -303,6 +305,7 @@ test-suite elara-test
     , process
     , relude
     , safe-exceptions
+    , stringsearch
     , terminal-size
     , utf8-string
   mixins:

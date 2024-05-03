@@ -45,6 +45,7 @@ dependencies:
   - terminal-size
   - hashable
   - process
+  - stringsearch
 
 ghc-options:
   - -Wall

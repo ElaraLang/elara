@@ -50,7 +50,8 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.FilePath
-import System.IO (openFile)
+import System.IO (hSetEncoding, openFile, utf8)
+import System.Info (os)
 import System.Process
 import Text.Printf
 
@@ -72,16 +73,18 @@ main = run `finally` cleanup
     run :: IO ()
     run = do
         hSetBuffering stdout NoBuffering
+        hSetEncoding stdout utf8
         putTextLn "\n"
         args <- getArgs
         env <- getEnvironment
+        let dumpLexed = "--dump-lexed" `elem` args || "ELARA_DUMP_LEXED" `elem` fmap fst env
         let dumpParsed = "--dump-parsed" `elem` args || "ELARA_DUMP_PARSED" `elem` fmap fst env
         let dumpDesugared = "--dump-desugared" `elem` args || "ELARA_DUMP_DESUGARED" `elem` fmap fst env
         let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
-        s <- runElara dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run
+        s <- runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
@@ -96,20 +99,21 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-runElara :: Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
+runElara :: Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
+runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
-    prim <- loadModule dumpParsed dumpDesugared "prim.elr"
-    source <- loadModule dumpParsed dumpDesugared "source.elr"
-    prelude <- loadModule dumpParsed dumpDesugared "prelude.elr"
+    prim <- loadModule dumpLexed dumpParsed dumpDesugared "prim.elr"
+    source <- loadModule dumpLexed dumpParsed dumpDesugared "source.elr"
+    prelude <- loadModule dumpLexed dumpParsed dumpDesugared "prelude.elr"
 
     let graph = createGraph [prim, source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
+
 
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
@@ -127,7 +131,11 @@ runElara dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst 
 
     when run $ liftIO $ do
         -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
-        x <- readCreateProcess ((shell "java -noverify -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
+        let process =
+                if os == "mingw32"
+                    then shell "java -noverify -cp ../jvm-stdlib;. Main"
+                    else shell "java -noverify -cp ../jvm-stdlib:. Main"
+        x <- readCreateProcess process{cwd = Just "./build"} ""
         putStrLn x
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
@@ -139,12 +147,13 @@ createAndWriteFile path content = do
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
-loadModule :: IsPipeline r => Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
-loadModule dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
+loadModule :: IsPipeline r => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
+loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
+    when dumpLexed $ writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
 
-    parsed <- parsePipeline moduleParser fp tokens
+    parsed <- parsePipeline moduleParser fp (source, tokens)
     when dumpParsed $ do
         liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".parsed.elr"
     desugared <- runDesugarPipeline $ runDesugar $ desugar parsed

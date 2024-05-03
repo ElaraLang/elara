@@ -27,7 +27,7 @@ lexAndParse :: (MonadTest m, ToString a1) => Parser a2 -> a1 -> m (Either (WPars
 lexAndParse parser source = do
     let fp = "<tests>"
     tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
-    pure $ run $ runParsePipelinePure $ parsePipeline parser fp tokens
+    pure $ run $ runParsePipelinePure $ parsePipeline parser fp (toString source, tokens)
 
 shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = withFrozenCallStack $ do
