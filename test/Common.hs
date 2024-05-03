@@ -1,6 +1,5 @@
 module Common where
 
-import Control.Lens.Plated
 import Elara.AST.Generic
 import Elara.Data.Pretty
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')

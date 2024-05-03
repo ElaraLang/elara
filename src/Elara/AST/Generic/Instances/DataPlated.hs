@@ -7,9 +7,7 @@ import Data.Data
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
 import Elara.AST.Generic.Utils
-import Elara.AST.Name
-import Elara.AST.Region (unlocated)
-import Optics (GPlate (..))
+import Elara.AST.Name (LowerAlphaName)
 
 -- Some of these 'Plated' instances could be derived with 'template', but I feel like it's more efficient to write them by hand
 
@@ -29,12 +27,10 @@ instance
         CharPattern a -> pure (CharPattern a)
         UnitPattern -> pure UnitPattern
 
--- instance
---     forall a (ast :: a).
---     Data (Pattern ast) =>
---     Plated (Pattern ast)
---     where
---     plate = gplate @(Pattern ast) @(Pattern ast)
+instance
+    forall a (ast :: a).
+    GPlate (Pattern ast) (Pattern ast) =>
+    Plated (Pattern ast)
 
 instance
     ( RUnlocate ast
@@ -70,35 +66,15 @@ instance
                     let e' = dataConAs @(Select "InParens" ast) @(Expr ast) e
                      in InParens . asDataCon <$> traverseOf traverseExpr f e'
 
--- instance
---     forall a (ast :: a).
---     Data (Expr ast) =>
---     Plated (Expr ast)
---     where
---     plate = _Unwrapped % _1 % unlocated % gplate @(Expr ast) @(Expr' ast)
+instance
+    forall a (ast :: a).
+    GPlate (Expr ast) (Expr ast) =>
+    Plated (Expr ast)
 
--- instance
---     forall a (ast :: a).
---     Data (Type ast) =>
---     Plated (Type ast)
---     where
---     plate = gplate
-
--- instance
---     forall a (ast :: a).
---     ( Data (ASTLocate ast (Type' ast))
---     , Data (ASTLocate ast (Select "TypeVar" ast))
---     , Data (Select "TypeVar" ast)
---     , Data (ASTLocate ast (Select "UserDefinedType" ast))
---     , Data (ASTLocate ast LowerAlphaName)
---     , Data (Select "UserDefinedType" ast)
---     , Typeable ast
---     , Typeable a
---     , (Data (Type' ast))
---     ) =>
---     Plated (Type' ast)
---     where
---     plate = gplate
+instance
+    forall a (ast :: a).
+    GPlate (Type ast) (Type ast) =>
+    Plated (Type ast)
 
 deriving instance
     forall a (ast :: a).

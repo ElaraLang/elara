@@ -29,7 +29,7 @@ import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
 import Elara.Pipeline
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
-import Optics (A_Traversal, filteredBy, traverseOf_)
+import Optics (filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, note, throw)
 import Polysemy.Reader hiding (Local)

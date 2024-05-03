@@ -38,7 +38,6 @@ import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
-import Optics (GPlate (..))
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State

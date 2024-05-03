@@ -54,7 +54,7 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 import TODO
 
 -- | Type-checking state

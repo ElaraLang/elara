@@ -30,7 +30,7 @@ import Elara.TypeInfer.Monotype (
  )
 import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Unique
-import Optics (cosmosOf, has, hasn't, only)
+import Optics (hasn't)
 import Optics qualified as Lens
 import Prettyprinter qualified as Pretty
 import Print (showPrettyUnannotated)
