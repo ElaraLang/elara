@@ -5,7 +5,6 @@ This includes functions for pretty printing in both context-free and context-sen
 -}
 module Elara.AST.Pretty where
 
-import Control.Lens (to, (^.), _1)
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
 import Elara.Data.Pretty
@@ -99,13 +98,13 @@ prettyLetInExpr v ps e1 e2 =
         <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
 
 shouldBrace :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
-shouldBrace x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
+shouldBrace x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr' ast of
     Block _ -> False
     Let{} -> True
     _ -> False
 
 shouldParen :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
-shouldParen x = case (x ^. _Unwrapped . _1 . to (rUnlocate @astK @ast)) :: Expr' ast of
+shouldParen x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr' ast of
     Block _ -> True
     Let{} -> True
     LetIn{} -> True

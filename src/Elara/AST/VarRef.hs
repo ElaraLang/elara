@@ -3,7 +3,6 @@
 
 module Elara.AST.VarRef where
 
-import Control.Lens (Traversal, view)
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
@@ -37,8 +36,10 @@ varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
 
 varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
-varRefVal' f (Global n) = let n' = traverse (traverse f) n in Global <$> n'
-varRefVal' f (Local n) = let n' = traverse (traverse f) n in Local <$> n'
+varRefVal' = traversalVL $ \f ->
+    \case
+        (Global n) -> let n' = traverse (traverse f) n in Global <$> n'
+        (Local n) -> let n' = traverse (traverse f) n in Local <$> n'
 
 ignoreLocation :: VarRef n -> IgnoreLocVarRef n
 ignoreLocation (Global n) = Global (IgnoreLocation n)

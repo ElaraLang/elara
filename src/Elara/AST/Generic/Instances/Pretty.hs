@@ -5,7 +5,6 @@
 
 module Elara.AST.Generic.Instances.Pretty where
 
-import Control.Lens ((^.))
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
 import Elara.AST.Generic.Utils

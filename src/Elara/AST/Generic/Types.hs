@@ -233,19 +233,19 @@ class RUnlocate ast where
         ASTLocate ast b
 
     traverseUnlocated ::
-        forall f a b.
-        (Applicative f, CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
+        forall a b.
+        (CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
         Traversal (ASTLocate ast a) (ASTLocate ast b) a b
 
 instance ASTLocate' ast ~ Located => RUnlocate (ast :: LocatedAST) where
     rUnlocate = view unlocated
     fmapUnlocated = fmap
-    traverseUnlocated = traverse
+    traverseUnlocated = traversalVL traverse
 
 instance ASTLocate' ast ~ Unlocated => RUnlocate (ast :: UnlocatedAST) where
     rUnlocate = identity
     fmapUnlocated f = f
-    traverseUnlocated = traversed
+    traverseUnlocated = traversalVL identity
 
 type ASTLocate :: a -> Kind.Type -> Kind.Type
 type ASTLocate ast a = CleanupLocated (ASTLocate' ast a)

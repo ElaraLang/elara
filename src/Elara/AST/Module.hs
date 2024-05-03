@@ -12,7 +12,6 @@
 
 module Elara.AST.Module where
 
-import Control.Lens (Each (each), toListOf, traverseOf, traverseOf_, (^.))
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Generic
@@ -21,6 +20,7 @@ import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
+import Optics (traverseOf_)
 import Unsafe.Coerce
 import Prelude hiding (Text)
 
@@ -61,7 +61,7 @@ data Exposition ast
 traverseModule :: _ => (a4 -> f (Declaration ast)) -> s1 -> f t
 traverseModule traverseDecl =
     traverseOf
-        (_Unwrapped . unlocated)
+        (_Unwrapped % unlocated)
         ( \m' -> do
             let exposing' = coerceExposing (m' ^. field' @"exposing")
             let imports' = coerceImport <$> (m' ^. field' @"imports")
@@ -72,7 +72,7 @@ traverseModule traverseDecl =
 traverseModule_ :: _ => (a4 -> f ()) -> s1 -> f ()
 traverseModule_ traverseDecl =
     traverseOf_
-        (_Unwrapped . unlocated)
+        (_Unwrapped % unlocated)
         ( \m' -> do
             traverse_ traverseDecl (m' ^. field' @"declarations")
         )
@@ -111,13 +111,13 @@ coerceImport = unsafeCoerce
 -- Module Graph functions
 instance ASTLocate' ast ~ Located => HasDependencies (Module ast) where
     type Key (Module ast) = ModuleName
-    key m = m ^. _Unwrapped . unlocated . field' @"name" . unlocated
-    dependencies = toListOf (_Unwrapped . unlocated . field' @"imports" . each . _Unwrapped . unlocated . field' @"importing" . unlocated)
+    key m = m ^. _Unwrapped % unlocated % field' @"name" % unlocated
+    dependencies = toListOf (_Unwrapped % unlocated % field' @"imports" % each % _Unwrapped % unlocated % field' @"importing" % unlocated)
 
 traverseModuleRevTopologically :: _ => (Declaration ast -> f (Declaration ast')) -> Module ast1 -> f (Module ast2)
 traverseModuleRevTopologically traverseDecl =
     traverseOf
-        (_Unwrapped . unlocated)
+        (_Unwrapped % unlocated)
         ( \m' -> do
             let exposing' = coerceExposing (m' ^. field' @"exposing")
             let imports' = coerceImport <$> (m' ^. field' @"imports")
