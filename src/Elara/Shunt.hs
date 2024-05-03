@@ -5,7 +5,6 @@
 
 module Elara.Shunt where
 
-import Control.Lens (over, traverseOf, (^.), _1)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
@@ -117,7 +116,7 @@ instance ReportableError ShuntWarning where
                 [Hint "Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol"]
 
 opInfo :: OpTable -> RenamedBinaryOperator -> Maybe OpInfo
-opInfo table operator = case operator ^. _Unwrapped . unlocated of
+opInfo table operator = case operator ^. _Unwrapped % unlocated of
     SymOp opName -> Map.lookup (ignoreLocation (NVarName . OperatorVarName <$> opName ^. unlocated)) table
     Infixed vn -> Map.lookup (ignoreLocation (toName <$> vn)) table
       where
@@ -142,7 +141,7 @@ fixOperators opTable o = do
     reassoc o
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
-    withLocationOf' s repl = over (_Unwrapped . _1) (repl <$) s
+    withLocationOf' s repl = over (_Unwrapped % _1) (repl <$) s
 
     reassoc :: RenamedExpr -> Sem r RenamedExpr
     reassoc (Expr (Located l (InParens e), t)) = do
@@ -206,7 +205,7 @@ createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
     addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Sem r ()
     addDeclsToOpTable' (Declaration (Located _ decl)) = do
         let declName = Global $ IgnoreLocation $ decl ^. field' @"name"
-        case decl ^. field' @"body" . _Unwrapped . unlocated of
+        case decl ^. field' @"body" % _Unwrapped % unlocated of
             Value{_valueAnnotations = (ValueDeclAnnotations (Just fixity))} -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
             TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity)) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
             _ -> pass
@@ -302,7 +301,7 @@ shuntExpr (Expr (le, t)) = do
 
         l' <- fixExpr l
         r' <- fixExpr r
-        let op' = case operator ^. _Unwrapped . unlocated of
+        let op' = case operator ^. _Unwrapped % unlocated of
                 SymOp lopName -> Var (OperatorVarName <<$>> lopName) `withLocationOf` lopName
                 Infixed inName -> do
                     let z = case inName of
@@ -325,7 +324,7 @@ shuntExpr (Expr (le, t)) = do
         let leftCall =
                 Expr
                     ( Located
-                        (Located.spanningRegion' (op' ^. sourceRegion :| [l' ^. _Unwrapped . _1 . sourceRegion]))
+                        (Located.spanningRegion' (op' ^. sourceRegion :| [l' ^. _Unwrapped % _1 % sourceRegion]))
                         (FunctionCall opVar l')
                     , Nothing -- this will / can never have a type annotation
                     )
@@ -340,7 +339,7 @@ shuntExpr (Expr (le, t)) = do
         cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
     shuntExpr' (Tuple es) = Tuple <$> traverse fixExpr es
-    shuntExpr' (InParens e) = (^. _Unwrapped . _1 . unlocated) <$> fixExpr e
+    shuntExpr' (InParens e) = (^. _Unwrapped % _1 % unlocated) <$> fixExpr e
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
   where

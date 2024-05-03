@@ -9,7 +9,6 @@ This is very similar to 'Elara.AST.Renamed.Expr' except:
 -}
 module Elara.AST.Shunted where
 
-import Control.Lens (concatMapOf, cosmosOn, view, (^.), _1)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Select)
@@ -102,14 +101,14 @@ type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
 
 instance HasDependencies ShuntedDeclaration where
     type Key ShuntedDeclaration = Qualified Name
-    key = view (_Unwrapped . unlocated . field' @"name" . unlocated)
-    dependencies decl = case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
+    key = view (_Unwrapped % unlocated % field' @"name" % unlocated)
+    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
         Generic.Value e _ _ _ -> valueDependencies e
         Generic.TypeDeclaration{} -> []
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =
-    concatMapOf (cosmosOn (_Unwrapped . _1 . unlocated)) names
+    concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names
   where
     names :: ShuntedExpr' -> [Qualified Name]
     names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]

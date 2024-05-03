@@ -53,7 +53,6 @@ module Elara.AST.Generic.Types (
 )
 where
 
-import Control.Lens (Lens', view, _1)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
@@ -131,7 +130,7 @@ patternTypeOf :: forall ast. Pattern ast -> Select "PatternType" ast
 patternTypeOf (Pattern (_, t)) = t
 
 exprLocation :: ASTLocate' ast ~ Located => Lens' (Expr ast) SourceRegion
-exprLocation = _Unwrapped . _1 . sourceRegion
+exprLocation = _Unwrapped % _1 % sourceRegion
 
 data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))
@@ -234,21 +233,19 @@ class RUnlocate ast where
         ASTLocate ast b
 
     traverseUnlocated ::
-        forall f a b.
-        (Applicative f, CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
-        (a -> f b) ->
-        ASTLocate ast a ->
-        f (ASTLocate ast b)
+        forall a b.
+        (CleanupLocated (Located a) ~ Located a, CleanupLocated (Located b) ~ Located b) =>
+        Traversal (ASTLocate ast a) (ASTLocate ast b) a b
 
 instance ASTLocate' ast ~ Located => RUnlocate (ast :: LocatedAST) where
     rUnlocate = view unlocated
     fmapUnlocated = fmap
-    traverseUnlocated = traverse
+    traverseUnlocated = traversalVL traverse
 
 instance ASTLocate' ast ~ Unlocated => RUnlocate (ast :: UnlocatedAST) where
     rUnlocate = identity
     fmapUnlocated f = f
-    traverseUnlocated f = f
+    traverseUnlocated = traversalVL identity
 
 type ASTLocate :: a -> Kind.Type -> Kind.Type
 type ASTLocate ast a = CleanupLocated (ASTLocate' ast a)

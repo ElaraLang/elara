@@ -4,7 +4,6 @@
 
 module Elara.Parse.Stream where
 
-import Control.Lens
 import Data.Text qualified as T
 import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), RealSourceRegion, generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
@@ -90,8 +89,8 @@ instance TraversableStream TokenStream where
 
 sourceRegionToSourcePos :: HasPath a1 => Located a2 -> Lens' (Located a2) a1 -> Lens' RealSourceRegion RealPosition -> SourcePos
 sourceRegionToSourcePos sr l which = do
-    let fp = view (l . path) sr
-    case preview (sourceRegion . _RealSourceRegion . which) sr of
+    let fp = view (l % path) sr
+    case preview (sourceRegion % _RealSourceRegion % which) sr of
         Just pos -> realPositionToSourcePos fp pos
         Nothing -> generatedSourcePos fp
 

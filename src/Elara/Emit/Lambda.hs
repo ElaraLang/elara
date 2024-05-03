@@ -20,18 +20,17 @@ import JVM.Data.Abstract.Descriptor (MethodDescriptor (MethodDescriptor), Return
 import JVM.Data.Abstract.Instruction (Instruction, Instruction' (..))
 import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Abstract.Type (ClassInfoType (ClassInfoType), FieldType (..))
-import Polysemy
+import Polysemy hiding (transform)
 import Polysemy.Error
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Print (showPretty)
 
-import Control.Lens (Field2 (_2), cosmos, filtered, (^..), _Just)
-import Control.Lens qualified as Lens
 import Data.Generics.Sum (AsAny (_As))
 import Data.Traversable (for)
 import Elara.Core qualified as Core
 import Elara.Emit.Params
+import Optics (filtered)
 import Polysemy.Reader
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
@@ -115,7 +114,7 @@ createLambda baseParams returnType thisClassName body = do
 
     let paramOffset = fromIntegral $ length captureParams
     let offsetBody =
-            Lens.transform
+            transform
                 ( \case
                     Core.Var (JVMLocal i t) -> Core.Var (JVMLocal (i - paramOffset) t)
                     x -> x
@@ -182,11 +181,11 @@ getCapturedParams params expr =
         let locals =
                 expr
                     ^.. cosmos
-                        . _As @"Var"
-                        . _As @"JVMLocal"
-                        . filtered (\(a, _) -> a >= len)
+                    % _As @"Var"
+                    % _As @"JVMLocal"
+                    % filtered (\(a, _) -> a >= len)
 
-        let locals' = locals ^.. traverse . _2 . _Just
+        let locals' = locals ^.. traversed % _2 % _Just
         for locals' $ \t -> do
             n <- makeUnique "local"
             let t' = case t of

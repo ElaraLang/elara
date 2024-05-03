@@ -4,7 +4,6 @@
 -- | A generic, graph data structure that supports topological sorting.
 module Elara.Data.TopologicalGraph where
 
-import Control.Lens
 import Data.Array
 import Data.Graph
 import Elara.Data.Pretty
@@ -82,13 +81,13 @@ createEdge m = do
     (m, mn, mImports)
 
 allEntries :: TopologicalGraph m -> [m]
-allEntries g = g ^.. moduleGraph . to vertices . each . to (g ^. nodeFromVertex) . _1
+allEntries g = g ^.. moduleGraph % to vertices % each % to (g ^. nodeFromVertex) % _1
 
 allEntriesTopologically :: TopologicalGraph m -> [m]
-allEntriesTopologically g = g ^.. moduleGraph . to topSort . each . to (g ^. nodeFromVertex) . _1
+allEntriesTopologically g = g ^.. moduleGraph % to topSort % each % to (g ^. nodeFromVertex) % _1
 
 allEntriesRevTopologically :: TopologicalGraph m -> [m]
-allEntriesRevTopologically g = g ^.. moduleGraph . to reverseTopSort . each . to (g ^. nodeFromVertex) . _1
+allEntriesRevTopologically g = g ^.. moduleGraph % to reverseTopSort % each % to (g ^. nodeFromVertex) % _1
 
 dependenciesOf :: Key a -> TopologicalGraph a -> [Key a]
 dependenciesOf m g = fromMaybe [] $ do
@@ -110,7 +109,7 @@ instance (Show a, Show (Key a)) => Show (TopologicalGraph a) where
     show g =
         let gArr = g ^. moduleGraph
             nodeFromVertex' = g ^. nodeFromVertex
-            mnFromVertex = view (to nodeFromVertex' . _2)
+            mnFromVertex = view (to nodeFromVertex' % _2)
             nodes = (mnFromVertex <<$>> gArr)
             assocs' = assocs nodes
          in Show.show (firstF mnFromVertex assocs')
@@ -119,7 +118,7 @@ instance Pretty (Key a) => Pretty (TopologicalGraph a) where
     pretty g =
         let gArr = g ^. moduleGraph
             nodeFromVertex' = g ^. nodeFromVertex
-            mnFromVertex = view (to nodeFromVertex' . _2)
+            mnFromVertex = view (to nodeFromVertex' % _2)
             nodes = (mnFromVertex <<$>> gArr)
             assocs' = assocs nodes
          in pretty (firstF mnFromVertex assocs')

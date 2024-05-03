@@ -2,7 +2,6 @@
 
 module Elara.AST.Generic.Utils where
 
-import Control.Lens
 import Data.Kind qualified as Kind
 import Elara.AST.Generic.Common
 import Elara.AST.Region

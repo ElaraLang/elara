@@ -10,7 +10,6 @@ This stage handles:
 -}
 module Elara.Rename where
 
-import Control.Lens (Each (each), Getter, filteredBy, folded, over, to, traverseOf, traverseOf_, view, (%~), (^.), (^..), _1, _2)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
@@ -30,6 +29,7 @@ import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
 import Elara.Pipeline
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
+import Optics (filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, note, throw)
 import Polysemy.Reader hiding (Local)
@@ -70,7 +70,7 @@ instance ReportableError RenameError where
          in writeReport $
                 Err
                     (Just Codes.nonExistentModuleDeclaration)
-                    ("Element" <+> n ^. unlocated . to pretty <+> "does not exist in in module" <+> pretty m)
+                    ("Element" <+> n ^. unlocated % to pretty <+> "does not exist in in module" <+> pretty m)
                     [(nPos, This "referenced here")]
                     []
     report (UnknownTypeVariable n) =
@@ -89,7 +89,7 @@ instance ReportableError RenameError where
                 Err
                     Nothing
                     ("Unknown" <+> nameKind <+> "name: " <> pretty n)
-                    [(n ^. sourceRegion . to sourceRegionToDiagnosePosition, This "referenced here")]
+                    [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
                     []
     report (NativeDefUnsupported _) =
         writeReport $
@@ -103,8 +103,8 @@ instance ReportableError RenameError where
             Err
                 Nothing
                 "Block ends with let"
-                ( (l ^. _Unwrapped . _1 . sourceRegion . to sourceRegionToDiagnosePosition, This "let occurs here")
-                    : maybe [] (\d -> [(d ^. _Unwrapped . sourceRegion . to sourceRegionToDiagnosePosition, Where "as part of this declaration")]) decl
+                ( (l ^. _Unwrapped % _1 % sourceRegion % to sourceRegionToDiagnosePosition, This "let occurs here")
+                    : maybe [] (\d -> [(d ^. _Unwrapped % sourceRegion % to sourceRegionToDiagnosePosition, Where "as part of this declaration")]) decl
                 )
                 [ Note "Blocks cannot end with let statements, as they are not expressions."
                 , Hint "Perhaps you meant to use a let ... in construct?"
@@ -165,7 +165,7 @@ qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
 lookupGenericName ::
     Rename r =>
     (Ord name, ToName name) =>
-    Getter RenameState (Map name (VarRef name)) ->
+    Lens' RenameState (Map name (VarRef name)) ->
     Located (MaybeQualified name) ->
     Sem r (Located (VarRef name))
 lookupGenericName _ (Located sr (MaybeQualified n (Just m))) = do
@@ -201,11 +201,11 @@ sortDeclarations = pure
 rename :: Rename r => Module 'Desugared -> Sem r (Module 'Renamed)
 rename =
     traverseOf
-        (_Unwrapped . unlocated)
+        (_Unwrapped % unlocated)
         ( \m' -> do
             addImportsToContext (m' ^. field' @"imports")
-            traverseOf_ (field' @"declarations" . each) (addDeclarationToContext False) m' -- add our own declarations to field' context
-            exposing' <- renameExposing (m' ^. field' @"name" . unlocated) (m' ^. field' @"exposing")
+            traverseOf_ (field' @"declarations" % each) (addDeclarationToContext False) m' -- add our own declarations to field' context
+            exposing' <- renameExposing (m' ^. field' @"name" % unlocated) (m' ^. field' @"exposing")
             imports' <- traverse renameImport (m' ^. field' @"imports")
             declarations' <- traverse renameDeclaration (m' ^. field' @"declarations")
             sorted <- sortDeclarations declarations'
@@ -223,11 +223,11 @@ rename =
     renameExposition mn (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors <$> traverse (qualifyIn mn) tn
 
     renameImport :: Rename r => Import 'Desugared -> Sem r (Import 'Renamed)
-    renameImport = traverseOf (_Unwrapped . unlocated) renameImport'
+    renameImport = traverseOf (_Unwrapped % unlocated) renameImport'
 
     renameImport' :: Rename r => Import' 'Desugared -> Sem r (Import' 'Renamed)
     renameImport' imp = do
-        exposing' <- renameExposing (imp ^. field' @"importing" . unlocated) (imp ^. field' @"exposing")
+        exposing' <- renameExposing (imp ^. field' @"importing" % unlocated) (imp ^. field' @"exposing")
         pure $ Import' (imp ^. field' @"importing") (imp ^. field' @"as") (imp ^. field' @"qualified") exposing'
 
 addImportsToContext :: Rename r => [Import 'Desugared] -> Sem r ()
@@ -236,8 +236,8 @@ addImportsToContext = traverse_ addImportToContext
 addImportToContext :: Rename r => Import 'Desugared -> Sem r ()
 addImportToContext imp =
     addModuleToContext
-        (imp ^. _Unwrapped . unlocated . field' @"importing" . unlocated)
-        (imp ^. _Unwrapped . unlocated . field' @"exposing")
+        (imp ^. _Unwrapped % unlocated % field' @"importing" % unlocated)
+        (imp ^. _Unwrapped % unlocated % field' @"exposing")
 
 addModuleToContext :: Rename r => ModuleName -> Exposing 'Desugared -> Sem r ()
 addModuleToContext mn exposing = do
@@ -246,21 +246,21 @@ addModuleToContext mn exposing = do
         note
             (UnknownModule mn)
             (moduleFromName mn modules)
-    let isExposingL = _Unwrapped . unlocated . field' @"name" . unlocated . to (isExposingAndExists imported)
+    let isExposingL = _Unwrapped % unlocated % field' @"name" % unlocated % to (isExposingAndExists imported)
     let exposed = case exposing of
-            ExposingAll -> imported ^. _Unwrapped . unlocated . field' @"declarations"
-            ExposingSome _ -> imported ^.. _Unwrapped . unlocated . field' @"declarations" . folded . filteredBy isExposingL
+            ExposingAll -> imported ^. _Unwrapped % unlocated % field' @"declarations"
+            ExposingSome _ -> imported ^.. _Unwrapped % unlocated % field' @"declarations" % folded % filteredBy isExposingL
     traverse_ (addDeclarationToContext False) exposed
 
 addDeclarationToContext :: Rename r => Bool -> DesugaredDeclaration -> Sem r ()
 addDeclarationToContext _ decl = do
     let global :: name -> VarRef name
-        global vn = Global (Qualified vn (decl ^. _Unwrapped . unlocated . field' @"moduleName" . unlocated) <$ decl ^. _Unwrapped)
-    case decl ^. _Unwrapped . unlocated . field' @"name" . unlocated of
+        global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) <$ decl ^. _Unwrapped)
+    case decl ^. _Unwrapped % unlocated % field' @"name" % unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ Map.insert vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ Map.insert vn (global vn)
 
-    case decl ^. _Unwrapped . unlocated . field @"body" . _Unwrapped . unlocated of
+    case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
         TypeDeclaration _ (Located _ (ADT _)) _ -> todo
         --     traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) constructors
@@ -276,12 +276,15 @@ ensureExistsAndExposed mn n = do
             unless (isExposingAndExists m (n ^. unlocated)) $ throw $ UnknownName n
 
 elementExistsInModule :: Module 'Desugared -> Name -> Bool
-elementExistsInModule m' n' = any (\d -> d ^. _Unwrapped . unlocated . field' @"name" . unlocated == n') (m' ^. _Unwrapped . unlocated . field' @"declarations")
+elementExistsInModule m' n' =
+    any
+        (\d -> d ^. _Unwrapped % unlocated % field' @"name" % unlocated == n')
+        (m' ^. _Unwrapped % unlocated % field' @"declarations")
 
 isExposingAndExists :: Module 'Desugared -> Name -> Bool
 isExposingAndExists m n =
-    let mn = m ^. _Unwrapped . unlocated . field' @"name" . unlocated
-     in case m ^. _Unwrapped . unlocated . field' @"exposing" of
+    let mn = m ^. _Unwrapped % unlocated % field' @"name" % unlocated
+     in case m ^. _Unwrapped % unlocated % field' @"exposing" of
             ExposingAll -> elementExistsInModule m n
             ExposingSome es -> elementExistsInModule m n && any (isExposition mn n) es
   where
@@ -297,7 +300,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
     renameDeclaration' :: Rename r => DesugaredDeclaration' -> Sem r RenamedDeclaration'
     renameDeclaration' fd = do
         -- qualify the name with the module name
-        let name' = sequenceA (traverseOf unlocated (`Qualified` (fd ^. field' @"moduleName" . unlocated)) (fd ^. field' @"name"))
+        let name' =
+                -- sequenceA @Qualified @Located
+                over
+                    unlocated
+                    (\n -> Qualified n (fd ^. field' @"moduleName" % unlocated))
+                    (fd ^. field' @"name")
         body' <- runReader (Just decl) $ renameDeclarationBody (fd ^. field' @"body")
 
         pure $ Declaration' (fd ^. field' @"moduleName") name' body'
@@ -307,7 +315,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
 
     renameDeclarationBody' :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
     renameDeclarationBody' (Value val _ ty ann) = scoped $ do
-        ty' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType True)) ty
+        ty' <- traverse (traverseOf (_Unwrapped % unlocated) (renameType True)) ty
         val' <- renameExpr val
         let ann' = coerceValueDeclAnnotations ann
         pure $ Value val' NoFieldValue ty' ann'
@@ -319,7 +327,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
                     (\s' (vn, uniqueVn) -> the @"typeVars" %~ Map.insert (vn ^. unlocated) (uniqueVn ^. unlocated) $ s')
                     s
                     varAliases
-        let declModuleName = ld ^. unlocated . field' @"moduleName" . unlocated
+        let declModuleName = ld ^. unlocated % field' @"moduleName" % unlocated
         withModified addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
             let ann' = coerceTypeDeclAnnotations ann
@@ -327,12 +335,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
 
 renameTypeDeclaration :: Rename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do
-    t' <- traverseOf (_Unwrapped . unlocated) (renameType False) t
+    t' <- traverseOf (_Unwrapped % unlocated) (renameType False) t
     pure $ Alias t'
 renameTypeDeclaration thisMod (ADT constructors) = do
     constructors' <-
         traverse
-            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each . _Unwrapped . unlocated) (renameType False) y)
+            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % unlocated) (renameType False) y)
             constructors
     pure $ ADT constructors'
 
@@ -356,13 +364,13 @@ renameType allowNewTypeVars (TypeVar (Located sr n)) = do
                 modify $ over (the @"typeVars") $ Map.insert n uniqueN -- add it to the context
                 pure (TypeVar $ Located sr uniqueN)
             | otherwise -> throw $ UnknownTypeVariable n
-renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped . unlocated) (renameType antv) t2
+renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % unlocated) (renameType antv) t2
 renameType _ UnitType = pure UnitType
-renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped . unlocated) (renameType antv) t2
+renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
-renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 . _Unwrapped . unlocated) (renameType antv)) ln
-renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped . unlocated) (renameType antv)) ts
-renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped . unlocated) (renameType antv) t
+renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % unlocated) (renameType antv)) ln
+renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped % unlocated) (renameType antv)) ts
+renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t
 
 renameExpr :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredExpr -> Sem r RenamedExpr
 renameExpr (Expr' (Block es)) = desugarBlock es
@@ -371,7 +379,7 @@ renameExpr (Expr le) =
     Expr
         <$> bitraverse
             (traverseOf unlocated renameExpr')
-            (traverse (traverseOf (_Unwrapped . unlocated) (renameType False)))
+            (traverse (traverseOf (_Unwrapped % unlocated) (renameType False)))
             le
   where
     renameExpr' (Int i) = pure $ Int i
@@ -388,7 +396,7 @@ renameExpr (Expr le) =
         pure $ FunctionCall e1' e2'
     renameExpr' (TypeApplication e1 t1) = do
         e1' <- renameExpr e1
-        t1' <- traverseOf (_Unwrapped . unlocated) (renameType False) t1
+        t1' <- traverseOf (_Unwrapped % unlocated) (renameType False) t1
         pure $ TypeApplication e1' t1'
     renameExpr' (If e1 e2 e3) = do
         e1' <- renameExpr e1
@@ -443,7 +451,7 @@ renamePattern (Pattern fp) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated renamePattern')
-            (traverse (traverseOf (_Unwrapped . unlocated) (renameType False)))
+            (traverse (traverseOf (_Unwrapped % unlocated) (renameType False)))
             fp
   where
     renamePattern' :: Rename r => DesugaredPattern' -> Sem r RenamedPattern'
@@ -457,7 +465,7 @@ renamePattern (Pattern fp) =
     renamePattern' (ConsPattern p1 p2) = ConsPattern <$> renamePattern p1 <*> renamePattern p2
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
-        modify (the @"varNames" %~ Map.insert (vn ^. unlocated . to NormalVarName) (Local (NormalVarName <<$>> vn')))
+        modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (Local (NormalVarName <<$>> vn')))
         pure $ VarPattern vn'
     renamePattern' (ConstructorPattern cn ps) = do
         cn' <- qualifyTypeName cn
@@ -487,12 +495,12 @@ patternToMatch :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => 
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
     uniqueVn <- uniquify (NormalVarName <$> vn)
-    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated . to NormalVarName) (Local uniqueVn)) $ renameExpr body
+    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
-    let patLocation = pat ^. _Unwrapped . _1 . sourceRegion
-    let bodyLocation = body ^. _Unwrapped . _1 . sourceRegion
+    let patLocation = pat ^. _Unwrapped % _1 % sourceRegion
+    let bodyLocation = body ^. _Unwrapped % _1 % sourceRegion
     uniqueVn <- uniquify (Located patLocation vn)
     let varRef = Local uniqueVn `withLocationOf` uniqueVn
     pat' <- renamePattern pat
@@ -518,16 +526,16 @@ renameLambda p e = do
 desugarBlock :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => NonEmpty DesugaredExpr -> Sem r RenamedExpr
 desugarBlock (e@(Expr' (Let{})) :| []) = do
     decl <- ask @(Maybe DesugaredDeclaration)
-    throw (BlockEndsWithLet e (fmap (view (_Unwrapped . unlocated . the @"body")) decl))
+    throw (BlockEndsWithLet e (fmap (view (_Unwrapped % unlocated % the @"body")) decl))
 desugarBlock (e :| []) = renameExpr e
 desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
     val' <- renameExpr val
-    a' <- traverse (traverseOf (_Unwrapped . unlocated) (renameType False)) a
+    a' <- traverse (traverseOf (_Unwrapped % unlocated) (renameType False)) a
     n' <- uniquify n
     xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
         desugarBlock (xs1 :| xs')
     pure $ Expr (Located l (LetIn n' p val' xs'), a')
 desugarBlock xs = do
-    let loc = spanningRegion' (xs <&> (^. _Unwrapped . _1 . sourceRegion))
+    let loc = spanningRegion' (xs <&> (^. _Unwrapped % _1 % sourceRegion))
     xs' <- traverse renameExpr xs
     pure $ Expr (Located loc (Block xs'), Nothing)

@@ -2,7 +2,6 @@
 
 module Elara.TypeInfer.Existential where
 
-import Control.Lens ((^.))
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Text qualified as Text

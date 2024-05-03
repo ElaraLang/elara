@@ -3,7 +3,6 @@
 
 module Elara.TypeInfer where
 
-import Control.Lens (Plated (..), concatMapOf, cosmosOn, to, traverseOf, view, (^.), _2)
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Wrapped
@@ -104,7 +103,7 @@ inferDeclaration (Declaration ld) =
     inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType) ann) = do
         maybeExpected' <- case maybeExpected of
             Just expected' -> do
-                kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped . unlocated))
+                kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped % unlocated))
                 mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
                 expectedPoly <- astTypeToInferPolyType expected'
                 push (Annotation (mkGlobal' declName) expectedPoly)
@@ -124,7 +123,7 @@ inferDeclaration (Declaration ld) =
         ctx <- Infer.getAll
 
         completed <- completeExpression ctx e'
-        push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped . _2))
+        push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped % _2))
 
         pure $ Value completed NoFieldValue NoFieldValue (coerceValueDeclAnnotations ann)
     inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
@@ -141,7 +140,7 @@ createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
     nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
-        . concatMapOf (cosmosOn (_Unwrapped . unlocated)) names
+        . concatMapOf (cosmosOnOf (_Unwrapped % unlocated) gplate) names
   where
     names :: ShuntedType' -> [Located (Unique LowerAlphaName)]
     names = \case
@@ -160,7 +159,7 @@ astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
   where
     astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated . to (fmap (Just . nameText))))
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated % to (fmap (Just . nameText))))
     astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
     astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get
@@ -198,7 +197,7 @@ completeExpression ctx (Expr (y', t)) = do
                 o -> pure o
             )
             y'
-    plate (completeExpression ctx') (Expr (y'', completed))
+    traverseOf gplate (completeExpression ctx') (Expr (y'', completed))
   where
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.

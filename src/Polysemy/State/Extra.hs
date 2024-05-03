@@ -2,15 +2,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Compatibility instances for polysemy effects.
-Particularly useful with the lens functions that operate on @Monad[Reader/State/Writer]@
+Particularly useful with the optics functions that operate on @Monad[Reader/State/Writer]@
 -}
 module Polysemy.State.Extra where
 
-import Control.Lens (Getting, Lens', set, view)
+import Optics (A_Getter, Is, set)
 import Polysemy
 import Polysemy.State as P (State (Get, Put), get, gets, modify', put)
 
-use' :: Member (State s) r => Getting a s a -> Sem r a
+use' :: (Is k A_Getter, Member (State a) r) => Optic' k is a b -> Sem r b
 use' lens = view lens <$> P.get
 
 locally :: Member (State s) r => (s -> s) -> Sem r a -> Sem r a

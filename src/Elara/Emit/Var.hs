@@ -4,7 +4,6 @@ This module handles that.
 -}
 module Elara.Emit.Var where
 
-import Control.Lens (transform)
 import Data.Data (Data)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core (CoreExpr, Expr (..), Var)

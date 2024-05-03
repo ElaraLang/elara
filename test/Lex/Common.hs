@@ -2,7 +2,6 @@
 
 module Lex.Common where
 
-import Control.Lens (view)
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
 import Elara.Lexer.Reader

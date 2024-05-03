@@ -5,7 +5,6 @@
 module Elara.Lexer.Utils where
 
 import Codec.Binary.UTF8.String (encodeChar)
-import Control.Lens (makeLenses, to, view, (^.))
 import Data.Char
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
@@ -56,7 +55,7 @@ type LexMonad a = Sem '[State ParseState, Error LexerError] a
 
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
-    pos <- use' (input . position)
+    pos <- use' (input % position)
     pure (IndentInfo i pos)
 
 data LexerError
@@ -75,8 +74,8 @@ data LexerError
 
 instance ReportableError LexerError where
     report (TooMuchIndentation expected further actual s) = do
-        let fp = view (input . filePath) s
-        let pos = view (input . position) s
+        let fp = view (input % filePath) s
+        let pos = view (input % position) s
         let msg = "Unexpected change in indentation. Expected " <> show (expected ^. indent) <> " spaces, but got " <> show actual <> " spaces."
         let hint = case further of
                 Nothing -> "Try removing the extra indentation."
@@ -98,8 +97,8 @@ instance ReportableError LexerError where
                 , Hint hint
                 ]
     report (UnterminatedStringLiteral s) = do
-        let fp = view (input . filePath) s
-        let pos = view (input . position) s
+        let fp = view (input % filePath) s
+        let pos = view (input % position) s
         let msg = "Unterminated string literal."
         let hint = "Make sure that the string literal is terminated with a double quote (\")."
         writeReport $
@@ -131,7 +130,7 @@ initialState fp s =
 
 fake :: Token -> LexMonad Lexeme
 fake t = do
-    fp <- use' (input . filePath)
+    fp <- use' (input % filePath)
     pure (Located (GeneratedRegion fp) t)
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
@@ -147,7 +146,7 @@ startWhite _ str = do
             pure Nothing
         LT -> do
             -- If the indentation is less than the current indentation, we need to close the current block
-            case span (view (indent . to (> indentation))) indents of
+            case span (view (indent % to (> indentation))) indents of
                 (pre, top : xs) -> do
                     -- pre is all the levels that need to be closed, top is the level that we need to match
                     fakeClosings <- sequenceA [fake TokenDedent, fake TokenSemicolon]
@@ -198,10 +197,10 @@ alexGetByte ai@AlexInput{..} =
                             )
 
 getLineNo :: LexMonad Int
-getLineNo = use' (input . position . line)
+getLineNo = use' (input % position % line)
 
 getColNo :: LexMonad Int
-getColNo = use' (input . position . column)
+getColNo = use' (input % position % column)
 
 getPosition :: Int -> LexMonad TokPosition
 getPosition tokenLength = do
@@ -210,7 +209,7 @@ getPosition tokenLength = do
 
 createRegion :: TokPosition -> TokPosition -> LexMonad RealSourceRegion
 createRegion start end = do
-    fp <- use' (input . filePath)
+    fp <- use' (input % filePath)
     pure $ SourceRegion (Just fp) start end
 
 createRegionStartingAt :: TokPosition -> LexMonad RealSourceRegion
@@ -224,7 +223,8 @@ Throws an error if the name is not qualified.
 Examples:
 
 >>> splitQualName "Hello.world"
-(ModuleName ("Hello" :| []),"world")
+WAS (ModuleName ("Hello" :| []),"world")
+NOW *** Exception: /var/folders/gd/_tgnljw10lz_95rz3sv5bp4h0000gn/T/extra-file-91583352691-2909-2183: withFile: resource busy (file is locked)
 
 >>> splitQualName "A.B.C"
 (ModuleName ("A" :| ["B"]),"C")

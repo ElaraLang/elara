@@ -4,7 +4,6 @@
 
 module Elara.Core.Module where
 
-import Control.Lens (makeFields, view)
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName)
 import Elara.Core (CoreBind)

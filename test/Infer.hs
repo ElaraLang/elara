@@ -1,16 +1,12 @@
 module Infer where
 
 import Common (diagShouldSucceed)
-import Control.Lens (Each (each), Field1 (_1), Prism', filtered, foldOf, folded, mapped, preview, traverseOf, (^.), (^..), (^?))
 import Data.Generics.Product (HasField (field))
-import Data.Generics.Sum (AsAny (_As), AsConstructor (_Ctor), AsConstructor' (_Ctor'), AsType (_Typed))
+import Data.Generics.Sum (AsConstructor' (_Ctor'))
 import Data.Generics.Wrapped (_Unwrapped)
-import Data.Map ((!))
-import Elara.AST.Generic.Common
 import Elara.AST.Generic.Types
 import Elara.AST.Region (unlocated)
-import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedTyped))
-import Elara.AST.StripLocation
+import Elara.AST.Select (LocatedAST (..))
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type (Type (..), structuralEq)
@@ -107,20 +103,20 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
         let decls =
                 mod
                     ^.. _Unwrapped
-                        . unlocated
-                        . field @"declarations"
-                        . folded
-                        . _Unwrapped
-                        . unlocated
-                        . field @"body"
-                        . _Unwrapped
-                        . unlocated
-                        . (_Ctor' @"Value" @(DeclarationBody' Typed))
-                        . _1
+                    % unlocated
+                    % field @"declarations"
+                    % folded
+                    % _Unwrapped
+                    % unlocated
+                    % field @"body"
+                    % _Unwrapped
+                    % unlocated
+                    % (_Ctor' @"Value" @(DeclarationBody' Typed))
+                    % _1
 
-        let idDecl = decls !! 1 ^. _Unwrapped . _1 . unlocated
-        let id2Decl = decls !! 2 ^. _Unwrapped . _1 . unlocated
-        let id3Decl = decls !! 3 ^. _Unwrapped . _1 . unlocated
+        let idDecl = decls !! 1 ^. _Unwrapped % _1 % unlocated
+        let id2Decl = decls !! 2 ^. _Unwrapped % _1 % unlocated
+        let id3Decl = decls !! 3 ^. _Unwrapped % _1 % unlocated
 
         printPretty decls
 

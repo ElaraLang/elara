@@ -4,7 +4,6 @@
 
 module Elara.Core.Pretty where
 
-import Control.Lens ((^.))
 import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.Core

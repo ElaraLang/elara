@@ -1,6 +1,5 @@
 module Elara.Parse.Indents where
 
-import Control.Lens (view, _1)
 import Data.Generics.Wrapped
 import Elara.AST.Frontend
 import Elara.AST.Generic (Expr (Expr), Expr' (..))
@@ -36,7 +35,7 @@ exprBlock = block merge identity
         single :| [] -> single
         x :| xs -> do
             let expressions' = view _Unwrapped <$> (x :| xs)
-            let region = Region.spanningRegion' (view (_1 . sourceRegion) <$> expressions')
+            let region = Region.spanningRegion' (view (_1 % sourceRegion) <$> expressions')
             let asBlock = \case
                     single :| [] -> Expr single
                     o -> Expr (Located region (Block $ Expr <$> o), Nothing)
