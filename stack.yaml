@@ -22,6 +22,7 @@ extra-deps:
   commit: 0089db6bc1785337ad7ea0353c0aec618ddb38cf
   subdirs:
     - packages/polysemy-log
+- polysemy-conc-0.13.0.1@sha256:6ef7737cce4a496bb5cdbda6a1a55cb89a2526c00e8c035a7d3b735c7d8ce9b5,5551
 - git: https://github.com/solidsnack/wcwidth.git
   commit: 747297319f0dd0c8e8f72b7de4fbf52aad73d5b0
 - aeson-2.2.1.0
