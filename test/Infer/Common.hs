@@ -61,7 +61,7 @@ inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline . run
     let fp = "<tests>"
     addFile fp (toString source)
     tokens <- readTokensWith fp (toString source)
-    parsed <- parsePipeline exprParser fp tokens
+    parsed <- parsePipeline exprParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
     renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ renameExpr desugared)
     shunted <- runReader mempty $ shuntExpr renamed
@@ -72,7 +72,7 @@ inferModuleFully source = finalisePipeline . runInferPipeline . runShuntPipeline
     let fp = "<tests>"
     addFile fp (toString source)
     tokens <- readTokensWith fp (toString source)
-    parsed <- parsePipeline moduleParser fp tokens
+    parsed <- parsePipeline moduleParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
     renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ rename desugared)
     shunted <- runReader mempty $ shunt renamed
