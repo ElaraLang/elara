@@ -52,6 +52,9 @@ type instance Select "ValueType" 'Renamed = Maybe RenamedType
 
 type instance Select "ValueTypeDef" 'Renamed = DataConCantHappen
 
+type instance Select "Alias" 'Renamed = RenamedType
+type instance Select "ADTParam" 'Renamed = RenamedType
+
 type instance Select "ValueDeclAnnotations" 'Renamed = RenamedValueDeclAnnotations
 type instance Select "TypeDeclAnnotations" 'Renamed = RenamedTypeDeclAnnotations
 

@@ -36,7 +36,6 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import TODO (todo)
 
 data RenameError
     = UnknownModule ModuleName
@@ -262,8 +261,8 @@ addDeclarationToContext _ decl = do
 
     case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
-        TypeDeclaration _ (Located _ (ADT _)) _ -> todo
-        --     traverseOf_ (each . _1 . unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) constructors
+        TypeDeclaration _ (Located _ (ADT ctors)) _ -> do
+            traverseOf_ (each % _1 % unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) ctors
         _ -> pass
 
 ensureExistsAndExposed :: Rename r => ModuleName -> Located Name -> Sem r ()

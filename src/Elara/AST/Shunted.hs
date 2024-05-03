@@ -11,7 +11,7 @@ module Elara.AST.Shunted where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Select, Type' (..))
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
@@ -63,6 +63,9 @@ type instance Select "ValueTypeDef" 'Shunted = DataConCantHappen
 
 type instance Select "InfixDecl" 'Shunted = DataConCantHappen
 
+type instance Select "Alias" 'Shunted = ShuntedType
+type instance Select "ADTParam" 'Shunted = ShuntedType
+
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Shunted = Qualified Name
 
@@ -102,8 +105,8 @@ type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
 instance HasDependencies ShuntedDeclaration where
     type Key ShuntedDeclaration = Qualified Name
     key = view (_Unwrapped % unlocated % field' @"name" % unlocated)
-    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-        Generic.Value e _ _ _ -> valueDependencies e
+    dependencies decl = traceShowId $ case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+        Generic.Value e _ t _ -> valueDependencies e <> (maybeToList t >>= typeDependencies)
         Generic.TypeDeclaration{} -> []
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
@@ -113,4 +116,12 @@ valueDependencies =
     names :: ShuntedExpr' -> [Qualified Name]
     names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
     names (Constructor (Located _ e)) = [NTypeName <$> e]
+    names _ = []
+
+typeDependencies :: ShuntedType -> [Qualified Name]
+typeDependencies =
+    concatMapOf (cosmosOnOf (_Unwrapped % unlocated) gplate) names
+  where
+    names :: ShuntedType' -> [Qualified Name]
+    names (UserDefinedType (Located _ e)) = [NTypeName <$> e]
     names _ = []

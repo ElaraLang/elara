@@ -24,7 +24,7 @@ import Elara.AST.Select (
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (VarRef' (..), mkGlobal')
-import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
@@ -84,7 +84,6 @@ inferDeclaration (Declaration ld) =
             unlocated
             ( \d' -> do
                 let (DeclarationBody ldb) = d' ^. field' @"body"
-
                 db' <-
                     DeclarationBody
                         <$> traverseOf
@@ -126,7 +125,21 @@ inferDeclaration (Declaration ld) =
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped % _2))
 
         pure $ Value completed NoFieldValue NoFieldValue (coerceValueDeclAnnotations ann)
-    inferDeclarationBody' _ _ = error "inferDeclarationBody': not implemented"
+    inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (Alias t)) ann) = do
+        t' <- astTypeToInferType t
+        push (Annotation (mkGlobal' declName) t')
+        pure $ TypeDeclaration tvs (Located sr (Alias t')) (coerceTypeDeclAnnotations ann)
+    inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
+        let inferCtor (ctorName, t :: [ShuntedType]) = do
+                t' <- traverse astTypeToInferType t
+                let ctorType = foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to nameText) []) t'
+                debugPretty ctorName
+                push (Annotation (mkGlobal' ctorName) ctorType)
+                pure (ctorName, t')
+        debugPretty ctors
+        ctors' <- traverse inferCtor ctors
+
+        pure $ TypeDeclaration tvs (Located sr (ADT ctors')) (coerceTypeDeclAnnotations ann)
 
 inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e

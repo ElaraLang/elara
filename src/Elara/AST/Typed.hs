@@ -57,6 +57,8 @@ type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the 
 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
 type instance Select "InfixDecl" 'Typed = DataConCantHappen
+type instance Select "Alias" 'Typed = Type SourceRegion
+type instance Select "ADTParam" 'Typed = Type SourceRegion
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name

@@ -147,6 +147,8 @@ deriving instance Show (InfixDeclaration ast) => Show (ValueDeclAnnotations ast)
 deriving instance
     ( Show (ASTLocate ast (Select "ConstructorName" ast))
     , Show (Type ast)
+    , Show (Select "Alias" ast)
+    , Show (Select "ADTParam" ast)
     ) =>
     Show (TypeDeclaration ast)
 

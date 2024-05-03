@@ -197,8 +197,8 @@ newtype TypeDeclAnnotations ast = TypeDeclAnnotations
     }
 
 data TypeDeclaration ast
-    = ADT (NonEmpty (ASTLocate ast (Select "ConstructorName" ast), [Type ast]))
-    | Alias (Type ast)
+    = ADT (NonEmpty (ASTLocate ast (Select "ConstructorName" ast), [Select "ADTParam" ast]))
+    | Alias !(Select "Alias" ast)
     deriving (Generic)
 
 newtype Type ast = Type (ASTLocate ast (Type' ast))

@@ -102,14 +102,15 @@ moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> S
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do
-        (body', var) <- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+        bv <- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value v _ _ _ -> do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty
-                pure (v', var)
-        pure (CoreValue $ NonRecursive (var, body'))
-    pure $ CoreModule name decls
+                pure $ Just (v', var)
+            TypeDeclaration{} -> pure Nothing
+        pure ((\(a, b) -> CoreValue $ NonRecursive (b, a)) <$> bv)
+    pure $ CoreModule name (catMaybes decls)
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do

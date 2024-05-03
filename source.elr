@@ -1,6 +1,6 @@
 import Prelude 
 import Elara.Prim
 
-let x = (1, 2)
+type Wrapper a = Box a 
 
-let main = sequence (map print ["hello", "world", "!"])
+let main = print (Box 5)

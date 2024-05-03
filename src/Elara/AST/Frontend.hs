@@ -50,6 +50,9 @@ type instance Select "ValueType" 'Frontend = NoFieldValue
 
 type instance Select "ValueTypeDef" 'Frontend = FrontendType
 
+type instance Select "Alias" 'Frontend = FrontendType
+type instance Select "ADTParam" 'Frontend = FrontendType
+
 type instance Select "ValueDeclAnnotations" 'Frontend = NoFieldValue
 type instance Select "TypeDeclAnnotations" 'Frontend = NoFieldValue
 
