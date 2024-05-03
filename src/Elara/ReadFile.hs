@@ -1,8 +1,6 @@
 module Elara.ReadFile where
 
-import Control.Monad
 import Data.ByteString qualified as B
-import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
 import Elara.Data.Pretty
