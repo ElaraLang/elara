@@ -972,6 +972,15 @@ instantiateTypeR _A0 a = do
             set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
 
             instantiateTypeR type_ a1
+        Type.Tuple{..} -> do
+            let _ΓL = _Γ
+            let _ΓR = _Γ'
+
+            a1s <- for tupleArguments (const fresh)
+
+            set (_ΓR <> (Context.SolvedType a (Monotype.Tuple (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType (toList a1s) <> _ΓL))
+
+            for_ (NE.zip tupleArguments a1s) (uncurry instantiateTypeR)
         Type.Record{..} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'

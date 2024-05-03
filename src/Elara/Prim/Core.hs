@@ -29,6 +29,14 @@ consType = do
 tuple2CtorName :: Qualified Text
 tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
 
+tuple2CtorType :: Member UniqueGen r => Sem r Type
+tuple2CtorType = do
+    a <- makeUnique (Just "a")
+    b <- makeUnique (Just "b")
+    let tvA = TypeVariable a TypeKind
+    let tvB = TypeVariable b TypeKind
+    pure $ ForAllTy tvA (ForAllTy tvB (FuncTy (TyVarTy tvA) (FuncTy (TyVarTy tvB) tuple2Con)))
+
 fetchPrimitiveName :: Qualified Text
 fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]))
 

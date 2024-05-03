@@ -251,6 +251,7 @@ completeExpression ctx (Expr (y', t)) = do
         Infer.Scalar{scalar} -> Mono.Scalar scalar
         Infer.Function{input, output} -> Mono.Function (toMonoType input) (toMonoType output)
         Infer.List{type_} -> Mono.List (toMonoType type_)
+        Infer.Tuple{tupleArguments} -> Mono.Tuple (toMonoType <$> tupleArguments)
         Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
         Infer.VariableType{name = v} -> Mono.VariableType v
         Infer.Custom{conName = n, typeArguments = args} -> Mono.Custom n (toMonoType <$> args)

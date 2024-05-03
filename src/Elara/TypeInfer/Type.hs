@@ -238,6 +238,8 @@ fromMonotype monotype =
             Union{alternatives = Alternatives (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
             Scalar{..}
+        Monotype.Tuple kτs ->
+            Tuple{tupleArguments = fmap fromMonotype kτs, ..}
         Monotype.Custom conName typeArguments ->
             Custom{typeArguments = map fromMonotype typeArguments, ..}
   where

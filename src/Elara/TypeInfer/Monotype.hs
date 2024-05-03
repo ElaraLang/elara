@@ -40,6 +40,7 @@ data Monotype
     | Function Monotype Monotype
     | Optional Monotype
     | List Monotype
+    | Tuple (NonEmpty Monotype)
     | Record Record
     | Union Union
     | Custom Text [Monotype]

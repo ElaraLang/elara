@@ -46,7 +46,7 @@ generateReturnType y = case generateMethodDescriptor' y of
     Just (MethodDescriptor _ x) -> x
     Nothing -> generateReturnDescriptor y
 
-generateReturnDescriptor :: Type -> ReturnDescriptor
+generateReturnDescriptor :: HasCallStack => Type -> ReturnDescriptor
 generateReturnDescriptor u | u == unitCon = VoidReturn
 generateReturnDescriptor other = TypeReturn (generateFieldType other)
 
@@ -56,9 +56,11 @@ generateFieldType c | c == boolCon = ObjectFieldType "java.lang.Boolean"
 generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType c | c == charCon = ObjectFieldType "java.lang.Character"
 generateFieldType c | c == unitCon = ObjectFieldType "Elara.Unit"
+generateFieldType c | c == tuple2Con = ObjectFieldType "Elara.Tuple2"
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "Elara.EList"
-generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "Elara.IO"
+generateFieldType (AppTy (AppTy l _) _) | l == tuple2Con = ObjectFieldType "Elara.Tuple2"
+generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (FuncTy _ _) = ObjectFieldType "Elara.Func"
 generateFieldType (ForAllTy _ x) = generateFieldType x
 generateFieldType o = error $ "generateFieldType: " <> show o
@@ -70,7 +72,9 @@ typeIsValue :: Type -> Bool
 typeIsValue (ForAllTy _ x) = typeIsValue x
 typeIsValue (AppTy con _) | con == ioCon = True
 typeIsValue (AppTy con _) | con == listCon = True
+typeIsValue (AppTy (AppTy con _) _) | con == tuple2Con = True
 typeIsValue c | c == stringCon = True
 typeIsValue c | c == intCon = True
+typeIsValue c | c == tuple2Con = True
 typeIsValue c | c == boolCon = True
 typeIsValue _ = False

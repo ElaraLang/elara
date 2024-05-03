@@ -127,6 +127,11 @@ typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
     let con = Core.ConTy (mkPrimQual n)
     pure (foldl' Core.AppTy con args')
+typeToCore (Type.Tuple _ (a :| [b])) = do
+    a' <- typeToCore a
+    b' <- typeToCore b
+    pure $ Core.AppTy (Core.AppTy tuple2Con a') b'
+typeToCore (Type.Tuple _ x) = error $ "unsupported tuple length: " <> show (length x)
 typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
 
 conToVar :: DataCon -> Core.Var
@@ -226,7 +231,8 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             one' <- toCore one
             two' <- toCore two
             let ref = mkGlobalRef tuple2CtorName
-            pure $ Core.App (Core.App (Core.Var (Core.Id ref todo)) one') two'
+            t <- tuple2CtorType
+            pure $ Core.App (Core.App (Core.Var (Core.Id ref t)) one') two'
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
 
