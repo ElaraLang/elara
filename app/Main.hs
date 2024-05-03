@@ -114,7 +114,6 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
-
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
         putTextLn ("Compiling " <> showPretty mn <> "...")
