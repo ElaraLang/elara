@@ -52,6 +52,7 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.FilePath
 import System.IO (hSetEncoding, openFile, utf8)
+import System.Info (os)
 import System.Process
 import Text.Printf
 
@@ -111,8 +112,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     let graph = createGraph [prim, source, prelude]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
-    when dumpCore $ do
-        liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
+    when dumpCore $ liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
 
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
@@ -130,7 +130,11 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     when run $ liftIO $ do
         -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
-        x <- readCreateProcess ((shell "java -noverify -cp ../jvm-stdlib:. Main"){cwd = Just "./build"}) ""
+        let process =
+                if os == "mingw32"
+                    then shell "java -noverify -cp ../jvm-stdlib;. Main"
+                    else shell "java -noverify -cp ../jvm-stdlib:. Main"
+        x <- readCreateProcess process{cwd = Just "./build"} ""
         putStrLn x
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
@@ -146,15 +150,12 @@ loadModule :: IsPipeline r => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 
 loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
     source <- readFileString fp
     tokens <- readTokensWith fp source
-    when dumpLexed $ do
-        writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
+    when dumpLexed $ writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
 
     parsed <- parsePipeline moduleParser fp (source, tokens)
-    when dumpParsed $ do
-        liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".parsed.elr"
+    when dumpParsed $ liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".parsed.elr"
     desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
-    when dumpDesugared $ do
-        liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".desugared.elr"
+    when dumpDesugared $ liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".desugared.elr"
     pure desugared
 
 processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
