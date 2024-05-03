@@ -30,7 +30,7 @@ loadExpr :: Text -> PipelineRes (Expr 'Shunted)
 loadExpr source = finalisePipeline . runShuntPipeline . runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
     tokens <- readTokensWith fp (toString source)
-    parsed <- parsePipeline exprParser fp tokens
+    parsed <- parsePipeline exprParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
     renamed <- runReader Nothing $ renameExpr desugared
