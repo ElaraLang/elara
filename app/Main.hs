@@ -109,7 +109,7 @@ runElara dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst 
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
-        liftIO $ dumpGraph coreGraph (view (field' @"name" . to nameText)) ".core.elr"
+        liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
     classes <- runReader java8 (emitGraph coreGraph)
     for_ classes $ \(mn, class') -> do
@@ -146,10 +146,10 @@ loadModule dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline .
 
     parsed <- parsePipeline moduleParser fp tokens
     when dumpParsed $ do
-        liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".parsed.elr"
+        liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".parsed.elr"
     desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
     when dumpDesugared $ do
-        liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".desugared.elr"
+        liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".desugared.elr"
     pure desugared
 
 processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
@@ -162,9 +162,9 @@ processModules graph (dumpShunted, dumpTyped) =
                     primitiveRenameState
                     ( traverseGraph rename
                         >=> shuntGraph (Just primOpTable)
-                        >=> dumpIf identity dumpShunted (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".shunted.elr"
+                        >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
-                        >=> dumpIf fst dumpTyped (view (_Unwrapped . unlocated . field' @"name" . to nameText)) ".typed.elr"
+                        >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
                         >=> traverseGraph (\(a, b) -> moduleToCore b a)
                         >=> pure
                         . mapGraph coreToCore

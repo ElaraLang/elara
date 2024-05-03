@@ -302,13 +302,13 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         -- qualify the name with the module name
         let name' =
                 -- sequenceA @Qualified @Located
-                traverseOf
+                over
                     unlocated
                     (\n -> Qualified n (fd ^. field' @"moduleName" % unlocated))
                     (fd ^. field' @"name")
         body' <- runReader (Just decl) $ renameDeclarationBody (fd ^. field' @"body")
 
-        pure $ Declaration' (fd ^. field' @"moduleName") (sequenceA name') body'
+        pure $ Declaration' (fd ^. field' @"moduleName") name' body'
 
     renameDeclarationBody :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody -> Sem r RenamedDeclarationBody
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
