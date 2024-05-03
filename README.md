@@ -30,7 +30,7 @@ If you don't have / want Nix, you *should* be able to get away with GHC 9.4.8 an
 2. Before running, and if you change the files, make sure to rebuild the Java standard library:
 ```sh
 cd jvm-stdlib
-javac elara/Error.java elara/Prelude.java elara/Func.java elara/Int.java elara/EList.java elara/IO.java elara/EList.java
+javac Elara/EList.java Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Unit.java
 cd ../
 ```
 
