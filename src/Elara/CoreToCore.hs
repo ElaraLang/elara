@@ -5,7 +5,6 @@ This stage performs optimisations and transformations on the Core AST
 -}
 module Elara.CoreToCore where
 
-import Control.Lens (transform)
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Expr (..), Literal (..), Var (..), mapBind)

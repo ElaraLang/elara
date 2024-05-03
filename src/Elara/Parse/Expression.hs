@@ -2,7 +2,6 @@
 
 module Elara.Parse.Expression where
 
-import Control.Lens (Iso', iso, (^.))
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set

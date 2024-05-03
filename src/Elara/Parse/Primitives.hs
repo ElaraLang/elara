@@ -18,7 +18,6 @@ module Elara.Parse.Primitives (
 )
 where
 
-import Control.Lens
 import Elara.AST.Region
 import Elara.Lexer.Token
 import Elara.Parse.Error (ElaraParseError)

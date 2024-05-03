@@ -19,7 +19,6 @@ TODO: this is extremely basic and needs some nicer error messages, no support fo
 -}
 module Elara.Data.Kind.Infer where
 
-import Control.Lens (Each (each), traverseOf_, view, (^.), _2)
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
 import Elara.AST.Generic
@@ -29,6 +28,7 @@ import Elara.AST.Shunted
 import Elara.Data.Kind
 import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId)
 import Elara.Prim (primKindCheckContext)
+import Optics (traverseOf_)
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
@@ -70,9 +70,9 @@ inferKind ::
 inferKind tName args t = do
     let args' = fmap (getUniqueId . view unlocated) args
     t' <- case t of
-        Alias a -> inferTypeKind (a ^. _Unwrapped . unlocated)
+        Alias a -> inferTypeKind (a ^. _Unwrapped % unlocated)
         ADT constructors -> do
-            traverseOf_ (each . _2 . each . _Unwrapped . unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
+            traverseOf_ (each % _2 % each % _Unwrapped % unlocated) (unifyKinds TypeKind <=< inferTypeKind) constructors
             pure TypeKind
 
     let funcKind = foldr (FunctionKind . VarKind) t' args'
@@ -88,14 +88,14 @@ inferTypeKind UnitType = pure TypeKind
 inferTypeKind (TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet
 inferTypeKind (UserDefinedType name) = lookupKind (name ^. unlocated)
 inferTypeKind (FunctionType a b) = do
-    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
-    b' <- inferTypeKind (b ^. _Unwrapped . unlocated)
+    a' <- inferTypeKind (a ^. _Unwrapped % unlocated)
+    b' <- inferTypeKind (b ^. _Unwrapped % unlocated)
     unifyKinds a' TypeKind
     unifyKinds b' TypeKind
     pure TypeKind
 inferTypeKind (TypeConstructorApplication ctor a) = do
-    ctor' <- inferTypeKind (ctor ^. _Unwrapped . unlocated)
-    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
+    ctor' <- inferTypeKind (ctor ^. _Unwrapped % unlocated)
+    a' <- inferTypeKind (a ^. _Unwrapped % unlocated)
     case ctor' of
         FunctionKind a'' b -> do
             unifyKinds a' a''
@@ -103,10 +103,10 @@ inferTypeKind (TypeConstructorApplication ctor a) = do
         e -> throw (NotFunctionKind e)
 inferTypeKind (RecordType _) = todo
 inferTypeKind (TupleType fields) = do
-    traverse_ ((unifyKinds TypeKind <=< inferTypeKind) . view (_Unwrapped . unlocated)) fields
+    traverse_ ((unifyKinds TypeKind <=< inferTypeKind) . view (_Unwrapped % unlocated)) fields
     pure TypeKind
 inferTypeKind (ListType a) = do
-    a' <- inferTypeKind (a ^. _Unwrapped . unlocated)
+    a' <- inferTypeKind (a ^. _Unwrapped % unlocated)
     unifyKinds a' TypeKind
     pure TypeKind
 

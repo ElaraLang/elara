@@ -23,7 +23,6 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Control.Lens (view, (^.), _1, _2)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -1365,7 +1364,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         _Θ <- get
 
-        (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped . _2)) argument
+        (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped % _2)) argument
 
         let e =
                 FunctionCall
@@ -1501,7 +1500,7 @@ check ::
     Type SourceRegion ->
     Sem r TypedExpr
 check expr@(Expr (Located exprLoc _, _)) t = do
-    let x = expr ^. _Unwrapped . _1 . unlocated
+    let x = expr ^. _Unwrapped % _1 % unlocated
     check' x t
   where
     check' :: ShuntedExpr' -> Type SourceRegion -> Sem r TypedExpr
@@ -1618,7 +1617,7 @@ checkPattern ::
     Type SourceRegion ->
     Sem r TypedPattern
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
-    let x = pattern_ ^. _Unwrapped . _1 . unlocated
+    let x = pattern_ ^. _Unwrapped % _1 % unlocated
     check' x t
   where
     check' :: ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern

@@ -1,6 +1,5 @@
 module Elara.Parse.Declaration where
 
-import Control.Lens (view, (^.), _1)
 import Data.Generics.Wrapped
 import Elara.AST.Frontend (FrontendDeclaration, FrontendTypeDeclaration)
 import Elara.AST.Generic
@@ -35,7 +34,7 @@ defDec modName = fmapLocated Declaration $ do
     token_ TokenColon
     typeAnnotation <- type'
 
-    let annotationLocation = view sourceRegion name <> view (_Unwrapped . sourceRegion) typeAnnotation
+    let annotationLocation = view sourceRegion name <> view (_Unwrapped % sourceRegion) typeAnnotation
     let declBody = Located annotationLocation $ ValueTypeDef typeAnnotation
     pure
         ( Declaration'
@@ -48,7 +47,7 @@ defDec modName = fmapLocated Declaration $ do
 letDec :: Located ModuleName -> Parser FrontendDeclaration
 letDec modName = fmapLocated Declaration $ do
     (name, patterns, e) <- letPreamble
-    let valueLocation = sconcat (e ^. _Unwrapped . _1 . sourceRegion :| (view (_Unwrapped . _1 . sourceRegion) <$> patterns))
+    let valueLocation = sconcat (e ^. _Unwrapped % _1 % sourceRegion :| (view (_Unwrapped % _1 % sourceRegion) <$> patterns))
         annotations = ValueDeclAnnotations Nothing
         value = DeclarationBody (Located valueLocation (Value e patterns NoFieldValue annotations))
     pure (Declaration' modName (NVarName <$> name) value)

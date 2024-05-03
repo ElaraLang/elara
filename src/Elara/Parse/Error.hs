@@ -6,7 +6,6 @@
 
 module Elara.Parse.Error where
 
-import Control.Lens (to, view)
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
@@ -37,7 +36,7 @@ parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
-        [ Note (view (unlocated . to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
+        [ Note (view (unlocated % to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
         , Hint "Try using a different name"
         ]
     hints (EmptyRecord _) =

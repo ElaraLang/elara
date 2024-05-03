@@ -1,6 +1,5 @@
 module Elara.Lexer.Reader where
 
-import Control.Lens
 import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
@@ -29,12 +28,12 @@ readToken = do
                     closeIndents <- cleanIndentation
                     modify (over pendingTokens (<> (closeIndents <> [eof])))
                     readToken
-                AlexError token -> error $ "Lexical error on line " <> show (token ^. position . line)
+                AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
                 AlexSkip inp _ -> do
                     put s{_input = inp}
                     readToken
                 AlexToken inp n act -> do
-                    let buf = s ^. input . rest
+                    let buf = s ^. input % rest
                     put s{_input = inp}
                     res <- act n (toText (take n buf))
                     maybe readToken pure res

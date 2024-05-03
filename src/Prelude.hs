@@ -1,3 +1,5 @@
+{-# LANGUAGE DefaultSignatures #-}
+
 module Prelude (
     module Relude,
     (:~:),
@@ -13,6 +15,8 @@ module Prelude (
     module Data.Function,
     Plated (..),
     cosmos,
+    cosmosOn,
+    cosmosOnOf,
     transform,
     concatMapOf,
 )
@@ -27,12 +31,14 @@ import Relude qualified (id)
 
 import Data.Function ((&))
 
+import Data.Data (Data)
 import Optics (
     AffineTraversal,
     AffineTraversal',
     At (..),
     Each (..),
     Fold,
+    GPlate (..),
     Getter,
     Iso,
     Iso',
@@ -114,9 +120,15 @@ identity = Relude.id
 
 class Plated a where
     plate :: Traversal' a a
+    default plate :: GPlate a a => Traversal' a a
+    plate = gplate
 
 cosmos :: Plated a => Fold a a
 cosmos = cosmosOf plate
+
+cosmosOn d = cosmosOnOf d plate
+
+cosmosOnOf d p = d % cosmosOf p
 
 transform :: Plated a => (a -> a) -> a -> a
 transform = transformOf plate

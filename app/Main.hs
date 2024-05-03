@@ -8,7 +8,6 @@ where
 
 import Control.Exception as E
 
-import Control.Lens (to, view)
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product

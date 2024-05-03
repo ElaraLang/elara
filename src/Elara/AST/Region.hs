@@ -4,13 +4,12 @@
 
 module Elara.AST.Region where
 
-import Control.Lens (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex)
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty (Pretty (..))
 import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
-import Optics (maximumOf, minimumOf)
+import Optics (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex, maximumOf, minimumOf)
 import Print (showPretty)
 import Relude.Unsafe (fromJust)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)

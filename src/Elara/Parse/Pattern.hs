@@ -1,6 +1,5 @@
 module Elara.Parse.Pattern (patParser) where
 
-import Control.Lens (Iso', iso)
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Elara.AST.Frontend
 import Elara.AST.Generic (Pattern (..), Pattern' (..))

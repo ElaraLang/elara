@@ -8,7 +8,6 @@ This means that currying can be avoided in a lot of cases (through arity analysi
 -}
 module Elara.Emit where
 
-import Control.Lens hiding (List)
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.VarRef (varRefVal)

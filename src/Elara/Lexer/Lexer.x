@@ -5,7 +5,6 @@ module Elara.Lexer.Lexer where
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
 import Relude.Unsafe (read)
-import Control.Lens ((^.), over)
 import Elara.AST.Region
 import Data.Text qualified as T
 import Elara.Lexer.Char

@@ -1,6 +1,5 @@
 module Elara.Core where
 
-import Control.Lens (Plated (plate), transform)
 import Data.Data
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
@@ -32,7 +31,7 @@ data Expr b
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
 
 instance Plated (Expr b) where
-    plate f = \case
+    plate = traversalVL $ \f -> \case
         Var b -> pure (Var b)
         Lit l -> pure (Lit l)
         App a b -> App <$> f a <*> f b
@@ -94,7 +93,7 @@ data Type
     deriving (Show, Eq, Data, Ord, Generic)
 
 instance Plated Type where
-    plate f = \case
+    plate = traversalVL $ \f -> \case
         TyVarTy tv -> pure (TyVarTy tv)
         FuncTy a b -> FuncTy <$> f a <*> f b
         AppTy a b -> AppTy <$> f a <*> f b

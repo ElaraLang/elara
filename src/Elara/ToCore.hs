@@ -1,7 +1,6 @@
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
-import Control.Lens (to, view, (^.), _2)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as M
@@ -101,13 +100,13 @@ runToCorePipeline =
 
 moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
-    let name = m ^. field' @"name" . unlocated
+    let name = m ^. field' @"name" % unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do
-        (body', var) <- case decl ^. _Unwrapped . unlocated . field' @"body" . _Unwrapped . unlocated of
+        (body', var) <- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value v _ _ _ -> do
-                ty <- typeToCore (v ^. _Unwrapped . _2)
+                ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
-                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped . unlocated . field' @"name" . unlocated)) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty
                 pure (v', var)
         pure (CoreValue $ NonRecursive (var, body'))
     pure $ CoreModule name decls
