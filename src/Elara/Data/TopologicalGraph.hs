@@ -13,12 +13,19 @@ import Text.Show qualified as Show
 
 class Ord (Key a) => HasDependencies a where
     type Key a
+    keys :: a -> NonEmpty (Key a)
+    keys = pure . key
+
     key :: a -> Key a
+    key = head . keys
+
     dependencies :: a -> [Key a]
+
+    {-# MINIMAL (keys | key), dependencies #-}
 
 instance HasDependencies a => HasDependencies (a, b) where
     type Key (a, b) = Key a
-    key = key . fst
+    keys = keys . fst
     dependencies = dependencies . fst
 
 data TopologicalGraph a = TopologicalGraph
@@ -68,17 +75,17 @@ genericGraphTraverse_ f f' g = do
     traverse_ f' sortedNodes
 
 createGraph :: HasDependencies a => [a] -> TopologicalGraph a
-createGraph = uncurry3 TopologicalGraph . graphFromEdges . fmap createEdge
+createGraph = uncurry3 TopologicalGraph . graphFromEdges . mconcat . fmap (toList . createEdge)
 
 createEdge ::
     forall a.
     HasDependencies a =>
     a ->
-    (a, Key a, [Key a])
+    NonEmpty (a, Key a, [Key a])
 createEdge m = do
-    let mn = key m
+    let mns = keys m
     let mImports = dependencies m
-    (m, mn, mImports)
+    (m,,mImports) <$> mns
 
 allEntries :: TopologicalGraph m -> [m]
 allEntries g = g ^.. moduleGraph % to vertices % each % to (g ^. nodeFromVertex) % _1

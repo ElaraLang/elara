@@ -104,8 +104,13 @@ type ShuntedTypeDeclaration = Generic.TypeDeclaration 'Shunted
 
 instance HasDependencies ShuntedDeclaration where
     type Key ShuntedDeclaration = Qualified Name
-    key = view (_Unwrapped % unlocated % field' @"name" % unlocated)
-    dependencies decl = traceShowId $ case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+
+    keys sd =
+        view (_Unwrapped % unlocated % field' @"name" % unlocated) sd :| case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+            Generic.TypeDeclaration _ (Located _ (Generic.ADT ctors)) _ ->
+                toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
+            _ -> []
+    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
         Generic.Value e _ t _ -> valueDependencies e <> (maybeToList t >>= typeDependencies)
         Generic.TypeDeclaration{} -> []
 
