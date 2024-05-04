@@ -107,6 +107,11 @@ instance Pretty Type where
     pretty :: Type -> Doc AnsiStyle
     pretty = prettyTy
 
+prettyTypeVariables :: [TypeVariable] -> Doc AnsiStyle
+prettyTypeVariables = \case
+    [] -> mempty
+    tvs -> hsep (punctuate " " (prettyTypeVariable True <$> tvs))
+
 prettyTy :: Type -> Doc AnsiStyle
 prettyTy (FuncTy t1 t2) = prettyTy1 t1 <+> "->" <+> prettyTy t2
 prettyTy (AppTy l t2) | l == listCon = brackets (prettyTy2 t2)

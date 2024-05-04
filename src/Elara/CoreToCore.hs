@@ -58,3 +58,4 @@ coreToCore :: CoreModule -> CoreModule
 coreToCore (CoreModule name decls) = CoreModule name (fmap f decls)
   where
     f (CoreValue v) = CoreValue (mapBind identity fullCoreToCoreExpr v)
+    f other = other

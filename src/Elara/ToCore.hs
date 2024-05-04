@@ -9,15 +9,15 @@ import Data.Traversable (for)
 import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
-import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
-import Elara.Data.Kind (ElaraKind (TypeKind))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (..))
+import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
@@ -107,28 +107,35 @@ moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> S
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
     decls <- for (m ^. field' @"declarations") $ \decl -> do
-        bv <- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+        let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
+        case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value v _ _ _ -> do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty
-                pure $ Just (v', var)
+                pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) _ -> do
-                let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
                 ctors' <- for ctors $ \(Located _ n, t) -> do
                     t' <- traverse typeToCore t
                     let ctorType =
                             foldr
-                                (Core.ForAllTy . (`TypeVariable` TypeKind) . fmap (Just . nameText) . view unlocated)
+                                (Core.ForAllTy . typedTvToCoreTv)
                                 (foldr Core.FuncTy (Core.ConTy declName) t')
                                 tvs
                     pure (nameText <$> n, ctorType)
                 let ctors'' = fmap (uncurry DataCon) ctors'
                 traverse_ registerCtor ctors''
-                pure Nothing
-            TypeDeclaration{} -> pure Nothing
-        pure ((\(a, b) -> CoreValue $ NonRecursive (b, a)) <$> bv)
+                let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
+                pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
+            TypeDeclaration tvs (Located _ (Alias t)) _ -> do
+                t' <- typeToCore t
+                let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs
+                let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
+                pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
     pure $ CoreModule name (catMaybes decls)
+
+typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariable
+typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
 typeToCore (Type.Forall _ _ tv _ t) = do
