@@ -121,7 +121,11 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                     let ctorType =
                             foldr
                                 (Core.ForAllTy . typedTvToCoreTv)
-                                (foldr Core.FuncTy (Core.ConTy declName) t')
+                                ( foldr
+                                    Core.FuncTy
+                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (Core.ConTy declName) tvs)
+                                    t'
+                                )
                                 tvs
                     pure (nameText <$> n, ctorType, Core.ConTy declName)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'

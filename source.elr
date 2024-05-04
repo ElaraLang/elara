@@ -1,8 +1,10 @@
 import Prelude 
 import Elara.Prim
 
-type Wrapper a = Box a 
+type Wrapper a = Box a
 
-let main = print (Box 5)
+type Option a = Some a | None
+
+let main = print (None)
 
 

@@ -35,7 +35,7 @@ import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 generateInstructions ::
     ( HasCallStack
@@ -94,6 +94,8 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tA
                 emit' inst
             _ -> do
                 -- no args function (eg undefined)
+                let x = approximateTypeAndNameOf v
+                debugPretty x
                 emit
                     ( InvokeStatic
                         (ClassInfoType $ createModuleName mn)
