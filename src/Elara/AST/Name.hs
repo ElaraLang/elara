@@ -23,6 +23,9 @@ import Prelude hiding (Show, show)
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Show, Eq, Ord, Data, Generic)
 
+appendModule :: ModuleName -> Text -> ModuleName
+appendModule (ModuleName m) n = ModuleName (m <> pure n)
+
 {- | A valid Variable name. This includes anything that could appear in `let [name] = ...`
 In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}

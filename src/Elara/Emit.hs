@@ -111,7 +111,7 @@ addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidRetu
 
 addDeclaration :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
-    CoreValue (NonRecursive (n@(Id name type'), e)) -> do
+    CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
         Log.debug $ "Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "..."
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'

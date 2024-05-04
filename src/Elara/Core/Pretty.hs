@@ -137,7 +137,7 @@ instance Pretty AltCon where
 instance Pretty DataCon where
     pretty :: DataCon -> Doc AnsiStyle
     pretty = \case
-        DataCon name t -> (pretty name <+> ":" <+> pretty t)
+        DataCon name t _ -> (pretty name <+> ":" <+> pretty t)
 
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case

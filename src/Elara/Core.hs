@@ -79,7 +79,11 @@ data AltCon
 -- | A data constructor.
 data DataCon = DataCon
     { name :: Qualified Text
+    -- ^ The name of the data constructor
     , dataConType :: Type
+    -- ^ The type of the data constructor, i.e. `type Foo a = Bar a` would have a data constructor with type `a -> Foo a`
+    , dataConDataType :: Type
+    -- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a data constructor with type `Foo a`. This should be identical to @functionTypeResult . dataConType@
     }
     deriving (Show, Eq, Data, Generic, Ord)
 

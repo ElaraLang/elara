@@ -61,9 +61,11 @@ import Elara.Core.Module (CoreTypeDecl (..), CoreTypeDeclBody (..))
 
 import Elara.AST.Name (unqualified)
 import Elara.Core (DataCon (..), functionTypeArgs)
+import Elara.Data.Unique (makeUnique)
 import Elara.Emit.Method (createMethodWithCodeBuilder)
 import Elara.Emit.Monad (InnerEmit, addClass, addInnerClass)
-import Elara.Emit.Utils (createQualifiedClassName, generateFieldType)
+import Elara.Emit.State (MethodCreationState (maxLocalVariables), findLocalVariable)
+import Elara.Emit.Utils (createQualifiedClassName, createQualifiedInnerClassName, generateFieldType)
 import Elara.Parse.Type (functionType)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code
@@ -82,38 +84,68 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
     let typeClassName = createQualifiedClassName name
     addClass typeClassName $ do
         addAccessFlag Public
-        addAccessFlag Interface
+        addAccessFlag Abstract
         let matchSig =
                 MethodDescriptor (ObjectFieldType "Elara/Func" <$ ctors) (TypeReturn $ ObjectFieldType "java/lang/Object")
+
+        -- add boring empty constructor
+        createMethodWithCodeBuilder typeClassName (MethodDescriptor [] VoidReturn) [MProtected] "<init>" $ do
+            emit $ ALoad 0
+            emit $ InvokeSpecial (ClassInfoType "java/lang/Object") "<init>" (MethodDescriptor [] VoidReturn)
+
         addMethod $
             ClassFileMethod
                 [MPublic, MAbstract]
                 "match"
                 matchSig
                 mempty
-        for_ ctors $ \(DataCon ctorName ctorType) -> do
+        for_ ctors $ \(DataCon ctorName ctorType conTy) -> do
+            let innerConClassName = createQualifiedInnerClassName (ctorName ^. unqualified) typeClassName
             let fields = functionTypeArgs ctorType
             -- Create static factory method
             createMethodWithCodeBuilder typeClassName (MethodDescriptor (generateFieldType <$> fields) (TypeReturn $ ObjectFieldType typeClassName)) [MPublic, MStatic] ("_" <> ctorName ^. unqualified) $ do
-                emit $ New (ClassInfoType typeClassName)
+                emit $ New (ClassInfoType innerConClassName)
                 emit Dup
-                for_ (zip fields [0 ..]) $ \(field, i) -> do
+                for_ (zip fields [0 ..]) $ \(_, i) -> do
                     emit $ ALoad (fromIntegral i)
-                emit $ InvokeSpecial (ClassInfoType typeClassName) "<init>" (MethodDescriptor (generateFieldType <$> fields) VoidReturn)
-                emit AReturn
+                emit $ InvokeSpecial (ClassInfoType innerConClassName) "<init>" (MethodDescriptor (generateFieldType <$> fields) VoidReturn)
 
             -- Create inner class
             addInnerClass (ctorName ^. unqualified) $ do
                 addAccessFlag Public
                 addAccessFlag Final
-                addInterface typeClassName
+                addAccessFlag Super
+                setSuperClass typeClassName
 
                 for_ (zip fields [0 ..]) $ \(field, i) -> do
                     addField $ ClassFileField [FPrivate, FFinal] ("field" <> show i) (generateFieldType field) []
 
                 thisName <- getName
                 createMethodWithCodeBuilder thisName (MethodDescriptor (generateFieldType <$> fields) VoidReturn) [MPublic] "<init>" $ do
+                    -- call super constructor
+                    emit $ ALoad 0
+                    emit $ InvokeSpecial (ClassInfoType typeClassName) "<init>" (MethodDescriptor [] VoidReturn)
                     emit $ ALoad 0
                     for_ (zip fields [0 ..]) $ \(field, i) -> do
                         emit $ ALoad (fromIntegral i + 1)
                         emit $ PutField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
+
+                -- generate toString
+                createMethodWithCodeBuilder thisName (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String")) [MPublic] "toString" $ do
+                    emit $ New (ClassInfoType "java/lang/StringBuilder")
+                    emit Dup
+                    emit $ LDC (LDCString $ ctorName ^. unqualified)
+                    emit $ InvokeSpecial (ClassInfoType "java/lang/StringBuilder") "<init>" (MethodDescriptor [ObjectFieldType "java/lang/String"] VoidReturn)
+
+                    for_ (zip fields [0 ..]) $ \(field, i) -> do
+                        -- add whitespace
+                        emit $ LDC (LDCString " ")
+                        emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
+                        -- get the field
+                        emit $ ALoad 0
+                        emit $ GetField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
+                        -- toString it
+                        emit $ InvokeVirtual (ClassInfoType "java/lang/Object") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
+                        -- append it to the StringBuilder
+                        emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [generateFieldType field] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
+                    emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))

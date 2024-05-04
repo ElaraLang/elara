@@ -20,7 +20,7 @@ data JVMBinder
 
 jvmBinderType :: JVMBinder -> Maybe JVMLocalType
 jvmBinderType (JVMLocal _ t) = t
-jvmBinderType (Normal (Core.Id _ t)) = Just $ JVMLType t
+jvmBinderType (Normal (Core.Id _ t _)) = Just $ JVMLType t
 jvmBinderType _ = Nothing
 
 jvmLocalTypeToFieldType :: JVMLocalType -> FieldType
@@ -51,13 +51,13 @@ toJVMExpr = fmap Normal
 
 replaceVar :: JVMBinder -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar old new = transform $ \case
-    Core.Var (Normal (Core.Id old' _)) | (Normal (Core.Id old'' _)) <- old, old' == old'' -> Core.Var new -- compare ignoring types
+    Core.Var (Normal (Core.Id old' _ _)) | (Normal (Core.Id old'' _ _)) <- old, old' == old'' -> Core.Var new -- compare ignoring types
     Core.Var old' | old == old' -> Core.Var new
     x -> x
 
 replaceVar' :: UnlocatedVarRef Text -> JVMBinder -> JVMExpr -> JVMExpr
 replaceVar' old new = transform $ \case
-    Core.Var (Normal (Core.Id old' _)) | old == old' -> Core.Var new
+    Core.Var (Normal (Core.Id old' _ _)) | old == old' -> Core.Var new
     x -> x
 
 {- | We end up with redundant top-level lambdas a lot, that can be converted into normal methods instead.
@@ -73,7 +73,7 @@ transformTopLevelJVMLambdas :: JVMExpr -> JVMExpr
 transformTopLevelJVMLambdas = go 0
   where
     go :: Word8 -> JVMExpr -> JVMExpr
-    go c (Lam (Normal v@(Core.Id _ t)) body) = replaceVar (Normal v) (JVMLocal c (Just $ JVMLType t)) (go (c + 1) body)
+    go c (Lam (Normal v@(Core.Id _ t _)) body) = replaceVar (Normal v) (JVMLocal c (Just $ JVMLType t)) (go (c + 1) body)
     go _ x = x
 
 {- | When we have a function let x = y, where y : A -> B,

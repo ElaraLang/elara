@@ -62,13 +62,13 @@ ioCon :: Type
 ioCon = ConTy (mkPrimQual "IO")
 
 trueCtor :: DataCon
-trueCtor = DataCon trueCtorName boolCon
+trueCtor = DataCon trueCtorName boolCon boolCon
 
 falseCtor :: DataCon
-falseCtor = DataCon falseCtorName boolCon
+falseCtor = DataCon falseCtorName boolCon boolCon
 
 tuple2Con :: Type
 tuple2Con = ConTy (mkPrimQual "(,)")
 
 tuple2Ctor :: DataCon
-tuple2Ctor = DataCon tuple2CtorName tuple2Con
+tuple2Ctor = DataCon tuple2CtorName _ tuple2Con

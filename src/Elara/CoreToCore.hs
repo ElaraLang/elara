@@ -16,7 +16,7 @@ pattern Infix :: NonEmpty Text -> Text -> CoreExpr -> CoreExpr -> CoreExpr
 pattern Infix mn op a b <-
     App
         ( App
-                (Var (Id (Global' (Qualified op (ModuleName mn))) _))
+                (Var (Id (Global' (Qualified op (ModuleName mn))) _ _))
                 a
             )
         b

@@ -62,7 +62,7 @@ addInnerClass innerClassName sem = do
     outerClass <- getClass
     let innerClassName' = createQualifiedInnerClassName innerClassName outerClass.name
     (cf, _) <- runClassBuilder innerClassName' ver sem
-    addAttribute $ InnerClasses [InnerClassInfo outerClass.name innerClassName' innerClassName mempty]
+    addAttribute $ InnerClasses [InnerClassInfo innerClassName' outerClass.name innerClassName mempty]
     addBuiltClass cf
     pass
 

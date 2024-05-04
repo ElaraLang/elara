@@ -26,6 +26,7 @@ import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
+import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Error.Diagnose.Report (Marker (..))
 import Polysemy (Members, Sem)
@@ -65,8 +66,8 @@ primCtorSymbolTable =
     fromList
         [ (trueCtorName, trueCtor)
         , (falseCtorName, falseCtor)
-        , (consCtorName, DataCon consCtorName listCon)
-        , (emptyListCtorName, DataCon emptyListCtorName listCon)
+        , (consCtorName, DataCon consCtorName listCon listCon)
+        , (emptyListCtorName, DataCon emptyListCtorName listCon listCon)
         , (tuple2CtorName, tuple2Ctor)
         ]
 
@@ -112,7 +113,7 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
             Value v _ _ _ -> do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
-                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty
+                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) _ -> do
                 ctors' <- for ctors $ \(Located _ n, t) -> do
@@ -122,8 +123,8 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                                 (Core.ForAllTy . typedTvToCoreTv)
                                 (foldr Core.FuncTy (Core.ConTy declName) t')
                                 tvs
-                    pure (nameText <$> n, ctorType)
-                let ctors'' = fmap (uncurry DataCon) ctors'
+                    pure (nameText <$> n, ctorType, Core.ConTy declName)
+                let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
                 let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
                 pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
@@ -161,7 +162,7 @@ typeToCore (Type.Tuple _ x) = error $ "unsupported tuple length: " <> show (leng
 typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
 
 conToVar :: DataCon -> Core.Var
-conToVar (Core.DataCon n t) = Core.Id (Global $ Identity n) t
+conToVar dc@(Core.DataCon n t _) = Core.Id (Global $ Identity n) t (Just dc)
 
 mkLocalRef :: Unique n -> UnlocatedVarRef n
 mkLocalRef = Local . Identity
@@ -190,10 +191,10 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                 Just t -> typeToCore t
                 Nothing -> throw (UnknownVariable (NVarName <<$>> l))
 
-            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t)
+            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t Nothing)
         AST.Var (Located _ v@(Local _)) -> do
             t' <- typeToCore t
-            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t')
+            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t' Nothing)
         AST.Constructor v -> do
             ctor <- lookupCtor v
             pure $ Core.Var (conToVar ctor)
@@ -206,7 +207,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
 
             t'' <- typeToCore t'
 
-            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'') <$> toCore body
+            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'' Nothing) <$> toCore body
         AST.FunctionCall e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
@@ -229,7 +230,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.List [] -> do
             t' <- typeToCore t
             let ref = mkGlobalRef emptyListCtorName
-            pure $ Core.Var (Core.Id ref t')
+            pure $ Core.Var (Core.Id ref t' Nothing)
         AST.List (x : xs) -> do
             x' <- toCore x
             xs' <- toCore' (AST.List xs)
@@ -237,7 +238,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             consType' <- consType
             pure $
                 Core.App
-                    (Core.App (Core.Var $ Core.Id ref consType') x') -- x
+                    (Core.App (Core.Var $ Core.Id ref consType' Nothing) x') -- x
                     xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
@@ -249,7 +250,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
-                    ( if isRecursive then Core.Recursive [(Core.Id ref t', e1')] else Core.NonRecursive (Core.Id ref t', e1')
+                    ( if isRecursive then Core.Recursive [(Core.Id ref t' Nothing, e1')] else Core.NonRecursive (Core.Id ref t' Nothing, e1')
                     )
                     e2'
         AST.Tuple (one :| []) -> toCore one
@@ -258,7 +259,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             two' <- toCore two
             let ref = mkGlobalRef tuple2CtorName
             t <- tuple2CtorType
-            pure $ Core.App (Core.App (Core.Var (Core.Id ref t)) one') two'
+            pure $ Core.App (Core.App (Core.Var (Core.Id ref t (Just tuple2Ctor))) one') two'
         AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
         AST.Block exprs -> desugarBlock exprs
 
@@ -288,32 +289,32 @@ desugarMatch e pats = do
             AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
             AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
             AST.WildcardPattern -> pure (Core.DEFAULT, [])
-            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t'])
+            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t' Nothing])
             AST.ConstructorPattern cn pats -> do
                 c <- lookupCtor cn
                 pats' <- for pats patternToCore
                 pure (Core.DataAlt c, snd =<< pats')
             AST.ListPattern [] -> do
                 t' <- typeToCore t
-                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy listCon t'), [])
+                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy listCon t') listCon, [])
             AST.ListPattern (x : xs) -> do
                 (_, vars) <- patternToCore x
                 vars' <- (snd =<<) <$> traverse patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
+                pure (Core.DataAlt $ DataCon consCtorName listCon listCon, vars <> vars')
             AST.ConsPattern x xs -> do
                 (_, vars) <- patternToCore x
                 vars' <- snd <$> patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName listCon, vars <> vars')
+                pure (Core.DataAlt $ DataCon consCtorName listCon listCon, vars <> vars')
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
-    pure (Core.Id (mkLocalRef unique) t')
+    pure (Core.Id (mkLocalRef unique) t' Nothing)
 mkBindName (AST.Expr (_, t)) = do
     t' <- typeToCore t
     unique <- makeUnique "bind"
-    pure (Core.Id (mkLocalRef unique) t')
+    pure (Core.Id (mkLocalRef unique) t' Nothing)
 
 desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (a :| []) = toCore a

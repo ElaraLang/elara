@@ -66,13 +66,13 @@ generateInstructions' ::
     Sem r ()
 generateInstructions' (Var v@(JVMLocal _ _)) _ = localVariableId v >>= emit . ALoad
 generateInstructions' (Lit s) _ = generateLitInstructions s >>= emit'
-generateInstructions' (Var (Normal (Id (Global' v) _))) _
+generateInstructions' (Var (Normal (Id (Global' v) _ _))) _
     | v == fetchPrimitiveName = error "elaraPrimitive without argument"
-generateInstructions' (App ((Var (Normal (Id (Global' v) _)))) (Lit (String primName))) _
+generateInstructions' (App ((Var (Normal (Id (Global' v) _ _)))) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _))) _) (Lit (String primName))) _
+generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _ _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t))) tApps = do
+generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tApps = do
     Log.debug $ "Generating instructions for global variable: " <> showPretty v
     if typeIsValue t
         then
@@ -124,7 +124,7 @@ generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableS
 generateInstructions' (Match a b c) _ = generateCaseInstructions a b c
 generateInstructions' (TyApp f t) tApps =
     generateInstructions' f (t : tApps) -- TODO
-generateInstructions' (Lam (Normal (Id (Local' v) binderType)) body) _ = do
+generateInstructions' (Lam (Normal (Id (Local' v) binderType _)) body) _ = do
     cName <- gets (.thisClassName)
     returnType <- case approximateTypeAndNameOf body of
         Right (_, t) -> pure $ generateFieldType t
@@ -152,8 +152,8 @@ generateCaseInstructions ::
 generateCaseInstructions -- hardcode if/else impl
     scrutinee
     _
-    [ (DataAlt (DataCon trueCtorName' boolCon'), _, ifTrue)
-        , (DataAlt (DataCon falseCtorName' boolCon2'), _, ifFalse)
+    [ (DataAlt (DataCon trueCtorName' boolCon' _), _, ifTrue)
+        , (DataAlt (DataCon falseCtorName' boolCon2' _), _, ifFalse)
         ]
         | trueCtorName' == trueCtorName && falseCtorName' == falseCtorName && boolCon' == boolCon && boolCon2' == boolCon = do
             generateInstructions scrutinee
@@ -169,8 +169,8 @@ generateCaseInstructions -- hardcode if/else impl
 generateCaseInstructions
     scrutinee
     as -- hardcode cons/empty imp
-    [ (DataAlt (DataCon emptyCtorName' (AppTy listCon' _)), _, ifEmpty)
-        , (DataAlt (DataCon consCtorName' listCon2'), [headBind, tailBind], ifCons)
+    [ (DataAlt (DataCon emptyCtorName' (AppTy listCon' _) _), _, ifEmpty)
+        , (DataAlt (DataCon consCtorName' listCon2' _), [headBind, tailBind], ifCons)
         ]
         | emptyCtorName' == emptyListCtorName
         , listCon' == listCon
@@ -223,7 +223,7 @@ localVariableId (JVMLocal i _) = do
     if i < maxLocalVariables s
         then pure i
         else throw $ LocalVariableNotFound i s
-localVariableId (Normal ((Id (Local' v) _))) = findLocalVariable v
+localVariableId (Normal ((Id (Local' v) _ Nothing))) = findLocalVariable v
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
 {- | Attempt to figure out the name and type of an expression, returning either a Local variable in @Left@ or a Global variable in @Right@
@@ -233,7 +233,12 @@ approximateTypeAndNameOf ::
     HasCallStack =>
     Expr JVMBinder ->
     Either (U1, Maybe JVMLocalType) (UnlocatedVarRef Text, Type)
-approximateTypeAndNameOf (Var (Normal (Id n t))) = Right (n, t)
+approximateTypeAndNameOf (Var (Normal (Id n t Nothing))) = Right (n, t)
+-- \| Here we turn the mention of Main.Box into Main.Wrapper.Box to reflect that it'll get compiled into a separate class
+approximateTypeAndNameOf (Var (Normal (Id n t (Just (DataCon dcName dcType (ConTy dcCon)))))) = do
+    let Qualified dcName' dcMod = dcCon
+    let newModName = appendModule dcMod dcName'
+    Right (Global' (Qualified (dcName ^. unqualified) newModName), t)
 approximateTypeAndNameOf (Var (JVMLocal i t)) = Left (i, t)
 approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
 approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty other
