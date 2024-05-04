@@ -3,7 +3,7 @@ module Elara.ToCore where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Data.List (foldr1)
+import Data.List (foldr1, nub)
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST

@@ -62,6 +62,7 @@ inferModule ::
     Sem r (Module 'Typed, Map (Qualified Name) (Type SourceRegion))
 inferModule m = do
     m' <- traverseModuleRevTopologically inferDeclaration m
+    debugPretty ("TI" :: Text, m' ^. _Unwrapped % unlocated % field' @"name", m' ^.. _Unwrapped % unlocated % field' @"declarations" % each % _Unwrapped % unlocated % field' @"name")
     ctx <- Infer.get
     let annotations =
             Map.fromList $
@@ -78,7 +79,8 @@ inferDeclaration ::
     (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
-inferDeclaration (Declaration ld) =
+inferDeclaration (Declaration ld) = do
+    debugPretty ("TI" :: Text, ld ^. unlocated % field' @"name")
     Declaration
         <$> traverseOf
             unlocated
@@ -133,10 +135,8 @@ inferDeclaration (Declaration ld) =
         let inferCtor (ctorName, t :: [ShuntedType]) = do
                 t' <- traverse astTypeToInferType t
                 let ctorType = universallyQuantify tvs (foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to nameText) []) t')
-                debugPretty ctorName
                 push (Annotation (mkGlobal' ctorName) ctorType)
                 pure (ctorName, t')
-        debugPretty ctors
         ctors' <- traverse inferCtor ctors
 
         pure $ TypeDeclaration tvs (Located sr (ADT ctors')) (coerceTypeDeclAnnotations ann)

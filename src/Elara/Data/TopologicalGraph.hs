@@ -5,9 +5,11 @@
 module Elara.Data.TopologicalGraph where
 
 import Data.Array
+import Data.Containers.ListUtils (nubOrd)
 import Data.Graph
 import Elara.Data.Pretty
 import Elara.Utils (uncurry3)
+import Print (debugPretty)
 import Relude.Extra (firstF)
 import Text.Show qualified as Show
 
@@ -90,11 +92,12 @@ createEdge m = do
 allEntries :: TopologicalGraph m -> [m]
 allEntries g = g ^.. moduleGraph % to vertices % each % to (g ^. nodeFromVertex) % _1
 
-allEntriesTopologically :: TopologicalGraph m -> [m]
-allEntriesTopologically g = g ^.. moduleGraph % to topSort % each % to (g ^. nodeFromVertex) % _1
+allEntriesTopologically :: Ord m => TopologicalGraph m -> [m]
+allEntriesTopologically g = nubOrd (g ^.. moduleGraph % to topSort % each % to (g ^. nodeFromVertex) % _1)
 
-allEntriesRevTopologically :: TopologicalGraph m -> [m]
-allEntriesRevTopologically g = g ^.. moduleGraph % to reverseTopSort % each % to (g ^. nodeFromVertex) % _1
+-- | Get all entries in reverse topological order, but without duplicates
+allEntriesRevTopologically :: Ord m => TopologicalGraph m -> [m]
+allEntriesRevTopologically g = nubOrd (g ^.. moduleGraph % to reverseTopSort % each % to (g ^. nodeFromVertex) % _1)
 
 dependenciesOf :: Key a -> TopologicalGraph a -> [Key a]
 dependenciesOf m g = fromMaybe [] $ do

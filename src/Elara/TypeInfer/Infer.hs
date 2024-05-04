@@ -1602,7 +1602,6 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         When checking that e:T, this can often provoke the creation of type applications.
         for example, given id: forall a. a -> a, checking that id : Int -> Int will create a type application @Int
         -}
-        -- debugPretty ("check'" :: Text, expr, _At, Context.solveType _1 _At, _B)
         case _At of
             Type.Forall{} -> do
                 case _At `Type.applicableTyApp` _B of

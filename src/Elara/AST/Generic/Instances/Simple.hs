@@ -18,7 +18,7 @@ type ForAllExpr c ast =
     , c (Select "InParens" ast)
     )
 
--- Eq instances
+-- Eq/Ord instances
 
 deriving instance
     ( (Eq (Select "LetPattern" ast))
@@ -34,7 +34,22 @@ deriving instance
     ) =>
     Eq (Expr' ast)
 
+deriving instance
+    ( (Ord (Select "LetPattern" ast))
+    , ForAllExpr Ord ast
+    , (Ord (ASTLocate ast (BinaryOperator' ast)))
+    , (Ord (Select "ExprType" ast))
+    , (Ord (Select "PatternType" ast))
+    , (Ord (Select "BinaryOperator" ast))
+    , Ord (Select "TypeApplication" ast)
+    , Ord (ASTLocate ast (Expr' ast))
+    , Ord (ASTLocate ast (Pattern' ast))
+    , Ord (Type ast)
+    ) =>
+    Ord (Expr' ast)
+
 deriving instance (Eq (ASTLocate ast (Expr' ast)), Eq (Select "ExprType" ast)) => Eq (Expr ast)
+deriving instance (Ord (ASTLocate ast (Expr' ast)), Ord (Select "ExprType" ast)) => Ord (Expr ast)
 
 deriving instance
     ( Eq (ASTLocate ast (Select "VarPat" ast))
@@ -44,7 +59,16 @@ deriving instance
     ) =>
     Eq (Pattern' ast)
 
+deriving instance
+    ( Ord (ASTLocate ast (Select "VarPat" ast))
+    , Ord (ASTLocate ast (Select "ConPat" ast))
+    , Ord (Select "PatternType" ast)
+    , Ord (ASTLocate ast (Pattern' ast))
+    ) =>
+    Ord (Pattern' ast)
+
 deriving instance (Eq (ASTLocate ast (Pattern' ast)), Eq (Select "PatternType" ast)) => Eq (Pattern ast)
+deriving instance (Ord (ASTLocate ast (Pattern' ast)), Ord (Select "PatternType" ast)) => Ord (Pattern ast)
 
 deriving instance
     ( Eq (ASTLocate ast (Select "TypeVar" ast))
@@ -58,12 +82,115 @@ deriving instance
 deriving instance Eq (ASTLocate ast (Type' ast)) => Eq (Type ast)
 
 deriving instance
+    ( Ord (ASTLocate ast (Select "TypeVar" ast))
+    , Ord (ASTLocate ast (Select "UserDefinedType" ast))
+    , Ord (ASTLocate ast (Type' ast))
+    , Ord (ASTLocate ast LowerAlphaName)
+    , Ord (Type ast)
+    ) =>
+    Ord (Type' ast)
+
+deriving instance Ord (ASTLocate ast (Type' ast)) => Ord (Type ast)
+
+deriving instance
     ( Eq (ASTLocate ast (Select "SymOp" ast))
     , Eq (Select "Infixed" ast)
     ) =>
     Eq (BinaryOperator' ast)
 
 deriving instance Eq (ASTLocate ast (BinaryOperator' ast)) => Eq (BinaryOperator ast)
+
+deriving instance Eq (ASTLocate ast (Declaration' ast)) => Eq (Declaration ast)
+
+deriving instance
+    ( Eq (DeclarationBody ast)
+    , Eq (ASTLocate ast (Select "DeclarationName" ast))
+    , Eq (ASTLocate ast ModuleName)
+    ) =>
+    Eq (Declaration' ast)
+
+deriving instance Eq (ASTLocate ast (DeclarationBody' ast)) => Eq (DeclarationBody ast)
+deriving instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
+
+deriving instance
+    ( Ord (ASTLocate ast (Select "SymOp" ast))
+    , Ord (Select "Infixed" ast)
+    ) =>
+    Ord (BinaryOperator' ast)
+
+deriving instance
+    ( Eq (Declaration' ast)
+    , Ord (DeclarationBody ast)
+    , Ord (ASTLocate ast (Select "DeclarationName" ast))
+    , Ord (ASTLocate ast ModuleName)
+    ) =>
+    Ord (Declaration' ast)
+deriving instance Ord (ASTLocate ast (Declaration' ast)) => Ord (Declaration ast)
+
+deriving instance
+    ( Eq (ASTLocate ast (DeclarationBody' ast))
+    , Ord (ASTLocate ast (DeclarationBody' ast))
+    ) =>
+    Ord (DeclarationBody ast)
+
+deriving instance
+    ( Eq (DeclarationBody' ast)
+    , Ord (Select "InfixDecl" ast)
+    , Ord (Select "ValueTypeDef" ast)
+    , Ord (Select "ValuePatterns" ast)
+    , Ord (Select "ValueType" ast)
+    , Ord (Expr ast)
+    , Ord (ValueDeclAnnotations ast)
+    , Ord (TypeDeclAnnotations ast)
+    , Ord (ASTLocate ast (Select "TypeVar" ast))
+    , Ord (ASTLocate ast (TypeDeclaration ast))
+    ) =>
+    Ord (DeclarationBody' ast)
+
+deriving instance
+    ( Eq (Select "InfixDecl" ast)
+    , Eq (Select "ValueTypeDef" ast)
+    , Eq (Select "ValuePatterns" ast)
+    , Eq (Select "ValueType" ast)
+    , Eq (Expr ast)
+    , Eq (ValueDeclAnnotations ast)
+    , Eq (TypeDeclAnnotations ast)
+    , Eq (ASTLocate ast (Select "TypeVar" ast))
+    , Eq (ASTLocate ast (TypeDeclaration ast))
+    ) =>
+    Eq (DeclarationBody' ast)
+
+deriving instance Eq (InfixDeclaration ast) => Eq (TypeDeclAnnotations ast)
+deriving instance
+    ( Eq (ASTLocate ast Int)
+    , Eq (ASTLocate ast AssociativityType)
+    ) =>
+    Eq (InfixDeclaration ast)
+
+deriving instance Ord (InfixDeclaration ast) => Ord (TypeDeclAnnotations ast)
+deriving instance
+    ( Ord (ASTLocate ast Int)
+    , Ord (ASTLocate ast AssociativityType)
+    ) =>
+    Ord (InfixDeclaration ast)
+
+deriving instance Eq (InfixDeclaration ast) => Eq (ValueDeclAnnotations ast)
+
+deriving instance Ord (InfixDeclaration ast) => Ord (ValueDeclAnnotations ast)
+
+deriving instance
+    ( Ord (Select "Alias" ast)
+    , Eq (TypeDeclaration ast)
+    , Ord (Select "ADTParam" ast)
+    , Ord (ASTLocate ast (Select "ConstructorName" ast))
+    ) =>
+    Ord (TypeDeclaration ast)
+deriving instance
+    ( Eq (Select "Alias" ast)
+    , Eq (Select "ADTParam" ast)
+    , Eq (ASTLocate ast (Select "ConstructorName" ast))
+    ) =>
+    Eq (TypeDeclaration ast)
 
 -- Show instances
 
@@ -151,16 +278,6 @@ deriving instance
     , Show (Select "ADTParam" ast)
     ) =>
     Show (TypeDeclaration ast)
-
--- Ord instances
-
-deriving instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
-
-deriving instance
-    ( Ord (ASTLocate ast (Select "SymOp" ast))
-    , Ord (Select "Infixed" ast)
-    ) =>
-    Ord (BinaryOperator' ast)
 
 -- Data instances
 

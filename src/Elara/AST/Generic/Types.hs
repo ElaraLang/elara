@@ -111,7 +111,7 @@ data AssociativityType
     = LeftAssoc
     | RightAssoc
     | NonAssoc
-    deriving (Generic, Show, Eq)
+    deriving (Generic, Show, Eq, Ord)
 
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
     deriving (Generic, Typeable)
