@@ -62,7 +62,6 @@ inferModule ::
     Sem r (Module 'Typed, Map (Qualified Name) (Type SourceRegion))
 inferModule m = do
     m' <- traverseModuleRevTopologically inferDeclaration m
-    debugPretty ("TI" :: Text, m' ^. _Unwrapped % unlocated % field' @"name", m' ^.. _Unwrapped % unlocated % field' @"declarations" % each % _Unwrapped % unlocated % field' @"name")
     ctx <- Infer.get
     let annotations =
             Map.fromList $
@@ -80,7 +79,6 @@ inferDeclaration ::
     ShuntedDeclaration ->
     Sem r TypedDeclaration
 inferDeclaration (Declaration ld) = do
-    debugPretty ("TI" :: Text, ld ^. unlocated % field' @"name")
     Declaration
         <$> traverseOf
             unlocated

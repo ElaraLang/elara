@@ -17,10 +17,12 @@ import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
 import Elara.Data.Unique
+import Elara.Emit.ADT (generateADTClasses)
 import Elara.Emit.Error
 import Elara.Emit.Expr
 import Elara.Emit.Lambda (etaExpandN)
 import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder, etaExpandNIntoMethod)
+import Elara.Emit.Monad
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
@@ -46,24 +48,8 @@ import Polysemy.Log qualified as Log
 import Polysemy.Maybe
 import Polysemy.Reader
 import Polysemy.State
-import Polysemy.Writer (Writer, runWriter, tell)
+import Polysemy.Writer (runWriter, tell)
 import Print (showPretty)
-
-type Emit r = Members '[Reader JVMVersion, Embed IO, MaybeE, DiagnosticWriter (Doc AnsiStyle), Log] r
-
-type InnerEmit r =
-    Members
-        '[ Reader JVMVersion
-         , Reader QualifiedClassName
-         , ClassBuilder
-         , State CLInitState
-         , UniqueGen
-         , Error EmitError
-         , Log
-         ]
-        r
-
-newtype CLInitState = CLInitState MethodCreationState
 
 liftState :: Member (State CLInitState) r => Sem (State MethodCreationState : r) a -> Sem r a
 liftState act = do
@@ -72,11 +58,9 @@ liftState act = do
     put $ CLInitState s'
     pure x
 
-emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, ClassFile)]
+emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, [ClassFile])]
 emitGraph g = do
-    let tellMod =
-            emitModule >=> tell . one ::
-                CoreModule -> Sem (Writer [(ModuleName, ClassFile)] : r) () -- this breaks without the type signature lol
+    let tellMod = emitModule >=> tell . one
     fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
 
 runInnerEmit ::
@@ -100,13 +84,12 @@ runInnerEmit name version x = do
             $ x
     pure (a, clinitState, attrs, inst)
 
-emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, ClassFile)
-emitModule m = do
+emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, [ClassFile])
+emitModule m = fmap swap $ runMultiClassBuilder $ do
     Log.debug $ "Emitting module " <> showPretty (m ^. field @"name") <> "..."
     let name = createModuleName (m ^. field' @"name")
-    version <- ask
-
-    (clazz, _) <- runClassBuilder @r name version $ do
+    version <- ask @JVMVersion
+    addClass name $ do
         addAccessFlag Public
         (_, clinitState, attrs, clinit) <-
             runInnerEmit name version $
@@ -116,7 +99,6 @@ emitModule m = do
 
     pure
         ( m ^. field @"name"
-        , clazz
         )
 
 addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreModule -> Sem r ()
@@ -125,7 +107,7 @@ addDeclarationsAndMain m = do
     when (isMainModule m) (addMethod (generateMainMethod m))
 
 addClinit :: Member ClassBuilder r => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
-addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidReturn) "<clinit>" attrs s
+addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidReturn) [MPublic, MStatic] "<clinit>" attrs s
 
 addDeclaration :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
@@ -154,7 +136,7 @@ addDeclaration declBody = case declBody of
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
                         Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
-                        createMethodWithCodeBuilder thisName getterDescriptor declName $ do
+                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ do
                             Log.debug $ "Getting static field " <> showPretty declName <> "..."
                             inst <- etaExpandN (Var $ Normal n) type' thisName
                             emit' inst
@@ -168,7 +150,8 @@ addDeclaration declBody = case declBody of
                         thisName <- ask @QualifiedClassName
                         createMethod thisName descriptor declName y
         Log.debug $ "Emitted non-recursive declaration " <> showPretty name
-    e -> error (showPretty e)
+    CoreType decl -> do
+        generateADTClasses decl
 
 isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])

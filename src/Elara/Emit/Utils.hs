@@ -11,6 +11,16 @@ import JVM.Data.Abstract.Type
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
+createQualifiedClassName :: Qualified Text -> QualifiedClassName
+createQualifiedClassName (Qualified name (ModuleName mn)) = QualifiedClassName (PackageName (toList mn)) (ClassName name)
+
+{- | Creates a qualified class name for an inner class
+>>> createQualifiedInnerClassName "Inner" (QualifiedClassName (PackageName "com.example") (ClassName "Outer"))
+QualifiedClassName (PackageName "com.example") (ClassName "Outer$Inner")
+-}
+createQualifiedInnerClassName :: Text -> QualifiedClassName -> QualifiedClassName
+createQualifiedInnerClassName name (QualifiedClassName (PackageName p) (ClassName c)) = QualifiedClassName (PackageName p) (ClassName $ c <> "$" <> name)
+
 generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor
 generateMethodDescriptor x = case generateMethodDescriptor' x of
     Just y -> y
@@ -57,6 +67,7 @@ generateFieldType c | c == stringCon = ObjectFieldType "java.lang.String"
 generateFieldType c | c == charCon = ObjectFieldType "java.lang.Character"
 generateFieldType c | c == unitCon = ObjectFieldType "Elara.Unit"
 generateFieldType c | c == tuple2Con = ObjectFieldType "Elara.Tuple2"
+generateFieldType (ConTy t) = ObjectFieldType (createQualifiedClassName t)
 generateFieldType (AppTy l _) | l == listCon = ObjectFieldType "Elara.EList"
 generateFieldType (AppTy l _) | l == ioCon = ObjectFieldType "Elara.IO"
 generateFieldType (AppTy (AppTy l _) _) | l == tuple2Con = ObjectFieldType "Elara.Tuple2"

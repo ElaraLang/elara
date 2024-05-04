@@ -6,7 +6,7 @@ import Data.List (maximum)
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"
-estimateArity (Var (Id _ t)) = typeArity t
+estimateArity (Var (Id _ t _)) = typeArity t
 estimateArity (Lit _) = 0
 estimateArity (App f _) = estimateArity f - 1
 estimateArity (TyApp f _) = estimateArity f

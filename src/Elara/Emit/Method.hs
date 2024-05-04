@@ -59,7 +59,7 @@ createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
         runCodeBuilder $
             runState initialState $
                 generateInstructions body
-    createMethodWith descriptor name codeAttrs mcState instructions
+    createMethodWith descriptor [MPublic, MStatic] name codeAttrs mcState instructions
 
 createMethodWithCodeBuilder ::
     ( Member ClassBuilder r
@@ -67,33 +67,35 @@ createMethodWithCodeBuilder ::
     ) =>
     QualifiedClassName ->
     MethodDescriptor ->
+    _ ->
     Text ->
     Sem (CodeBuilder : r) () ->
     Sem r ()
-createMethodWithCodeBuilder thisClassName descriptor@(MethodDescriptor args _) name codeBuilder = do
+createMethodWithCodeBuilder thisClassName descriptor@(MethodDescriptor args _) methodAttrs name codeBuilder = do
     Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor
     let initialState = createMethodCreationState (length args) thisClassName
     (_, codeAttrs, instructions) <-
         subsume_ $
             runCodeBuilder codeBuilder
-    createMethodWith descriptor name codeAttrs initialState instructions
+    createMethodWith descriptor methodAttrs name codeAttrs initialState instructions
 
 createMethodWith ::
     Member ClassBuilder r =>
     MethodDescriptor ->
+    _ ->
     Text ->
     [CodeAttribute] ->
     MethodCreationState ->
     [Instruction] ->
     Sem r ()
-createMethodWith descriptor@(MethodDescriptor _ return_) name codeAttrs mcState code = do
+createMethodWith descriptor@(MethodDescriptor _ return_) methodAttrs name codeAttrs mcState code = do
     let maxStack = analyseMaxStack code
 
     let maxLocals = 1 + mcState.maxLocalVariables
     let code' = code <> [if return_ == VoidReturn then Return else AReturn]
     addMethod $
         ClassFileMethod
-            [MPublic, MStatic]
+            methodAttrs
             name
             descriptor
             [ Code $
@@ -116,6 +118,7 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (InvokeStatic _ _ desc) = stackChangeOf desc
     stackChange (InvokeVirtual _ _ desc) = stackChangeOf desc
     stackChange (InvokeInterface _ _ desc) = stackChangeOf desc
+    stackChange (InvokeSpecial _ _ desc) = stackChangeOf desc
     stackChange AConstNull = 1
     stackChange (ALoad _) = 1
     stackChange (AStore _) = -1
@@ -126,6 +129,7 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange (GetStatic{}) = 1
     stackChange (GetField{}) = 1
     stackChange (PutStatic{}) = -1
+    stackChange (PutField{}) = -2
     stackChange Return = -1
     stackChange IfEq{} = -1
     stackChange IfNe{} = -1
@@ -137,6 +141,7 @@ analyseMaxStack instructions = maximum $ scanl (+) 0 (stackChange <$> instructio
     stackChange ILoad{} = 1
     stackChange IStore{} = -1
     stackChange Label{} = 0 -- labels have no representation in the bytecode
+    stackChange (New{}) = 1
 
 etaExpandNIntoMethod ::
     ( HasCallStack

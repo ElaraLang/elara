@@ -16,7 +16,7 @@ data TypeVariable = TypeVariable
 
 data Var
     = TyVar TypeVariable
-    | Id (UnlocatedVarRef Text) Type
+    | Id (UnlocatedVarRef Text) Type (Maybe DataCon)
     deriving (Show, Data, Eq, Ord, Generic)
 
 data Expr b
@@ -81,7 +81,7 @@ data DataCon = DataCon
     { name :: Qualified Text
     , dataConType :: Type
     }
-    deriving (Show, Eq, Data, Generic)
+    deriving (Show, Eq, Data, Generic, Ord)
 
 data Type
     = TyVarTy TypeVariable

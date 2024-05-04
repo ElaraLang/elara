@@ -64,10 +64,12 @@ library
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Emit
+      Elara.Emit.ADT
       Elara.Emit.Error
       Elara.Emit.Expr
       Elara.Emit.Lambda
       Elara.Emit.Method
+      Elara.Emit.Monad
       Elara.Emit.Operator
       Elara.Emit.Params
       Elara.Emit.State

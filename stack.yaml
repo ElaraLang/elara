@@ -17,7 +17,7 @@ allow-newer-deps:
 
 extra-deps:
 - git: 'https://github.com/ElaraLang/h2jvm.git'
-  commit: 8e71345eac701c8bf3d7454a9987e3224aaa5768
+  commit: 889d007686e2464508c097664d07b81edf6e289c
 - git: https://github.com/ElaraLang/polysemy-log.git
   commit: 0089db6bc1785337ad7ea0353c0aec618ddb38cf
   subdirs:

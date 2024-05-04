@@ -30,7 +30,7 @@ instance Pretty Var where
 instance PrettyVar Var where
     prettyVar withType withParens = \case
         TyVar tv -> prettyTypeVariable withType tv
-        Id name t -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
+        Id name t _ -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
 
     prettyVarArg = \case
         TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)

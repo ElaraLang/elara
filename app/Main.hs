@@ -115,13 +115,15 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
     classes <- runReader java8 (emitGraph coreGraph)
-    for_ classes $ \(mn, class') -> do
+    for_ classes $ \(mn, classes') -> do
         putTextLn ("Compiling " <> showPretty mn <> "...")
-        converted <- runErrorOrReport $ fromEither $ convert class'
-        let bs = runPut (writeBinary converted)
-        let fp = "build/" <> suitableFilePath class'.name
-        liftIO $ createAndWriteFile fp bs
-        putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
+        for_ classes' $ \class' -> do
+            converted <- runErrorOrReport $ fromEither $ convert class'
+            let bs = runPut (writeBinary converted)
+            let fp = "build/" <> suitableFilePath class'.name
+            liftIO $ createAndWriteFile fp bs
+            putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
+        putTextLn ("Successfully compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
