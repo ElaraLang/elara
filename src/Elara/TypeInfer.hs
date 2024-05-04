@@ -132,7 +132,7 @@ inferDeclaration (Declaration ld) =
     inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
         let inferCtor (ctorName, t :: [ShuntedType]) = do
                 t' <- traverse astTypeToInferType t
-                let ctorType = foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to nameText) []) t'
+                let ctorType = universallyQuantify tvs (foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to nameText) []) t')
                 debugPretty ctorName
                 push (Annotation (mkGlobal' ctorName) ctorType)
                 pure (ctorName, t')
@@ -160,13 +160,13 @@ freeTypeVars =
         TypeVar l -> [l]
         _ -> [] -- cosmos takes care of the recursion :D
 
+universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
+universallyQuantify [] x = x
+universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
+
 -- | Like 'astTypeToInferType' but universally quantifies over the free type variables
 astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
-  where
-    universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
-    universallyQuantify [] x = x
-    universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
 astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut

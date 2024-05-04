@@ -3,6 +3,7 @@ module Elara.ToCore where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
+import Data.List (foldr1)
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST
@@ -31,6 +32,7 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
+import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError
@@ -76,6 +78,9 @@ lookupCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownConstructor qn)
 
+registerCtor :: ToCoreC r => DataCon -> Sem r ()
+registerCtor ctor = modify (M.insert (ctor ^. field @"name") ctor)
+
 lookupPrimCtor :: ToCoreC r => Qualified Text -> Sem r DataCon
 lookupPrimCtor qn = do
     table <- get @CtorSymbolTable
@@ -108,6 +113,19 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 v' <- toCore v
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty
                 pure $ Just (v', var)
+            TypeDeclaration tvs (Located _ (ADT ctors)) _ -> do
+                let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
+                ctors' <- for ctors $ \(Located _ n, t) -> do
+                    t' <- traverse typeToCore t
+                    let ctorType =
+                            foldr
+                                (Core.ForAllTy . (`TypeVariable` TypeKind) . fmap (Just . nameText) . view unlocated)
+                                (foldr Core.FuncTy (Core.ConTy declName) t')
+                                tvs
+                    pure (nameText <$> n, ctorType)
+                let ctors'' = fmap (uncurry DataCon) ctors'
+                traverse_ registerCtor ctors''
+                pure Nothing
             TypeDeclaration{} -> pure Nothing
         pure ((\(a, b) -> CoreValue $ NonRecursive (b, a)) <$> bv)
     pure $ CoreModule name (catMaybes decls)
