@@ -151,7 +151,7 @@ prettyValueDeclaration name e expectedType anns =
     let defLine = prettyValueTypeDef name <$> expectedType
         annLine = prettyValueDeclAnnotations anns
         rest =
-            [ "let" <+> pretty name <+> "="
+            [ keyword "let" <+> pretty name <+> punctuation "="
             , indent indentDepth (pretty e)
             , "" -- add a newline
             ]
@@ -162,13 +162,12 @@ prettyValueDeclAnnotations (ValueDeclAnnotations Nothing) = ""
 prettyValueDeclAnnotations (ValueDeclAnnotations (Just x)) = pretty x
 
 prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
-prettyValueTypeDef name t = "def" <+> pretty name <+> "=" <+> pretty t
+prettyValueTypeDef name t = "def" <+> pretty name <+> punctuation ":" <+> pretty t
 
 prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> TypeDeclAnnotations ast -> Doc AnsiStyle
 prettyTypeDeclaration name vars t _ =
     vsep
-        [ keyword "type" <+> typeName (pretty name)
-        , keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
-        , indent indentDepth (pretty t)
+        [ keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
+        , indent indentDepth (punctuation "=" <+> pretty t)
         , "" -- add a newline
         ]

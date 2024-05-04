@@ -77,8 +77,19 @@ instance
         prettyDB n (ValueTypeDef t) = prettyValueTypeDef n t
         prettyDB n (InfixDecl f) = pretty f <+> pretty n
 
-instance Pretty (TypeDeclaration ast) where
-    pretty _ = "TODO"
+instance
+    ( Pretty (Select "Alias" ast)
+    , Pretty (Select "ADTParam" ast)
+    , Pretty (ASTLocate ast (Select "ConstructorName" ast))
+    ) =>
+    Pretty (TypeDeclaration ast)
+    where
+    pretty = \case
+        ADT c -> prettyADT c
+          where
+            prettyADT :: NonEmpty (CleanupLocated (ASTLocate' ast (Select "ConstructorName" ast)), [Select "ADTParam" ast]) -> Doc AnsiStyle
+            prettyADT = hsep . punctuate "|" . map (\(name, params) -> pretty name <+> hsep (pretty <$> params)) . toList
+        Alias a -> pretty a
 
 instance
     ( exprType ~ UnwrapMaybe (Select "ExprType" ast) -- This constraint fixes ambiguity errors
