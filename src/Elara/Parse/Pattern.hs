@@ -15,15 +15,12 @@ patParser :: Parser FrontendPattern
 patParser =
     choice
         [ try literalPattern
-        , inParens apat
+        , inParens rpat
         , varPattern
-        , zeroArgConstructorPattern
+        , constructorPattern
         , wildcardPattern
         , listPattern
         ]
-
-apat :: Parser FrontendPattern
-apat = constructorPattern <|> rpat
 
 rpat :: Parser FrontendPattern
 rpat =
@@ -67,12 +64,6 @@ listPattern = locatedPattern $ do
 --         pure (head', tail')
 
 --     pure $ ConsPattern head' tail'
-
--- To prevent ambiguity between space-separated patterns and constructor patterns
-zeroArgConstructorPattern :: Parser FrontendPattern
-zeroArgConstructorPattern = locatedPattern $ do
-    con <- located conName
-    pure $ ConstructorPattern con []
 
 constructorPattern :: Parser FrontendPattern
 constructorPattern = locatedPattern $ do

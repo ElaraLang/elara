@@ -9,7 +9,6 @@ import Data.Containers.ListUtils (nubOrd)
 import Data.Graph
 import Elara.Data.Pretty
 import Elara.Utils (uncurry3)
-import Print (debugPretty)
 import Relude.Extra (firstF)
 import Text.Show qualified as Show
 

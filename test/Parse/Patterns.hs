@@ -91,8 +91,14 @@ constructorPatterns = describe "Parses constructor parens" $ do
     it "Parses constructor patterns correctly" $ hedgehog $ do
         "ZeroArity" `shouldParsePattern` Pattern (ConstructorPattern "ZeroArity" [], Nothing)
 
-    it "Fails with multiple arguments without parens" $ hedgehog $ do
-        shouldFailToParse "TwoArgs 1 2"
+    it "Parses single constructor pattern without parens" $ hedgehog $ do
+        "TwoArgs 1 2"
+            `shouldParsePattern` Pattern
+                ( ConstructorPattern
+                    "TwoArgs"
+                    [Pattern (IntegerPattern 1, Nothing), Pattern (IntegerPattern 2, Nothing)]
+                , Nothing
+                )
 
     it "Parses constructor patterns with parens correctly" $ hedgehog $ do
         "(TwoArgs one two)"
