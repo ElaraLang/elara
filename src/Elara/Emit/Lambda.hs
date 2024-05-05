@@ -79,6 +79,8 @@ etaExpandN funcCall exprType thisClassName = do
                     (NE.zip paramTypes [0 ..])
         createLambda paramTypes (generateFieldType $ functionTypeResult exprType) thisClassName body
 
+-- createGeneratedLambda :: [JVMBinder] -> JVMExpr ->
+
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:
 1. Create a method that implements the lambda's body

@@ -1,6 +1,7 @@
 module Elara.Core.Analysis where
 
-import Elara.Core (CoreExpr, Expr (..), Var (..), typeArity)
+import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
+import Elara.Core qualified as Core
 
 import Data.List (maximum)
 
@@ -18,3 +19,10 @@ estimateArity (Match _ _ alts) = maximum (map (\(_, _, e) -> estimateArity e) al
 declaredLambdaArity :: CoreExpr -> Int
 declaredLambdaArity (Lam _ e) = 1 + declaredLambdaArity e
 declaredLambdaArity _ = 0
+
+findTyCon :: Core.Type -> Maybe TyCon
+findTyCon (Core.ConTy tc) = Just tc
+findTyCon (Core.ForAllTy _ t) = findTyCon t
+findTyCon (Core.FuncTy _ t) = findTyCon t
+findTyCon (Core.AppTy t _) = findTyCon t
+findTyCon _ = Nothing

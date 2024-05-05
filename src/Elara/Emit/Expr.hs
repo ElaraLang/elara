@@ -3,12 +3,14 @@
 
 module Elara.Emit.Expr where
 
-import Data.Map (union)
+import Data.Map (union, (!?))
 import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core as Core
+import Elara.Core.Analysis (findTyCon)
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Lambda
@@ -139,6 +141,7 @@ generateInstructions' (Lam (JVMLocal _ _) _) _ = error "Lambda with local variab
 generateInstructions' other _ = error $ "Not implemented: " <> showPretty other
 
 generateCaseInstructions ::
+    forall r.
     ( Member (State MethodCreationState) r
     , Member CodeBuilder r
     , Member ClassBuilder r
@@ -215,13 +218,16 @@ generateCaseInstructions
                 generateInstructions ifEmpty
                 emit $ Label endLabel
 generateCaseInstructions scrutinee (Just bind) alts = do
+    -- matches over ADTs are pretty simple, since we can just call the generated match method
+    -- For example, @type Option a = None | Some a@ will have a match method that looks like:
+    -- java.lang.Object match(elara.Func0 none, elara.Func some)
     -- firstly we need to find the actual type that we're matching over so we can analyse all its constructors
     let (binderType, ctors) = case jvmBinderType bind of
-            Just (JVMLType (ConTy (TyCon t (TyADT ctors)))) -> (t, ctors)
-            _ -> error "unknown type"
+            Just (JVMLType x) | Just (TyCon t (TyADT ctors)) <- findTyCon x -> (t, ctors)
+            x -> error $ "unknown type: " <> show x
     -- undefined <- undefinedId
     -- let defaultBindersMap :: Map _ JVMExpr = fromList (ctors <&> (,Var $ Normal undefined))
-    let altsMap :: Map _ _ =
+    let altsMap :: Map (Qualified Text) ([JVMBinder], Expr JVMBinder) =
             fromList
                 ( alts
                     <&> ( \case
@@ -229,7 +235,19 @@ generateCaseInstructions scrutinee (Just bind) alts = do
                             _ -> error "aaa"
                         )
                 )
-    -- createLambda
+    -- We now turn each alternative into a lambda taking the binders as arguments
+    -- This will be passed to Type#match which will call the appropriate lambda
+    let lambdas =
+            altsMap <&> \(binders :: [JVMBinder], altBody) -> do
+                generateInstructions @r (foldr Lam altBody binders)
+    -- Emit the lambdas in order
+    for_ ctors $ \ctor -> do
+        case lambdas !? ctor of
+            Just sem -> sem
+            Nothing -> error "no alt"
+    -- Call the match method on the scrutinee
+    generateInstructions scrutinee
+
     error $ "Not implemented, " <> showPretty altsMap
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
