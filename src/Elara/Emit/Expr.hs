@@ -94,13 +94,12 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tA
                 emit' inst
             _ -> do
                 -- no args function (eg undefined)
-                let x = approximateTypeAndNameOf v
-                debugPretty x
+                invokeStatic <- case approximateTypeAndNameOf v of
+                    Right (fName, fType) -> invokeStaticVars fName fType
+                    Left _ -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+
                 emit
-                    ( InvokeStatic
-                        (ClassInfoType $ createModuleName mn)
-                        (translateOperatorName n)
-                        (generateMethodDescriptor t)
+                    ( uncurry3 InvokeStatic invokeStatic
                     )
                 params <- ask
                 case tApps of

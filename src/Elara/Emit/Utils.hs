@@ -51,6 +51,7 @@ generateMethodDescriptor' t@(TyVarTy{}) = Just $ MethodDescriptor [] (TypeReturn
 -- Awkwardly we have to assume here that the constructor has no parameters with no safety checking as literally all the information we have is the name.
 -- Should probably refactor ConTy to take a DataCon instead
 generateMethodDescriptor' (ConTy dc) = Just $ MethodDescriptor [] (TypeReturn $ ObjectFieldType $ createQualifiedClassName dc)
+generateMethodDescriptor' (AppTy t _) = generateMethodDescriptor' t -- type erasure
 generateMethodDescriptor' _ = Nothing
 
 -- | Returns either the JVM type of the argument, or the JVM type of the return type, if it would compile to a method
