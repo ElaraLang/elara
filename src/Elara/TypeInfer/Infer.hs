@@ -23,6 +23,7 @@
 -}
 module Elara.TypeInfer.Infer where
 
+import Control.Monad (foldM)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -56,7 +57,6 @@ import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
 import Print (debugPretty, showPretty)
 import TODO
-import Control.Monad (foldM)
 
 -- | Type-checking state
 data Status = Status
@@ -267,7 +267,6 @@ subtype ::
     Type SourceRegion ->
     Sem r ()
 subtype _A0 _B0 = do
-    debugPretty ("Subtype"::Text, _A0, _B0)
     _Γ <- get
 
     case (_A0, _B0) of
@@ -1446,14 +1445,16 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         pure $ Expr (Located location (If cond' then' else'), _L1)
     Syntax.Match e branches -> do
-        e' <- infer e
-        debugPretty ("e'" :: Text, e')
+        new <- fresh
+        push (Context.UnsolvedType new)
+        let unsolvedNew = Type.UnsolvedType (e ^. exprLocation) new
+        e' <- check e unsolvedNew
 
         returnType <- fresh -- create a monotype for the return of the match
         push (Context.UnsolvedType returnType)
-        
-        let process (pattern_, branch) = do
-                pattern' <- checkPattern pattern_ (Syntax.typeOf e')
+
+        let process (pattern_, branch) = scoped' $ do
+                pattern' <- checkPattern pattern_ unsolvedNew
                 branch' <-
                     -- check that the branch type matches the return type of the match
                     check branch (Type.UnsolvedType (branch ^. exprLocation) returnType)
@@ -1579,13 +1580,9 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         pure $ Expr (Located exprLoc (Syntax.List y), t)
     check' (Syntax.Match e branches) t = do
         e' <- infer e
-        ctx <- get
-
 
         let process (pattern_, branch) = do
-                pattern' <-
-                    checkPattern pattern_ $ Syntax.typeOf e'
-                subtype (Syntax.patternTypeOf pattern') (Syntax.typeOf e')
+                pattern' <- checkPattern pattern_ (Syntax.typeOf e')
 
                 -- check that the branch type matches the return type of the match
                 branch' <- check branch t
@@ -1627,15 +1624,17 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 -}
 checkPattern ::
     forall r.
+    HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedPattern ->
     Type SourceRegion ->
     Sem r TypedPattern
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
+    debugPretty ("CheckPattern" :: Text, pattern_, t)
     let x = pattern_ ^. _Unwrapped % _1 % unlocated
     check' x t
   where
-    check' :: ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
+    check' :: HasCallStack => ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
     check' (Syntax.VarPattern vn) t = do
         debugPretty ("Check' var" :: Text, vn, t)
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
@@ -1643,29 +1642,29 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match
     -- Suppose we have the type @type Option a = Some a | None@
     -- Checking the pattern @Some a@ against the type @Option b@ should succeed and emit the constraint @a = b@
-    check' (Syntax.ConstructorPattern ctor args) expectedType = do
+    check' (Syntax.ConstructorPattern ctor args) expectedType@Type.Custom{conName, typeArguments} = do
         _Γ <- get
         let n = Global $ IgnoreLocation (NTypeName <<$>> ctor)
-        constructorType <- Context.lookup n _Γ `orDie` UnboundConstructor (ctor ^. sourceRegion) n _Γ
-        debugPretty ("Check' ctor" :: Text, (ctor, args), expectedType, constructorType)
 
-        -- inferApplication
-        let ctorArgs = Type.functionTypeArgs constructorType
-        completedType <- pure $ Type.replaceQuantified constructorType (Type.functionTypeReturn constructorType)
-        subtype (completedType ) expectedType
-        when (length ctorArgs /= length args) (throw PartiallyAppliedConstructorPattern)
+        -- get the type of the constructor, eg Some : forall a. a -> Option a
+        ctorFunc <- Context.lookup n _Γ `orDie` UnboundVariable (ctor ^. sourceRegion) n _Γ
 
-        let process (expected, element) = do
+        -- Given Some x <: Option b, we need to imagine we're applying
+        -- Some : forall a. a -> Option a to x : xT to get Option xT
+        -- Then we can check that Option xT <: Option b
+
+        let process (arg, argType) = do
                 _Γ <- get
-                checkPattern element (Context.solveType _Γ expected)
-        args' <- traverse process (zip ctorArgs args)
 
-        -- the constructor function applied to all its arguments must be a subtype of t
+                checkPattern arg (Context.solveType _Γ argType)
+
+        args' <- traverse process (zip args typeArguments)
+
+        -- solve expectedType
         _Θ <- get
-        let t'' = Context.solveType _Θ expectedType
-        debugPretty t''
+        let expectedType' = Context.solveType _Θ expectedType
 
-        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), t'')
+        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), expectedType')
     check' (Syntax.ListPattern patterns) Type.List{..} = do
         let process element = do
                 _Γ <- get

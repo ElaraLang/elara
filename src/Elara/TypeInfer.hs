@@ -227,7 +227,6 @@ completeExpression ctx (Expr (y', t)) = do
         ctx' <- Infer.getAll
         traverseOf gplate (completePattern ctx') (Pattern (p', completed))
 
-
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
     quantify :: Type SourceRegion -> Type SourceRegion
@@ -263,7 +262,6 @@ completeExpression ctx (Expr (y', t)) = do
             (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
             (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
             other -> error (showPretty other)
-
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     subst Infer.UnsolvedType{existential} solved = do

@@ -117,7 +117,7 @@ data TypeInferenceError where
         TypeInferenceError
     UnboundFields :: SourceRegion -> UniqueTyVar -> TypeInferenceError
     UnboundTypeVariable ::
-        HasCallStack => 
+        HasCallStack =>
         SourceRegion ->
         UniqueTyVar ->
         (Context SourceRegion) ->
@@ -225,8 +225,8 @@ instance ReportableError TypeInferenceError where
                     [ "Type error: The following type variable is unbound:"
                     , pretty a
                     , "The following type variables are bound in the current context:"
-                    -- , listToText _Γ
-                    , pretty $ prettyCallStack callStack
+                    , -- , listToText _Γ
+                      pretty $ prettyCallStack callStack
                     ]
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]
