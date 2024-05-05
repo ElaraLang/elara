@@ -1,6 +1,6 @@
 module Elara.Core where
 
-import Data.Data
+import Data.Data (Data, Typeable)
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
@@ -82,7 +82,7 @@ data DataCon = DataCon
     -- ^ The name of the data constructor
     , dataConType :: Type
     -- ^ The type of the data constructor, i.e. `type Foo a = Bar a` would have a data constructor with type `a -> Foo a`
-    , dataConDataType :: Type
+    , dataConDataType :: TyCon
     -- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a data constructor with type `Foo a`. This should be identical to @functionTypeResult . dataConType@
     }
     deriving (Show, Eq, Data, Generic, Ord)
@@ -92,8 +92,19 @@ data Type
     | FuncTy Type Type
     | AppTy Type Type
     | -- | A type constructor
-      ConTy (Qualified Text)
+      ConTy TyCon
     | ForAllTy !TypeVariable !Type
+    deriving (Show, Eq, Data, Ord, Generic)
+
+data TyCon
+    = TyCon (Qualified Text) TyConDetails
+    deriving (Show, Eq, Data, Ord, Generic)
+
+data TyConDetails
+    = -- | The ids of the datacons
+      TyADT [Qualified Text]
+    | TyAlias Type
+    | Prim
     deriving (Show, Eq, Data, Ord, Generic)
 
 instance Plated Type where
@@ -153,6 +164,9 @@ instance Hashable AltCon
 instance Hashable DataCon
 
 instance Hashable Type
+instance Hashable TyCon
+
+instance Hashable TyConDetails
 
 instance Hashable TypeVariable
 

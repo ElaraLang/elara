@@ -105,7 +105,7 @@ primitiveTCContext = do
                 (Scalar primRegion Bool)
             , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-                (Custom primRegion "IO" [])
+                (Custom primRegion (mkPrimQual "IO") [])
             , Annotation
                 (Global (IgnoreLocation $ mkPrimVarRef (NTypeName trueName)))
                 (Scalar primRegion Bool)

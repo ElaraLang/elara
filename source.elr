@@ -8,8 +8,8 @@ type Option a = Some a | None
 let someOpt = Some 5
 
 let main = 
-    match someOpt with
-        Some x -> print x
+    match Some 5 with
         None -> print "It's empty"
+        Some x -> print x
 
 

@@ -3,7 +3,7 @@
 module Elara.TypeInfer.Error where
 
 import Data.Map qualified as Map
-import Elara.AST.Name (Name)
+import Elara.AST.Name (Name, Qualified)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
 import Elara.AST.Shunted
 import Elara.AST.VarRef (IgnoreLocVarRef)
@@ -142,8 +142,8 @@ data TypeInferenceError where
     CustomTypeMismatch ::
         (Type SourceRegion) ->
         (Type SourceRegion) ->
-        Text ->
-        Text ->
+        Qualified Text ->
+        Qualified Text ->
         TypeInferenceError
     UserDefinedTypeNotInContext ::
         SourceRegion ->

@@ -16,6 +16,7 @@ import Data.Data (Data)
 import Data.Generics.Product (the)
 import Data.Generics.Sum (_As)
 import Data.Text qualified as Text
+import Elara.AST.Name (Qualified)
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty
@@ -101,7 +102,7 @@ data Type s
       --
       -- >>> pretty @(Type ()) (Custom () "Maybe" ["a"])
       -- Maybe a
-      Custom {location :: s, conName :: Text, typeArguments :: [Type s]}
+      Custom {location :: s, conName :: Qualified Text, typeArguments :: [Type s]}
     | -- | A tuple
       --
       -- >>> pretty @(Type ()) (Tuple () ("a" :| ["b"]))

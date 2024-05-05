@@ -132,7 +132,7 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
         let inferCtor (ctorName, t :: [ShuntedType]) = do
                 t' <- traverse astTypeToInferType t
-                let ctorType = universallyQuantify tvs (foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to nameText) []) t')
+                let ctorType = universallyQuantify tvs (foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) []) t')
                 push (Annotation (mkGlobal' ctorName) ctorType)
                 pure (ctorName, t')
         ctors' <- traverse inferCtor ctors

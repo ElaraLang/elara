@@ -39,7 +39,7 @@ instance PrettyVar Var where
 instance PrettyVar Type where
     prettyVar withType withParens = \case
         TyVarTy tv -> prettyTypeVariable withType tv
-        ConTy name -> pretty name
+        ConTy (TyCon name details) -> pretty name
         other -> prettyVar withType withParens other
 
     prettyVarArg = \case
@@ -114,7 +114,7 @@ prettyTypeVariables = \case
 
 prettyTy :: Type -> Doc AnsiStyle
 prettyTy (FuncTy t1 t2) = prettyTy1 t1 <+> "->" <+> prettyTy t2
-prettyTy (AppTy l t2) | l == listCon = brackets (prettyTy2 t2)
+prettyTy (AppTy (ConTy l) t2) | l == listCon = brackets (prettyTy2 t2)
 prettyTy (ForAllTy tv t) = "∀" <+> prettyTypeVariable False tv <> "." <+> prettyTy t
 prettyTy other = prettyTy1 other
 
@@ -124,8 +124,11 @@ prettyTy1 e = prettyTy2 e
 
 prettyTy2 :: Type -> Doc AnsiStyle
 prettyTy2 (TyVarTy tv) = prettyTypeVariable False tv
-prettyTy2 (ConTy name) = pretty (name ^. unqualified)
+prettyTy2 (ConTy (TyCon name details)) = pretty (name ^. unqualified)
 prettyTy2 e = parens (prettyTy e)
+
+instance Pretty TyCon where
+    pretty (TyCon name details) = pretty (name ^. unqualified)
 
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle

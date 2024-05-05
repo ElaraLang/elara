@@ -17,7 +17,7 @@ import Elara.Emit.State (MethodCreationState (..), findLocalVariable, withLocalV
 import Elara.Emit.Utils
 import Elara.Emit.Var
 import Elara.Prim.Core
-import Elara.ToCore (stripForAll)
+import Elara.ToCore (lookupCtor, lookupPrimCtor, stripForAll)
 import Elara.Utils (uncurry3)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, emit', newLabel)
@@ -153,8 +153,8 @@ generateCaseInstructions ::
 generateCaseInstructions -- hardcode if/else impl
     scrutinee
     _
-    [ (DataAlt (DataCon trueCtorName' boolCon' _), _, ifTrue)
-        , (DataAlt (DataCon falseCtorName' boolCon2' _), _, ifFalse)
+    [ (DataAlt (DataCon trueCtorName' (ConTy boolCon') _), _, ifTrue)
+        , (DataAlt (DataCon falseCtorName' (ConTy boolCon2') _), _, ifFalse)
         ]
         | trueCtorName' == trueCtorName && falseCtorName' == falseCtorName && boolCon' == boolCon && boolCon2' == boolCon = do
             generateInstructions scrutinee
@@ -170,8 +170,8 @@ generateCaseInstructions -- hardcode if/else impl
 generateCaseInstructions
     scrutinee
     as -- hardcode cons/empty imp
-    [ (DataAlt (DataCon emptyCtorName' (AppTy listCon' _) _), _, ifEmpty)
-        , (DataAlt (DataCon consCtorName' listCon2' _), [headBind, tailBind], ifCons)
+    [ (DataAlt (DataCon emptyCtorName' (AppTy (ConTy listCon') _) _), _, ifEmpty)
+        , (DataAlt (DataCon consCtorName' (ConTy listCon2') _), [headBind, tailBind], ifCons)
         ]
         | emptyCtorName' == emptyListCtorName
         , listCon' == listCon
@@ -213,6 +213,12 @@ generateCaseInstructions
                 emit $ Label ifEmptyLabel
                 generateInstructions ifEmpty
                 emit $ Label endLabel
+generateCaseInstructions scrutinee (Just bind) alts = do
+    -- firstly we need to find the actual type that we're matching over so we can analyse all its constructors
+    let binderType = case jvmBinderType bind of
+            Just (JVMLType (ConTy t)) -> t
+            _ -> error "unknown type"
+    error $ "Not implemented: " <> showPretty (scrutinee, binderType, alts)
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId ::
@@ -236,7 +242,7 @@ approximateTypeAndNameOf ::
     Either (U1, Maybe JVMLocalType) (UnlocatedVarRef Text, Type)
 approximateTypeAndNameOf (Var (Normal (Id n t Nothing))) = Right (n, t)
 -- \| Here we turn the mention of Main.Box into Main.Wrapper.Box to reflect that it'll get compiled into a separate class
-approximateTypeAndNameOf (Var (Normal (Id n t (Just (DataCon dcName dcType (ConTy dcCon)))))) = do
+approximateTypeAndNameOf (Var (Normal (Id n t (Just (DataCon dcName dcType ((TyCon dcCon _))))))) = do
     let Qualified dcName' dcMod = dcCon
     let newModName = appendModule dcMod dcName'
     Right (Global' (Qualified (dcName ^. unqualified) newModName), t)

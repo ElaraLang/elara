@@ -40,6 +40,7 @@ data ToCoreError
     = LetInTopLevel !TypedExpr
     | UnknownConstructor !(Located (Qualified TypeName))
     | UnknownPrimConstructor !(Qualified Text)
+    | UnknownTypeConstructor !(Qualified Text)
     | UnknownLambdaType !(Type.Type SourceRegion)
     | UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
     | UnknownVariable !(Located (Qualified Name))
@@ -48,6 +49,7 @@ instance ReportableError ToCoreError where
     report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
+    report (UnknownTypeConstructor qn) = writeReport $ Err (Just "UnknownTypeConstructor") (pretty qn) [] []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
     report (UnsolvedTypeSnuckIn t) = do
         writeReport $
@@ -59,35 +61,52 @@ instance ReportableError ToCoreError where
                 []
     report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
 
-type CtorSymbolTable = Map (Qualified Text) DataCon
+data CtorSymbolTable = CtorSymbolTable
+    { dataCons :: Map (Qualified Text) DataCon
+    , tyCons :: Map (Qualified Text) TyCon
+    }
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
-    fromList
-        [ (trueCtorName, trueCtor)
-        , (falseCtorName, falseCtor)
-        , (consCtorName, DataCon consCtorName listCon listCon)
-        , (emptyListCtorName, DataCon emptyListCtorName listCon listCon)
-        , (tuple2CtorName, tuple2Ctor)
-        ]
+    CtorSymbolTable
+        ( fromList
+            [ (trueCtorName, trueCtor)
+            , (falseCtorName, falseCtor)
+            , (consCtorName, DataCon consCtorName (ConTy listCon) listCon)
+            , (emptyListCtorName, DataCon emptyListCtorName (ConTy listCon) listCon)
+            ]
+        )
+        ( fromList
+            [(mkPrimQual "IO", ioCon)]
+        )
 
 lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Sem r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
     let plainName = nameText <$> qn ^. unlocated
-    case M.lookup plainName table of
+    case M.lookup plainName table.dataCons of
         Just ctor -> pure ctor
         Nothing -> throw (UnknownConstructor qn)
 
 registerCtor :: ToCoreC r => DataCon -> Sem r ()
-registerCtor ctor = modify (M.insert (ctor ^. field @"name") ctor)
+registerCtor ctor = modify (\s -> s{dataCons = M.insert (ctor ^. field @"name") ctor s.dataCons})
+
+registerTyCon :: ToCoreC r => TyCon -> Sem r ()
+registerTyCon ctor@(TyCon name _) = modify (\s -> s{tyCons = M.insert name ctor s.tyCons})
 
 lookupPrimCtor :: ToCoreC r => Qualified Text -> Sem r DataCon
 lookupPrimCtor qn = do
     table <- get @CtorSymbolTable
-    case M.lookup qn table of
+    case M.lookup qn (table.dataCons) of
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
+
+lookupTyCon :: ToCoreC r => _ -> Sem r TyCon
+lookupTyCon qn = do
+    table <- get @CtorSymbolTable
+    case M.lookup qn (table.tyCons) of
+        Just ctor -> pure ctor
+        Nothing -> throw (UnknownTypeConstructor qn)
 
 type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
 
@@ -116,6 +135,8 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) _ -> do
+                let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                registerTyCon tyCon
                 ctors' <- for ctors $ \(Located _ n, t) -> do
                     t' <- traverse typeToCore t
                     let ctorType =
@@ -123,11 +144,11 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                                 (Core.ForAllTy . typedTvToCoreTv)
                                 ( foldr
                                     Core.FuncTy
-                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (Core.ConTy declName) tvs)
+                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
                                     t'
                                 )
                                 tvs
-                    pure (nameText <$> n, ctorType, Core.ConTy declName)
+                    pure (nameText <$> n, ctorType, tyCon)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
                 let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
@@ -148,21 +169,18 @@ typeToCore (Type.Forall _ _ tv _ t) = do
     pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
 typeToCore (Type.VariableType{Type.name}) = pure (Core.TyVarTy (TypeVariable name TypeKind))
 typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
-typeToCore (Type.List _ t) = Core.AppTy listCon <$> typeToCore t
-typeToCore (Type.Scalar _ Scalar.Text) = pure stringCon
-typeToCore (Type.Scalar _ Scalar.Integer) = pure intCon
-typeToCore (Type.Scalar _ Scalar.Unit) = pure unitCon
-typeToCore (Type.Scalar _ Scalar.Char) = pure charCon
-typeToCore (Type.Scalar _ Scalar.Bool) = pure boolCon
+typeToCore (Type.List _ t) = Core.AppTy (ConTy listCon) <$> typeToCore t
+typeToCore (Type.Scalar _ Scalar.Text) = pure (ConTy stringCon)
+typeToCore (Type.Scalar _ Scalar.Integer) = pure $ ConTy intCon
+typeToCore (Type.Scalar _ Scalar.Unit) = pure $ ConTy unitCon
+typeToCore (Type.Scalar _ Scalar.Char) = pure $ ConTy charCon
+typeToCore (Type.Scalar _ Scalar.Bool) = pure $ ConTy boolCon
 typeToCore (Type.Custom _ n args) = do
     args' <- traverse typeToCore args
-    let con = Core.ConTy (mkPrimQual n)
+    con' <- lookupTyCon n
+    let con = Core.ConTy con'
     pure (foldl' Core.AppTy con args')
-typeToCore (Type.Tuple _ (a :| [b])) = do
-    a' <- typeToCore a
-    b' <- typeToCore b
-    pure $ Core.AppTy (Core.AppTy tuple2Con a') b'
-typeToCore (Type.Tuple _ x) = error $ "unsupported tuple length: " <> show (length x)
+typeToCore (Type.Tuple _ x) = error $ "unsupported tuple " <> show (length x)
 typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
 
 conToVar :: DataCon -> Core.Var
@@ -258,13 +276,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     )
                     e2'
         AST.Tuple (one :| []) -> toCore one
-        AST.Tuple (one :| [two]) -> do
-            one' <- toCore one
-            two' <- toCore two
-            let ref = mkGlobalRef tuple2CtorName
-            t <- tuple2CtorType
-            pure $ Core.App (Core.App (Core.Var (Core.Id ref t (Just tuple2Ctor))) one') two'
-        AST.Tuple _ -> error "TODO: tuple with more than 2 elements"
+        AST.Tuple _ -> error "TODO: tuple not supported yet :)"
         AST.Block exprs -> desugarBlock exprs
 
 stripForAll :: Core.Type -> Core.Type
@@ -300,15 +312,15 @@ desugarMatch e pats = do
                 pure (Core.DataAlt c, snd =<< pats')
             AST.ListPattern [] -> do
                 t' <- typeToCore t
-                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy listCon t') listCon, [])
+                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy (ConTy listCon) t') listCon, [])
             AST.ListPattern (x : xs) -> do
                 (_, vars) <- patternToCore x
                 vars' <- (snd =<<) <$> traverse patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName listCon listCon, vars <> vars')
+                pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
             AST.ConsPattern x xs -> do
                 (_, vars) <- patternToCore x
                 vars' <- snd <$> patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName listCon listCon, vars <> vars')
+                pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do

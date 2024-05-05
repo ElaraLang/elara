@@ -19,6 +19,7 @@ where
 
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
+import Elara.AST.Name (Qualified)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.TypeInfer.Existential (Existential)
 import Elara.TypeInfer.Unique
@@ -43,7 +44,7 @@ data Monotype
     | Tuple (NonEmpty Monotype)
     | Record Record
     | Union Union
-    | Custom Text [Monotype]
+    | Custom (Qualified Text) [Monotype]
     | Scalar Scalar
     deriving stock (Eq, Generic, Show, Ord)
 
