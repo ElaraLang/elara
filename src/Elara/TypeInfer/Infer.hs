@@ -1633,7 +1633,18 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
     check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match
-    check' (Syntax.ConstructorPattern _ _) _ = todo
+    check' (Syntax.ConstructorPattern ctor args) t = do
+        _Γ <- get
+        let process element = do
+                _Γ <- get
+
+                checkPattern element (Context.solveType _Γ t)
+        args' <- traverse process args
+        let n = Global $ IgnoreLocation (NTypeName <<$>> ctor)
+
+        t <- Context.lookup n _Γ `orDie` UnboundVariable (ctor ^. sourceRegion) n _Γ
+
+        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), t)
     check' (Syntax.ListPattern patterns) Type.List{..} = do
         let process element = do
                 _Γ <- get

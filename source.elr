@@ -5,6 +5,11 @@ type Wrapper a = Box a
 
 type Option a = Some a | None
 
-let main = print (None)
+let someOpt = Some 5
+
+let main = 
+    match someOpt with
+        Some x -> print x
+        None -> print "It's empty"
 
 
