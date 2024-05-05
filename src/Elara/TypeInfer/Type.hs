@@ -7,6 +7,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 -- TODO: remove this
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Elara.TypeInfer.Type where
 
@@ -257,8 +258,23 @@ stripForAll type_ =
         _ ->
             type_
 
+
 isMonoType :: Type s -> Bool
 isMonoType = hasn't (cosmosOf plate % _As @"Forall")
+
+functionTypeArgs :: Type s -> [Type s]
+functionTypeArgs (stripForAll -> Function{..}) = input : functionTypeArgs output
+functionTypeArgs (_) = []
+
+functionTypeReturn :: Type s ->  (Type s)
+functionTypeReturn (stripForAll -> Function{..}) = functionTypeReturn output
+functionTypeReturn o =  o
+
+
+replaceQuantified :: Type s -> Type s -> Type s
+replaceQuantified (Forall{..}) x = Forall{type_ = replaceQuantified type_ x, ..}
+replaceQuantified _ y = y 
+
 
 instantiate :: Type s -> Type s -> Type s
 Forall{name, type_} `instantiate` typeArgument = substituteType name typeArgument type_

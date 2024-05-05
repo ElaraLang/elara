@@ -54,8 +54,9 @@ import Polysemy.Error (Error, throw)
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 import TODO
+import Control.Monad (foldM)
 
 -- | Type-checking state
 data Status = Status
@@ -266,6 +267,7 @@ subtype ::
     Type SourceRegion ->
     Sem r ()
 subtype _A0 _B0 = do
+    debugPretty ("Subtype"::Text, _A0, _B0)
     _Γ <- get
 
     case (_A0, _B0) of
@@ -339,6 +341,8 @@ subtype _A0 _B0 = do
             subtype _A0 (Type.substituteType name a type_)
         (_, Type.Exists{domain = Domain.Fields, ..}) -> scopedUnsolvedFields \a -> subtype _A0 (Type.substituteFields name a type_)
         (_, Type.Exists{domain = Domain.Alternatives, ..}) -> scopedUnsolvedAlternatives \a -> subtype _A0 (Type.substituteAlternatives name a type_)
+        -- <:∀R
+        (_, Type.Forall{..}) -> scoped (Context.Variable domain name) (subtype _A0 type_)
         -- <:∀L
         (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name a type_) _B0
         (Type.Forall{domain = Domain.Fields, ..}, _) -> scopedUnsolvedFields \a -> subtype (Type.substituteFields name a type_) _B0
@@ -346,10 +350,6 @@ subtype _A0 _B0 = do
         -- <:∃L
         (Type.Exists{..}, _) -> scoped (Context.Variable domain name) do
             subtype type_ _B0
-
-        -- <:∀R
-        (_, Type.Forall{..}) -> scoped (Context.Variable domain name) do
-            subtype _A0 type_
         (Type.Scalar{scalar = s0}, Type.Scalar{scalar = s1})
             | s0 == s1 -> pass
         (Type.Optional{type_ = _A}, Type.Optional{type_ = _B}) -> subtype _A _B
@@ -1373,7 +1373,10 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 
         _Θ <- get
 
-        (typedArgument, resultType) <- inferApplication (Context.solveType _Θ (_A ^. _Unwrapped % _2)) argument
+        (typedArgument, resultType) <-
+            inferApplication
+                (Context.solveType _Θ (_A ^. _Unwrapped % _2))
+                argument
 
         let e =
                 FunctionCall
@@ -1444,10 +1447,11 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
         pure $ Expr (Located location (If cond' then' else'), _L1)
     Syntax.Match e branches -> do
         e' <- infer e
+        debugPretty ("e'" :: Text, e')
 
         returnType <- fresh -- create a monotype for the return of the match
         push (Context.UnsolvedType returnType)
-
+        
         let process (pattern_, branch) = do
                 pattern' <- checkPattern pattern_ (Syntax.typeOf e')
                 branch' <-
@@ -1575,10 +1579,13 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         pure $ Expr (Located exprLoc (Syntax.List y), t)
     check' (Syntax.Match e branches) t = do
         e' <- infer e
+        ctx <- get
+
 
         let process (pattern_, branch) = do
                 pattern' <-
-                    checkPattern pattern_ (Syntax.typeOf e')
+                    checkPattern pattern_ $ Syntax.typeOf e'
+                subtype (Syntax.patternTypeOf pattern') (Syntax.typeOf e')
 
                 -- check that the branch type matches the return type of the match
                 branch' <- check branch t
@@ -1630,21 +1637,35 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
   where
     check' :: ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
     check' (Syntax.VarPattern vn) t = do
+        debugPretty ("Check' var" :: Text, vn, t)
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
     check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match
-    check' (Syntax.ConstructorPattern ctor args) t = do
+    -- Suppose we have the type @type Option a = Some a | None@
+    -- Checking the pattern @Some a@ against the type @Option b@ should succeed and emit the constraint @a = b@
+    check' (Syntax.ConstructorPattern ctor args) expectedType = do
         _Γ <- get
-        let process element = do
-                _Γ <- get
-
-                checkPattern element (Context.solveType _Γ t)
-        args' <- traverse process args
         let n = Global $ IgnoreLocation (NTypeName <<$>> ctor)
+        constructorType <- Context.lookup n _Γ `orDie` UnboundConstructor (ctor ^. sourceRegion) n _Γ
+        debugPretty ("Check' ctor" :: Text, (ctor, args), expectedType, constructorType)
 
-        t <- Context.lookup n _Γ `orDie` UnboundVariable (ctor ^. sourceRegion) n _Γ
+        -- inferApplication
+        let ctorArgs = Type.functionTypeArgs constructorType
+        completedType <- pure $ Type.replaceQuantified constructorType (Type.functionTypeReturn constructorType)
+        subtype (completedType ) expectedType
+        when (length ctorArgs /= length args) (throw PartiallyAppliedConstructorPattern)
 
-        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), t)
+        let process (expected, element) = do
+                _Γ <- get
+                checkPattern element (Context.solveType _Γ expected)
+        args' <- traverse process (zip ctorArgs args)
+
+        -- the constructor function applied to all its arguments must be a subtype of t
+        _Θ <- get
+        let t'' = Context.solveType _Θ expectedType
+        debugPretty t''
+
+        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), t'')
     check' (Syntax.ListPattern patterns) Type.List{..} = do
         let process element = do
                 _Γ <- get

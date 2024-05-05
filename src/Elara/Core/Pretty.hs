@@ -124,11 +124,16 @@ prettyTy1 e = prettyTy2 e
 
 prettyTy2 :: Type -> Doc AnsiStyle
 prettyTy2 (TyVarTy tv) = prettyTypeVariable False tv
-prettyTy2 (ConTy (TyCon name details)) = pretty (name ^. unqualified)
+prettyTy2 (ConTy t) = pretty t
 prettyTy2 e = parens (prettyTy e)
 
 instance Pretty TyCon where
     pretty (TyCon name details) = pretty (name ^. unqualified)
+
+instance Pretty TyConDetails where
+    pretty Prim = "Prim"
+    pretty (TyAlias t) = "Alias:" <+> pretty t
+    pretty (TyADT ctors) = "ADT:" <+> pretty ctors
 
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle

@@ -130,9 +130,16 @@ inferDeclaration (Declaration ld) = do
         push (Annotation (mkGlobal' declName) t')
         pure $ TypeDeclaration tvs (Located sr (Alias t')) (coerceTypeDeclAnnotations ann)
     inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
+        let tvs' = map createTypeVar tvs
+        let adtWithTvs = Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) tvs'
+
         let inferCtor (ctorName, t :: [ShuntedType]) = do
                 t' <- traverse astTypeToInferType t
-                let ctorType = universallyQuantify tvs (foldr (Infer.Function sr) (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) []) t')
+                let ctorType =
+                        universallyQuantify
+                            tvs
+                            (foldr (Infer.Function sr) adtWithTvs t')
+                debugPretty ctorType
                 push (Annotation (mkGlobal' ctorName) ctorType)
                 pure (ctorName, t')
         ctors' <- traverse inferCtor ctors
@@ -160,7 +167,8 @@ freeTypeVars =
 
 universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
 universallyQuantify [] x = x
-universallyQuantify (Located sr u : us) t = Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
+universallyQuantify (Located sr u : us) t =
+    Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 -- | Like 'astTypeToInferType' but universally quantifies over the free type variables
 astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
@@ -208,8 +216,18 @@ completeExpression ctx (Expr (y', t)) = do
                 o -> pure o
             )
             y'
-    traverseOf gplate (completeExpression ctx') (Expr (y'', completed))
+    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y'', completed))
+    traverseOf gplate (completePattern ctx') completedExprs
   where
+    completePattern :: Context SourceRegion -> TypedPattern -> Sem r TypedPattern
+    completePattern ctx (Pattern (p', t)) = do
+        completed <- quantify <$> complete ctx t
+        unify t completed
+        -- debugPretty ("CompletePattern" :: Text, t, completed)
+        ctx' <- Infer.getAll
+        traverseOf gplate (completePattern ctx') (Pattern (p', completed))
+
+
     -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
     -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
     quantify :: Type SourceRegion -> Type SourceRegion
@@ -232,7 +250,7 @@ completeExpression ctx (Expr (y', t)) = do
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     unify unsolved solved = do
-        case (stripForAlls unsolved, stripForAlls solved) of
+        case (Infer.stripForAll unsolved, Infer.stripForAll solved) of
             (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
                 subst unsolvedInput solvedInput
                 unify unsolvedInput solvedInput
@@ -246,10 +264,6 @@ completeExpression ctx (Expr (y', t)) = do
             (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
             other -> error (showPretty other)
 
-    stripForAlls :: Type SourceRegion -> Type SourceRegion
-    stripForAlls = \case
-        Infer.Forall{type_} -> stripForAlls type_
-        other -> other
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     subst Infer.UnsolvedType{existential} solved = do

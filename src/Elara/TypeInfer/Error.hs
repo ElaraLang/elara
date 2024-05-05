@@ -117,6 +117,7 @@ data TypeInferenceError where
         TypeInferenceError
     UnboundFields :: SourceRegion -> UniqueTyVar -> TypeInferenceError
     UnboundTypeVariable ::
+        HasCallStack => 
         SourceRegion ->
         UniqueTyVar ->
         (Context SourceRegion) ->
@@ -124,6 +125,7 @@ data TypeInferenceError where
     UnboundVariable ::
         HasCallStack => SourceRegion -> (IgnoreLocVarRef Name) -> (Context SourceRegion) -> TypeInferenceError
     UnboundConstructor ::
+        SourceRegion ->
         (IgnoreLocVarRef Name) ->
         (Context SourceRegion) ->
         TypeInferenceError
@@ -151,6 +153,7 @@ data TypeInferenceError where
         (Context SourceRegion) ->
         TypeInferenceError
     KindInferError :: KindInferError -> TypeInferenceError
+    PartiallyAppliedConstructorPattern :: HasCallStack => TypeInferenceError
 
 deriving instance Show TypeInferenceError
 
@@ -185,7 +188,7 @@ instance ReportableError TypeInferenceError where
                 )
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 []
-    report (UnboundConstructor v _Γ) =
+    report (UnboundConstructor loc v _Γ) =
         writeReport $
             Err
                 Nothing
@@ -196,7 +199,7 @@ instance ReportableError TypeInferenceError where
                     , listToText _Γ
                     ]
                 )
-                []
+                [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 []
     report (NotSubtype p1 t1 p2 t2) =
         writeReport $
@@ -222,7 +225,8 @@ instance ReportableError TypeInferenceError where
                     [ "Type error: The following type variable is unbound:"
                     , pretty a
                     , "The following type variables are bound in the current context:"
-                    , listToText _Γ
+                    -- , listToText _Γ
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]

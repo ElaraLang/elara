@@ -290,6 +290,7 @@ desugarMatch e pats = do
 
     pats' <- for pats $ \(p, branch) -> do
         (con, vars) <- patternToCore p
+
         branch' <- toCore branch
         pure (con, vars, branch')
 

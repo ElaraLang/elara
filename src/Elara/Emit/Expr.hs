@@ -3,6 +3,7 @@
 
 module Elara.Emit.Expr where
 
+import Data.Map (union)
 import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
@@ -215,10 +216,21 @@ generateCaseInstructions
                 emit $ Label endLabel
 generateCaseInstructions scrutinee (Just bind) alts = do
     -- firstly we need to find the actual type that we're matching over so we can analyse all its constructors
-    let binderType = case jvmBinderType bind of
-            Just (JVMLType (ConTy t)) -> t
+    let (binderType, ctors) = case jvmBinderType bind of
+            Just (JVMLType (ConTy (TyCon t (TyADT ctors)))) -> (t, ctors)
             _ -> error "unknown type"
-    error $ "Not implemented: " <> showPretty (scrutinee, binderType, alts)
+    -- undefined <- undefinedId
+    -- let defaultBindersMap :: Map _ JVMExpr = fromList (ctors <&> (,Var $ Normal undefined))
+    let altsMap :: Map _ _ =
+            fromList
+                ( alts
+                    <&> ( \case
+                            (DataAlt (DataCon altName _ _), binders, altBody) -> (altName, (binders, altBody))
+                            _ -> error "aaa"
+                        )
+                )
+    -- createLambda
+    error $ "Not implemented, " <> showPretty altsMap
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId ::

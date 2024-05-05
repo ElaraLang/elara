@@ -74,7 +74,7 @@ data AltCon
     = DataAlt DataCon
     | LitAlt Literal
     | DEFAULT
-    deriving (Show, Eq, Data, Generic)
+    deriving (Show, Eq, Data, Generic, Ord)
 
 -- | A data constructor.
 data DataCon = DataCon
@@ -151,7 +151,7 @@ data Literal
     | Char !Char
     | Double !Double
     | Unit
-    deriving (Show, Eq, Data, Generic)
+    deriving (Show, Eq, Data, Generic, Ord)
 
 instance Hashable b => Hashable (Expr b)
 
