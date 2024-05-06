@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Shunted AST Type
 This is very similar to 'Elara.AST.Renamed.Expr' except:
@@ -11,7 +12,7 @@ module Elara.AST.Shunted where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Select, Type' (..))
+import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Pattern' (..), Select, Type' (..))
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
@@ -20,6 +21,7 @@ import Elara.AST.Select (LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef, VarRef' (..))
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Data.Unique (Unique)
+import Optics (foldOf)
 
 type instance ASTLocate' 'Shunted = Located
 
@@ -111,7 +113,7 @@ instance HasDependencies ShuntedDeclaration where
                 toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
             _ -> []
     dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-        Generic.Value e _ t _ -> valueDependencies e <> (maybeToList t >>= typeDependencies)
+        Generic.Value e NoFieldValue t _ -> valueDependencies e <> patternDependencies e <> (maybeToList t >>= typeDependencies)
         Generic.TypeDeclaration{} -> []
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
@@ -121,6 +123,19 @@ valueDependencies =
     names :: ShuntedExpr' -> [Qualified Name]
     names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
     names (Constructor (Located _ e)) = [NTypeName <$> e]
+    names _ = []
+
+patternDependencies :: ShuntedExpr -> [Qualified Name]
+patternDependencies =
+    foldOf x
+  where
+    x = trav % to patternDependencies'
+    trav :: Traversal' ShuntedExpr ShuntedPattern
+    trav = gplate @ShuntedPattern @ShuntedExpr
+    patternDependencies' :: ShuntedPattern -> [Qualified Name]
+    patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
+    names :: ShuntedPattern' -> [Qualified Name]
+    names (ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
     names _ = []
 
 typeDependencies :: ShuntedType -> [Qualified Name]
