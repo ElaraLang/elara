@@ -8,15 +8,9 @@ import Elara.Data.Pretty (Pretty (..))
 data Domain
     = -- | @forall (a : Type) . …@
       Type
-    | -- | @forall (a : Fields) . …@
-      Fields
-    | -- | @forall (a : Alternatives) . …@
-      Alternatives
     deriving (Eq, Ord, Generic, Show, Data)
 
 instance ToJSON Domain
 
 instance Pretty Domain where
     pretty Type = "Type"
-    pretty Fields = "Fields"
-    pretty Alternatives = "Alternatives"

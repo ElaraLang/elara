@@ -22,7 +22,6 @@ module Elara.TypeInfer.Context (
     discardUpTo,
     solveType,
     solveRecord,
-    solveUnion,
     complete,
 )
 where
@@ -258,7 +257,6 @@ solveType context type_ = foldl' snoc type_ context
   where
     snoc t (SolvedType a τ) = Type.solveType a τ t
     snoc t (SolvedFields a r) = Type.solveFields a r t
-    snoc t (SolvedAlternatives a u) = Type.solveAlternatives a u t
     snoc t _ = t
 
 -- | Substitute a t`Type.Record` using the solved entries of a `Context`
@@ -272,19 +270,6 @@ solveRecord context oldFields = newFields
     Type.Record{fields = newFields} =
         solveType context Type.Record{fields = oldFields, ..}
 
-{- | Substitute a t`Type.Union` using the solved entries of a `Context`
-   `Context`
--}
-solveUnion :: Context s -> Type.Union s -> Type.Union s
-solveUnion context oldAlternatives = newAlternatives
-  where
-    location =
-        error "Grace.Context.solveUnion: Internal error - Missing location field"
-
-    -- TODO: Come up with total solution
-    Type.Union{alternatives = newAlternatives} =
-        solveType context Type.Union{alternatives = oldAlternatives, ..}
-
 {- | This function is used at the end of the bidirectional type-checking
    algorithm to complete the inferred type by:
 
@@ -297,37 +282,12 @@ complete context type0 = Monad.foldM snoc type0 context
   where
     snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
     snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
-    snoc t (SolvedAlternatives a r) = pure (Type.solveAlternatives a r t)
     snoc t (UnsolvedType a) | a `Type.typeFreeIn` t = do
         name <- makeUniqueTyVar
 
         let domain = Domain.Type
 
         let type_ = Type.solveType a (Monotype.VariableType name) t
-
-        let location = Type.location t
-
-        let nameLocation = location
-
-        pure Type.Forall{..}
-    snoc t (UnsolvedFields p) | p `Type.fieldsFreeIn` t = do
-        name <- makeUniqueTyVar
-
-        let domain = Domain.Fields
-
-        let type_ = Type.solveFields p (Monotype.Fields [] (Monotype.VariableFields name)) t
-
-        let location = Type.location t
-
-        let nameLocation = location
-
-        pure Type.Forall{..}
-    snoc t (UnsolvedAlternatives p) | p `Type.alternativesFreeIn` t = do
-        name <- makeUniqueTyVar
-
-        let domain = Domain.Alternatives
-
-        let type_ = Type.solveAlternatives p (Monotype.Alternatives [] (Monotype.VariableAlternatives name)) t
 
         let location = Type.location t
 

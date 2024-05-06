@@ -83,11 +83,6 @@ data TypeInferenceError where
         SourceRegion ->
         UniqueTyVar ->
         TypeInferenceError
-    NotAlternativesSubtype ::
-        SourceRegion ->
-        (Existential Monotype.Union) ->
-        (Type.Union SourceRegion) ->
-        TypeInferenceError
     NotFieldsSubtype ::
         SourceRegion ->
         (Existential Monotype.Record) ->

@@ -43,7 +43,6 @@ data Monotype
     | List Monotype
     | Tuple (NonEmpty Monotype)
     | Record Record
-    | Union Union
     | Custom (Qualified Text) [Monotype]
     | Scalar Scalar
     deriving stock (Eq, Generic, Show, Ord)

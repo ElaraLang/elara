@@ -91,13 +91,6 @@ data Type s
       -- >>> pretty @(Type ()) (Record () (Fields [("x", "X"), ("y", "Y")] (Monotype.UnsolvedFields 0)))
       -- { x: X, y: Y, a? }
       Record {location :: s, fields :: Record s}
-    | -- | Union type
-      --
-      -- >>> pretty @(Type ()) (Union () (Alternatives [("X", "X"), ("Y", "Y")] Monotype.EmptyAlternatives))
-      -- < X: X | Y: Y >
-      -- >>> pretty @(Type ()) (Union () (Alternatives [("X", "X"), ("Y", "Y")] (Monotype.UnsolvedAlternatives 0)))
-      -- < X: X | Y: Y | a? >
-      Union {location :: s, alternatives :: Union s}
     | Scalar {location :: s, scalar :: Scalar}
     | -- | A custom data type
       --
@@ -134,7 +127,6 @@ instance StructuralEq (Type s) where
     structuralEq (Optional _ type1) (Optional _ type2) = structuralEq type1 type2
     structuralEq (List _ type1) (List _ type2) = structuralEq type1 type2
     structuralEq (Record _ fields1) (Record _ fields2) = structuralEq fields1 fields2
-    structuralEq (Union _ alternatives1) (Union _ alternatives2) = structuralEq alternatives1 alternatives2
     structuralEq (Scalar _ scalar1) (Scalar _ scalar2) = scalar1 == scalar2
     structuralEq (Custom _ conName1 typeArguments1) (Custom _ conName2 typeArguments2) = conName1 == conName2 && typeArguments1 `structuralEq` typeArguments2
     structuralEq (Tuple _ tupleArguments1) (Tuple _ tupleArguments2) = tupleArguments1 `structuralEq` tupleArguments2
@@ -177,12 +169,6 @@ instance Plated (Type s) where
                         pure (field, newType)
                 newFieldTypes <- traverse onPair oldFieldTypes
                 pure Record{fields = Fields newFieldTypes remainingFields, ..}
-            Union{alternatives = Alternatives oldAlternativeTypes remainingAlternatives, ..} -> do
-                let onPair (alternative, oldType) = do
-                        newType <- onType oldType
-                        pure (alternative, newType)
-                newAlternativeTypes <- traverse onPair oldAlternativeTypes
-                pure Union{alternatives = Alternatives newAlternativeTypes remainingAlternatives, ..}
             Scalar{..} -> pure Scalar{..}
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
@@ -200,22 +186,9 @@ instance (Show s, ToJSON s) => ToJSON (Record s)
 instance Show s => Pretty (Record s) where
     pretty = prettyRecordType
 
--- | A potentially polymorphic union type
-data Union s = Alternatives [(UniqueTyVar, Type s)] RemainingAlternatives
-    deriving stock (Eq, Functor, Generic, Show, Data, Ord)
-
-instance StructuralEq (Union s) where
-    structuralEq :: Union s -> Union s -> Bool
-    structuralEq (Alternatives alternatives1 remainingAlternatives1) (Alternatives alternatives2 remainingAlternatives2) = alternatives1 `structuralEq` alternatives2 && remainingAlternatives1 == remainingAlternatives2
-
 instance StructuralEq (UniqueTyVar, Type s) where
     structuralEq :: (UniqueTyVar, Type s) -> (UniqueTyVar, Type s) -> Bool
     structuralEq (name1, type1) (name2, type2) = name1 == name2 && structuralEq type1 type2
-
-instance (Show s, ToJSON s) => ToJSON (Union s)
-
-instance Show s => Pretty (Union s) where
-    pretty = prettyUnionType
 
 {- | This function should not be exported or generally used because it does not
    handle the `location` field correctly.  It is only really safe to use within
@@ -236,8 +209,6 @@ fromMonotype monotype =
             List{type_ = fromMonotype type_, ..}
         Monotype.Record (Monotype.Fields kτs ρ) ->
             Record{fields = Fields (map (second fromMonotype) kτs) ρ, ..}
-        Monotype.Union (Monotype.Alternatives kτs ρ) ->
-            Union{alternatives = Alternatives (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
             Scalar{..}
         Monotype.Tuple kτs ->
@@ -344,26 +315,6 @@ solveFields unsolved (Monotype.Fields fieldMonotypes fields) =
     transformType type_ =
         type_
 
-{- | Substitute a `Type` by replacing all occurrences of the given unsolved
-   alternatives variable with a t`Monotype.Union`
--}
-solveAlternatives ::
-    Existential Monotype.Union -> Monotype.Union -> Type s -> Type s
-solveAlternatives unsolved (Monotype.Alternatives alternativeMonotypes alternatives) =
-    transform transformType
-  where
-    transformType Union{alternatives = Alternatives alternativeTypes (UnsolvedAlternatives existential), ..}
-        | unsolved == existential =
-            Union{alternatives = Alternatives alternativeTypes' alternatives, ..}
-      where
-        alternativeTypes' =
-            alternativeTypes <> map transformPair alternativeMonotypes
-
-        transformPair (alternative, monotype) =
-            (alternative, fmap (const location) (fromMonotype monotype))
-    transformType type_ =
-        type_
-
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
    given the variable's label and index
 -}
@@ -395,8 +346,6 @@ substituteType a _A type_ =
             newType = substituteType a _A oldType
         Record{fields = Fields kAs ρ, ..} ->
             Record{fields = Fields (map (second (substituteType a _A)) kAs) ρ, ..}
-        Union{alternatives = Alternatives kAs ρ, ..} ->
-            Union{alternatives = Alternatives (map (second (substituteType a _A)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
@@ -439,58 +388,12 @@ substituteFields ρ0 r@(Fields kτs ρ1) type_ =
                 Record{fields = Fields (map (second (substituteFields ρ0 r)) kAs0) ρ, ..}
           where
             kAs1 = kAs0 <> map (second (fmap (const location))) kτs
-        Union{alternatives = Alternatives kAs ρ, ..} ->
-            Union{alternatives = Alternatives (map (second (substituteFields ρ0 r)) kAs) ρ, ..}
         Scalar{..} ->
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
         Tuple{tupleArguments = oldTypeArguments, ..} ->
             Tuple{tupleArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
-
-{- | Replace all occurrences of a variable within one `Type` with another `Type`,
-   given the variable's label and index
--}
-substituteAlternatives :: UniqueTyVar -> Union s -> Type s -> Type s
-substituteAlternatives ρ0 r@(Alternatives kτs ρ1) type_ =
-    case type_ of
-        VariableType{..} ->
-            VariableType{..}
-        UnsolvedType{..} ->
-            UnsolvedType{..}
-        Exists{type_ = oldType, ..} -> Exists{type_ = newType, ..}
-          where
-            newType = substituteAlternatives ρ0 r oldType
-        Forall{type_ = oldType, ..} -> Forall{type_ = newType, ..}
-          where
-            newType = substituteAlternatives ρ0 r oldType
-        Function{input = oldInput, output = oldOutput, ..} ->
-            Function{input = newInput, output = newOutput, ..}
-          where
-            newInput = substituteAlternatives ρ0 r oldInput
-
-            newOutput = substituteAlternatives ρ0 r oldOutput
-        Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
-          where
-            newType = substituteAlternatives ρ0 r oldType
-        List{type_ = oldType, ..} -> List{type_ = newType, ..}
-          where
-            newType = substituteAlternatives ρ0 r oldType
-        Record{fields = Fields kAs ρ, ..} ->
-            Record{fields = Fields (map (second (substituteAlternatives ρ0 r)) kAs) ρ, ..}
-        Union{alternatives = Alternatives kAs0 ρ, ..}
-            | Monotype.VariableAlternatives ρ0 == ρ ->
-                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 r)) kAs1) ρ1, ..}
-            | otherwise ->
-                Union{alternatives = Alternatives (map (second (substituteAlternatives ρ0 r)) kAs0) ρ, ..}
-          where
-            kAs1 = kAs0 <> map (second (fmap (const location))) kτs
-        Scalar{..} ->
-            Scalar{..}
-        Custom{typeArguments = oldTypeArguments, ..} ->
-            Custom{typeArguments = fmap (substituteAlternatives ρ0 r) oldTypeArguments, ..}
-        Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteAlternatives ρ0 r) oldTypeArguments, ..}
 
 {- | Count how many times the given `Existential` `Type` variable appears within
    a `Type`
@@ -515,20 +418,6 @@ fieldsFreeIn unsolved =
             % the @2
             % the @2
             % _As @"UnsolvedFields"
-            % Lens.only unsolved
-        )
-
-{- | Count how many times the given `Existential` t`Monotype.Union` variable
-   appears within a `Type`
--}
-alternativesFreeIn :: Existential Monotype.Union -> Type s -> Bool
-alternativesFreeIn unsolved =
-    Lens.has
-        ( cosmos
-            % _As @"Union"
-            % the @2
-            % the @2
-            % _As @"UnsolvedAlternatives"
             % Lens.only unsolved
         )
 
@@ -682,8 +571,6 @@ prettyPrimitiveType UnsolvedType{..} =
     label (pretty existential <> "?")
 prettyPrimitiveType Record{..} =
     prettyRecordType fields
-prettyPrimitiveType Union{..} =
-    prettyUnionType alternatives
 prettyPrimitiveType Scalar{..} =
     pretty scalar
 prettyPrimitiveType Custom{..} =
@@ -791,76 +678,6 @@ prettyRecordType (Fields (keyType : keyTypes) fields) =
     prettyLongFieldType :: Show s => (UniqueTyVar, Type s) -> Doc AnsiStyle
     prettyLongFieldType (key, type_) =
         prettyRecordLabel False key
-            <> operator ":"
-            <> Pretty.group (Pretty.flatAlt (Pretty.hardline <> "    ") " ")
-            <> prettyQuantifiedType type_
-            <> Pretty.hardline
-
-prettyUnionType :: Show s => Union s -> Doc AnsiStyle
-prettyUnionType (Alternatives [] alternatives) =
-    punctuation "<"
-        <> ( case alternatives of
-                EmptyAlternatives -> " "
-                UnsolvedAlternatives ρ -> " " <> label (pretty ρ <> "?") <> " "
-                VariableAlternatives ρ -> " " <> label (pretty ρ) <> " "
-           )
-        <> punctuation ">"
-prettyUnionType (Alternatives (keyType : keyTypes) alternatives) =
-    Pretty.group (Pretty.flatAlt long short)
-  where
-    short =
-        punctuation "<"
-            <> " "
-            <> prettyShortAlternativeType keyType
-            <> foldMap (\kt -> " " <> punctuation "|" <> " " <> prettyShortAlternativeType kt) keyTypes
-            <> ( case alternatives of
-                    EmptyAlternatives ->
-                        mempty
-                    UnsolvedAlternatives ρ ->
-                        " "
-                            <> punctuation "|"
-                            <> " "
-                            <> label (pretty ρ <> "?")
-                    VariableAlternatives ρ ->
-                        " "
-                            <> punctuation "|"
-                            <> " "
-                            <> label (pretty ρ)
-               )
-            <> " "
-            <> punctuation ">"
-
-    long =
-        Pretty.align
-            ( punctuation "<"
-                <> " "
-                <> prettyLongAlternativeType keyType
-                <> foldMap (\kt -> punctuation "|" <> " " <> prettyLongAlternativeType kt) keyTypes
-                <> case alternatives of
-                    EmptyAlternatives ->
-                        punctuation ">"
-                    UnsolvedAlternatives ρ ->
-                        punctuation "|"
-                            <> " "
-                            <> label (pretty ρ <> "?")
-                            <> Pretty.hardline
-                            <> punctuation ">"
-                    VariableAlternatives ρ ->
-                        punctuation "|"
-                            <> " "
-                            <> label (pretty ρ)
-                            <> Pretty.hardline
-                            <> punctuation ">"
-            )
-
-    prettyShortAlternativeType (key, type_) =
-        prettyAlternativeLabel key
-            <> operator ":"
-            <> " "
-            <> prettyQuantifiedType type_
-
-    prettyLongAlternativeType (key, type_) =
-        prettyAlternativeLabel key
             <> operator ":"
             <> Pretty.group (Pretty.flatAlt (Pretty.hardline <> "    ") " ")
             <> prettyQuantifiedType type_
