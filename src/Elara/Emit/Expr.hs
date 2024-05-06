@@ -263,8 +263,11 @@ generateCaseInstructions scrutinee (Just bind) alts = do
             "match"
             ( MethodDescriptor
                 ( fmap
-                    (\(binders, altBody) -> ObjectFieldType $ lambdaTypeName (length binders))
-                    (Map.elems altsMap)
+                    ( \ctor ->
+                        let (binders, _) = altsMap Map.! ctor
+                         in ObjectFieldType $ lambdaTypeName (length binders)
+                    )
+                    ctors
                 )
                 (TypeReturn (ObjectFieldType "java.lang.Object"))
             )

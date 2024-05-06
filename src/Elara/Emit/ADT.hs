@@ -100,7 +100,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                 "match"
                 matchSig
                 mempty
-        for_ ctors $ \(DataCon ctorName ctorType conTy) -> do
+        for_ (zip ctors [1 ..]) $ \(DataCon ctorName ctorType conTy, i) -> do
             let innerConClassName = createQualifiedInnerClassName (ctorName ^. unqualified) typeClassName
             let fields = functionTypeArgs ctorType
             -- Create static factory method
@@ -150,3 +150,19 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                         -- append it to the StringBuilder
                         emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [generateFieldType field] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
                     emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
+
+                -- generate the match impl
+                createMethodWithCodeBuilder thisName matchSig [MPublic] "match" $ do
+                    emit $ ALoad i
+                    for_ (zip fields [0 ..]) $ \(field, i) -> do
+                        emit $ ALoad 0
+                        emit $ GetField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
+                    -- call the corresponding lambda param
+                    emit $
+                        InvokeInterface
+                            (ClassInfoType $ lambdaTypeName $ length fields)
+                            "run"
+                            ( MethodDescriptor
+                                (generateFieldType <$> fields)
+                                (TypeReturn $ ObjectFieldType "java/lang/Object")
+                            )
