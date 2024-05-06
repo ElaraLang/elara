@@ -14,6 +14,12 @@ let sequence a =
       [] -> pure []
       (x::xs) -> x *> sequence xs
 
+def sequence_ : [IO a] -> IO ()
+let sequence_ a = 
+    match a with
+      [] -> pure ()
+      (x::xs) -> x *> sequence_ xs
+
 def identity : a -> a
 let identity a = a
 

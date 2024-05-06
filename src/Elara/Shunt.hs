@@ -137,7 +137,6 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
 -}
 fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
 fixOperators opTable o = do
-    Log.debug $ "fixOperators: " <> showPretty o
     reassoc o
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr

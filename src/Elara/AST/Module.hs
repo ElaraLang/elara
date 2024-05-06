@@ -21,6 +21,7 @@ import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
 import Optics (traverseOf_)
+import Print (debugPretty)
 import Unsafe.Coerce
 import Prelude hiding (Text)
 

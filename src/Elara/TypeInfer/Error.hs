@@ -2,6 +2,7 @@
 
 module Elara.TypeInfer.Error where
 
+import Data.Containers.ListUtils (nubOrd)
 import Data.Map qualified as Map
 import Elara.AST.Name (Name, Qualified)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
@@ -10,7 +11,7 @@ import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (report), writeReport)
-import Elara.TypeInfer.Context (Context)
+import Elara.TypeInfer.Context (Context, Entry (..))
 import Elara.TypeInfer.Existential
 import Elara.TypeInfer.Monotype (Monotype)
 import Elara.TypeInfer.Monotype qualified as Monotype
@@ -154,6 +155,7 @@ data TypeInferenceError where
         TypeInferenceError
     KindInferError :: KindInferError -> TypeInferenceError
     PartiallyAppliedConstructorPattern :: HasCallStack => TypeInferenceError
+    NotCustomType :: HasCallStack => SourceRegion -> Type SourceRegion -> TypeInferenceError
 
 deriving instance Show TypeInferenceError
 
@@ -196,7 +198,7 @@ instance ReportableError TypeInferenceError where
                     [ "Type error: The following constructor is unbound:"
                     , pretty v
                     , "The following constructors are bound in the current context:"
-                    , listToText _Γ
+                    , listToText (nubOrd $ filter (\case Annotation{} -> True; _ -> False) _Γ)
                     ]
                 )
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
@@ -265,4 +267,11 @@ instance ReportableError TypeInferenceError where
                 (vsep ["Type error: The following type is not necessarily a function type:", pretty a])
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 [Note "The type could be anything and so can't be asserted to be a function"]
+    report (NotCustomType loc a) = do
+        writeReport $
+            Err
+                Nothing
+                (vsep ["Type error: The following type is not a custom type:", pretty a])
+                [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
+                []
     report e = writeReport $ Err Nothing (showColored e) [] []

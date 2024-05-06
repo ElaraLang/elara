@@ -1287,7 +1287,26 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
     Syntax.StringPattern s -> pure (Pattern (Located location (Syntax.StringPattern s), Type.Scalar{scalar = Monotype.Text, ..}))
     Syntax.CharPattern c -> pure (Pattern (Located location (Syntax.CharPattern c), Type.Scalar{scalar = Monotype.Char, ..}))
     Syntax.UnitPattern -> pure (Pattern (Located location Syntax.UnitPattern, Type.Scalar{scalar = Monotype.Unit, ..}))
-    Syntax.ConstructorPattern{} -> todo
+    Syntax.ConstructorPattern ctors args -> do
+        _Γ <- get
+
+        let n = Global $ IgnoreLocation (NTypeName <<$>> ctors)
+
+        t <- Context.lookup n _Γ `orDie` UnboundConstructor (ctors ^. sourceRegion) n _Γ
+
+        case t of
+            Type.Custom{conName, typeArguments} -> do
+                let process (a, arg) = do
+                        p <- inferPattern arg
+
+                        subtype (Syntax.patternTypeOf p) a
+
+                        pure p
+
+                args' <- traverse process (zip typeArguments args)
+
+                pure (Pattern (Located location (Syntax.ConstructorPattern ctors args'), t))
+            _ -> throw (NotCustomType (ctors ^. sourceRegion) t)
     Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
         let t = Type.List{location, type_ = a, ..}
 

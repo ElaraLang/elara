@@ -26,6 +26,7 @@ import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (VarRef' (..), mkGlobal')
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -40,20 +41,25 @@ import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
+import Polysemy.Log qualified as Log
 import Polysemy.State
+import Polysemy.Time (interpretTimeGhc)
 import Print
 
-type InferPipelineEffects = '[State Status, State InferState, Error TypeInferenceError, UniqueGen]
+type InferPipelineEffects = '[Log.Log, State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
-runInferPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
+runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
     s <- uniqueGenToIO initialStatus
 
-    uniqueGenToIO
-        . runErrorOrReport @TypeInferenceError
-        . evalState initialInferState
-        . evalState s
-        $ e
+    e
+        & subsume_
+        & Log.interpretLogStdoutLevel (Just Log.Debug)
+        & interpretTimeGhc
+        & evalState initialInferState
+        & evalState s
+        & runErrorOrReport @TypeInferenceError
+        & uniqueGenToIO
 
 inferModule ::
     forall r.
@@ -75,10 +81,11 @@ inferModule m = do
 inferDeclaration ::
     forall r.
     (HasCallStack, Member UniqueGen r) =>
-    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r, Member Log.Log r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
 inferDeclaration (Declaration ld) = do
+    -- debugPretty ("Infering declaration " <> showPretty (ld ^. unlocated % field' @"name"))
     Declaration
         <$> traverseOf
             unlocated
@@ -140,8 +147,12 @@ inferDeclaration (Declaration ld) = do
                             tvs
                             (foldr (Infer.Function sr) adtWithTvs t')
                 push (Annotation (mkGlobal' ctorName) ctorType)
+                debugPretty ("Added annotation for " <> show ctorName <> " with type " <> showPretty ctorType)
+
                 pure (ctorName, t')
         ctors' <- traverse inferCtor ctors
+
+        debugPretty ("Inferred ADT " <> pretty (declName ^. unlocated) <> " with constructors " <> pretty ctors')
 
         pure $ TypeDeclaration tvs (Located sr (ADT ctors')) (coerceTypeDeclAnnotations ann)
 

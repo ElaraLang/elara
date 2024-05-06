@@ -5,9 +5,14 @@ type Wrapper a = Box a
 
 type Option a = Some a | None
 
-let main = 
-    match Some 5 with
+
+let options = [Some 1, None, Some 2]
+
+let processOption opt =
+    match opt with 
         None -> print "It's empty"
         Some x -> print "It's some!" *> print x
 
+let main = 
+    sequence_ (map processOption options)
 

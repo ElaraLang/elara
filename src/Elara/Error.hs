@@ -27,7 +27,7 @@ runErrorOrReport ::
     Sem (Error e ': r) a ->
     Sem r a
 runErrorOrReport e = do
-    x <- subsume_ (runError e)
+    x <- raise_ (runError e)
     case x of
         Left err -> report err *> nothingE
         Right a -> justE a
