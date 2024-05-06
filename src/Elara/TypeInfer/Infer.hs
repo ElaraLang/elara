@@ -1630,13 +1630,11 @@ checkPattern ::
     Type SourceRegion ->
     Sem r TypedPattern
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
-    debugPretty ("CheckPattern" :: Text, pattern_, t)
     let x = pattern_ ^. _Unwrapped % _1 % unlocated
     check' x t
   where
     check' :: HasCallStack => ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
     check' (Syntax.VarPattern vn) t = do
-        debugPretty ("Check' var" :: Text, vn, t)
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
     check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match

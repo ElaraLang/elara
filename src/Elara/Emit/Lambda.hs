@@ -45,7 +45,7 @@ etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = do
     param <- makeUnique "x"
     local (\x -> x{checkCasts = False}) $
         createLambda
-            ((param, generateFieldType i) :| [])
+            [(param, generateFieldType i)]
             (generateFieldType o)
             thisClassName
             ( App
@@ -77,7 +77,7 @@ etaExpandN funcCall exprType thisClassName = do
                     (\((_, pt), t) b -> App b (Var $ JVMLocal t (Just $ JVMLFieldType pt)))
                     funcCall
                     (NE.zip paramTypes [0 ..])
-        createLambda paramTypes (generateFieldType $ functionTypeResult exprType) thisClassName body
+        createLambda (toList paramTypes) (generateFieldType $ functionTypeResult exprType) thisClassName body
 
 -- createGeneratedLambda :: [JVMBinder] -> JVMExpr ->
 
@@ -90,7 +90,7 @@ This involves a few steps:
 createLambda ::
     (HasCallStack, Members [ClassBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r) =>
     -- | The names and parameters of the lambda
-    NonEmpty (Unique Text, FieldType) ->
+    [(Unique Text, FieldType)] ->
     -- | The return type of the lambda
     FieldType ->
     -- | The class name the lambda will be created in
@@ -101,7 +101,7 @@ createLambda ::
 createLambda baseParams returnType thisClassName body = do
     lamSuffix <- makeUniqueId
     captureParams <- getCapturedParams baseParams body
-    let params = captureParams `NE.prependList` baseParams
+    let params = captureParams <> baseParams
     let lambdaMethodName = "lambda$" <> show lamSuffix
     Log.debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
 
@@ -133,9 +133,10 @@ createLambda baseParams returnType thisClassName body = do
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, baseMethodDescriptor, methodDescriptor) =
             case baseParams of
-                (_, t) :| [] -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t] (TypeReturn returnType))
-                (_, t1) :| [(_, t2)] -> ("Elara/Func2", "run", MethodDescriptor (replicate 2 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2] (TypeReturn returnType))
-                (_, t1) :| [(_, t2), (_, t3)] -> ("Elara/Func3", "run", MethodDescriptor (replicate 3 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2, t3] (TypeReturn returnType))
+                [] -> ("Elara/Func0", "run", MethodDescriptor [] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [] (TypeReturn returnType))
+                [(_, t)] -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t] (TypeReturn returnType))
+                [(_, t1), (_, t2)] -> ("Elara/Func2", "run", MethodDescriptor (replicate 2 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2] (TypeReturn returnType))
+                [(_, t1), (_, t2), (_, t3)] -> ("Elara/Func3", "run", MethodDescriptor (replicate 3 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2, t3] (TypeReturn returnType))
                 other -> error $ "createLambda: " <> show other <> " parameters not supported"
 
     let inst =
@@ -175,7 +176,14 @@ createLambda baseParams returnType thisClassName body = do
     Log.debug $ "Created lambda " <> showPretty lambdaMethodName
     pure $ map (ALoad . fromIntegral) [1 .. length captureParams] <> [inst]
 
-getCapturedParams :: Member UniqueGen r => NonEmpty (Unique Text, FieldType) -> JVMExpr -> Sem r [(Unique Text, FieldType)]
+lambdaTypeName :: Int -> QualifiedClassName
+lambdaTypeName 0 = "Elara/Func0"
+lambdaTypeName 1 = "Elara/Func"
+lambdaTypeName 2 = "Elara/Func2"
+lambdaTypeName 3 = "Elara/Func3"
+lambdaTypeName n = error $ "lambdaTypeName: " <> show n <> " not supported"
+
+getCapturedParams :: Member UniqueGen r => [(Unique Text, FieldType)] -> JVMExpr -> Sem r [(Unique Text, FieldType)]
 getCapturedParams params expr =
     do
         let len = fromIntegral $ length params

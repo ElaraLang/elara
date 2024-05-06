@@ -62,6 +62,7 @@ import Elara.Core.Module (CoreTypeDecl (..), CoreTypeDeclBody (..))
 import Elara.AST.Name (unqualified)
 import Elara.Core (DataCon (..), functionTypeArgs)
 import Elara.Data.Unique (makeUnique)
+import Elara.Emit.Lambda (lambdaTypeName)
 import Elara.Emit.Method (createMethodWithCodeBuilder)
 import Elara.Emit.Monad (InnerEmit, addClass, addInnerClass)
 import Elara.Emit.State (MethodCreationState (maxLocalVariables), findLocalVariable)
@@ -76,7 +77,6 @@ import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type
 import Polysemy
-import Relude.Unsafe ((!!))
 
 generateADTClasses :: InnerEmit r => CoreTypeDecl -> Sem r ()
 generateADTClasses (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass -- nothing to generate for type aliases
@@ -85,8 +85,9 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
     addClass typeClassName $ do
         addAccessFlag Public
         addAccessFlag Abstract
+        let conArities = ctors <&> (\(DataCon _ ty _) -> length $ functionTypeArgs ty)
         let matchSig =
-                MethodDescriptor (ObjectFieldType "Elara/Func" <$ ctors) (TypeReturn $ ObjectFieldType "java/lang/Object")
+                MethodDescriptor (ObjectFieldType . lambdaTypeName <$> conArities) (TypeReturn $ ObjectFieldType "java/lang/Object")
 
         -- add boring empty constructor
         createMethodWithCodeBuilder typeClassName (MethodDescriptor [] VoidReturn) [MProtected] "<init>" $ do

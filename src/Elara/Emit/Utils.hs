@@ -3,6 +3,7 @@ module Elara.Emit.Utils where
 import Data.List.NonEmpty ((<|))
 import Elara.AST.Name
 import Elara.Core
+import Elara.Core.Analysis (findTyCon)
 import Elara.Prim.Core
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Name
@@ -76,6 +77,7 @@ generateFieldType (AppTy (ConTy c) _) | c == ioCon = ObjectFieldType "Elara.IO"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (FuncTy _ _) = ObjectFieldType "Elara.Func"
 generateFieldType (ForAllTy _ x) = generateFieldType x
+generateFieldType x | Just (TyCon y _) <- findTyCon x = ObjectFieldType (createQualifiedClassName y)
 generateFieldType o = error $ "generateFieldType: " <> show o
 
 {- | Determines if a type is a value type.

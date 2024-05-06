@@ -4,6 +4,7 @@
 module Elara.Emit.Expr where
 
 import Data.Map (union, (!?))
+import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
 import Elara.AST.Name
@@ -134,7 +135,7 @@ generateInstructions' (Lam (Normal (Id (Local' v) binderType _)) body) _ = do
         Right (_, t) -> pure $ generateFieldType t
         Left (_, Just t) -> pure $ jvmLocalTypeToFieldType t
         Left (_, Nothing) -> error "Lambda with no return type"
-    inst <- createLambda ((v, generateFieldType binderType) :| []) returnType cName body
+    inst <- createLambda [(v, generateFieldType binderType)] returnType cName body
     emit' inst
     pass
 generateInstructions' (Lam (JVMLocal _ _) _) _ = error "Lambda with local variable as its binder"
@@ -239,16 +240,34 @@ generateCaseInstructions scrutinee (Just bind) alts = do
     -- This will be passed to Type#match which will call the appropriate lambda
     let lambdas =
             altsMap <&> \(binders :: [JVMBinder], altBody) -> do
-                generateInstructions @r (foldr Lam altBody binders)
+                cName <- gets (.thisClassName)
+                let returnType = ObjectFieldType "java/lang/Object"
+                let binders' =
+                        binders <&> \case
+                            JVMLocal i t -> error "Not a local variable"
+                            Normal (Id (Local' v) t _) -> (v, generateFieldType t)
+                            other -> error $ "Not a local variable: " <> showPretty other
+                inst <- createLambda binders' returnType cName altBody
+                emit' inst
     -- Emit the lambdas in order
+    generateInstructions scrutinee
     for_ ctors $ \ctor -> do
         case lambdas !? ctor of
             Just sem -> sem
             Nothing -> error "no alt"
     -- Call the match method on the scrutinee
-    generateInstructions scrutinee
-
-    error $ "Not implemented, " <> showPretty altsMap
+    let adtName = createQualifiedClassName binderType
+    emit $
+        InvokeVirtual
+            (ClassInfoType adtName)
+            "match"
+            ( MethodDescriptor
+                ( fmap
+                    (\(binders, altBody) -> ObjectFieldType $ lambdaTypeName (length binders))
+                    (Map.elems altsMap)
+                )
+                (TypeReturn (ObjectFieldType "java.lang.Object"))
+            )
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId ::

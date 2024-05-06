@@ -139,7 +139,6 @@ inferDeclaration (Declaration ld) = do
                         universallyQuantify
                             tvs
                             (foldr (Infer.Function sr) adtWithTvs t')
-                debugPretty ctorType
                 push (Annotation (mkGlobal' ctorName) ctorType)
                 pure (ctorName, t')
         ctors' <- traverse inferCtor ctors
@@ -223,7 +222,6 @@ completeExpression ctx (Expr (y', t)) = do
     completePattern ctx (Pattern (p', t)) = do
         completed <- quantify <$> complete ctx t
         unify t completed
-        -- debugPretty ("CompletePattern" :: Text, t, completed)
         ctx' <- Infer.getAll
         traverseOf gplate (completePattern ctx') (Pattern (p', completed))
 
