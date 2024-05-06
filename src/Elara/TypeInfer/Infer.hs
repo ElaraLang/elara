@@ -1663,6 +1663,10 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
         let expectedType' = Context.solveType _Θ expectedType
 
         pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), expectedType')
+    -- ∀I
+    check' e Type.Forall{..} = do
+        push (Context.Variable domain name)
+        check' e type_
     check' (Syntax.ListPattern patterns) Type.List{..} = do
         let process element = do
                 _Γ <- get
@@ -1684,6 +1688,7 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     check' Syntax.UnitPattern Type.Scalar{scalar = Monotype.Unit} = pure $ Pattern (Located exprLoc Syntax.UnitPattern, t)
     -- Sub
     check' _ _B = do
+        debugPretty ("check'" :: Text, pattern_, _B)
         _A@(Syntax.Pattern (_, _At)) <- inferPattern pattern_
 
         _Θ <- get

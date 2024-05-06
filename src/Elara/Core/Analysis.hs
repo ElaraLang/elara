@@ -23,6 +23,5 @@ declaredLambdaArity _ = 0
 findTyCon :: Core.Type -> Maybe TyCon
 findTyCon (Core.ConTy tc) = Just tc
 findTyCon (Core.ForAllTy _ t) = findTyCon t
-findTyCon (Core.FuncTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
