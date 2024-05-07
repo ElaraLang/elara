@@ -126,8 +126,8 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                     -- call super constructor
                     emit $ ALoad 0
                     emit $ InvokeSpecial (ClassInfoType typeClassName) "<init>" (MethodDescriptor [] VoidReturn)
-                    emit $ ALoad 0
                     for_ (zip fields [0 ..]) $ \(field, i) -> do
+                        emit $ ALoad 0
                         emit $ ALoad (fromIntegral i + 1)
                         emit $ PutField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
 
