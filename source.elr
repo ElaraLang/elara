@@ -5,11 +5,10 @@ type Option a = Some a | None
 
 let options = [Some 1, None, Some 2]
 
-let processOption opt =
+let printOption opt =
     match opt with 
         None -> print "It's empty"
         Some x -> print ("It's some! " ++ toString x)
 
 let main = 
-    sequence_ (map processOption options)
-
+    sequence_ (map printOption options)
