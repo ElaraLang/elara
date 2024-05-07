@@ -36,7 +36,7 @@ def sum : [Int] -> Int
 let sum ls =
     match ls with
         [] -> 0
-        x:xs -> x + sum xs
+        x::xs -> x + sum xs
 
 def main : IO ()
 let main = print (sum [1, 2, 3])
@@ -50,7 +50,7 @@ def map : (a -> b) -> [a] -> [b]
 let map f ls =
     match ls with
         [] -> []
-        x:xs -> f x : map f xs
+        x::xs -> f x :: map f xs
 
 def main : IO ()
 let main = print (map (\x -> x * 2) [1, 2, 3])
