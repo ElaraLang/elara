@@ -271,7 +271,10 @@ applicableTyApp (Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
     if type_ `structuralEq` substituteType name2 (VariableType{name = name, ..}) type2
         then applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
         else (VariableType{name = name2, ..}) : applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
-applicableTyApp x y = error $ "applicableTyApp: " <> showPrettyUnannotated x <> " & " <> showPrettyUnannotated y
+-- If x is forall a. X a and y is X b, then we need to instantiate x with b
+-- applicableTyApp (Forall{type_ = Custom{typeArguments = [VariableType{..}]}}) Custom{typeArguments = [y]} =
+--     [y]
+applicableTyApp x y = []
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free

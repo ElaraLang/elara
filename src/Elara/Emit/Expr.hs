@@ -407,6 +407,8 @@ generateLitInstructions (Core.Char c) =
         [ LDC (LDCInt (fromEnum c))
         , InvokeStatic (ClassInfoType "java.lang.Character") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Char] (TypeReturn (ObjectFieldType "java.lang.Character")))
         ]
+generateLitInstructions Core.Unit =
+    pure [GetStatic (ClassInfoType "Elara.Unit") "unit" (ObjectFieldType "Elara.Unit")]
 generateLitInstructions other = error $ "Not implemented: " <> showPretty other
 
 generatePrimInstructions :: Monad m => Text -> m [Instruction]

@@ -986,6 +986,7 @@ equateAlternatives p0 p1 = do
  type of A and an updated context Δ.
 -}
 inferPattern ::
+    forall r.
     (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedPattern ->
     Sem r TypedPattern
@@ -1010,21 +1011,19 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
 
         let n = Global $ IgnoreLocation (NTypeName <<$>> ctors)
 
+        -- get the constructor type, which could be a function
         t <- Context.lookup n _Γ `orDie` UnboundConstructor (ctors ^. sourceRegion) n _Γ
 
-        case t of
-            Type.Custom{conName, typeArguments} -> do
-                let process (a, arg) = do
-                        p <- inferPattern arg
+        -- fold over the application with inferPatternApplication
+        -- for example, given Ctor a b where Ctor : a -> b -> Type a b
+        -- we infer it as (Ctor a) b
+        let run t [] acc = pure (t, acc)
+            run t (arg : args) acc = do
+                (pat, t) <- inferPatternApplication t arg
+                run t args (pat : acc)
+        (finalType, pats') <- run t args []
 
-                        subtype (Syntax.patternTypeOf p) a
-
-                        pure p
-
-                args' <- traverse process (zip typeArguments args)
-
-                pure (Pattern (Located location (Syntax.ConstructorPattern ctors args'), t))
-            _ -> throw (NotCustomType (ctors ^. sourceRegion) t)
+        pure (Pattern (Located location (Syntax.ConstructorPattern ctors pats'), finalType))
     Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
         let t = Type.List{location, type_ = a, ..}
 
@@ -1482,6 +1481,10 @@ inferApplication Type.Function{..} e = do
 inferApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
 inferApplication _A _ = throw (NotFunctionType (location _A) _A)
 
+{- | This corresponds to the judgment:
+> Γ ⊢ e ⇐ A • e ⇒⇒ C ⊣ Δ
+… which checks that e has type A and infers the result type C when a function of type A is applied to an input argument e, under input context Γ, producing an updated context Δ.
+-}
 inferPatternApplication ::
     HasCallStack =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
@@ -1495,6 +1498,29 @@ inferPatternApplication Type.Forall{domain = Domain.Type, ..} e = do
 
     let a' = Type.UnsolvedType{location = nameLocation, existential = a}
     inferPatternApplication (Type.substituteType name a' type_) e
+inferPatternApplication Type.Exists{..} e = scoped (Context.Variable domain name) do
+    inferPatternApplication type_ e
+inferPatternApplication Type.UnsolvedType{existential = a, ..} e = do
+    _Γ <- get
+
+    (_ΓR, _ΓL) <- Context.splitOnUnsolvedType a _Γ `orDie` MissingVariable a _Γ
+
+    a1 <- fresh
+    a2 <- fresh
+
+    set (_ΓR <> (Context.SolvedType a (Monotype.Function (Monotype.UnsolvedType a1) (Monotype.UnsolvedType a2)) : Context.UnsolvedType a1 : Context.UnsolvedType a2 : _ΓL))
+
+    e' <- checkPattern e Type.UnsolvedType{existential = a1, ..}
+
+    let t = Type.UnsolvedType{existential = a2, ..}
+
+    pure (e', t)
+inferPatternApplication Type.Function{..} e = do
+    e' <- checkPattern e input
+
+    pure (e', output)
+inferPatternApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
+inferPatternApplication _A _ = throw (NotFunctionType (location _A) _A)
 
 -- Helper functions for displaying errors
 
