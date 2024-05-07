@@ -1422,7 +1422,6 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     check' Syntax.UnitPattern Type.Scalar{scalar = Monotype.Unit} = pure $ Pattern (Located exprLoc Syntax.UnitPattern, t)
     -- Sub
     check' _ _B = do
-        debugPretty ("check'" :: Text, pattern_, _B)
         _A@(Syntax.Pattern (_, _At)) <- inferPattern pattern_
 
         _Θ <- get

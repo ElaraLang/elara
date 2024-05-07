@@ -147,12 +147,9 @@ inferDeclaration (Declaration ld) = do
                             tvs
                             (foldr (Infer.Function sr) adtWithTvs t')
                 push (Annotation (mkGlobal' ctorName) ctorType)
-                debugPretty ("Added annotation for " <> show ctorName <> " with type " <> showPretty ctorType)
 
                 pure (ctorName, t')
         ctors' <- traverse inferCtor ctors
-
-        debugPretty ("Inferred ADT " <> pretty (declName ^. unlocated) <> " with constructors " <> pretty ctors')
 
         pure $ TypeDeclaration tvs (Located sr (ADT ctors')) (coerceTypeDeclAnnotations ann)
 
