@@ -137,6 +137,12 @@ inferDeclaration (Declaration ld) = do
         push (Annotation (mkGlobal' declName) t')
         pure $ TypeDeclaration tvs (Located sr (Alias t')) (coerceTypeDeclAnnotations ann)
     inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
+        -- add the custom annotation to allow recursive types
+        push
+            ( Annotation
+                (mkGlobal' declName)
+                (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) (createTypeVar <$> tvs))
+            )
         let tvs' = map createTypeVar tvs
         let adtWithTvs = Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) tvs'
 
