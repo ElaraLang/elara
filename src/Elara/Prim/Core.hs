@@ -45,7 +45,7 @@ boolCon :: TyCon
 boolCon = TyCon (mkPrimQual "Bool") Prim
 
 listCon :: TyCon
-listCon = TyCon (mkPrimQual "[]") Prim
+listCon = TyCon (mkPrimQual "List") Prim
 
 intCon :: TyCon
 intCon = TyCon (mkPrimQual "Int") Prim

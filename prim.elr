@@ -1,6 +1,8 @@
 module Elara.Prim
 
 
+type List a = Cons a (List a) | Nil
+
 def undefined : a	
 let undefined = elaraPrimitive "undefined"	
 

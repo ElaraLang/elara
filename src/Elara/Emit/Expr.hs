@@ -76,6 +76,27 @@ generateInstructions' (App ((Var (Normal (Id (Global' v) _ _)))) (Lit (String pr
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _ _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
+generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t (Just dc)))) tApps = do
+    -- data cons always compile to methods
+    Log.debug $ "Generating instructions for data constructor: " <> showPretty v
+    -- no args function (eg undefined)
+    invokeStatic <- case approximateTypeAndNameOf v of
+        Right (fName, fType) -> invokeStaticVars fName fType
+        Left _ -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+
+    emit
+        ( uncurry3 InvokeStatic invokeStatic
+        )
+    params <- ask
+    case tApps of
+        [] -> pass
+        [tApp]
+            | params.checkCasts -> do
+                let ft = fieldTypeToClassInfoType (generateFieldType tApp)
+                emit $ CheckCast ft
+                Log.debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
+            | otherwise -> Log.debug $ "Skipping checkcast for " <> showPretty v
+        _ -> error "Multiple tApps for a single value... curious..."
 generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tApps = do
     Log.debug $ "Generating instructions for global variable: " <> showPretty v
     if typeIsValue t

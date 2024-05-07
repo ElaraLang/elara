@@ -87,7 +87,5 @@ typeIsValue :: Type -> Bool
 typeIsValue (ForAllTy _ x) = typeIsValue x
 typeIsValue (AppTy (ConTy con) _) | con == ioCon = True
 typeIsValue (AppTy (ConTy con) _) | con == listCon = True
-typeIsValue (ConTy c) | c == stringCon = True
-typeIsValue (ConTy c) | c == intCon = True
-typeIsValue (ConTy c) | c == boolCon = True
+typeIsValue x | Just (TyCon y _) <- findTyCon x = True
 typeIsValue _ = False

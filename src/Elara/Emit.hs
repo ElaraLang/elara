@@ -152,6 +152,7 @@ addDeclaration declBody = case declBody of
         Log.debug $ "Emitted non-recursive declaration " <> showPretty name
     CoreType decl -> do
         generateADTClasses decl
+    _ -> undefined
 
 isMainModule :: CoreModule -> Bool
 isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
