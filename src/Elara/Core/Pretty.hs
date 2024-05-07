@@ -114,7 +114,6 @@ prettyTypeVariables = \case
 
 prettyTy :: Type -> Doc AnsiStyle
 prettyTy (FuncTy t1 t2) = prettyTy1 t1 <+> "->" <+> prettyTy t2
-prettyTy (AppTy (ConTy l) t2) | l == listCon = brackets (prettyTy2 t2)
 prettyTy (ForAllTy tv t) = "∀" <+> prettyTypeVariable False tv <> "." <+> prettyTy t
 prettyTy other = prettyTy1 other
 
