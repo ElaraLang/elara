@@ -11,7 +11,7 @@ let options = [Some 1, None, Some 2]
 let processOption opt =
     match opt with 
         None -> print "It's empty"
-        Some x -> print "It's some!" *> print x
+        Some x -> print ("It's some! " ++ toString x)
 
 let main = 
     sequence_ (map processOption options)
