@@ -19,6 +19,7 @@ import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
@@ -128,9 +129,18 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
-    putTextLn ("Successfully compiled " <> show (length classes) <> " classes in " <> fromString (printf "%.2f" t) <> "ms!")
+    printPretty
+        ( Style.varName "Successfully" <+> "compiled "
+            <> Style.punctuation (pretty (length classes))
+            <> " classes in "
+            <> Style.punctuation
+                ( fromString (printf "%.2f" t)
+                    <> "ms!"
+                )
+        )
 
     when run $ liftIO $ do
+        printPretty (Style.varName "Running code...")
         -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
         let process =
                 if os == "mingw32"
