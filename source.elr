@@ -1,10 +1,7 @@
 import Prelude 
 import Elara.Prim
 
-type Wrapper a = Box a
-
 type Option a = Some a | None
-
 
 let options = [Some 1, None, Some 2]
 
