@@ -123,11 +123,10 @@ instance (Show a, Show (Key a)) => Show (TopologicalGraph a) where
             assocs' = assocs nodes
          in Show.show (firstF mnFromVertex assocs')
 
-instance Pretty (Key a) => Pretty (TopologicalGraph a) where
+instance (Pretty (Key a), Ord (Key a)) => Pretty (TopologicalGraph a) where
     pretty g =
-        let gArr = g ^. moduleGraph
+        let gArr = g ^. moduleGraph % to vertices
             nodeFromVertex' = g ^. nodeFromVertex
-            mnFromVertex = view (to nodeFromVertex' % _2)
-            nodes = (mnFromVertex <<$>> gArr)
-            assocs' = assocs nodes
-         in pretty (firstF mnFromVertex assocs')
+            keyFromVertex = view (to nodeFromVertex' % _2)
+            nodes = nubOrd (keyFromVertex <$> gArr)
+         in pretty (map (\x -> (x, nubOrd $ dependenciesOf x g)) nodes)

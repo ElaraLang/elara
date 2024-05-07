@@ -113,8 +113,16 @@ instance HasDependencies ShuntedDeclaration where
                 toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
             _ -> []
     dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-        Generic.Value e NoFieldValue t _ -> valueDependencies e <> patternDependencies e <> (maybeToList t >>= typeDependencies)
-        Generic.TypeDeclaration{} -> []
+        Generic.Value e NoFieldValue t _ ->
+            valueDependencies e
+                <> patternDependencies e
+                <> (maybeToList t >>= typeDependencies)
+        Generic.TypeDeclaration tvs x _ ->
+            case x of
+                Located _ (Generic.ADT ctors) ->
+                    concatMapOf (each % _2 % each) typeDependencies ctors
+                Located _ (Generic.Alias t) ->
+                    typeDependencies t
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =

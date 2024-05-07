@@ -33,6 +33,7 @@ import Data.Function ((&))
 
 import Data.Data (Data)
 import Optics (
+    A_Fold,
     AffineTraversal,
     AffineTraversal',
     At (..),
@@ -40,6 +41,7 @@ import Optics (
     Fold,
     GPlate (..),
     Getter,
+    Is,
     Iso,
     Iso',
     Ixed (..),
@@ -133,5 +135,5 @@ cosmosOnOf d p = d % cosmosOf p
 transform :: Plated a => (a -> a) -> a -> a
 transform = transformOf plate
 
-concatMapOf :: Fold s a -> (a -> [b]) -> s -> [b]
+concatMapOf :: Is k A_Fold => Optic' k is a1 a2 -> (a2 -> [b]) -> a1 -> [b]
 concatMapOf l f = toListOf l >>> concatMap f
