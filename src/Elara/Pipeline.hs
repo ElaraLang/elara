@@ -34,5 +34,5 @@ finalisePipeline =
         . runDiagnosticWriter
         . runMaybe
         . interpretTimeGhc
-        . interpretLogStdoutLevel (Just Debug)
+        . interpretLogStdoutLevel (Just Info)
         . subsume_
