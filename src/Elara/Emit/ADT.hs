@@ -148,7 +148,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                         -- toString it
                         emit $ InvokeVirtual (ClassInfoType "java/lang/Object") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
                         -- append it to the StringBuilder
-                        emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [generateFieldType field] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
+                        emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
                     emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
 
                 -- generate the match impl
