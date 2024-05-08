@@ -205,7 +205,7 @@ generateCaseInstructions
         , listCon2' == listCon =
             do
                 generateInstructions scrutinee
-                emit $ CheckCast (ClassInfoType "Elara.EList")
+                emit $ CheckCast (ClassInfoType "Elara.Prim.List")
                 -- store the scrutinee into the as, if it exists
 
                 as' <- for as $ \as' -> do
@@ -220,7 +220,7 @@ generateCaseInstructions
                 ifEmptyLabel <- newLabel
                 endLabel <- newLabel
 
-                emit $ InvokeVirtual (ClassInfoType "Elara.EList") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
+                emit $ InvokeVirtual (ClassInfoType "Elara.Prim.List") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
                 emit $ IfNe ifEmptyLabel
                 -- store the cons binds into locals
                 referenceScrutinee
@@ -489,11 +489,11 @@ generatePrimInstructions "cons" =
     pure
         [ ALoad 0
         , ALoad 1
-        , InvokeStatic (ClassInfoType "Elara.EList") "Cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "Elara.EList"] (TypeReturn (ObjectFieldType "Elara.EList")))
+        , InvokeStatic (ClassInfoType "Elara.Prim.List") "_Cons" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "Elara.Prim.List"] (TypeReturn (ObjectFieldType "Elara.Prim.List")))
         ]
 generatePrimInstructions "empty" =
     pure
-        [ InvokeStatic (ClassInfoType "Elara.EList") "Empty" (MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.EList")))
+        [ InvokeStatic (ClassInfoType "Elara.Prim.List") "_Nil" (MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Prim.List")))
         ]
 generatePrimInstructions "listToString" =
     pure

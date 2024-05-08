@@ -269,4 +269,5 @@ instance ReportableError TypeInferenceError where
                 (vsep ["Type error: The following type is not a custom type:", pretty a])
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 []
+    report (KindInferError e) = report e
     report e = writeReport $ Err Nothing (showColored e) [] []

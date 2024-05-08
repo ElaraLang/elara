@@ -26,8 +26,11 @@ import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Region (Located, unlocated)
 import Elara.AST.Shunted
 import Elara.Data.Kind
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueGen, getUniqueId, makeUniqueId)
+import Elara.Error
 import Elara.Prim (primKindCheckContext)
+import Error.Diagnose
 import Optics (traverseOf_)
 import Polysemy (Member, Sem)
 import Polysemy.Error
@@ -45,15 +48,44 @@ initialInferState =
         }
 
 data KindInferError
-    = UnknownKind (Qualified TypeName) (Map (Qualified TypeName) ElaraKind)
+    = HasCallStack => UnknownKind (Qualified TypeName) (Map (Qualified TypeName) ElaraKind)
     | CannotUnify ElaraKind ElaraKind
     | NotFunctionKind ElaraKind
-    deriving (Eq, Show)
+
+deriving instance Show KindInferError
+
+instance ReportableError KindInferError where
+    report (UnknownKind name kinds) =
+        writeReport $
+            Err
+                (Just "Unknown Kind")
+                ( vsep
+                    [ "Unknown kind" <+> pretty name
+                    , "Known kinds:" <+> pretty (Map.keysSet kinds)
+                    , pretty $ prettyCallStack callStack
+                    ]
+                )
+                []
+                []
+    report (CannotUnify a b) =
+        writeReport $
+            Err
+                (Just "Cannot Unify Kinds")
+                (vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b])
+                []
+                []
+    report (NotFunctionKind k) =
+        writeReport $
+            Err
+                (Just "Not Function Kind")
+                (vsep ["Expected a function kind, got" <+> pretty k])
+                []
+                []
 
 freshKindVar :: Member UniqueGen r => Sem r ElaraKind
 freshKindVar = VarKind <$> makeUniqueId
 
-lookupKind :: (Member (State InferState) r, Member (Error KindInferError) r) => Qualified TypeName -> Sem r ElaraKind
+lookupKind :: (Member (State InferState) r, Member (Error KindInferError) r, HasCallStack) => Qualified TypeName -> Sem r ElaraKind
 lookupKind name = do
     InferState{..} <- get
     case Map.lookup name kinds of
@@ -61,7 +93,7 @@ lookupKind name = do
         Nothing -> throw (UnknownKind name kinds)
 
 inferKind ::
-    (Member (State InferState) r, Member (Error KindInferError) r) =>
+    (Member (State InferState) r, Member (Error KindInferError) r, HasCallStack) =>
     Qualified TypeName ->
     [Located (Unique LowerAlphaName)] ->
     ShuntedTypeDeclaration ->
@@ -82,7 +114,7 @@ inferKind tName args t = do
             }
     pure funcKind
 
-inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r) => ShuntedType' -> Sem r ElaraKind
+inferTypeKind :: (Member (State InferState) r, Member (Error KindInferError) r, HasCallStack) => ShuntedType' -> Sem r ElaraKind
 inferTypeKind UnitType = pure TypeKind
 inferTypeKind (TypeVar v) = pure (VarKind (getUniqueId (v ^. unlocated))) -- no higher kinded types yet
 inferTypeKind (UserDefinedType name) = lookupKind (name ^. unlocated)

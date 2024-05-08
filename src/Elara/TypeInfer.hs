@@ -13,7 +13,7 @@ import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name, NameLike (nameText), Qualified)
+import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..))
 import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -25,8 +25,7 @@ import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (VarRef' (..), mkGlobal')
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Kind.Infer (InferState, inferTypeKind, initialInferState, unifyKinds)
-import Elara.Data.Pretty
+import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState, unifyKinds)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -132,17 +131,20 @@ inferDeclaration (Declaration ld) = do
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped % _2))
 
         pure $ Value completed NoFieldValue NoFieldValue (coerceValueDeclAnnotations ann)
-    inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (Alias t)) ann) = do
+    inferDeclarationBody' (Located _ (Qualified (NVarName _) _)) _ = error "inferDeclarationBody' NVarName"
+    inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl@(Alias t)) ann) = do
         t' <- astTypeToInferType t
+        mapError KindInferError (inferKind (tn <$ q) tvs decl)
         push (Annotation (mkGlobal' declName) t')
         pure $ TypeDeclaration tvs (Located sr (Alias t')) (coerceTypeDeclAnnotations ann)
-    inferDeclarationBody' declName (TypeDeclaration tvs (Located sr (ADT ctors)) ann) = do
+    inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl@(ADT ctors)) ann) = do
         -- add the custom annotation to allow recursive types
         push
             ( Annotation
                 (mkGlobal' declName)
                 (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) (createTypeVar <$> tvs))
             )
+        mapError KindInferError (inferKind (tn <$ q) tvs decl)
         let tvs' = map createTypeVar tvs
         let adtWithTvs = Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) tvs'
 
@@ -260,20 +262,19 @@ completeExpression ctx (Expr (y', t)) = do
 
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    unify unsolved solved = do
-        case (Infer.stripForAll unsolved, Infer.stripForAll solved) of
-            (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
-                subst unsolvedInput solvedInput
-                unify unsolvedInput solvedInput
-                subst unsolvedOutput solvedOutput
-                unify unsolvedOutput solvedOutput
-            (Infer.VariableType{}, out) -> subst unsolved out
-            (Infer.UnsolvedType{}, out) -> subst unsolved out
-            (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
-            (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
-            (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
-            (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
-            other -> error (showPretty other)
+    unify unsolved solved = case (Infer.stripForAll unsolved, Infer.stripForAll solved) of
+        (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
+            subst unsolvedInput solvedInput
+            unify unsolvedInput solvedInput
+            subst unsolvedOutput solvedOutput
+            unify unsolvedOutput solvedOutput
+        (Infer.VariableType{}, out) -> subst unsolved out
+        (Infer.UnsolvedType{}, out) -> subst unsolved out
+        (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
+        (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
+        (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
+        (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
+        other -> error (showPretty other)
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
     subst Infer.UnsolvedType{existential} solved = do
