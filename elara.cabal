@@ -39,6 +39,7 @@ library
       Elara.AST.Generic.Pattern
       Elara.AST.Generic.Types
       Elara.AST.Generic.Utils
+      Elara.AST.Kinded
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Pretty

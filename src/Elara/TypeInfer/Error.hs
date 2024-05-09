@@ -4,6 +4,7 @@ module Elara.TypeInfer.Error where
 
 import Data.Containers.ListUtils (nubOrd)
 import Data.Map qualified as Map
+import Elara.AST.Kinded
 import Elara.AST.Name (Name, Qualified)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
 import Elara.AST.Shunted
@@ -145,7 +146,7 @@ data TypeInferenceError where
         TypeInferenceError
     UserDefinedTypeNotInContext ::
         SourceRegion ->
-        ShuntedType ->
+        KindedType ->
         (Context SourceRegion) ->
         TypeInferenceError
     KindInferError :: KindInferError -> TypeInferenceError

@@ -216,12 +216,12 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
 
             pure (JustLet (decl ^. field' @"name" % unlocated :: Name) wholeDeclRegion body (Just ann))
         genPartial'' (ValueTypeDef ty) = do
-            ty' <- traverseOf (_Unwrapped % unlocated) desugarType ty
+            ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
             pure (JustDef (decl ^. field' @"name" % unlocated) wholeDeclRegion ty' Nothing)
         genPartial'' (TypeDeclaration vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
-                traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % unlocated) desugarType t
-                traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each % _Unwrapped % unlocated) desugarType constructors
+                traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % _1 % unlocated) desugarType t
+                traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each % _Unwrapped % _1 % unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
             let ann = coerceTypeDeclAnnotations @Frontend @Desugared typeAnnotations
             let decl' = TypeDeclaration vars typeDecl' ann
@@ -263,7 +263,7 @@ desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desug
 
         pure (foldLambda (pats' ^. unlocated) e' ^. _Unwrapped % _1 % unlocated) -- Somewhat cursed but it works
     desugarExpr' (FunctionCall e1 e2) = liftA2 FunctionCall (desugarExpr e1) (desugarExpr e2)
-    desugarExpr' (TypeApplication e1 e2) = liftA2 TypeApplication (desugarExpr e1) (traverseOf (_Unwrapped % unlocated) desugarType e2)
+    desugarExpr' (TypeApplication e1 e2) = liftA2 TypeApplication (desugarExpr e1) (traverseOf (_Unwrapped % _1 % unlocated) desugarType e2)
     desugarExpr' (If a b c) = liftA3 If (desugarExpr a) (desugarExpr b) (desugarExpr c)
     desugarExpr' (BinaryOperator (o, a, b)) = liftA3 (curry3 BinaryOperator) (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
     desugarExpr' (List e) = List <$> traverse desugarExpr e
@@ -296,7 +296,7 @@ desugarPattern (Pattern lp) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated desugarPattern')
-            (traverse (traverseOf (_Unwrapped % unlocated) desugarType))
+            (traverse (traverseOf (_Unwrapped % _1 % unlocated) desugarType))
             lp
   where
     desugarPattern' :: FrontendPattern' -> Desugar DesugaredPattern'

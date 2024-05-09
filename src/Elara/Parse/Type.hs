@@ -5,10 +5,11 @@ import Data.Generics.Wrapped
 import Data.List.NonEmpty ((<|))
 import Elara.AST.Frontend (FrontendType, FrontendType')
 import Elara.AST.Generic (Type (..), Type' (..))
+import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Name (LowerAlphaName)
-import Elara.AST.Region (Located (..))
+import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (liftedBinary, sepBy1')
+import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
@@ -30,13 +31,20 @@ typeNotApplication =
         ]
 
 locatedType :: Parser FrontendType' -> Parser FrontendType
-locatedType = (Type <$>) . located
+locatedType = (Type . (,NoFieldValue) <$>) . located
 
 constructorApplication :: Parser (FrontendType -> FrontendType -> FrontendType)
-constructorApplication = liftedBinary pass (const TypeConstructorApplication) _Unwrapped
+constructorApplication = liftedBinaryType pass (const TypeConstructorApplication)
 
 functionType :: Parser (FrontendType -> FrontendType -> FrontendType)
-functionType = liftedBinary (token_ TokenRightArrow) (const FunctionType) _Unwrapped
+functionType = liftedBinaryType (token_ TokenRightArrow) (const FunctionType)
+
+liftedBinaryType op f = do
+    op' <- op
+    let create l r =
+            let region = enclosingRegion' (l ^. _Unwrapped % _1 % sourceRegion) (r ^. _Unwrapped % _1 % sourceRegion)
+             in Located region (f op' l r) ^. to (Type . (,NoFieldValue))
+    pure create
 
 typeTerm :: Parser FrontendType
 typeTerm =

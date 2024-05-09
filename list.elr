@@ -1,0 +1,8 @@
+module List
+import Elara.Prim
+
+def isEmpty : [a] -> Bool
+let isEmpty l =
+    match l with
+        [] -> True
+        (x::xs) -> False

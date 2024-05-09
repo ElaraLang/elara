@@ -34,7 +34,7 @@ defDec modName = fmapLocated Declaration $ do
     token_ TokenColon
     typeAnnotation <- type'
 
-    let annotationLocation = view sourceRegion name <> view (_Unwrapped % sourceRegion) typeAnnotation
+    let annotationLocation = view sourceRegion name <> view (_Unwrapped % _1 % sourceRegion) typeAnnotation
     let declBody = Located annotationLocation $ ValueTypeDef typeAnnotation
     pure
         ( Declaration'
@@ -62,7 +62,7 @@ typeDeclaration modName = fmapLocated Declaration $ do
     token_ TokenEquals
     body <- located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
-        annotations = TypeDeclAnnotations Nothing
+        annotations = TypeDeclAnnotations Nothing NoFieldValue
         value = DeclarationBody $ Located valueLocation (TypeDeclaration args body annotations)
     pure (Declaration' modName (NTypeName <$> name) value)
 

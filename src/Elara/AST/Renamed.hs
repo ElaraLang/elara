@@ -47,6 +47,7 @@ type instance Select "TypeApplication" 'Renamed = RenamedType
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Renamed = NoFieldValue
+type instance Select "TypeKind" 'Renamed = NoFieldValue
 
 type instance Select "ValueType" 'Renamed = Maybe RenamedType
 
@@ -59,6 +60,7 @@ type instance Select "ValueDeclAnnotations" 'Renamed = RenamedValueDeclAnnotatio
 type instance Select "TypeDeclAnnotations" 'Renamed = RenamedTypeDeclAnnotations
 
 type instance Select "InfixDecl" 'Renamed = DataConCantHappen
+type instance Select "KindAnnotation" 'Renamed = NoFieldValue
 
 newtype RenamedValueDeclAnnotations = RenamedValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration Renamed)

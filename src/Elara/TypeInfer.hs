@@ -12,6 +12,7 @@ import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
+import Elara.AST.Kinded
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..))
 import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
@@ -25,7 +26,7 @@ import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (VarRef' (..), mkGlobal')
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState, unifyKinds)
+import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -108,9 +109,10 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType) ann) = do
         maybeExpected' <- case maybeExpected of
             Just expected' -> do
-                kind <- mapError KindInferError (inferTypeKind (expected' ^. _Unwrapped % unlocated))
-                mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
-                expectedPoly <- astTypeToInferPolyType expected'
+                debugPretty expected'
+                expected' <- mapError KindInferError (inferTypeKind expected')
+                -- mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
+                (expectedPoly, expectedKind) <- astTypeToInferPolyType expected'
                 push (Annotation (mkGlobal' declName) expectedPoly)
                 pure expectedPoly
             Nothing -> do
@@ -132,34 +134,30 @@ inferDeclaration (Declaration ld) = do
 
         pure $ Value completed NoFieldValue NoFieldValue (coerceValueDeclAnnotations ann)
     inferDeclarationBody' (Located _ (Qualified (NVarName _) _)) _ = error "inferDeclarationBody' NVarName"
-    inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl@(Alias t)) ann) = do
-        t' <- astTypeToInferType t
-        mapError KindInferError (inferKind (tn <$ q) tvs decl)
-        push (Annotation (mkGlobal' declName) t')
-        pure $ TypeDeclaration tvs (Located sr (Alias t')) (coerceTypeDeclAnnotations ann)
-    inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl@(ADT ctors)) ann) = do
-        -- add the custom annotation to allow recursive types
-        push
-            ( Annotation
-                (mkGlobal' declName)
-                (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) (createTypeVar <$> tvs))
-            )
-        mapError KindInferError (inferKind (tn <$ q) tvs decl)
-        let tvs' = map createTypeVar tvs
-        let adtWithTvs = Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) tvs'
+    inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl) ann) = do
+        (kind, decl') <- mapError KindInferError (inferKind (tn <$ q) tvs decl)
+        case decl' of
+            Alias t -> do
+                (t', k) <- astTypeToInferType t
+                push (Annotation (mkGlobal' declName) t')
+                let ann' = TypeDeclAnnotations{infixTypeDecl = coerceInfixDeclaration <$> ann.infixTypeDecl, kindAnn = k}
+                pure $ TypeDeclaration tvs (Located sr (Alias (t', kind))) ann'
+            ADT ctors' -> do
+                let tvs' = map createTypeVar tvs
+                let adtWithTvs = Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) tvs'
 
-        let inferCtor (ctorName, t :: [ShuntedType]) = do
-                t' <- traverse astTypeToInferType t
-                let ctorType =
-                        universallyQuantify
-                            tvs
-                            (foldr (Infer.Function sr) adtWithTvs t')
-                push (Annotation (mkGlobal' ctorName) ctorType)
+                let inferCtor (ctorName, t :: [KindedType]) = do
+                        t' <- traverse astTypeToInferType t
+                        let ctorType =
+                                universallyQuantify
+                                    tvs
+                                    (foldr (Infer.Function sr . fst) adtWithTvs t')
+                        push (Annotation (mkGlobal' ctorName) ctorType)
 
-                pure (ctorName, t')
-        ctors' <- traverse inferCtor ctors
-
-        pure $ TypeDeclaration tvs (Located sr (ADT ctors')) (coerceTypeDeclAnnotations ann)
+                        pure (ctorName, t')
+                ctors' <- traverse inferCtor ctors'
+                let ann' = TypeDeclAnnotations{infixTypeDecl = coerceInfixDeclaration <$> ann.infixTypeDecl, kindAnn = kind}
+                pure $ TypeDeclaration tvs (Located sr (ADT ctors')) ann'
 
 inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e
@@ -170,12 +168,12 @@ inferExpression e (Just expectedType) = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
-freeTypeVars :: ShuntedType -> [Located (Unique LowerAlphaName)]
+freeTypeVars :: KindedType -> [Located (Unique LowerAlphaName)]
 freeTypeVars =
     nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
-        . concatMapOf (cosmosOnOf (_Unwrapped % unlocated) gplate) names
+        . concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
   where
-    names :: ShuntedType' -> [Located (Unique LowerAlphaName)]
+    names :: KindedType' -> [Located (Unique LowerAlphaName)]
     names = \case
         TypeVar l -> [l]
         _ -> [] -- cosmos takes care of the recursion :D
@@ -186,28 +184,33 @@ universallyQuantify (Located sr u : us) t =
     Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 -- | Like 'astTypeToInferType' but universally quantifies over the free type variables
-astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
-astTypeToInferPolyType l = universallyQuantify (freeTypeVars l) <$> astTypeToInferType l
+astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
+astTypeToInferPolyType l = first (universallyQuantify (freeTypeVars l)) <$> astTypeToInferType l
 
-astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => ShuntedType -> Sem r (Infer.Type SourceRegion)
-astTypeToInferType lt@(Generic.Type (Located sr ut)) = astTypeToInferType' ut
+astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
+astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType' ut
   where
-    astTypeToInferType' :: ShuntedType' -> Sem r (Infer.Type SourceRegion)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated % to (fmap (Just . nameText))))
-    astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit)
+    astTypeToInferType' :: KindedType' -> Sem r (Infer.Type SourceRegion, ElaraKind)
+    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated % to (fmap (Just . nameText))), kind)
+    astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit, kind)
     astTypeToInferType' (UserDefinedType n) = do
         ctx <- Infer.get
         case Context.lookup (mkGlobal' n) ctx of
-            Just ty -> pure ty
+            Just ty -> pure (ty, kind)
             Nothing -> throw (UserDefinedTypeNotInContext sr lt ctx)
-    astTypeToInferType' (FunctionType a b) = Infer.Function sr <$> astTypeToInferType a <*> astTypeToInferType b
-    astTypeToInferType' (ListType ts) = Infer.List sr <$> astTypeToInferType ts
+    astTypeToInferType' (FunctionType a b) = do
+        (a', _) <- astTypeToInferType a
+        (b', _) <- astTypeToInferType b
+        pure (Infer.Function sr a' b', kind)
+    astTypeToInferType' (ListType ts) = do
+        (ts', _) <- astTypeToInferType ts
+        pure (Infer.List sr ts', kind)
     astTypeToInferType' (TypeConstructorApplication ctor arg) = do
-        ctor' <- astTypeToInferType ctor
-        arg' <- astTypeToInferType arg
+        (ctor', _) <- astTypeToInferType ctor
+        (arg', _) <- astTypeToInferType arg
 
         case ctor' of
-            Infer.Custom{conName = ctorName, ..} -> pure $ Infer.Custom location ctorName (typeArguments ++ [arg'])
+            Infer.Custom{conName = ctorName, ..} -> pure (Infer.Custom location ctorName (typeArguments ++ [arg']), kind)
             -- Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
             other -> error (showColored other)
     astTypeToInferType' other = error (showColored other)

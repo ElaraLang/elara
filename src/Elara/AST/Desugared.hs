@@ -63,12 +63,14 @@ type instance Select "ValueType" 'Desugared = Maybe DesugaredType
 type instance Select "ValueTypeDef" 'Desugared = DataConCantHappen
 
 type instance Select "InfixDecl" 'Desugared = DataConCantHappen
+type instance Select "KindAnnotation" 'Desugared = NoFieldValue
 
 type instance Select "Alias" 'Desugared = DesugaredType
 type instance Select "ADTParam" 'Desugared = DesugaredType
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Desugared = LowerAlphaName
+type instance Select "TypeKind" 'Desugared = NoFieldValue
 
 type instance Select "UserDefinedType" 'Desugared = MaybeQualified TypeName
 

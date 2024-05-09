@@ -4,5 +4,12 @@ import Elara.Prim
 type Option a = Some a | None
 
 let l = ( Cons 1 (Cons 2 (Cons 3 Nil)))
+
+def map : (a -> b) -> List a -> List b
+let map f l = 
+    match l with
+        Nil -> Nil
+        Cons x xs -> Cons (f x) (map f xs)
+
 let main = 
-    print l
+    print (map (\x -> x + 1) l)

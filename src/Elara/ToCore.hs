@@ -134,11 +134,11 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 v' <- toCore v
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
-            TypeDeclaration tvs (Located _ (ADT ctors)) _ -> do
+            TypeDeclaration tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
                 registerTyCon tyCon
                 ctors' <- for ctors $ \(Located _ n, t) -> do
-                    t' <- traverse typeToCore t
+                    t' <- traverse (typeToCore . fst) t
                     let ctorType =
                             foldr
                                 (Core.ForAllTy . typedTvToCoreTv)
@@ -151,12 +151,10 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                     pure (nameText <$> n, ctorType, tyCon)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
-                let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
                 pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
-            TypeDeclaration tvs (Located _ (Alias t)) _ -> do
+            TypeDeclaration tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 t' <- typeToCore t
                 let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs
-                let kind = foldr (FunctionKind . const TypeKind) TypeKind tvs
                 pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
     pure $ CoreModule name (catMaybes decls)
 

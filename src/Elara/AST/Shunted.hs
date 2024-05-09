@@ -64,6 +64,7 @@ type instance Select "ValueType" 'Shunted = Maybe ShuntedType
 type instance Select "ValueTypeDef" 'Shunted = DataConCantHappen
 
 type instance Select "InfixDecl" 'Shunted = DataConCantHappen
+type instance Select "KindAnnotation" 'Shunted = NoFieldValue
 
 type instance Select "Alias" 'Shunted = ShuntedType
 type instance Select "ADTParam" 'Shunted = ShuntedType
@@ -72,6 +73,7 @@ type instance Select "ADTParam" 'Shunted = ShuntedType
 type instance Select "DeclarationName" 'Shunted = Qualified Name
 
 -- Selections for 'Type'
+type instance Select "TypeKind" 'Shunted = NoFieldValue
 type instance Select "TypeVar" 'Shunted = Unique LowerAlphaName
 
 type instance Select "UserDefinedType" 'Shunted = Qualified TypeName
@@ -148,7 +150,7 @@ patternDependencies =
 
 typeDependencies :: ShuntedType -> [Qualified Name]
 typeDependencies =
-    concatMapOf (cosmosOnOf (_Unwrapped % unlocated) gplate) names
+    concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
   where
     names :: ShuntedType' -> [Qualified Name]
     names (UserDefinedType (Located _ e)) = [NTypeName <$> e]

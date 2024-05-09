@@ -55,6 +55,7 @@ type instance Select "ADTParam" 'Frontend = FrontendType
 
 type instance Select "ValueDeclAnnotations" 'Frontend = NoFieldValue
 type instance Select "TypeDeclAnnotations" 'Frontend = NoFieldValue
+type instance Select "KindAnnotation" 'Frontend = NoFieldValue
 
 type instance Select "InfixDecl" 'Frontend = InfixDeclaration 'Frontend
 
@@ -63,6 +64,7 @@ type instance Select "DeclarationName" 'Frontend = Name
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Frontend = LowerAlphaName
+type instance Select "TypeKind" 'Frontend = NoFieldValue
 
 type instance Select "UserDefinedType" 'Frontend = MaybeQualified TypeName
 

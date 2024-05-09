@@ -33,6 +33,7 @@ instance
     , (DataConAs (Select "BinaryOperator" ast2) (BinaryOperator ast2, Expr ast2, Expr ast2))
     , (DataConAs (Select "InParens" ast1) (Expr ast1))
     , (DataConAs (Select "InParens" ast2) (Expr ast2))
+    , StripLocation (Select "TypeKind" ast1) (Select "TypeKind" ast2)
     ) =>
     StripLocation (Expr ast1) (Expr ast2)
     where
@@ -127,6 +128,7 @@ instance
             (Select "ConPat" ast2)
       )
     , (StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2))
+    , StripLocation (Select "TypeKind" ast1) (Select "TypeKind" ast2)
     ) =>
     StripLocation (Pattern ast1) (Pattern ast2)
     where
@@ -195,9 +197,9 @@ instance
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( (ASTLocate' ast1 ~ Located)
     , ASTLocate' ast2 ~ Unlocated
-    , ( StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2)
-      , StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
-      )
+    , StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2)
+    , StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
+    , StripLocation (Select "TypeKind" ast1) (Select "TypeKind" ast2)
     ) =>
     StripLocation (Type ast1) (Type ast2)
     where
@@ -207,15 +209,15 @@ stripTypeLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( (ASTLocate' ast1 ~ Located)
     , ASTLocate' ast2 ~ Unlocated
-    , ( StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2)
-      , StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
-      )
+    , StripLocation (CleanupLocated (Located (Select "TypeVar" ast1))) (Select "TypeVar" ast2)
+    , StripLocation (CleanupLocated (Located (Select "UserDefinedType" ast1))) (Select "UserDefinedType" ast2)
+    , StripLocation (Select "TypeKind" ast1) (Select "TypeKind" ast2)
     ) =>
     Type ast1 ->
     Type ast2
-stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1))) =
+stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1), kind)) =
     let t' = fmapUnlocated @LocatedAST @ast1 stripTypeLocation' t
-     in Type (stripLocation @(ASTLocate ast1 (Type' ast2)) @(Type' ast2) t')
+     in Type (stripLocation @(ASTLocate ast1 (Type' ast2)) @(Type' ast2) t', stripLocation kind)
   where
     stripTypeLocation' :: Type' ast1 -> Type' ast2
     stripTypeLocation' (TypeVar name) = TypeVar (stripLocation name)

@@ -314,7 +314,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
 
     renameDeclarationBody' :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
     renameDeclarationBody' (Value val _ ty ann) = scoped $ do
-        ty' <- traverse (traverseOf (_Unwrapped % unlocated) (renameType True)) ty
+        ty' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType True)) ty
         val' <- renameExpr val
         let ann' = coerceValueDeclAnnotations ann
         pure $ Value val' NoFieldValue ty' ann'
@@ -334,12 +334,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
 
 renameTypeDeclaration :: Rename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do
-    t' <- traverseOf (_Unwrapped % unlocated) (renameType False) t
+    t' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) t
     pure $ Alias t'
 renameTypeDeclaration thisMod (ADT constructors) = do
     constructors' <-
         traverse
-            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % unlocated) (renameType False) y)
+            (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % _1 % unlocated) (renameType False) y)
             constructors
     pure $ ADT constructors'
 
@@ -363,13 +363,13 @@ renameType allowNewTypeVars (TypeVar (Located sr n)) = do
                 modify $ over (the @"typeVars") $ Map.insert n uniqueN -- add it to the context
                 pure (TypeVar $ Located sr uniqueN)
             | otherwise -> throw $ UnknownTypeVariable n
-renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % unlocated) (renameType antv) t2
+renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ UnitType = pure UnitType
-renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % unlocated) (renameType antv) t2
+renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
-renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % unlocated) (renameType antv)) ln
-renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped % unlocated) (renameType antv)) ts
-renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % unlocated) (renameType antv) t
+renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % _1 % unlocated) (renameType antv)) ln
+renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType antv)) ts
+renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t
 
 renameExpr :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredExpr -> Sem r RenamedExpr
 renameExpr (Expr' (Block es)) = desugarBlock es
@@ -378,7 +378,7 @@ renameExpr (Expr le) =
     Expr
         <$> bitraverse
             (traverseOf unlocated renameExpr')
-            (traverse (traverseOf (_Unwrapped % unlocated) (renameType False)))
+            (traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)))
             le
   where
     renameExpr' (Int i) = pure $ Int i
@@ -395,7 +395,7 @@ renameExpr (Expr le) =
         pure $ FunctionCall e1' e2'
     renameExpr' (TypeApplication e1 t1) = do
         e1' <- renameExpr e1
-        t1' <- traverseOf (_Unwrapped % unlocated) (renameType False) t1
+        t1' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) t1
         pure $ TypeApplication e1' t1'
     renameExpr' (If e1 e2 e3) = do
         e1' <- renameExpr e1
@@ -450,7 +450,7 @@ renamePattern (Pattern fp) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated renamePattern')
-            (traverse (traverseOf (_Unwrapped % unlocated) (renameType False)))
+            (traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)))
             fp
   where
     renamePattern' :: Rename r => DesugaredPattern' -> Sem r RenamedPattern'
@@ -529,7 +529,7 @@ desugarBlock (e@(Expr' (Let{})) :| []) = do
 desugarBlock (e :| []) = renameExpr e
 desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
     val' <- renameExpr val
-    a' <- traverse (traverseOf (_Unwrapped % unlocated) (renameType False)) a
+    a' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)) a
     n' <- uniquify n
     xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
         desugarBlock (xs1 :| xs')

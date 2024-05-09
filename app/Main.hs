@@ -108,8 +108,9 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     prim <- loadModule dumpLexed dumpParsed dumpDesugared "prim.elr"
     source <- loadModule dumpLexed dumpParsed dumpDesugared "source.elr"
     prelude <- loadModule dumpLexed dumpParsed dumpDesugared "prelude.elr"
+    list <- loadModule dumpLexed dumpParsed dumpDesugared "list.elr"
 
-    let graph = createGraph [prim, source, prelude]
+    let graph = createGraph [prim, source, prelude, list]
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do

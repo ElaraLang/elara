@@ -14,6 +14,7 @@ data ElaraKind
       FunctionKind ElaraKind ElaraKind
     | -- | A kind variable for poly-kinds (probably not supported yet)
       VarKind UniqueId
+    | KindScheme [UniqueId] ElaraKind
     deriving (Show, Eq, Data, Ord, Generic)
 
 instance Pretty ElaraKind where

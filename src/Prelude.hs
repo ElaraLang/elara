@@ -18,6 +18,7 @@ module Prelude (
     cosmosOn,
     cosmosOnOf,
     transform,
+    transformOf',
     concatMapOf,
 )
 where
@@ -134,6 +135,8 @@ cosmosOnOf d p = d % cosmosOf p
 
 transform :: Plated a => (a -> a) -> a -> a
 transform = transformOf plate
+
+transformOf' optic f a = runIdentity $ traverseOf optic (fmap Identity f) a
 
 concatMapOf :: Is k A_Fold => Optic' k is a1 a2 -> (a2 -> [b]) -> a1 -> [b]
 concatMapOf l f = toListOf l >>> concatMap f

@@ -192,8 +192,9 @@ newtype ValueDeclAnnotations ast = ValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration ast)
     }
 
-newtype TypeDeclAnnotations ast = TypeDeclAnnotations
+data TypeDeclAnnotations ast = TypeDeclAnnotations
     { infixTypeDecl :: Maybe (InfixDeclaration ast)
+    , kindAnn :: !(Select "KindAnnotation" ast)
     }
 
 data TypeDeclaration ast
@@ -201,7 +202,7 @@ data TypeDeclaration ast
     | Alias !(Select "Alias" ast)
     deriving (Generic)
 
-newtype Type ast = Type (ASTLocate ast (Type' ast))
+newtype Type ast = Type (ASTLocate ast (Type' ast), Select "TypeKind" ast)
     deriving (Generic)
 
 data Type' ast
@@ -279,7 +280,7 @@ coerceTypeDeclaration (Alias a) = Alias (coerceType a)
 coerceTypeDeclaration (ADT a) = ADT (fmap coerceType <<$>> a)
 
 coerceType :: _ => Type ast1 -> Type ast2
-coerceType (Type a) = Type (coerceType' <$> a)
+coerceType (Type (a, kind)) = Type (coerceType' <$> a, kind)
 
 coerceType' :: _ => Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
@@ -295,10 +296,13 @@ coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotat
 coerceValueDeclAnnotations (ValueDeclAnnotations v) = ValueDeclAnnotations (coerceInfixDeclaration <$> v)
 
 coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations v) = TypeDeclAnnotations (coerceInfixDeclaration <$> v)
+coerceTypeDeclAnnotations (TypeDeclAnnotations v k) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) (coerceKindAnnotation k)
 
 coerceInfixDeclaration ::
     _ =>
     InfixDeclaration ast1 ->
     InfixDeclaration ast2
 coerceInfixDeclaration (InfixDeclaration a b) = InfixDeclaration a b
+
+coerceKindAnnotation :: _ => a -> b
+coerceKindAnnotation = coerce

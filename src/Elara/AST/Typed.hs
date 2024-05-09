@@ -14,6 +14,7 @@ import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarNam
 import Elara.AST.Region (Located (..), SourceRegion)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.VarRef (VarRef)
+import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Type)
 
@@ -57,14 +58,16 @@ type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the 
 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
 type instance Select "InfixDecl" 'Typed = DataConCantHappen
-type instance Select "Alias" 'Typed = Type SourceRegion
-type instance Select "ADTParam" 'Typed = Type SourceRegion
+type instance Select "Alias" 'Typed = (Type SourceRegion, ElaraKind)
+type instance Select "ADTParam" 'Typed = (Type SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Typed = Unique LowerAlphaName
+type instance Select "TypeKind" 'Typed = ElaraKind
+type instance Select "KindAnnotation" 'Typed = ElaraKind
 
 type instance Select "UserDefinedType" 'Typed = Qualified TypeName
 

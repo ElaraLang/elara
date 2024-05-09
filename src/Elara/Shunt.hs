@@ -206,7 +206,7 @@ createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
         let declName = Global $ IgnoreLocation $ decl ^. field' @"name"
         case decl ^. field' @"body" % _Unwrapped % unlocated of
             Value{_valueAnnotations = (ValueDeclAnnotations (Just fixity))} -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
-            TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity)) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
+            TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
             _ -> pass
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo

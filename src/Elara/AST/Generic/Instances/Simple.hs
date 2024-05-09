@@ -79,7 +79,7 @@ deriving instance
     ) =>
     Eq (Type' ast)
 
-deriving instance Eq (ASTLocate ast (Type' ast)) => Eq (Type ast)
+deriving instance (Eq (ASTLocate ast (Type' ast)), Eq (Select "TypeKind" ast)) => Eq (Type ast)
 
 deriving instance
     ( Ord (ASTLocate ast (Select "TypeVar" ast))
@@ -90,7 +90,7 @@ deriving instance
     ) =>
     Ord (Type' ast)
 
-deriving instance Ord (ASTLocate ast (Type' ast)) => Ord (Type ast)
+deriving instance (Ord (ASTLocate ast (Type' ast)), Ord (Select "TypeKind" ast)) => Ord (Type ast)
 
 deriving instance
     ( Eq (ASTLocate ast (Select "SymOp" ast))
@@ -160,14 +160,14 @@ deriving instance
     ) =>
     Eq (DeclarationBody' ast)
 
-deriving instance Eq (InfixDeclaration ast) => Eq (TypeDeclAnnotations ast)
+deriving instance (Eq (InfixDeclaration ast), Eq (Select "KindAnnotation" ast)) => Eq (TypeDeclAnnotations ast)
 deriving instance
     ( Eq (ASTLocate ast Int)
     , Eq (ASTLocate ast AssociativityType)
     ) =>
     Eq (InfixDeclaration ast)
 
-deriving instance Ord (InfixDeclaration ast) => Ord (TypeDeclAnnotations ast)
+deriving instance (Ord (InfixDeclaration ast), Ord (Select "KindAnnotation" ast)) => Ord (TypeDeclAnnotations ast)
 deriving instance
     ( Ord (ASTLocate ast Int)
     , Ord (ASTLocate ast AssociativityType)
@@ -229,7 +229,7 @@ deriving instance
     ) =>
     Show (Type' ast)
 
-deriving instance Show (ASTLocate ast (Type' ast)) => Show (Type ast)
+deriving instance (Show (ASTLocate ast (Type' ast)), Show (Select "TypeKind" ast)) => Show (Type ast)
 
 deriving instance
     ( Show (ASTLocate ast (Select "SymOp" ast))
@@ -268,7 +268,7 @@ deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (Declarati
 
 deriving instance (Show (ASTLocate ast Int), Show (ASTLocate ast AssociativityType)) => Show (InfixDeclaration ast)
 
-deriving instance Show (InfixDeclaration ast) => Show (TypeDeclAnnotations ast)
+deriving instance (Show (InfixDeclaration ast), Show (Select "KindAnnotation" ast)) => Show (TypeDeclAnnotations ast)
 deriving instance Show (InfixDeclaration ast) => Show (ValueDeclAnnotations ast)
 
 deriving instance
@@ -329,6 +329,7 @@ deriving instance
     ( Data (ASTLocate ast (Type' ast))
     , Data (Select "TypeVar" ast)
     , Data (Select "UserDefinedType" ast)
+    , Data (Select "TypeKind" ast)
     , Typeable ast
     , Typeable a
     ) =>
@@ -342,6 +343,7 @@ deriving instance
     , Data (ASTLocate ast (Select "UserDefinedType" ast))
     , Data (ASTLocate ast LowerAlphaName)
     , Data (Select "UserDefinedType" ast)
+    , Data (Select "TypeKind" ast)
     , Typeable ast
     , Typeable a
     ) =>

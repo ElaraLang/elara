@@ -25,7 +25,17 @@ instance
     pretty (SymOp op) = pretty op
     pretty (Infixed op) = "`" <> pretty op <> "`"
 
-deriving instance Pretty (ASTLocate ast (Type' ast)) => Pretty (Type ast)
+instance
+    ( Pretty (ASTLocate ast (Type' ast))
+    , ToMaybe (Select "TypeKind" ast) (Maybe typeKind)
+    , typeKind ~ UnwrapMaybe (Select "TypeKind" ast)
+    , Pretty typeKind
+    ) =>
+    Pretty (Type ast)
+    where
+    pretty (Type (t, k)) = pretty t <+> pretty kAnn
+      where
+        kAnn = (":" <+>) . pretty <$> (toMaybe k :: Maybe typeKind)
 
 instance
     Pretty (ASTLocate ast (Declaration' ast)) =>
@@ -289,6 +299,9 @@ instance
     , Pretty (ASTLocate ast LowerAlphaName)
     , Pretty (ASTLocate ast (Select "TypeVar" ast))
     , Pretty (ASTLocate ast (Select "UserDefinedType" ast))
+    , ToMaybe (Select "TypeKind" ast) (Maybe typeKind)
+    , typeKind ~ UnwrapMaybe (Select "TypeKind" ast)
+    , Pretty typeKind
     ) =>
     Pretty (Type' ast)
     where
