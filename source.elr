@@ -1,7 +1,7 @@
 import Prelude 
 import Elara.Prim
 
-let l = ( Cons 1 (Cons 2 (Cons 3 Nil)))
+let l = Cons 1 (Cons 2 (Cons 3 Nil))
 
 def map : (a -> b) -> List a -> List b
 let map f l = 

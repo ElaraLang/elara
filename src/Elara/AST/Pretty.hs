@@ -123,16 +123,9 @@ prettyBlockExpr b = do
     let open = if ?contextFree then "{ " else flatAlt "" "{ "
         close = if ?contextFree then "}" else flatAlt "" " }"
         separator = if ?contextFree then "; " else flatAlt "" "; "
-        arrange = if ?contextFree then identity else group . align
+        arrange = group . align
 
-    arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
-
-encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-encloseSep' contextFree = if contextFree then encloseSepUnarranged else encloseSep
-  where
-    encloseSepUnarranged :: Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-    encloseSepUnarranged open close _ [] = open <> close
-    encloseSepUnarranged open close sep (x : xs) = open <> x <> foldr (\y ys -> sep <> y <> ys) close xs
+    arrange (encloseSep open close separator (pretty <$> toList b))
 
 prettyConstructorPattern :: (Pretty a1, Pretty a2) => a1 -> [a2] -> Doc AnsiStyle
 prettyConstructorPattern c p = parens (pretty c <+> hsep (pretty <$> p))
@@ -140,7 +133,7 @@ prettyConstructorPattern c p = parens (pretty c <+> hsep (pretty <$> p))
 prettyList :: (Pretty a, ?contextFree :: Bool) => [a] -> Doc AnsiStyle
 prettyList l =
     if ?contextFree
-        then encloseSep' ?contextFree "[ " " ]" ", " (pretty <$> l)
+        then encloseSep "[ " " ]" ", " (pretty <$> l)
         else list (pretty <$> l)
 
 prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle

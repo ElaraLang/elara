@@ -34,7 +34,7 @@ instance PrettyVar Var where
 
     prettyVarArg = \case
         TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
-        v -> prettyVar True True v
+        v -> prettyVar False True v
 
 instance PrettyVar Type where
     prettyVar withType withParens = \case
@@ -80,7 +80,7 @@ prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
-prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = True in prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
@@ -90,9 +90,14 @@ prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar True True
 
 prettyAlts :: PrettyVar v => [Alt v] -> Doc AnsiStyle
-prettyAlts alts = let ?contextFree = True in prettyBlockExpr (prettyAlt <$> alts)
+prettyAlts alts = let ?contextFree = False in prettyBlockExpr (prettyAlt <$> alts)
   where
-    prettyAlt (con, vars, e) = pretty @AltCon con <+> hsep (prettyVarArg <$> vars) <+> "->" <+> prettyExpr e
+    prettyAlt (con, vars, e) =
+        pretty @AltCon con
+            <+> hsep (prettyVarArg <$> vars)
+            <+> "->"
+            <+> line
+            <+> hang indentDepth (prettyExpr e)
 
 instance Pretty Literal where
     pretty :: Literal -> Doc AnsiStyle

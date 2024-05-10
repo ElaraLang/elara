@@ -95,7 +95,8 @@ dumpGraph graph nameFunc suffix = do
             let contents = pretty m
             let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
             fileHandle <- openFile fileName WriteMode
-            hPutDoc fileHandle contents
+            let rendered = layoutSmart defaultLayoutOptions contents
+            renderIO fileHandle rendered
             hFlush fileHandle
 
     traverseGraph_ dump graph
