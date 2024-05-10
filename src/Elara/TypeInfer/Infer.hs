@@ -1372,31 +1372,33 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
         push (Context.Annotation (mkLocal' $ NormalVarName <<$>> vn) t)
         pure $ Pattern (Located exprLoc (Syntax.VarPattern (NormalVarName <<$>> vn)), t) -- var patterns always match
     check' Syntax.WildcardPattern t = pure $ Pattern (Located exprLoc Syntax.WildcardPattern, t) -- wildcard patterns always match
-    -- Suppose we have the type @type Option a = Some a | None@
-    -- Checking the pattern @Some a@ against the type @Option b@ should succeed and emit the constraint @a = b@
-    check' (Syntax.ConstructorPattern ctor args) expectedType@Type.Custom{conName, typeArguments} = do
-        _Γ <- get
-        let n = Global $ IgnoreLocation (NTypeName <<$>> ctor)
+    -- Suppose we have the type @type List a = Cons a (List a) | Nil@
+    -- Checking the pattern @Cons b c@ against the type @List a@ should succeed and emit the constraints @b = a@ and @c = List a@
+    -- check' (Syntax.ConstructorPattern ctor args) expectedType@Type.Custom{conName, typeArguments} = do
+    --     debugPretty ("CheckPattern" :: Text, ctor, args, expectedType)
+    --     _Γ <- get
+    --     let n = Global $ IgnoreLocation (NTypeName <<$>> ctor)
 
-        -- get the type of the constructor, eg Some : forall a. a -> Option a
-        ctorFunc <- Context.lookup n _Γ `orDie` UnboundVariable (ctor ^. sourceRegion) n _Γ
+    --     -- get the type of the constructor, eg Cons : forall a. forall b. a -> List b -> List a
+    --     ctorFunc <- Context.lookup n _Γ `orDie` UnboundVariable (ctor ^. sourceRegion) n _Γ
 
-        -- Given Some x <: Option b, we need to imagine we're applying
-        -- Some : forall a. a -> Option a to x : xT to get Option xT
-        -- Then we can check that Option xT <: Option b
+    --     -- Given Some x <: Option b, we need to imagine we're applying
+    --     -- Some : forall a. a -> Option a to x : xT to get Option xT
+    --     -- Then we can check that Option xT <: Option b
 
-        let process (arg, argType) = do
-                _Γ <- get
+    --     let process (arg, argType) = do
 
-                checkPattern arg (Context.solveType _Γ argType)
+    --             _Γ <- get
 
-        args' <- traverse process (zip args typeArguments)
+    --             checkPattern arg (Context.solveType _Γ argType)
 
-        -- solve expectedType
-        _Θ <- get
-        let expectedType' = Context.solveType _Θ expectedType
+    --     args' <- traverse process (zip args typeArguments)
 
-        pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), expectedType')
+    --     -- solve expectedType
+    --     _Θ <- get
+    --     let expectedType' = Context.solveType _Θ expectedType
+
+    --     pure $ Pattern (Located exprLoc (Syntax.ConstructorPattern ctor args'), expectedType')
     -- ∀I
     check' e Type.Forall{..} = do
         push (Context.Variable domain name)

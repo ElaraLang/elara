@@ -145,6 +145,7 @@ data TypeInferenceError where
         Qualified Text ->
         TypeInferenceError
     UserDefinedTypeNotInContext ::
+        HasCallStack =>
         SourceRegion ->
         KindedType ->
         (Context SourceRegion) ->
@@ -180,7 +181,7 @@ instance ReportableError TypeInferenceError where
                     [ "Type error: The following variable is unbound:"
                     , pretty v
                     , "The following variables are bound in the current context:"
-                    , listToText _Γ
+                    , listToText (nubOrd $ filter (\case Variable{} -> True; Annotation{} -> True; _ -> False) _Γ)
                     , pretty $ prettyCallStack callStack
                     ]
                 )
@@ -238,6 +239,7 @@ instance ReportableError TypeInferenceError where
                     , pretty a
                     , "The following types are bound in the current context:"
                     , listToText _Γ
+                    , pretty $ prettyCallStack callStack
                     ]
                 )
                 [(sourceRegionToDiagnosePosition location, Where "Referenced here")]

@@ -109,7 +109,6 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' declName (Value e _ (maybeExpected :: Maybe ShuntedType) ann) = do
         maybeExpected' <- case maybeExpected of
             Just expected' -> do
-                debugPretty expected'
                 expected' <- mapError KindInferError (inferTypeKind expected')
                 -- mapError KindInferError (unifyKinds kind TypeKind) -- expected type must be of kind Type
                 (expectedPoly, expectedKind) <- astTypeToInferPolyType expected'
@@ -136,6 +135,12 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' (Located _ (Qualified (NVarName _) _)) _ = error "inferDeclarationBody' NVarName"
     inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl) ann) = do
         (kind, decl') <- mapError KindInferError (inferKind (tn <$ q) tvs decl)
+        -- add the custom annotation to allow recursive types
+        push
+            ( Annotation
+                (mkGlobal' declName)
+                (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) [])
+            )
         case decl' of
             Alias t -> do
                 (t', k) <- astTypeToInferType t
@@ -167,16 +172,6 @@ inferExpression e (Just expectedType) = do
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
-
-freeTypeVars :: KindedType -> [Located (Unique LowerAlphaName)]
-freeTypeVars =
-    nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
-        . concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
-  where
-    names :: KindedType' -> [Located (Unique LowerAlphaName)]
-    names = \case
-        TypeVar l -> [l]
-        _ -> [] -- cosmos takes care of the recursion :D
 
 universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
 universallyQuantify [] x = x

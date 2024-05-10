@@ -1,8 +1,6 @@
 import Prelude 
 import Elara.Prim
 
-type Option a = Some a | None
-
 let l = ( Cons 1 (Cons 2 (Cons 3 Nil)))
 
 def map : (a -> b) -> List a -> List b

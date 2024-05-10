@@ -34,6 +34,7 @@ module Elara.AST.Generic.Types (
     ValueDeclAnnotations (..),
     TypeDeclAnnotations (..),
     typeOf,
+    freeTypeVars,
     patternTypeOf,
     RUnlocate (..),
     ASTLocate,
@@ -53,6 +54,7 @@ module Elara.AST.Generic.Types (
 )
 where
 
+import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
@@ -215,6 +217,15 @@ data Type' ast
     | TupleType (NonEmpty (Type ast))
     | ListType (Type ast)
     deriving (Generic)
+
+freeTypeVars :: _ => Type ast -> [ASTLocate ast (Select "TypeVar" ast)]
+freeTypeVars =
+    nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
+        . concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
+  where
+    names = \case
+        TypeVar l -> [l]
+        _ -> [] -- cosmos takes care of the recursion :D
 
 -- Ttg stuff
 

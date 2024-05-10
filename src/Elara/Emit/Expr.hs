@@ -81,8 +81,9 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t (Just d
     Log.debug $ "Generating instructions for data constructor: " <> showPretty v
     -- no args function (eg undefined)
     invokeStatic <- case approximateTypeAndNameOf v of
-        Right (fName, fType) -> invokeStaticVars fName fType
-        Left _ -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+        Just (Right (fName, fType)) -> invokeStaticVars fName fType
+        Just (Left _) -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+        Nothing -> error $ "Unknown global variable: " <> showPretty v
 
     emit
         ( uncurry3 InvokeStatic invokeStatic
@@ -120,8 +121,9 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tA
             _ -> do
                 -- no args function (eg undefined)
                 invokeStatic <- case approximateTypeAndNameOf v of
-                    Right (fName, fType) -> invokeStaticVars fName fType
-                    Left _ -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+                    Just (Right (fName, fType)) -> invokeStaticVars fName fType
+                    Just (Left _) -> pure (ClassInfoType $ createModuleName mn, translateOperatorName n, generateMethodDescriptor t)
+                    Nothing -> error $ "Unknown global variable: " <> showPretty v
 
                 emit
                     ( uncurry3 InvokeStatic invokeStatic
@@ -153,9 +155,9 @@ generateInstructions' (TyApp f t) tApps =
 generateInstructions' (Lam (Normal (Id (Local' v) binderType _)) body) _ = do
     cName <- gets (.thisClassName)
     returnType <- case approximateTypeAndNameOf body of
-        Right (_, t) -> pure $ generateFieldType t
-        Left (_, Just t) -> pure $ jvmLocalTypeToFieldType t
-        Left (_, Nothing) -> error "Lambda with no return type"
+        Just (Right (_, t)) -> pure $ generateFieldType t
+        Just (Left (_, Just t)) -> pure $ jvmLocalTypeToFieldType t
+        _ -> pure $ ObjectFieldType "java/lang/Object" -- this is probably fine
     inst <- createLambda [(v, generateFieldType binderType)] returnType cName body
     emit' inst
     pass
@@ -312,16 +314,16 @@ This function is partial! (Sorry)
 approximateTypeAndNameOf ::
     HasCallStack =>
     Expr JVMBinder ->
-    Either (U1, Maybe JVMLocalType) (UnlocatedVarRef Text, Type)
-approximateTypeAndNameOf (Var (Normal (Id n t Nothing))) = Right (n, t)
+    Maybe (Either (U1, Maybe JVMLocalType) (UnlocatedVarRef Text, Type))
+approximateTypeAndNameOf (Var (Normal (Id n t Nothing))) = Just $ Right (n, t)
 -- \| Here we turn the mention of Main.Box into Main.Wrapper.Box to reflect that it'll get compiled into a separate class
 approximateTypeAndNameOf (Var (Normal (Id n t (Just (DataCon dcName dcType ((TyCon dcCon _))))))) = do
     let Qualified dcName' dcMod = dcCon
     let newModName = appendModule dcMod dcName'
-    Right (Global' (Qualified (dcName ^. unqualified) newModName), t)
-approximateTypeAndNameOf (Var (JVMLocal i t)) = Left (i, t)
-approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <$> approximateTypeAndNameOf e
-approximateTypeAndNameOf other = error $ "Don't know type of: " <> showPretty other
+    Just $ Right (Global' (Qualified (dcName ^. unqualified) newModName), t)
+approximateTypeAndNameOf (Var (JVMLocal i t)) = Just $ Left (i, t)
+approximateTypeAndNameOf (TyApp e t) = second (`instantiate` t) <<$>> approximateTypeAndNameOf e
+approximateTypeAndNameOf other = Nothing
 
 {- | Generate instructions for function application
 This function performs arity "analysis" to avoid redundant currying when a function is "fully applied" (i.e. all arguments are provided)
@@ -349,12 +351,13 @@ generateAppInstructions f x = do
     Log.debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
-        Left (local, _) -> do
+        Nothing -> error $ "Unknown function: " <> showPretty f'
+        Just (Left (local, _)) -> do
             Log.debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x
             emit $ InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
-        Right (fName, fType) -> do
+        Just (Right (fName, fType)) -> do
             let arity = typeArity fType
             Log.debug $ "Function is a global variable: " <> showPretty fName <> " with type " <> showPretty fType <> " and arity " <> show arity
             if length args == arity

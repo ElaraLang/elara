@@ -212,6 +212,9 @@ inferKind name tvs t = do
 
 inferTypeKind :: KindInfer r => ShuntedType -> Sem r KindedType
 inferTypeKind t = do
+    for_ (freeTypeVars t) $ \var -> do
+        kindVar <- makeUniqueId
+        declareTypeVar (var ^. unlocated) kindVar
     t' <- elaborateType t
     solveConstraints
     solveType t'
@@ -234,6 +237,7 @@ lookupNameKindVar name = do
         Nothing ->
             maybe (throw $ UnknownKind name kindEnv) pure (Map.lookup (Left name) env)
 
+-- | Find the kind variable of a type variable in the environment.
 lookupVarKindVar :: KindInfer r => TypeVar -> Sem r KindVar
 lookupVarKindVar var = do
     InferState{..} <- get

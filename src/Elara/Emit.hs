@@ -95,7 +95,7 @@ emitModule m = fmap swap $ runMultiClassBuilder $ do
             runInnerEmit name version $
                 addDeclarationsAndMain m
 
-        addClinit clinitState attrs clinit
+        runReader defaultGenParams $ addClinit clinitState attrs clinit
 
     pure
         ( m ^. field @"name"
@@ -106,7 +106,7 @@ addDeclarationsAndMain m = do
     traverse_ addDeclaration (m ^. field @"declarations")
     when (isMainModule m) (addMethod (generateMainMethod m))
 
-addClinit :: Member ClassBuilder r => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
+addClinit :: (Member ClassBuilder r, Member (Reader GenParams) r) => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
 addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidReturn) [MPublic, MStatic] "<clinit>" attrs s
 
 addDeclaration :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()

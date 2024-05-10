@@ -20,6 +20,7 @@ import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Params
 import JVM.Data.Abstract.Name
+import JVM.Data.Abstract.Type (fieldTypeToClassInfoType)
 import Polysemy
 import Polysemy.Error
 import Polysemy.Log (Log)
@@ -27,6 +28,7 @@ import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State (runState)
 import Print
+import Prelude hiding (asks)
 
 {- | Create a method in the current class, with the given name, descriptor, and body
 This handles the calculation of messiness like max stack and locals
@@ -64,6 +66,7 @@ createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
 createMethodWithCodeBuilder ::
     ( Member ClassBuilder r
     , Member Log r
+    , Member (Reader GenParams) r
     ) =>
     QualifiedClassName ->
     MethodDescriptor ->
@@ -80,7 +83,7 @@ createMethodWithCodeBuilder thisClassName descriptor@(MethodDescriptor args _) m
     createMethodWith descriptor methodAttrs name codeAttrs initialState instructions
 
 createMethodWith ::
-    Member ClassBuilder r =>
+    (Member ClassBuilder r, Member (Reader GenParams) r) =>
     MethodDescriptor ->
     _ ->
     Text ->
@@ -92,7 +95,12 @@ createMethodWith descriptor@(MethodDescriptor _ return_) methodAttrs name codeAt
     let maxStack = analyseMaxStack code
 
     let maxLocals = 1 + mcState.maxLocalVariables
-    let code' = code <> [if return_ == VoidReturn then Return else AReturn]
+    checkCasts <- asks checkCasts
+    let code' =
+            code <> case (return_, checkCasts) of
+                (VoidReturn, _) -> [Return]
+                (TypeReturn t, True) -> [CheckCast (fieldTypeToClassInfoType t), AReturn]
+                (_, False) -> [AReturn]
     addMethod $
         ClassFileMethod
             methodAttrs
