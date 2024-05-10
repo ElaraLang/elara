@@ -65,6 +65,7 @@ import Elara.Data.Unique (makeUnique)
 import Elara.Emit.Lambda (lambdaTypeName)
 import Elara.Emit.Method (createMethodWithCodeBuilder)
 import Elara.Emit.Monad (InnerEmit, addClass, addInnerClass)
+import Elara.Emit.Params (GenParams)
 import Elara.Emit.State (MethodCreationState (maxLocalVariables), findLocalVariable)
 import Elara.Emit.Utils (createQualifiedClassName, createQualifiedInnerClassName, generateFieldType)
 import Elara.Parse.Type (functionType)
@@ -77,8 +78,9 @@ import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type
 import Polysemy
+import Polysemy.Reader (Reader)
 
-generateADTClasses :: InnerEmit r => CoreTypeDecl -> Sem r ()
+generateADTClasses :: (InnerEmit r, Member (Reader GenParams) r) => CoreTypeDecl -> Sem r ()
 generateADTClasses (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass -- nothing to generate for type aliases
 generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
     let typeClassName = createQualifiedClassName name
@@ -154,7 +156,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                 -- generate the match impl
                 createMethodWithCodeBuilder thisName matchSig [MPublic] "match" $ do
                     emit $ ALoad i
-                    for_ (zip fields [0 ..]) $ \(field, i) -> do
+                    for_ (reverse $ zip fields [0 ..]) $ \(field, i) -> do
                         emit $ ALoad 0
                         emit $ GetField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
                     -- call the corresponding lambda param
@@ -163,6 +165,6 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                             (ClassInfoType $ lambdaTypeName $ length fields)
                             "run"
                             ( MethodDescriptor
-                                (generateFieldType <$> fields)
+                                (ObjectFieldType "java/lang/Object" <$ fields)
                                 (TypeReturn $ ObjectFieldType "java/lang/Object")
                             )
