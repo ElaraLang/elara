@@ -11,7 +11,7 @@ module Elara.Pipeline where
 import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, Members, Sem, raiseUnder, runM, subsume_)
+import Polysemy (Effect, Embed, Members, Sem, runM, subsume_)
 import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel)
 import Polysemy.Maybe (MaybeE, runMaybe)
 import Polysemy.Time.Interpreter.Ghc
