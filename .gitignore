@@ -60,6 +60,7 @@ TAGS
 .direnv
 result
 /.pre-commit-config.yaml
+just-flake.just
 
 # Elara! :D
 build/

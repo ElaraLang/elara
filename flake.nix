@@ -7,7 +7,7 @@
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     flake-root.url = "github:srid/flake-root";
-    mission-control.url = "github:Platonic-Systems/mission-control";
+    just-flake.url = "github:juspay/just-flake";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
     h2jvm.url = "github:ElaraLang/h2jvm";
@@ -28,7 +28,7 @@
         inputs.haskell-flake.flakeModule
         inputs.treefmt-nix.flakeModule
         inputs.flake-root.flakeModule
-        inputs.mission-control.flakeModule
+        inputs.just-flake.flakeModule
       ];
 
       perSystem = { self', lib, system, config, pkgs, ... }: {
@@ -101,7 +101,10 @@
           };
         };
 
-
+        just-flake.features = {
+          treefmt.enable = true;
+          convco.enable = true;
+        };
 
 
         treefmt.config = {
@@ -157,9 +160,11 @@
           inputsFrom = [
             config.haskellProjects.default.outputs.devShell
             config.flake-root.devShell
-            config.mission-control.devShell
+            config.just-flake.outputs.devShell
           ];
           inherit (self.checks.${system}.pre-commit-check) shellHook;
+
+          nativeBuildInputs = [ pkgs.just pkgs.convco ];
 
           buildInputs =
             let
@@ -183,7 +188,6 @@
               pkgs.haskellPackages.haskell-debug-adapter
               pkgs.haskellPackages.ghci-dap
               pkgs.haskellPackages.hpack
-
             ];
         };
 
