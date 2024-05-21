@@ -121,38 +121,6 @@
 
         };
 
-        mission-control.scripts = {
-          docs = {
-            description = "Start Hoogle server for project dependencies";
-            exec = ''
-              echo http://127.0.0.1:8888
-              stack hoogle -- serve -p 8888 --local
-            '';
-            category = "Dev Tools";
-          };
-
-          fmt = {
-            description = "Format the source tree";
-            exec = config.treefmt.build.wrapper;
-            category = "Dev Tools";
-          };
-
-          run = {
-            description = "Run the project with ghcid auto-recompile";
-            exec = ''
-              stack build --file-watch --fast --ghc-options='-O0 -fbyte-code' --exec "elara --dump-shunted --dump-core --dump-typed --run"
-            '';
-            category = "Primary";
-          };
-          test = {
-            description = "Run the project tests with ghcid auto-recompile";
-            exec = ''
-              stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code"
-            '';
-            category = "Primary";
-          };
-        };
-
 
         packages.default = self'.packages.elara;
 
