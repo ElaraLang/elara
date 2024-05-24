@@ -522,4 +522,35 @@ generatePrimInstructions "pure" =
         [ ALoad 0
         , InvokeStatic (ClassInfoType "Elara.IO") "pure" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "Elara.IO")))
         ]
+-- consString : Char -> String -> String
+generatePrimInstructions "consString" =
+    pure
+        [ ALoad 0
+        , -- toString on the first argument
+          InvokeVirtual (ClassInfoType "java.lang.Character") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
+        , ALoad 1
+        , -- concat the two strings
+          InvokeVirtual (ClassInfoType "java.lang.String") "concat" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "java.lang.String")))
+        ]
+-- stringLength : String -> Int
+generatePrimInstructions "stringLength" =
+    pure
+        [ ALoad 0
+        , InvokeVirtual (ClassInfoType "java.lang.String") "length" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Int)))
+        ]
+generatePrimInstructions "unconsString" =
+    -- the rough impl equivalent here is
+    {-
+        return Tuple2._Tuple2(s.charAt(0), s.substring(1));
+    -}
+    pure
+        [ ALoad 0
+        , LDC (LDCInt 0)
+        , InvokeVirtual (ClassInfoType "java.lang.String") "charAt" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (PrimitiveFieldType JVM.Char)))
+        , InvokeStatic (ClassInfoType "java.lang.Character") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Char] (TypeReturn (ObjectFieldType "java.lang.Character")))
+        , ALoad 0
+        , LDC (LDCInt 1)
+        , InvokeVirtual (ClassInfoType "java.lang.String") "substring" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.String")))
+        , InvokeStatic (ClassInfoType "Elara.Prim.Tuple2") "_Tuple2" (MethodDescriptor [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "Elara.Prim.Tuple2")))
+        ]
 generatePrimInstructions other = error $ "Unknown elara primitive: " <> showPretty other
