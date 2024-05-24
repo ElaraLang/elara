@@ -58,7 +58,7 @@ createMethod thisClassName descriptor@(NamedMethodDescriptor args _) name body =
             <> showPretty descriptor
             <> " and body "
             <> showPretty body
-    let initialState = createMethodCreationState (fst <$> args) thisClassName
+    let initialState = createMethodCreationState args thisClassName
     ((mcState, _), codeAttrs, instructions) <-
         runCodeBuilder $
             runState initialState $
@@ -78,7 +78,7 @@ createMethodWithCodeBuilder ::
     Sem r ()
 createMethodWithCodeBuilder thisClassName descriptor@(NamedMethodDescriptor args _) methodAttrs name codeBuilder = do
     Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor
-    let initialState = createMethodCreationState (fst <$> args) thisClassName
+    let initialState = createMethodCreationState args thisClassName
     (_, codeAttrs, instructions) <-
         subsume_ $
             runCodeBuilder codeBuilder

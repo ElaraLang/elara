@@ -39,7 +39,7 @@ import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 generateInstructions ::
     ( HasCallStack
@@ -249,8 +249,6 @@ generateCaseInstructions scrutinee (Just bind) alts = do
     let (binderType, ctors) = case jvmBinderType bind of
             Just (JVMLType x) | Just (TyCon t (TyADT ctors)) <- findTyCon x -> (t, ctors)
             x -> error $ "unknown type: " <> show x
-    -- undefined <- undefinedId
-    -- let defaultBindersMap :: Map _ JVMExpr = fromList (ctors <&> (,Var $ Normal undefined))
     let altsMap :: Map (Qualified Text) ([JVMBinder], Expr JVMBinder) =
             fromList
                 ( alts
@@ -271,8 +269,7 @@ generateCaseInstructions scrutinee (Just bind) alts = do
                             Normal (Id (Local' v) t _) -> (v, generateFieldType t)
                             other -> error $ "Not a local variable: " <> showPretty other
                 x <- get @MethodCreationState
-                (s, inst) <- generateLambda x binders' returnType cName altBody
-                emit' inst
+                generateLambda x binders' returnType cName altBody
     -- Emit the lambdas in order
     generateInstructions scrutinee
     for_ ctors $ \ctor -> do
@@ -306,7 +303,7 @@ localVariableId (JVMLocal i _) = do
     if i < maxLocalVariables s
         then pure i
         else throw $ LocalVariableNotFound i s
-localVariableId (Normal ((Id (Local' v) _ Nothing))) = findLocalVariable v
+localVariableId (Normal ((Id (Local' v) t Nothing))) = fst <$> findLocalVariable (v, t)
 localVariableId other = error $ "Not a local variable: " <> showPretty other
 
 {- | Attempt to figure out the name and type of an expression, returning either a Local variable in @Left@ or a Global variable in @Right@

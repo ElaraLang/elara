@@ -24,16 +24,20 @@ import Polysemy hiding (transform)
 import Polysemy.Error
 import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
-import Print (debugPretty, showPretty)
+import Print (showPretty)
 
 import Data.Generics.Sum (AsAny (_As))
+import Data.List (partition)
+import Data.Map qualified as Map
 import Data.Traversable (for)
 import Elara.Core qualified as Core
 import {-# SOURCE #-} Elara.Emit.Expr (generateInstructions)
 import Elara.Emit.Method.Descriptor (NamedMethodDescriptor (..), toMethodDescriptor)
 import Elara.Emit.Params
-import Elara.Emit.State (MethodCreationState, createMethodCreationStateOf, initialMethodCreationState)
-import JVM.Data.Abstract.Builder.Code (runCodeBuilder)
+import Elara.Emit.State (LVKey (..), MethodCreationState (..), createMethodCreationStateOf, lookupVar)
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, runCodeBuilder)
+import JVM.Data.Abstract.ClassFile.AccessFlags
+import JVM.Data.Abstract.ClassFile.Method
 import Optics (filtered)
 import Polysemy.Reader
 import Polysemy.State
@@ -84,6 +88,7 @@ etaExpandN funcCall exprType thisClassName = do
                     (NE.zip paramTypes [0 ..])
         createLambda (toList paramTypes) (generateFieldType $ functionTypeResult exprType) thisClassName body
 
+elaraFuncDescriptor :: (HasCallStack, IsString b, IsString a2) => FieldType -> [FieldType] -> (a2, b, MethodDescriptor, MethodDescriptor)
 elaraFuncDescriptor returnType baseParams = case baseParams of
     [] -> ("Elara/Func0", "run", MethodDescriptor [] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [] (TypeReturn returnType))
     [t] -> ("Elara/Func", "run", MethodDescriptor [ObjectFieldType "java/lang/Object"] (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t] (TypeReturn returnType))
@@ -97,19 +102,86 @@ generateLambda ::
     , Member UniqueGen r
     , Member (Reader GenParams) r
     , Member Log r
+    , Member (State MethodCreationState) r
+    , Member CodeBuilder r
     ) =>
     MethodCreationState ->
     [(Unique Text, FieldType)] ->
     FieldType ->
     QualifiedClassName ->
     JVMExpr ->
-    Sem r (MethodCreationState, [Instruction])
+    Sem r ()
 generateLambda oldState explicitParams returnType thisClassName body = do
-    (state, (_, a, b)) <- runState (createMethodCreationStateOf oldState (fst <$> explicitParams)) $ do
-        debugPretty ("generateLambda" :: Text, body)
+    (state, (_, a, b)) <- runState (createMethodCreationStateOf oldState explicitParams) $ do
         runCodeBuilder $ generateInstructions body
 
-    error (showPretty (state, body))
+    -- we can now use the state to determine how which parameters are captured
+    let locals = Map.toAscList state.localVariables
+        locals' = fmap (\(KnownName n, (_, t)) -> (n, t)) locals
+        (explicitParams', capturedParams) = partition (\(n, _) -> n `elem` (fst <$> explicitParams)) locals'
+    createLambdaRaw explicitParams' capturedParams returnType thisClassName (state, a, b)
+
+createLambdaRaw ::
+    (HasCallStack, Members [ClassBuilder, CodeBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r, Member (State MethodCreationState) r) =>
+    -- | The base parameters of the lambda - i.e. ones in the functional interface
+    [(Unique Text, FieldType)] ->
+    -- | Extra "captured" parameters
+    [(Unique Text, FieldType)] ->
+    -- | The return type of the lambda
+    FieldType ->
+    -- | The class name the lambda will be created in
+    QualifiedClassName ->
+    -- | The body of the lambda
+    (MethodCreationState, [CodeAttribute], [Instruction]) ->
+    Sem r ()
+createLambdaRaw baseParams captureParams returnType thisClassName (state, attr, bodyInsts) = do
+    lamSuffix <- makeUniqueId
+    let params = captureParams <> baseParams
+    let lambdaMethodName = "lambda$" <> show lamSuffix
+    Log.debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
+
+    let lambdaMethodDescriptor = MethodDescriptor (snd <$> toList params) (TypeReturn returnType)
+
+    createMethodWith lambdaMethodDescriptor [MPublic, MStatic] lambdaMethodName attr state bodyInsts
+    let (functionalInterface, invoke, baseMethodDescriptor, methodDescriptor) = elaraFuncDescriptor returnType (snd <$> baseParams)
+
+    let inst =
+            InvokeDynamic
+                ( BootstrapMethod
+                    ( MHInvokeStatic
+                        ( MethodRef
+                            (ClassInfoType "java/lang/invoke/LambdaMetafactory")
+                            "metafactory"
+                            ( MethodDescriptor
+                                [ ObjectFieldType "java/lang/invoke/MethodHandles$Lookup"
+                                , ObjectFieldType "java/lang/String"
+                                , ObjectFieldType "java/lang/invoke/MethodType"
+                                , ObjectFieldType "java/lang/invoke/MethodType"
+                                , ObjectFieldType "java/lang/invoke/MethodHandle"
+                                , ObjectFieldType "java/lang/invoke/MethodType"
+                                ]
+                                (TypeReturn $ ObjectFieldType "java/lang/invoke/CallSite")
+                            )
+                        )
+                    )
+                    [ BMMethodArg baseMethodDescriptor
+                    , BMMethodHandleArg
+                        ( MHInvokeStatic
+                            ( MethodRef
+                                (ClassInfoType thisClassName)
+                                lambdaMethodName
+                                lambdaMethodDescriptor
+                            )
+                        )
+                    , BMMethodArg methodDescriptor
+                    ]
+                )
+                invoke
+                (MethodDescriptor (snd <$> captureParams) (TypeReturn $ ObjectFieldType functionalInterface))
+    for_ captureParams $ \(cp, _) -> do
+        (cp', _) <- lookupVar cp
+        emit $ ALoad cp'
+    emit inst
 
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:
@@ -212,7 +284,6 @@ For example, if we have \x -> local_1, we know that local_1 must be captured fro
 -}
 getCapturedParams :: Member UniqueGen r => [(Unique Text, FieldType)] -> JVMExpr -> Sem r [(Unique Text, FieldType)]
 getCapturedParams params expr = do
-    debugPretty ("params" :: Text, params, expr)
     let len = fromIntegral $ length params
     -- Get all locals_<n> where n >= length params
     let locals =
@@ -221,10 +292,6 @@ getCapturedParams params expr = do
                 % _As @"Var"
                 % _As @"JVMLocal"
                 % filtered (\(a, _) -> a >= len)
-
-    let namedLocals = expr ^.. cosmos % _As @"Var" % _As @"Normal"
-
-    debugPretty (locals, namedLocals)
 
     let locals' = locals ^.. traversed % _2 % _Just
     for locals' $ \t -> do

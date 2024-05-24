@@ -105,7 +105,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                 "match"
                 (toMethodDescriptor matchSig)
                 mempty
-        for_ (zip ctors [1 ..]) $ \(DataCon ctorName ctorType conTy, i) -> do
+        for_ (zip ctors [1 ..]) $ \(DataCon ctorName ctorType conTy, ctorIndex) -> do
             let innerConClassName = createQualifiedInnerClassName (ctorName ^. unqualified) typeClassName
             let fields = functionTypeArgs ctorType
             -- Create static factory method
@@ -161,8 +161,8 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
 
                 -- generate the match impl
                 createMethodWithCodeBuilder thisName matchSig [MPublic] "match" $ do
-                    emit $ ALoad i
-                    for_ (reverse $ zip fields [0 ..]) $ \(field, i) -> do
+                    emit $ ALoad ctorIndex
+                    for_ (zip fields [0 ..]) $ \(field, i) -> do
                         emit $ ALoad 0
                         emit $ GetField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
                     -- call the corresponding lambda param
