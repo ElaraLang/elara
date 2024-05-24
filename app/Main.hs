@@ -147,7 +147,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
         let process =
                 if os == "mingw32"
                     then shell "java -noverify -cp ../jvm-stdlib;. Main"
-                    else shell "java -cp ../jvm-stdlib:. Main"
+                    else shell "java -noverify -cp ../jvm-stdlib:. Main"
         x <- readCreateProcess process{cwd = Just "./build"} ""
         putStrLn x
 
