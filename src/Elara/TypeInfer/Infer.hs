@@ -1017,7 +1017,7 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
         -- fold over the application with inferPatternApplication
         -- for example, given Ctor a b where Ctor : a -> b -> Type a b
         -- we infer it as (Ctor a) b
-        let run t [] acc = pure (t, acc)
+        let run t [] acc = pure (t, reverse acc) -- reverse because we fold from the right
             run t (arg : args) acc = do
                 (pat, t) <- inferPatternApplication t arg
                 run t args (pat : acc)
