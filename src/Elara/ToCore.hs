@@ -3,7 +3,6 @@ module Elara.ToCore where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Data.List (foldr1, nub)
 import Data.Map qualified as M
 import Data.Traversable (for)
 import Elara.AST.Generic as AST
@@ -17,6 +16,7 @@ import Elara.AST.Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (..))
+import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
@@ -33,8 +33,6 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
-import Print (debugPretty)
-import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -308,7 +306,7 @@ desugarMatch e pats = do
             AST.ConstructorPattern cn pats -> do
                 c <- lookupCtor cn
                 pats' <- for pats patternToCore
-                pure (Core.DataAlt c, snd =<< pats')
+                pure (Core.DataAlt c, pats' >>= snd)
             AST.ListPattern [] -> do
                 t' <- typeToCore t
                 pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy (ConTy listCon) t') listCon, [])
