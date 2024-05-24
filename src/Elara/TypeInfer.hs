@@ -179,7 +179,7 @@ universallyQuantify (Located sr u : us) t =
     Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
 
 -- | Like 'astTypeToInferType' but universally quantifies over the free type variables
-astTypeToInferPolyType :: (Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
+astTypeToInferPolyType :: (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
 astTypeToInferPolyType l = first (universallyQuantify (freeTypeVars l)) <$> astTypeToInferType l
 
 astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
@@ -204,10 +204,23 @@ astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType'
         (ctor', _) <- astTypeToInferType ctor
         (arg', _) <- astTypeToInferType arg
 
-        case ctor' of
-            Infer.Custom{conName = ctorName, ..} -> pure (Infer.Custom location ctorName (typeArguments ++ [arg']), kind)
-            -- Infer.Alias{..} -> pure $ Infer.Alias location name (typeArguments ++ [arg']) value
-            other -> error (showColored other)
+        -- apply the type argument to the constructor
+        -- this will discharge one single forall and one single function arrow
+        let applyTypeArg ctor'' arg'' = base
+              where
+                base = case ctor'' of
+                    Infer.Custom{conName = ctorName, ..} -> Infer.Custom sr ctorName (typeArguments ++ [arg''])
+                    Infer.Function{output} -> output
+                    Infer.Forall{..} ->
+                        -- apply a substitution to the forall
+                        Infer.substituteType name arg'' (rec' type_)
+                    other -> error (showPretty (other, arg''))
+                rec' ctor'' = case ctor'' of
+                    Infer.Function{output} -> output
+                    Infer.Forall{type_, ..} -> Infer.Forall{type_ = rec' type_, ..}
+                    other -> other
+
+        pure (applyTypeArg ctor' arg', kind)
     astTypeToInferType' other = error (showColored other)
 
 completeExpression ::
