@@ -2,12 +2,16 @@ module Elara.Emit.Utils where
 
 import Data.List.NonEmpty ((<|))
 import Elara.AST.Name
+import Elara.AST.VarRef
 import Elara.Core
 import Elara.Core.Analysis (findTyCon)
+import Elara.Data.Unique
+import Elara.Emit.Method.Descriptor
 import Elara.Prim.Core
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Name
 import JVM.Data.Abstract.Type
+import Polysemy
 
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
@@ -26,6 +30,26 @@ generateMethodDescriptor :: HasCallStack => Type -> MethodDescriptor
 generateMethodDescriptor x = case generateMethodDescriptor' x of
     Just y -> y
     Nothing -> error $ "generateMethodDescriptor: " <> show x
+
+generateNamedMethodDescriptor :: (HasCallStack, Member UniqueGen r) => Type -> CoreExpr -> Sem r NamedMethodDescriptor
+generateNamedMethodDescriptor t e = do
+    -- collect as many known names as possible, looking at lambda params
+    -- note due to eta reduction this might not have the same length as the type signature
+    let collectLambdaBinders :: CoreExpr -> [(Unique Text, Type)]
+        collectLambdaBinders (Lam (Id (Local (Identity t')) ty _) e') = (t', ty) : collectLambdaBinders e'
+        collectLambdaBinders _ = []
+    let lambdaBinders :: [(Unique Text, FieldType)] = second generateFieldType <$> collectLambdaBinders e
+    let (MethodDescriptor params ret) = generateMethodDescriptor t
+    actualBinders <-
+        if length params == length lambdaBinders
+            then pure lambdaBinders
+            else do
+                -- pad out the lambda binders with fresh names, we'll just call it "paramN"
+
+                freshNames <- traverse (\p -> (,p) <$> makeUnique "param") (drop (length lambdaBinders) params)
+                pure $ lambdaBinders <> freshNames
+
+    pure $ NamedMethodDescriptor actualBinders ret
 
 {- |
 Attempts to generate a method descriptor for a given type, returning `Nothing` if the type should not compile to a method.
@@ -53,7 +77,6 @@ generateMethodDescriptor' t@(TyVarTy{}) = Just $ MethodDescriptor [] (TypeReturn
 -- Should probably refactor ConTy to take a DataCon instead
 generateMethodDescriptor' (ConTy (TyCon dc _)) = Just $ MethodDescriptor [] (TypeReturn $ ObjectFieldType $ createQualifiedClassName dc)
 generateMethodDescriptor' (AppTy t _) = generateMethodDescriptor' t -- type erasure
-generateMethodDescriptor' _ = Nothing
 
 -- | Returns either the JVM type of the argument, or the JVM type of the return type, if it would compile to a method
 generateReturnType :: HasCallStack => Type -> ReturnDescriptor

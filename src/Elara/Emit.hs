@@ -22,6 +22,7 @@ import Elara.Emit.Error
 import Elara.Emit.Expr
 import Elara.Emit.Lambda (etaExpandN)
 import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder, etaExpandNIntoMethod)
+import Elara.Emit.Method.Descriptor
 import Elara.Emit.Monad
 import Elara.Emit.Operator (translateOperatorName)
 import Elara.Emit.Params
@@ -123,18 +124,18 @@ addDeclaration declBody = case declBody of
                 let e' = transformTopLevelLambdas e
                 addStaticFieldInitialiser field e'
             else do
+                descriptor <- generateNamedMethodDescriptor type' e
                 -- Whenever we have a function declaration we do 2 things
                 -- Turn it into a hidden method _name, doing the actual logic
                 -- Create a getter method name, which just returns _name wrapped into a Func
                 case stripForAll type' of
                     FuncTy{} -> do
-                        let descriptor = generateMethodDescriptor type'
                         Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                         thisName <- ask @QualifiedClassName
                         y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
                         Log.debug $ "Transformed lambda expression: " <> showPretty y
                         createMethod thisName descriptor ("_" <> declName) y
-                        let getterDescriptor = MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
+                        let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
                         Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
                         createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ do
                             Log.debug $ "Getting static field " <> showPretty declName <> "..."
@@ -143,7 +144,6 @@ addDeclaration declBody = case declBody of
                             Log.debug $ "Returning static field " <> showPretty declName <> "..."
                         Log.debug "=="
                     _ -> do
-                        let descriptor = generateMethodDescriptor type'
                         Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                         let y = transformTopLevelLambdas e
                         Log.debug $ "Transformed lambda expression: " <> showPretty y

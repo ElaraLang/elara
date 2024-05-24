@@ -270,7 +270,8 @@ generateCaseInstructions scrutinee (Just bind) alts = do
                             JVMLocal i t -> error "Not a local variable"
                             Normal (Id (Local' v) t _) -> (v, generateFieldType t)
                             other -> error $ "Not a local variable: " <> showPretty other
-                inst <- createLambda binders' returnType cName altBody
+                x <- get @MethodCreationState
+                (s, inst) <- generateLambda x binders' returnType cName altBody
                 emit' inst
     -- Emit the lambdas in order
     generateInstructions scrutinee

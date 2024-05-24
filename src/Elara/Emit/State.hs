@@ -4,6 +4,7 @@ import Data.Map qualified as Map
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import JVM.Data.Abstract.Name
+import JVM.Data.Abstract.Type (FieldType)
 import JVM.Data.Raw.Types
 import Polysemy (Member, Sem)
 import Polysemy.State
@@ -41,11 +42,18 @@ instance Pretty LVKey where
 initialMethodCreationState :: QualifiedClassName -> MethodCreationState
 initialMethodCreationState = MethodCreationState Map.empty 0
 
-createMethodCreationState :: Int -> QualifiedClassName -> MethodCreationState
-createMethodCreationState argsCount =
+-- | creates a "nested" method creation state, taking the existing state and appending the given arguments
+createMethodCreationStateOf :: MethodCreationState -> [Unique Text] -> MethodCreationState
+createMethodCreationStateOf copy args =
+    let newLvs = copy.localVariables <> Map.fromList (zip (KnownName <$> args) [maxLocalVariables copy ..])
+        newMax = maxLocalVariables copy + fromIntegral (length args)
+     in copy{localVariables = newLvs, maxLocalVariables = newMax}
+
+createMethodCreationState :: [Unique Text] -> QualifiedClassName -> MethodCreationState
+createMethodCreationState args =
     MethodCreationState
-        (Map.fromList $ zip (UnknownName <$> [0 .. argsCount - 1]) [0 ..])
-        (fromIntegral argsCount)
+        (Map.fromList $ zip (KnownName <$> args) [0 ..])
+        (fromIntegral $ length args)
 
 findLocalVariable :: Member (State MethodCreationState) r => Unique Text -> Sem r U1
 findLocalVariable v = do

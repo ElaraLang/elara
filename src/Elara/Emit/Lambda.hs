@@ -29,9 +29,14 @@ import Print (debugPretty, showPretty)
 import Data.Generics.Sum (AsAny (_As))
 import Data.Traversable (for)
 import Elara.Core qualified as Core
+import {-# SOURCE #-} Elara.Emit.Expr (generateInstructions)
+import Elara.Emit.Method.Descriptor (NamedMethodDescriptor (..), toMethodDescriptor)
 import Elara.Emit.Params
+import Elara.Emit.State (MethodCreationState, createMethodCreationStateOf, initialMethodCreationState)
+import JVM.Data.Abstract.Builder.Code (runCodeBuilder)
 import Optics (filtered)
 import Polysemy.Reader
+import Polysemy.State
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
 etaExpand ::
@@ -86,6 +91,26 @@ elaraFuncDescriptor returnType baseParams = case baseParams of
     [t1, t2, t3] -> ("Elara/Func3", "run", MethodDescriptor (replicate 3 (ObjectFieldType "java/lang/Object")) (TypeReturn (ObjectFieldType "java/lang/Object")), MethodDescriptor [t1, t2, t3] (TypeReturn returnType))
     other -> error $ "createLambda: " <> show other <> " parameters not supported"
 
+generateLambda ::
+    ( Member (Error EmitError) r
+    , Member ClassBuilder r
+    , Member UniqueGen r
+    , Member (Reader GenParams) r
+    , Member Log r
+    ) =>
+    MethodCreationState ->
+    [(Unique Text, FieldType)] ->
+    FieldType ->
+    QualifiedClassName ->
+    JVMExpr ->
+    Sem r (MethodCreationState, [Instruction])
+generateLambda oldState explicitParams returnType thisClassName body = do
+    (state, (_, a, b)) <- runState (createMethodCreationStateOf oldState (fst <$> explicitParams)) $ do
+        debugPretty ("generateLambda" :: Text, body)
+        runCodeBuilder $ generateInstructions body
+
+    error (showPretty (state, body))
+
 {- | Creates the bytecode for a lambda expression
 This involves a few steps:
 1. Create a method that implements the lambda's body
@@ -110,7 +135,7 @@ createLambda baseParams returnType thisClassName body = do
     let lambdaMethodName = "lambda$" <> show lamSuffix
     Log.debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
 
-    let lambdaMethodDescriptor = MethodDescriptor (toList $ snd <$> params) (TypeReturn returnType)
+    let lambdaMethodDescriptor = NamedMethodDescriptor (toList params) (TypeReturn returnType)
     Log.debug $
         "Creating lambda method "
             <> showPretty lambdaMethodName
@@ -163,7 +188,7 @@ createLambda baseParams returnType thisClassName body = do
                             ( MethodRef
                                 (ClassInfoType thisClassName)
                                 lambdaMethodName
-                                lambdaMethodDescriptor
+                                (toMethodDescriptor lambdaMethodDescriptor)
                             )
                         )
                     , BMMethodArg methodDescriptor

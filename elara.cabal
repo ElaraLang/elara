@@ -70,6 +70,7 @@ library
       Elara.Emit.Expr
       Elara.Emit.Lambda
       Elara.Emit.Method
+      Elara.Emit.Method.Descriptor
       Elara.Emit.Monad
       Elara.Emit.Operator
       Elara.Emit.Params

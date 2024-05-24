@@ -59,11 +59,13 @@ module Elara.Emit.ADT where
 
 import Elara.Core.Module (CoreTypeDecl (..), CoreTypeDeclBody (..))
 
-import Elara.AST.Name (unqualified)
+import Data.Traversable (for)
+import Elara.AST.Name (NameLike (nameText), unqualified)
 import Elara.Core (DataCon (..), functionTypeArgs)
 import Elara.Data.Unique (makeUnique)
 import Elara.Emit.Lambda (lambdaTypeName)
 import Elara.Emit.Method (createMethodWithCodeBuilder)
+import Elara.Emit.Method.Descriptor
 import Elara.Emit.Monad (InnerEmit, addClass, addInnerClass)
 import Elara.Emit.Params (GenParams)
 import Elara.Emit.State (MethodCreationState (maxLocalVariables), findLocalVariable)
@@ -87,12 +89,13 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
     addClass typeClassName $ do
         addAccessFlag Public
         addAccessFlag Abstract
-        let conArities = ctors <&> (\(DataCon _ ty _) -> length $ functionTypeArgs ty)
-        let matchSig =
-                MethodDescriptor (ObjectFieldType . lambdaTypeName <$> conArities) (TypeReturn $ ObjectFieldType "java/lang/Object")
+        let conArities = ctors <&> (\(DataCon conName ty _) -> (conName ^. unqualified, length $ functionTypeArgs ty))
+        matchSig <- do
+            conArities <- for conArities (\(conName, arity) -> (,ObjectFieldType $ lambdaTypeName arity) <$> makeUnique conName)
+            pure $ NamedMethodDescriptor conArities (TypeReturn $ ObjectFieldType "java/lang/Object")
 
         -- add boring empty constructor
-        createMethodWithCodeBuilder typeClassName (MethodDescriptor [] VoidReturn) [MProtected] "<init>" $ do
+        createMethodWithCodeBuilder typeClassName (NamedMethodDescriptor [] VoidReturn) [MProtected] "<init>" $ do
             emit $ ALoad 0
             emit $ InvokeSpecial (ClassInfoType "java/lang/Object") "<init>" (MethodDescriptor [] VoidReturn)
 
@@ -100,13 +103,16 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
             ClassFileMethod
                 [MPublic, MAbstract]
                 "match"
-                matchSig
+                (toMethodDescriptor matchSig)
                 mempty
         for_ (zip ctors [1 ..]) $ \(DataCon ctorName ctorType conTy, i) -> do
             let innerConClassName = createQualifiedInnerClassName (ctorName ^. unqualified) typeClassName
             let fields = functionTypeArgs ctorType
             -- Create static factory method
-            createMethodWithCodeBuilder typeClassName (MethodDescriptor (generateFieldType <$> fields) (TypeReturn $ ObjectFieldType typeClassName)) [MPublic, MStatic] ("_" <> ctorName ^. unqualified) $ do
+            fields' <- for fields $ \field -> do
+                field' <- makeUnique "param"
+                pure (field', generateFieldType field)
+            createMethodWithCodeBuilder typeClassName (NamedMethodDescriptor fields' (TypeReturn $ ObjectFieldType typeClassName)) [MPublic, MStatic] ("_" <> ctorName ^. unqualified) $ do
                 emit $ New (ClassInfoType innerConClassName)
                 emit Dup
                 for_ (zip fields [0 ..]) $ \(_, i) -> do
@@ -124,7 +130,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                     addField $ ClassFileField [FPrivate, FFinal] ("field" <> show i) (generateFieldType field) []
 
                 thisName <- getName
-                createMethodWithCodeBuilder thisName (MethodDescriptor (generateFieldType <$> fields) VoidReturn) [MPublic] "<init>" $ do
+                createMethodWithCodeBuilder thisName (NamedMethodDescriptor fields' VoidReturn) [MPublic] "<init>" $ do
                     -- call super constructor
                     emit $ ALoad 0
                     emit $ InvokeSpecial (ClassInfoType typeClassName) "<init>" (MethodDescriptor [] VoidReturn)
@@ -134,7 +140,7 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                         emit $ PutField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
 
                 -- generate toString
-                createMethodWithCodeBuilder thisName (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String")) [MPublic] "toString" $ do
+                createMethodWithCodeBuilder thisName (NamedMethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String")) [MPublic] "toString" $ do
                     emit $ New (ClassInfoType "java/lang/StringBuilder")
                     emit Dup
                     emit $ LDC (LDCString $ ctorName ^. unqualified)

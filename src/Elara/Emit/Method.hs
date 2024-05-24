@@ -16,11 +16,13 @@ import JVM.Data.Abstract.Instruction
 import Data.List.NonEmpty qualified as NE
 import Elara.Core (CoreExpr, Expr (..), Type, functionTypeArgs)
 import Elara.Core.Analysis (declaredLambdaArity, estimateArity)
+import Elara.Data.Pretty (Pretty)
 import Elara.Data.Unique
 import Elara.Emit.Error
+import Elara.Emit.Method.Descriptor
 import Elara.Emit.Params
 import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type (fieldTypeToClassInfoType)
+import JVM.Data.Abstract.Type (FieldType, fieldTypeToClassInfoType)
 import Polysemy
 import Polysemy.Error
 import Polysemy.Log (Log)
@@ -42,11 +44,11 @@ createMethod ::
     , Member (Error EmitError) r
     ) =>
     QualifiedClassName ->
-    MethodDescriptor ->
+    NamedMethodDescriptor ->
     Text ->
     JVMExpr ->
     Sem r ()
-createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
+createMethod thisClassName descriptor@(NamedMethodDescriptor args _) name body = do
     Log.debug $
         "Creating method "
             <> showPretty thisClassName
@@ -56,12 +58,12 @@ createMethod thisClassName descriptor@(MethodDescriptor args _) name body = do
             <> showPretty descriptor
             <> " and body "
             <> showPretty body
-    let initialState = createMethodCreationState (length args) thisClassName
+    let initialState = createMethodCreationState (fst <$> args) thisClassName
     ((mcState, _), codeAttrs, instructions) <-
         runCodeBuilder $
             runState initialState $
                 generateInstructions body
-    createMethodWith descriptor [MPublic, MStatic] name codeAttrs mcState instructions
+    createMethodWith (toMethodDescriptor descriptor) [MPublic, MStatic] name codeAttrs mcState instructions
 
 createMethodWithCodeBuilder ::
     ( Member ClassBuilder r
@@ -69,18 +71,18 @@ createMethodWithCodeBuilder ::
     , Member (Reader GenParams) r
     ) =>
     QualifiedClassName ->
-    MethodDescriptor ->
+    NamedMethodDescriptor ->
     _ ->
     Text ->
     Sem (CodeBuilder : r) () ->
     Sem r ()
-createMethodWithCodeBuilder thisClassName descriptor@(MethodDescriptor args _) methodAttrs name codeBuilder = do
+createMethodWithCodeBuilder thisClassName descriptor@(NamedMethodDescriptor args _) methodAttrs name codeBuilder = do
     Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor
-    let initialState = createMethodCreationState (length args) thisClassName
+    let initialState = createMethodCreationState (fst <$> args) thisClassName
     (_, codeAttrs, instructions) <-
         subsume_ $
             runCodeBuilder codeBuilder
-    createMethodWith descriptor methodAttrs name codeAttrs initialState instructions
+    createMethodWith (toMethodDescriptor descriptor) methodAttrs name codeAttrs initialState instructions
 
 createMethodWith ::
     (Member ClassBuilder r, Member (Reader GenParams) r) =>
