@@ -215,7 +215,6 @@ wellFormedType _Γ type0 = case type0 of
         predicate (Context.SolvedType a _) = existential == a
         predicate _ = False
     Type.Optional{..} -> wellFormedType _Γ type_
-    Type.List{..} -> wellFormedType _Γ type_
     Type.Record{fields = Type.Fields kAs Monotype.EmptyFields} -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
     Type.Record{fields = Type.Fields kAs (Monotype.UnsolvedFields a0), ..}
         | any predicate _Γ -> traverse_ (\(_, _A) -> wellFormedType _Γ _A) kAs
@@ -324,7 +323,6 @@ subtype _A0 _B0 = do
         (Type.Scalar{scalar = s0}, Type.Scalar{scalar = s1})
             | s0 == s1 -> pass
         (Type.Optional{type_ = _A}, Type.Optional{type_ = _B}) -> subtype _A _B
-        (Type.List{type_ = _A}, Type.List{type_ = _B}) -> subtype _A _B
         (Type.Tuple{tupleArguments = typesA}, Type.Tuple{tupleArguments = typesB}) -> do
             when (length typesA /= length typesB) do
                 error "Tuple types must have the same number of elements"
@@ -341,9 +339,6 @@ subtype _A0 _B0 = do
         -- rule.
         (_, Type.Optional{..}) -> subtype _A0 type_
         (Type.Scalar{}, Type.Scalar{scalar = Monotype.JSON}) -> pass
-        (Type.List{type_ = _A}, Type.Scalar{scalar = Monotype.JSON}) -> do
-            subtype _A _B0
-            pass
         (Type.Record{fields = Type.Fields kAs Monotype.EmptyFields}, Type.Scalar{scalar = Monotype.JSON}) -> do
             let process (_, _A) = do
                     _Γ <- get
@@ -681,15 +676,15 @@ instantiateTypeL a _A0 = do
 
         -- We solve an unsolved variable against `List` using the same
         -- principles described above for solving `Optional`
-        Type.List{..} -> do
-            let _ΓL = _Γ
-            let _ΓR = _Γ'
+        -- Type.List{..} -> do
+        --     let _ΓL = _Γ
+        --     let _ΓR = _Γ'
 
-            a1 <- fresh
+        --     a1 <- fresh
 
-            set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
+        --     set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
 
-            instantiateTypeL a1 type_
+        --     instantiateTypeL a1 type_
 
         -- This is still the same one-layer-at-a-time principle, with a small
         -- twist.  In order to solve:
@@ -781,15 +776,15 @@ instantiateTypeR _A0 a = do
             set (_ΓR <> (Context.SolvedType a (Monotype.Optional (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
 
             instantiateTypeR type_ a1
-        Type.List{..} -> do
-            let _ΓL = _Γ
-            let _ΓR = _Γ'
+        -- Type.List{..} -> do
+        --     let _ΓL = _Γ
+        --     let _ΓR = _Γ'
 
-            a1 <- fresh
+        --     a1 <- fresh
 
-            set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
+        --     set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
 
-            instantiateTypeR type_ a1
+        --     instantiateTypeR type_ a1
         Type.Tuple{..} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
@@ -1027,30 +1022,30 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = do
             (finalType, pats') <- run t args []
 
             pure (Pattern (Located location (Syntax.ConstructorPattern ctors pats'), finalType))
-        Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
-            let t = Type.List{location, type_ = a, ..}
+    -- Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
+    --     let t = Type.List{location, type_ = a, ..}
 
-            ps <- traverse inferPattern ps
+    --     ps <- traverse inferPattern ps
 
-            traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
+    --     traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
 
-            pure (Pattern (Located location (Syntax.ListPattern ps), t))
-        Syntax.ConsPattern p0 p1 -> do
-            a <- fresh
+    --     pure (Pattern (Located location (Syntax.ListPattern ps), t))
+    -- Syntax.ConsPattern p0 p1 -> do
+    --     a <- fresh
 
-            let t = Type.List{location, type_ = Type.UnsolvedType{existential = a, ..}, ..}
+    --     let t = Type.List{location, type_ = Type.UnsolvedType{existential = a, ..}, ..}
 
-            p0 <- inferPattern p0
-            p1 <- inferPattern p1
+    --     p0 <- inferPattern p0
+    --     p1 <- inferPattern p1
 
-            subtype (Syntax.patternTypeOf p0) (Type.UnsolvedType{existential = a, ..})
-            subtype (Syntax.patternTypeOf p1) (Type.List location $ Type.UnsolvedType{existential = a, ..})
+    --     subtype (Syntax.patternTypeOf p0) (Type.UnsolvedType{existential = a, ..})
+    --     subtype (Syntax.patternTypeOf p1) (Type.List location $ Type.UnsolvedType{existential = a, ..})
 
-            _Θ <- get
+    --     _Θ <- get
 
-            instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
+    --     instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
 
-            pure (Pattern (Located location (Syntax.ConsPattern p0 p1), t))
+    --     pure (Pattern (Located location (Syntax.ConsPattern p0 p1), t))
     Log.debug $ "Inferred pattern " <> showPretty e0 <> " : " <> showPretty (Syntax.patternTypeOf r)
     pure r
 
@@ -1206,31 +1201,31 @@ infer (Syntax.Expr (Located location e0, _)) = do
             branches' <- traverse process branches
 
             pure $ Expr (Located location (Match e' branches'), Type.UnsolvedType (scrutinee ^. exprLocation) returnType)
-        Syntax.List [] -> do
-            existential <- fresh
+        -- Syntax.List [] -> do
+        --     existential <- fresh
 
-            push (Context.UnsolvedType existential)
+        --     push (Context.UnsolvedType existential)
 
-            pure $
-                Expr
-                    ( Located location (Syntax.List [])
-                    , Type.List{location, type_ = Type.UnsolvedType location existential, ..}
-                    )
-        Syntax.List (y : ys) -> do
-            y'@(Expr (_, type_)) <- infer y
+        --     pure $
+        --         Expr
+        --             ( Located location (Syntax.List [])
+        --             , Type.List{location, type_ = Type.UnsolvedType location existential, ..}
+        --             )
+        -- Syntax.List (y : ys) -> do
+        --     y'@(Expr (_, type_)) <- infer y
 
-            let process element = do
-                    _Γ <- get
+        --     let process element = do
+        --             _Γ <- get
 
-                    check element (Context.solveType _Γ type_)
+        --             check element (Context.solveType _Γ type_)
 
-            ys' <- traverse process ys
+        --     ys' <- traverse process ys
 
-            pure $
-                Expr
-                    ( Located location (Syntax.List (y' : ys'))
-                    , Type.List (Syntax.typeOf y').location (Syntax.typeOf y')
-                    )
+        --     pure $
+        --         Expr
+        --             ( Located location (Syntax.List (y' : ys'))
+        --             , Type.List (Syntax.typeOf y').location (Syntax.typeOf y')
+        --             )
         Syntax.Block exprs -> do
             let process expr = do
                     _Γ <- get
@@ -1312,15 +1307,15 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         y <- traverse process (NE.zip elements tupleArguments)
 
         pure $ Expr (Located exprLoc (Syntax.Tuple y), t)
-    check' (Syntax.List elements) Type.List{..} = do
-        let process element = do
-                _Γ <- get
+    -- check' (Syntax.List elements) Type.List{..} = do
+    --     let process element = do
+    --             _Γ <- get
 
-                check element (Context.solveType _Γ type_)
+    --             check element (Context.solveType _Γ type_)
 
-        y <- traverse process elements
+    --     y <- traverse process elements
 
-        pure $ Expr (Located exprLoc (Syntax.List y), t)
+    --     pure $ Expr (Located exprLoc (Syntax.List y), t)
     check' (Syntax.Match e branches) t = do
         e' <- infer e
 
@@ -1414,20 +1409,20 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     check' e Type.Forall{..} = do
         push (Context.Variable domain name)
         check' e type_
-    check' (Syntax.ListPattern patterns) Type.List{..} = do
-        let process element = do
-                _Γ <- get
+    -- check' (Syntax.ListPattern patterns) Type.List{..} = do
+    --     let process element = do
+    --             _Γ <- get
 
-                checkPattern element (Context.solveType _Γ type_)
+    --             checkPattern element (Context.solveType _Γ type_)
 
-        y <- traverse process patterns
+    --     y <- traverse process patterns
 
-        pure $ Pattern (Located exprLoc (Syntax.ListPattern y), t)
-    check' (Syntax.ConsPattern x xs) Type.List{..} = do
-        x' <- checkPattern x type_
-        xs' <- checkPattern xs (Type.List{..})
+    --     pure $ Pattern (Located exprLoc (Syntax.ListPattern y), t)
+    -- check' (Syntax.ConsPattern x xs) Type.List{..} = do
+    --     x' <- checkPattern x type_
+    --     xs' <- checkPattern xs (Type.List{..})
 
-        pure $ Pattern (Located exprLoc (Syntax.ConsPattern x' xs'), t)
+    --     pure $ Pattern (Located exprLoc (Syntax.ConsPattern x' xs'), t)
     check' (Syntax.IntegerPattern x) Type.Scalar{scalar = Monotype.Integer} = pure $ Pattern (Located exprLoc (Syntax.IntegerPattern x), t)
     check' (Syntax.FloatPattern x) Type.Scalar{scalar = Monotype.Real} = pure $ Pattern (Located exprLoc (Syntax.FloatPattern x), t)
     check' (Syntax.CharPattern x) Type.Scalar{scalar = Monotype.Char} = pure $ Pattern (Located exprLoc (Syntax.CharPattern x), t)

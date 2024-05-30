@@ -46,13 +46,15 @@ type instance Select "LetParamName" 'Shunted = Unique VarName
 
 type instance Select "InParens" 'Shunted = DataConCantHappen
 
+type instance Select "List" 'Shunted = DataConCantHappen
 type instance Select "BinaryOperator" 'Shunted = DataConCantHappen
 
 type instance Select "PatternType" 'Shunted = Maybe ShuntedType
 
 type instance Select "VarPat" 'Shunted = Unique LowerAlphaName
-
 type instance Select "ConPat" 'Shunted = Qualified TypeName
+type instance Select "ConsPattern" 'Shunted = DataConCantHappen
+type instance Select "ListPattern" 'Shunted = DataConCantHappen
 
 type instance Select "TypeApplication" 'Shunted = ShuntedType
 
@@ -119,7 +121,7 @@ instance HasDependencies ShuntedDeclaration where
             valueDependencies e
                 <> patternDependencies e
                 <> (maybeToList t >>= typeDependencies)
-        Generic.TypeDeclaration tvs x _ ->
+        Generic.TypeDeclaration _ x _ ->
             case x of
                 Located _ (Generic.ADT ctors) ->
                     concatMapOf (each % _2 % each) typeDependencies ctors
@@ -131,21 +133,18 @@ valueDependencies =
     concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names
   where
     names :: ShuntedExpr' -> [Qualified Name]
-    names (Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
-    names (Constructor (Located _ e)) = [NTypeName <$> e]
+    names (Generic.Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
+    names (Generic.Constructor (Located _ e)) = [NTypeName <$> e]
     names _ = []
 
 patternDependencies :: ShuntedExpr -> [Qualified Name]
 patternDependencies =
-    foldOf x
+    foldOf (gplate % to patternDependencies')
   where
-    x = trav % to patternDependencies'
-    trav :: Traversal' ShuntedExpr ShuntedPattern
-    trav = gplate @ShuntedPattern @ShuntedExpr
     patternDependencies' :: ShuntedPattern -> [Qualified Name]
     patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
     names :: ShuntedPattern' -> [Qualified Name]
-    names (ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
+    names (Generic.ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
     names _ = []
 
 typeDependencies :: ShuntedType -> [Qualified Name]
@@ -153,5 +152,5 @@ typeDependencies =
     concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
   where
     names :: ShuntedType' -> [Qualified Name]
-    names (UserDefinedType (Located _ e)) = [NTypeName <$> e]
+    names (Generic.UserDefinedType (Located _ e)) = [NTypeName <$> e]
     names _ = []

@@ -35,7 +35,7 @@ unannotatedPattern = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
 
 -- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y
 cons :: Parser (FrontendPattern -> FrontendPattern -> FrontendPattern)
-cons = liftedBinary (token_ TokenDoubleColon) (const ConsPattern) unannotatedPattern
+cons = liftedBinary (token_ TokenDoubleColon) (const (curry ConsPattern)) unannotatedPattern
 
 locatedPattern :: Parser FrontendPattern' -> Parser FrontendPattern
 locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located

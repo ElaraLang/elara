@@ -29,6 +29,7 @@ import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInfer
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
+import Elara.Prim (fullListName)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -195,7 +196,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType'
         pure (Infer.Function sr a' b', kind)
     astTypeToInferType' (ListType ts) = do
         (ts', _) <- astTypeToInferType ts
-        pure (Infer.List sr ts', kind)
+        pure (Infer.Custom sr fullListName [ts'], kind)
     astTypeToInferType' (TypeConstructorApplication ctor arg) = do
         (ctor', _) <- astTypeToInferType ctor
         (arg', _) <- astTypeToInferType arg
@@ -281,7 +282,6 @@ completeExpression ctx (Expr (y', t)) = do
         (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
         (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
         (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
-        (Infer.List{type_ = unsolvedType}, Infer.List{type_ = solvedType}) -> unify unsolvedType solvedType
         other -> error (showPretty other)
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
@@ -294,7 +294,6 @@ completeExpression ctx (Expr (y', t)) = do
     toMonoType = \case
         Infer.Scalar{scalar} -> Mono.Scalar scalar
         Infer.Function{input, output} -> Mono.Function (toMonoType input) (toMonoType output)
-        Infer.List{type_} -> Mono.List (toMonoType type_)
         Infer.Tuple{tupleArguments} -> Mono.Tuple (toMonoType <$> tupleArguments)
         Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
         Infer.VariableType{name = v} -> Mono.VariableType v

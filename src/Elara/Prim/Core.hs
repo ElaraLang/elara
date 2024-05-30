@@ -15,17 +15,11 @@ trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
 falseCtorName :: Qualified Text
 falseCtorName = Qualified "False" (ModuleName ("Elara" :| ["Prim"]))
 
-emptyListCtorName :: Qualified Text
-emptyListCtorName = Qualified "empty" (ModuleName ("Elara" :| ["Prim"]))
+emptyListCtorName :: IsString s => Qualified s
+emptyListCtorName = Qualified "Nil" (ModuleName ("Elara" :| ["Prim"]))
 
-consCtorName :: Qualified Text
-consCtorName = Qualified "cons" (ModuleName ("Elara" :| ["Prim"]))
-
-consType :: Member UniqueGen r => Sem r Type
-consType = do
-    a <- makeUnique (Just "a")
-    let tv = TypeVariable a TypeKind
-    pure $ ForAllTy tv (FuncTy (TyVarTy tv) (FuncTy (AppTy (ConTy listCon) (TyVarTy tv)) (AppTy (ConTy listCon) (TyVarTy tv))))
+consCtorName :: IsString s => Qualified s
+consCtorName = Qualified "Cons" (ModuleName ("Elara" :| ["Prim"]))
 
 -- tuple2CtorName :: Qualified Text
 -- tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
@@ -43,9 +37,6 @@ fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]
 
 boolCon :: TyCon
 boolCon = TyCon (mkPrimQual "Bool") Prim
-
-listCon :: TyCon
-listCon = TyCon (mkPrimQual "List") Prim
 
 intCon :: TyCon
 intCon = TyCon (mkPrimQual "Int") Prim

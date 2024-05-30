@@ -8,7 +8,6 @@ import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.Core
 import Elara.Data.Pretty
-import Elara.Prim.Core (listCon)
 import Prelude hiding (Alt)
 
 class Pretty v => PrettyVar v where

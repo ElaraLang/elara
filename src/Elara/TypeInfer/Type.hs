@@ -79,11 +79,6 @@ data Type s
       -- >>> pretty @(Type ()) (Optional () "a")
       -- Optional a
       Optional {location :: s, type_ :: Type s}
-    | -- | List type
-      --
-      -- >>> pretty @(Type ()) (List () "a")
-      -- List a
-      List {location :: s, type_ :: Type s}
     | -- | Record type
       --
       -- >>> pretty @(Type ()) (Record () (Fields [("x", "X"), ("y", "Y")] Monotype.EmptyFields))
@@ -125,7 +120,6 @@ instance StructuralEq (Type s) where
     structuralEq (Forall _ _ name1 domain1 type1) (Forall _ _ name2 domain2 type2) = name1 == name2 && domain1 == domain2 && structuralEq type1 type2
     structuralEq (Function _ input1 output1) (Function _ input2 output2) = structuralEq input1 input2 && structuralEq output1 output2
     structuralEq (Optional _ type1) (Optional _ type2) = structuralEq type1 type2
-    structuralEq (List _ type1) (List _ type2) = structuralEq type1 type2
     structuralEq (Record _ fields1) (Record _ fields2) = structuralEq fields1 fields2
     structuralEq (Scalar _ scalar1) (Scalar _ scalar2) = scalar1 == scalar2
     structuralEq (Custom _ conName1 typeArguments1) (Custom _ conName2 typeArguments2) = conName1 == conName2 && typeArguments1 `structuralEq` typeArguments2
@@ -160,9 +154,6 @@ instance Plated (Type s) where
             Optional{type_ = oldType, ..} -> do
                 newType <- onType oldType
                 pure Optional{type_ = newType, ..}
-            List{type_ = oldType, ..} -> do
-                newType <- onType oldType
-                pure List{type_ = newType, ..}
             Record{fields = Fields oldFieldTypes remainingFields, ..} -> do
                 let onPair (field, oldType) = do
                         newType <- onType oldType
@@ -205,8 +196,6 @@ fromMonotype monotype =
             Function{input = fromMonotype input, output = fromMonotype output, ..}
         Monotype.Optional type_ ->
             Optional{type_ = fromMonotype type_, ..}
-        Monotype.List type_ ->
-            List{type_ = fromMonotype type_, ..}
         Monotype.Record (Monotype.Fields kτs ρ) ->
             Record{fields = Fields (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
@@ -344,9 +333,6 @@ substituteType a _A type_ =
         Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
           where
             newType = substituteType a _A oldType
-        List{type_ = oldType, ..} -> List{type_ = newType, ..}
-          where
-            newType = substituteType a _A oldType
         Record{fields = Fields kAs ρ, ..} ->
             Record{fields = Fields (map (second (substituteType a _A)) kAs) ρ, ..}
         Scalar{..} ->
@@ -379,9 +365,6 @@ substituteFields ρ0 r@(Fields kτs ρ1) type_ =
 
             newOutput = substituteFields ρ0 r oldOutput
         Optional{type_ = oldType, ..} -> Optional{type_ = newType, ..}
-          where
-            newType = substituteFields ρ0 r oldType
-        List{type_ = oldType, ..} -> List{type_ = newType, ..}
           where
             newType = substituteFields ρ0 r oldType
         Record{fields = Fields kAs0 ρ, ..}
@@ -553,17 +536,17 @@ prettyApplicationType Optional{..} = Pretty.group (Pretty.flatAlt long short)
                 <> "  "
                 <> prettyPrimitiveType type_
             )
-prettyApplicationType List{..} = Pretty.group (Pretty.flatAlt long short)
-  where
-    short = builtin "List" <> " " <> prettyPrimitiveType type_
+-- prettyApplicationType List{..} = Pretty.group (Pretty.flatAlt long short)
+--   where
+--     short = builtin "List" <> " " <> prettyPrimitiveType type_
 
-    long =
-        Pretty.align
-            ( builtin "List"
-                <> Pretty.hardline
-                <> "  "
-                <> prettyPrimitiveType type_
-            )
+--     long =
+--         Pretty.align
+--             ( builtin "List"
+--                 <> Pretty.hardline
+--                 <> "  "
+--                 <> prettyPrimitiveType type_
+--             )
 prettyApplicationType other =
     prettyPrimitiveType other
 

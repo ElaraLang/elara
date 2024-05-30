@@ -88,7 +88,7 @@ data Expr' (ast :: a)
     | TypeApplication (Expr ast) (Select "TypeApplication" ast)
     | If (Expr ast) (Expr ast) (Expr ast)
     | BinaryOperator !(Select "BinaryOperator" ast)
-    | List [Expr ast]
+    | List !(Select "List" ast)
     | Match (Expr ast) [(Pattern ast, Expr ast)]
     | LetIn
         (ASTLocate ast (Select "LetParamName" ast))
@@ -137,8 +137,8 @@ exprLocation = _Unwrapped % _1 % sourceRegion
 data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))
     | ConstructorPattern (ASTLocate ast (Select "ConPat" ast)) [Pattern ast]
-    | ListPattern [Pattern ast]
-    | ConsPattern (Pattern ast) (Pattern ast)
+    | ListPattern !(Select "ListPattern" ast)
+    | ConsPattern !(Select "ConsPattern" ast)
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double

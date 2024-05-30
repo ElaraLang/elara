@@ -19,8 +19,8 @@ generatedFileName :: String
 generatedFileName = "<generated>"
 
 data RealPosition = Position
-    { _line :: Int
-    , _column :: Int
+    { _line :: !Int
+    , _column :: !Int
     }
     deriving (Show, Eq, Ord, Data, Generic)
 
@@ -125,11 +125,15 @@ positionToDiagnosePosition fp (Position ln cn) =
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
 
+class HasSourceRegion a where
+    sourceRegion :: Lens' a SourceRegion
+
+instance HasSourceRegion (Located a) where
+    sourceRegion = lensVL $ \f (Located region x) -> fmap (`Located` x) (f region)
+
 instance FoldableWithIndex Int Located
 instance TraversableWithIndex Int Located
 instance FunctorWithIndex Int Located
-
--- itraverse f (Located region x) = Located region <$> f 0 x
 
 instance Each Int (Located a) (Located b) a b
 
@@ -148,16 +152,13 @@ makePrisms ''IgnoreLocation
 generatedSourceRegionFrom :: Located a -> SourceRegion
 generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 
-sourceRegion :: Lens' (Located a) SourceRegion
-sourceRegion = lensVL $ \f (Located region x) -> fmap (`Located` x) (f region)
-
 unlocated :: Lens (Located a) (Located b) a b
 unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
 
-withLocationOf :: a -> Located b -> Located a
-withLocationOf a (Located region _) = Located region a
+withLocationOf :: HasSourceRegion b => a -> b -> Located a
+withLocationOf a b = Located (b ^. sourceRegion) a
 
-merge :: (Located a -> Located b -> c) -> Located a -> Located b -> Located c
+merge :: (HasSourceRegion a, HasSourceRegion b) => (a -> b -> c) -> a -> b -> Located c
 merge fn l1 l2 =
     Located
         (spanningRegion' (l1 ^. sourceRegion :| [l2 ^. sourceRegion]))

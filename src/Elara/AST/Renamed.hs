@@ -35,13 +35,15 @@ type instance Select "LetParamName" 'Renamed = Unique VarName
 
 type instance Select "InParens" 'Renamed = RenamedExpr
 
+type instance Select "List" 'Renamed = DataConCantHappen
 type instance Select "BinaryOperator" 'Renamed = (RenamedBinaryOperator, RenamedExpr, RenamedExpr)
 
 type instance Select "PatternType" 'Renamed = Maybe RenamedType
 
 type instance Select "VarPat" 'Renamed = Unique LowerAlphaName
-
 type instance Select "ConPat" 'Renamed = Qualified TypeName
+type instance Select "ConsPattern" 'Renamed = DataConCantHappen
+type instance Select "ListPattern" 'Renamed = DataConCantHappen
 
 type instance Select "TypeApplication" 'Renamed = RenamedType
 

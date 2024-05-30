@@ -4,9 +4,11 @@
 module Elara.AST.Generic.Instances.Simple where
 
 import Data.Data
+import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
 import Elara.AST.Generic.Types
 import Elara.AST.Name
+import Elara.AST.Region
 
 type ForAllExpr :: (Kind.Type -> Kind.Constraint) -> ast -> Kind.Constraint
 type ForAllExpr c ast =
@@ -24,9 +26,10 @@ deriving instance
     ( (Eq (Select "LetPattern" ast))
     , ForAllExpr Eq ast
     , (Eq (ASTLocate ast (BinaryOperator' ast)))
-    , (Eq (Select "ExprType" ast))
-    , (Eq (Select "PatternType" ast))
-    , (Eq (Select "BinaryOperator" ast))
+    , Eq (Select "ExprType" ast)
+    , Eq (Select "PatternType" ast)
+    , Eq (Select "BinaryOperator" ast)
+    , Eq (Select "List" ast)
     , Eq (Select "TypeApplication" ast)
     , Eq (ASTLocate ast (Expr' ast))
     , Eq (ASTLocate ast (Pattern' ast))
@@ -35,12 +38,13 @@ deriving instance
     Eq (Expr' ast)
 
 deriving instance
-    ( (Ord (Select "LetPattern" ast))
+    ( Ord (Select "LetPattern" ast)
     , ForAllExpr Ord ast
-    , (Ord (ASTLocate ast (BinaryOperator' ast)))
-    , (Ord (Select "ExprType" ast))
-    , (Ord (Select "PatternType" ast))
-    , (Ord (Select "BinaryOperator" ast))
+    , Ord (ASTLocate ast (BinaryOperator' ast))
+    , Ord (Select "ExprType" ast)
+    , Ord (Select "PatternType" ast)
+    , Ord (Select "BinaryOperator" ast)
+    , Ord (Select "List" ast)
     , Ord (Select "TypeApplication" ast)
     , Ord (ASTLocate ast (Expr' ast))
     , Ord (ASTLocate ast (Pattern' ast))
@@ -54,7 +58,9 @@ deriving instance (Ord (ASTLocate ast (Expr' ast)), Ord (Select "ExprType" ast))
 deriving instance
     ( Eq (ASTLocate ast (Select "VarPat" ast))
     , Eq (ASTLocate ast (Select "ConPat" ast))
-    , (Eq (Select "PatternType" ast))
+    , Eq (Select "PatternType" ast)
+    , Eq (Select "ConsPattern" ast)
+    , Eq (Select "ListPattern" ast)
     , Eq (ASTLocate ast (Pattern' ast))
     ) =>
     Eq (Pattern' ast)
@@ -63,6 +69,8 @@ deriving instance
     ( Ord (ASTLocate ast (Select "VarPat" ast))
     , Ord (ASTLocate ast (Select "ConPat" ast))
     , Ord (Select "PatternType" ast)
+    , Ord (Select "ConsPattern" ast)
+    , Ord (Select "ListPattern" ast)
     , Ord (ASTLocate ast (Pattern' ast))
     ) =>
     Ord (Pattern' ast)
@@ -195,12 +203,13 @@ deriving instance
 -- Show instances
 
 deriving instance
-    ( (Show (Select "LetPattern" ast))
-    , (Show (Select "TypeApplication" ast))
-    , (Show (ASTLocate ast (BinaryOperator' ast)))
-    , (Show (Select "ExprType" ast))
-    , (Show (Select "PatternType" ast))
+    ( Show (Select "LetPattern" ast)
+    , Show (Select "TypeApplication" ast)
+    , Show (ASTLocate ast (BinaryOperator' ast))
+    , Show (Select "ExprType" ast)
+    , Show (Select "PatternType" ast)
     , Show (Select "BinaryOperator" ast)
+    , Show (Select "List" ast)
     , Show (ASTLocate ast (Expr' ast))
     , Show (ASTLocate ast (Pattern' ast))
     , Show (Type ast)
@@ -213,7 +222,9 @@ deriving instance (Show (ASTLocate ast (Expr' ast)), Show (Select "ExprType" ast
 deriving instance
     ( Show (ASTLocate ast (Select "VarPat" ast))
     , Show (ASTLocate ast (Select "ConPat" ast))
-    , (Show (Select "PatternType" ast))
+    , Show (Select "PatternType" ast)
+    , Show (Select "ConsPattern" ast)
+    , Show (Select "ListPattern" ast)
     , Show (ASTLocate ast (Pattern' ast))
     ) =>
     Show (Pattern' ast)
@@ -297,6 +308,8 @@ deriving instance
     , (Data (Pattern ast))
     , (Data (ASTLocate ast (Select "VarPat" ast)))
     , (Data (ASTLocate ast (Select "ConPat" ast)))
+    , (Data (Select "ConsPattern" ast))
+    , (Data (Select "ListPattern" ast))
     ) =>
     Data (Pattern' ast)
 
@@ -315,7 +328,8 @@ deriving instance
     , Data (Select "LetPattern" ast)
     , Data (Select "PatternType" ast)
     , Data (Select "BinaryOperator" ast)
-    , (Data (Select "ExprType" ast))
+    , Data (Select "List" ast)
+    , Data (Select "ExprType" ast)
     , ForAllExpr Data ast
     , Data (Select "TypeApplication" ast)
     , Data (ASTLocate ast (Pattern' ast))
@@ -348,3 +362,11 @@ deriving instance
     , Typeable a
     ) =>
     Data (Type' ast)
+
+-- HasSourceRegion instances
+
+instance ASTLocate' ast ~ Located => HasSourceRegion (Pattern ast) where
+    sourceRegion = _Unwrapped % _1 % sourceRegion
+
+instance ASTLocate' ast ~ Located => HasSourceRegion (Expr ast) where
+    sourceRegion = _Unwrapped % _1 % sourceRegion

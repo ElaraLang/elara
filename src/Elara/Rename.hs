@@ -28,8 +28,9 @@ import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
 import Elara.Pipeline
+import Elara.Prim.Core (consCtorName, emptyListCtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
-import Optics (filteredBy, traverseOf_)
+import Optics (anyOf, filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem)
 import Polysemy.Error (Error, note, throw)
 import Polysemy.Reader hiding (Local)
@@ -277,7 +278,12 @@ ensureExistsAndExposed mn n = do
 elementExistsInModule :: Module 'Desugared -> Name -> Bool
 elementExistsInModule m' n' =
     any
-        (\d -> d ^. _Unwrapped % unlocated % field' @"name" % unlocated == n')
+        ( \d ->
+            d ^. _Unwrapped % unlocated % field' @"name" % unlocated == n'
+                || case d ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+                    TypeDeclaration _ (Located _ (ADT ctors)) _ -> anyOf (each % _1 % unlocated) (\n -> NTypeName n == n') ctors
+                    _ -> False
+        )
         (m' ^. _Unwrapped % unlocated % field' @"declarations")
 
 isExposingAndExists :: Module 'Desugared -> Name -> Bool
@@ -374,7 +380,7 @@ renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % _1 % unloca
 renameExpr :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredExpr -> Sem r RenamedExpr
 renameExpr (Expr' (Block es)) = desugarBlock es
 renameExpr e@(Expr' (Let{})) = desugarBlock (e :| [])
-renameExpr (Expr le) =
+renameExpr (Expr le@(Located loc _, _)) =
     Expr
         <$> bitraverse
             (traverseOf unlocated renameExpr')
@@ -407,7 +413,31 @@ renameExpr (Expr le) =
         left' <- renameExpr left
         right' <- renameExpr right
         pure $ BinaryOperator (op', left', right')
-    renameExpr' (List es) = List <$> traverse renameExpr es
+    renameExpr' (List []) = pure $ Constructor (Located loc emptyListCtorName)
+    renameExpr' (List (x : xs)) = do
+        xs' <- traverse renameExpr (x :| xs)
+        let lastCons :: RenamedExpr =
+                Expr (Constructor (Located loc emptyListCtorName) `withLocationOf` last xs', Nothing)
+        let cons x y =
+                -- create a cons of x and y i.e. (Cons x) y
+                Expr
+                    ( FunctionCall
+                        ( Expr
+                            ( FunctionCall
+                                (Expr (Constructor (Located loc consCtorName) `withLocationOf` x, Nothing))
+                                x
+                                `withLocationOf` x
+                            , Nothing
+                            )
+                        )
+                        y
+                        `withLocationOf` y
+                    , Nothing
+                    )
+        let createConses :: [RenamedExpr] -> RenamedExpr
+            createConses [] = lastCons
+            createConses (x' : xs') = cons x' (createConses xs')
+        pure (createConses (toList xs') ^. _Unwrapped % _1 % unlocated)
     renameExpr' (LetIn vn _ e body) = do
         vn' <- uniquify vn
         withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local vn')) $ do
@@ -446,7 +476,7 @@ renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unl
         pure $ Infixed op'
 
 renamePattern :: Rename r => DesugaredPattern -> Sem r RenamedPattern
-renamePattern (Pattern fp) =
+renamePattern (Pattern fp@(Located loc _, _)) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated renamePattern')
@@ -460,8 +490,27 @@ renamePattern (Pattern fp) =
     renamePattern' (CharPattern i) = pure $ CharPattern i
     renamePattern' WildcardPattern = pure WildcardPattern
     renamePattern' UnitPattern = pure UnitPattern
-    renamePattern' (ListPattern ps) = ListPattern <$> traverse renamePattern ps
-    renamePattern' (ConsPattern p1 p2) = ConsPattern <$> renamePattern p1 <*> renamePattern p2
+    renamePattern' (ListPattern []) = pure $ ConstructorPattern (Located loc emptyListCtorName) []
+    renamePattern' (ListPattern (x : xs)) = do
+        -- turn [x, y, z] into Cons x (Cons y (Cons z Nil))
+        xs' <- traverse renamePattern (x :| xs)
+        let lastCons :: Pattern Renamed =
+                Pattern
+                    ( ConstructorPattern
+                        (Located loc emptyListCtorName)
+                        []
+                        `withLocationOf` last xs'
+                    , Nothing
+                    )
+        let cons x y = Pattern (ConstructorPattern (Located loc consCtorName) [x, y] `withLocationOf` x, Nothing)
+        let createConses :: [Pattern 'Renamed] -> Pattern 'Renamed
+            createConses [] = lastCons
+            createConses (x' : xs') = cons x' (createConses xs')
+        pure (createConses (init xs') ^. _Unwrapped % _1 % unlocated)
+    renamePattern' (ConsPattern (p1, p2)) = do
+        p1' <- renamePattern p1
+        p2' <- renamePattern p2
+        pure $ ConstructorPattern (Located loc consCtorName) [p1', p2']
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
         modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (Local (NormalVarName <<$>> vn')))
@@ -486,7 +535,7 @@ patternToVarName (Pattern (Located _ p, _)) =
             StringPattern _ -> mn "string"
             CharPattern _ -> mn "char"
             ConstructorPattern _ _ -> mn "constructor"
-            ConsPattern _ _ -> mn "cons"
+            ConsPattern _ -> mn "cons"
             UnitPattern -> "unit"
 
 patternToMatch :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r (Located (Unique VarName), RenamedExpr)

@@ -18,11 +18,11 @@ import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
 import Polysemy
 
-consName :: VarName
-consName = NormalVarName "::"
+consName :: TypeName
+consName = "::"
 
 cons :: MaybeQualified VarOrConName
-cons = MaybeQualified (VarName "cons") (Just primModuleName)
+cons = MaybeQualified (ConName "Cons") (Just primModuleName)
 
 fetchPrimitiveName :: VarName
 fetchPrimitiveName = NormalVarName "elaraPrimitive"
@@ -51,6 +51,9 @@ charName = TypeName "Char"
 ioName :: TypeName
 ioName = TypeName "IO"
 
+fullListName :: IsString a => Qualified a
+fullListName = mkPrimQual "List"
+
 primModuleName :: ModuleName
 primModuleName = ModuleName ["Elara", "Prim"]
 
@@ -67,10 +70,10 @@ mkPrimVarRef :: c -> Located (Qualified c)
 mkPrimVarRef c = generatedLocated (Just "<primitive>") (mkPrimQual c)
 
 primitiveVars :: [VarName]
-primitiveVars = [fetchPrimitiveName, consName]
+primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, boolName, trueName, falseName]
+primitiveTypes = [stringName, charName, intName, boolName, trueName, falseName, consName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =

@@ -33,6 +33,7 @@ type instance Select "ConRef" 'Desugared = MaybeQualified TypeName
 type instance Select "LetParamName" 'Desugared = VarName
 
 type instance Select "InParens" 'Desugared = DesugaredExpr
+type instance Select "List" 'Desugared = [DesugaredExpr]
 
 type instance Select "BinaryOperator" 'Desugared = (DesugaredBinaryOperator, DesugaredExpr, DesugaredExpr)
 
@@ -47,8 +48,9 @@ type instance Select "Infixed" 'Desugared = Located (MaybeQualified VarOrConName
 type instance Select "PatternType" 'Desugared = Maybe DesugaredType
 
 type instance Select "VarPat" 'Desugared = LowerAlphaName
-
 type instance Select "ConPat" 'Desugared = MaybeQualified TypeName
+type instance Select "ConsPattern" 'Desugared = (DesugaredPattern, DesugaredPattern)
+type instance Select "ListPattern" 'Desugared = [DesugaredPattern]
 
 type instance Select "TypeApplication" 'Desugared = DesugaredType
 

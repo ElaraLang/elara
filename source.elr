@@ -2,7 +2,7 @@ import Prelude
 import Elara.Prim
 
 def l : List Int
-let l = Cons 1 (Cons 2 (Cons 3 Nil))
+let l = [1, 2, 3]
 
 def map : (a -> b) -> List a -> List b
 let map f l = 
@@ -11,4 +11,4 @@ let map f l =
         Cons x xs -> Cons (f x) (map f xs)
 
 let main = 
-    print (stringToList "hello")
+    print (map (\x -> x) l)

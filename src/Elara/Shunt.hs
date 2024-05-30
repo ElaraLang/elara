@@ -328,7 +328,6 @@ shuntExpr (Expr (le, t)) = do
                     , Nothing -- this will / can never have a type annotation
                     )
         pure (FunctionCall leftCall r')
-    shuntExpr' (List es) = List <$> traverse fixExpr es
     shuntExpr' (If cond then' else') = If <$> fixExpr cond <*> fixExpr then' <*> fixExpr else'
     shuntExpr' (Let vn _ e) = Let vn NoFieldValue <$> fixExpr e
     shuntExpr' (LetIn vn _ e body) = LetIn vn NoFieldValue <$> fixExpr e <*> fixExpr body
@@ -351,5 +350,3 @@ shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> trave
     shuntPattern' (FloatPattern l) = pure (FloatPattern l)
     shuntPattern' (StringPattern l) = pure (StringPattern l)
     shuntPattern' (CharPattern l) = pure (CharPattern l)
-    shuntPattern' (ListPattern ps) = ListPattern <$> traverse shuntPattern ps
-    shuntPattern' (ConsPattern p1 p2) = ConsPattern <$> shuntPattern p1 <*> shuntPattern p2

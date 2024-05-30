@@ -1,9 +1,11 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 
 module Elara.AST.Generic.Utils where
 
 import Data.Kind qualified as Kind
 import Elara.AST.Generic.Common
+import Elara.AST.Generic.Types (Select)
 import Elara.AST.Region
 
 {- | When fields may be optional, we need a way of representing that generally. This class does that.
@@ -31,6 +33,9 @@ class ToList i o where
 
 instance {-# OVERLAPPING #-} ToList NoFieldValue [a] where
     fieldToList _ = []
+
+instance {-# OVERLAPPING #-} ToList DataConCantHappen [a] where
+    fieldToList _ = error "fieldToList: DataConCantHappen"
 
 instance ToList [a] [a] where
     fieldToList = identity

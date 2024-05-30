@@ -112,6 +112,7 @@ instance
     , Pretty letPatterns
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
     , (ToList (Select "LetPattern" ast) [letPatterns])
+    , (ToList (Select "List" ast) [Expr ast])
     , Pretty lambdaPatterns
     , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
     , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
@@ -139,26 +140,8 @@ prettyExpr ::
     ( exprType ~ UnwrapMaybe (Select "ExprType" ast) -- This constraint fixes ambiguity errors
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
     , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
-    , Pretty (ASTLocate ast (Select "ConRef" ast))
-    , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty (Select "TypeApplication" ast)
-    , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
-    , Pretty letPatterns
-    , (ToList (Select "LetPattern" ast) [letPatterns])
-    , Pretty lambdaPatterns
-    , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
-    , (Pretty (ASTLocate ast (BinaryOperator' ast)))
-    , (ToMaybe (Select "ExprType" ast) (Maybe (UnwrapMaybe (Select "ExprType" ast))))
-    , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
-    , (Pretty (UnwrapMaybe (Select "ExprType" ast)))
-    , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
-    , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
-    , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
-    , (Pretty (Select "ExprType" ast))
-    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
-    , (DataConAs (Select "InParens" ast) (Expr ast))
     , (?contextFree :: Bool, ?withType :: Bool)
-    , RUnlocate ast
+    , _
     ) =>
     Expr ast ->
     Doc AnsiStyle
@@ -175,10 +158,11 @@ instance
     ( Pretty (ASTLocate ast (Select "ConRef" ast))
     , Pretty (ASTLocate ast (Select "VarRef" ast))
     , Pretty (Select "TypeApplication" ast)
-    , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
+    , Pretty (ASTLocate ast (Select "LetParamName" ast))
     , Pretty letPatterns
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
-    , (ToList (Select "LetPattern" ast) [letPatterns])
+    , ToList (Select "LetPattern" ast) [letPatterns]
+    , ToList (Select "List" ast) [Expr ast]
     , Pretty lambdaPatterns
     , lambdaPatterns ~ UnwrapList (Select "LambdaPattern" ast)
     , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
@@ -207,25 +191,7 @@ prettyExpr' ::
     , letPatterns ~ UnwrapList (Select "LetPattern" ast)
     , ?contextFree :: Bool
     , ?withType :: Bool
-    , Pretty (ASTLocate ast (Select "VarRef" ast))
-    , Pretty (ASTLocate ast (Select "ConRef" ast))
-    , Pretty (Select "TypeApplication" ast)
-    , (Pretty (ASTLocate ast (Select "LetParamName" ast)))
-    , Pretty letPatterns
-    , (ToList (Select "LetPattern" ast) [letPatterns])
-    , Pretty lambdaPatterns
-    , (ToList (ASTLocate ast (Select "LambdaPattern" ast)) [lambdaPatterns])
-    , (Pretty (ASTLocate ast (BinaryOperator' ast)))
-    , (ToMaybe (Select "ExprType" ast) (Maybe (UnwrapMaybe (Select "ExprType" ast))))
-    , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
-    , (Pretty (UnwrapMaybe (Select "ExprType" ast)))
-    , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
-    , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
-    , (StripLocation (ASTLocate ast (Expr' ast)) (Expr' ast))
-    , (Pretty (Select "ExprType" ast))
-    , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
-    , (DataConAs (Select "InParens" ast) (Expr ast))
-    , RUnlocate ast
+    , _
     ) =>
     Expr' ast ->
     Doc AnsiStyle
@@ -240,7 +206,8 @@ prettyExpr' (Lambda ps e) = prettyLambdaExpr (fieldToList @(ASTLocate ast (Selec
 prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2 False
 prettyExpr' (TypeApplication e1 e2) = prettyFunctionCall e1 ("@" <> parens (pretty e2))
 prettyExpr' (If e1 e2 e3) = prettyIfExpr (prettyExpr e1) (prettyExpr e2) (prettyExpr e3)
-prettyExpr' (List l) = prettyList (prettyExpr <$> l)
+prettyExpr' (List l) =
+    prettyList (prettyExpr <$> fieldToList @(Select "List" ast) @[Expr ast] l)
 prettyExpr' (Match e m) = prettyMatchExpr (prettyExpr e) (prettyMatchBranch . second prettyExpr <$> m)
 prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e1 e2
 prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e
@@ -273,6 +240,8 @@ instance
     , (ToMaybe (Select "PatternType" ast) (Maybe (UnwrapMaybe (Select "PatternType" ast))))
     , (Pretty (UnwrapMaybe (Select "PatternType" ast)))
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
+    , DataConAs (Select "ConsPattern" ast) (Pattern ast, Pattern ast)
+    , DataConAs (Select "ListPattern" ast) [Pattern ast]
     ) =>
     Pretty (Pattern' ast)
     where
@@ -285,8 +254,10 @@ prettyPattern ::
     Doc AnsiStyle
 prettyPattern (VarPattern v) = pretty v
 prettyPattern (ConstructorPattern c ps) = prettyConstructorPattern c ps
-prettyPattern (ListPattern l) = prettyList l
-prettyPattern (ConsPattern p1 p2) = prettyConsPattern p1 p2
+prettyPattern (ListPattern l) = prettyList (dataConAs @(Select "ListPattern" ast) @[Pattern ast] l)
+prettyPattern (ConsPattern c) = do
+    let (p1, p2) = dataConAs @(Select "ConsPattern" ast) @(Pattern ast, Pattern ast) c
+    prettyConsPattern p1 p2
 prettyPattern WildcardPattern = "_"
 prettyPattern (IntegerPattern i) = pretty i
 prettyPattern (FloatPattern f) = pretty f

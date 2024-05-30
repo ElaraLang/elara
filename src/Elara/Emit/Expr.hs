@@ -39,7 +39,7 @@ import Polysemy.Log (Log)
 import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State
-import Print (showPretty)
+import Print (showColored, showPretty)
 
 generateInstructions ::
     ( HasCallStack
@@ -195,52 +195,6 @@ generateCaseInstructions -- hardcode if/else impl
             emit' [Goto endLabel, Label ifFalseLabel]
             generateInstructions ifFalse
             emit' [Label endLabel]
-generateCaseInstructions
-    scrutinee
-    as -- hardcode cons/empty imp
-    [ (DataAlt (DataCon emptyCtorName' (AppTy (ConTy listCon') _) _), _, ifEmpty)
-        , (DataAlt (DataCon consCtorName' (ConTy listCon2') _), [headBind, tailBind], ifCons)
-        ]
-        | emptyCtorName' == emptyListCtorName
-        , listCon' == listCon
-        , consCtorName' == consCtorName
-        , listCon2' == listCon =
-            do
-                generateInstructions scrutinee
-                emit $ CheckCast (ClassInfoType "Elara.Prim.List")
-                -- store the scrutinee into the as, if it exists
-
-                as' <- for as $ \as' -> do
-                    idx <- localVariableId as'
-                    emit Dup
-                    emit $ AStore idx
-                    pure idx
-                let referenceScrutinee = case as' of
-                        Just as' -> emit $ ALoad as'
-                        Nothing -> generateInstructions scrutinee
-
-                ifEmptyLabel <- newLabel
-                endLabel <- newLabel
-
-                emit $ InvokeVirtual (ClassInfoType "Elara.Prim.List") "isEmpty" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Boolean)))
-                emit $ IfNe ifEmptyLabel
-                -- store the cons binds into locals
-                referenceScrutinee
-                emit $ GetField (ClassInfoType "Elara.EList") "head" (ObjectFieldType "java.lang.Object")
-                headIdx <- localVariableId headBind
-                emit $ AStore headIdx
-
-                referenceScrutinee
-                emit $ GetField (ClassInfoType "Elara.EList") "tail" (ObjectFieldType "Elara.EList")
-                tailIdx <- localVariableId tailBind
-                emit $ AStore tailIdx
-
-                generateInstructions ifCons
-                emit $ Goto endLabel
-
-                emit $ Label ifEmptyLabel
-                generateInstructions ifEmpty
-                emit $ Label endLabel
 generateCaseInstructions scrutinee (Just bind) alts = do
     -- matches over ADTs are pretty simple, since we can just call the generated match method
     -- For example, @type Option a = None | Some a@ will have a match method that looks like:
@@ -248,7 +202,7 @@ generateCaseInstructions scrutinee (Just bind) alts = do
     -- firstly we need to find the actual type that we're matching over so we can analyse all its constructors
     let (binderType, ctors) = case jvmBinderType bind of
             Just (JVMLType x) | Just (TyCon t (TyADT ctors)) <- findTyCon x -> (t, ctors)
-            x -> error $ "unknown type: " <> show x
+            x -> error $ "unknown type: " <> showColored x
     let altsMap :: Map (Qualified Text) ([JVMBinder], Expr JVMBinder) =
             fromList
                 ( alts
@@ -495,16 +449,6 @@ generatePrimInstructions "cons" =
 generatePrimInstructions "empty" =
     pure
         [ InvokeStatic (ClassInfoType "Elara.Prim.List") "_Nil" (MethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Prim.List")))
-        ]
-generatePrimInstructions "listToString" =
-    pure
-        [ ALoad 0
-        , InvokeStatic (ClassInfoType "Elara.EList") "listToString" (MethodDescriptor [ObjectFieldType "Elara.EList"] (TypeReturn (ObjectFieldType "java.lang.String")))
-        ]
-generatePrimInstructions "stringToList" =
-    pure
-        [ ALoad 0
-        , InvokeStatic (ClassInfoType "Elara.EList") "stringToList" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.EList")))
         ]
 generatePrimInstructions "readFile" =
     pure

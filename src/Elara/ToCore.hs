@@ -19,6 +19,7 @@ import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (.
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat)
+import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -39,7 +40,7 @@ data ToCoreError
     = LetInTopLevel !TypedExpr
     | UnknownConstructor !(Located (Qualified TypeName))
     | UnknownPrimConstructor !(Qualified Text)
-    | UnknownTypeConstructor !(Qualified Text)
+    | UnknownTypeConstructor !(Qualified Text) CtorSymbolTable
     | UnknownLambdaType !(Type.Type SourceRegion)
     | HasCallStack => UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
     | UnknownVariable !(Located (Qualified Name))
@@ -48,7 +49,18 @@ instance ReportableError ToCoreError where
     report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
     report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
-    report (UnknownTypeConstructor qn) = writeReport $ Err (Just "UnknownTypeConstructor") (pretty qn) [] []
+    report (UnknownTypeConstructor qn syms) =
+        writeReport $
+            Err
+                (Just "UnknownTypeConstructor")
+                ( vcat
+                    [ pretty qn
+                    , "Known constructors:"
+                    , vcat $ pretty <$> M.keys (syms.tyCons)
+                    ]
+                )
+                []
+                []
     report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
     report (UnsolvedTypeSnuckIn t) = do
         writeReport $
@@ -71,8 +83,6 @@ primCtorSymbolTable =
         ( fromList
             [ (trueCtorName, trueCtor)
             , (falseCtorName, falseCtor)
-            , (consCtorName, DataCon consCtorName (ConTy listCon) listCon)
-            , (emptyListCtorName, DataCon emptyListCtorName (ConTy listCon) listCon)
             ]
         )
         ( fromList
@@ -100,12 +110,12 @@ lookupPrimCtor qn = do
         Just ctor -> pure ctor
         Nothing -> throw (UnknownPrimConstructor qn)
 
-lookupTyCon :: ToCoreC r => _ -> Sem r TyCon
+lookupTyCon :: ToCoreC r => Qualified Text -> Sem r TyCon
 lookupTyCon qn = do
     table <- get @CtorSymbolTable
-    case M.lookup qn (table.tyCons) of
+    case M.lookup qn table.tyCons of
         Just ctor -> pure ctor
-        Nothing -> throw (UnknownTypeConstructor qn)
+        Nothing -> throw (UnknownTypeConstructor qn table)
 
 type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
 
@@ -125,7 +135,8 @@ runToCorePipeline =
 moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
-    decls <- for (m ^. field' @"declarations") $ \decl -> do
+    let declGraph = createGraph (m ^. field' @"declarations")
+    decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
         let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value v _ _ _ -> do
@@ -135,6 +146,7 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                debugPretty declName
                 registerTyCon tyCon
                 ctors' <- for ctors $ \(Located _ n, t) -> do
                     t' <- traverse (typeToCore . fst) t
@@ -167,14 +179,14 @@ typeToCore (Type.Forall _ _ tv _ t) = do
     pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
 typeToCore (Type.VariableType{Type.name}) = pure (Core.TyVarTy (TypeVariable name TypeKind))
 typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
-typeToCore (Type.List _ t) = Core.AppTy (ConTy listCon) <$> typeToCore t
+-- typeToCore (Type.List _ t) = Core.AppTy (ConTy listCon) <$> typeToCore t
 typeToCore (Type.Scalar _ Scalar.Text) = pure (ConTy stringCon)
 typeToCore (Type.Scalar _ Scalar.Integer) = pure $ ConTy intCon
 typeToCore (Type.Scalar _ Scalar.Unit) = pure $ ConTy unitCon
 typeToCore (Type.Scalar _ Scalar.Char) = pure $ ConTy charCon
 typeToCore (Type.Scalar _ Scalar.Bool) = pure $ ConTy boolCon
 typeToCore (Type.Custom sr n args) = do
-    -- debugPretty sr
+    debugPretty sr
     args' <- traverse typeToCore args
     con' <- lookupTyCon n
     let con = Core.ConTy con'
@@ -248,19 +260,19 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     [ (Core.DataAlt trueCtor, [], ifTrue')
                     , (Core.DataAlt falseCtor, [], ifFalse')
                     ]
-        AST.List [] -> do
-            t' <- typeToCore t
-            let ref = mkGlobalRef emptyListCtorName
-            pure $ Core.Var (Core.Id ref t' Nothing)
-        AST.List (x : xs) -> do
-            x' <- toCore x
-            xs' <- toCore' (AST.List xs)
-            let ref = mkGlobalRef consCtorName
-            consType' <- consType
-            pure $
-                Core.App
-                    (Core.App (Core.Var $ Core.Id ref consType' Nothing) x') -- x
-                    xs'
+        -- AST.List [] -> do
+        --     t' <- typeToCore t
+        --     let ref = mkGlobalRef emptyListCtorName
+        --     pure $ Core.Var (Core.Id ref t' Nothing)
+        -- AST.List (x : xs) -> do
+        --     x' <- toCore x
+        --     xs' <- toCore' (AST.List xs)
+        --     let ref = mkGlobalRef consCtorName
+        --     consType' <- consType
+        --     pure $
+        --         Core.App
+        --             (Core.App (Core.Var $ Core.Id ref consType' Nothing) x') -- x
+        --             xs'
         AST.Match e pats -> desugarMatch e pats
         AST.Let{} -> throw (LetInTopLevel le)
         AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
@@ -311,17 +323,18 @@ desugarMatch e pats = do
                 c <- lookupCtor cn
                 pats' <- for pats patternToCore
                 pure (Core.DataAlt c, pats' >>= snd)
-            AST.ListPattern [] -> do
-                t' <- typeToCore t
-                pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy (ConTy listCon) t') listCon, [])
-            AST.ListPattern (x : xs) -> do
-                (_, vars) <- patternToCore x
-                vars' <- (snd =<<) <$> traverse patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
-            AST.ConsPattern x xs -> do
-                (_, vars) <- patternToCore x
-                vars' <- snd <$> patternToCore xs
-                pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
+
+-- AST.ListPattern [] -> do
+--     t' <- typeToCore t
+--     pure (Core.DataAlt $ DataCon emptyListCtorName (AppTy (ConTy listCon) t') listCon, [])
+-- AST.ListPattern (x : xs) -> do
+--     (_, vars) <- patternToCore x
+--     vars' <- (snd =<<) <$> traverse patternToCore xs
+--     pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
+-- AST.ConsPattern x xs -> do
+--     (_, vars) <- patternToCore x
+--     vars' <- snd <$> patternToCore xs
+--     pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do

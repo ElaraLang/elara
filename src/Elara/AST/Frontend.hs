@@ -27,6 +27,7 @@ type instance Select "LetParamName" 'Frontend = VarName
 
 type instance Select "InParens" 'Frontend = FrontendExpr
 
+type instance Select "List" 'Frontend = [FrontendExpr]
 type instance Select "BinaryOperator" 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
 
 type instance Select "TypeApplication" 'Frontend = FrontendType
@@ -42,6 +43,8 @@ type instance Select "PatternType" 'Frontend = Maybe FrontendType
 type instance Select "VarPat" 'Frontend = LowerAlphaName
 
 type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
+type instance Select "ListPattern" 'Frontend = [FrontendPattern]
+type instance Select "ConsPattern" 'Frontend = (FrontendPattern, FrontendPattern)
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Frontend = [FrontendPattern]

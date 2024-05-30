@@ -309,7 +309,7 @@ desugarPattern (Pattern lp) =
     desugarPattern' WildcardPattern = pure WildcardPattern
     desugarPattern' UnitPattern = pure UnitPattern
     desugarPattern' (ListPattern pats) = ListPattern <$> traverse desugarPattern pats
-    desugarPattern' (ConsPattern a b) = liftA2 ConsPattern (desugarPattern a) (desugarPattern b)
+    desugarPattern' (ConsPattern as) = ConsPattern <$> traverseOf each desugarPattern as
 
 {-
 

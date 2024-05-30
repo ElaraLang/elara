@@ -95,7 +95,6 @@ generateFieldType (ConTy c) | c == stringCon = ObjectFieldType "java.lang.String
 generateFieldType (ConTy c) | c == charCon = ObjectFieldType "java.lang.Character"
 generateFieldType (ConTy c) | c == unitCon = ObjectFieldType "Elara.Unit"
 generateFieldType (ConTy (TyCon t _)) = ObjectFieldType (createQualifiedClassName t)
-generateFieldType (AppTy (ConTy c) _) | c == listCon = ObjectFieldType "Elara.EList"
 generateFieldType (AppTy (ConTy c) _) | c == ioCon = ObjectFieldType "Elara.IO"
 generateFieldType (TyVarTy _) = ObjectFieldType "java.lang.Object"
 generateFieldType (FuncTy _ _) = ObjectFieldType "Elara.Func"
@@ -109,6 +108,5 @@ That is, a type that can be compiled to a field rather than a method.
 typeIsValue :: Type -> Bool
 typeIsValue (ForAllTy _ x) = typeIsValue x
 typeIsValue (AppTy (ConTy con) _) | con == ioCon = True
-typeIsValue (AppTy (ConTy con) _) | con == listCon = True
-typeIsValue x | Just (TyCon y _) <- findTyCon x = True
+typeIsValue x | Just (TyCon _ _) <- findTyCon x = True
 typeIsValue _ = False
