@@ -3,7 +3,6 @@
 
 module Elara.TypeInfer where
 
-import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
@@ -15,7 +14,7 @@ import Elara.AST.Generic.Common
 import Elara.AST.Kinded
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..))
-import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, sourceRegion, unlocated)
+import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -43,7 +42,6 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.Log qualified as Log
 import Polysemy.State
-import Polysemy.Time (interpretTimeGhc)
 import Print
 
 type InferPipelineEffects = '[Log.Log, State Status, State InferState, Error TypeInferenceError, UniqueGen]
@@ -54,8 +52,6 @@ runInferPipeline e = do
 
     e
         & subsume_
-        & Log.interpretLogStdoutLevel (Just Log.Debug)
-        & interpretTimeGhc
         & evalState initialInferState
         & evalState s
         & runErrorOrReport @TypeInferenceError
