@@ -15,7 +15,7 @@ import Elara.AST.Generic.Common
 import Elara.AST.Kinded
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..))
-import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -225,7 +225,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType'
 
 completeExpression ::
     forall r.
-    (Member (State Status) r, Member UniqueGen r) =>
+    (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r) =>
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr
@@ -245,9 +245,10 @@ completeExpression ctx (Expr (y', t)) = do
     completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y'', completed))
     traverseOf gplate (completePattern ctx') completedExprs
   where
-    completePattern :: Context SourceRegion -> TypedPattern -> Sem r TypedPattern
+    completePattern :: HasCallStack => Context SourceRegion -> TypedPattern -> Sem r TypedPattern
     completePattern ctx (Pattern (p', t)) = do
         completed <- quantify <$> complete ctx t
+        wellFormedType ctx completed
         unify t completed
         ctx' <- Infer.getAll
         traverseOf gplate (completePattern ctx') (Pattern (p', completed))

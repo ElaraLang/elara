@@ -23,7 +23,6 @@
 -}
 module Elara.TypeInfer.Infer where
 
-import Control.Monad (foldM)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -52,11 +51,11 @@ import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
 import Polysemy
 import Polysemy.Error (Error, throw)
+import Polysemy.Log qualified as Log
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (debugPretty, showPretty)
-import TODO
+import Print (showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -238,11 +237,12 @@ wellFormedType _Γ type0 = case type0 of
 -}
 subtype ::
     HasCallStack =>
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     Type SourceRegion ->
     Type SourceRegion ->
     Sem r ()
 subtype _A0 _B0 = do
+    Log.debug $ "Subtyping " <> showPretty _A0 <> " <: " <> showPretty _B0
     _Γ <- get
 
     case (_A0, _B0) of
@@ -587,11 +587,12 @@ subtype _A0 _B0 = do
  However, for consistency with the paper we still name them @instantiate*@.
 -}
 instantiateTypeL ::
-    (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     Existential Monotype ->
     Type SourceRegion ->
     Sem r ()
 instantiateTypeL a _A0 = do
+    Log.debug $ "InstantiatingL " <> showPretty a <> " <: " <> showPretty _A0
     _Γ0 <- get
 
     (_Γ', _Γ) <- Context.splitOnUnsolvedType a _Γ0 `orDie` MissingVariable a _Γ0
@@ -725,11 +726,12 @@ instantiateTypeL a _A0 = do
 -}
 instantiateTypeR ::
     HasCallStack =>
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     Type SourceRegion ->
     Existential Monotype ->
     Sem r ()
 instantiateTypeR _A0 a = do
+    Log.debug $ "InstantiatingR " <> showPretty _A0 <> " <: " <> showPretty a
     _Γ0 <- get
 
     (_Γ', _Γ) <- Context.splitOnUnsolvedType a _Γ0 `orDie` MissingVariable a _Γ0
@@ -863,7 +865,7 @@ equateFields p0 p1 = do
         Just setContext -> setContext
 
 instantiateFieldsL ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     Existential Monotype.Record ->
     SourceRegion ->
     Type.Record SourceRegion ->
@@ -908,7 +910,7 @@ instantiateFieldsL p0 location fields@(Type.Fields kAs rest) = do
     traverse_ instantiate kAbs
 
 instantiateFieldsR ::
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     SourceRegion ->
     Type.Record SourceRegion ->
     Existential Monotype.Record ->
@@ -987,67 +989,70 @@ equateAlternatives p0 p1 = do
 -}
 inferPattern ::
     forall r.
-    (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     ShuntedPattern ->
     Sem r TypedPattern
-inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
-    Syntax.VarPattern v -> do
-        a <- fresh
-        push (Context.UnsolvedType a)
-        push (Context.Annotation (mkLocal' $ NormalVarName <<$>> v) (Type.UnsolvedType{location, existential = a}))
+inferPattern (Syntax.Pattern (Located location e0, _)) = do
+    r <- case e0 of
+        Syntax.VarPattern v -> do
+            a <- fresh
+            push (Context.UnsolvedType a)
+            push (Context.Annotation (mkLocal' $ NormalVarName <<$>> v) (Type.UnsolvedType{location, existential = a}))
 
-        pure (Pattern (Located location (Syntax.VarPattern (NormalVarName <<$>> v)), Type.UnsolvedType location a))
-    Syntax.WildcardPattern -> do
-        a <- fresh
+            pure (Pattern (Located location (Syntax.VarPattern (NormalVarName <<$>> v)), Type.UnsolvedType location a))
+        Syntax.WildcardPattern -> do
+            a <- fresh
 
-        pure (Pattern (Located location Syntax.WildcardPattern, Type.UnsolvedType location a))
-    Syntax.IntegerPattern i -> pure (Pattern (Located location (Syntax.IntegerPattern i), Type.Scalar{scalar = Monotype.Integer, ..}))
-    Syntax.FloatPattern f -> pure (Pattern (Located location (Syntax.FloatPattern f), Type.Scalar{scalar = Monotype.Real, ..}))
-    Syntax.StringPattern s -> pure (Pattern (Located location (Syntax.StringPattern s), Type.Scalar{scalar = Monotype.Text, ..}))
-    Syntax.CharPattern c -> pure (Pattern (Located location (Syntax.CharPattern c), Type.Scalar{scalar = Monotype.Char, ..}))
-    Syntax.UnitPattern -> pure (Pattern (Located location Syntax.UnitPattern, Type.Scalar{scalar = Monotype.Unit, ..}))
-    Syntax.ConstructorPattern ctors args -> do
-        _Γ <- get
+            pure (Pattern (Located location Syntax.WildcardPattern, Type.UnsolvedType location a))
+        Syntax.IntegerPattern i -> pure (Pattern (Located location (Syntax.IntegerPattern i), Type.Scalar{scalar = Monotype.Integer, ..}))
+        Syntax.FloatPattern f -> pure (Pattern (Located location (Syntax.FloatPattern f), Type.Scalar{scalar = Monotype.Real, ..}))
+        Syntax.StringPattern s -> pure (Pattern (Located location (Syntax.StringPattern s), Type.Scalar{scalar = Monotype.Text, ..}))
+        Syntax.CharPattern c -> pure (Pattern (Located location (Syntax.CharPattern c), Type.Scalar{scalar = Monotype.Char, ..}))
+        Syntax.UnitPattern -> pure (Pattern (Located location Syntax.UnitPattern, Type.Scalar{scalar = Monotype.Unit, ..}))
+        Syntax.ConstructorPattern ctors args -> do
+            _Γ <- get
 
-        let n = Global $ IgnoreLocation (NTypeName <<$>> ctors)
+            let n = Global $ IgnoreLocation (NTypeName <<$>> ctors)
 
-        -- get the constructor type, which could be a function
-        t <- Context.lookup n _Γ `orDie` UnboundConstructor (ctors ^. sourceRegion) n _Γ
+            -- get the constructor type, which could be a function
+            t <- Context.lookup n _Γ `orDie` UnboundConstructor (ctors ^. sourceRegion) n _Γ
 
-        -- fold over the application with inferPatternApplication
-        -- for example, given Ctor a b where Ctor : a -> b -> Type a b
-        -- we infer it as (Ctor a) b
-        let run t [] acc = pure (t, reverse acc) -- reverse because we fold from the right
-            run t (arg : args) acc = do
-                (pat, t) <- inferPatternApplication t arg
-                run t args (pat : acc)
-        (finalType, pats') <- run t args []
+            -- fold over the application with inferPatternApplication
+            -- for example, given Ctor a b where Ctor : a -> b -> Type a b
+            -- we infer it as (Ctor a) b
+            let run t [] acc = pure (t, reverse acc) -- reverse because we fold from the right
+                run t (arg : args) acc = do
+                    (pat, t) <- inferPatternApplication t arg
+                    run t args (pat : acc)
+            (finalType, pats') <- run t args []
 
-        pure (Pattern (Located location (Syntax.ConstructorPattern ctors pats'), finalType))
-    Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
-        let t = Type.List{location, type_ = a, ..}
+            pure (Pattern (Located location (Syntax.ConstructorPattern ctors pats'), finalType))
+        Syntax.ListPattern ps -> scopedUnsolvedType location \a -> do
+            let t = Type.List{location, type_ = a, ..}
 
-        ps <- traverse inferPattern ps
+            ps <- traverse inferPattern ps
 
-        traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
+            traverse_ ((`subtype` a) . Syntax.patternTypeOf) ps
 
-        pure (Pattern (Located location (Syntax.ListPattern ps), t))
-    Syntax.ConsPattern p0 p1 -> do
-        a <- fresh
+            pure (Pattern (Located location (Syntax.ListPattern ps), t))
+        Syntax.ConsPattern p0 p1 -> do
+            a <- fresh
 
-        let t = Type.List{location, type_ = Type.UnsolvedType{existential = a, ..}, ..}
+            let t = Type.List{location, type_ = Type.UnsolvedType{existential = a, ..}, ..}
 
-        p0 <- inferPattern p0
-        p1 <- inferPattern p1
+            p0 <- inferPattern p0
+            p1 <- inferPattern p1
 
-        subtype (Syntax.patternTypeOf p0) (Type.UnsolvedType{existential = a, ..})
-        subtype (Syntax.patternTypeOf p1) (Type.List location $ Type.UnsolvedType{existential = a, ..})
+            subtype (Syntax.patternTypeOf p0) (Type.UnsolvedType{existential = a, ..})
+            subtype (Syntax.patternTypeOf p1) (Type.List location $ Type.UnsolvedType{existential = a, ..})
 
-        _Θ <- get
+            _Θ <- get
 
-        instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
+            instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
 
-        pure (Pattern (Located location (Syntax.ConsPattern p0 p1), t))
+            pure (Pattern (Located location (Syntax.ConsPattern p0 p1), t))
+    Log.debug $ "Inferred pattern " <> showPretty e0 <> " : " <> showPretty (Syntax.patternTypeOf r)
+    pure r
 
 {- | This corresponds to the judgment:
 
@@ -1057,183 +1062,187 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = case e0 of
  type of A and an updated context Δ.
 -}
 infer ::
-    HasCallStack =>
+    (HasCallStack, Member Log.Log r) =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Sem r TypedExpr
-infer (Syntax.Expr (Located location e0, _)) = case e0 of
-    -- Var
-    Syntax.Var vn -> do
-        _Γ <- get
+infer (Syntax.Expr (Located location e0, _)) = do
+    r <- case e0 of
+        -- Var
+        Syntax.Var vn -> do
+            _Γ <- get
 
-        let n = withName' (vn ^. unlocated)
+            let n = withName' (vn ^. unlocated)
 
-        t <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
+            t <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
 
-        pure $ Expr (Located location (Var vn), t)
-    Syntax.Constructor (cn :: Located (Qualified TypeName)) -> do
-        _Γ <- get
+            pure $ Expr (Located location (Var vn), t)
+        Syntax.Constructor (cn :: Located (Qualified TypeName)) -> do
+            _Γ <- get
 
-        let n = Global $ IgnoreLocation (NTypeName <<$>> cn)
+            let n = Global $ IgnoreLocation (NTypeName <<$>> cn)
 
-        t <- Context.lookup n _Γ `orDie` UnboundVariable (cn ^. sourceRegion) n _Γ
+            t <- Context.lookup n _Γ `orDie` UnboundVariable (cn ^. sourceRegion) n _Γ
 
-        pure $ Expr (Located location (Constructor cn), t)
+            pure $ Expr (Located location (Constructor cn), t)
 
-    -- →I⇒
-    Syntax.Lambda name body -> do
-        a <- fresh
-        b <- fresh
+        -- →I⇒
+        Syntax.Lambda name body -> do
+            a <- fresh
+            b <- fresh
 
-        let input = Type.UnsolvedType{location = name ^. sourceRegion, existential = a}
+            let input = Type.UnsolvedType{location = name ^. sourceRegion, existential = a}
 
-        let output = Type.UnsolvedType{existential = b, ..}
+            let output = Type.UnsolvedType{existential = b, ..}
 
-        push (Context.UnsolvedType a)
-        push (Context.UnsolvedType b)
+            push (Context.UnsolvedType a)
+            push (Context.UnsolvedType b)
 
-        body' <- scoped (Context.Annotation (mkLocal' name) input) do
-            check body output
+            body' <- scoped (Context.Annotation (mkLocal' name) input) do
+                check body output
 
-        let t = Type.Function{..}
-        -- if input is unsolved, we need to create a type lambda, i.e. \(@a : Type) -> blah
-        let actualLam = Syntax.Expr (Located location (Lambda name body'), t)
-        case input of
-            Type.UnsolvedType{} -> pure actualLam
-            _ -> pure actualLam
+            let t = Type.Function{..}
+            -- if input is unsolved, we need to create a type lambda, i.e. \(@a : Type) -> blah
+            let actualLam = Syntax.Expr (Located location (Lambda name body'), t)
+            case input of
+                Type.UnsolvedType{} -> pure actualLam
+                _ -> pure actualLam
 
-    -- →E
-    Syntax.FunctionCall function argument -> do
-        _A <- infer function
+        -- →E
+        Syntax.FunctionCall function argument -> do
+            _A <- infer function
 
-        _Θ <- get
+            _Θ <- get
 
-        (typedArgument, resultType) <-
-            inferApplication
-                (Context.solveType _Θ (_A ^. _Unwrapped % _2))
-                argument
+            (typedArgument, resultType) <-
+                inferApplication
+                    (Context.solveType _Θ (_A ^. _Unwrapped % _2))
+                    argument
 
-        let e =
-                FunctionCall
-                    _A
-                    typedArgument
-        pure $ Expr (Located location e, resultType)
+            let e =
+                    FunctionCall
+                        _A
+                        typedArgument
+            pure $ Expr (Located location e, resultType)
 
-    -- All the type inference rules for scalars go here.  This part is
-    -- pretty self-explanatory: a scalar literal returns the matching
-    -- scalar type.
-    Syntax.Float f -> do
-        let t = (Type.Scalar{scalar = Monotype.Real, ..})
-        pure $ Expr (Located location (Float f), t)
-    Syntax.Int i -> do
-        let t = (Type.Scalar{scalar = Monotype.Integer, ..})
-        pure $ Expr (Located location (Int i), t)
-    Syntax.String s -> do
-        let t = (Type.Scalar{scalar = Monotype.Text, ..})
-        pure $ Expr (Located location (String s), t)
-    Syntax.Unit -> do
-        let t = (Type.Scalar{scalar = Monotype.Unit, ..})
-        pure $ Expr (Located location Unit, t)
-    Syntax.Char c -> do
-        let t = (Type.Scalar{scalar = Monotype.Char, ..})
-        pure $ Expr (Located location (Char c), t)
-    Syntax.LetIn name NoFieldValue val body -> do
-        -- TODO: infer whether a let-in is recursive or not
-        -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
-        existential <- fresh
+        -- All the type inference rules for scalars go here.  This part is
+        -- pretty self-explanatory: a scalar literal returns the matching
+        -- scalar type.
+        Syntax.Float f -> do
+            let t = (Type.Scalar{scalar = Monotype.Real, ..})
+            pure $ Expr (Located location (Float f), t)
+        Syntax.Int i -> do
+            let t = (Type.Scalar{scalar = Monotype.Integer, ..})
+            pure $ Expr (Located location (Int i), t)
+        Syntax.String s -> do
+            let t = (Type.Scalar{scalar = Monotype.Text, ..})
+            pure $ Expr (Located location (String s), t)
+        Syntax.Unit -> do
+            let t = (Type.Scalar{scalar = Monotype.Unit, ..})
+            pure $ Expr (Located location Unit, t)
+        Syntax.Char c -> do
+            let t = (Type.Scalar{scalar = Monotype.Char, ..})
+            pure $ Expr (Located location (Char c), t)
+        Syntax.LetIn name NoFieldValue val body -> do
+            -- TODO: infer whether a let-in is recursive or not
+            -- insert a new unsolved type variable for the let-in to make recursive let-ins possible
+            existential <- fresh
 
-        let span = spanningRegion' [name ^. sourceRegion, val ^. exprLocation, body ^. exprLocation]
-        push (Context.UnsolvedType existential)
-        push (Context.Annotation (mkLocal' name) (Type.UnsolvedType span existential))
+            let span = spanningRegion' [name ^. sourceRegion, val ^. exprLocation, body ^. exprLocation]
+            push (Context.UnsolvedType existential)
+            push (Context.Annotation (mkLocal' name) (Type.UnsolvedType span existential))
 
-        val'@(Expr (_, valType)) <-
-            infer val
+            val'@(Expr (_, valType)) <-
+                infer val
 
-        ctx <- get
+            ctx <- get
 
-        valType' <- Context.complete ctx valType -- I have a feeling that this will break things
-        -- Basically in a case of something like let id = \x -> x in id id, we have to 'complete' \x -> x early, otherwise we get a type error
-        -- But this is probably not the right way to do it
-        push (Context.Annotation (mkLocal' name) valType')
+            valType' <- Context.complete ctx valType -- I have a feeling that this will break things
+            -- Basically in a case of something like let id = \x -> x in id id, we have to 'complete' \x -> x early, otherwise we get a type error
+            -- But this is probably not the right way to do it
+            push (Context.Annotation (mkLocal' name) valType')
 
-        body'@(Expr (_, bodyType)) <- infer body
-        pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
-    Syntax.Tuple elements -> do
-        let process element = do
-                _Γ <- get
+            body'@(Expr (_, bodyType)) <- infer body
+            pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
+        Syntax.Tuple elements -> do
+            let process element = do
+                    _Γ <- get
 
-                infer element
+                    infer element
 
-        elementTypes <- traverse process elements
+            elementTypes <- traverse process elements
 
-        let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
-        pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
-    Syntax.If cond then_ else_ -> do
-        cond' <- check cond Type.Scalar{scalar = Monotype.Bool, ..}
+            let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
+            pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
+        Syntax.If cond then_ else_ -> do
+            cond' <- check cond Type.Scalar{scalar = Monotype.Bool, ..}
 
-        then' <- infer then_
+            then' <- infer then_
 
-        _Γ <- get
+            _Γ <- get
 
-        let _L1 = Context.solveType _Γ (Syntax.typeOf then')
+            let _L1 = Context.solveType _Γ (Syntax.typeOf then')
 
-        else' <- check else_ _L1
+            else' <- check else_ _L1
 
-        pure $ Expr (Located location (If cond' then' else'), _L1)
-    Syntax.Match e branches -> do
-        new <- fresh
-        push (Context.UnsolvedType new)
-        let unsolvedNew = Type.UnsolvedType (e ^. exprLocation) new
-        e' <- check e unsolvedNew
+            pure $ Expr (Located location (If cond' then' else'), _L1)
+        Syntax.Match scrutinee branches -> do
+            new <- fresh
+            push (Context.UnsolvedType new)
+            let unsolvedNew = Type.UnsolvedType (scrutinee ^. exprLocation) new
+            e' <- check scrutinee unsolvedNew
+            Log.debug $ "Match scrutinee type: " <> showPretty (Syntax.typeOf e')
 
-        returnType <- fresh -- create a monotype for the return of the match
-        push (Context.UnsolvedType returnType)
+            returnType <- fresh -- create a monotype for the return of the match
+            push (Context.UnsolvedType returnType)
 
-        let process (pattern_, branch) = scoped' $ do
-                pattern' <- checkPattern pattern_ unsolvedNew
-                branch' <-
-                    -- check that the branch type matches the return type of the match
-                    check branch (Type.UnsolvedType (branch ^. exprLocation) returnType)
-                pure (pattern', branch')
+            let process (pattern_, branch) = do
+                    pattern' <- checkPattern pattern_ (Syntax.typeOf e')
+                    branch' <-
+                        -- check that the branch type matches the return type of the match
+                        check branch (Type.UnsolvedType (branch ^. exprLocation) returnType)
+                    pure (pattern', branch')
 
-        branches' <- traverse process branches
+            branches' <- traverse process branches
 
-        pure $ Expr (Located location (Match e' branches'), Type.UnsolvedType (e ^. exprLocation) returnType)
-    Syntax.List [] -> do
-        existential <- fresh
+            pure $ Expr (Located location (Match e' branches'), Type.UnsolvedType (scrutinee ^. exprLocation) returnType)
+        Syntax.List [] -> do
+            existential <- fresh
 
-        push (Context.UnsolvedType existential)
+            push (Context.UnsolvedType existential)
 
-        pure $
-            Expr
-                ( Located location (Syntax.List [])
-                , Type.List{location, type_ = Type.UnsolvedType location existential, ..}
-                )
-    Syntax.List (y : ys) -> do
-        y'@(Expr (_, type_)) <- infer y
+            pure $
+                Expr
+                    ( Located location (Syntax.List [])
+                    , Type.List{location, type_ = Type.UnsolvedType location existential, ..}
+                    )
+        Syntax.List (y : ys) -> do
+            y'@(Expr (_, type_)) <- infer y
 
-        let process element = do
-                _Γ <- get
+            let process element = do
+                    _Γ <- get
 
-                check element (Context.solveType _Γ type_)
+                    check element (Context.solveType _Γ type_)
 
-        ys' <- traverse process ys
+            ys' <- traverse process ys
 
-        pure $
-            Expr
-                ( Located location (Syntax.List (y' : ys'))
-                , Type.List (Syntax.typeOf y').location (Syntax.typeOf y')
-                )
-    Syntax.Block exprs -> do
-        let process expr = do
-                _Γ <- get
+            pure $
+                Expr
+                    ( Located location (Syntax.List (y' : ys'))
+                    , Type.List (Syntax.typeOf y').location (Syntax.typeOf y')
+                    )
+        Syntax.Block exprs -> do
+            let process expr = do
+                    _Γ <- get
 
-                infer expr
+                    infer expr
 
-        exprTypes <- traverse process exprs
+            exprTypes <- traverse process exprs
 
-        pure $ Expr (Located location (Syntax.Block exprTypes), Syntax.typeOf $ last exprTypes)
-    other -> error $ "infer: " <> showPretty other
+            pure $ Expr (Located location (Syntax.Block exprTypes), Syntax.typeOf $ last exprTypes)
+        other -> error $ "infer: " <> showPretty other
+    Log.debug $ "Inferring " <> showPretty e0 <> " as " <> showPretty (Syntax.typeOf r)
+    pure r
 
 {- | This corresponds to the judgment:
 
@@ -1245,7 +1254,7 @@ infer (Syntax.Expr (Located location e0, _)) = case e0 of
 check ::
     forall r.
     HasCallStack =>
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
@@ -1359,13 +1368,15 @@ check expr@(Expr (Located exprLoc _, _)) t = do
 checkPattern ::
     forall r.
     HasCallStack =>
-    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
+    (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r, Member Log.Log r) =>
     ShuntedPattern ->
     Type SourceRegion ->
     Sem r TypedPattern
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     let x = pattern_ ^. _Unwrapped % _1 % unlocated
-    check' x t
+    r <- check' x t
+    Log.debug $ "Checking pattern: " <> showPretty pattern_ <> " against type: " <> showPretty t <> " -> " <> showPretty r
+    pure r
   where
     check' :: HasCallStack => ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
     check' (Syntax.VarPattern vn) t = do
@@ -1441,7 +1452,7 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
  This has been adjusted to return the typed argument as well as C
 -}
 inferApplication ::
-    HasCallStack =>
+    (HasCallStack, Member Log.Log r) =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     ShuntedExpr ->
@@ -1487,7 +1498,7 @@ inferApplication _A _ = throw (NotFunctionType (location _A) _A)
 … which checks that e has type A and infers the result type C when a function of type A is applied to an input argument e, under input context Γ, producing an updated context Δ.
 -}
 inferPatternApplication ::
-    HasCallStack =>
+    (HasCallStack, Member Log.Log r) =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     ShuntedPattern ->

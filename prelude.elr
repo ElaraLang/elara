@@ -11,7 +11,7 @@ let (>>) f g = \x -> g (f x)
 def sequence : [IO a] -> IO [a]	
 let sequence a = 	
     match a with	
-      [] -> pure []	
+      [] -> pure []
       (x::xs) -> x *> sequence xs	
 
 def sequence_ : [IO a] -> IO ()	
@@ -102,7 +102,22 @@ let sum a =
       (x::xs) -> x + sum xs	
 
 def isEmpty : [a] -> Bool	
-let isEmpty a = 	
+let isEmpty a =	
     match a with	
-      [] -> True	
-      (x::xs) -> False	
+      [] -> True
+      (x::xs) -> False
+
+def listToString : [Char] -> String
+let listToString a =	
+    match a with	
+      [] -> ""	
+      (x::xs) -> consString x (listToString xs)
+
+def stringToList : String -> [Char]
+let stringToList a =	
+    let len = stringLength a
+    if len == 0 then []  
+    else	
+        let c = unconsString a
+        match c with
+          Tuple2 c cs -> c :: stringToList cs

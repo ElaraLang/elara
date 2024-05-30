@@ -577,9 +577,14 @@ prettyPrimitiveType Record{..} =
 prettyPrimitiveType Scalar{..} =
     pretty scalar
 prettyPrimitiveType Custom{..} =
-    label (pretty conName)
-        <> " "
-        <> Pretty.group (Pretty.flatAlt long short)
+    if null typeArguments
+        then label (pretty conName)
+        else
+            punctuation "("
+                <> label (pretty conName)
+                <> " "
+                <> Pretty.group (Pretty.flatAlt long short)
+                <> punctuation ")"
   where
     short =
         foldMap (\t -> prettyQuantifiedType t <> " ") typeArguments

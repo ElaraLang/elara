@@ -18,7 +18,7 @@ import Elara.Core as Core
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (..))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Pretty (Pretty (..), vcat)
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
@@ -33,6 +33,7 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
+import Print (debugPretty, showPretty)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -40,7 +41,7 @@ data ToCoreError
     | UnknownPrimConstructor !(Qualified Text)
     | UnknownTypeConstructor !(Qualified Text)
     | UnknownLambdaType !(Type.Type SourceRegion)
-    | UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
+    | HasCallStack => UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
     | UnknownVariable !(Located (Qualified Name))
 
 instance ReportableError ToCoreError where
@@ -53,7 +54,7 @@ instance ReportableError ToCoreError where
         writeReport $
             Err
                 (Just "UnsolvedTypeSnuckIn")
-                (pretty t)
+                (vcat [pretty t, pretty $ prettyCallStack callStack])
                 [ (sourceRegionToDiagnosePosition t.location, Where "Type declared / created here")
                 ]
                 []
@@ -160,6 +161,7 @@ typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariab
 typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
+-- typeToCore x | trace ("typeToCore " <> (toString $ showPretty x)) False = undefined
 typeToCore (Type.Forall _ _ tv _ t) = do
     t' <- typeToCore t
     pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
@@ -171,7 +173,8 @@ typeToCore (Type.Scalar _ Scalar.Integer) = pure $ ConTy intCon
 typeToCore (Type.Scalar _ Scalar.Unit) = pure $ ConTy unitCon
 typeToCore (Type.Scalar _ Scalar.Char) = pure $ ConTy charCon
 typeToCore (Type.Scalar _ Scalar.Bool) = pure $ ConTy boolCon
-typeToCore (Type.Custom _ n args) = do
+typeToCore (Type.Custom sr n args) = do
+    -- debugPretty sr
     args' <- traverse typeToCore args
     con' <- lookupTyCon n
     let con = Core.ConTy con'
@@ -294,6 +297,7 @@ desugarMatch e pats = do
   where
     patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
     patternToCore (Pattern (Located _ p, t)) = do
+        -- debugPretty ("ptc" :: Text, p, t)
         t' <- typeToCore t
         case p of
             AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])
