@@ -11,4 +11,4 @@ let map f l =
         Cons x xs -> Cons (f x) (map f xs)
 
 let main = 
-    print (map (\x -> x) l)
+    print (stringToList "hello")

@@ -222,7 +222,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType'
 
 completeExpression ::
     forall r.
-    (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r) =>
+    (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member Log.Log r) =>
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr

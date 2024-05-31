@@ -14,6 +14,10 @@ import Text.Pretty.Simple (
     pShow,
  )
 
+elaraDebug :: Bool
+elaraDebug = False
+{-# INLINE elaraDebug #-}
+
 printColored :: (Show a, MonadIO m) => a -> m ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
 

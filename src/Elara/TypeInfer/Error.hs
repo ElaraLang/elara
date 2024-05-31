@@ -107,6 +107,7 @@ data TypeInferenceError where
         (Type SourceRegion) ->
         SourceRegion ->
         (Type SourceRegion) ->
+        Context SourceRegion ->
         TypeInferenceError
     UnboundAlternatives ::
         SourceRegion ->
@@ -200,7 +201,7 @@ instance ReportableError TypeInferenceError where
                 )
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 []
-    report (NotSubtype p1 t1 p2 t2) =
+    report (NotSubtype p1 t1 p2 t2 ctx) =
         writeReport $
             Err
                 Nothing
@@ -210,6 +211,8 @@ instance ReportableError TypeInferenceError where
                     , "is not a subtype of"
                     , pretty t2
                     , pretty $ prettyCallStack callStack
+                    , "The following context is available:"
+                    , listToText (nubOrd ctx)
                     ]
                 )
                 [ (sourceRegionToDiagnosePosition p1, Where ("Has type" <+> pretty t1))

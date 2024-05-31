@@ -55,7 +55,7 @@ import Polysemy.Log qualified as Log
 import Polysemy.State (State)
 import Polysemy.State qualified as State
 import Prettyprinter qualified as Pretty
-import Print (showPretty)
+import Print (elaraDebug, showPretty)
 
 -- | Type-checking state
 data Status = Status
@@ -63,6 +63,7 @@ data Status = Status
     -- ^ The type-checking context (e.g. Γ, Δ, Θ)
     , writeOnlyContext :: Context SourceRegion
     -- ^ A write-only context that logs every entry that is added to the main context
+    , depth :: Int
     }
 
 initialStatus :: Member UniqueGen r => Sem r Status
@@ -72,6 +73,7 @@ initialStatus = do
         Status
             { context = primitiveTCContext'
             , writeOnlyContext = primitiveTCContext'
+            , depth = 0
             }
 
 orDie :: Member (Error e) r => Maybe a -> e -> Sem r a
@@ -86,8 +88,10 @@ fresh = UnsafeExistential <$> makeUniqueTyVar
 -- Instead, we modify the ambient state using the following utility functions:
 
 -- | Push a new `Context` `Entry` onto the stack
-push :: Member (State Status) r => Entry SourceRegion -> Sem r ()
-push entry = State.modify (\s -> s{context = entry : context s, writeOnlyContext = entry : writeOnlyContext s})
+push :: (Member (State Status) r, Member Log.Log r) => Entry SourceRegion -> Sem r ()
+push entry = do
+    debug' ("push: " <> showPretty entry)
+    State.modify (\s -> s{context = entry : context s, writeOnlyContext = entry : writeOnlyContext s})
 
 -- | Retrieve the current `Context`
 get :: Member (State Status) r => Sem r (Context SourceRegion)
@@ -104,7 +108,7 @@ set context = State.modify (\s -> s{context, writeOnlyContext = context <> write
  end of the entry's scope, along with any downstream entries that were
  created within that same scope
 -}
-scoped :: Member (State Status) r => Entry SourceRegion -> Sem r a -> Sem r a
+scoped :: (Member (State Status) r, Member Log.Log r) => Entry SourceRegion -> Sem r a -> Sem r a
 scoped entry k = do
     push entry
 
@@ -114,7 +118,7 @@ scoped entry k = do
 
     pure r
 
-scopedMany :: Member (State Status) r => NonEmpty (Entry SourceRegion) -> Sem r a -> Sem r a
+scopedMany :: (Member (State Status) r, Member Log.Log r) => NonEmpty (Entry SourceRegion) -> Sem r a -> Sem r a
 scopedMany entries k = do
     traverse_ push entries
 
@@ -162,7 +166,7 @@ scopedListening k = do
             (x : xs) -> Context.discardUpToExcluding (head (x :| xs)) cur'.context
         )
 
-scopedUnsolvedType :: (Member (State Status) r, Member UniqueGen r) => s -> (Type.Type s -> Sem r a) -> Sem r a
+scopedUnsolvedType :: (Member (State Status) r, Member UniqueGen r, Member Log.Log r) => s -> (Type.Type s -> Sem r a) -> Sem r a
 scopedUnsolvedType location k = do
     existential <- fresh
 
@@ -171,7 +175,7 @@ scopedUnsolvedType location k = do
 
         k Type.UnsolvedType{..}
 
-scopedUnsolvedFields :: (Member (State Status) r, Member UniqueGen r) => (Type.Record s -> Sem r a) -> Sem r a
+scopedUnsolvedFields :: (Member (State Status) r, Member UniqueGen r, Member Log.Log r) => (Type.Record s -> Sem r a) -> Sem r a
 scopedUnsolvedFields k = do
     a <- fresh
 
@@ -227,6 +231,24 @@ wellFormedType _Γ type0 = case type0 of
     Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
     Type.Custom _ _ ts -> traverse_ (wellFormedType _Γ) ts
 
+-- TODO use CPP to improve performance cuz this is BAD
+debug :: (Member (State Status) r, Member Log.Log r) => Text -> Sem r a -> Sem r a
+debug msg cont =
+    if not elaraDebug
+        then cont
+        else do
+            depth <- State.gets depth
+            debug' msg
+            State.modify (\s -> s{depth = depth + 1})
+            r <- cont
+            State.modify (\s -> s{depth = depth})
+            pure r
+
+debug' :: (Member (State Status) r, Member Log.Log r) => Text -> Sem r ()
+debug' msg = when elaraDebug $ do
+    depth <- State.gets depth
+    Log.debug $ Text.replicate depth "│ " <> msg
+
 {- | This corresponds to the judgment:
 
  > Γ ⊢ A <: B ⊣ Δ
@@ -240,8 +262,7 @@ subtype ::
     Type SourceRegion ->
     Type SourceRegion ->
     Sem r ()
-subtype _A0 _B0 = do
-    Log.debug $ "Subtyping " <> showPretty _A0 <> " <: " <> showPretty _B0
+subtype _A0 _B0 = debug ("subtype: " <> showPretty _A0 <> " <: " <> showPretty _B0) $ do
     _Γ <- get
 
     case (_A0, _B0) of
@@ -316,7 +337,9 @@ subtype _A0 _B0 = do
         -- <:∀R
         (_, Type.Forall{..}) -> scoped (Context.Variable domain name) (subtype _A0 type_)
         -- <:∀L
-        (Type.Forall{domain = Domain.Type, ..}, _) -> scopedUnsolvedType nameLocation \a -> subtype (Type.substituteType name a type_) _B0
+        (Type.Forall{..}, _) ->
+            scopedUnsolvedType nameLocation \a ->
+                subtype (Type.substituteType name a type_) _B0
         -- <:∃L
         (Type.Exists{..}, _) -> scoped (Context.Variable domain name) do
             subtype type_ _B0
@@ -568,7 +591,10 @@ subtype _A0 _B0 = do
         -- (like `List`), and then one of the occurrences will be here in this
         -- `subtype` function and then I'll remember to add a case for my new
         -- complex type here.
-        (_A, _B) -> throw (NotSubtype (Type.location _A0) _A (Type.location _B0) _B)
+
+        (_A, _B) -> do
+            ctx <- get
+            throw (NotSubtype (Type.location _A0) _A (Type.location _B0) _B ctx)
 
 {- | This corresponds to the judgment:
 
@@ -586,13 +612,12 @@ instantiateTypeL ::
     Existential Monotype ->
     Type SourceRegion ->
     Sem r ()
-instantiateTypeL a _A0 = do
-    Log.debug $ "InstantiatingL " <> showPretty a <> " <: " <> showPretty _A0
+instantiateTypeL a _A0 = debug ("instantiateTypeL: " <> showPretty a <> " <: " <> showPretty _A0) $ do
     _Γ0 <- get
 
     (_Γ', _Γ) <- Context.splitOnUnsolvedType a _Γ0 `orDie` MissingVariable a _Γ0
 
-    let instLSolve τ = do
+    let instLSolve τ = debug ("instLSolve: " <> showPretty τ) $ do
             wellFormedType _Γ _A0
             set (_Γ' <> (Context.SolvedType a τ : _Γ))
 
@@ -725,8 +750,7 @@ instantiateTypeR ::
     Type SourceRegion ->
     Existential Monotype ->
     Sem r ()
-instantiateTypeR _A0 a = do
-    Log.debug $ "InstantiatingR " <> showPretty _A0 <> " <: " <> showPretty a
+instantiateTypeR _A0 a = debug ("instantiateTypeR: " <> showPretty _A0 <> " <: " <> showPretty a) $ do
     _Γ0 <- get
 
     (_Γ', _Γ) <- Context.splitOnUnsolvedType a _Γ0 `orDie` MissingVariable a _Γ0
@@ -1046,7 +1070,7 @@ inferPattern (Syntax.Pattern (Located location e0, _)) = do
     --     instantiateTypeL a (Context.solveType _Θ (Type.List location (Type.stripForAll t)))
 
     --     pure (Pattern (Located location (Syntax.ConsPattern p0 p1), t))
-    Log.debug $ "Inferred pattern " <> showPretty e0 <> " : " <> showPretty (Syntax.patternTypeOf r)
+    debug' $ "infer: " <> showPretty e0 <> " : " <> showPretty (Syntax.patternTypeOf r)
     pure r
 
 {- | This corresponds to the judgment:
@@ -1061,7 +1085,7 @@ infer ::
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     ShuntedExpr ->
     Sem r TypedExpr
-infer (Syntax.Expr (Located location e0, _)) = do
+infer (Syntax.Expr (Located location e0, _)) = debug ("infer: " <> showPretty e0) $ do
     r <- case e0 of
         -- Var
         Syntax.Var vn -> do
@@ -1072,7 +1096,7 @@ infer (Syntax.Expr (Located location e0, _)) = do
             t <- Context.lookup n _Γ `orDie` UnboundVariable (vn ^. sourceRegion) n _Γ
 
             pure $ Expr (Located location (Var vn), t)
-        Syntax.Constructor (cn :: Located (Qualified TypeName)) -> do
+        Syntax.Constructor cn -> do
             _Γ <- get
 
             let n = Global $ IgnoreLocation (NTypeName <<$>> cn)
@@ -1170,23 +1194,23 @@ infer (Syntax.Expr (Located location e0, _)) = do
             let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
             pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
         Syntax.If cond then_ else_ -> do
+            -- if/elses are basically the same as matches with 2 branches
+            -- in fact, later on (in ToCore) we desugar them to this!
             cond' <- check cond Type.Scalar{scalar = Monotype.Bool, ..}
 
-            then' <- infer then_
+            returnType <- fresh -- create a monotype for the return of the match
+            push (Context.UnsolvedType returnType)
 
-            _Γ <- get
+            then' <- check then_ (Type.UnsolvedType (then_ ^. exprLocation) returnType)
+            else' <- check else_ (Type.UnsolvedType (else_ ^. exprLocation) returnType)
 
-            let _L1 = Context.solveType _Γ (Syntax.typeOf then')
-
-            else' <- check else_ _L1
-
-            pure $ Expr (Located location (If cond' then' else'), _L1)
+            pure $ Expr (Located location (If cond' then' else'), Syntax.typeOf then')
         Syntax.Match scrutinee branches -> do
             new <- fresh
             push (Context.UnsolvedType new)
             let unsolvedNew = Type.UnsolvedType (scrutinee ^. exprLocation) new
             e' <- check scrutinee unsolvedNew
-            Log.debug $ "Match scrutinee type: " <> showPretty (Syntax.typeOf e')
+            debug' $ "Match scrutinee type: " <> showPretty (Syntax.typeOf e')
 
             returnType <- fresh -- create a monotype for the return of the match
             push (Context.UnsolvedType returnType)
@@ -1236,7 +1260,7 @@ infer (Syntax.Expr (Located location e0, _)) = do
 
             pure $ Expr (Located location (Syntax.Block exprTypes), Syntax.typeOf $ last exprTypes)
         other -> error $ "infer: " <> showPretty other
-    Log.debug $ "Inferring " <> showPretty e0 <> " as " <> showPretty (Syntax.typeOf r)
+    debug' $ "infer: " <> showPretty e0 <> " : " <> showPretty (Syntax.typeOf r)
     pure r
 
 {- | This corresponds to the judgment:
@@ -1253,7 +1277,7 @@ check ::
     ShuntedExpr ->
     Type SourceRegion ->
     Sem r TypedExpr
-check expr@(Expr (Located exprLoc _, _)) t = do
+check expr@(Expr (Located exprLoc _, _)) t = debug ("check: " <> showPretty expr <> " : " <> showPretty t) $ do
     let x = expr ^. _Unwrapped % _1 % unlocated
     check' x t
   where
@@ -1332,12 +1356,14 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         pure $ Expr (Located exprLoc (Match e' branches'), t)
 
     -- Sub
-    check' _ _B = do
+    check' _ _ = do
+        debug' $ "check base case: " <> showPretty expr <> " : " <> showPretty t
         _A@(Syntax.Expr (_, _At)) <- infer expr
+        debug' $ "infer: " <> showPretty _A <> " : " <> showPretty _At
 
         _Θ <- get
-
-        subtype (Context.solveType _Θ _At) (Context.solveType _Θ _B)
+        debug' $ "solved _B: " <> showPretty t <> " => " <> showPretty (Context.solveType _Θ t)
+        subtype (Context.solveType _Θ _At) (Context.solveType _Θ t)
         _1 <- get
 
         {-
@@ -1346,7 +1372,7 @@ check expr@(Expr (Located exprLoc _, _)) t = do
         -}
         case _At of
             Type.Forall{} -> do
-                case _At `Type.applicableTyApp` _B of
+                case _At `Type.applicableTyApp` t of
                     [] -> pure _A
                     (tApp : _) ->
                         -- insert type application from instantiating the forall
@@ -1370,7 +1396,7 @@ checkPattern ::
 checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
     let x = pattern_ ^. _Unwrapped % _1 % unlocated
     r <- check' x t
-    Log.debug $ "Checking pattern: " <> showPretty pattern_ <> " against type: " <> showPretty t <> " -> " <> showPretty r
+    debug' $ "Checking pattern: " <> showPretty pattern_ <> " against type: " <> showPretty t <> " -> " <> showPretty r
     pure r
   where
     check' :: HasCallStack => ShuntedPattern' -> Type SourceRegion -> Sem r TypedPattern
