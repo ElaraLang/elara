@@ -146,7 +146,6 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
-                debugPretty declName
                 registerTyCon tyCon
                 ctors' <- for ctors $ \(Located _ n, t) -> do
                     t' <- traverse (typeToCore . fst) t
@@ -186,7 +185,6 @@ typeToCore (Type.Scalar _ Scalar.Unit) = pure $ ConTy unitCon
 typeToCore (Type.Scalar _ Scalar.Char) = pure $ ConTy charCon
 typeToCore (Type.Scalar _ Scalar.Bool) = pure $ ConTy boolCon
 typeToCore (Type.Custom sr n args) = do
-    debugPretty sr
     args' <- traverse typeToCore args
     con' <- lookupTyCon n
     let con = Core.ConTy con'
@@ -309,7 +307,6 @@ desugarMatch e pats = do
   where
     patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
     patternToCore (Pattern (Located _ p, t)) = do
-        -- debugPretty ("ptc" :: Text, p, t)
         t' <- typeToCore t
         case p of
             AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])

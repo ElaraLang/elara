@@ -82,7 +82,6 @@ inferDeclaration ::
     ShuntedDeclaration ->
     Sem r TypedDeclaration
 inferDeclaration (Declaration ld) = do
-    -- debugPretty ("Infering declaration " <> showPretty (ld ^. unlocated % field' @"name"))
     Declaration
         <$> traverseOf
             unlocated
