@@ -4,11 +4,5 @@ import Elara.Prim
 def l : List Int
 let l = [1, 2, 3]
 
-def map : (a -> b) -> List a -> List b
-let map f l = 
-    match l with
-        Nil -> Nil
-        Cons x xs -> Cons (f x) (map f xs)
-
 let main = 
-    print (stringToList "hello")
+    print (stringToList "hello" |> map identity |> length)
