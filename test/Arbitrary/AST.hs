@@ -32,7 +32,7 @@ genPattern =
         , mkPat . StringPattern <$> genLowerAlphaText
         , mkPat . CharPattern <$> Gen.unicode
         ]
-        [ Gen.subterm2 genPattern genPattern (\x y -> mkPat (ConsPattern x y))
+        [ Gen.subterm2 genPattern genPattern (\x y -> mkPat (ConsPattern (x, y)))
         , mkPat . ListPattern <$> Gen.list (Range.linear 0 5) genPattern
         , (\x y -> mkPat (ConstructorPattern x y))
             <$> genMaybeQualified genTypeName

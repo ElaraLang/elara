@@ -67,19 +67,21 @@ consPatterns = describe "Parses cons patterns" $ do
         "(x :: xs)"
             `shouldParsePattern` Pattern
                 ( ConsPattern
-                    (Pattern (VarPattern "x", Nothing))
-                    (Pattern (VarPattern "xs", Nothing))
+                    ( Pattern (VarPattern "x", Nothing)
+                    , Pattern (VarPattern "xs", Nothing)
+                    )
                 , Nothing
                 )
 
         "(x :: xs :: xss)"
             `shouldParsePattern` Pattern
                 ( ConsPattern
-                    (Pattern (VarPattern "x", Nothing))
-                    ( Pattern
+                    ( Pattern (VarPattern "x", Nothing)
+                    , Pattern
                         ( ConsPattern
-                            (Pattern (VarPattern "xs", Nothing))
-                            (Pattern (VarPattern "xss", Nothing))
+                            ( Pattern (VarPattern "xs", Nothing)
+                            , Pattern (VarPattern "xss", Nothing)
+                            )
                         , Nothing
                         )
                     )

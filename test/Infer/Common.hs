@@ -26,14 +26,16 @@ import Elara.Rename (rename, renameExpr, runRenamePipeline)
 import Elara.Shunt (runShuntPipeline, shunt, shuntExpr)
 import Elara.TypeInfer (completeExpression, inferExpression, inferModule, runInferPipeline)
 import Elara.TypeInfer.Domain (Domain)
+import Elara.TypeInfer.Error
 import Elara.TypeInfer.Infer qualified as Infer
 import Elara.TypeInfer.Type (Type (..))
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
 import Hedgehog
-import Hedgehog.Internal.Property
+import Hedgehog.Internal.Property (failWith)
 import Polysemy
 import Polysemy.Error (Error, errorToIOFinal)
+import Polysemy.Log
 import Polysemy.Reader (runReader)
 import Polysemy.State (State)
 import Print (showPretty)
@@ -51,7 +53,7 @@ pattern VariableType' name = VariableType () name
 pattern Tuple' :: NonEmpty (Type ()) -> Type ()
 pattern Tuple' ts = Type.Tuple () ts
 
-completeInference :: (Member (State Infer.Status) r, Member UniqueGen r) => TypedExpr -> Sem r TypedExpr
+completeInference :: (Member (State Infer.Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member Log r) => TypedExpr -> Sem r TypedExpr
 completeInference x = do
     ctx <- Infer.getAll
     completeExpression ctx x

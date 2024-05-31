@@ -66,6 +66,12 @@ instance ApplyAsFunctorish a b a b where
 instance ApplyAsFunctorish NoFieldValue NoFieldValue a b where
     applyAsFunctorish _ = identity
 
+instance ApplyAsFunctorish DataConCantHappen DataConCantHappen a b where
+    applyAsFunctorish _ = error "applyAsFunctorish: DataConCantHappen"
+
+instance ApplyAsFunctorish a b c d => ApplyAsFunctorish (a, a) (b, b) c d where
+    applyAsFunctorish f (a, b) = (applyAsFunctorish f a, applyAsFunctorish f b)
+
 class DataConAs a b where
     dataConAs :: a -> b
     asDataCon :: b -> a
