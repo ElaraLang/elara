@@ -431,13 +431,7 @@ prettyQuantifiedType type0
 
     prettyShort quantifier Forall{..} =
         prefix
-            <> punctuation "("
             <> label (pretty name)
-            <> " "
-            <> punctuation ":"
-            <> " "
-            <> pretty domain
-            <> punctuation ")"
             <> " "
             <> prettyShort ForallQuantifier type_
       where
@@ -448,13 +442,7 @@ prettyQuantifiedType type0
                 ForallQuantifier -> ""
     prettyShort quantifier Exists{..} =
         prefix
-            <> punctuation "("
             <> label (pretty name)
-            <> " "
-            <> punctuation ":"
-            <> " "
-            <> pretty domain
-            <> punctuation ")"
             <> " "
             <> prettyShort ExistsQuantifier type_
       where
@@ -469,14 +457,7 @@ prettyQuantifiedType type0
     prettyLong Forall{..} =
         keyword "forall"
             <> " "
-            <> punctuation "("
             <> label (pretty name)
-            <> " "
-            <> punctuation ":"
-            <> " "
-            <> pretty domain
-            <> punctuation ")"
-            <> " "
             <> punctuation "."
             <> Pretty.hardline
             <> prettyLong type_
