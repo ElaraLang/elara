@@ -481,6 +481,7 @@ generatePrimInstructions "stringLength" =
     pure
         [ ALoad 0
         , InvokeVirtual (ClassInfoType "java.lang.String") "length" (MethodDescriptor [] (TypeReturn (PrimitiveFieldType JVM.Int)))
+        , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
         ]
 generatePrimInstructions "unconsString" =
     -- the rough impl equivalent here is
