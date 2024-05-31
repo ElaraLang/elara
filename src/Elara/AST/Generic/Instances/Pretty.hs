@@ -12,6 +12,7 @@ import Elara.AST.Name
 import Elara.AST.Pretty
 import Elara.AST.StripLocation
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles
 import Prelude hiding (group)
 
 deriving instance Pretty (ASTLocate ast (BinaryOperator' ast)) => Pretty (BinaryOperator ast)
@@ -195,13 +196,13 @@ prettyExpr' ::
     ) =>
     Expr' ast ->
     Doc AnsiStyle
-prettyExpr' (Int i) = pretty i
-prettyExpr' (Float f) = pretty f
-prettyExpr' (String s) = pretty '\"' <> pretty s <> pretty '\"'
-prettyExpr' (Char c) = "'" <> escapeChar c <> "'"
-prettyExpr' Unit = "()"
-prettyExpr' (Var v) = pretty v
-prettyExpr' (Constructor c) = pretty c
+prettyExpr' (Int i) = scalar (pretty i)
+prettyExpr' (Float f) = scalar (pretty f)
+prettyExpr' (String s) = scalar (pretty '\"' <> pretty s <> pretty '\"')
+prettyExpr' (Char c) = scalar ("'" <> escapeChar c <> "'")
+prettyExpr' Unit = scalar "()"
+prettyExpr' (Var v) = varName (pretty v)
+prettyExpr' (Constructor c) = typeName (pretty c)
 prettyExpr' (Lambda ps e) = prettyLambdaExpr (fieldToList @(ASTLocate ast (Select "LambdaPattern" ast)) ps :: [lambdaPatterns]) (prettyExpr e)
 prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2 False
 prettyExpr' (TypeApplication e1 e2) = prettyFunctionCall e1 ("@" <> parens (pretty e2))

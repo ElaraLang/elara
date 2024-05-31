@@ -12,6 +12,9 @@ punctuation = annotate (bold <> colorDull Green)
 label :: Doc AnsiStyle -> Doc AnsiStyle
 label = annotate mempty
 
+scalar :: Doc AnsiStyle -> Doc AnsiStyle
+scalar = annotate (colorDull Cyan)
+
 builtin :: Doc AnsiStyle -> Doc AnsiStyle
 builtin = annotate underlined
 

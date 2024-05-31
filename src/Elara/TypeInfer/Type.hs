@@ -558,7 +558,7 @@ prettyPrimitiveType UnsolvedType{..} =
 prettyPrimitiveType Record{..} =
     prettyRecordType fields
 prettyPrimitiveType Scalar{..} =
-    pretty scalar
+    Elara.Data.Pretty.Styles.scalar (pretty scalar)
 prettyPrimitiveType Custom{..} =
     if null typeArguments
         then label (pretty conName)

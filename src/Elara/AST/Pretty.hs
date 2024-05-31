@@ -62,7 +62,7 @@ prettyFunctionCallExpr e1 e2 tyApp = prettyFunctionCall e1' e2'
     tyApp' = if tyApp then "@" else ""
 
 prettyIfExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
-prettyIfExpr e1 e2 e3 = parens ("if" <+> pretty e1 <+> "then" <+> pretty e2 <+> "else" <+> pretty e3)
+prettyIfExpr e1 e2 e3 = parens (keyword "if" <+> pretty e1 <+> keyword "then" <+> pretty e2 <+> keyword "else" <+> pretty e3)
 
 prettyBinaryOperatorExpr :: (Pretty b, Pretty (Expr ast), RUnlocate ast) => Expr ast -> b -> Expr ast -> Doc AnsiStyle
 prettyBinaryOperatorExpr e1 o e2 =
@@ -76,10 +76,10 @@ prettyTupleExpr :: Pretty a => NonEmpty a -> Doc AnsiStyle
 prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))
 
 prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t, ?contextFree :: Bool) => a1 -> t a2 -> Doc AnsiStyle
-prettyMatchExpr e m = parens ("match" <+> pretty e <+> "with" <+> prettyBlockExpr m)
+prettyMatchExpr e m = parens (keyword "match" <+> pretty e <+> keyword "with" <+> prettyBlockExpr m)
 
 prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
-prettyMatchBranch (p, e) = pretty p <+> "->" <+> pretty e
+prettyMatchBranch (p, e) = pretty p <+> punctuation "->" <+> pretty e
 
 prettyLetInExpr ::
     (Pretty a1, Pretty a2, ?contextFree :: Bool, RUnlocate ast, Pretty (Expr ast)) =>
@@ -89,12 +89,12 @@ prettyLetInExpr ::
     Expr ast ->
     Doc AnsiStyle
 prettyLetInExpr v ps e1 e2 =
-    "let"
+    keyword "let"
         <+> pretty v
         <+> hsep (pretty <$> ps)
         <+> "="
         <+> blockParensIf (?contextFree && shouldBrace e1) (pretty e1)
-        <+> "in"
+        <+> keyword "in"
         <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
 
 shouldBrace :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
@@ -112,10 +112,10 @@ shouldParen x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr'
 
 prettyLetExpr :: (Pretty a1, Pretty a2, RUnlocate ast, ?contextFree :: Bool, Pretty (Expr ast)) => a1 -> [a2] -> Expr ast -> Doc AnsiStyle
 prettyLetExpr v ps e =
-    "let"
+    keyword "let"
         <+> pretty v
         <+> hsep (pretty <$> ps)
-        <+> "="
+        <+> punctuation "="
         <+> blockParensIf (?contextFree && shouldBrace e) (pretty e)
 
 prettyBlockExpr :: (Pretty a, Foldable t, ?contextFree :: Bool) => t a -> Doc AnsiStyle
