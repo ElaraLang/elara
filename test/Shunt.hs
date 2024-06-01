@@ -44,7 +44,7 @@ mkFakeOp name = Global (generatedLocated Nothing (Qualified name "ShuntTests"))
 
 operatorRenameState :: RenameState
 operatorRenameState =
-    let mkFakeVarP name = (OperatorVarName name, mkFakeVar name)
+    let mkFakeVarP name = (OperatorVarName name, one $ mkFakeVar name)
      in primitiveRenameState
             <> RenameState
                 { varNames =
