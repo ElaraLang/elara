@@ -90,7 +90,7 @@ If you don't have / want Nix, you _should_ be able to get away with GHC 9.6.5 an
 
 ```sh
 cd jvm-stdlib
-javac Elara/EList.java Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Unit.java Elara/Func0.java
+javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Unit.java Elara/Func0.java
 cd ../
 ```
 
