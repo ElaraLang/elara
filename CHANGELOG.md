@@ -1,5 +1,30 @@
 # Changelog
 
+### [v0.0.2](https://github.com/ElaraLang/elara/compare/v0.0.1...v0.0.2) (2024-06-01)
+
+#### Features
+
+* **renamer:** Add a nice pretty error report for when the renamer catches
+ambiguous names
+([f31a6cd](https://github.com/ElaraLang/elara/commit/f31a6cd94be1e86fcd419fcc2d0a47b79e08e086))
+
+#### Fixes
+
+* **renamer:** Fix heavy-handed ambiguous name checking reporting ambiguity
+when there actually isn't any! Fixes variable shadowing
+([ecb3481](https://github.com/ElaraLang/elara/commit/ecb3481cd8580e8b1ac9cfca42413f0996e5ad81))
+
+#### Other
+
+* **renamer:** Change renaming backend to allow multiple names with the same
+unqualified name
+([f61f155](https://github.com/ElaraLang/elara/commit/f61f155c4f2c57e069ff82fa1cf7149d69d0dbdf))
+
+#### Documentation
+
+* **changelog:** Update CHANGELOG.md
+([0882b33](https://github.com/ElaraLang/elara/commit/0882b339938554cd083a197b1a4b7092f23b905c))
+
 ### [v0.0.1](https://github.com/ElaraLang/elara/compare/v0.0.0...v0.0.1) (2024-06-01)
 
 #### Features

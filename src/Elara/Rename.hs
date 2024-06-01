@@ -12,6 +12,7 @@ module Elara.Rename where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Elara.AST.Desugared
 import Elara.AST.Generic
@@ -44,6 +45,8 @@ data RenameError
     | NonExistentModuleDeclaration ModuleName (Located Name)
     | UnknownTypeVariable LowerAlphaName
     | UnknownName (Located Name)
+    | AmbiguousVarName (Located Name) (NonEmpty (VarRef VarName))
+    | AmbiguousTypeName (Located Name) (NonEmpty (VarRef TypeName))
     | NativeDefUnsupported (Located DesugaredDeclaration')
     | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
     deriving (Show)
@@ -109,10 +112,45 @@ instance ReportableError RenameError where
                 [ Note "Blocks cannot end with let statements, as they are not expressions."
                 , Hint "Perhaps you meant to use a let ... in construct?"
                 ]
+    report (AmbiguousTypeName n options) =
+        writeReport $
+            Err
+                Nothing
+                ("Ambiguous type name: " <> pretty n)
+                [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
+                [ Note $
+                    vsep
+                        [ "The name is ambiguous, and could refer to any of the following:"
+                        , listToText (pretty <$> toList options)
+                        ]
+                , Hint "Try qualifying the name with the module name"
+                , Hint
+                    "Try removing all but one of the imports that is causing the ambiguity"
+                , Hint $
+                    "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports"
+                ]
+    report (AmbiguousVarName n options) =
+        writeReport $
+            Err
+                Nothing
+                ("Ambiguous variable name: " <> pretty n)
+                [ (n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")
+                ]
+                [ Note $
+                    vsep
+                        [ "The name is ambiguous, and could refer to any of the following:"
+                        , listToText (pretty <$> toList options)
+                        ]
+                , Hint "Try qualifying the name with the module name"
+                , Hint
+                    "Try removing all but one of the imports that is causing the ambiguity"
+                , Hint $
+                    "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports"
+                ]
 
 data RenameState = RenameState
-    { varNames :: Map VarName (VarRef VarName)
-    , typeNames :: Map TypeName (VarRef TypeName)
+    { varNames :: Map VarName (NonEmpty (VarRef VarName))
+    , typeNames :: Map TypeName (NonEmpty (VarRef TypeName))
     , typeVars :: Map LowerAlphaName (Unique LowerAlphaName)
     -- ^ All the type variables in scope
     }
@@ -158,31 +196,34 @@ qualifyTypeName (Located sr (MaybeQualified n (Just m))) = do
 qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
     typeNames' <- use' (field' @"typeNames")
     case Map.lookup n typeNames' of
-        Just (Global (Located sr' (Qualified n' m))) -> pure $ Located sr' (Qualified n' m)
-        Just (Local _) -> error "can't have local type names"
         Nothing -> throw $ UnknownName (Located sr (NTypeName n))
+        Just ((Global (Located sr' (Qualified n' m))) :| []) -> pure $ Located sr' (Qualified n' m)
+        Just ((Local _) :| []) -> error "can't have local type names"
+        Just many -> throw $ AmbiguousTypeName (Located sr (NTypeName n)) many
 
 lookupGenericName ::
     Rename r =>
     (Ord name, ToName name) =>
-    Lens' RenameState (Map name (VarRef name)) ->
+    Lens' RenameState (Map name (NonEmpty (VarRef name))) ->
+    (Located Name -> NonEmpty (VarRef name) -> RenameError) ->
     Located (MaybeQualified name) ->
     Sem r (Located (VarRef name))
-lookupGenericName _ (Located sr (MaybeQualified n (Just m))) = do
+lookupGenericName _ _ (Located sr (MaybeQualified n (Just m))) = do
     ensureExistsAndExposed m (Located sr (toName n))
     pure $ Located sr $ Global (Located sr (Qualified n m))
-lookupGenericName lens (Located sr (MaybeQualified n Nothing)) = do
+lookupGenericName lens err (Located sr (MaybeQualified n Nothing)) = do
     names' <- use' lens
     case Map.lookup n names' of
-        Just v -> pure $ Located sr v
+        Just (v :| []) -> pure $ Located sr v
+        Just many -> throw $ err (Located sr $ toName n) many
         Nothing -> throw $ UnknownName (Located sr $ toName n)
 
 lookupVarName :: Rename r => Located (MaybeQualified VarName) -> Sem r (Located (VarRef VarName))
-lookupVarName = lookupGenericName (field' @"varNames")
+lookupVarName = lookupGenericName (field' @"varNames") AmbiguousVarName
 
 lookupTypeName :: Rename r => Located (MaybeQualified TypeName) -> Sem r (Located (Qualified TypeName))
 lookupTypeName n =
-    lookupGenericName (field' @"typeNames") n <<&>> \case
+    lookupGenericName (field' @"typeNames") AmbiguousTypeName n <<&>> \case
         Local _ -> error "can't have local type names"
         Global v -> v ^. unlocated
 
@@ -254,16 +295,20 @@ addModuleToContext mn exposing = do
 
 addDeclarationToContext :: Rename r => Bool -> DesugaredDeclaration -> Sem r ()
 addDeclarationToContext _ decl = do
+    -- for global declarations we can have many with the same name, so we need to merge them
+    let insertMerging :: (Ord k, Eq a) => k -> a -> Map k (NonEmpty a) -> Map k (NonEmpty a)
+        insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
+
     let global :: name -> VarRef name
         global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) <$ decl ^. _Unwrapped)
     case decl ^. _Unwrapped % unlocated % field' @"name" % unlocated of
-        NVarName vn -> modify $ over (the @"varNames") $ Map.insert vn (global vn)
-        NTypeName vn -> modify $ over (the @"typeNames") $ Map.insert vn (global vn)
+        NVarName vn -> modify $ over (the @"varNames") $ insertMerging vn (global vn)
+        NTypeName vn -> modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 
     case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
         TypeDeclaration _ (Located _ (ADT ctors)) _ -> do
-            traverseOf_ (each % _1 % unlocated) (\tn -> modify $ over (the @"typeNames") $ Map.insert tn (global tn)) ctors
+            traverseOf_ (each % _1 % unlocated) (\tn -> modify $ over (the @"typeNames") $ insertMerging tn (global tn)) ctors
         _ -> pass
 
 ensureExistsAndExposed :: Rename r => ModuleName -> Located Name -> Sem r ()
@@ -440,7 +485,7 @@ renameExpr (Expr le@(Located loc _, _)) =
         pure (createConses (toList xs') ^. _Unwrapped % _1 % unlocated)
     renameExpr' (LetIn vn _ e body) = do
         vn' <- uniquify vn
-        withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (Local vn')) $ do
+        withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local vn')) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
             pure $ LetIn vn' NoFieldValue exp' body'
@@ -513,7 +558,7 @@ renamePattern (Pattern fp@(Located loc _, _)) =
         pure $ ConstructorPattern (Located loc consCtorName) [p1', p2']
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
-        modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (Local (NormalVarName <<$>> vn')))
+        modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local (NormalVarName <<$>> vn')))
         pure $ VarPattern vn'
     renamePattern' (ConstructorPattern cn ps) = do
         cn' <- qualifyTypeName cn
@@ -543,7 +588,7 @@ patternToMatch :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => 
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
     uniqueVn <- uniquify (NormalVarName <$> vn)
-    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (Local uniqueVn)) $ renameExpr body
+    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
@@ -580,7 +625,7 @@ desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
     val' <- renameExpr val
     a' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)) a
     n' <- uniquify n
-    xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (Local n')) $ do
+    xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local n')) $ do
         desugarBlock (xs1 :| xs')
     pure $ Expr (Located l (LetIn n' p val' xs'), a')
 desugarBlock xs = do
