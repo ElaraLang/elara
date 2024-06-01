@@ -1372,11 +1372,13 @@ check expr@(Expr (Located exprLoc _, _)) t = debug ("check: " <> showPretty expr
         -}
         case _At of
             Type.Forall{} -> do
+                debug' $ "applicableTyApp: " <> showPretty (_At, t) <> " => " <> showPretty (Type.applicableTyApp _At t)
                 case _At `Type.applicableTyApp` t of
                     [] -> pure _A
-                    (tApp : _) ->
+                    [tApp] ->
                         -- insert type application from instantiating the forall
                         pure $ Expr (Located exprLoc (TypeApplication _A tApp), _At `Type.instantiate` t)
+                    more -> throw $ AmbiguousTypeApplication exprLoc more
             _ -> pure _A
 
 {- | This corresponds to the judgment:

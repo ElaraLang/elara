@@ -154,6 +154,7 @@ data TypeInferenceError where
     KindInferError :: KindInferError -> TypeInferenceError
     PartiallyAppliedConstructorPattern :: HasCallStack => TypeInferenceError
     NotCustomType :: HasCallStack => SourceRegion -> Type SourceRegion -> TypeInferenceError
+    AmbiguousTypeApplication :: HasCallStack => SourceRegion -> [Type SourceRegion] -> TypeInferenceError
 
 deriving instance Show TypeInferenceError
 
