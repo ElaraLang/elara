@@ -1,4 +1,8 @@
 import Prelude
+import Option
+import List
+
+let inc x = x + 1
 
 let main = 
-    print (stringToList "hello" |> map identity |> length)
+    print (Option.map inc (Some 5))

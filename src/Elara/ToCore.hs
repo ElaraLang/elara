@@ -34,11 +34,11 @@ import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
-import Print (debugPretty, showPretty)
+import Print (debugPretty)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
-    | UnknownConstructor !(Located (Qualified TypeName))
+    | UnknownConstructor !(Located (Qualified TypeName)) CtorSymbolTable
     | UnknownPrimConstructor !(Qualified Text)
     | UnknownTypeConstructor !(Qualified Text) CtorSymbolTable
     | UnknownLambdaType !(Type.Type SourceRegion)
@@ -47,7 +47,18 @@ data ToCoreError
 
 instance ReportableError ToCoreError where
     report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
-    report (UnknownConstructor (Located _ qn)) = writeReport $ Err (Just "UnknownConstructor") (pretty qn) [] []
+    report (UnknownConstructor (Located _ qn) syms) =
+        writeReport $
+            Err
+                (Just "UnknownDataConstructor")
+                ( vcat
+                    [ pretty qn
+                    , "Known constructors:"
+                    , vcat $ pretty <$> M.keys syms.dataCons
+                    ]
+                )
+                []
+                []
     report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
     report (UnknownTypeConstructor qn syms) =
         writeReport $
@@ -95,7 +106,7 @@ lookupCtor qn = do
     let plainName = nameText <$> qn ^. unlocated
     case M.lookup plainName table.dataCons of
         Just ctor -> pure ctor
-        Nothing -> throw (UnknownConstructor qn)
+        Nothing -> throw (UnknownConstructor qn table)
 
 registerCtor :: ToCoreC r => DataCon -> Sem r ()
 registerCtor ctor = modify (\s -> s{dataCons = M.insert (ctor ^. field @"name") ctor s.dataCons})
@@ -135,6 +146,7 @@ runToCorePipeline =
 moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
+    debugPretty name
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
         let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
