@@ -159,9 +159,6 @@ data RenameState = RenameState
 instance Semigroup RenameState where
     RenameState v1 t1 tv1 <> RenameState v2 t2 tv2 = RenameState (v1 <> v2) (t1 <> t2) (tv1 <> tv2)
 
-insertMerging :: (Ord k, Eq a) => k -> a -> Map k (NonEmpty a) -> Map k (NonEmpty a)
-insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
-
 instance Monoid RenameState where
     mempty = RenameState mempty mempty mempty
 
@@ -298,6 +295,10 @@ addModuleToContext mn exposing = do
 
 addDeclarationToContext :: Rename r => Bool -> DesugaredDeclaration -> Sem r ()
 addDeclarationToContext _ decl = do
+    -- for global declarations we can have many with the same name, so we need to merge them
+    let insertMerging :: (Ord k, Eq a) => k -> a -> Map k (NonEmpty a) -> Map k (NonEmpty a)
+        insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
+
     let global :: name -> VarRef name
         global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) <$ decl ^. _Unwrapped)
     case decl ^. _Unwrapped % unlocated % field' @"name" % unlocated of
@@ -484,7 +485,7 @@ renameExpr (Expr le@(Located loc _, _)) =
         pure (createConses (toList xs') ^. _Unwrapped % _1 % unlocated)
     renameExpr' (LetIn vn _ e body) = do
         vn' <- uniquify vn
-        withModified (the @"varNames" %~ insertMerging (vn ^. unlocated) (Local vn')) $ do
+        withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local vn')) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
             pure $ LetIn vn' NoFieldValue exp' body'
@@ -557,7 +558,7 @@ renamePattern (Pattern fp@(Located loc _, _)) =
         pure $ ConstructorPattern (Located loc consCtorName) [p1', p2']
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
-        modify (the @"varNames" %~ insertMerging (vn ^. unlocated % to NormalVarName) (Local (NormalVarName <<$>> vn')))
+        modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local (NormalVarName <<$>> vn')))
         pure $ VarPattern vn'
     renamePattern' (ConstructorPattern cn ps) = do
         cn' <- qualifyTypeName cn
@@ -587,7 +588,7 @@ patternToMatch :: (Rename r, Member (Reader (Maybe DesugaredDeclaration)) r) => 
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
     uniqueVn <- uniquify (NormalVarName <$> vn)
-    body' <- withModified (the @"varNames" %~ insertMerging (vn ^. unlocated % to NormalVarName) (Local uniqueVn)) $ renameExpr body
+    body' <- withModified (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
@@ -624,7 +625,7 @@ desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
     val' <- renameExpr val
     a' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)) a
     n' <- uniquify n
-    xs' <- withModified (the @"varNames" %~ insertMerging (n ^. unlocated) (Local n')) $ do
+    xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local n')) $ do
         desugarBlock (xs1 :| xs')
     pure $ Expr (Located l (LetIn n' p val' xs'), a')
 desugarBlock xs = do
