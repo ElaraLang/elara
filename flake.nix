@@ -103,7 +103,6 @@
 
         just-flake.features = {
           treefmt.enable = true;
-          convco.enable = true;
         };
 
 
@@ -156,6 +155,7 @@
               pkgs.haskellPackages.haskell-debug-adapter
               pkgs.haskellPackages.ghci-dap
               pkgs.haskellPackages.hpack
+              pkgs.git-cliff
             ];
         };
 
