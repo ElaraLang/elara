@@ -8,14 +8,12 @@ import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Generic.Types
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select (LocatedAST (..))
-import Elara.Data.Unique (makeUnique, uniqueGenToIO)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type (applicableTyApp)
 import Elara.TypeInfer.Type as Type (Type (..), structuralEq)
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Infer.Common
-import Polysemy (run, runM)
 import Print (printPretty)
 import Relude.Unsafe ((!!))
 import Test.Hspec
@@ -148,7 +146,7 @@ typeApplications = describe "Correctly determines which type applications to add
         n <- runUnique makeUniqueTyVar
         Forall () () n Domain.Type (Scalar () Scalar.Char) `applicableTyApp` Scalar () Scalar.Integer === []
 
-        -- it "Adds ty-apps to forall a. a" $ hedgehog $ do
+    it "Adds ty-apps to forall a. a" $ hedgehog $ do
         n <- runUnique makeUniqueTyVar
         someT <- forAll arbitraryType
         Forall () () n Domain.Type (VariableType () n) `applicableTyApp` someT === [someT]
