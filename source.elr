@@ -1,8 +1,8 @@
 import Prelude
 import Option
-import List
+import Elara.Prim
 
 let inc x = x + 1
 
 let main = 
-    print (Option.map inc (Some 5))
+    print (map incc (Some 5))

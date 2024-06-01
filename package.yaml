@@ -46,6 +46,7 @@ dependencies:
   - hashable
   - process
   - stringsearch
+  - text-metrics
 
 ghc-options:
   - -Wall
