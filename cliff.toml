@@ -115,5 +115,5 @@ sort_commits = "oldest"
 # limit_commits = 42
 
 [remote.github]
-owner="elaralang"
+owner="ElaraLang"
 repo="elara"

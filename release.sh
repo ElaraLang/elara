@@ -26,7 +26,7 @@ export GIT_CLIFF_TEMPLATE="\
 		- {% if commit.breaking %}(breaking) {% endif %}{{ commit.message | upper_first }} ({{ commit.id | truncate(length=7, end=\"\") }})\
 	{% endfor %}
 	{% endfor %}"
-changelog=$(git cliff --unreleased --strip all)
+changelog=$(git cliff -c cliff-release.toml --unreleased --strip all)
 
 git tag -s -a "${new_version}" -m "Release ${new_version}" -m "${changelog}"
 git tag -v "${new_version}"
