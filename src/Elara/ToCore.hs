@@ -146,7 +146,6 @@ runToCorePipeline =
 moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
-    debugPretty name
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
         let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
