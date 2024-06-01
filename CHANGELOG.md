@@ -7,10 +7,35 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ## [unreleased]
 
+### ⚙️ Miscellaneous Tasks
+
+- *(changelog)* Add release script - ([8dca1bb](https://github.com/ElaraLang/elara/commit/8dca1bb1d6a90ac20d867fb056d54ac809d0b844)) 
+
+## [0.1.0](https://github.com/ElaraLang/elara/compare/v0.0.2..vv0.1.0) - 2024-06-01
+
+### 🚀 Features
+
+- *(renamer)* :bug: Fix #14 and significantly improve error message quality for unknown names - ([d22a9b5](https://github.com/ElaraLang/elara/commit/d22a9b59bdc87a5bbb11a350b95d275d5eae6ab2)) 
+- *(renamer)* :lipstick: Use code E0001 for unknown name again - ([8e4d3c0](https://github.com/ElaraLang/elara/commit/8e4d3c07679613ef388837ab2b20db781f7d623a)) 
+
+### 🐛 Bug Fixes
+
+- *(renamer)* :rotating_light: Fix invalid import - ([9162419](https://github.com/ElaraLang/elara/commit/916241968cff7a92feea3441a56161212d308f9e)) 
+
+### 🚜 Refactor
+
+- *(renamer)* :recycle: Change renamer to have the current module be _optional_ - ([515f619](https://github.com/ElaraLang/elara/commit/515f6197597b15760811171b8cbb4f92f607fd07)) 
+
 ### 📚 Documentation
 
 - *(changelog)* Update CHANGELOG.md - ([31c62a7](https://github.com/ElaraLang/elara/commit/31c62a74c4273f360f1b8cbb88a57c166ae942c9)) 
 - *(changelog)* Use the git-cliff format for current changelog - ([f52b80b](https://github.com/ElaraLang/elara/commit/f52b80b26ba811767b4c0e4cc7059b8c24df8601)) 
+- *(changelog)* Use the git-cliff format for current changelog - ([9356157](https://github.com/ElaraLang/elara/commit/9356157d672d7c5f2e402e835a0947e25cf32d03)) 
+
+### 🎨 Styling
+
+- *(renamer)* :rotating_light: Remove unused variable binding - ([bbd9441](https://github.com/ElaraLang/elara/commit/bbd9441fda5ca16c4e49e73f6fe10eb1e838f688)) 
+- *(renamer)* :lipstick: Slightly reword unknown name error message - ([8936a7c](https://github.com/ElaraLang/elara/commit/8936a7c61bf3c4039f63bbd62295716621447c9d)) 
 
 ### 🧪 Testing
 
@@ -19,11 +44,14 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### ⚙️ Miscellaneous Tasks
 
 - *(cd)* Add action to generate changelogs whenever you push to main - ([cea8bae](https://github.com/ElaraLang/elara/commit/cea8bae0ec2d7fba47b7831ac720f8cc21fce308)) 
+- *(cd)* Add action to generate changelogs whenever you push to main - ([bdbcfb9](https://github.com/ElaraLang/elara/commit/bdbcfb900923116c535d046a99b1d1f6d4323864)) 
 
 ### Build
 
 - *(changelog)* Add cliff.toml - ([682cc9f](https://github.com/ElaraLang/elara/commit/682cc9f771b49de35f2f4d70f4829d2e4bd31523)) 
+- *(changelog)* Add cliff.toml - ([b498ae3](https://github.com/ElaraLang/elara/commit/b498ae36aaad575f2f375596fc67f8b6b4cfe713)) 
 - *(nix)* Add `git-cliff` to devshell - ([8a6187e](https://github.com/ElaraLang/elara/commit/8a6187e4038f9dc73e756983c6abd9aaec4eb4d9)) 
+- *(nix)* Add `git-cliff` to devshell - ([7b5a372](https://github.com/ElaraLang/elara/commit/7b5a372ad3cfccfdbf9c781422926c6f8de4df22)) 
 
 ## [0.0.2](https://github.com/ElaraLang/elara/compare/v0.0.1..v0.0.2) - 2024-06-01
 
