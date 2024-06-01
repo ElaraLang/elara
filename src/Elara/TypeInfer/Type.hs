@@ -245,21 +245,22 @@ to determine the type of the type application, as naively we would instantiate i
 which is actually incorrect.
 -}
 applicableTyApp :: Show s => Type s -> Type s -> [Type s]
--- applicableTyApp x y | traceShow ("ata", pretty x, pretty y) False = undefined
 -- If x and y are the same, there's no instantiation to be done
 applicableTyApp x y | x `structuralEq` y = []
 applicableTyApp _ (UnsolvedType{}) = []
 -- If x is forall a. a, and y is x, then we need to instantiate x with a
+-- eg `def y : Int; let y = undefined` -> `def y : Int; let y = undefined @Int`
 applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = [y]
 -- If x is forall a. a -> _, and y is c -> _, then we need to instantiate x with c
 applicableTyApp
     (Forall{type_ = Function{input = VariableType{}}})
     Function{input = sIn} = [sIn]
--- Instantiating forall x. y with forall z. y[x := z] doesn't create any instantiations
-applicableTyApp (Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
+applicableTyApp a@(Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
+    -- Instantiating forall x. y with forall z. y[x := z] doesn't create any instantiations
+    -- in other words, if the first forall is just a copy of the second with a different name, then we don't need to instantiate
     if type_ `structuralEq` substituteType name2 (VariableType{name = name, ..}) type2
         then applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
-        else (VariableType{name = name2, ..}) : applicableTyApp type_ (substituteType name2 (VariableType{name = name, ..}) type2)
+        else applicableTyApp a type2
 -- If x is forall a. X a and y is X b, then we need to instantiate x with b
 -- applicableTyApp (Forall{type_ = Custom{typeArguments = [VariableType{..}]}}) Custom{typeArguments = [y]} =
 --     [y]
