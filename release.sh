@@ -1,6 +1,10 @@
 # inspired by https://github.com/orhun/git-cliff/blob/main/release.sh
 
 new_version=$(git cliff --bumped-version)
+if [ -z "$new_version" ]; then
+    echo "No new version found (did git cliff fail?). Exiting."
+    exit 1
+fi
 echo "New version: $new_version"
 
 # update package.yaml version
@@ -12,7 +16,7 @@ hpack
 # Update changelog
 git cliff --tag "${new_version}" > CHANGELOG.md
 git add -A && git commit -m "chore(release): prepare for ${new_version}"
-git show
+git show || exit 1
 
 # generate a changelog for the tag message
 export GIT_CLIFF_TEMPLATE="\
