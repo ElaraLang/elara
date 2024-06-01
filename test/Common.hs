@@ -2,9 +2,12 @@ module Common where
 
 import Elara.AST.Generic
 import Elara.Data.Pretty
+import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
 import Hedgehog.Internal.Property
 import Orphans ()
+import Polysemy (Sem, runM)
+import Polysemy.Embed
 import Test.HUnit (assertFailure)
 import Test.Hspec
 
@@ -29,3 +32,6 @@ diagShouldFail (d, x) = liftIO $ do
     case x of
         Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
         Nothing -> pass
+
+runUnique :: MonadIO m => Sem [UniqueGen, Embed IO] a -> m a
+runUnique = liftIO . runM @IO . uniqueGenToIO

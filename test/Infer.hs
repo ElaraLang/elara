@@ -1,16 +1,21 @@
 module Infer where
 
-import Common (diagShouldSucceed)
+import Arbitrary.Type (arbitraryType)
+import Common (diagShouldSucceed, runUnique)
 import Data.Generics.Product (HasField (field))
 import Data.Generics.Sum (AsConstructor' (_Ctor'))
 import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Generic.Types
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select (LocatedAST (..))
+import Elara.Data.Unique (makeUnique, uniqueGenToIO)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
-import Elara.TypeInfer.Type (Type (..), structuralEq)
+import Elara.TypeInfer.Type (applicableTyApp)
+import Elara.TypeInfer.Type as Type (Type (..), structuralEq)
+import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Infer.Common
+import Polysemy (run, runM)
 import Print (printPretty)
 import Relude.Unsafe ((!!))
 import Test.Hspec
@@ -21,6 +26,7 @@ spec :: Spec
 spec = describe "Infers types correctly" $ parallel $ do
     simpleTypes
     functionTypes
+    typeApplications
 
 simpleTypes :: Spec
 simpleTypes = describe "Infers simple types correctly" $ parallel $ do
@@ -125,9 +131,37 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
             o -> failTypeMismatch "id" "Main.id @a" o
 
         case id2Decl of
-            (TypeApplication{}) -> pass
+            (TypeApplication _ (Scalar{scalar = Scalar.Integer})) -> pass
             o -> failTypeMismatch "id" "Main.id @Int" o
 
         case id3Decl of
             (TypeApplication _ (Function _ a b)) | a `structuralEq` b -> pass
             o -> failTypeMismatch "id" "Main.id @(a -> a)" o
+
+typeApplications :: Spec
+typeApplications = describe "Correctly determines which type applications to add" $ do
+    it "Doesn't add unnecessary ty-apps with monotypes" $ hedgehog $ do
+        Scalar () Scalar.Integer `applicableTyApp` Scalar () Scalar.Integer === []
+        Scalar () Scalar.Integer `applicableTyApp` Scalar () Scalar.Char === []
+
+    it "Doesn't add unnecessary ty-apps with polymorphic types" $ hedgehog $ do
+        n <- runUnique makeUniqueTyVar
+        Forall () () n Domain.Type (Scalar () Scalar.Char) `applicableTyApp` Scalar () Scalar.Integer === []
+
+        -- it "Adds ty-apps to forall a. a" $ hedgehog $ do
+        n <- runUnique makeUniqueTyVar
+        someT <- forAll arbitraryType
+        Forall () () n Domain.Type (VariableType () n) `applicableTyApp` someT === [someT]
+
+    it "Adds ty-apps to forall a. a -> a" $ hedgehog $ do
+        n <- runUnique makeUniqueTyVar
+        someT <- forAll arbitraryType
+        let forAllT = Forall () () n Domain.Type (Function () (VariableType () n) (VariableType () n))
+
+        -- forall `applicableTyApp` someT === [] -- usages like this should really throw an error
+        forAllT `applicableTyApp` Function () someT someT === [someT]
+
+        -- instantiating forall a. a -> a to forall b. (b -> b) -> b -> b should give us [b -> b]
+        n2 <- runUnique makeUniqueTyVar
+        let n2Var = VariableType () n2
+        forAllT `applicableTyApp` Forall () () n2 Domain.Type (Function () (Function () n2Var n2Var) (Function () n2Var n2Var)) === [Function () n2Var n2Var]

@@ -243,6 +243,7 @@ test-suite elara-test
       Arbitrary.AST
       Arbitrary.Literals
       Arbitrary.Names
+      Arbitrary.Type
       Common
       Infer
       Infer.Common
