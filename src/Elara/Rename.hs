@@ -133,7 +133,7 @@ instance ReportableError RenameError where
 
         writeReport $
             Err
-                Nothing
+                (Just Codes.unknownName)
                 ("Unknown" <+> nameKind <+> "name: " <> pretty n)
                 [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
                 (namesThatMightveBeenIntendedButNotImported <> possibleTypos)
