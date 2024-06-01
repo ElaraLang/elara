@@ -5,4 +5,4 @@ import Elara.Prim
 let inc x = x + 1
 
 let main = 
-    print (map incc (Some 5))
+    print (map inc (Some 5))
