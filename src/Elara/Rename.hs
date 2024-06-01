@@ -408,7 +408,7 @@ n's module name is in the import list of m
 n is exposed by the import
 -}
 isImportedBy :: Module 'Desugared -> VarRef Name -> Bool
-isImportedBy m (Local _) = True -- we always assume a local variable exists, even if it doesn't. this condition is checked elsewhere
+isImportedBy _ (Local _) = True -- we always assume a local variable exists, even if it doesn't. this condition is checked elsewhere
 isImportedBy m (Global (Located _ (Qualified n' nameMod))) = do
     (nameMod == m ^. _Unwrapped % unlocated % field' @"name" % unlocated) || isImportedBy' m n' nameMod
   where
