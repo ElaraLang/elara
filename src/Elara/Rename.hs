@@ -112,7 +112,7 @@ instance ReportableError RenameError where
                                 ]
                         ]
         let
-            prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(declared locally)"
+            prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(local variable)"
             prettyVarRef (Global (Located _ (Qualified n m))) = pretty (toName n) <+> "(imported from" <+> pretty m <> ")"
             possibleTypos =
                 let intendedText = nameText n
