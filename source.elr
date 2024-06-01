@@ -1,4 +1,5 @@
 import Prelude
+import Option
 
 let main = 
-    print (stringToList "hello" |> map identity |> length)
+    print (Some 5)

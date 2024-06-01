@@ -1,0 +1,9 @@
+module Option
+
+type Option a = Some a | None
+
+def map : (a -> b) -> Option a -> Option b
+let map f o =
+    match o with
+        Some x -> Some (f x)
+        None -> None
