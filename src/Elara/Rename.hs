@@ -29,7 +29,7 @@ import Elara.Data.Pretty
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
-import Elara.Error.Codes qualified as Codes (nonExistentModuleDeclaration, unknownModule)
+import Elara.Error.Codes qualified as Codes
 import Elara.Pipeline
 import Elara.Prim.Core (consCtorName, emptyListCtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
