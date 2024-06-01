@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 Note that while Elara follows SemVer where possible, most of the source code is not considered public API with regards to breaking changes.
 As such, breaking changes may occur between minor versions until a stable release of the language.
 
+## [unreleased]
+
+### 🐛 Bug Fixes
+
+- *(stdlib)* :pencil2: Fix a "typo" in source.elr (so that it works) - ([9e1f1fd](https://github.com/ElaraLang/elara/commit/9e1f1fd78c435d78117de605a05f3442c654b823)) 
+
+### 🎨 Styling
+
+- *(to-core)* :mute: Remove old debug message - ([eda6d02](https://github.com/ElaraLang/elara/commit/eda6d02197fd1e57653362d2960cd8e36ded82ec)) 
+
 ## [0.1.0](https://github.com/ElaraLang/elara/compare/v0.0.2..v0.1.0) - 2024-06-01
 
 ### 🚀 Features
