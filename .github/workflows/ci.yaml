@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
+      - name: Delete huge unnecessary tools folder
+        if: runner.os == 'Linux'
+        run: rm -rf /opt/hostedtoolcache
+        
+
       - uses: DeterminateSystems/nix-installer-action@main
         name: Install Nix
         with:
