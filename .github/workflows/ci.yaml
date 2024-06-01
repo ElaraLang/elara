@@ -19,7 +19,6 @@ jobs:
           cd /opt
           find . -maxdepth 1 -mindepth 1 '!' -path ./containerd '!' -path ./actionarchivecache '!' -path ./runner '!' -path ./runner-cache -exec rm -rf '{}' ';'
         
-
       - uses: DeterminateSystems/nix-installer-action@main
         name: Install Nix
         with:
