@@ -7,7 +7,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        os: [self-hosted, macos-latest]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -16,6 +16,8 @@ jobs:
       - name: Delete huge unnecessary tools folder
         if: runner.os == 'Linux'
         run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           cd /opt
           find . -maxdepth 1 -mindepth 1 '!' -path ./containerd '!' -path ./actionarchivecache '!' -path ./runner '!' -path ./runner-cache -exec rm -rf '{}' ';'
         
