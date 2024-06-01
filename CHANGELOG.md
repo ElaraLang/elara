@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 Note that while Elara follows SemVer where possible, most of the source code is not considered public API with regards to breaking changes.
 As such, breaking changes may occur between minor versions until a stable release of the language.
 
-## [unreleased]
+## [0.1.0](https://github.com/ElaraLang/elara/compare/v0.0.2..v0.1.0) - 2024-06-01
 
 ### 🚀 Features
 
@@ -47,6 +47,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(changelog)* Add cliff.toml - ([b498ae3](https://github.com/ElaraLang/elara/commit/b498ae36aaad575f2f375596fc67f8b6b4cfe713)) 
 - *(changelog)* Add a safety check to the release script and allow aborting it - ([c1ec919](https://github.com/ElaraLang/elara/commit/c1ec91978c06e527ea1a665f490c24e3380a2f1f)) 
 - *(changelog)* :bug: Add more safety checking to release.sh and fix weird sed behaviour - ([1d01db1](https://github.com/ElaraLang/elara/commit/1d01db166fb361126fe4e0cf087342d39a5bdd5d)) 
+- *(changelog)* :art: Change changelog generation for tags - ([536e580](https://github.com/ElaraLang/elara/commit/536e5809c4111fa3a1c72b8bf5ee386f5f949f5d)) 
+- *(changelog)* :safety_vest: Ask if we're ok before making git tags - ([3e3e457](https://github.com/ElaraLang/elara/commit/3e3e457b238d94b61387187bbe7ddf2eb1e27f58)) 
 - *(nix)* Add `git-cliff` to devshell - ([8a6187e](https://github.com/ElaraLang/elara/commit/8a6187e4038f9dc73e756983c6abd9aaec4eb4d9)) 
 - *(nix)* Add `git-cliff` to devshell - ([7b5a372](https://github.com/ElaraLang/elara/commit/7b5a372ad3cfccfdbf9c781422926c6f8de4df22)) 
 
