@@ -50,7 +50,7 @@ import Polysemy.Reader
 import Prettyprinter.Render.Text
 import Print
 import System.CPUTime
-import System.Directory (createDirectoryIfMissing, doesFileExist, getDirectoryContents, listDirectory)
+import System.Directory (createDirectoryIfMissing, doesFileExist, listDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath
 import System.IO (hSetEncoding, openFile, utf8)
@@ -192,7 +192,7 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
                         >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
-                        >=> traverseGraph (\(a, b) -> moduleToCore b a)
+                        >=> traverseGraphRevTopologically (\(a, b) -> moduleToCore b a)
                         >=> pure
                         . mapGraph coreToCore
                         $ graph
