@@ -12,6 +12,7 @@ module Elara.Rename where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Elara.AST.Desugared
 import Elara.AST.Generic
@@ -111,6 +112,41 @@ instance ReportableError RenameError where
                 [ Note "Blocks cannot end with let statements, as they are not expressions."
                 , Hint "Perhaps you meant to use a let ... in construct?"
                 ]
+    report (AmbiguousTypeName n options) =
+        writeReport $
+            Err
+                Nothing
+                ("Ambiguous type name: " <> pretty n)
+                [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
+                [ Note $
+                    vsep
+                        [ "The name is ambiguous, and could refer to any of the following:"
+                        , listToText (pretty <$> toList options)
+                        ]
+                , Hint "Try qualifying the name with the module name"
+                , Hint
+                    "Try removing all but one of the imports that is causing the ambiguity"
+                , Hint $
+                    "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports"
+                ]
+    report (AmbiguousVarName n options) =
+        writeReport $
+            Err
+                Nothing
+                ("Ambiguous variable name: " <> pretty n)
+                [ (n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")
+                ]
+                [ Note $
+                    vsep
+                        [ "The name is ambiguous, and could refer to any of the following:"
+                        , listToText (pretty <$> toList options)
+                        ]
+                , Hint "Try qualifying the name with the module name"
+                , Hint
+                    "Try removing all but one of the imports that is causing the ambiguity"
+                , Hint $
+                    "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports"
+                ]
 
 data RenameState = RenameState
     { varNames :: Map VarName (NonEmpty (VarRef VarName))
@@ -123,8 +159,8 @@ data RenameState = RenameState
 instance Semigroup RenameState where
     RenameState v1 t1 tv1 <> RenameState v2 t2 tv2 = RenameState (v1 <> v2) (t1 <> t2) (tv1 <> tv2)
 
-insertMerging :: (Ord k, Semigroup a, One a) => k -> OneItem a -> Map k a -> Map k a
-insertMerging k x = Map.insertWith (<>) k (one x)
+insertMerging :: (Ord k, Eq a) => k -> a -> Map k (NonEmpty a) -> Map k (NonEmpty a)
+insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
 
 instance Monoid RenameState where
     mempty = RenameState mempty mempty mempty
