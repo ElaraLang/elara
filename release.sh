@@ -1,5 +1,5 @@
+#!/usr/bin/env bash
 # inspired by https://github.com/orhun/git-cliff/blob/main/release.sh
-
 new_version=$(git cliff --bumped-version)
 if [ -z "$new_version" ]; then
     echo "No new version found (did git cliff fail?). Exiting."
@@ -8,9 +8,9 @@ fi
 echo "New version: $new_version"
 
 # update package.yaml version
-sed -E -i '' "s/^version: \"[^\"]*\"$/version: \"${new_version#v}\"/" package.yaml
+sed -i'' -e "s/^version: \"[^\"]*\"$/version: \"${new_version#v}\"/" package.yaml || exit 1
 # and the cabal file
-hpack
+hpack || exit 1
 
 
 # Update changelog
