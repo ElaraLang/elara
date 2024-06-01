@@ -4,6 +4,7 @@ import Common (diagShouldSucceed)
 import Elara.AST.Generic
 import Elara.AST.Generic.Instances ()
 import Elara.AST.Generic.Pattern (functionCall, int, var)
+import Elara.AST.Module
 import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
 import Elara.AST.Region (generatedLocated)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedShunted))
@@ -33,7 +34,7 @@ loadExpr source = finalisePipeline . runShuntPipeline . runRenamePipeline (creat
     parsed <- parsePipeline exprParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
-    renamed <- runReader Nothing $ renameExpr desugared
+    renamed <- runReader Nothing $ runReader (Nothing :: Maybe (Module 'Desugared)) $ renameExpr desugared
     runReader fakeOperatorTable $ fixExpr renamed
 
 mkFakeVar :: OpName -> VarRef VarName

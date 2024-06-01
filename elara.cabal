@@ -175,6 +175,7 @@ library
     , safe-exceptions
     , stringsearch
     , terminal-size
+    , text-metrics
     , utf8-string
   mixins:
       base hiding (Prelude)
@@ -231,6 +232,7 @@ executable elara
     , safe-exceptions
     , stringsearch
     , terminal-size
+    , text-metrics
     , utf8-string
   mixins:
       base hiding (Prelude)
@@ -312,6 +314,7 @@ test-suite elara-test
     , safe-exceptions
     , stringsearch
     , terminal-size
+    , text-metrics
     , utf8-string
   mixins:
       base hiding (Prelude)
