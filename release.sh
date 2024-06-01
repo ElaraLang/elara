@@ -17,6 +17,12 @@ hpack || exit 1
 git cliff --tag "${new_version}" > CHANGELOG.md
 git add -A && git commit -m "chore(release): prepare for ${new_version}"
 git show || exit 1
+read -p "Is this ok? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+fi
 
 # generate a changelog for the tag message
 export GIT_CLIFF_TEMPLATE="\
