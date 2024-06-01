@@ -39,7 +39,6 @@ import Polysemy.Log
 import Polysemy.Reader (runReader)
 import Polysemy.State (State)
 import Print (showPretty)
-import Test.HUnit (assertFailure)
 
 pattern Forall' :: UniqueTyVar -> Domain -> Type () -> Type ()
 pattern Forall' name domain t = Forall () () name domain t
@@ -65,7 +64,14 @@ inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline . run
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
-    renamed <- runRenamePipeline (createGraph []) primitiveRenameState (runReader Nothing $ renameExpr desugared)
+    renamed <-
+        runRenamePipeline
+            (createGraph [])
+            primitiveRenameState
+            ( runReader (Nothing @(Module 'Desugared)) $
+                runReader (Nothing @(Declaration 'Desugared)) $
+                    renameExpr desugared
+            )
     shunted <- runReader mempty $ shuntExpr renamed
     inferExpression shunted Nothing >>= completeInference
 

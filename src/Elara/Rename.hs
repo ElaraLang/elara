@@ -54,7 +54,7 @@ data RenameError
         -- | The name that was unknown
         (Located Name)
         -- | The module we're renaming that the unknown name was referenced in
-        (Module 'Desugared)
+        (Maybe (Module 'Desugared))
         -- | All known names
         (Map name (NonEmpty (VarRef name)))
     | AmbiguousVarName (Located Name) (NonEmpty (VarRef VarName))
@@ -101,35 +101,39 @@ instance ReportableError RenameError where
         let namesMap = Map.mapKeys toName names
         let allNames = maybe [] toList (fmap toName <<$>> Map.lookup (n ^. unlocated) namesMap)
         let namesThatMightveBeenIntendedButNotImported =
-                case filter (not . isImportedBy m) allNames of
-                    [] -> []
-                    ns ->
-                        [ Hint $
-                            vsep
-                                [ "This name is defined in the following modules, but none of them are imported:"
-                                , hsep (punctuate comma (ns ^.. each % _As @"Global" % unlocated % qualifier % to pretty))
-                                , "Try importing one of the modules."
-                                ]
-                        ]
+                case m of
+                    Nothing -> []
+                    Just m -> case filter (not . isImportedBy m) allNames of
+                        [] -> []
+                        ns ->
+                            [ Hint $
+                                vsep
+                                    [ "This name is defined in the following modules, but none of them are imported:"
+                                    , hsep (punctuate comma (ns ^.. each % _As @"Global" % unlocated % qualifier % to pretty))
+                                    , "Try importing one of the modules."
+                                    ]
+                            ]
         let
             prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(local variable)"
             prettyVarRef (Global (Located _ (Qualified n m))) = pretty (toName n) <+> "(imported from" <+> pretty m <> ")"
-            possibleTypos =
-                let intendedText = nameText n
-                    isTypo name = levenshtein (nameText name) intendedText < 3
-                    typos =
-                        Map.filterWithKey
-                            (\k _ -> isTypo k)
-                            (NonEmpty.filter (\x -> isImportedBy m (toName <$> x)) <$> namesMap)
-                 in case join (Map.elems typos) of
-                        [] -> []
-                        ts ->
-                            [ Hint $
-                                vsep
-                                    [ "You may have meant one of:"
-                                    , listToText (prettyVarRef <$> ts)
-                                    ]
-                            ]
+            possibleTypos = case m of
+                Nothing -> []
+                Just m ->
+                    let intendedText = nameText n
+                        isTypo name = levenshtein (nameText name) intendedText < 3
+                        typos =
+                            Map.filterWithKey
+                                (\k _ -> isTypo k)
+                                (NonEmpty.filter (\x -> isImportedBy m (toName <$> x)) <$> namesMap)
+                     in case join (Map.elems typos) of
+                            [] -> []
+                            ts ->
+                                [ Hint $
+                                    vsep
+                                        [ "You may have meant one of:"
+                                        , listToText (prettyVarRef <$> ts)
+                                        ]
+                                ]
 
         writeReport $
             Err
@@ -216,7 +220,7 @@ type RenamePipelineEffects =
 type Rename r = Members RenamePipelineEffects r
 type InnerRename r =
     ( Members RenamePipelineEffects r
-    , Member (Reader (Module 'Desugared)) r -- the module we're renaming
+    , Member (Reader (Maybe (Module 'Desugared))) r -- the module we're renaming
     )
 
 runRenamePipeline ::
@@ -264,10 +268,16 @@ lookupGenericName _ _ (Located sr (MaybeQualified n (Just m))) = do
 lookupGenericName lens ambiguousError (Located sr (MaybeQualified n Nothing)) = do
     names' <- use' lens
     m <- ask
-    case maybe [] (NonEmpty.filter ((m `isImportedBy`) . fmap toName)) (Map.lookup n names') of
-        [v] -> pure $ Located sr v
-        [] -> throw $ UnknownName (Located sr $ toName n) m names'
-        (x : xs) -> throw $ ambiguousError (Located sr $ toName n) (x :| xs)
+    case m of
+        Nothing ->
+            case Map.lookup n names' of
+                Nothing -> throw $ UnknownName (Located sr $ toName n) m names'
+                Just (v :| []) -> pure $ Located sr v
+                Just many -> throw $ ambiguousError (Located sr $ toName n) many
+        Just m -> case maybe [] (NonEmpty.filter ((m `isImportedBy`) . fmap toName)) (Map.lookup n names') of
+            [v] -> pure $ Located sr v
+            [] -> throw $ UnknownName (Located sr $ toName n) (Just m) names'
+            (x : xs) -> throw $ ambiguousError (Located sr $ toName n) (x :| xs)
 
 lookupVarName :: InnerRename r => Located (MaybeQualified VarName) -> Sem r (Located (VarRef VarName))
 lookupVarName = lookupGenericName (field' @"varNames") AmbiguousVarName
@@ -300,7 +310,7 @@ rename m = do
             traverseOf_ (field' @"declarations" % each) (addDeclarationToContext False) m' -- add our own declarations to field' context
             exposing' <- renameExposing (m' ^. field' @"name" % unlocated) (m' ^. field' @"exposing")
             imports' <- traverse renameImport (m' ^. field' @"imports")
-            declarations' <- runReader m (traverse renameDeclaration (m' ^. field' @"declarations"))
+            declarations' <- runReader (Just m) (traverse renameDeclaration (m' ^. field' @"declarations"))
             sorted <- sortDeclarations declarations'
             pure (Module' (m' ^. field' @"name") exposing' imports' sorted)
         )
