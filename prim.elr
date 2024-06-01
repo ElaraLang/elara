@@ -44,7 +44,7 @@ let empty = elaraPrimitive "empty"
 def (|>) : a -> (a -> b) -> b	
 let (|>) a f = f a	
 
-def readFile : String -> IO [String]
+def readFile : String -> IO String
 let readFile = elaraPrimitive "readFile"
 
 def ioBind : IO a -> (a -> IO b) -> IO b

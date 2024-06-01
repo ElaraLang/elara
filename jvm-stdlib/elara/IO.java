@@ -31,10 +31,10 @@ public class IO<T> {
         });
     }
 
-    public static IO<EList<String>> readFile(String path) {
+    public static IO<String> readFile(String path) {
         return new IO<>(() -> {
             try {
-                return EList.fromList(Files.readAllLines(Paths.get(path)));
+                return new String(Files.readAllBytes(Paths.get(path)));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
