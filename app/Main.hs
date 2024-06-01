@@ -12,6 +12,7 @@ import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
 import Data.Generics.Wrapped
+import Data.Traversable (for)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
@@ -43,12 +44,13 @@ import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad
 import JVM.Data.JVMVersion
 import Polysemy (Sem)
+import Polysemy.Embed (embed)
 import Polysemy.Error (fromEither)
 import Polysemy.Reader
 import Prettyprinter.Render.Text
 import Print
 import System.CPUTime
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, doesFileExist, getDirectoryContents, listDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath
 import System.IO (hSetEncoding, openFile, utf8)
@@ -106,12 +108,14 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
-    prim <- loadModule dumpLexed dumpParsed dumpDesugared "prim.elr"
+    -- main file
     source <- loadModule dumpLexed dumpParsed dumpDesugared "source.elr"
-    prelude <- loadModule dumpLexed dumpParsed dumpDesugared "prelude.elr"
-    list <- loadModule dumpLexed dumpParsed dumpDesugared "list.elr"
 
-    let graph = createGraph [prim, source, prelude, list]
+    files <- embed (listDirectory "stdlib" >>= (filterM doesFileExist . fmap ("stdlib/" <>)))
+    stdlibMods <- for files $ \file -> do
+        loadModule dumpLexed dumpParsed dumpDesugared file
+
+    let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
 
     when dumpCore $ do
@@ -162,6 +166,7 @@ cleanup = resetGlobalUniqueSupply
 
 loadModule :: IsPipeline r => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
 loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
+    putTextLn ("Loading " <> toText fp <> "...")
     source <- readFileString fp
     tokens <- readTokensWith fp source
     when dumpLexed $ writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
