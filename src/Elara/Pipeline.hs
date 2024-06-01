@@ -15,6 +15,7 @@ import Polysemy (Effect, Embed, Members, Sem, runM, subsume_)
 import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel)
 import Polysemy.Maybe (MaybeE, runMaybe)
 import Polysemy.Time.Interpreter.Ghc
+import Print (elaraDebug)
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
 type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), Log, Embed IO]
@@ -34,5 +35,5 @@ finalisePipeline =
         . runDiagnosticWriter
         . runMaybe
         . interpretTimeGhc
-        . interpretLogStdoutLevel (Just Info)
+        . interpretLogStdoutLevel (Just $ if elaraDebug then Debug else Info)
         . subsume_
