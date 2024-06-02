@@ -2,7 +2,29 @@ import Prelude
 import Option
 import Elara.Prim
 
-let inc x = x + 1
+type JSON 
+    = JSONNull
+    | JSONBool Bool
+    | JSONNumber Int
+    | JSONString String
+    | JSONArray [JSON]
+    | JSONObject [(Tuple2 String JSON)]
+
+
+type Parser a = Parser (String -> Option (Tuple2 a String))
+
+def runParser : Parser a -> String -> Option (Tuple2 a String)
+let runParser (Parser f) = f
+
+def const : Char -> Parser Char
+let const c =
+    let f s = 
+        match stringToList s with
+            [] -> None
+            Cons x xs -> 
+                if x == c then Some (Tuple2 c (listToString xs))
+                else None
+    Parser f
 
 let main = 
-    print (map inc (Some 5))
+    print (JSONObject ([("name", JSONString "Elara"), ("version", JSONNumber 1)]))
