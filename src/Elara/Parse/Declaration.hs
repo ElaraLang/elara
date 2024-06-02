@@ -55,7 +55,7 @@ letDec modName = fmapLocated Declaration $ do
     pure (Declaration' modName (NVarName <$> name) value)
 
 typeDeclaration :: Located ModuleName -> Parser FrontendDeclaration
-typeDeclaration modName = fmapLocated Declaration $ dbg "typeDeclaration" $ ignoringIndents $ do
+typeDeclaration modName = fmapLocated Declaration $ ignoringIndents $ do
     token_ TokenType
 
     isAlias <- isJust <$> optional (token_ TokenAlias)
