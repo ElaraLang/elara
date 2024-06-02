@@ -143,13 +143,14 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                 createMethodWithCodeBuilder thisName (NamedMethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String")) [MPublic] "toString" $ do
                     emit $ New (ClassInfoType "java/lang/StringBuilder")
                     emit Dup
-                    emit $ LDC (LDCString $ ctorName ^. unqualified)
+                    emit $ LDC (LDCString $ ctorName ^. unqualified <> " (")
                     emit $ InvokeSpecial (ClassInfoType "java/lang/StringBuilder") "<init>" (MethodDescriptor [ObjectFieldType "java/lang/String"] VoidReturn)
 
                     for_ (zip fields [0 ..]) $ \(field, i) -> do
                         -- add whitespace
-                        emit $ LDC (LDCString " ")
-                        emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
+                        when (i /= 0) $ do
+                            emit $ LDC (LDCString " ")
+                            emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
                         -- get the field
                         emit $ ALoad 0
                         emit $ GetField (ClassInfoType thisName) ("field" <> show i) (generateFieldType field)
@@ -157,6 +158,10 @@ generateADTClasses (CoreTypeDecl name kind tvs (CoreDataDecl ctors)) = do
                         emit $ InvokeVirtual (ClassInfoType "java/lang/Object") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
                         -- append it to the StringBuilder
                         emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
+
+                    -- add closing bracket
+                    emit $ LDC (LDCString ")")
+                    emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "append" (MethodDescriptor [ObjectFieldType "java/lang/String"] (TypeReturn $ ObjectFieldType "java/lang/StringBuilder"))
                     emit $ InvokeVirtual (ClassInfoType "java/lang/StringBuilder") "toString" (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/String"))
 
                 -- generate the match impl
