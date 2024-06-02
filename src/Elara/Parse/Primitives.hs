@@ -15,18 +15,33 @@ module Elara.Parse.Primitives (
     satisfyMap,
     lexeme,
     locatedTokens',
+    ignoringIndents,
 )
 where
 
 import Elara.AST.Region
 import Elara.Lexer.Token
 import Elara.Parse.Error (ElaraParseError)
-import Elara.Parse.Stream (TokenStream (tokenStreamTokens))
+import Elara.Parse.Stream (TokenStream (..))
 import Text.Megaparsec hiding (Token, token)
 import Text.Megaparsec qualified as MP (token)
 import Prelude hiding (many, some)
 
 type Parser = Parsec ElaraParseError TokenStream
+
+{- | Temporarily puts the parser in a state where it ignores indents
+this is useful for parsing things that are truly context-free, such as type declarations
+where the indentation level is not significant.
+-}
+ignoringIndents :: Parser a -> Parser a
+ignoringIndents p = do
+    s <- getInput
+    setInput (s{skipIndents = True})
+    r <- p
+    s' <- getInput
+    setInput (s'{skipIndents = False})
+    void $ optional (token_ TokenDedent) -- this can get leftover because p wouldn't have consumed it
+    pure r
 
 {- | A parser that records the location information of the tokens it consumes.
 TODO this is not going to perform very well as it's O(n) in the total number of input tokens

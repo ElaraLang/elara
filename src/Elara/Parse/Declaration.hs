@@ -10,11 +10,13 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error
 import Elara.Parse.Expression (letPreamble, operator)
+import Elara.Parse.Indents (dedentToken, indentToken)
 import Elara.Parse.Literal (integerLiteral)
 import Elara.Parse.Names
-import Elara.Parse.Primitives (Parser, fmapLocated, located, token, token_, withPredicate)
+import Elara.Parse.Primitives (Parser, fmapLocated, ignoringIndents, located, token, token_, withPredicate)
 import Elara.Parse.Type (type', typeNotApplication)
 import Text.Megaparsec (choice)
+import Text.Megaparsec.Debug
 
 declaration :: Located ModuleName -> Parser FrontendDeclaration
 declaration n =
@@ -53,14 +55,14 @@ letDec modName = fmapLocated Declaration $ do
     pure (Declaration' modName (NVarName <$> name) value)
 
 typeDeclaration :: Located ModuleName -> Parser FrontendDeclaration
-typeDeclaration modName = fmapLocated Declaration $ do
+typeDeclaration modName = fmapLocated Declaration $ dbg "typeDeclaration" $ ignoringIndents $ do
     token_ TokenType
 
     isAlias <- isJust <$> optional (token_ TokenAlias)
     name <- located conId
     args <- many (located varId)
     token_ TokenEquals
-    body <- located (if isAlias then alias else adt)
+    body <- dbg "body" $ located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
         annotations = TypeDeclAnnotations Nothing NoFieldValue
         value = DeclarationBody $ Located valueLocation (TypeDeclaration args body annotations)
