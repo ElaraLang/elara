@@ -13,7 +13,7 @@ import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (TokenDedent, TokenIndent, TokenSemicolon))
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (..))
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Polysemy
 import Polysemy.Error
@@ -149,7 +149,7 @@ startWhite _ str = do
             case span (view (indent % to (> indentation))) indents of
                 (pre, top : xs) -> do
                     -- pre is all the levels that need to be closed, top is the level that we need to match
-                    fakeClosings <- sequenceA [fake TokenDedent, fake TokenSemicolon]
+                    fakeClosings <- sequenceA [fake TokenDedent, fake TokenLineSeparator]
                     if top ^. indent == indentation
                         then
                             put
@@ -160,7 +160,7 @@ startWhite _ str = do
                         else throw (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
                 (_, []) -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
-        EQ -> Just <$> fake TokenSemicolon
+        EQ -> Just <$> fake TokenLineSeparator
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]

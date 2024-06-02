@@ -182,10 +182,10 @@ ifElse :: Parser FrontendExpr
 ifElse = locatedExpr $ do
     token_ TokenIf
     condition <- exprParser
-    _ <- optional (token_ TokenSemicolon)
+    _ <- optional lineSeparator
     token_ TokenThen
     thenBranch <- exprBlock element
-    _ <- optional (token_ TokenSemicolon)
+    _ <- optional lineSeparator
     token_ TokenElse
     elseBranch <- exprBlock element
     pure (If condition thenBranch elseBranch)

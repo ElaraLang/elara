@@ -25,7 +25,7 @@ parse p path = fromEither . first WParseErrorBundle . runParser p path
 type ParsePipelineEffects = '[Error (WParseErrorBundle TokenStream ElaraParseError)]
 
 createTokenStream :: String -> [Lexeme] -> TokenStream
-createTokenStream = TokenStream
+createTokenStream i tokens = TokenStream i tokens False
 
 parsePipeline ::
     Members ParsePipelineEffects r =>

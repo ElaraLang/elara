@@ -12,16 +12,18 @@ import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 
+import Elara.Parse.Indents (lineSeparator)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
+import Text.Megaparsec.Debug
 
 module' :: Parser (Module 'Frontend)
 module' = fmapLocated Module $ do
-    mHeader <- optional (header <* optional (token_ TokenSemicolon))
+    mHeader <- optional (header <* optional lineSeparator)
     thisFile <- sourceName . pstateSourcePos . statePosState <$> getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
-    imports <- sepEndBy import' (token_ TokenSemicolon)
-    _ <- optional (token_ TokenSemicolon)
-    declarations <- sepEndBy (declaration _name) (token_ TokenSemicolon)
+    imports <- sepEndBy import' lineSeparator
+
+    declarations <- sepEndBy (declaration _name) lineSeparator
 
     pure $
         Module'
@@ -58,9 +60,9 @@ exposition = exposedValue <|> exposedOp
 
 import' :: Parser (Import 'Frontend)
 import' = fmapLocated Import $ do
-    token_ TokenImport
+    dbg "import'" $ token_ TokenImport
 
-    moduleName' <- located Parse.moduleName
+    moduleName' <- dbg "mn" $ located Parse.moduleName
     isQualified <- isJust <$> optional (token_ TokenQualified)
     as <- optional . located $ do
         token_ TokenAs

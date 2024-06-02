@@ -10,6 +10,10 @@ import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (Parser, token_)
 
 import Text.Megaparsec (try)
+import Text.Megaparsec.Debug
+
+lineSeparator :: Parser ()
+lineSeparator = token_ TokenLineSeparator <|> token_ TokenSemicolon
 
 indentToken :: Parser ()
 indentToken = token_ TokenIndent <|> token_ TokenLeftBrace
@@ -23,7 +27,7 @@ block mergeFunction single exprParser = try singleBlock <|> wholeBlock
     singleBlock = single <$> exprParser
     wholeBlock = do
         indentToken
-        exprs <- sepEndBy1' exprParser (token_ TokenSemicolon)
+        exprs <- sepEndBy1' exprParser lineSeparator
         dedentToken
         pure $ mergeFunction exprs
 
