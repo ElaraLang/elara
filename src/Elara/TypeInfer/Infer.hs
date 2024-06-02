@@ -228,7 +228,6 @@ wellFormedType _Γ type0 = case type0 of
         predicate (Context.SolvedFields a1 _) = a0 == a1
         predicate _ = False
     Type.Scalar{} -> pass
-    Type.Tuple _ ts -> traverse_ (wellFormedType _Γ) ts
     Type.Custom _ _ ts -> traverse_ (wellFormedType _Γ) ts
 
 -- TODO use CPP to improve performance cuz this is BAD
@@ -346,11 +345,6 @@ subtype _A0 _B0 = debug ("subtype: " <> showPretty _A0 <> " <: " <> showPretty _
         (Type.Scalar{scalar = s0}, Type.Scalar{scalar = s1})
             | s0 == s1 -> pass
         (Type.Optional{type_ = _A}, Type.Optional{type_ = _B}) -> subtype _A _B
-        (Type.Tuple{tupleArguments = typesA}, Type.Tuple{tupleArguments = typesB}) -> do
-            when (length typesA /= length typesB) do
-                error "Tuple types must have the same number of elements"
-
-            for_ (NE.zip typesA typesB) (uncurry subtype)
         -- This is where you need to add any non-trivial subtypes.  For example,
         -- the following three rules specify that `Natural` is a subtype of
         -- `Integer`, which is in turn a subtype of `Real`.
@@ -809,15 +803,6 @@ instantiateTypeR _A0 a = debug ("instantiateTypeR: " <> showPretty _A0 <> " <: "
         --     set (_ΓR <> (Context.SolvedType a (Monotype.List (Monotype.UnsolvedType a1)) : Context.UnsolvedType a1 : _ΓL))
 
         --     instantiateTypeR type_ a1
-        Type.Tuple{..} -> do
-            let _ΓL = _Γ
-            let _ΓR = _Γ'
-
-            a1s <- for tupleArguments (const fresh)
-
-            set (_ΓR <> (Context.SolvedType a (Monotype.Tuple (Monotype.UnsolvedType <$> a1s)) : fmap Context.UnsolvedType (toList a1s) <> _ΓL))
-
-            for_ (NE.zip tupleArguments a1s) (uncurry instantiateTypeR)
         Type.Record{..} -> do
             let _ΓL = _Γ
             let _ΓR = _Γ'
@@ -1183,16 +1168,6 @@ infer (Syntax.Expr (Located location e0, _)) = debug ("infer: " <> showPretty e0
 
             body'@(Expr (_, bodyType)) <- infer body
             pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
-        Syntax.Tuple elements -> do
-            let process element = do
-                    _Γ <- get
-
-                    infer element
-
-            elementTypes <- traverse process elements
-
-            let t = (Type.Tuple{tupleArguments = Syntax.typeOf <$> elementTypes, ..})
-            pure $ Expr (Located location (Syntax.Tuple elementTypes), t)
         Syntax.If cond then_ else_ -> do
             -- if/elses are basically the same as matches with 2 branches
             -- in fact, later on (in ToCore) we desugar them to this!
@@ -1322,15 +1297,6 @@ check expr@(Expr (Located exprLoc _, _)) t = debug ("check: " <> showPretty expr
     -- ∀I
     check' e Type.Forall{..} = scoped (Context.Variable domain name) do
         check' e type_
-    check' (Syntax.Tuple elements) Type.Tuple{tupleArguments} = do
-        let process (element, type_) = do
-                _Γ <- get
-
-                check element (Context.solveType _Γ type_)
-
-        y <- traverse process (NE.zip elements tupleArguments)
-
-        pure $ Expr (Located exprLoc (Syntax.Tuple y), t)
     -- check' (Syntax.List elements) Type.List{..} = do
     --     let process element = do
     --             _Γ <- get

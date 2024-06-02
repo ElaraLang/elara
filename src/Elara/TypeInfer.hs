@@ -280,7 +280,6 @@ completeExpression ctx (Expr (y', t)) = do
         (Infer.UnsolvedType{}, out) -> subst unsolved out
         (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
         (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
-        (Infer.Tuple{tupleArguments = unsolvedArgs}, Infer.Tuple{tupleArguments = solvedArgs}) -> traverse_ (uncurry unify) (NonEmpty.zip unsolvedArgs solvedArgs)
         other -> error (showPretty other)
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
@@ -293,7 +292,6 @@ completeExpression ctx (Expr (y', t)) = do
     toMonoType = \case
         Infer.Scalar{scalar} -> Mono.Scalar scalar
         Infer.Function{input, output} -> Mono.Function (toMonoType input) (toMonoType output)
-        Infer.Tuple{tupleArguments} -> Mono.Tuple (toMonoType <$> tupleArguments)
         Infer.UnsolvedType{existential} -> Mono.UnsolvedType existential
         Infer.VariableType{name = v} -> Mono.VariableType v
         Infer.Custom{conName = n, typeArguments = args} -> Mono.Custom n (toMonoType <$> args)

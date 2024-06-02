@@ -92,11 +92,6 @@ data Type s
       -- >>> pretty @(Type ()) (Custom () "Maybe" ["a"])
       -- Maybe a
       Custom {location :: s, conName :: Qualified Text, typeArguments :: [Type s]}
-    | -- | A tuple
-      --
-      -- >>> pretty @(Type ()) (Tuple () ("a" :| ["b"]))
-      -- (a, b)
-      Tuple {location :: s, tupleArguments :: NonEmpty (Type s)}
     deriving stock (Eq, Functor, Generic, Show, Data, Ord)
 
 class StructuralEq a where
@@ -123,7 +118,6 @@ instance StructuralEq (Type s) where
     structuralEq (Record _ fields1) (Record _ fields2) = structuralEq fields1 fields2
     structuralEq (Scalar _ scalar1) (Scalar _ scalar2) = scalar1 == scalar2
     structuralEq (Custom _ conName1 typeArguments1) (Custom _ conName2 typeArguments2) = conName1 == conName2 && typeArguments1 `structuralEq` typeArguments2
-    structuralEq (Tuple _ tupleArguments1) (Tuple _ tupleArguments2) = tupleArguments1 `structuralEq` tupleArguments2
     structuralEq _ _ = False
 
 instance StructuralEq (Record s) where
@@ -164,9 +158,6 @@ instance Plated (Type s) where
             Custom{typeArguments = oldTypeArguments, ..} -> do
                 newTypeArguments <- traverse onType oldTypeArguments
                 pure Custom{typeArguments = newTypeArguments, ..}
-            Tuple{tupleArguments = oldTypeArguments, ..} -> do
-                newTypeArguments <- traverse onType oldTypeArguments
-                pure Tuple{tupleArguments = newTypeArguments, ..}
 
 -- | A potentially polymorphic record type
 data Record s = Fields [(UniqueTyVar, Type s)] RemainingFields
@@ -200,8 +191,6 @@ fromMonotype monotype =
             Record{fields = Fields (map (second fromMonotype) kτs) ρ, ..}
         Monotype.Scalar scalar ->
             Scalar{..}
-        Monotype.Tuple kτs ->
-            Tuple{tupleArguments = fmap fromMonotype kτs, ..}
         Monotype.Custom conName typeArguments ->
             Custom{typeArguments = map fromMonotype typeArguments, ..}
   where
@@ -340,8 +329,6 @@ substituteType a _A type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteType a _A) oldTypeArguments, ..}
-        Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteType a _A) oldTypeArguments, ..}
 
 {- | Replace all occurrences of a variable within one `Type` with another `Type`,
    given the variable's label and index
@@ -379,8 +366,6 @@ substituteFields ρ0 r@(Fields kτs ρ1) type_ =
             Scalar{..}
         Custom{typeArguments = oldTypeArguments, ..} ->
             Custom{typeArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
-        Tuple{tupleArguments = oldTypeArguments, ..} ->
-            Tuple{tupleArguments = fmap (substituteFields ρ0 r) oldTypeArguments, ..}
 
 {- | Count how many times the given `Existential` `Type` variable appears within
    a `Type`
@@ -558,24 +543,24 @@ prettyPrimitiveType Custom{..} =
         Pretty.align
             ( foldMap (\t -> prettyQuantifiedType t <> Pretty.hardline) typeArguments
             )
-prettyPrimitiveType Tuple{..} =
-    Pretty.group (Pretty.flatAlt long short)
-  where
-    short =
-        punctuation "("
-            <> prettyQuantifiedType (head tupleArguments)
-            <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
-            <> punctuation ")"
+-- prettyPrimitiveType Tuple{..} =
+--     Pretty.group (Pretty.flatAlt long short)
+--   where
+--     short =
+--         punctuation "("
+--             <> prettyQuantifiedType (head tupleArguments)
+--             <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
+--             <> punctuation ")"
 
-    long =
-        Pretty.align
-            ( punctuation "("
-                <> " "
-                <> prettyQuantifiedType (head tupleArguments)
-                <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
-                <> Pretty.hardline
-                <> punctuation ")"
-            )
+--     long =
+--         Pretty.align
+--             ( punctuation "("
+--                 <> " "
+--                 <> prettyQuantifiedType (head tupleArguments)
+--                 <> foldMap (\t -> punctuation "," <> " " <> prettyQuantifiedType t) (tail tupleArguments)
+--                 <> Pretty.hardline
+--                 <> punctuation ")"
+--             )
 prettyPrimitiveType other =
     Pretty.group (Pretty.flatAlt long short)
   where

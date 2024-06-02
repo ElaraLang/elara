@@ -52,6 +52,7 @@ instance
     , DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast)
     , DataConAs (Select "InParens" ast) (Expr ast)
     , DataConAs (Select "List" ast) [Expr ast]
+    , DataConAs (Select "Tuple" ast) (NonEmpty (Expr ast))
     ) =>
     Plated (Expr' ast)
     where
@@ -76,7 +77,9 @@ instance
                 LetIn v p e1 e2 -> (LetIn v p <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2
                 Let v p e -> (Let v p <$> traverseOf traverseExpr f e)
                 Block b -> Block <$> traverseOf (each % traverseExpr) f b
-                Tuple t -> Tuple <$> traverseOf (each % traverseExpr) f t
+                Tuple t ->
+                    let t' = dataConAs @(Select "Tuple" ast) @(NonEmpty (Expr ast)) t
+                     in Tuple . asDataCon <$> traverseOf (each % traverseExpr) f t'
                 BinaryOperator b -> do
                     let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
                     e1' <- traverseOf traverseExpr f e1

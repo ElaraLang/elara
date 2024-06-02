@@ -34,6 +34,7 @@ type instance Select "LetParamName" 'Desugared = VarName
 
 type instance Select "InParens" 'Desugared = DesugaredExpr
 type instance Select "List" 'Desugared = [DesugaredExpr]
+type instance Select "Tuple" 'Desugared = NonEmpty DesugaredExpr
 
 type instance Select "BinaryOperator" 'Desugared = (DesugaredBinaryOperator, DesugaredExpr, DesugaredExpr)
 

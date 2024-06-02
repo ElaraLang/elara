@@ -40,7 +40,6 @@ data Monotype
     | UnsolvedType (Existential Monotype)
     | Function Monotype Monotype
     | Optional Monotype
-    | Tuple (NonEmpty Monotype)
     | Record Record
     | Custom (Qualified Text) [Monotype]
     | Scalar Scalar

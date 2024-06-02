@@ -200,7 +200,6 @@ typeToCore (Type.Custom sr n args) = do
     con' <- lookupTyCon n
     let con = Core.ConTy con'
     pure (foldl' Core.AppTy con args')
-typeToCore (Type.Tuple _ x) = error $ "unsupported tuple " <> show (length x)
 typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
 
 conToVar :: DataCon -> Core.Var
@@ -295,8 +294,6 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     ( if isRecursive then Core.Recursive [(Core.Id ref t' Nothing, e1')] else Core.NonRecursive (Core.Id ref t' Nothing, e1')
                     )
                     e2'
-        AST.Tuple (one :| []) -> toCore one
-        AST.Tuple _ -> error "TODO: tuple not supported yet :)"
         AST.Block exprs -> desugarBlock exprs
 
 stripForAll :: Core.Type -> Core.Type

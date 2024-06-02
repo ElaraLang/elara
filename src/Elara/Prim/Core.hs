@@ -21,8 +21,8 @@ emptyListCtorName = Qualified "Nil" (ModuleName ("Elara" :| ["Prim"]))
 consCtorName :: IsString s => Qualified s
 consCtorName = Qualified "Cons" (ModuleName ("Elara" :| ["Prim"]))
 
--- tuple2CtorName :: Qualified Text
--- tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
+tuple2CtorName :: Qualified Text
+tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
 
 -- tuple2CtorType :: Member UniqueGen r => Sem r Type
 -- tuple2CtorType = do

@@ -12,7 +12,7 @@ module Elara.AST.Shunted where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate', ASTQual, Expr' (..), Pattern' (..), Select, Type' (..))
+import Elara.AST.Generic (ASTLocate', ASTQual, Select)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
@@ -47,6 +47,7 @@ type instance Select "LetParamName" 'Shunted = Unique VarName
 type instance Select "InParens" 'Shunted = DataConCantHappen
 
 type instance Select "List" 'Shunted = DataConCantHappen
+type instance Select "Tuple" 'Shunted = DataConCantHappen
 type instance Select "BinaryOperator" 'Shunted = DataConCantHappen
 
 type instance Select "PatternType" 'Shunted = Maybe ShuntedType

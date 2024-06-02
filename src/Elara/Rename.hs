@@ -20,7 +20,7 @@ import Elara.AST.Desugared
 import Elara.AST.Generic hiding (moduleName)
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (HasQualifier (qualifier), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), NameLike (..), Qualified (Qualified), ToName (toName), TypeName, VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Name (HasQualifier (qualifier), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), NameLike (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
@@ -31,7 +31,7 @@ import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes
 import Elara.Pipeline
-import Elara.Prim.Core (consCtorName, emptyListCtorName)
+import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
 import Optics (anyOf, filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem, subsume)
@@ -591,7 +591,15 @@ renameExpr (Expr le@(Located loc _, _)) =
         e' <- renameExpr e
         cases' <- traverse (bitraverse renamePattern renameExpr) cases
         pure $ Match e' cases'
-    renameExpr' (Tuple es) = Tuple <$> traverse renameExpr es
+    renameExpr' (Tuple (x :| [x2])) = do
+        -- turn it into Elara.Prim.Tuple2
+
+        let tupleCtorName = TypeName <$> tuple2CtorName
+        x' <- renameExpr x
+        x2' <- renameExpr x2
+        let base = Expr (FunctionCall (Expr (Located loc (Constructor (Located loc tupleCtorName)), Nothing)) x' `withLocationOf` x, Nothing)
+        pure $ FunctionCall base x2'
+    renameExpr' (Tuple bigger) = error "renameExpr': Tuple more than length 2"
     renameExpr' (InParens e) = InParens <$> renameExpr e
     renameExpr' (Let{}) = error "renameExpr': Let should be handled by renameExpr"
     renameExpr' (Block{}) = error "renameExpr': Block should be handled by renameExpr"

@@ -127,6 +127,7 @@ instance
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (DataConAs (Select "InParens" ast) (Expr ast))
+    , DataConAs (Select "Tuple" ast) (NonEmpty (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr ast)
@@ -177,6 +178,7 @@ instance
     , (Pretty (Select "ExprType" ast))
     , (DataConAs (Select "BinaryOperator" ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (DataConAs (Select "InParens" ast) (Expr ast))
+    , DataConAs (Select "Tuple" ast) (NonEmpty (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr' ast)
@@ -213,7 +215,9 @@ prettyExpr' (Match e m) = prettyMatchExpr (prettyExpr e) (prettyMatchBranch . se
 prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e1 e2
 prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select "LetPattern" ast) p :: [letPatterns]) e
 prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
-prettyExpr' (Tuple t) = prettyTupleExpr (prettyExpr <$> t)
+prettyExpr' (Tuple t) =
+    let t' = dataConAs @(Select "Tuple" ast) @(NonEmpty (Expr ast)) t
+     in prettyTupleExpr (prettyExpr <$> t')
 prettyExpr' (BinaryOperator b) =
     let (op, e1, e2) = dataConAs @(Select "BinaryOperator" ast) @(BinaryOperator ast, Expr ast, Expr ast) b
      in prettyBinaryOperatorExpr e1 op e2

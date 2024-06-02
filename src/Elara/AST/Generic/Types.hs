@@ -100,7 +100,7 @@ data Expr' (ast :: a)
         (Select "LetPattern" ast)
         (Expr ast)
     | Block (NonEmpty (Expr ast))
-    | Tuple (NonEmpty (Expr ast))
+    | Tuple !(Select "Tuple" ast)
     | InParens !(Select "InParens" ast)
     deriving (Generic)
 

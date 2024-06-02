@@ -47,6 +47,7 @@ type instance Select "LetParamName" 'Typed = Unique VarName
 type instance Select "InParens" 'Typed = DataConCantHappen
 
 type instance Select "List" 'Typed = DataConCantHappen
+type instance Select "Tuple" 'Typed = DataConCantHappen
 type instance Select "BinaryOperator" 'Typed = DataConCantHappen
 
 type instance Select "PatternType" 'Typed = Type SourceRegion

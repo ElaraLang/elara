@@ -34,6 +34,7 @@ type instance Select "Infixed" 'Renamed = VarRef VarOrConName
 type instance Select "LetParamName" 'Renamed = Unique VarName
 
 type instance Select "InParens" 'Renamed = RenamedExpr
+type instance Select "Tuple" 'Renamed = DataConCantHappen
 
 type instance Select "List" 'Renamed = DataConCantHappen
 type instance Select "BinaryOperator" 'Renamed = (RenamedBinaryOperator, RenamedExpr, RenamedExpr)

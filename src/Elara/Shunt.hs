@@ -336,7 +336,6 @@ shuntExpr (Expr (le, t)) = do
         e' <- fixExpr e
         cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
-    shuntExpr' (Tuple es) = Tuple <$> traverse fixExpr es
     shuntExpr' (InParens e) = (^. _Unwrapped % _1 % unlocated) <$> fixExpr e
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
