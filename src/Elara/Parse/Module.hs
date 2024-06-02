@@ -60,9 +60,9 @@ exposition = exposedValue <|> exposedOp
 
 import' :: Parser (Import 'Frontend)
 import' = fmapLocated Import $ do
-    dbg "import'" $ token_ TokenImport
+    token_ TokenImport
 
-    moduleName' <- dbg "mn" $ located Parse.moduleName
+    moduleName' <- located Parse.moduleName
     isQualified <- isJust <$> optional (token_ TokenQualified)
     as <- optional . located $ do
         token_ TokenAs

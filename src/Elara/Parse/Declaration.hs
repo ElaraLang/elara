@@ -62,7 +62,7 @@ typeDeclaration modName = fmapLocated Declaration $ dbg "typeDeclaration" $ igno
     name <- located conId
     args <- many (located varId)
     token_ TokenEquals
-    body <- dbg "body" $ located (if isAlias then alias else adt)
+    body <- located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
         annotations = TypeDeclAnnotations Nothing NoFieldValue
         value = DeclarationBody $ Located valueLocation (TypeDeclaration args body annotations)
