@@ -139,19 +139,14 @@ addDeclaration declBody = case declBody of
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
                         debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
-                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ do
-                            debug $ "Getting static field " <> showPretty declName <> "..."
+                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ debugWith ("Getting static field " <> showPretty declName <> "...") $ do
                             inst <- etaExpandN (Var $ Normal n) type' thisName
                             emit' inst
-                            debug $ "Returning static field " <> showPretty declName <> "..."
-                        debug "=="
-                    _ -> do
-                        debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
+                    _ -> debugWith ("Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "...") $ do
                         let y = transformTopLevelLambdas e
                         debug $ "Transformed lambda expression: " <> showPretty y
                         thisName <- ask @QualifiedClassName
                         createMethod thisName descriptor declName y
-        debug $ "Emitted non-recursive declaration " <> showPretty name
     CoreType decl -> do
         generateADTClasses decl
     _ -> undefined
@@ -166,7 +161,6 @@ addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = debugWith ("Ad
 
     cn <- ask @QualifiedClassName
     emit $ PutStatic (ClassInfoType cn) name fieldType
-    debug $ "Added initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "."
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
 generateMainMethod :: CoreModule -> ClassFileMethod

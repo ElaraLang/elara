@@ -22,11 +22,9 @@ import Elara.Emit.Method.Descriptor
 import Elara.Emit.Params
 import Elara.Logging
 import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type (FieldType, fieldTypeToClassInfoType)
+import JVM.Data.Abstract.Type (fieldTypeToClassInfoType)
 import Polysemy
 import Polysemy.Error
-import Polysemy.Log (Log)
-import Polysemy.Log qualified as Log
 import Polysemy.Reader
 import Polysemy.State (runState)
 import Print
@@ -163,12 +161,12 @@ etaExpandNIntoMethod ::
     Type ->
     QualifiedClassName ->
     Sem r JVMExpr
-etaExpandNIntoMethod funcCall exprType thisClassName = do
+etaExpandNIntoMethod funcCall exprType thisClassName = debugWith ("etaExpandNIntoMethod:" <> showPretty (funcCall, exprType, thisClassName)) $ do
     let arity = estimateArity funcCall - declaredLambdaArity funcCall
     let args = NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
             Just x -> x
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
-    debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
+    debug $ "etaExpandNIntoMethod: " <> showPretty (arity, args)
     params <- traverse (\_ -> makeUnique ("param" :: Text)) args
     let paramTypes = zip params args
 
