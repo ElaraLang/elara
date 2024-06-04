@@ -7,7 +7,7 @@ module Elara.CoreToCore where
 
 import Elara.AST.Name
 import Elara.AST.VarRef
-import Elara.Core (CoreExpr, Expr (..), Literal (..), Var (..), mapBind)
+import Elara.Core (Bind (..), CoreExpr, Expr (..), Literal (..), Var (..), mapBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 
 type CoreExprPass = CoreExpr -> CoreExpr
@@ -34,6 +34,12 @@ betaReduce = transform f
     f (App (Lam param body) arg) = subst param arg body
     f other = other
 
+uselessLetInline :: CoreExprPass
+uselessLetInline = transform f
+  where
+    f (Let (NonRecursive (b, e)) body) | body == Var b = e
+    f other = other
+
 pipeInline :: CoreExprPass
 pipeInline = transform f
   where
@@ -47,7 +53,7 @@ subst v e = transform f
     f other = other
 
 coreToCoreExpr :: CoreExprPass
-coreToCoreExpr = betaReduce . constantFold . pipeInline
+coreToCoreExpr = betaReduce . constantFold . pipeInline . uselessLetInline
 
 fullCoreToCoreExpr :: CoreExprPass
 fullCoreToCoreExpr = fix' coreToCoreExpr
