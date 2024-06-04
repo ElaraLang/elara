@@ -16,11 +16,11 @@ import JVM.Data.Abstract.Instruction
 import Data.List.NonEmpty qualified as NE
 import Elara.Core (CoreExpr, Expr (..), Type, functionTypeArgs)
 import Elara.Core.Analysis (declaredLambdaArity, estimateArity)
-import Elara.Data.Pretty (Pretty)
 import Elara.Data.Unique
 import Elara.Emit.Error
 import Elara.Emit.Method.Descriptor
 import Elara.Emit.Params
+import Elara.Logging
 import JVM.Data.Abstract.Name
 import JVM.Data.Abstract.Type (FieldType, fieldTypeToClassInfoType)
 import Polysemy
@@ -39,7 +39,7 @@ createMethod ::
     ( HasCallStack
     , Member ClassBuilder r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     , Member UniqueGen r
     , Member (Error EmitError) r
     ) =>
@@ -48,26 +48,27 @@ createMethod ::
     Text ->
     JVMExpr ->
     Sem r ()
-createMethod thisClassName descriptor@(NamedMethodDescriptor args _) name body = do
-    Log.debug $
-        "Creating method "
-            <> showPretty thisClassName
-            <> "."
-            <> showPretty name
-            <> " with descriptor "
-            <> showPretty descriptor
-            <> " and body "
-            <> showPretty body
-    let initialState = createMethodCreationState args thisClassName
-    ((mcState, _), codeAttrs, instructions) <-
-        runCodeBuilder $
-            runState initialState $
-                generateInstructions body
-    createMethodWith (toMethodDescriptor descriptor) [MPublic, MStatic] name codeAttrs mcState instructions
+createMethod thisClassName descriptor@(NamedMethodDescriptor args _) name body = debugWith
+    ( "Creating method "
+        <> showPretty thisClassName
+        <> "."
+        <> showPretty name
+        <> " with descriptor "
+        <> showPretty descriptor
+        <> " and body "
+        <> showPretty body
+    )
+    $ do
+        let initialState = createMethodCreationState args thisClassName
+        ((mcState, _), codeAttrs, instructions) <-
+            runCodeBuilder $
+                runState initialState $
+                    generateInstructions body
+        createMethodWith (toMethodDescriptor descriptor) [MPublic, MStatic] name codeAttrs mcState instructions
 
 createMethodWithCodeBuilder ::
     ( Member ClassBuilder r
-    , Member Log r
+    , Member StructuredDebug r
     , Member (Reader GenParams) r
     ) =>
     QualifiedClassName ->
@@ -76,8 +77,7 @@ createMethodWithCodeBuilder ::
     Text ->
     Sem (CodeBuilder : r) () ->
     Sem r ()
-createMethodWithCodeBuilder thisClassName descriptor@(NamedMethodDescriptor args _) methodAttrs name codeBuilder = do
-    Log.debug $ "Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor
+createMethodWithCodeBuilder thisClassName descriptor@(NamedMethodDescriptor args _) methodAttrs name codeBuilder = debugWith ("Creating method " <> showPretty thisClassName <> "." <> showPretty name <> " with descriptor " <> showPretty descriptor) $ do
     let initialState = createMethodCreationState args thisClassName
     (_, codeAttrs, instructions) <-
         subsume_ $
@@ -157,7 +157,7 @@ etaExpandNIntoMethod ::
     ( HasCallStack
     , Member UniqueGen r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     ) =>
     CoreExpr ->
     Type ->
@@ -168,7 +168,7 @@ etaExpandNIntoMethod funcCall exprType thisClassName = do
     let args = NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
             Just x -> x
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
-    Log.debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
+    debug $ "etaExpandNIntoMethod: " <> showPretty ((funcCall, arity), exprType, thisClassName, args)
     params <- traverse (\_ -> makeUnique ("param" :: Text)) args
     let paramTypes = zip params args
 

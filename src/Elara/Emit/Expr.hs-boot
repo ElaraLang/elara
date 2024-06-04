@@ -13,6 +13,7 @@ import Polysemy.State
 import Polysemy.Reader
 import Elara.Emit.Params
 import Polysemy.Log
+import Elara.Logging (StructuredDebug)
 
 generateInstructions ::
     ( HasCallStack
@@ -22,7 +23,7 @@ generateInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r,
-     Member Log r
+     Member StructuredDebug r
     ) =>
     Expr JVMBinder ->
     Sem r ()

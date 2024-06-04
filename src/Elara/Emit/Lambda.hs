@@ -35,6 +35,7 @@ import {-# SOURCE #-} Elara.Emit.Expr (generateInstructions)
 import Elara.Emit.Method.Descriptor (NamedMethodDescriptor (..), toMethodDescriptor)
 import Elara.Emit.Params
 import Elara.Emit.State (LVKey (..), MethodCreationState (..), createMethodCreationStateOf, lookupVar)
+import Elara.Logging
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, runCodeBuilder)
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
@@ -44,13 +45,12 @@ import Polysemy.State
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
 etaExpand ::
-    (HasCallStack, Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member Log r) =>
+    (HasCallStack, Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member StructuredDebug r) =>
     JVMExpr ->
     Type ->
     QualifiedClassName ->
     Sem r [Instruction]
-etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = do
-    Log.debug $ "Eta expanding " <> showPretty funcCall <> " into \\(x : " <> showPretty i <> ") -> " <> showPretty funcCall <> " x"
+etaExpand funcCall (stripForAll -> FuncTy i o) thisClassName = debugWith ("Eta expanding " <> showPretty funcCall <> " into \\(x : " <> showPretty i <> ") -> " <> showPretty funcCall <> " x") $ do
     param <- makeUnique "x"
     local (\x -> x{checkCasts = False}) $
         createLambda
@@ -67,16 +67,16 @@ etaExpand n t c = error $ "etaExpand called on non-function type: " <> showPrett
 for example, given f : a -> b -> c, etaExpandN will return \x -> \y -> (f x) y
 -}
 etaExpandN ::
-    (HasCallStack, Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member Log r) =>
+    (HasCallStack, Member ClassBuilder r, Member UniqueGen r, Member (Error EmitError) r, Member (Reader GenParams) r, Member StructuredDebug r) =>
     JVMExpr ->
     Type ->
     QualifiedClassName ->
     Sem r [Instruction]
-etaExpandN funcCall exprType thisClassName = do
+etaExpandN funcCall exprType thisClassName = debugWith ("etaExpandN: " <> showPretty (funcCall, exprType, thisClassName)) $ do
     let args = case nonEmpty $ functionTypeArgs exprType of
             Just x -> x
             Nothing -> error $ "etaExpandN: " <> show exprType <> " is not a function type"
-    Log.debug $ "etaExpandN: " <> showPretty (funcCall, exprType, thisClassName, args)
+    debug $ "args: " <> showPretty args
     params <- traverse (\_ -> makeUnique "param") args
     let paramTypes = NE.zip params (generateFieldType <$> args)
 
@@ -101,7 +101,7 @@ generateLambda ::
     , Member ClassBuilder r
     , Member UniqueGen r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     , Member (State MethodCreationState) r
     , Member CodeBuilder r
     ) =>
@@ -122,7 +122,7 @@ generateLambda oldState explicitParams returnType thisClassName body = do
     createLambdaRaw explicitParams' capturedParams returnType thisClassName (state, a, b)
 
 createLambdaRaw ::
-    (HasCallStack, Members [ClassBuilder, CodeBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r, Member (State MethodCreationState) r) =>
+    (HasCallStack, Members [ClassBuilder, CodeBuilder, Reader GenParams, UniqueGen, Error EmitError, StructuredDebug] r, Member (State MethodCreationState) r) =>
     -- | The base parameters of the lambda - i.e. ones in the functional interface
     [(Unique Text, FieldType)] ->
     -- | Extra "captured" parameters
@@ -138,7 +138,7 @@ createLambdaRaw baseParams captureParams returnType thisClassName (state, attr, 
     lamSuffix <- makeUniqueId
     let params = captureParams <> baseParams
     let lambdaMethodName = "lambda$" <> show lamSuffix
-    Log.debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
+    debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
 
     let lambdaMethodDescriptor = MethodDescriptor (snd <$> toList params) (TypeReturn returnType)
 
@@ -190,7 +190,7 @@ This involves a few steps:
 3. Returns an invokedynamic instruction that calls the bootstrap method
 -}
 createLambda ::
-    (HasCallStack, Members [ClassBuilder, Reader GenParams, UniqueGen, Error EmitError, Log] r) =>
+    (HasCallStack, Members [ClassBuilder, Reader GenParams, UniqueGen, Error EmitError, StructuredDebug] r) =>
     -- | The names and parameters of the lambda
     [(Unique Text, FieldType)] ->
     -- | The return type of the lambda
@@ -205,10 +205,10 @@ createLambda baseParams returnType thisClassName body = do
     captureParams <- getCapturedParams baseParams body
     let params = captureParams <> baseParams
     let lambdaMethodName = "lambda$" <> show lamSuffix
-    Log.debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
+    debug $ "Creating lambda " <> showPretty lambdaMethodName <> " which captures: " <> showPretty captureParams
 
     let lambdaMethodDescriptor = NamedMethodDescriptor (toList params) (TypeReturn returnType)
-    Log.debug $
+    debug $
         "Creating lambda method "
             <> showPretty lambdaMethodName
             <> " with descriptor "
@@ -230,7 +230,7 @@ createLambda baseParams returnType thisClassName body = do
                 offsetBody
                 (zip (toList params) [0 ..])
 
-    Log.debug $ "Body: " <> showPretty body <> " -> " <> showPretty body'
+    debug $ "Body: " <> showPretty body <> " -> " <> showPretty body'
 
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, baseMethodDescriptor, methodDescriptor) = elaraFuncDescriptor returnType (snd <$> baseParams)
@@ -269,7 +269,7 @@ createLambda baseParams returnType thisClassName body = do
                 invoke
                 (MethodDescriptor (snd <$> captureParams) (TypeReturn $ ObjectFieldType functionalInterface))
 
-    Log.debug $ "Created lambda " <> showPretty lambdaMethodName
+    debug $ "Created lambda " <> showPretty lambdaMethodName
     pure $ map (ALoad . fromIntegral) [1 .. length captureParams] <> [inst]
 
 lambdaTypeName :: Int -> QualifiedClassName

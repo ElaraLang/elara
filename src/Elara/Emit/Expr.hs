@@ -20,6 +20,7 @@ import Elara.Emit.Params
 import Elara.Emit.State (MethodCreationState (..), findLocalVariable, withLocalVariableScope)
 import Elara.Emit.Utils
 import Elara.Emit.Var
+import Elara.Logging
 import Elara.Prim.Core
 import Elara.ToCore (lookupCtor, lookupPrimCtor, stripForAll)
 import Elara.Utils (uncurry3)
@@ -49,7 +50,7 @@ generateInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     ) =>
     Expr JVMBinder ->
     Sem r ()
@@ -63,7 +64,7 @@ generateInstructions' ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     ) =>
     Expr JVMBinder ->
     [Type] ->
@@ -76,9 +77,8 @@ generateInstructions' (App ((Var (Normal (Id (Global' v) _ _)))) (Lit (String pr
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
 generateInstructions' (App (TyApp (Var (Normal (Id (Global (Identity v)) _ _))) _) (Lit (String primName))) _
     | v == fetchPrimitiveName = generatePrimInstructions primName >>= emit'
-generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t (Just dc)))) tApps = do
+generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t (Just dc)))) tApps = debugWith ("Generating instructions for data constructor: " <> showPretty v) $ do
     -- data cons always compile to methods
-    Log.debug $ "Generating instructions for data constructor: " <> showPretty v
     -- no args function (eg undefined)
     invokeStatic <- case approximateTypeAndNameOf v of
         Just (Right (fName, fType)) -> invokeStaticVars fName fType
@@ -95,11 +95,10 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t (Just d
             | params.checkCasts -> do
                 let ft = fieldTypeToClassInfoType (generateFieldType tApp)
                 emit $ CheckCast ft
-                Log.debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
-            | otherwise -> Log.debug $ "Skipping checkcast for " <> showPretty v
+                debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
+            | otherwise -> debug $ "Skipping checkcast for " <> showPretty v
         _ -> error "Multiple tApps for a single value... curious..."
-generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tApps = do
-    Log.debug $ "Generating instructions for global variable: " <> showPretty v
+generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tApps = debugWith ("Generating instructions for global variable: " <> showPretty v) $ do
     if typeIsValue t
         then
             if
@@ -135,14 +134,13 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tA
                         | params.checkCasts -> do
                             let ft = fieldTypeToClassInfoType (generateFieldType tApp)
                             emit $ CheckCast ft
-                            Log.debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
-                        | otherwise -> Log.debug $ "Skipping checkcast for " <> showPretty v
+                            debug $ "Checking no-args cast for " <> showPretty v <> " with type " <> showPretty ft
+                        | otherwise -> debug $ "Skipping checkcast for " <> showPretty v
                     _ -> error "Multiple tApps for a single value... curious..."
 generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
-generateInstructions' (App f x) t = do
-    Log.debug $ "Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x <> " with type args" <> showPretty t
+generateInstructions' (App f x) t = debugWith ("Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x <> " with type args" <> showPretty t) $ do
     generateAppInstructions f x
 generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
     idx <- localVariableId n
@@ -172,7 +170,7 @@ generateCaseInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     ) =>
     Expr JVMBinder ->
     Maybe JVMBinder ->
@@ -291,27 +289,26 @@ generateAppInstructions ::
     , Member UniqueGen r
     , Member (Error EmitError) r
     , Member (Reader GenParams) r
-    , Member Log r
+    , Member StructuredDebug r
     ) =>
     JVMExpr ->
     JVMExpr ->
     Sem r ()
-generateAppInstructions f x = do
-    Log.debug $ "Generating instructions for function application: " <> showPretty f <> " " <> showPretty x
+generateAppInstructions f x = debugWith ("Generating instructions for function application: " <> showPretty f <> " " <> showPretty x) $ do
     let (f', typeArgs, args) = collectArgs f ([], [x])
-    Log.debug $ "Collected args: " <> showPretty args
-    Log.debug $ "Collected type args: " <> showPretty typeArgs
+    debug $ "Collected args: " <> showPretty args
+    debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
         Nothing -> error $ "Unknown function: " <> showPretty f'
         Just (Left (local, _)) -> do
-            Log.debug $ "Function is a local variable: " <> showPretty local
+            debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
             generateInstructions x
             emit $ InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         Just (Right (fName, fType)) -> do
             let arity = typeArity fType
-            Log.debug $ "Function is a global variable: " <> showPretty fName <> " with type " <> showPretty fType <> " and arity " <> show arity
+            debug $ "Function is a global variable: " <> showPretty fName <> " with type " <> showPretty fType <> " and arity " <> show arity
             if length args == arity
                 then -- yippee, no currying necessary
                 do
@@ -324,11 +321,11 @@ generateAppInstructions f x = do
                     p <- ask @GenParams
                     if p.checkCasts
                         then do
-                            Log.debug $ "Checking cast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")" <> " with type " <> showPretty instantiatedReturnType
+                            debug $ "Checking cast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")" <> " with type " <> showPretty instantiatedReturnType
                             case instantiatedReturnType of
                                 TypeReturn ft -> emit $ CheckCast (fieldTypeToClassInfoType ft)
                                 VoidReturn -> pass
-                        else Log.debug $ "Skipping checkcast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")"
+                        else debug $ "Skipping checkcast for " <> showPretty f' <> "(" <> Text.intercalate ", " (showPretty <$> args) <> ")"
                 else
                     if length args == arity - 1
                         then do

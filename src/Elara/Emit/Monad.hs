@@ -8,6 +8,7 @@ import Elara.Emit.Error
 import Elara.Emit.State
 import Elara.Emit.Utils (createQualifiedClassName, createQualifiedInnerClassName)
 import Elara.Error.Effect (DiagnosticWriter)
+import Elara.Logging (StructuredDebug)
 import JVM.Data.Abstract.Builder (ClassBuilder, addAttribute, getClass, runClassBuilder)
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.Name (QualifiedClassName)
@@ -38,7 +39,7 @@ type InnerEmit r =
          , State CLInitState
          , UniqueGen
          , Error EmitError
-         , Log
+         , StructuredDebug
          , MultiClassBuilder
          ]
         r

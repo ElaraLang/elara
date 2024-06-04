@@ -30,6 +30,7 @@ import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
 import Elara.Emit.Utils
 import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelJVMLambdas, transformTopLevelLambdas)
 import Elara.Error (DiagnosticWriter, runErrorOrReport)
+import Elara.Logging
 import Elara.ToCore (stripForAll)
 import JVM.Data.Abstract.Builder
 import JVM.Data.Abstract.Builder.Code hiding (code)
@@ -68,10 +69,11 @@ runInnerEmit ::
     ( Member (Embed IO) r
     , Member (DiagnosticWriter (Doc AnsiStyle)) r
     , Member MaybeE r
+    , Member Log r
     ) =>
     QualifiedClassName ->
     i ->
-    Sem (Error EmitError : UniqueGen : State CLInitState : Reader GenParams : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
+    Sem (StructuredDebug : Error EmitError : UniqueGen : State CLInitState : Reader GenParams : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
     Sem r (a, CLInitState, [CodeAttribute], [Instruction])
 runInnerEmit name version x = do
     ((clinitState, a), attrs, inst) <-
@@ -82,12 +84,13 @@ runInnerEmit name version x = do
             . runState @CLInitState (CLInitState (initialMethodCreationState name))
             . uniqueGenToIO
             . runErrorOrReport
+            . structuredDebugToLog
             $ x
     pure (a, clinitState, attrs, inst)
 
 emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, [ClassFile])
 emitModule m = fmap swap $ runMultiClassBuilder $ do
-    Log.debug $ "Emitting module " <> showPretty (m ^. field @"name") <> "..."
+    Log.debug ("Emitting module " <> showPretty (m ^. field @"name") <> "...")
     let name = createModuleName (m ^. field' @"name")
     version <- ask @JVMVersion
     addClass name $ do
@@ -112,14 +115,13 @@ addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidRetu
 
 addDeclaration :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
 addDeclaration declBody = case declBody of
-    CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
-        Log.debug $ "Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "..."
+    CoreValue (NonRecursive (n@(Id name type' _), e)) -> debugWith ("Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "...") $ do
         let declName = translateOperatorName $ runIdentity (varRefVal name)
         if typeIsValue type'
             then do
                 let fieldType = generateFieldType type'
                 let field = ClassFileField [FPublic, FStatic] declName fieldType []
-                Log.debug $ "Creating field " <> showPretty declName <> " of type " <> showPretty fieldType <> "..."
+                debug $ "Creating field " <> showPretty declName <> " of type " <> showPretty fieldType <> "..."
                 addField field
                 let e' = transformTopLevelLambdas e
                 addStaticFieldInitialiser field e'
@@ -130,26 +132,26 @@ addDeclaration declBody = case declBody of
                 -- Create a getter method name, which just returns _name wrapped into a Func
                 case stripForAll type' of
                     FuncTy{} -> do
-                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
+                        debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                         thisName <- ask @QualifiedClassName
                         y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
-                        Log.debug $ "Transformed lambda expression: " <> showPretty y
+                        debug $ "Transformed lambda expression: " <> showPretty y
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
-                        Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
+                        debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
                         createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ do
-                            Log.debug $ "Getting static field " <> showPretty declName <> "..."
+                            debug $ "Getting static field " <> showPretty declName <> "..."
                             inst <- etaExpandN (Var $ Normal n) type' thisName
                             emit' inst
-                            Log.debug $ "Returning static field " <> showPretty declName <> "..."
-                        Log.debug "=="
+                            debug $ "Returning static field " <> showPretty declName <> "..."
+                        debug "=="
                     _ -> do
-                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
+                        debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                         let y = transformTopLevelLambdas e
-                        Log.debug $ "Transformed lambda expression: " <> showPretty y
+                        debug $ "Transformed lambda expression: " <> showPretty y
                         thisName <- ask @QualifiedClassName
                         createMethod thisName descriptor declName y
-        Log.debug $ "Emitted non-recursive declaration " <> showPretty name
+        debug $ "Emitted non-recursive declaration " <> showPretty name
     CoreType decl -> do
         generateADTClasses decl
     _ -> undefined
@@ -159,13 +161,12 @@ isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
 
 -- | Adds an initialiser for a static field to <clinit>
 addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => ClassFileField -> JVMExpr -> Sem r ()
-addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
-    Log.debug $ "Adding initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "..."
+addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = debugWith ("Adding initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "...") $ do
     liftState $ generateInstructions e
 
     cn <- ask @QualifiedClassName
     emit $ PutStatic (ClassInfoType cn) name fieldType
-    Log.debug $ "Added initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "."
+    debug $ "Added initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "."
 
 -- | Generates a main method, which merely loads a IO action field called main and runs it
 generateMainMethod :: CoreModule -> ClassFileMethod
