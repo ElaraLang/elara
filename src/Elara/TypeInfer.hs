@@ -5,7 +5,6 @@ module Elara.TypeInfer where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
@@ -28,6 +27,7 @@ import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
+import Elara.Logging (StructuredDebug, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (fullListName)
 import Elara.TypeInfer.Context
@@ -41,11 +41,10 @@ import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
-import Polysemy.Log qualified as Log
 import Polysemy.State
 import Print
 
-type InferPipelineEffects = '[Log.Log, State Status, State InferState, Error TypeInferenceError, UniqueGen]
+type InferPipelineEffects = '[StructuredDebug, State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
 runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
@@ -53,6 +52,7 @@ runInferPipeline e = do
 
     e
         & subsume_
+        & structuredDebugToLog
         & evalState initialInferState
         & evalState s
         & runErrorOrReport @TypeInferenceError
@@ -78,7 +78,7 @@ inferModule m = do
 inferDeclaration ::
     forall r.
     (HasCallStack, Member UniqueGen r) =>
-    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r, Member Log.Log r) =>
+    (Member (Error TypeInferenceError) r, Member (State Status) r, Member (State InferState) r, Member StructuredDebug r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
 inferDeclaration (Declaration ld) = do
@@ -221,7 +221,7 @@ astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType'
 
 completeExpression ::
     forall r.
-    (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member Log.Log r) =>
+    (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member StructuredDebug r) =>
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr

@@ -86,6 +86,7 @@ library
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
+      Elara.Logging
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
