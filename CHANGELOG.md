@@ -7,6 +7,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(type-infer)* :lipstick: Improve output of NotFunctionType error - ([2508123](https://github.com/ElaraLang/elara/commit/25081239a78878b089460c85e2c0465072b0ccb2)) 
+
 ### 🐛 Bug Fixes
 
 - *(parser)* :bug: Fix type declaration parsing wrt indents - ([53f148b](https://github.com/ElaraLang/elara/commit/53f148beae28c2ef2465cc2fdd080206f556b2d9)) 
