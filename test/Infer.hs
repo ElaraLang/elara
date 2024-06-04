@@ -6,8 +6,10 @@ import Data.Generics.Product (HasField (field))
 import Data.Generics.Sum (AsConstructor' (_Ctor'))
 import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Generic.Types
+import Elara.AST.Name
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select (LocatedAST (..))
+import Elara.AST.StripLocation
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type (applicableTyApp)
@@ -92,10 +94,17 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
             o -> fail o
 
     it "Infers polymorphic lets correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in (id 1, id ())" "(Int, ())"
-        case t of
-            Tuple' (Scalar () Scalar.Integer :| [Scalar () Scalar.Unit]) -> pass
-            o -> fail o
+        (mod, _) <-
+            liftIO
+                ( inferModuleFully @Text
+                    "type Pair a b = Pair a b; let p = let id = \\x -> x in Pair (id 1) (id ())"
+                )
+                >>= diagShouldSucceed
+        let decls = modDecls mod
+        let pDecl = decls !! 0 ^. _Unwrapped % _2 % to stripLocation
+        case pDecl of
+            Type.Custom () (Qualified "Pair" "Main") [Scalar () Scalar.Integer, Scalar () Scalar.Unit] -> pass
+            o -> failTypeMismatch "p" "Pair Int ()" o
 
     it "Correctly adds type applications when referring to another polymorphic function" $ hedgehog $ do
         (mod, _) <-
@@ -104,19 +113,7 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
                     "let id_ x = x; let id = id_; def id2 : Int -> Int; let id2 = id_; def id3: (a -> a) -> (a -> a); let id3 = id_;"
                 )
                 >>= diagShouldSucceed
-        let decls =
-                mod
-                    ^.. _Unwrapped
-                    % unlocated
-                    % field @"declarations"
-                    % folded
-                    % _Unwrapped
-                    % unlocated
-                    % field @"body"
-                    % _Unwrapped
-                    % unlocated
-                    % (_Ctor' @"Value" @(DeclarationBody' Typed))
-                    % _1
+        let decls = modDecls mod
 
         let idDecl = decls !! 1 ^. _Unwrapped % _1 % unlocated
         let id2Decl = decls !! 2 ^. _Unwrapped % _1 % unlocated
@@ -163,3 +160,17 @@ typeApplications = describe "Correctly determines which type applications to add
         n2 <- runUnique makeUniqueTyVar
         let n2Var = VariableType () n2
         forAllT `applicableTyApp` Forall () () n2 Domain.Type (Function () (Function () n2Var n2Var) (Function () n2Var n2Var)) === [Function () n2Var n2Var]
+
+modDecls mod =
+    mod
+        ^.. _Unwrapped
+        % unlocated
+        % field @"declarations"
+        % folded
+        % _Unwrapped
+        % unlocated
+        % field @"body"
+        % _Unwrapped
+        % unlocated
+        % (_Ctor' @"Value" @(DeclarationBody' Typed))
+        % _1

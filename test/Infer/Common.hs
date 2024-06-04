@@ -18,6 +18,7 @@ import Elara.Desugar (desugar, desugarExpr, runDesugar, runDesugarPipeline)
 import Elara.Error (addFile)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader (readTokensWith)
+import Elara.Logging (StructuredDebug)
 import Elara.Parse (moduleParser, parsePipeline, runParsePipeline)
 import Elara.Parse.Expression (exprParser)
 import Elara.Pipeline (PipelineRes, finalisePipeline)
@@ -49,10 +50,7 @@ pattern Function' a b = Function () a b
 pattern VariableType' :: UniqueTyVar -> Type ()
 pattern VariableType' name = VariableType () name
 
-pattern Tuple' :: NonEmpty (Type ()) -> Type ()
-pattern Tuple' ts = Type.Tuple () ts
-
-completeInference :: (Member (State Infer.Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member Log r) => TypedExpr -> Sem r TypedExpr
+completeInference :: (Member (State Infer.Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member StructuredDebug r) => TypedExpr -> Sem r TypedExpr
 completeInference x = do
     ctx <- Infer.getAll
     completeExpression ctx x
