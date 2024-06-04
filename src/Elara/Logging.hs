@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Elara.Logging where
 
 import Data.Text qualified as Text
@@ -9,10 +7,14 @@ import Polysemy.State (State, evalState, get, put)
 import Print (elaraDebug)
 
 data StructuredDebug m a where
-    Debug :: Text -> StructuredDebug m ()
-    DebugWith :: Text -> m a -> StructuredDebug m a
+    Debug :: HasCallStack => Text -> StructuredDebug m ()
+    DebugWith :: HasCallStack => Text -> m a -> StructuredDebug m a
 
-makeSem ''StructuredDebug
+debug :: HasCallStack => Member StructuredDebug r => Text -> Sem r ()
+debug msg = withFrozenCallStack $ send $ Debug msg
+
+debugWith :: HasCallStack => Member StructuredDebug r => Text -> Sem r a -> Sem r a
+debugWith msg act = withFrozenCallStack $ send $ DebugWith msg act
 
 structuredDebugToLog :: forall r a. Member Log.Log r => Sem (StructuredDebug : r) a -> Sem r a
 structuredDebugToLog =
@@ -23,11 +25,11 @@ structuredDebugToLog =
                 . evalState 0
                 . reinterpret2H @StructuredDebug @(State Int) @Log.Log @r
                     ( \case
-                        Debug msg -> do
+                        Debug msg -> withFrozenCallStack $ do
                             depth <- get
                             Log.debug $ Text.replicate depth "│ " <> msg
                             pureT ()
-                        DebugWith msg act -> do
+                        DebugWith msg act -> withFrozenCallStack $ do
                             depth <- get
                             Log.debug $ Text.replicate depth "│ " <> msg
                             put $ depth + 1
