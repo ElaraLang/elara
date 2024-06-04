@@ -78,6 +78,7 @@ data TypeInferenceError where
         TypeInferenceError
     NotFunctionType ::
         SourceRegion ->
+        SourceRegion ->
         (Type SourceRegion) ->
         TypeInferenceError
     NotNecessarilyFunctionType ::
@@ -277,4 +278,14 @@ instance ReportableError TypeInferenceError where
                 [(sourceRegionToDiagnosePosition loc, Where "Referenced here")]
                 []
     report (KindInferError e) = report e
+    report (NotFunctionType loc appLoc a) = do
+        writeReport $
+            Err
+                Nothing
+                (vsep ["Type error: The following type is not a function type:", pretty a])
+                [ (sourceRegionToDiagnosePosition loc, Where "This should be a function type, but isn't")
+                , (sourceRegionToDiagnosePosition appLoc, Where "Applied here")
+                ]
+                [ Hint "Perhaps you applied too many arguments to a function?"
+                ]
     report e = writeReport $ Err Nothing (showColored e) [] []

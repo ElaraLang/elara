@@ -1480,7 +1480,7 @@ inferApplication Type.Function{..} e = do
 
     pure (e', output)
 inferApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
-inferApplication _A _ = throw (NotFunctionType (location _A) _A)
+inferApplication _A _B = throw (NotFunctionType (location _A) (_B ^. sourceRegion) _A)
 
 {- | This corresponds to the judgment:
 > Γ ⊢ e ⇐ A • e ⇒⇒ C ⊣ Δ
@@ -1521,7 +1521,7 @@ inferPatternApplication Type.Function{..} e = do
 
     pure (e', output)
 inferPatternApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
-inferPatternApplication _A _ = throw (NotFunctionType (location _A) _A)
+inferPatternApplication _A _B = throw (NotFunctionType (location _A) (_B ^. sourceRegion) _A)
 
 -- Helper functions for displaying errors
 
