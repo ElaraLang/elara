@@ -19,7 +19,7 @@ extra-deps:
 - git: 'https://github.com/ElaraLang/h2jvm.git'
   commit: 889d007686e2464508c097664d07b81edf6e289c
 - git: https://github.com/ElaraLang/polysemy-log.git
-  commit: 0089db6bc1785337ad7ea0353c0aec618ddb38cf
+  commit: 21bfd248e5f0a8f45e291dbfbdf81db9e361fe5d
   subdirs:
     - packages/polysemy-log
 - polysemy-conc-0.13.0.1@sha256:6ef7737cce4a496bb5cdbda6a1a55cb89a2526c00e8c035a7d3b735c7d8ce9b5,5551
