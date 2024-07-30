@@ -2,7 +2,14 @@ import Prelude
 import Option
 import Elara.Prim
 
-let inc x = x + 1
+type Box a = Box a
 
+type Parser a = Parser (String -> Box a)
+
+def any : Parser Int
+let any =
+    Parser \s -> Box 0
+
+let runParser (Parser f) x = f x
 let main = 
-    print (map inc (Some 5))
+    print ((runParser any) "Hello")

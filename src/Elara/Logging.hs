@@ -11,10 +11,10 @@ data StructuredDebug m a where
     DebugWith :: HasCallStack => Text -> m a -> StructuredDebug m a
 
 debug :: HasCallStack => Member StructuredDebug r => Text -> Sem r ()
-debug msg = withFrozenCallStack $ send $ Debug msg
+debug msg = send $ Debug msg
 
 debugWith :: HasCallStack => Member StructuredDebug r => Text -> Sem r a -> Sem r a
-debugWith msg act = withFrozenCallStack $ send $ DebugWith msg act
+debugWith msg act = send $ DebugWith msg act
 
 structuredDebugToLog :: forall r a. Member Log.Log r => Sem (StructuredDebug : r) a -> Sem r a
 structuredDebugToLog =
@@ -25,11 +25,11 @@ structuredDebugToLog =
                 . evalState 0
                 . reinterpret2H @StructuredDebug @(State Int) @Log.Log @r
                     ( \case
-                        Debug msg -> withFrozenCallStack $ do
+                        Debug msg -> do
                             depth <- get
                             Log.debug $ Text.replicate depth "│ " <> msg
                             pureT ()
-                        DebugWith msg act -> withFrozenCallStack $ do
+                        DebugWith msg act -> do
                             depth <- get
                             Log.debug $ Text.replicate depth "│ " <> msg
                             put $ depth + 1

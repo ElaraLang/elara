@@ -140,10 +140,11 @@ generateInstructions' v@(Var (Normal (Id (Global' qn@(Qualified n mn)) t _))) tA
 generateInstructions' (Var v) _ = do
     idx <- localVariableId v
     emit $ ALoad idx
-generateInstructions' (App f x) t = debugWith ("Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x <> " with type args" <> showPretty t) $ do
+generateInstructions' (App f x) t = do
     generateAppInstructions f x
-generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ do
+generateInstructions' (Let (NonRecursive (n, val)) b) tApps = withLocalVariableScope $ debugWith ("Generating let-in instructions: " <> showPretty (n, val, b)) $ do
     idx <- localVariableId n
+    debug $ "Storing value in local variable " <> show idx
     generateInstructions' val tApps
     emit $ AStore idx
     generateInstructions' (replaceVar n (JVMLocal idx (jvmBinderType n)) b) tApps
@@ -193,7 +194,7 @@ generateCaseInstructions -- hardcode if/else impl
             emit' [Goto endLabel, Label ifFalseLabel]
             generateInstructions ifFalse
             emit' [Label endLabel]
-generateCaseInstructions scrutinee (Just bind) alts = do
+generateCaseInstructions scrutinee (Just bind) alts = debugWith ("generateCaseInstructions: " <> showPretty (scrutinee, bind, alts)) $ do
     -- matches over ADTs are pretty simple, since we can just call the generated match method
     -- For example, @type Option a = None | Some a@ will have a match method that looks like:
     -- java.lang.Object match(elara.Func0 none, elara.Func some)
@@ -244,6 +245,7 @@ generateCaseInstructions scrutinee (Just bind) alts = do
                 )
                 (TypeReturn (ObjectFieldType "java.lang.Object"))
             )
+-- emit $ CheckCast
 generateCaseInstructions scrutinee bind alts = error $ "Not implemented: " <> showPretty (scrutinee, bind, alts)
 
 localVariableId ::
@@ -294,13 +296,20 @@ generateAppInstructions ::
     JVMExpr ->
     JVMExpr ->
     Sem r ()
-generateAppInstructions f x = debugWith ("Generating instructions for function application: " <> showPretty f <> " " <> showPretty x) $ do
+generateAppInstructions f x = debugWith ("Generating instructions for function application: (" <> showPretty f <> ") " <> showPretty x) $ do
     let (f', typeArgs, args) = collectArgs f ([], [x])
     debug $ "Collected args: " <> showPretty args
     debug $ "Collected type args: " <> showPretty typeArgs
 
     case approximateTypeAndNameOf f' of
-        Nothing -> error $ "Unknown function: " <> showPretty f'
+        Nothing -> do
+            debug $ "Function is not a variable: " <> showPretty f'
+            generateInstructions f'
+            -- assume that this has now pushed an Elara/Func onto the stack.
+            -- I _think_ we can always make this assumption as type checking won't allow us to apply an argument to a non-function
+            -- but i also wouldn't be surprised if this assumption is wrong and this blows up in the future
+            generateInstructions x
+            emit $ InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "java.lang.Object")))
         Just (Left (local, _)) -> do
             debug $ "Function is a local variable: " <> showPretty local
             emit $ ALoad local
@@ -312,9 +321,7 @@ generateAppInstructions f x = debugWith ("Generating instructions for function a
             if length args == arity
                 then -- yippee, no currying necessary
                 do
-                    insts <- invokeStaticVars fName fType
-                    traverse_ generateInstructions args
-                    emit $ uncurry3 InvokeStatic insts
+                    genInvokeStatic args fName fType
                     -- After calling any function we always checkcast it otherwise generic functions will die
                     let instantiatedFType = foldl' instantiate fType typeArgs
                     let instantiatedReturnType = generateReturnType instantiatedFType
@@ -356,7 +363,12 @@ generateAppInstructions f x = debugWith ("Generating instructions for function a
     collectArgs (TyApp f t) (tArgs, args) = collectArgs f (t : tArgs, args)
     collectArgs f (tArgs, args) = (f, tArgs, args)
 
-invokeStaticVars :: HasCallStack => Member (Error EmitError) r => UnlocatedVarRef Text -> Type -> Sem r (ClassInfoType, Text, MethodDescriptor)
+invokeStaticVars ::
+    HasCallStack =>
+    Member (Error EmitError) r =>
+    UnlocatedVarRef Text ->
+    Type ->
+    Sem r (ClassInfoType, Text, MethodDescriptor)
 invokeStaticVars (Global' (Qualified fName mn)) fType =
     pure
         ( ClassInfoType $ createModuleName mn
@@ -364,6 +376,20 @@ invokeStaticVars (Global' (Qualified fName mn)) fType =
         , generateMethodDescriptor fType
         )
 invokeStaticVars (Local' x) t = throw $ InvokeStaticLocal x t
+
+genInvokeStatic args (Global' (Qualified fName mn)) fType = do
+    traverse_ generateInstructions args
+    emit $
+        InvokeStatic
+            (ClassInfoType $ createModuleName mn)
+            ("_" <> translateOperatorName fName)
+            (generateMethodDescriptor fType)
+genInvokeStatic args (Local' x) t = do
+    traverse_ generateInstructions args
+    -- assume it's an Elara.Func<N>
+    let name = lambdaTypeName (length args)
+    -- invoke the run method on the lambda
+    emit $ InvokeInterface (ClassInfoType name) "run" (MethodDescriptor (replicate (length args) (ObjectFieldType "java.lang.Object")) (TypeReturn (ObjectFieldType "java.lang.Object")))
 
 generateLitInstructions :: Monad m => Literal -> m [Instruction]
 generateLitInstructions (String s) =

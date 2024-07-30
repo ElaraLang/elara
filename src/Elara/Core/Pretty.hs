@@ -6,8 +6,11 @@ module Elara.Core.Pretty where
 
 import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
+import Elara.AST.VarRef
 import Elara.Core
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles
+import Prettyprinter.Render.Terminal qualified as Style
 import Prelude hiding (Alt)
 
 class Pretty v => PrettyVar v where
@@ -29,10 +32,16 @@ instance Pretty Var where
 instance PrettyVar Var where
     prettyVar withType withParens = \case
         TyVar tv -> prettyTypeVariable withType tv
-        Id name t _ -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
+        Id name t _ ->
+            let style = case name of (Global _) -> Style.color Style.Green; (Local _) -> Style.color Style.Blue
+             in if withType
+                    then
+                        (if withParens then parens else identity)
+                            (annotate style (pretty name) <+> punctuation ":" <+> pretty t)
+                    else annotate style $ pretty name
 
     prettyVarArg = \case
-        TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        TyVar (TypeVariable tv _) -> parens (punctuation "@" <> pretty tv)
         v -> prettyVar False True v
 
 instance PrettyVar Type where
@@ -42,34 +51,34 @@ instance PrettyVar Type where
         other -> prettyVar withType withParens other
 
     prettyVarArg = \case
-        TyVarTy (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        TyVarTy (TypeVariable tv _) -> parens (punctuation "@" <> pretty tv)
         v -> prettyVar True True v
 
 instance {-# OVERLAPS #-} PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> Doc AnsiStyle
-prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
-prettyTLLam b e = "\\" <+> prettyVarArg b <+> "->" <+> prettyExpr e
+prettyTLLam b e@(Lam _ _) = punctuation "\\" <+> prettyVarArg b <+> prettyLam e
+prettyTLLam b e = punctuation "\\" <+> prettyVarArg b <+> punctuation "->" <+> prettyExpr e
 
 prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
-prettyLam (Lam b e) = prettyVarArg b <+> "->" <+> prettyLam e
+prettyLam (Lam b e) = prettyVarArg b <+> punctuation "->" <+> prettyLam e
 prettyLam e = pretty e
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (TyLam b e) = prettyTLLam b e
-prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
+prettyExpr (Let bindings e) = keyword "let" <+> prettyVdefg bindings <+> keyword "in" <+> prettyExpr e
 prettyExpr (Match e of' alts) =
     vsep
-        [ "case" <+> prettyExpr e <+> pretty (("of" <+>) . prettyVBind <$> of')
+        [ keyword "case" <+> prettyExpr e <+> pretty ((keyword "of" <+>) . prettyVBind <$> of')
         , indent indentDepth (prettyAlts alts)
         ]
 prettyExpr other = prettyExpr1 other
 
 prettyExpr1 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr1 (TyApp f t) = prettyExpr1 f <+> "@" <> prettyTy2 t
+prettyExpr1 (TyApp f t) = prettyExpr1 f <+> punctuation "@" <> prettyTy2 t
 prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
@@ -86,7 +95,7 @@ prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
 prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
-prettyVBind = prettyVar True True
+prettyVBind = prettyVar False True
 
 prettyAlts :: PrettyVar v => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = let ?contextFree = False in prettyBlockExpr (prettyAlt <$> alts)
@@ -141,7 +150,7 @@ instance Pretty TyConDetails where
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle
     pretty = \case
-        DataAlt d -> pretty d
+        DataAlt (DataCon name t _) -> pretty name
         LitAlt l -> pretty l
         DEFAULT -> "DEFAULT"
 

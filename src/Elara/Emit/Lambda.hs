@@ -31,16 +31,17 @@ import Data.List (partition)
 import Data.Map qualified as Map
 import Data.Traversable (for)
 import Elara.Core qualified as Core
+import Elara.Data.Pretty
 import {-# SOURCE #-} Elara.Emit.Expr (generateInstructions)
 import Elara.Emit.Method.Descriptor (NamedMethodDescriptor (..), toMethodDescriptor)
 import Elara.Emit.Params
-import Elara.Emit.State (LVKey (..), MethodCreationState (..), createMethodCreationStateOf, lookupVar)
+import Elara.Emit.State (LVKey (..), MethodCreationState (..), addLocalVariable, createMethodCreationStateOf, lookupVar)
 import Elara.Logging
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, runCodeBuilder)
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Method
 import Optics (filtered)
-import Polysemy.Reader
+import Polysemy.Reader hiding (Local)
 import Polysemy.State
 
 -- | etaExpand takes a function @f@, its type @a -> b@, and generates a lambda expression @\(x : a) -> f x@
@@ -106,12 +107,21 @@ generateLambda ::
     , Member CodeBuilder r
     ) =>
     MethodCreationState ->
+    -- | The current method creation state, used to determine which variables are captured
     [(Unique Text, FieldType)] ->
+    -- | The explicit parameters of the lambda - i.e. the ones in the functional interface
     FieldType ->
+    -- | The return type of the lambda
     QualifiedClassName ->
+    -- | The class name the lambda will be created in
     JVMExpr ->
+    -- | The body of the lambda
     Sem r ()
-generateLambda oldState explicitParams returnType thisClassName body = do
+-- generateLambda oldState explicitParams returnType thisClassName body@(Lam (Normal (Id (Local' name) t _)) b) = debugWith ("generateLambda:" <> showPretty (explicitParams, body)) $ do
+--     let explicitParams' = explicitParams <> [(name, generateFieldType t)]
+--     let oldState' = addLocalVariable oldState name (generateFieldType t)
+--     generateLambda oldState' explicitParams' returnType thisClassName b
+generateLambda oldState explicitParams returnType thisClassName body = debugWith ("generateLambda: " <> showPretty (explicitParams, body)) $ do
     (state, (_, a, b)) <- runState (createMethodCreationStateOf oldState explicitParams) $ do
         runCodeBuilder $ generateInstructions body
 
@@ -119,6 +129,8 @@ generateLambda oldState explicitParams returnType thisClassName body = do
     let locals = Map.toAscList state.localVariables
         locals' = fmap (\(KnownName n, (_, t)) -> (n, t)) locals
         (explicitParams', capturedParams) = partition (\(n, _) -> n `elem` (fst <$> explicitParams)) locals'
+    debug $ "Captured params: " <> showPretty capturedParams
+    debug $ "Explit params: " <> showPretty explicitParams
     createLambdaRaw explicitParams' capturedParams returnType thisClassName (state, a, b)
 
 createLambdaRaw ::
@@ -230,7 +242,7 @@ createLambda baseParams returnType thisClassName body = do
                 offsetBody
                 (zip (toList params) [0 ..])
 
-    debug $ "Body: " <> showPretty body <> " -> " <> showPretty body'
+    debug $ "Body: " <> showPretty body <> " --> " <> showPretty body'
 
     createMethod thisClassName lambdaMethodDescriptor lambdaMethodName body'
     let (functionalInterface, invoke, baseMethodDescriptor, methodDescriptor) = elaraFuncDescriptor returnType (snd <$> baseParams)

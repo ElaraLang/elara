@@ -139,7 +139,7 @@ addDeclaration declBody = case declBody of
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
                         debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
-                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ debugWith ("Getting static field " <> showPretty declName <> "...") $ do
+                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ debugWith ("Creating static getter method for field " <> showPretty declName <> "...") $ do
                             inst <- etaExpandN (Var $ Normal n) type' thisName
                             emit' inst
                     _ -> debugWith ("Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "...") $ do

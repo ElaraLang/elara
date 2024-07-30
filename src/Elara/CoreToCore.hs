@@ -53,7 +53,8 @@ subst v e = transform f
     f other = other
 
 coreToCoreExpr :: CoreExprPass
-coreToCoreExpr = betaReduce . constantFold . pipeInline . uselessLetInline
+coreToCoreExpr =
+    betaReduce . constantFold . pipeInline . uselessLetInline
 
 fullCoreToCoreExpr :: CoreExprPass
 fullCoreToCoreExpr = fix' coreToCoreExpr

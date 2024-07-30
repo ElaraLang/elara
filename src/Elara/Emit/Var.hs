@@ -39,7 +39,7 @@ instance Pretty JVMLocalType where
 instance Pretty JVMBinder where
     pretty = prettyVar True True
 instance PrettyVar JVMBinder where
-    prettyVar t p (Normal v) = prettyVar t p v
+    prettyVar t p (Normal v) = prettyVar @Var t p v
     prettyVar _ _ (JVMLocal i _) = "local_" <> pretty i
 
     prettyVarArg = prettyVar True True

@@ -58,6 +58,12 @@ createMethodCreationState args =
         (Map.fromList $ zip (KnownName . fst <$> args) (zip [0 ..] (map snd args)))
         (fromIntegral $ length args)
 
+addLocalVariable :: MethodCreationState -> Unique Text -> FieldType -> MethodCreationState
+addLocalVariable s v t =
+    let new = maxLocalVariables s
+        newLvs = Map.insert (KnownName v) (new, t) (localVariables s)
+     in s{localVariables = newLvs, maxLocalVariables = new + 1}
+
 lookupVar :: Member (State MethodCreationState) r => Unique Text -> Sem r (U1, FieldType)
 lookupVar v = do
     s <- get
