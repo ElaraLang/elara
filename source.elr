@@ -2,14 +2,8 @@ import Prelude
 import Option
 import Elara.Prim
 
-type Box a = Box a
+let add x = 
+    if x == 0 then \y -> y else \y -> x + y
 
-type Parser a = Parser (String -> Box a)
-
-def any : Parser Int
-let any =
-    Parser \s -> Box 0
-
-let runParser (Parser f) x = f x
 let main = 
-    print ((runParser any) "Hello")
+    print (add 3 4)

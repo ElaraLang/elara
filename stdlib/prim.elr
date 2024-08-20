@@ -6,3 +6,9 @@ let println = elaraPrimitive "println"
 
 def toString : a -> String
 let toString = elaraPrimitive "toString"
+
+def (+) : Int -> Int -> Int
+let (+) x y = elaraPrimitive "+"
+
+def (==) : Int -> Int -> Bool
+let (==) x y = elaraPrimitive "=="

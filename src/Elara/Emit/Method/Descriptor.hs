@@ -7,6 +7,9 @@ import JVM.Data.Abstract.Type
 
 data NamedMethodDescriptor = NamedMethodDescriptor [(Unique Text, FieldType)] ReturnDescriptor
     deriving (Show)
+
+methodDescriptorTypes :: NamedMethodDescriptor -> [FieldType]
+methodDescriptorTypes (NamedMethodDescriptor m _) = fmap snd m
 instance Pretty NamedMethodDescriptor where
     pretty (NamedMethodDescriptor args ret) = pretty ret <+> tupled (prettyArg <$> args)
       where

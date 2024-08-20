@@ -134,7 +134,9 @@ addDeclaration declBody = case declBody of
                     FuncTy{} -> do
                         debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
                         thisName <- ask @QualifiedClassName
-                        y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
+                        eta <- etaExpandNIntoMethod e type' thisName descriptor
+                        debug $ "Eta expanded into: " <> showPretty eta
+                        let y = transformTopLevelJVMLambdas eta
                         debug $ "Transformed lambda expression: " <> showPretty y
                         createMethod thisName descriptor ("_" <> declName) y
                         let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))

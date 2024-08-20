@@ -160,19 +160,22 @@ etaExpandNIntoMethod ::
     CoreExpr ->
     Type ->
     QualifiedClassName ->
+    NamedMethodDescriptor ->
     Sem r JVMExpr
-etaExpandNIntoMethod funcCall exprType thisClassName = debugWith ("etaExpandNIntoMethod:" <> showPretty (funcCall, exprType, thisClassName)) $ do
+etaExpandNIntoMethod funcCall exprType thisClassName descriptor = debugWith ("etaExpandNIntoMethod:" <> showPretty (funcCall, exprType, thisClassName)) $ do
     let arity = estimateArity funcCall - declaredLambdaArity funcCall
-    let args = NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
+    debug $ "Arity: " <> showPretty arity
+    let args = fmap JVMLType $ NE.take arity $ case nonEmpty $ functionTypeArgs exprType of
             Just x -> x
             Nothing -> error $ "etaExpandNIntoMethod: " <> show exprType <> " is not a function type"
-    debug $ "etaExpandNIntoMethod: " <> showPretty (arity, args)
-    params <- traverse (\_ -> makeUnique ("param" :: Text)) args
-    let paramTypes = zip params args
+    let args' = args <> drop (length args) (JVMLFieldType <$> methodDescriptorTypes descriptor)
+    debug $ "etaExpandNIntoMethod: " <> showPretty (arity, args')
+    params <- traverse (\_ -> makeUnique ("param" :: Text)) args'
+    let paramTypes = zip params args'
 
     local (\x -> x{checkCasts = False}) $
         pure $
             flipfoldl'
-                (\((_, pt), t) b -> App b (Var $ JVMLocal t (Just $ JVMLType pt)))
+                (\((_, pt), t) b -> App b (Var $ JVMLocal t (Just pt)))
                 (toJVMExpr funcCall)
                 (zip paramTypes [0 ..])
