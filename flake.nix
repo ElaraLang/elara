@@ -37,14 +37,14 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc965;
+          basePackages = pkgs.haskell.packages.ghc910;
 
 
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
             megaparsec.source = inputs.megaparsec;
-            polysemy-test.source = "0.9.0.0";
+            polysemy-test.source = "0.10.0.0";
           };
 
           settings = {
@@ -52,7 +52,13 @@
             fourmolu.check = false;
             polysemy-test.jailbreak = true;
             polysemy-conc.jailbreak = true;
+            polysemy-conc.check = false;
             polysemy-log.jailbreak = true;
+            polysemy-plugin.jailbreak = true;
+            incipit-base.jailbreak = true;
+            incipit-core.jailbreak = true;
+            polysemy-resume.jailbreak = true;
+            polysemy-time.jailbreak = true;
 
             diagnose = {
               extraBuildDepends = [

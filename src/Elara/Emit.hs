@@ -33,7 +33,8 @@ import Elara.Error (DiagnosticWriter, runErrorOrReport)
 import Elara.Logging
 import Elara.ToCore (stripForAll)
 import JVM.Data.Abstract.Builder
-import JVM.Data.Abstract.Builder.Code hiding (code)
+import JVM.Data.Abstract.Builder.Code
+    ( emit, emit', runCodeBuilder, CodeBuilder )
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.AccessFlags
 import JVM.Data.Abstract.ClassFile.Field
@@ -102,8 +103,7 @@ emitModule m = fmap swap $ runMultiClassBuilder $ do
         runReader defaultGenParams $ addClinit clinitState attrs clinit
 
     pure
-        ( m ^. field @"name"
-        )
+        (m ^. field @"name")
 
 addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreModule -> Sem r ()
 addDeclarationsAndMain m = do
