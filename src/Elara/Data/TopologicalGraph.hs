@@ -130,3 +130,6 @@ instance (Pretty (Key a), Ord (Key a)) => Pretty (TopologicalGraph a) where
             keyFromVertex = view (to nodeFromVertex' % _2)
             nodes = nubOrd (keyFromVertex <$> gArr)
          in pretty (map (\x -> (x, nubOrd $ dependenciesOf x g)) nodes)
+
+instance Foldable TopologicalGraph where
+    foldMap f g = foldMap f (allEntries g)

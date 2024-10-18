@@ -2,8 +2,10 @@ import Prelude
 import Option
 import Elara.Prim
 
+let app f x = f x
+
 let add x = 
     \y -> x + y
 
 let main = 
-    print (add 3 4)
+    print (app add 3 4)

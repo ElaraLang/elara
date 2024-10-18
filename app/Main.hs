@@ -24,7 +24,7 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
-import Elara.Emit
+
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
@@ -121,23 +121,23 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
-    classes <- runReader java8 (emitGraph coreGraph)
-    for_ classes $ \(mn, classes') -> do
-        putTextLn ("Compiling " <> showPretty mn <> "...")
-        for_ classes' $ \class' -> do
-            converted <- runErrorOrReport $ fromEither $ convert class'
-            let bs = runPut (writeBinary converted)
-            let fp = "build/" <> suitableFilePath class'.name
-            liftIO $ createAndWriteFile fp bs
-            putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
-        putTextLn ("Successfully compiled " <> showPretty mn <> "!")
+    -- classes <- runReader java8 (emitGraph coreGraph)
+    -- for_ classes $ \(mn, classes') -> do
+    --     putTextLn ("Compiling " <> showPretty mn <> "...")
+    --     for_ classes' $ \class' -> do
+    --         converted <- runErrorOrReport $ fromEither $ convert class'
+    --         let bs = runPut (writeBinary converted)
+    --         let fp = "build/" <> suitableFilePath class'.name
+    --         liftIO $ createAndWriteFile fp bs
+    --         putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
+    --     putTextLn ("Successfully compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
     printPretty
         ( Style.varName "Successfully" <+> "compiled "
-            <> Style.punctuation (pretty (length classes))
+            <> Style.punctuation (pretty (length coreGraph))
             <> " classes in "
             <> Style.punctuation
                 ( fromString (printf "%.2f" t)
@@ -145,15 +145,15 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
                 )
         )
 
-    when run $ liftIO $ do
-        printPretty (Style.varName "Running code...")
-        -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
-        let process =
-                if os == "mingw32"
-                    then shell "java -noverify -cp ../jvm-stdlib;. Main"
-                    else shell "java -noverify -cp ../jvm-stdlib:. Main"
-        x <- readCreateProcess process{cwd = Just "./build"} ""
-        putStrLn x
+    -- when run $ liftIO $ do
+    --     printPretty (Style.varName "Running code...")
+    --     -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
+    --     let process =
+    --             if os == "mingw32"
+    --                 then shell "java -noverify -cp ../jvm-stdlib;. Main"
+    --                 else shell "java -noverify -cp ../jvm-stdlib:. Main"
+    --     x <- readCreateProcess process{cwd = Just "./build"} ""
+    --     putStrLn x
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do

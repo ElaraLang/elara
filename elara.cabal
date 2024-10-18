@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -64,19 +64,6 @@ library
       Elara.Data.Unique
       Elara.Data.Unwrap
       Elara.Desugar
-      Elara.Emit
-      Elara.Emit.ADT
-      Elara.Emit.Error
-      Elara.Emit.Expr
-      Elara.Emit.Lambda
-      Elara.Emit.Method
-      Elara.Emit.Method.Descriptor
-      Elara.Emit.Monad
-      Elara.Emit.Operator
-      Elara.Emit.Params
-      Elara.Emit.State
-      Elara.Emit.Utils
-      Elara.Emit.Var
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
