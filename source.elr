@@ -3,7 +3,7 @@ import Option
 import Elara.Prim
 
 let add x = 
-    if x == 0 then \y -> y else \y -> x + y
+    \y -> x + y
 
 let main = 
     print (add 3 4)
