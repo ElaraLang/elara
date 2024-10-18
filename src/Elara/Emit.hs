@@ -5,19 +5,21 @@ import Elara.AST.VarRef
 import Elara.Core as Core
 import Elara.Core.Module
 import Elara.Data.Pretty (prettyToText)
-import Elara.Emit.Utils (createModuleName)
+import Elara.Emit.Utils (createModuleName, generateFieldType)
 import Elara.Logging
 import Elara.Prim.Core
-import JVM.Data.Abstract.Builder (ClassBuilder, addField, runClassBuilder)
+import JVM.Data.Abstract.Builder (ClassBuilder, addField, addMethod, runClassBuilder)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit', runCodeBuilder)
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.ClassFile.Field (ClassFileField (ClassFileField), ConstantValue (ConstantInteger), FieldAttribute (ConstantValue))
+import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.JVMVersion
 import JVM.Data.Pretty (showPretty)
+import JVM.Data.Raw.ClassFile (Attribute (CodeAttribute))
 import Polysemy
 
 emitCoreModule :: Member StructuredDebug r => CoreModule -> Sem r ClassFile
@@ -36,8 +38,8 @@ emitCoreDecl decl = case decl of
             Core.Lit (Core.Int i) -> do
                 addField $ ClassFileField [] declName (ObjectFieldType "java.lang.Integer") [ConstantValue (ConstantInteger (fromIntegral i))]
             e -> do
-                code <- runCodeBuilder (emitCoreExpr e)
-                pass
+                (_, attrs, code) <- runCodeBuilder (emitCoreExpr e)
+                addMethod $ ClassFileMethod [] declName (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object"))) (fromList [Code $ CodeAttributeData 100 100 code [] attrs])
         pass
     _ -> pass
 
@@ -48,10 +50,15 @@ emitCoreExpr e = case e of
         emit'
             [ InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
             ]
+    (App ((Var ((Id (Global' (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
+        emit'
+            [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
+            ]
+    v@(Var ((Id (Global' qn@(Qualified n mn)) t _))) -> emit' [GetStatic ((ClassInfoType $ createModuleName mn)) n (((generateFieldType t)))]
     Core.App f x -> do
-        emitCoreExpr f
         emitCoreExpr x
-    _ -> pass
+        emitCoreExpr f
+    other -> pass
 
 emitValue :: Member CodeBuilder r => Literal -> Sem r ()
 emitValue s = case s of

@@ -126,6 +126,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     for_ coreGraph $ \coreModule -> do
         putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
         class' <- structuredDebugToLog (emitCoreModule coreModule)
+        putTextLn (showPretty class')
         converted <- runErrorOrReport $ fromEither $ convert class'
         let bs = runPut (writeBinary converted)
         let fp = "build/" <> suitableFilePath class'.name

@@ -4,4 +4,4 @@ import Elara.Prim
 
 let x = 1
 
-let main = print x
+let main = (elaraPrimitive "println") (elaraPrimitive "toString" x)
