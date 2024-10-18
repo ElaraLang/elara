@@ -125,8 +125,12 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     for_ coreGraph $ \coreModule -> do
         putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
-        structuredDebugToLog (emitCoreModule coreModule)
-        pass
+        class' <- structuredDebugToLog (emitCoreModule coreModule)
+        converted <- runErrorOrReport $ fromEither $ convert class'
+        let bs = runPut (writeBinary converted)
+        let fp = "build/" <> suitableFilePath class'.name
+        liftIO $ createAndWriteFile fp bs
+        putTextLn ("Compiled " <> showPretty (class'.name) <> " to " <> toText fp <> "!")
     -- classes <- runReader java8 (emitGraph coreGraph)
     -- for_ classes $ \(mn, classes') -> do
     --     putTextLn ("Compiling " <> showPretty mn <> "...")

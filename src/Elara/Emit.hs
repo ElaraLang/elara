@@ -5,6 +5,7 @@ import Elara.AST.VarRef
 import Elara.Core as Core
 import Elara.Core.Module
 import Elara.Data.Pretty (prettyToText)
+import Elara.Emit.Utils (createModuleName)
 import Elara.Logging
 import Elara.Prim.Core
 import JVM.Data.Abstract.Builder (ClassBuilder, addField, runClassBuilder)
@@ -19,16 +20,13 @@ import JVM.Data.JVMVersion
 import JVM.Data.Pretty (showPretty)
 import Polysemy
 
-emitCoreModule :: Member StructuredDebug r => CoreModule -> Sem r ()
+emitCoreModule :: Member StructuredDebug r => CoreModule -> Sem r ClassFile
 emitCoreModule (CoreModule name decls) = do
-    debug $ "Emitting module: " <> show name
-    (clf, _) <- runClassBuilder (fromString (show name)) java8 $ for_ decls $ \decl -> do
+    (clf, _) <- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -> do
         emitCoreDecl decl
         pass
 
-    debug $ "Emitting class file: " <> showPretty clf
-
-    pass
+    pure clf
 
 emitCoreDecl :: (Member ClassBuilder r, Member StructuredDebug r) => CoreDeclaration -> Sem r ()
 emitCoreDecl decl = case decl of
@@ -39,7 +37,7 @@ emitCoreDecl decl = case decl of
                 addField $ ClassFileField [] declName (ObjectFieldType "java.lang.Integer") [ConstantValue (ConstantInteger (fromIntegral i))]
             e -> do
                 code <- runCodeBuilder (emitCoreExpr e)
-                debug $ "Emitting value: " <> show declName <> " : " <> showPretty code
+                pass
         pass
     _ -> pass
 
