@@ -1,3 +1,39 @@
+{- | Emits JVM bytecode from the Core AST
+
+The emitting process:
+Every module is translated to a class file.
+For each declaration, we turn it into a field if it is a value (i.e. a zero argument function, including IO actions),
+or a method if it is a function.
+
+*Translation of functions to methods:*
+
+The emitter will eta expand declarations:
+@ let id = \x -> x@
+will be translated to:
+@ public static Object id(Object x) { return x; }@
+
+however it does not do any complex analysis on the code:
+@ let add x =
+    if x == 0 then \y -> y else \y -> x + y
+@
+The higher order function here _can_ be avoided if we rearrange the code into:
+@ let add = \x -> \y ->
+    if x == 0 then y else x + y
+@
+but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
+
+@ public static Func add(int x) {
+    if (x == 0) {
+        return (y) -> y;
+    } else {
+        return (y) -> x + y;
+    }
+}
+@
+
+What this means is that the emitted method's arity will always match the declared arity of the function
+(i.e. how many directly nested lambdas there are)
+-}
 module Elara.Emit where
 
 import Elara.AST.Name
@@ -54,7 +90,7 @@ emitCoreExpr e = case e of
         emit'
             [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
             ]
-    v@(Var ((Id (Global' qn@(Qualified n mn)) t _))) -> emit' [GetStatic ((ClassInfoType $ createModuleName mn)) n (((generateFieldType t)))]
+    v@(Var ((Id (Global' qn@(Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
     Core.App f x -> do
         emitCoreExpr x
         emitCoreExpr f

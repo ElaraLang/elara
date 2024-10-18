@@ -1,18 +1,17 @@
 module Elara.Emit.Utils where
-import Elara.AST.Name
-import JVM.Data.Abstract.Name
-import Elara.Core (Type (..), TyCon (..))
-import JVM.Data.Abstract.Type
-import Elara.Prim.Core
-import Elara.Core.Analysis (findTyCon)
 
+import Elara.AST.Name
+import Elara.Core (TyCon (..), Type (..))
+import Elara.Core.Analysis (findTyCon)
+import Elara.Prim.Core
+import JVM.Data.Abstract.Name
+import JVM.Data.Abstract.Type
 
 createModuleName :: ModuleName -> QualifiedClassName
 createModuleName (ModuleName name) = QualifiedClassName (PackageName $ init name) (ClassName $ last name)
 
 createQualifiedClassName :: Qualified Text -> QualifiedClassName
 createQualifiedClassName (Qualified name (ModuleName mn)) = QualifiedClassName (PackageName (toList mn)) (ClassName name)
-
 
 generateFieldType :: HasCallStack => Type -> FieldType
 generateFieldType (ConTy c) | c == intCon = ObjectFieldType "java.lang.Integer"

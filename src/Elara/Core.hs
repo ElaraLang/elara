@@ -1,6 +1,6 @@
 module Elara.Core where
 
-import Data.Data (Data, Typeable)
+import Data.Data (Data)
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)

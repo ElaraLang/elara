@@ -25,6 +25,7 @@ import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, tra
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 
+import Elara.CoreToIR
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
@@ -126,12 +127,14 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     for_ coreGraph $ \coreModule -> do
         putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
         class' <- structuredDebugToLog (emitCoreModule coreModule)
-        putTextLn (showPretty class')
-        converted <- runErrorOrReport $ fromEither $ convert class'
-        let bs = runPut (writeBinary converted)
-        let fp = "build/" <> suitableFilePath class'.name
-        liftIO $ createAndWriteFile fp bs
-        putTextLn ("Compiled " <> showPretty (class'.name) <> " to " <> toText fp <> "!")
+        ir <- coreModuleToIR coreModule
+        print ir
+    -- putTextLn (showPretty class')
+    -- converted <- runErrorOrReport $ fromEither $ convert class'
+    -- let bs = runPut (writeBinary converted)
+    -- let fp = "build/" <> suitableFilePath class'.name
+    -- liftIO $ createAndWriteFile fp bs
+    -- putTextLn ("Compiled " <> showPretty (class'.name) <> " to " <> toText fp <> "!")
     -- classes <- runReader java8 (emitGraph coreGraph)
     -- for_ classes $ \(mn, classes') -> do
     --     putTextLn ("Compiling " <> showPretty mn <> "...")

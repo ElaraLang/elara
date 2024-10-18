@@ -5,7 +5,7 @@ module Elara.AST.VarRef where
 
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
-import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
+import Elara.AST.Name (HasName (name), Name, NameLike (..), Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located (..))
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty (Pretty (pretty))
@@ -34,6 +34,10 @@ pattern Local' n = Local (Identity n)
 varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
+
+unlocatedVarRefVal :: UnlocatedVarRef n -> n
+unlocatedVarRefVal (Global n) = runIdentity $ fmap (view name) n
+unlocatedVarRefVal (Local n) = runIdentity $ fmap (view uniqueVal) n
 
 varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
 varRefVal' = traversalVL $ \f ->
