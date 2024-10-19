@@ -32,12 +32,12 @@ findTyCon _ = Nothing
 exprType :: HasCallStack => CoreExpr -> Core.Type
 exprType (Var v) = varType v
 exprType (Lit l) = literalType l
-exprType (App f _) = case exprType f of
+exprType app@(App f _) = case exprType f of
     Core.FuncTy _ t -> t
-    t -> error $ "exprType: expected function type, got " <> showPretty t
+    t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
 exprType (TyApp f t) = case exprType f of
     Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
-    t' -> error $ "exprType: expected forall type, got " <> showPretty t'
+    t' -> error $ "exprType: expected forall type, got " <> showPretty t' <> " in " <> showPretty (TyApp f t)
 exprType (Lam b e) = Core.FuncTy (varType b) (exprType e)
 exprType (TyLam _ e) = exprType e
 exprType (Let _ e) = exprType e
