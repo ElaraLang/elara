@@ -102,6 +102,7 @@ executables:
     source-dirs: app
     ghc-options:
       - -threaded
+      - -O0
     dependencies:
       - elara
 
