@@ -53,8 +53,10 @@ library
       Elara.AST.VarRef
       Elara.Core
       Elara.Core.Analysis
+      Elara.Core.ANF
       Elara.Core.Module
       Elara.Core.Pretty
+      Elara.Core.ToANF
       Elara.CoreToCore
       Elara.Data.Kind
       Elara.Data.Kind.Infer

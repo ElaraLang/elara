@@ -2,9 +2,11 @@ module Elara.Core.Analysis where
 
 import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
 import Elara.Core qualified as Core
+import Elara.Core.Pretty
 
 import Data.List (maximum)
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
+import Print (showPretty)
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"
@@ -32,10 +34,10 @@ exprType (Var v) = varType v
 exprType (Lit l) = literalType l
 exprType (App f _) = case exprType f of
     Core.FuncTy _ t -> t
-    t -> error $ "exprType: expected function type, got " <> show t
+    t -> error $ "exprType: expected function type, got " <> showPretty t
 exprType (TyApp f t) = case exprType f of
     Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
-    t' -> error $ "exprType: expected forall type, got " <> show t'
+    t' -> error $ "exprType: expected forall type, got " <> showPretty t'
 exprType (Lam b e) = Core.FuncTy (varType b) (exprType e)
 exprType (TyLam _ e) = exprType e
 exprType (Let _ e) = exprType e

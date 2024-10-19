@@ -7,8 +7,9 @@ module Elara.CoreToCore where
 
 import Elara.AST.Name
 import Elara.AST.VarRef
-import Elara.Core (Bind (..), CoreExpr, Expr (..), Literal (..), Var (..), mapBind)
+import Elara.Core (Bind (..), CoreExpr, Expr (..), Literal (..), Var (..), mapBind, traverseBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
+import Elara.Core.ToANF
 
 type CoreExprPass = CoreExpr -> CoreExpr
 
@@ -60,6 +61,12 @@ fullCoreToCoreExpr :: CoreExprPass
 fullCoreToCoreExpr = fix' coreToCoreExpr
   where
     fix' f x = let x' = f x in if x == x' then x else fix' f x'
+
+-- toANF :: CoreModule -> CoreModule
+toANF' (CoreModule name decls) = CoreModule name <$> traverse f decls
+  where
+    f (CoreValue v) = CoreValue <$> traverseBind pure (toANF >=> pure . fromANF) v
+    f other = pure other
 
 coreToCore :: CoreModule -> CoreModule
 coreToCore (CoreModule name decls) = CoreModule name (fmap f decls)

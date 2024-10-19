@@ -22,10 +22,10 @@ import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
-import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 
-import Elara.CoreToIR
+-- import Elara.CoreToIR
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
@@ -120,6 +120,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
+    coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
@@ -127,8 +128,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     for_ coreGraph $ \coreModule -> do
         putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
         class' <- structuredDebugToLog (emitCoreModule coreModule)
-        ir <- coreModuleToIR coreModule
-        print ir
+        pass
     -- putTextLn (showPretty class')
     -- converted <- runErrorOrReport $ fromEither $ convert class'
     -- let bs = runPut (writeBinary converted)

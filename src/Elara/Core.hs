@@ -68,6 +68,11 @@ mapBind f g = \case
     Recursive bs -> Recursive (bimapF f g bs)
     NonRecursive (b, e) -> NonRecursive (f b, g e)
 
+traverseBind :: Applicative f => (b -> f b') -> (Expr b -> f (Expr b')) -> Bind b -> f (Bind b')
+traverseBind f g = \case
+    Recursive bs -> Recursive <$> traverse (\(b, e) -> (,) <$> f b <*> g e) bs
+    NonRecursive (b, e) -> NonRecursive <$> ((,) <$> f b <*> g e)
+
 type Alt b = (AltCon, [b], Expr b)
 
 data AltCon
