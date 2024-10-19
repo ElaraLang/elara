@@ -50,6 +50,9 @@ unitCon = TyCon (mkPrimQual "()") Prim
 charCon :: TyCon
 charCon = TyCon (mkPrimQual "Char") Prim
 
+doubleCon :: TyCon
+doubleCon = TyCon (mkPrimQual "Double") Prim
+
 ioCon :: TyCon
 ioCon = TyCon (mkPrimQual "IO") Prim
 
