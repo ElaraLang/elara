@@ -2,7 +2,3 @@ module Prelude
 import Elara.Prim
 import List
 
-
-
-def print : a -> IO ()
-let print a = println (toString a)

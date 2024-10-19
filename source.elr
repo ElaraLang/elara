@@ -3,5 +3,4 @@ import Option
 import Elara.Prim
 
 let x = 1
-
-let main = (elaraPrimitive "println") (elaraPrimitive "toString" x)
+let main = println (toString (toString x))

@@ -15,7 +15,7 @@ data AExpr b
 
 data CExpr b
     = App (AExpr b) (AExpr b)
-        | AExpr (AExpr b)
+    | AExpr (AExpr b)
     | Match (AExpr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
 
@@ -29,4 +29,4 @@ data Bind b
     | NonRecursive (b, CExpr b)
     deriving (Show, Eq, Data, Functor, Foldable, Traversable, Generic)
 
-type Alt b = (AltCon, [b], Expr b)
+type Alt b = (AltCon, [b], CExpr b)
