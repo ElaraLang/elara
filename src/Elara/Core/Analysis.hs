@@ -2,7 +2,7 @@ module Elara.Core.Analysis where
 
 import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
 import Elara.Core qualified as Core
-import Elara.Core.Pretty
+import Elara.Core.Pretty ()
 
 import Data.List (maximum)
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
