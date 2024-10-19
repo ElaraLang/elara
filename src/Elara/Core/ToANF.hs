@@ -8,7 +8,6 @@ import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (exprType)
 import Elara.Data.Unique
 import Polysemy
-import TODO (todo)
 
 {- | Convert a Core expression to ANF
 For example:
@@ -28,6 +27,7 @@ becomes:
 toANF :: Member UniqueGen r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 toANF expr = toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
 
+toANFCont :: Member UniqueGen r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
 toANFCont e = ContT $ \k -> toANF' e k
 
 toANF' :: Member UniqueGen r => Core.CoreExpr -> (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) -> Sem r (ANF.Expr Core.Var)
@@ -42,6 +42,11 @@ toANF' other k = evalContT $ do
     lift $ toANFRec other $ \e -> do
         pure $ ANF.Let (ANF.NonRecursive (id, e)) l'
 
+toANFRec ::
+    Member UniqueGen r =>
+    Core.Expr Core.Var ->
+    (ANF.CExpr Core.Var -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.Expr Core.Var)) ->
+    Sem r (ANF.Expr Core.Var)
 toANFRec (Core.App f x) k = evalContT $ do
     f' <- toANFCont f
     x' <- toANFCont x
@@ -51,7 +56,7 @@ toANFRec (Core.Match bind as cases) k = evalContT $ do
     cases' <- for cases $ \(con, bs, e) -> do
         e' <- toANFCont e
         pure (con, bs, ANF.AExpr e')
-    k $ ANF.Match (bind) as cases'
+    k $ ANF.Match bind as cases'
 toANFRec other k = error $ "toANFRec: " <> show other
 
 fromANF :: ANF.Expr Core.Var -> Core.CoreExpr
