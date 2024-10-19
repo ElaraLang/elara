@@ -11,7 +11,7 @@ import Elara.Core
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal qualified as Style
-import Prelude hiding (Alt)
+import Prelude hiding (Alt, group)
 
 class Pretty v => PrettyVar v where
     prettyVar ::
@@ -69,7 +69,12 @@ prettyLam e = pretty e
 prettyExpr :: (Pretty (Expr v), PrettyVar v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (TyLam b e) = prettyTLLam b e
-prettyExpr (Let bindings e) = keyword "let" <+> prettyVdefg bindings <+> keyword "in" <+> prettyExpr e
+prettyExpr (Let bindings e) =
+    group $
+        vsep
+            [ keyword "let" <+> prettyVdefg bindings <+> keyword "in"
+            , prettyExpr e
+            ]
 prettyExpr (Match e of' alts) =
     vsep
         [ keyword "case" <+> prettyExpr e <+> pretty ((keyword "of" <+>) . prettyVBind <$> of')
@@ -92,7 +97,12 @@ prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = False in prettyBl
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
-prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
+prettyVdef (v, e) =
+    group $
+        vsep
+            [ prettyVar True False v <+> "="
+            , indent indentDepth (prettyExpr e)
+            ]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
 prettyVBind = prettyVar False True
