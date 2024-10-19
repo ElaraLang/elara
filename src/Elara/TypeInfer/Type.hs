@@ -237,13 +237,55 @@ applicableTyApp :: Show s => Type s -> Type s -> [Type s]
 -- If x and y are the same, there's no instantiation to be done
 applicableTyApp x y | x `structuralEq` y = []
 applicableTyApp _ (UnsolvedType{}) = []
--- If x is forall a. a, and y is x, then we need to instantiate x with a
--- eg `def y : Int; let y = undefined` -> `def y : Int; let y = undefined @Int`
+{- If x is forall a. a, and y is x, then we need to instantiate x with a
+For example:
+    def y : Int
+    let y = undefined
+
+Should be instantiated to:
+    def y : Int
+    let y = undefined @Int
+
+Because undefined : forall a. a
+-}
 applicableTyApp (Forall{name, type_ = VariableType{name = n}}) y | name == n = [y]
--- If x is forall a. a -> _, and y is c -> _, then we need to instantiate x with c
+{- If x is forall a. a -> _, and y is c -> _, then we need to instantiate x with c
+
+For example:
+    def x : forall a. a -> Int
+    let x = ...
+
+    def y : Int -> Int
+    let y = x
+
+Should be instantiated to:
+    def x : forall a. a -> Int
+    let x = ...
+
+    def y : Int -> Int
+    let y = x @Int
+
+-}
 applicableTyApp
-    (Forall{type_ = Function{input = VariableType{}}})
-    Function{input = sIn} = [sIn]
+    (Forall{name, type_ = Function{input = VariableType{name = n}}})
+    Function{input = sIn} | name == n = [sIn]
+{- If x is forall a. b -> a, and y is b -> c, then we need to instantiate x with c
+
+For example:
+    def elaraPrimitive : forall a. Text -> a
+
+    def y : forall a. Text -> (a -> Text)
+    let y = elaraPrimitive
+
+Should be instantiated to:
+
+    def y : forall a. Text -> (a -> Text)
+    let y = elaraPrimitive @(a -> Text)
+
+-}
+applicableTyApp
+    (Forall{name, type_ = Function{output = VariableType{name = n}}})
+    Function{output = sOut} | name == n = [sOut]
 applicableTyApp a@(Forall{name, type_, ..}) Forall{name = name2, type_ = type2} =
     -- Instantiating forall x. y with forall z. y[x := z] doesn't create any instantiations
     -- in other words, if the first forall is just a copy of the second with a different name, then we don't need to instantiate
@@ -541,8 +583,7 @@ prettyPrimitiveType Custom{..} =
 
     long =
         Pretty.align
-            ( foldMap (\t -> prettyQuantifiedType t <> Pretty.hardline) typeArguments
-            )
+            (foldMap (\t -> prettyQuantifiedType t <> Pretty.hardline) typeArguments)
 -- prettyPrimitiveType Tuple{..} =
 --     Pretty.group (Pretty.flatAlt long short)
 --   where

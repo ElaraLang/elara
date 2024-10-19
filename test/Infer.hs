@@ -119,8 +119,6 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
         let id2Decl = decls !! 2 ^. _Unwrapped % _1 % unlocated
         let id3Decl = decls !! 3 ^. _Unwrapped % _1 % unlocated
 
-        printPretty decls
-
         case idDecl of
             (Elara.AST.Generic.Types.Var _) -> pass
             o -> failTypeMismatch "id" "Main.id @a" o
@@ -160,6 +158,22 @@ typeApplications = describe "Correctly determines which type applications to add
         n2 <- runUnique makeUniqueTyVar
         let n2Var = VariableType () n2
         forAllT `applicableTyApp` Forall () () n2 Domain.Type (Function () (Function () n2Var n2Var) (Function () n2Var n2Var)) === [Function () n2Var n2Var]
+
+    it "Can add ty-apps to a polymorphic toString" $ hedgehog $ do
+        -- toString : forall a. a -> Text
+        n <- runUnique makeUniqueTyVar
+        let toString = Forall () () n Domain.Type (Function () (VariableType () n) (Scalar () Scalar.Text))
+        -- someT : Int -> Text
+        let someT = Function () (Scalar () Scalar.Integer) (Scalar () Scalar.Text)
+        toString `applicableTyApp` someT === [Scalar () Scalar.Integer]
+
+    it "Can add ty-apps for elaraPrimitive" $ hedgehog $ do
+        -- elaraPrimitive : forall a. Text -> a
+        n <- runUnique makeUniqueTyVar
+        let elaraPrimitive = Forall () () n Domain.Type (Function () (Scalar () Scalar.Text) (VariableType () n))
+        -- someT : Text -> Int
+        let someT = Function () ((Scalar () Scalar.Text)) (Scalar () Scalar.Integer)
+        elaraPrimitive `applicableTyApp` someT === [Scalar () Scalar.Integer]
 
 modDecls mod =
     mod
