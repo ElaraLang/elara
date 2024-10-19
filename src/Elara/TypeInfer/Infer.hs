@@ -1099,14 +1099,16 @@ infer (Syntax.Expr (Located location e0, _)) = debugWith ("infer: " <> showPrett
 
             _Θ <- get
 
-            (typedArgument, resultType) <-
+            (tyApps, typedArgument, resultType) <-
                 inferApplication
                     (Context.solveType _Θ (_A ^. _Unwrapped % _2))
                     argument
 
+            debug $ "applicableTyAppFC: " <> showPretty tyApps
+
             let e =
                     FunctionCall
-                        _A
+                        (foldl' addTypeApplication _A tyApps)
                         typedArgument
             pure $ Expr (Located location e, resultType)
 
@@ -1317,16 +1319,17 @@ check expr@(Expr (Located exprLoc _, _)) t = debugWith ("check: " <> showPretty 
         When checking that e:T, this can often provoke the creation of type applications.
         for example, given id: forall a. a -> a, checking that id : Int -> Int will create a type application @Int
         -}
-        case _At of
-            Type.Forall{} -> do
-                debug $ "applicableTyApp: " <> showPretty (_At, t) <> " => " <> showPretty (Type.applicableTyApp _At t)
-                case _At `Type.applicableTyApp` t of
-                    [] -> pure _A
-                    [tApp] ->
-                        -- insert type application from instantiating the forall
-                        pure $ Expr (Located exprLoc (TypeApplication _A tApp), _At `Type.instantiate` t)
-                    more -> throw $ AmbiguousTypeApplication exprLoc more
-            _ -> pure _A
+        debug $ "applicableTyApp: " <> showPretty (Context.solveType _Θ _At, t) <> " => " <> showPretty (Type.applicableTyApp (Context.solveType _Θ _At) t)
+
+        case _At `Type.applicableTyApp` t of
+            [] -> pure _A
+            [tApp] ->
+                -- insert type application from instantiating the forall
+                pure $ addTypeApplication _A tApp
+            more -> throw $ AmbiguousTypeApplication exprLoc more
+
+addTypeApplication :: TypedExpr -> Type SourceRegion -> TypedExpr
+addTypeApplication e@(Expr (Located loc _, t)) tApp = Expr (Located loc (TypeApplication e tApp), t `Type.instantiate` t)
 
 {- | This corresponds to the judgment:
 
@@ -1419,22 +1422,26 @@ checkPattern pattern_@(Pattern (Located exprLoc _, _)) t = do
  … which infers the result type C when a function of type A is applied to an
  input argument e, under input context Γ, producing an updated context Δ.
 
- This has been adjusted to return the typed argument as well as C
+ This has been adjusted to return the typed argument as well as C, as well as a list of type applications for the *function*
 -}
 inferApplication ::
     (HasCallStack, Member StructuredDebug r) =>
     (Member (State Status) r, Member (Error TypeInferenceError) r, Member UniqueGen r) =>
     Type SourceRegion ->
     ShuntedExpr ->
-    Sem r (TypedExpr, Type SourceRegion)
+    Sem r ([Type SourceRegion], TypedExpr, Type SourceRegion)
 -- ∀App
-inferApplication Type.Forall{domain = Domain.Type, ..} e = do
+inferApplication t@Type.Forall{domain = Domain.Type, ..} e = do
     a <- fresh
 
     push (Context.UnsolvedType a)
 
     let a' = Type.UnsolvedType{location = nameLocation, existential = a}
-    inferApplication (Type.substituteType name a' type_) e
+
+    let subst = Type.substituteType name a' type_
+    let apps = t `Type.applicableTyApp` subst -- since we're applying a forall, there's a very good chance we need to add some type applications
+    (apps', e', t) <- inferApplication subst e
+    pure (apps <> apps', e', t)
 
 -- ∃App
 inferApplication Type.Exists{..} e = scoped (Context.Variable domain name) do
@@ -1451,15 +1458,15 @@ inferApplication Type.UnsolvedType{existential = a, ..} e = do
 
     set (_ΓR <> (Context.SolvedType a (Monotype.Function (Monotype.UnsolvedType a1) (Monotype.UnsolvedType a2)) : Context.UnsolvedType a1 : Context.UnsolvedType a2 : _ΓL))
 
+    debug $ "inferApplication (αApp): " <> showPretty e <> " : " <> showPretty Type.UnsolvedType{existential = a1, ..}
     e' <- check e Type.UnsolvedType{existential = a1, ..}
 
     let t = Type.UnsolvedType{existential = a2, ..}
 
-    pure (e', t)
+    pure ([], e', t)
 inferApplication Type.Function{..} e = do
     e' <- check e input
-
-    pure (e', output)
+    pure ([], e', output)
 inferApplication Type.VariableType{..} _ = throw (NotNecessarilyFunctionType location name)
 inferApplication _A _B = throw (NotFunctionType (location _A) (_B ^. sourceRegion) _A)
 
