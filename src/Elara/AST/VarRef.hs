@@ -5,7 +5,7 @@ module Elara.AST.VarRef where
 
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
-import Elara.AST.Name (HasName (name), Name, NameLike (..), Qualified, ToName (toName))
+import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located (..))
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty (Pretty (pretty))

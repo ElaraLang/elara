@@ -1,10 +1,11 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- | Renamed AST Type
 This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
 -}
 module Elara.AST.Renamed where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, InfixDeclaration, Select)
-import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
@@ -85,28 +86,28 @@ type instance Select "UserDefinedType" 'Renamed = Qualified TypeName
 
 type instance Select "ConstructorName" 'Renamed = Qualified TypeName
 
-type RenamedExpr = Generic.Expr 'Renamed
+type RenamedExpr = Expr 'Renamed
 
-type RenamedExpr' = Generic.Expr' 'Renamed
+type RenamedExpr' = Expr' 'Renamed
 
-type RenamedPattern = Generic.Pattern 'Renamed
+type RenamedPattern = Pattern 'Renamed
 
-type RenamedPattern' = Generic.Pattern' 'Renamed
+type RenamedPattern' = Pattern' 'Renamed
 
-type RenamedBinaryOperator = Generic.BinaryOperator 'Renamed
+type RenamedBinaryOperator = BinaryOperator 'Renamed
 
-type RenamedBinaryOperator' = Generic.BinaryOperator' 'Renamed
+type RenamedBinaryOperator' = BinaryOperator' 'Renamed
 
-type RenamedType = Generic.Type 'Renamed
+type RenamedType = Type 'Renamed
 
-type RenamedType' = Generic.Type' 'Renamed
+type RenamedType' = Type' 'Renamed
 
-type RenamedDeclaration = Generic.Declaration 'Renamed
+type RenamedDeclaration = Declaration 'Renamed
 
-type RenamedDeclaration' = Generic.Declaration' 'Renamed
+type RenamedDeclaration' = Declaration' 'Renamed
 
-type RenamedDeclarationBody = Generic.DeclarationBody 'Renamed
+type RenamedDeclarationBody = DeclarationBody 'Renamed
 
-type RenamedDeclarationBody' = Generic.DeclarationBody' 'Renamed
+type RenamedDeclarationBody' = DeclarationBody' 'Renamed
 
-type RenamedTypeDeclaration = Generic.TypeDeclaration 'Renamed
+type RenamedTypeDeclaration = TypeDeclaration 'Renamed
