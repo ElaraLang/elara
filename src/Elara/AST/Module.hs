@@ -8,7 +8,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoFieldSelectors #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Elara.AST.Module where
 
@@ -21,7 +20,6 @@ import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph
 import Optics (traverseOf_)
-import Unsafe.Coerce
 import Prelude hiding (Text)
 
 newtype Module ast = Module (ASTLocate ast (Module' ast))
@@ -87,7 +85,10 @@ coerceExposition ::
     ) =>
     Exposition ast1 ->
     Exposition ast2
-coerceExposition = unsafeCoerce
+coerceExposition (ExposedValue n) = ExposedValue n
+coerceExposition (ExposedOp o) = ExposedOp o
+coerceExposition (ExposedType tn) = ExposedType tn
+coerceExposition (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors tn
 
 coerceExposing ::
     ( FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
@@ -96,17 +97,33 @@ coerceExposing ::
     ) =>
     Exposing ast1 ->
     Exposing ast2
-coerceExposing = unsafeCoerce
+coerceExposing ExposingAll = ExposingAll
+coerceExposing (ExposingSome e) = ExposingSome (coerceExposition <$> e)
 
 coerceImport ::
+    forall astK (ast1 :: astK) ast2.
+    ( RUnlocate ast1
+    , ASTLocate ast1 ModuleName ~ ASTLocate ast2 ModuleName
+    , FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
+    , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName
+    , FullASTQual ast1 TypeName ~ FullASTQual ast2 TypeName
+    , ASTLocate ast1 (Import' ast2) ~ ASTLocate ast2 (Import' ast2)
+    ) =>
+    Import ast1 ->
+    Import ast2
+coerceImport (Import (i :: ASTLocate ast1 (Import' ast1))) =
+    Import $
+        fmapUnlocated @astK @ast1 @(Import' ast1) @(Import' ast2) coerceImport' i
+
+coerceImport' ::
     ( ASTLocate ast1 ModuleName ~ ASTLocate ast2 ModuleName
     , FullASTQual ast1 VarName ~ FullASTQual ast2 VarName
     , FullASTQual ast1 OpName ~ FullASTQual ast2 OpName
     , FullASTQual ast1 TypeName ~ FullASTQual ast2 TypeName
     ) =>
-    Import ast1 ->
-    Import ast2
-coerceImport = unsafeCoerce
+    Import' ast1 ->
+    Import' ast2
+coerceImport' (Import' i a q e) = Import' i a q (coerceExposing e)
 
 -- Module Graph functions
 instance ASTLocate' ast ~ Located => HasDependencies (Module ast) where

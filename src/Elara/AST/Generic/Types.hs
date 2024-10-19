@@ -307,13 +307,10 @@ coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotat
 coerceValueDeclAnnotations (ValueDeclAnnotations v) = ValueDeclAnnotations (coerceInfixDeclaration <$> v)
 
 coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations v k) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) (coerceKindAnnotation k)
+coerceTypeDeclAnnotations (TypeDeclAnnotations v k) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) k
 
 coerceInfixDeclaration ::
     _ =>
     InfixDeclaration ast1 ->
     InfixDeclaration ast2
 coerceInfixDeclaration (InfixDeclaration a b) = InfixDeclaration a b
-
-coerceKindAnnotation :: _ => a -> b
-coerceKindAnnotation = coerce

@@ -5,10 +5,10 @@ This is the second main AST stage, which is very similar to the `Elara.AST.Desug
   * Let bindings have no patterns, they are desugared into lambdas
   * Def and Let declarations are merged into a single entity
 -}
+{-# OPTIONS_GHC -Wno-orphans #-} -- Since when was there a warning for orphan type families?
 module Elara.AST.Desugared where
 
 import Elara.AST.Generic
-import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located)
@@ -79,28 +79,28 @@ type instance Select "UserDefinedType" 'Desugared = MaybeQualified TypeName
 
 type instance Select "ConstructorName" 'Desugared = TypeName
 
-type DesugaredExpr = Generic.Expr 'Desugared
+type DesugaredExpr = Expr 'Desugared
 
-type DesugaredExpr' = Generic.Expr' 'Desugared
+type DesugaredExpr' = Expr' 'Desugared
 
-type DesugaredPattern = Generic.Pattern 'Desugared
+type DesugaredPattern = Pattern 'Desugared
 
-type DesugaredPattern' = Generic.Pattern' 'Desugared
+type DesugaredPattern' = Pattern' 'Desugared
 
-type DesugaredBinaryOperator = Generic.BinaryOperator 'Desugared
+type DesugaredBinaryOperator = BinaryOperator 'Desugared
 
-type DesugaredBinaryOperator' = Generic.BinaryOperator' 'Desugared
+type DesugaredBinaryOperator' = BinaryOperator' 'Desugared
 
-type DesugaredType = Generic.Type 'Desugared
+type DesugaredType = Type 'Desugared
 
-type DesugaredType' = Generic.Type' 'Desugared
+type DesugaredType' = Type' 'Desugared
 
-type DesugaredDeclaration = Generic.Declaration 'Desugared
+type DesugaredDeclaration = Declaration 'Desugared
 
-type DesugaredDeclaration' = Generic.Declaration' 'Desugared
+type DesugaredDeclaration' = Declaration' 'Desugared
 
-type DesugaredDeclarationBody = Generic.DeclarationBody 'Desugared
+type DesugaredDeclarationBody = DeclarationBody 'Desugared
 
-type DesugaredDeclarationBody' = Generic.DeclarationBody' 'Desugared
+type DesugaredDeclarationBody' = DeclarationBody' 'Desugared
 
-type DesugaredTypeDeclaration = Generic.TypeDeclaration 'Desugared
+type DesugaredTypeDeclaration = TypeDeclaration 'Desugared

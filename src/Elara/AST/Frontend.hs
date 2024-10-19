@@ -1,7 +1,9 @@
+-- Since when was there a warning for orphan type families?
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Elara.AST.Frontend where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, InfixDeclaration, Select)
-import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
@@ -74,28 +76,28 @@ type instance Select "UserDefinedType" 'Frontend = MaybeQualified TypeName
 
 type instance Select "ConstructorName" 'Frontend = TypeName
 
-type FrontendExpr = Generic.Expr 'Frontend
+type FrontendExpr = Expr 'Frontend
 
-type FrontendExpr' = Generic.Expr' 'Frontend
+type FrontendExpr' = Expr' 'Frontend
 
-type FrontendPattern = Generic.Pattern 'Frontend
+type FrontendPattern = Pattern 'Frontend
 
-type FrontendPattern' = Generic.Pattern' 'Frontend
+type FrontendPattern' = Pattern' 'Frontend
 
-type FrontendBinaryOperator = Generic.BinaryOperator 'Frontend
+type FrontendBinaryOperator = BinaryOperator 'Frontend
 
-type FrontendBinaryOperator' = Generic.BinaryOperator' 'Frontend
+type FrontendBinaryOperator' = BinaryOperator' 'Frontend
 
-type FrontendType = Generic.Type 'Frontend
+type FrontendType = Type 'Frontend
 
-type FrontendType' = Generic.Type' 'Frontend
+type FrontendType' = Type' 'Frontend
 
-type FrontendDeclaration = Generic.Declaration 'Frontend
+type FrontendDeclaration = Declaration 'Frontend
 
-type FrontendDeclaration' = Generic.Declaration' 'Frontend
+type FrontendDeclaration' = Declaration' 'Frontend
 
-type FrontendDeclarationBody = Generic.DeclarationBody 'Frontend
+type FrontendDeclarationBody = DeclarationBody 'Frontend
 
-type FrontendDeclarationBody' = Generic.DeclarationBody' 'Frontend
+type FrontendDeclarationBody' = DeclarationBody' 'Frontend
 
-type FrontendTypeDeclaration = Generic.TypeDeclaration 'Frontend
+type FrontendTypeDeclaration = TypeDeclaration 'Frontend
