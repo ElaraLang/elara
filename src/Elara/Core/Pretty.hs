@@ -8,10 +8,13 @@ import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
 import Elara.AST.VarRef
 import Elara.Core
+import Elara.Core.ANF qualified as ANF
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal qualified as Style
 import Prelude hiding (Alt, group)
+import Elara.Core.Generic (Bind(..))
+import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 
 class Pretty v => PrettyVar v where
     prettyVar ::
@@ -88,20 +91,23 @@ prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
 prettyExpr2 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr2 (Var v) = prettyVar False False v
+prettyExpr2 (Var v) = prettyVar True False v
 prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
-prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
+prettyVdefg :: (PrettyVar v, Pretty (expr v)) => Elara.Core.Generic.Bind v expr -> Doc AnsiStyle
 prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
-prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
+instance (PrettyVar v, Pretty (e v)) => Pretty (Elara.Core.Generic.Bind v e) where
+    pretty = prettyVdefg
+
+prettyVdef :: (PrettyVar v, Pretty (expr v)) => (v, expr v) -> Doc AnsiStyle
 prettyVdef (v, e) =
     group $
         vsep
             [ prettyVar True False v <+> "="
-            , indent indentDepth (prettyExpr e)
+            , indent indentDepth (pretty e)
             ]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
@@ -172,3 +178,15 @@ instance Pretty DataCon where
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case
     TypeVariable name kind -> if withKind then parens (pretty name <+> ":" <+> pretty kind) else pretty name
+
+
+-- ANF 
+
+instance Pretty (ANF.AExpr Var) where
+    pretty = prettyExpr . fromANFAtom
+
+instance Pretty (ANF.CExpr Var) where
+    pretty = prettyExpr . fromANFCExpr
+
+instance Pretty (ANF.Expr Var) where
+    pretty = prettyExpr . fromANF

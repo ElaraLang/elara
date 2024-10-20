@@ -6,6 +6,7 @@ import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (exprType)
+import Elara.Core.Generic (Bind (..))
 import Elara.Data.Unique
 import Polysemy
 
@@ -34,13 +35,15 @@ toANF' :: Member UniqueGen r => Core.CoreExpr -> (ANF.AExpr Core.Var -> Sem r (A
 toANF' (Core.Lit l) k = k $ ANF.Lit l
 toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
+toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
+toANF' (Core.Lam b e) k = toANFRec e $ \e' -> lift $ k $ ANF.Lam b (ANF.CExpr e')
 toANF' other k = evalContT $ do
     v <- lift $ makeUnique "var"
     let id = Core.Id (Local' v) (exprType other) Nothing
 
     l' <- lift $ k $ ANF.Var id
     lift $ toANFRec other $ \e -> do
-        pure $ ANF.Let (ANF.NonRecursive (id, e)) l'
+        pure $ ANF.Let (NonRecursive (id, e)) l'
 
 toANFRec ::
     Member UniqueGen r =>
@@ -57,11 +60,14 @@ toANFRec (Core.Match bind as cases) k = evalContT $ do
         e' <- toANFCont e
         pure (con, bs, ANF.AExpr e')
     k $ ANF.Match bind as cases'
-toANFRec other k = error $ "toANFRec: " <> show other
+toANFRec other k = evalContT $ do
+    y <- toANFCont other
+    k $ ANF.AExpr y
+
 
 fromANF :: ANF.Expr Core.Var -> Core.CoreExpr
-fromANF (ANF.Let (ANF.NonRecursive (b, e)) body) = Core.Let (Core.NonRecursive (b, fromANFCExpr e)) $ fromANF body
-fromANF (ANF.Let (ANF.Recursive bs) body) = Core.Let (Core.Recursive $ fromANFCExpr <<$>> bs) $ fromANF body
+fromANF (ANF.Let (NonRecursive (b, e)) body) = Core.Let (NonRecursive (b, fromANFCExpr e)) $ fromANF body
+fromANF (ANF.Let (Recursive bs) body) = Core.Let (Recursive $ fromANFCExpr <<$>> bs) $ fromANF body
 fromANF (ANF.CExpr e) = fromANFCExpr e
 
 fromANFCExpr :: ANF.CExpr Core.Var -> Core.CoreExpr

@@ -18,6 +18,7 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core.Module (CoreModule)
+import Elara.Core (CoreBind)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
@@ -60,6 +61,7 @@ import System.IO (hSetEncoding, openFile, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
+import Elara.Core.LiftClosures (runLiftClosures)
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -127,7 +129,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     for_ coreGraph $ \coreModule -> do
         putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
-        class' <- structuredDebugToLog (emitCoreModule coreModule)
+        -- class' <- structuredDebugToLog (emitCoreModule coreModule)
         pass
     -- putTextLn (showPretty class')
     -- converted <- runErrorOrReport $ fromEither $ convert class'
@@ -193,7 +195,7 @@ loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParse
         liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".desugared.elr"
     pure desugared
 
-processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph (CoreModule CoreBind))
 processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $

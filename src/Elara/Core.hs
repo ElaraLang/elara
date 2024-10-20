@@ -8,6 +8,8 @@ import Elara.TypeInfer.Unique
 import Relude.Extra (bimapF)
 import Prelude hiding (Alt)
 
+import Elara.Core.Generic qualified as G
+
 data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
     , tvKind :: ElaraKind
@@ -28,7 +30,7 @@ data Expr b
     | TyLam Type (Expr b)
     | Let (Bind b) (Expr b)
     | Match (Expr b) (Maybe b) [Alt b]
-    deriving (Show, Eq, Data, Functor, Foldable, Traversable, Typeable, Generic)
+    deriving (Show, Eq, Data, Typeable, Generic)
 
 instance Plated (Expr b) where
     plate = traversalVL $ \f -> \case
@@ -41,8 +43,8 @@ instance Plated (Expr b) where
         Let b e -> (Let <$> f' b <*> f e)
           where
             f' = \case
-                Recursive bs -> Recursive <$> traverse (traverse f) bs
-                NonRecursive (b, e) -> NonRecursive <$> ((,) b <$> f e)
+                G.Recursive bs -> G.Recursive <$> traverse (traverse f) bs
+                G.NonRecursive (b, e) -> G.NonRecursive <$> ((,) b <$> f e)
         Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
           where
             traverse3 f (a, b, c) = ((,,) a b <$> f c)
@@ -52,26 +54,7 @@ type CoreExpr = Expr Var
 type CoreAlt = Alt Var
 
 type CoreBind = Bind Var
-
-data Bind b
-    = Recursive [(b, Expr b)]
-    | NonRecursive (b, Expr b)
-    deriving (Show, Eq, Data, Functor, Foldable, Traversable, Generic)
-
-binds :: Bind b -> [(b, Expr b)]
-binds = \case
-    Recursive bs -> bs
-    NonRecursive b -> [b]
-
-mapBind :: (b -> b') -> (Expr b -> Expr b') -> Bind b -> Bind b'
-mapBind f g = \case
-    Recursive bs -> Recursive (bimapF f g bs)
-    NonRecursive (b, e) -> NonRecursive (f b, g e)
-
-traverseBind :: Applicative f => (b -> f b') -> (Expr b -> f (Expr b')) -> Bind b -> f (Bind b')
-traverseBind f g = \case
-    Recursive bs -> Recursive <$> traverse (\(b, e) -> (,) <$> f b <*> g e) bs
-    NonRecursive (b, e) -> NonRecursive <$> ((,) <$> f b <*> g e)
+type Bind b = G.Bind b Expr
 
 type Alt b = (AltCon, [b], Expr b)
 

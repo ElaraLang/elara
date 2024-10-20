@@ -15,6 +15,7 @@ import Elara.AST.StripLocation
 import Elara.AST.Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
+import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (..))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
@@ -143,7 +144,7 @@ runToCorePipeline =
         . runErrorOrReport
         . evalState primCtorSymbolTable
 
-moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r CoreModule
+moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
 moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
@@ -291,7 +292,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
-                    ( if isRecursive then Core.Recursive [(Core.Id ref t' Nothing, e1')] else Core.NonRecursive (Core.Id ref t' Nothing, e1')
+                    ( if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1')
                     )
                     e2'
         AST.Block exprs -> desugarBlock exprs

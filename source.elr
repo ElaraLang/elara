@@ -1,6 +1,4 @@
 import Prelude
 import Option
 import Elara.Prim
-
-let x = 1
-let main = println (toString (toString x))
+let makeAdder x = \y -> x y

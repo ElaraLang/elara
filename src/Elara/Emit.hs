@@ -57,8 +57,9 @@ import JVM.Data.JVMVersion
 import JVM.Data.Pretty (showPretty)
 import JVM.Data.Raw.ClassFile (Attribute (CodeAttribute))
 import Polysemy
+import Elara.Core.Generic (Bind(..))
 
-emitCoreModule :: Member StructuredDebug r => CoreModule -> Sem r ClassFile
+emitCoreModule :: Member StructuredDebug r => CoreModule CoreBind -> Sem r ClassFile
 emitCoreModule (CoreModule name decls) = do
     (clf, _) <- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -> do
         emitCoreDecl decl
@@ -66,7 +67,7 @@ emitCoreModule (CoreModule name decls) = do
 
     pure clf
 
-emitCoreDecl :: (Member ClassBuilder r, Member StructuredDebug r) => CoreDeclaration -> Sem r ()
+emitCoreDecl :: (Member ClassBuilder r, Member StructuredDebug r) => CoreDeclaration CoreBind -> Sem r ()
 emitCoreDecl decl = case decl of
     CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
         let declName = runIdentity (varRefVal name)

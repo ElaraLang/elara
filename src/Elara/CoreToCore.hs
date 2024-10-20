@@ -7,9 +7,13 @@ module Elara.CoreToCore where
 
 import Elara.AST.Name
 import Elara.AST.VarRef
-import Elara.Core (Bind (..), CoreExpr, Expr (..), Literal (..), Var (..), mapBind, traverseBind)
+import Elara.Core (Bind (..), CoreBind, CoreExpr, Expr (..), Literal (..), Var (..))
+import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
+import Elara.Data.Unique
+import Polysemy hiding (transform)
+import qualified Elara.Core.ANF as ANF
 
 type CoreExprPass = CoreExpr -> CoreExpr
 
@@ -63,12 +67,16 @@ fullCoreToCoreExpr = fix' coreToCoreExpr
     fix' f x = let x' = f x in if x == x' then x else fix' f x'
 
 -- toANF :: CoreModule -> CoreModule
+toANF' ::
+    Member UniqueGen r =>
+    CoreModule (Elara.Core.Generic.Bind Var Expr) ->
+    Sem r (CoreModule (Elara.Core.Generic.Bind Var ANF.Expr))
 toANF' (CoreModule name decls) = CoreModule name <$> traverse f decls
   where
-    f (CoreValue v) = CoreValue <$> traverseBind pure (toANF >=> pure . fromANF) v
-    f other = pure other
+    f (CoreValue v) = CoreValue <$> traverseBind pure toANF v
+    f (CoreType t) = pure (CoreType t)
 
-coreToCore :: CoreModule -> CoreModule
+coreToCore :: CoreModule CoreBind -> CoreModule CoreBind
 coreToCore (CoreModule name decls) = CoreModule name (fmap f decls)
   where
     f (CoreValue v) = CoreValue (mapBind identity fullCoreToCoreExpr v)

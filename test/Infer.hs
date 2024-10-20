@@ -172,7 +172,7 @@ typeApplications = describe "Correctly determines which type applications to add
         n <- runUnique makeUniqueTyVar
         let elaraPrimitive = Forall () () n Domain.Type (Function () (Scalar () Scalar.Text) (VariableType () n))
         -- someT : Text -> Int
-        let someT = Function () ((Scalar () Scalar.Text)) (Scalar () Scalar.Integer)
+        let someT = Function () (Scalar () Scalar.Text) (Scalar () Scalar.Integer)
         elaraPrimitive `applicableTyApp` someT === [Scalar () Scalar.Integer]
 
 modDecls mod =

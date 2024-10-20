@@ -54,6 +54,8 @@ library
       Elara.Core
       Elara.Core.Analysis
       Elara.Core.ANF
+      Elara.Core.Generic
+      Elara.Core.LiftClosures
       Elara.Core.Module
       Elara.Core.Pretty
       Elara.Core.ToANF
