@@ -240,14 +240,8 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.Constructor v -> do
             ctor <- lookupCtor v
             pure $ Core.Var (conToVar ctor)
-        AST.Lambda (Located _ vn) body -> do
-            -- figure out the type of vn from the type of the lambda
-            let extractLambdaInput (Type.Function{Type.input}) = pure input
-                extractLambdaInput (Type.Forall _ _ _ _ t) = extractLambdaInput t
-                extractLambdaInput other = throw (UnknownLambdaType other)
-            t' <- extractLambdaInput t
-
-            t'' <- typeToCore t'
+        AST.Lambda (Located _ (TypedLambdaParam (vn, t))) body -> do
+            t'' <- typeToCore t
 
             Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'' Nothing) <$> toCore body
         AST.FunctionCall e1 e2 -> do

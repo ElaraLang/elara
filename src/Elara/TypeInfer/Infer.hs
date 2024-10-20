@@ -28,9 +28,10 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Traversable (for)
-import Elara.AST.Generic (Expr (..), Expr' (..), Pattern (..), exprLocation)
+import Elara.AST.Generic (Expr (..), Expr' (..), Pattern (..), TypedLambdaParam, exprLocation)
 import Elara.AST.Generic qualified as Syntax
 import Elara.AST.Generic.Common
+import Elara.AST.Generic.Types (TypedLambdaParam (..))
 import Elara.AST.Name
 import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), sourceRegion, spanningRegion', unlocated)
 import Elara.AST.Shunted
@@ -1072,7 +1073,7 @@ infer (Syntax.Expr (Located location e0, _)) = debugWith ("infer: " <> showPrett
             pure $ Expr (Located location (Constructor cn), t)
 
         -- →I⇒
-        Syntax.Lambda name body -> do
+        Syntax.Lambda name@(Located _ (TypedLambdaParam (paramName, paramType :: Maybe ShuntedType))) body -> do
             a <- fresh
             b <- fresh
 
@@ -1083,12 +1084,16 @@ infer (Syntax.Expr (Located location e0, _)) = debugWith ("infer: " <> showPrett
             push (Context.UnsolvedType a)
             push (Context.UnsolvedType b)
 
-            body' <- scoped (Context.Annotation (mkLocal' name) input) do
+            body' <- scoped (Context.Annotation (mkLocal' (paramName <$ name)) input) do
                 check body output
+
+            whenJust paramType $ \paramType' -> do
+                -- TODO
+                pass
 
             let t = Type.Function{..}
             -- if input is unsolved, we need to create a type lambda, i.e. \(@a : Type) -> blah
-            let actualLam = Syntax.Expr (Located location (Lambda name body'), t)
+            let actualLam = Syntax.Expr (Located location (Lambda (TypedLambdaParam (paramName, input) <$ name) body'), t)
             case input of
                 Type.UnsolvedType{} -> pure actualLam
                 _ -> pure actualLam
@@ -1140,8 +1145,9 @@ infer (Syntax.Expr (Located location e0, _)) = debugWith ("infer: " <> showPrett
             push (Context.Annotation (mkLocal' name) (Type.UnsolvedType span existential))
 
             val'@(Expr (_, valType)) <-
-                infer val
+                check val (Type.UnsolvedType (val ^. exprLocation) existential)
 
+            debug $ "LetIn val type: " <> showPretty valType
             ctx <- get
 
             valType' <- Context.complete ctx valType -- I have a feeling that this will break things
@@ -1150,7 +1156,8 @@ infer (Syntax.Expr (Located location e0, _)) = debugWith ("infer: " <> showPrett
             push (Context.Annotation (mkLocal' name) valType')
 
             body'@(Expr (_, bodyType)) <- infer body
-            pure $ Expr (Located location (LetIn name NoFieldValue val' body'), bodyType)
+            let val'' = val' & _Unwrapped % _2 .~ valType'
+            pure $ Expr (Located location (LetIn name NoFieldValue val'' body'), bodyType)
         Syntax.If cond then_ else_ -> do
             -- if/elses are basically the same as matches with 2 branches
             -- in fact, later on (in ToCore) we desugar them to this!
@@ -1272,9 +1279,12 @@ check expr@(Expr (Located exprLoc _, _)) t = debugWith ("check: " <> showPretty 
     -- a desirable property!
 
     -- →I
-    check' (Syntax.Lambda name body) Type.Function{..} = scoped (Context.Annotation (mkLocal' name) input) do
+    check' (Syntax.Lambda name@(Located _ (TypedLambdaParam (paramName, paramType))) body) Type.Function{..} = scoped (Context.Annotation (mkLocal' (paramName <$ name)) input) do
+        whenJust paramType $ \paramType' -> do
+            -- TODO
+            pass
         o <- check body output
-        pure $ Expr (Located exprLoc (Lambda name o), t)
+        pure $ Expr (Located exprLoc (Lambda (TypedLambdaParam (paramName, input) <$ name) o), t)
     -- ∃I
     check' e Type.Exists{domain = Domain.Type, ..} = scopedUnsolvedType nameLocation \a -> check' e (Type.substituteType name a type_)
     -- ∀I

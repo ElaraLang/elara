@@ -16,7 +16,8 @@ import Elara.TypeInfer.Type (applicableTyApp)
 import Elara.TypeInfer.Type as Type (Type (..), structuralEq)
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Infer.Common
-import Print (printPretty)
+import Optics.Operators.Unsafe ((^?!))
+import Print (showPretty)
 import Relude.Unsafe ((!!))
 import Test.Hspec
 import Test.Hspec.Hedgehog
@@ -81,16 +82,13 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
             o -> fail o
 
     it "Infers fix-point function correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let fix = \\f -> f (fix f) in fix" "forall a b. (a -> b) -> b"
+        (t, fail) <- inferSpec "let fix = \\f -> f (fix f) in fix" "forall a. (a -> a) -> a"
+
         case t of
             Forall'
                 a
                 Domain.Type
-                ( Forall'
-                        b
-                        Domain.Type
-                        (Function' (Function' (VariableType' a') (VariableType' b')) (VariableType' b''))
-                    ) | a == a' && b == b' && b == b'' -> pass
+                ((Function' (Function' (VariableType' a') (VariableType' a'')) (VariableType' a'''))) | a == a' && a == a'' && a == a''' -> pass
             o -> fail o
 
     it "Infers polymorphic lets correctly" $ hedgehog $ do
@@ -130,6 +128,36 @@ functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (c
         case id3Decl of
             (TypeApplication _ (Function _ a b)) | a `structuralEq` b -> pass
             o -> failTypeMismatch "id" "Main.id @(a -> a)" o
+
+    it "Handles higher order foralls correctly" $ hedgehog $ do
+        (typedR, fail) <- inferSpecWithExpr "let r = \\f -> f 1 in r" "forall a. (Int -> a) -> a"
+        let t = stripLocation $ typeOf typedR
+        case t of
+            Forall' a Domain.Type (Function' (Function' (Scalar' Scalar.Integer) (VariableType' a')) (VariableType' a'')) | a == a' && a == a'' -> do
+                -- we also need to check that f : Int -> a, NOT f : forall b. Int -> b
+                let fType =
+                        typedR
+                            ^?! _Unwrapped
+                            % _1
+                            % unlocated
+                            % _Ctor' @"LetIn"
+                            % _3
+                            % _Unwrapped
+                            % _1
+                            % unlocated
+                            % _Ctor' @"Lambda"
+                            % _1
+                            % unlocated
+                            % _Unwrapped
+                            % _2
+                            % to stripLocation
+
+                case fType of
+                    Function' (Scalar' Scalar.Integer) (VariableType' a''') | a == a''' -> pass
+                    o -> do
+                        error (showPretty (o, t))
+                        failTypeMismatch "f" "Int -> a" o
+            o -> fail o
 
 typeApplications :: Spec
 typeApplications = describe "Correctly determines which type applications to add" $ do

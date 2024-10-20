@@ -10,7 +10,7 @@ module Elara.AST.Typed where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Elara.AST.Generic (ASTLocate', ASTQual, Select)
+import Elara.AST.Generic (ASTLocate', ASTQual, Select, TypedLambdaParam)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName (..), VarName)
@@ -30,7 +30,7 @@ type instance ASTQual 'Typed = Qualified
 -- Selections for 'Expr'
 type instance Select "ExprType" 'Typed = Type SourceRegion
 
-type instance Select "LambdaPattern" 'Typed = Unique VarName
+type instance Select "LambdaPattern" 'Typed = TypedLambdaParam (Unique VarName) 'Typed
 
 type instance Select "LetPattern" 'Typed = NoFieldValue
 

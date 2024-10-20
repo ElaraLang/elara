@@ -107,6 +107,7 @@ library
       Elara.TypeInfer.Error
       Elara.TypeInfer.Existential
       Elara.TypeInfer.Infer
+      Elara.TypeInfer.Kind
       Elara.TypeInfer.Monotype
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique

@@ -29,7 +29,7 @@ type instance ASTQual 'Shunted = Qualified
 -- Selections for 'Expr'
 type instance Select "ExprType" 'Shunted = Maybe ShuntedType
 
-type instance Select "LambdaPattern" 'Shunted = Unique VarName
+type instance Select "LambdaPattern" 'Shunted = TypedLambdaParam (Unique VarName) 'Shunted
 
 type instance Select "LetPattern" 'Shunted = NoFieldValue
 

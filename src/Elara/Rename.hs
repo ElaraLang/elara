@@ -492,6 +492,9 @@ renameTypeDeclaration thisMod (ADT constructors) = do
             constructors
     pure $ ADT constructors'
 
+renameSimpleType :: InnerRename r => DesugaredType -> Sem r RenamedType
+renameSimpleType = traverseOf (_Unwrapped % _1 % unlocated) (renameType False)
+
 -- | Renames a type, qualifying type constructors and type variables where necessary
 renameType ::
     InnerRename r =>
@@ -718,9 +721,11 @@ For example,
  @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
 renameLambda :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
-renameLambda p e = do
+renameLambda p@((Pattern (_, argType))) e = do
     (arg, match) <- patternToMatch p e
-    pure (Lambda arg match)
+    argType' <- traverse renameSimpleType argType
+    let arg' = fmap (\arg -> (arg, argType')) arg
+    pure (Lambda (TypedLambdaParam <$> arg') match)
 
 desugarBlock :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => NonEmpty DesugaredExpr -> Sem r RenamedExpr
 desugarBlock (e@(Expr' (Let{})) :| []) = do

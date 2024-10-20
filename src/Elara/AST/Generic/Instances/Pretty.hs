@@ -205,7 +205,10 @@ prettyExpr' (Char c) = scalar ("'" <> escapeChar c <> "'")
 prettyExpr' Unit = scalar "()"
 prettyExpr' (Var v) = varName (pretty v)
 prettyExpr' (Constructor c) = typeName (pretty c)
-prettyExpr' (Lambda ps e) = prettyLambdaExpr (fieldToList @(ASTLocate ast (Select "LambdaPattern" ast)) ps :: [lambdaPatterns]) (prettyExpr e)
+prettyExpr' (Lambda ps e) =
+    prettyLambdaExpr
+        (fieldToList @(ASTLocate ast (Select "LambdaPattern" ast)) ps :: [lambdaPatterns])
+        (prettyExpr e)
 prettyExpr' (FunctionCall e1 e2) = prettyFunctionCallExpr e1 e2 False
 prettyExpr' (TypeApplication e1 e2) = prettyFunctionCall e1 ("@" <> parens (pretty e2))
 prettyExpr' (If e1 e2 e3) = prettyIfExpr (prettyExpr e1) (prettyExpr e2) (prettyExpr e3)
@@ -304,3 +307,15 @@ instance RUnlocate (ast :: b) => Pretty (InfixDeclaration ast) where
             NonAssoc -> "infix"
         )
             <+> pretty @Int (rUnlocate @b @ast prec)
+
+instance
+    ( Pretty v
+    , ToMaybe (Select "PatternType" ast) (Maybe pt)
+    , pt ~ UnwrapMaybe (Select "PatternType" ast)
+    , Pretty pt
+    ) =>
+    Pretty (TypedLambdaParam v ast)
+    where
+    pretty (TypedLambdaParam (v, t)) = case toMaybe t of
+        Just t' -> pretty v <+> ":" <+> pretty @pt t'
+        Nothing -> pretty v

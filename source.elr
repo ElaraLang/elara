@@ -1,4 +1,4 @@
 import Prelude
 import Option
 import Elara.Prim
-let makeAdder x = \y -> x y
+let bbb = let r = \f -> f in r

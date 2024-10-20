@@ -20,6 +20,8 @@ module Prelude (
     transform,
     transformOf',
     concatMapOf,
+    AsConstructor (..),
+    AsConstructor' (..),
 )
 where
 
@@ -30,9 +32,9 @@ import Polysemy.State (State, get, put)
 import Relude hiding (Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
 import Relude qualified (id)
 
-import Data.Function ((&))
-
 import Data.Data (Data)
+import Data.Function ((&))
+import Data.Generics.Sum
 import Optics (
     A_Fold,
     AffineTraversal,

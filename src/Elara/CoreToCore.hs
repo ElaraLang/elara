@@ -68,7 +68,7 @@ fullCoreToCoreExpr = fix' coreToCoreExpr
 
 -- toANF :: CoreModule -> CoreModule
 toANF' ::
-    Member UniqueGen r =>
+    ToANF r =>
     CoreModule (Elara.Core.Generic.Bind Var Expr) ->
     Sem r (CoreModule (Elara.Core.Generic.Bind Var ANF.Expr))
 toANF' (CoreModule name decls) = CoreModule name <$> traverse f decls

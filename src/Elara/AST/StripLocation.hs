@@ -11,6 +11,9 @@ class StripLocation a b where
 instance {-# INCOHERENT #-} StripLocation a a where
     stripLocation = identity
 
+instance StripLocation s () where
+    stripLocation _ = ()
+
 instance StripLocation (Located a) a where
     stripLocation :: Located a -> a
     stripLocation (Located _ a) = a

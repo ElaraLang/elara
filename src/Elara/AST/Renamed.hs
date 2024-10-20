@@ -20,7 +20,7 @@ type instance ASTQual 'Renamed = Qualified
 -- Selections for 'Expr'
 type instance Select "ExprType" 'Renamed = Maybe RenamedType
 
-type instance Select "LambdaPattern" 'Renamed = Unique VarName
+type instance Select "LambdaPattern" 'Renamed = TypedLambdaParam (Unique VarName) 'Renamed
 
 type instance Select "LetPattern" 'Renamed = NoFieldValue
 

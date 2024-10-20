@@ -40,10 +40,8 @@ import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core as Core
 import Elara.Core.Module
-import Elara.Data.Pretty (prettyToText)
 import Elara.Emit.Utils (createModuleName, generateFieldType)
 import Elara.Logging
-import Elara.Prim.Core
 import JVM.Data.Abstract.Builder (ClassBuilder, addField, addMethod, runClassBuilder)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit', runCodeBuilder)
 import JVM.Data.Abstract.ClassFile
@@ -54,8 +52,6 @@ import JVM.Data.Abstract.Instruction
 import JVM.Data.Abstract.Type
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.JVMVersion
-import JVM.Data.Pretty (showPretty)
-import JVM.Data.Raw.ClassFile (Attribute (CodeAttribute))
 import Polysemy
 import Elara.Core.Generic (Bind(..))
 

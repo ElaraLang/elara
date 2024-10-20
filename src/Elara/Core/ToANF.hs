@@ -8,7 +8,10 @@ import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (exprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Unique
+import Elara.Logging (StructuredDebug, debugWith)
 import Polysemy
+import Print (showPretty)
+import Elara.Data.Pretty
 
 {- | Convert a Core expression to ANF
 For example:
@@ -25,19 +28,23 @@ becomes:
 -- toANF :: Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 -- toANF expr = (toANF' expr pure)
 
-toANF :: Member UniqueGen r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
-toANF expr = toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
+type ToANF r = (Members [UniqueGen, StructuredDebug] r, Pretty (Core.Expr Core.Var))
 
-toANFCont :: Member UniqueGen r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
+toANF :: (ToANF r) => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
+toANF expr =
+    debugWith ("toANF " <> showPretty expr) $
+        toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
+
+toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
 toANFCont e = ContT $ \k -> toANF' e k
 
-toANF' :: Member UniqueGen r => Core.CoreExpr -> (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) -> Sem r (ANF.Expr Core.Var)
+toANF' :: ToANF r => Core.CoreExpr -> (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) -> Sem r (ANF.Expr Core.Var)
 toANF' (Core.Lit l) k = k $ ANF.Lit l
 toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
 toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
 toANF' (Core.Lam b e) k = toANFRec e $ \e' -> lift $ k $ ANF.Lam b (ANF.CExpr e')
-toANF' other k = evalContT $ do
+toANF' other k = debugWith ("toANF' " <> showPretty other <>": ") $ evalContT $ do
     v <- lift $ makeUnique "var"
     let id = Core.Id (Local' v) (exprType other) Nothing
 
@@ -46,7 +53,7 @@ toANF' other k = evalContT $ do
         pure $ ANF.Let (NonRecursive (id, e)) l'
 
 toANFRec ::
-    Member UniqueGen r =>
+    ToANF r =>
     Core.Expr Core.Var ->
     (ANF.CExpr Core.Var -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.Expr Core.Var)) ->
     Sem r (ANF.Expr Core.Var)
@@ -60,9 +67,10 @@ toANFRec (Core.Match bind as cases) k = evalContT $ do
         e' <- toANFCont e
         pure (con, bs, ANF.AExpr e')
     k $ ANF.Match bind as cases'
-toANFRec other k = evalContT $ do
-    y <- toANFCont other
-    k $ ANF.AExpr y
+toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
+    e' <- toANFCont e
+    body' <- toANFCont body
+    pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
 
 
 fromANF :: ANF.Expr Core.Var -> Core.CoreExpr

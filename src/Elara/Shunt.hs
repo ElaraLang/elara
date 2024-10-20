@@ -285,7 +285,10 @@ shuntExpr (Expr (le, t)) = do
     shuntExpr' Unit = pure Unit
     shuntExpr' (Var v) = pure (Var v)
     shuntExpr' (Constructor v) = pure (Constructor v)
-    shuntExpr' (Lambda n e) = Lambda n <$> fixExpr e
+    shuntExpr' (Lambda n e) = do
+        e' <- fixExpr e
+        n' <- traverseOf unlocated (\(TypedLambdaParam (v, t)) -> pure $ TypedLambdaParam (v, coerceType <$> t)) n
+        pure (Lambda n' e')
     shuntExpr' (FunctionCall f x) = FunctionCall <$> fixExpr f <*> fixExpr x
     shuntExpr' (TypeApplication e t) = TypeApplication <$> fixExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
@@ -306,16 +309,13 @@ shuntExpr (Expr (le, t)) = do
                     let z = case inName of
                             Global (Located l' (Qualified (VarName n) m)) ->
                                 Var
-                                    ( Located l' (Global (Located l' (Qualified (NormalVarName n) m)))
-                                    )
+                                    (Located l' (Global (Located l' (Qualified (NormalVarName n) m))))
                             Global (Located l' (Qualified (ConName n) m)) ->
                                 Constructor
-                                    ( Located l' (Qualified n m)
-                                    )
+                                    (Located l' (Qualified n m))
                             Local (Located l' (Unique (VarName n) i)) ->
                                 Var
-                                    ( Located l' (Local (Located l' (Unique (NormalVarName n) i)))
-                                    )
+                                    (Located l' (Local (Located l' (Unique (NormalVarName n) i))))
                             Local (Located _ (Unique (ConName _1) _)) -> error "Shouldn't have local con names"
                     z `withLocationOf` (operator ^. _Unwrapped)
 

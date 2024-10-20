@@ -25,12 +25,12 @@ import Elara.Pipeline (PipelineRes, finalisePipeline)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (rename, renameExpr, runRenamePipeline)
 import Elara.Shunt (runShuntPipeline, shunt, shuntExpr)
-import Elara.TypeInfer (completeExpression, inferExpression, inferModule, runInferPipeline)
+import Elara.TypeInfer (completeExpression, inferExpression, inferModule, runInferPipeline, inferFreshExpression)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Error
 import Elara.TypeInfer.Infer qualified as Infer
+import Elara.TypeInfer.Monotype (Scalar)
 import Elara.TypeInfer.Type (Type (..))
-import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
 import Hedgehog
 import Hedgehog.Internal.Property (failWith)
@@ -46,6 +46,9 @@ pattern Forall' name domain t = Forall () () name domain t
 
 pattern Function' :: Type () -> Type () -> Type ()
 pattern Function' a b = Function () a b
+
+pattern Scalar' :: Scalar -> Type ()
+pattern Scalar' s = Scalar () s
 
 pattern VariableType' :: UniqueTyVar -> Type ()
 pattern VariableType' name = VariableType () name
@@ -71,7 +74,7 @@ inferFully source = finalisePipeline . runInferPipeline . runShuntPipeline . run
                     renameExpr desugared
             )
     shunted <- runReader mempty $ shuntExpr renamed
-    inferExpression shunted Nothing >>= completeInference
+    inferFreshExpression shunted >>= completeInference
 
 inferModuleFully :: ToString a => a -> PipelineRes (Module Typed, Map (Qualified Name) (Type SourceRegion))
 inferModuleFully source = finalisePipeline . runInferPipeline . runShuntPipeline . runParsePipeline . runLexPipeline $ do
@@ -97,17 +100,23 @@ typeOf' msg = do
     y <- diagShouldSucceed x
     pure $ stripLocation $ typeOf y
 
-failTypeMismatch :: (Pretty a1, MonadTest m) => String -> String -> a1 -> m a2
+failTypeMismatch :: (Pretty a1, MonadTest m, Show a1) => String -> String -> a1 -> m a2
 failTypeMismatch name expected actual =
     withFrozenCallStack $
         failWith
             Nothing
-            ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual))
+            ("Expected " <> name <> " to have type " <> expected <> " but was " <> toString (showPretty actual) <> " (" <> show actual <> ")")
 
-inferSpec :: (MonadIO m, Pretty a1, MonadTest m) => Text -> String -> m (Type (), a1 -> m a2)
+inferSpec :: (MonadIO m, Pretty a1, MonadTest m, Show a1) => Text -> String -> m (Type (), a1 -> m a2)
 inferSpec code expected = do
     t' <- typeOf' code
     pure (t', failTypeMismatch (toString code) expected)
+
+inferSpecWithExpr :: (MonadIO m, Pretty a1, MonadTest m, Show a1) => Text -> String -> m (TypedExpr, a1 -> m a2)
+inferSpecWithExpr code expected = do
+    x <- liftIO $ inferFully code
+    y <- diagShouldSucceed x
+    pure (y, failTypeMismatch (toString code) expected)
 
 inferShouldFail :: MonadIO m => Text -> m ()
 inferShouldFail code = do

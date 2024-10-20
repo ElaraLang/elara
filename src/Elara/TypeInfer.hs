@@ -3,6 +3,7 @@
 
 module Elara.TypeInfer where
 
+import Data.Containers.ListUtils (nubOrd)
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
@@ -27,7 +28,7 @@ import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (fullListName)
 import Elara.TypeInfer.Context
@@ -36,6 +37,7 @@ import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Error (TypeInferenceError (..))
 import Elara.TypeInfer.Infer hiding (get)
 import Elara.TypeInfer.Infer qualified as Infer
+import Elara.TypeInfer.Kind
 import Elara.TypeInfer.Monotype qualified as Mono
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Infer
@@ -43,6 +45,7 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
+import Elara.AST.StripLocation (StripLocation(..))
 
 type InferPipelineEffects = '[StructuredDebug, State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
@@ -160,64 +163,26 @@ inferDeclaration (Declaration ld) = do
                 let ann' = TypeDeclAnnotations{infixTypeDecl = coerceInfixDeclaration <$> ann.infixTypeDecl, kindAnn = kind}
                 pure $ TypeDeclaration tvs (Located sr (ADT ctors')) ann'
 
+inferFreshExpression ::
+    Members InferPipelineEffects r => ShuntedExpr -> Sem r TypedExpr
+inferFreshExpression e = do
+    -- if no expected type is given, we create a fresh type variable
+    -- this is useful for top-level declarations, where we don't know the type yet
+    -- but we still want to infer it
+    f <- fresh
+    let y = Infer.UnsolvedType (e ^. exprLocation) f
+    push (UnsolvedType f)
+    inferExpression e (Just y)
+
 inferExpression :: Members InferPipelineEffects r => ShuntedExpr -> Maybe (Type SourceRegion) -> Sem r TypedExpr
 inferExpression e Nothing = infer e
 inferExpression e (Just expectedType) = do
-    (Expr (l, _)) <- check e expectedType
-    pure (Expr (l, expectedType))
+    (Expr (l, f)) <- check e expectedType
+    pure (Expr (l, f))
 
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
-universallyQuantify :: [Located (Unique LowerAlphaName)] -> Infer.Type SourceRegion -> Infer.Type SourceRegion
-universallyQuantify [] x = x
-universallyQuantify (Located sr u : us) t =
-    Infer.Forall sr sr (fmap (Just . nameText) u) Domain.Type (universallyQuantify us t)
-
--- | Like 'astTypeToInferType' but universally quantifies over the free type variables
-astTypeToInferPolyType :: (HasCallStack, Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
-astTypeToInferPolyType l = first (universallyQuantify (freeTypeVars l)) <$> astTypeToInferType l
-
-astTypeToInferType :: forall r. HasCallStack => (Member (State Status) r, Member (Error TypeInferenceError) r) => KindedType -> Sem r (Infer.Type SourceRegion, ElaraKind)
-astTypeToInferType lt@(Generic.Type (Located sr ut, kind)) = astTypeToInferType' ut
-  where
-    astTypeToInferType' :: KindedType' -> Sem r (Infer.Type SourceRegion, ElaraKind)
-    astTypeToInferType' (TypeVar l) = pure (Infer.VariableType sr (l ^. unlocated % to (fmap (Just . nameText))), kind)
-    astTypeToInferType' UnitType = pure (Infer.Scalar sr Mono.Unit, kind)
-    astTypeToInferType' (UserDefinedType n) = do
-        ctx <- Infer.get
-        case Context.lookup (mkGlobal' n) ctx of
-            Just ty -> pure (ty, kind)
-            Nothing -> throw (UserDefinedTypeNotInContext sr lt ctx)
-    astTypeToInferType' (FunctionType a b) = do
-        (a', _) <- astTypeToInferType a
-        (b', _) <- astTypeToInferType b
-        pure (Infer.Function sr a' b', kind)
-    astTypeToInferType' (ListType ts) = do
-        (ts', _) <- astTypeToInferType ts
-        pure (Infer.Custom sr fullListName [ts'], kind)
-    astTypeToInferType' (TypeConstructorApplication ctor arg) = do
-        (ctor', _) <- astTypeToInferType ctor
-        (arg', _) <- astTypeToInferType arg
-
-        -- apply the type argument to the constructor
-        -- this will discharge one single forall and one single function arrow
-        let applyTypeArg ctor'' arg'' = base
-              where
-                base = case ctor'' of
-                    Infer.Custom{conName = ctorName, ..} -> Infer.Custom sr ctorName (typeArguments ++ [arg''])
-                    Infer.Function{output} -> output
-                    Infer.Forall{..} ->
-                        -- apply a substitution to the forall
-                        Infer.substituteType name arg'' (rec' type_)
-                    other -> error (showPretty (other, arg''))
-                rec' ctor'' = case ctor'' of
-                    Infer.Function{output} -> output
-                    Infer.Forall{type_, ..} -> Infer.Forall{type_ = rec' type_, ..}
-                    other -> other
-
-        pure (applyTypeArg ctor' arg', kind)
-    astTypeToInferType' other = error (showColored other)
 
 completeExpression ::
     forall r.
@@ -225,38 +190,47 @@ completeExpression ::
     Context SourceRegion ->
     TypedExpr ->
     Sem r TypedExpr
-completeExpression ctx (Expr (y', t)) = do
-    completed <- quantify <$> complete ctx t
-    unify t completed
+completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> showPretty (y', t)) $ do
+    complete' <- complete ctx t
+    debug ("complete: " <> showPretty (complete'))
+    unify t complete'
 
     ctx' <- Infer.getAll
+    let graph = simplifyContext (stripLocation ctx')
+
+    debug ("completeExpression ctx': " <> showPretty (nubOrd ctx'))
     y'' <-
         traverseOf
             unlocated
             ( \case
                 TypeApplication f t' -> TypeApplication f <$> complete ctx' t'
+                Lambda p e -> do
+                    -- stupid
+                    p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> complete ctx' t) p
+                    pure (Lambda p' e)
                 o -> pure o
             )
             y'
-    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y'', completed))
+    debug ("completeExpressionDone: " <> showPretty (y'', complete'))
+    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y'', complete'))
     traverseOf gplate (completePattern ctx') completedExprs
   where
     completePattern :: HasCallStack => Context SourceRegion -> TypedPattern -> Sem r TypedPattern
     completePattern ctx (Pattern (p', t)) = do
-        completed <- quantify <$> complete ctx t
+        completed <- complete ctx t
         wellFormedType ctx completed
         unify t completed
         ctx' <- Infer.getAll
         traverseOf gplate (completePattern ctx') (Pattern (p', completed))
 
-    -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
-    -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
-    quantify :: Type SourceRegion -> Type SourceRegion
-    quantify fa@(Infer.Forall{}) = fa
-    quantify x = do
-        let ftvs = Infer.freeTypeVars x
+    -- -- If type variables are explicitly added by the user, the algorithm doesn't re-add the forall in 'complete' (which is supposedly correct,
+    -- -- as the types are considered "solved" in the context). However, we need to add the forall back in the final type.
+    -- quantify :: Type SourceRegion -> Type SourceRegion
+    -- quantify fa@(Infer.Forall{}) = fa
+    -- quantify x = do
+    --     let ftvs = Infer.freeTypeVars x
 
-        foldr (\(Located l tv) acc -> Infer.Forall l l tv Domain.Type acc) x ftvs
+    --     foldr (\(Located l tv) acc -> Infer.Forall l l tv Domain.Type acc) x ftvs
     {-
     Unifies completed types with unsolved ones. It assumes that the types are of the same shape, excluding quantifiers.
 
@@ -268,25 +242,78 @@ completeExpression ctx (Expr (y', t)) = do
         - a? = a
         - b? = b
 
+
+    Unification can get complex as it has to fully traverse down the "tree" of solved types:
+    Consider the context
+    @
+    k = l?
+    , ➤ k: Type
+    , r_1: forall _9 . _9 -> _9
+    , g = f?
+    , f = h?
+    , r_1: e?
+    , e = h? -> i?
+    , h = i?
+    , i?
+    , Main.bbb: d?
+    , d = l? -> m?
+    , l = m?
+    , m?
+    @
+
+    and suppose we want to solve the type @f@:
+    @
+    f = h?
+    h = i?
+    i?
+    @
+    Initially, one might think that we would get stuck here, as we don't know what @i@ is. 
+    However, we can figure out a lot more if we use the other parts of the context:
+    @
+    r_1 : forall _9 . _9 -> _9
+    r_1 : e?
+    -------------------------
+    e = forall _9 . _9 -> _9
+
+    e = h? -> i?
+    h? = i?
+    ------------
+    e = i? -> i
+
+    e = i? -> i?
+    e = forall _9 . _9 -> _9
+    ------------------------
+    i = _9
+    @
     -}
     unify :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    unify unsolved solved = case (Infer.stripForAll unsolved, Infer.stripForAll solved) of
-        (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
-            subst unsolvedInput solvedInput
-            unify unsolvedInput solvedInput
-            subst unsolvedOutput solvedOutput
-            unify unsolvedOutput solvedOutput
-        (Infer.VariableType{}, out) -> subst unsolved out
-        (Infer.UnsolvedType{}, out) -> subst unsolved out
-        (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
-        (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
-        other -> error (showPretty other)
+    unify unsolved solved | unsolved == solved = pass
+    unify unsolved solved = debugWith ("unify: " <> showPretty (unsolved, solved)) $
+        case (Infer.stripForAll unsolved, Infer.stripForAll solved) of
+            (Infer.Function{input = unsolvedInput, output = unsolvedOutput}, Infer.Function{input = solvedInput, output = solvedOutput}) -> do
+                subst unsolvedInput solvedInput
+                unify unsolvedInput solvedInput
+                subst unsolvedOutput solvedOutput
+                unify unsolvedOutput solvedOutput
+            (Infer.VariableType{}, out) -> subst unsolved out
+            (Infer.UnsolvedType{}, out) -> do 
+                subst unsolved out
+                ctx <- Infer.getAll
+                debug ("unifySolved: " <> showPretty (Context.solveType ctx unsolved, Context.solveType ctx out))
+            (Infer.Scalar{}, Infer.Scalar{}) -> pass -- Scalars are always the same
+            (Infer.Custom{typeArguments = unsolvedArgs}, Infer.Custom{typeArguments = solvedArgs}) -> traverse_ (uncurry unify) (zip unsolvedArgs solvedArgs)
+            other -> error (showPretty other)
 
     subst :: Type SourceRegion -> Type SourceRegion -> Sem r ()
-    subst Infer.UnsolvedType{existential} solved = do
+    subst t@Infer.UnsolvedType{existential} solved = do
         let annotation = SolvedType existential (toMonoType solved)
+        debug ("subst: " <> showPretty annotation)
+        ctx <- Infer.get
+        let solvedT = Context.solveType ctx t
         push annotation
-    subst _ _ = pass
+        ctx <- Infer.get
+        unify solvedT (Context.solveType ctx t)
+    subst a b = debug ("subst!: " <> showPretty (a, b))
 
     toMonoType :: Type SourceRegion -> Mono.Monotype
     toMonoType = \case

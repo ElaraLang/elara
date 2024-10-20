@@ -1,8 +1,1 @@
 module Elara.Prim
-
-
-def println : String -> IO ()
-let println = elaraPrimitive "println"
-
-def toString : a -> String
-let toString = elaraPrimitive "toString"
