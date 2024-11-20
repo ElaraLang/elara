@@ -23,24 +23,30 @@ module Elara.TypeInfer.Context (
     solveType,
     solveRecord,
     complete,
-    SolvedTypeEntry (..),
     ContextGraph (..),
     simplifyContext,
+    unifyContextGraph,
+    solveFromGraph,
+    graphToContext,
 )
 where
 
+import Algebra.Graph qualified as Algebraic.Graph
+import Algebra.Graph.Export.Dot (defaultStyle, defaultStyleViaShow, export, exportAsIs, exportViaShow)
+import Algebra.Graph.ToGraph (reachable)
+import Algebra.Graph.Undirected hiding (Context)
 import Control.Monad qualified as Monad
-import Data.Graph (Graph)
+import Data.Generics.Sum (AsAny (_As))
 import Data.List (groupBy)
 import Data.List.NonEmpty (groupAllWith)
 import Data.List.NonEmpty qualified as NE
 import Elara.AST.Name (Name)
 import Elara.AST.StripLocation (StripLocation (..))
 import Elara.AST.VarRef (IgnoreLocVarRef)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..))
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (..), prettyToUnannotatedText)
 import Elara.Data.Pretty.Styles (label, operator, punctuation)
-import Elara.Data.TopologicalGraph (HasDependencies (..), TopologicalGraph, addNode, createGraph, moduleFromName, replaceNode, replaceNodeAt)
 import Elara.Data.Unique (UniqueGen)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Elara.TypeInfer.Domain (Domain)
 import Elara.TypeInfer.Domain qualified as Domain
 import Elara.TypeInfer.Existential (Existential)
@@ -49,8 +55,12 @@ import Elara.TypeInfer.Monotype qualified as Monotype
 import Elara.TypeInfer.Type (Type)
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique
+import Optics (hasn't)
 import Polysemy
+import Polysemy.State
 import Prettyprinter qualified as Pretty
+import Print (debugPretty, showPretty)
+import Prelude hiding (empty)
 
 {- $setup
 
@@ -300,7 +310,7 @@ solveRecord context oldFields = newFields
    * Adding universal quantifiers for all unsolved entries in the `Context`
 -}
 complete :: Member UniqueGen r => Context s -> Type s -> Sem r (Type s)
-complete context type0 = Monad.foldM snoc (type0) context
+complete context type0 = Monad.foldM snoc type0 context
   where
     snoc t (SolvedType a τ) = pure (Type.solveType a τ t)
     snoc t (SolvedFields a r) = pure (Type.solveFields a r t)
@@ -411,23 +421,73 @@ discardUpToExcluding entry0 (entry1 : _Γ)
     | otherwise = entry1 : discardUpToExcluding entry0 _Γ
 discardUpToExcluding _ [] = []
 
-newtype ContextGraph s = ContextGraph (TopologicalGraph (SolvedTypeEntry s))
-    deriving (Pretty, Show)
+-- newtype ContextGraph s = ContextGraph (TopologicalGraph (SolvedTypeEntry s))
+--     deriving (Pretty, Show)
 
-simplifyContext :: Context () -> ContextGraph ()
-simplifyContext context = (ContextGraph . addAnnotations . createGraph . mapMaybe toEntry) $ context
+-- simplifyContext :: Context () -> ContextGraph ()
+-- simplifyContext context = (ContextGraph . addAnnotations . createGraph . mapMaybe toEntry) $ context
+--   where
+--     toEntry :: Entry () -> Maybe (SolvedTypeEntry ())
+--     toEntry entry = case entry of
+--         SolvedType a τ -> Just (SolvedTypeEntry (Type.fromMonotype τ, [Type.fromMonotype $ Monotype.UnsolvedType a]))
+--         _ -> Nothing
+
+--     addAnnotations :: TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
+--     addAnnotations graph = foldr addAnnotationsForEQ graph annotations
+--       where
+--         annotations = groupAnnotations $ mapMaybe toAnnotation context
+
+--         toAnnotation :: Entry () -> Maybe ((IgnoreLocVarRef Name), (Type ()))
+--         toAnnotation = preview (_Ctor' @"Annotation")
+
+--         groupAnnotations :: [(IgnoreLocVarRef Name, Type ())] -> [(IgnoreLocVarRef Name, NonEmpty (Type ()))]
+--         groupAnnotations [] = []
+--         groupAnnotations ((k, v) : xs) = (k, v :| map snd ys) : groupAnnotations zs
+--           where
+--             (ys, zs) = span ((== k) . fst) xs
+
+--         -- Add annotations for a group of annotations with the same key
+--         -- this essentially adds an edge between every type in the group in
+--         addAnnotationsForEQ :: (IgnoreLocVarRef Name, NonEmpty (Type ())) -> TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
+--         addAnnotationsForEQ (name, types) graph = foldr addEdgeForType graph types
+--           where
+--             addEdgeForType :: Type () -> TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
+--             addEdgeForType t g =
+--                 let others = NE.filter (/= t) types
+--                  in case moduleFromName t g of
+--                         Nothing -> addNode (SolvedTypeEntry (t, others)) g
+--                         Just (SolvedTypeEntry (a, bs)) -> replaceNodeAt t (SolvedTypeEntry (t, others ++ bs)) g
+
+-- newtype SolvedTypeEntry s = SolvedTypeEntry (Type s, [Type s])
+--     deriving (Eq, Pretty, Show, Ord)
+
+-- instance Ord s => HasDependencies (SolvedTypeEntry s) where
+--     type Key (SolvedTypeEntry s) = Type s
+
+--     keys :: SolvedTypeEntry s -> NonEmpty (Type s)
+--     keys (SolvedTypeEntry (b, _)) = b :| []
+
+--     dependencies :: SolvedTypeEntry s -> [Type s]
+--     dependencies (SolvedTypeEntry (_, extraDeps)) = extraDeps
+
+newtype ContextGraph = ContextGraph (Graph (Type ())) deriving (Show, Pretty)
+
+instance (Show s, Ord s) => Pretty (Graph (Type s)) where
+    pretty graph = pretty @Text $ export (defaultStyle prettyToUnannotatedText) $ fromUndirected graph
+
+simplifyContext :: Context () -> ContextGraph
+simplifyContext context = ContextGraph $ addAnnotationEdges $ foldMap toEntry context
   where
-    toEntry :: Entry () -> Maybe (SolvedTypeEntry ())
     toEntry entry = case entry of
-        SolvedType a τ -> Just (SolvedTypeEntry (Type.fromMonotype τ, [Type.fromMonotype $ Monotype.UnsolvedType a]))
-        _ -> Nothing
+        SolvedType a τ -> let a' = Type.UnsolvedType () a in let τ' = Type.fromMonotype τ in edge a' τ'
+        _ -> empty
 
-    addAnnotations :: TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
-    addAnnotations graph = foldr addAnnotationsForEQ graph annotations
+    addAnnotationEdges :: Graph (Type ()) -> Graph (Type ())
+    addAnnotationEdges graph = foldr addAnnotationEdge graph annotations
       where
         annotations = groupAnnotations $ mapMaybe toAnnotation context
 
-        toAnnotation :: Entry () -> Maybe ((IgnoreLocVarRef Name), (Type ()))
+        toAnnotation :: Entry () -> Maybe (IgnoreLocVarRef Name, Type ())
         toAnnotation = preview (_Ctor' @"Annotation")
 
         groupAnnotations :: [(IgnoreLocVarRef Name, Type ())] -> [(IgnoreLocVarRef Name, NonEmpty (Type ()))]
@@ -436,26 +496,88 @@ simplifyContext context = (ContextGraph . addAnnotations . createGraph . mapMayb
           where
             (ys, zs) = span ((== k) . fst) xs
 
-        -- Add annotations for a group of annotations with the same key
-        -- this essentially adds an edge between every type in the group in
-        addAnnotationsForEQ :: (IgnoreLocVarRef Name, NonEmpty (Type ())) -> TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
-        addAnnotationsForEQ (name, types) graph = foldr addEdgeForType graph types
+        addAnnotationEdge :: (IgnoreLocVarRef Name, NonEmpty (Type ())) -> Graph (Type ()) -> Graph (Type ())
+        addAnnotationEdge (name, types) graph = foldr addEdgeForType graph types
           where
-            addEdgeForType :: Type () -> TopologicalGraph (SolvedTypeEntry ()) -> TopologicalGraph (SolvedTypeEntry ())
+            addEdgeForType :: Type () -> Graph (Type ()) -> Graph (Type ())
             addEdgeForType t g =
                 let others = NE.filter (/= t) types
-                 in case moduleFromName t g of
-                        Nothing -> addNode (SolvedTypeEntry (t, others)) g
-                        Just (SolvedTypeEntry (a, bs)) -> replaceNodeAt t (SolvedTypeEntry (t, others ++ bs)) g
+                 in foldr (overlay . edge t) g others
 
-newtype SolvedTypeEntry s = SolvedTypeEntry (Type s, [Type s])
-    deriving (Eq, Pretty, Show)
+{- | "Unifies" a `ContextGraph`
+This is the core functionality of unifying a context and works by unifying neighbours of nodes
+For example, consider the following context:
+@
+(h? -> i?) <-> e <-> forall a. a -> a
+@
 
-instance Ord s => HasDependencies (SolvedTypeEntry s) where
-    type Key (SolvedTypeEntry s) = Type s
+We can look at the 2 neighbours of @e@ to deduce that @h = a@ and @i = a@, creating new `SolvedType`s
+-}
+unifyContextGraph :: Member StructuredDebug r => ContextGraph -> Sem r ContextGraph
+unifyContextGraph (ContextGraph graph) = fmap ContextGraph $ fmap fst <$> runState graph $ do
+    for_ (vertexList graph) $ \vertex -> do
+        let adjacent = neighbours vertex graph
+        unify (toList adjacent)
+  where
+    modify_ = modify . overlay
+    unify :: [Type ()] -> Sem _ ()
+    unify adj = debugWith ("unifyGraph: " <> showPretty adj) $ do
+        for_ adj $ \adjacent -> do
+            for_ adj $ \adjacent' -> do
+                when (adjacent /= adjacent') $ do
+                    unify' adjacent adjacent'
 
-    keys :: SolvedTypeEntry s -> NonEmpty (Type s)
-    keys (SolvedTypeEntry (b, _)) = b :| []
+    unify' :: Type () -> Type () -> Sem _ ()
+    unify' unsolved solved | unsolved == solved = pass
+    unify' unsolved solved = debugWith ("unifyGraph: " <> showPretty (unsolved, solved)) $
+        case (Type.stripForAll unsolved, Type.stripForAll solved) of
+            (Type.Function{input = unsolvedInput, output = unsolvedOutput}, Type.Function{input = solvedInput, output = solvedOutput}) -> do
+                subst unsolvedInput solvedInput
+                unify' unsolvedInput solvedInput
+                subst unsolvedOutput solvedOutput
+                unify' unsolvedOutput solvedOutput
+            (Type.VariableType{}, out) -> subst unsolved out
+            (Type.UnsolvedType{}, out) -> subst unsolved out
+            (out, Type.UnsolvedType{}) -> subst solved out
+            other -> error (showPretty other)
 
-    dependencies :: SolvedTypeEntry s -> [Type s]
-    dependencies (SolvedTypeEntry (_, extraDeps)) = extraDeps
+    subst :: Type () -> Type () -> Sem _ ()
+    subst t@Type.UnsolvedType{} solved = debugWith ("subst: " <> showPretty (t, solved)) $ do
+        ctx <- get
+        let solvedT = solveType' ctx t
+        when (solvedT /= solved) $ do
+            -- debug ("subst1: " <> showPretty (solvedT, solved))
+            modify_ (edge t solved)
+            modify_ (edge solved solvedT)
+            ctx <- get
+            let solvedAgain = solveType' ctx t
+            when (solvedT /= solvedAgain) $ do
+                -- debug ("subst2: " <> showPretty (solvedAgain, solved))
+                unify' solvedT solvedAgain
+    subst a b = pass
+
+-- like normal `solveType` but using edges of the graph
+-- given that `SolvedType` entries map to edges in the graph, this needs to solve over _every_ edge
+solveType' :: forall s. (Ord s, Show s) => Graph (Type s) -> Type s -> Type s
+solveType' graph type_ =
+    let g = fromUndirected graph :: Algebraic.Graph.Graph (Type s)
+     in let r = reachable g type_ :: [Type s]
+         in case filter isSolved r of
+                [] -> type_
+                [x] -> x
+                multiple -> error $ "Multiple solutions found for " <> showPretty type_ <> ": " <> showPretty multiple <> " in " <> showPretty graph
+  where
+    isSolved :: Type s -> Bool
+    isSolved = hasn't (cosmosOf plate % _As @"UnsolvedType")
+
+solveFromGraph :: ContextGraph -> Type () -> Type ()
+solveFromGraph (ContextGraph graph) = solveType' graph
+
+graphToContext :: ContextGraph -> Context ()
+graphToContext (ContextGraph graph) = mapMaybe toEntry $ edgeList graph
+  where
+    toEntry :: (Type (), Type ()) -> Maybe (Entry ())
+    toEntry (Type.UnsolvedType _ a, b@Type.Forall{}) = Nothing
+    toEntry (Type.UnsolvedType _ a, b) = Just $ SolvedType a (Type.toMonoType b)
+    toEntry (b, Type.UnsolvedType _ a) = Just $ SolvedType a (Type.toMonoType b)
+    toEntry _ = Nothing

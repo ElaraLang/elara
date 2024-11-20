@@ -137,11 +137,12 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
+  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
   build-tools:
       alex
   build-depends:
       aeson
+    , algebraic-graphs
     , array
     , base
     , binary
@@ -195,9 +196,10 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
   build-depends:
       aeson
+    , algebraic-graphs
     , array
     , base
     , binary
@@ -270,11 +272,12 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
   build-depends:
       HUnit
     , QuickCheck
     , aeson
+    , algebraic-graphs
     , array
     , base
     , binary

@@ -6,6 +6,7 @@ module Elara.TypeInfer where
 import Data.Containers.ListUtils (nubOrd)
 import Data.Generics.Product
 import Data.Generics.Wrapped
+import Data.List ((\\))
 import Data.Map qualified as Map
 import Elara.AST.Generic ()
 import Elara.AST.Generic hiding (Type)
@@ -22,6 +23,7 @@ import Elara.AST.Select (
     ),
  )
 import Elara.AST.Shunted as Shunted
+import Elara.AST.StripLocation (StripLocation (..))
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (VarRef' (..), mkGlobal')
 import Elara.Data.Kind (ElaraKind (..))
@@ -30,7 +32,7 @@ import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Prim (fullListName)
+import Elara.Prim (fullListName, primRegion)
 import Elara.TypeInfer.Context
 import Elara.TypeInfer.Context qualified as Context
 import Elara.TypeInfer.Domain qualified as Domain
@@ -45,7 +47,6 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Print
-import Elara.AST.StripLocation (StripLocation(..))
 
 type InferPipelineEffects = '[StructuredDebug, State Status, State InferState, Error TypeInferenceError, UniqueGen]
 
@@ -126,6 +127,7 @@ inferDeclaration (Declaration ld) = do
         e' <- inferExpression e (Just maybeExpected')
 
         ctx <- Infer.getAll
+        debugPretty $ simplifyContext (stripLocation ctx)
 
         completed <- completeExpression ctx e'
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped % _2))
@@ -183,7 +185,6 @@ inferExpression e (Just expectedType) = do
 createTypeVar :: Located (Unique LowerAlphaName) -> Infer.Type SourceRegion
 createTypeVar (Located sr u) = Infer.VariableType sr (fmap (Just . nameText) u)
 
-
 completeExpression ::
     forall r.
     (HasCallStack, Member (State Status) r, Member UniqueGen r, Member (Error TypeInferenceError) r, Member StructuredDebug r) =>
@@ -191,28 +192,40 @@ completeExpression ::
     TypedExpr ->
     Sem r TypedExpr
 completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> showPretty (y', t)) $ do
-    complete' <- complete ctx t
-    debug ("complete: " <> showPretty (complete'))
-    unify t complete'
-
     ctx' <- Infer.getAll
-    let graph = simplifyContext (stripLocation ctx')
 
-    debug ("completeExpression ctx': " <> showPretty (nubOrd ctx'))
-    y'' <-
-        traverseOf
-            unlocated
-            ( \case
-                TypeApplication f t' -> TypeApplication f <$> complete ctx' t'
-                Lambda p e -> do
-                    -- stupid
-                    p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> complete ctx' t) p
-                    pure (Lambda p' e)
-                o -> pure o
-            )
-            y'
-    debug ("completeExpressionDone: " <> showPretty (y'', complete'))
-    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y'', complete'))
+    -- let solveFromGraph' t = do
+    --         graph <- unifyContextGraph $ simplifyContext (stripLocation ctx')
+
+    --         -- TODO: solveFromGraph needs to return all the neighbours so we can unify all of them
+    --         -- unify k with m? -> n?
+    --         let solved = solveFromGraph graph (stripLocation t)
+    --         debug ("solveFromGraph solved: " <> showPretty (t, solved))
+    --         all <- fmap stripLocation <$> Infer.getAll
+    --         let fromGraph = graphToContext graph
+    --         debugPretty ("diff: " <> showPretty (nubOrd $ all \\ fromGraph))
+    --         let c = fromGraph <> all
+    --         completed <- complete c solved
+    --         debug (showPretty (t, completed))
+    --         pure (t.location <$ completed)
+
+    -- completed <- solveFromGraph' t
+
+    -- -- debug ("completeExpression ctx': " <> showPretty (nubOrd ctx', graph))
+    -- y'' <-
+    --     traverseOf
+    --         unlocated
+    --         ( \case
+    --             TypeApplication f t' -> TypeApplication f <$> solveFromGraph' t'
+    --             Lambda p e -> do
+    --                 -- stupid
+    --                 p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> solveFromGraph' t) p
+    --                 pure (Lambda p' e)
+    --             o -> pure o
+    --         )
+    --         y'
+    -- debug ("completeExpressionDone: " <> showPretty (y'', completed))
+    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y', t))
     traverseOf gplate (completePattern ctx') completedExprs
   where
     completePattern :: HasCallStack => Context SourceRegion -> TypedPattern -> Sem r TypedPattern
@@ -242,7 +255,6 @@ completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> sho
         - a? = a
         - b? = b
 
-
     Unification can get complex as it has to fully traverse down the "tree" of solved types:
     Consider the context
     @
@@ -267,7 +279,7 @@ completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> sho
     h = i?
     i?
     @
-    Initially, one might think that we would get stuck here, as we don't know what @i@ is. 
+    Initially, one might think that we would get stuck here, as we don't know what @i@ is.
     However, we can figure out a lot more if we use the other parts of the context:
     @
     r_1 : forall _9 . _9 -> _9
@@ -296,7 +308,7 @@ completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> sho
                 subst unsolvedOutput solvedOutput
                 unify unsolvedOutput solvedOutput
             (Infer.VariableType{}, out) -> subst unsolved out
-            (Infer.UnsolvedType{}, out) -> do 
+            (Infer.UnsolvedType{}, out) -> do
                 subst unsolved out
                 ctx <- Infer.getAll
                 debug ("unifySolved: " <> showPretty (Context.solveType ctx unsolved, Context.solveType ctx out))

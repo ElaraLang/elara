@@ -133,7 +133,7 @@ instance
     Pretty (Expr ast)
     where
     pretty =
-        let ?withType = False
+        let ?withType = True
             ?contextFree = True
          in prettyExpr @ast @exprType @letPatterns @lambdaPatterns
 

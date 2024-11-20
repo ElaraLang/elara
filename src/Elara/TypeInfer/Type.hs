@@ -35,7 +35,7 @@ import Elara.TypeInfer.Unique
 import Optics (hasn't)
 import Optics qualified as Lens
 import Prettyprinter qualified as Pretty
-import Print (showPrettyUnannotated)
+import Print (showPretty, showPrettyUnannotated)
 
 {- $setup
 
@@ -296,6 +296,15 @@ applicableTyApp a@(Forall{name, type_, ..}) Forall{name = name2, type_ = type2} 
 -- applicableTyApp (Forall{type_ = Custom{typeArguments = [VariableType{..}]}}) Custom{typeArguments = [y]} =
 --     [y]
 applicableTyApp x y = []
+
+toMonoType :: (HasCallStack, Show s) => Type s -> Monotype.Monotype
+toMonoType = \case
+    Scalar{scalar} -> Monotype.Scalar scalar
+    Function{input, output} -> Monotype.Function (toMonoType input) (toMonoType output)
+    UnsolvedType{existential} -> Monotype.UnsolvedType existential
+    VariableType{name = v} -> Monotype.VariableType v
+    Custom{conName = n, typeArguments = args} -> Monotype.Custom n (toMonoType <$> args)
+    other -> error $ "toMonoType: " <> showPretty other
 
 freeTypeVars :: Type SourceRegion -> [Located UniqueTyVar]
 -- todo: make this check for foralls rather than assuming they're all free

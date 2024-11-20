@@ -739,8 +739,9 @@ instantiateTypeR _A0 a = debugWith ("instantiateTypeR: " <> showPretty _A0 <> " 
         -- InstRReach
         Type.UnsolvedType{..}
             | let _ΓL = _Γ
-            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' ->
-                set (_ΓR <> (Context.SolvedType existential (Monotype.UnsolvedType a) : _ΓM) <> (Context.UnsolvedType a : _ΓL))
+            , Just (_ΓR, _ΓM) <- Context.splitOnUnsolvedType existential _Γ' -> do
+                push (Context.UnsolvedType a)
+                push (Context.SolvedType existential (Monotype.UnsolvedType a))
         -- InstRSolve
         Type.UnsolvedType{..} -> instRSolve (Monotype.UnsolvedType existential)
         Type.VariableType{..} -> instRSolve (Monotype.VariableType name)
@@ -753,7 +754,14 @@ instantiateTypeR _A0 a = debugWith ("instantiateTypeR: " <> showPretty _A0 <> " 
             a1 <- fresh
             a2 <- fresh
 
-            set (_ΓR <> (Context.SolvedType a (Monotype.Function (Monotype.UnsolvedType a1) (Monotype.UnsolvedType a2)) : Context.UnsolvedType a1 : Context.UnsolvedType a2 : _ΓL))
+            set
+                ( _ΓR
+                    <> ( Context.SolvedType a (Monotype.Function (Monotype.UnsolvedType a1) (Monotype.UnsolvedType a2))
+                            : Context.UnsolvedType a1
+                            : Context.UnsolvedType a2
+                            : _ΓL
+                       )
+                )
 
             instantiateTypeL a1 input
 

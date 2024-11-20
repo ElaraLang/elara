@@ -7,11 +7,11 @@ import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (exprType)
 import Elara.Core.Generic (Bind (..))
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Logging (StructuredDebug, debugWith)
 import Polysemy
 import Print (showPretty)
-import Elara.Data.Pretty
 
 {- | Convert a Core expression to ANF
 For example:
@@ -30,7 +30,7 @@ becomes:
 
 type ToANF r = (Members [UniqueGen, StructuredDebug] r, Pretty (Core.Expr Core.Var))
 
-toANF :: (ToANF r) => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
+toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 toANF expr =
     debugWith ("toANF " <> showPretty expr) $
         toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
@@ -44,7 +44,7 @@ toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
 toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
 toANF' (Core.Lam b e) k = toANFRec e $ \e' -> lift $ k $ ANF.Lam b (ANF.CExpr e')
-toANF' other k = debugWith ("toANF' " <> showPretty other <>": ") $ evalContT $ do
+toANF' other k = debugWith ("toANF' " <> showPretty other <> ": ") $ evalContT $ do
     v <- lift $ makeUnique "var"
     let id = Core.Id (Local' v) (exprType other) Nothing
 
@@ -71,7 +71,8 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     e' <- toANFCont e
     body' <- toANFCont body
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
-
+toANFRec other k = do -- DANGER of infinite loop!!! make sure all cases are covered
+    toANF' other $ \e -> evalContT $ k $ ANF.AExpr e
 
 fromANF :: ANF.Expr Core.Var -> Core.CoreExpr
 fromANF (ANF.Let (NonRecursive (b, e)) body) = Core.Let (NonRecursive (b, fromANFCExpr e)) $ fromANF body
