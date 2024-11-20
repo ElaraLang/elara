@@ -154,7 +154,6 @@ fixOperators opTable o = do
 
     reassoc' :: SourceRegion -> RenamedBinaryOperator -> RenamedExpr -> RenamedExpr -> Sem r RenamedExpr'
     reassoc' sr o1 e1 r@(InExpr (BinaryOperator (o2, e2, e3))) = do
-        Log.debug $ "reassoc': " <> showPretty (o1, e1, r)
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
         case compare info1.precedence info2.precedence of
