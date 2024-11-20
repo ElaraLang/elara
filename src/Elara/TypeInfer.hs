@@ -1,5 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Elara.TypeInfer where
 
@@ -137,11 +136,11 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' declName@(Located _ q@(Qualified (NTypeName tn) _)) (TypeDeclaration tvs (Located sr decl) ann) = do
         (kind, decl') <- mapError KindInferError (inferKind (tn <$ q) tvs decl)
         -- add the custom annotation to allow recursive types
-        push
-            ( Annotation
-                (mkGlobal' declName)
-                (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) [])
-            )
+        -- push
+        --     ( Annotation
+        --         (mkGlobal' declName)
+        --         (Infer.Custom sr (declName ^. unlocated % to (fmap nameText)) [])
+        --     )
         case decl' of
             Alias t -> do
                 (t', k) <- astTypeToInferType t
@@ -194,39 +193,38 @@ completeExpression ::
 completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> showPretty (y', t)) $ do
     ctx' <- Infer.getAll
 
-    -- let solveFromGraph' t = do
-    --         graph <- unifyContextGraph $ simplifyContext (stripLocation ctx')
+    let solveFromGraph' t = do
+            graph <- unifyContextGraph $ simplifyContext (stripLocation ctx')
 
-    --         -- TODO: solveFromGraph needs to return all the neighbours so we can unify all of them
-    --         -- unify k with m? -> n?
-    --         let solved = solveFromGraph graph (stripLocation t)
-    --         debug ("solveFromGraph solved: " <> showPretty (t, solved))
-    --         all <- fmap stripLocation <$> Infer.getAll
-    --         let fromGraph = graphToContext graph
-    --         debugPretty ("diff: " <> showPretty (nubOrd $ all \\ fromGraph))
-    --         let c = fromGraph <> all
-    --         completed <- complete c solved
-    --         debug (showPretty (t, completed))
-    --         pure (t.location <$ completed)
+            -- TODO: solveFromGraph needs to return all the neighbours so we can unify all of them
+            -- unify k with m? -> n?
+            let solved = solveFromGraph graph (stripLocation t)
+            debug ("solveFromGraph solved: " <> showPretty (t, solved))
+            all <- fmap stripLocation <$> Infer.getAll
+            let fromGraph = graphToContext graph
+            let c = fromGraph <> all
+            completed <- complete c solved
+            debug (showPretty (t, completed))
+            pure (t.location <$ completed)
 
-    -- completed <- solveFromGraph' t
+    completedType <- solveFromGraph' t
 
-    -- -- debug ("completeExpression ctx': " <> showPretty (nubOrd ctx', graph))
-    -- y'' <-
-    --     traverseOf
-    --         unlocated
-    --         ( \case
-    --             TypeApplication f t' -> TypeApplication f <$> solveFromGraph' t'
-    --             Lambda p e -> do
-    --                 -- stupid
-    --                 p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> solveFromGraph' t) p
-    --                 pure (Lambda p' e)
-    --             o -> pure o
-    --         )
-    --         y'
-    -- debug ("completeExpressionDone: " <> showPretty (y'', completed))
-    completedExprs <- traverseOf gplate (completeExpression ctx') (Expr (y', t))
-    traverseOf gplate (completePattern ctx') completedExprs
+    -- debug ("completeExpression ctx': " <> showPretty (nubOrd ctx', graph))
+    fixedCompletedExpr <-
+        traverseOf
+            unlocated
+            ( \case
+                TypeApplication f t' -> TypeApplication f <$> solveFromGraph' t'
+                Lambda p e -> do
+                    -- stupid
+                    p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> solveFromGraph' t) p
+                    pure (Lambda p' e)
+                o -> pure o
+            )
+            y'
+    debug ("completeExpressionDone: " <> showPretty (fixedCompletedExpr, completedType))
+    recursivelyCompletedExpr <- traverseOf gplate (completeExpression ctx') (Expr (fixedCompletedExpr, completedType))
+    traverseOf gplate (completePattern ctx') recursivelyCompletedExpr
   where
     completePattern :: HasCallStack => Context SourceRegion -> TypedPattern -> Sem r TypedPattern
     completePattern ctx (Pattern (p', t)) = do

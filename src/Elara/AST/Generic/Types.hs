@@ -153,7 +153,7 @@ newtype Pattern ast = Pattern (ASTLocate ast (Pattern' ast), Select "PatternType
 
 -- | Wrapper over a tuple of a param name and its type
 -- Used mainly to influence Prettyprinting (if we just used a tuple it would get printed as (x,t) rather than x:t)
-newtype TypedLambdaParam v ast = TypedLambdaParam (v, (Select "PatternType" ast))
+newtype TypedLambdaParam v ast = TypedLambdaParam (v, Select "PatternType" ast)
     deriving (Generic)
 
 data BinaryOperator' (ast :: a)

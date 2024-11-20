@@ -558,7 +558,7 @@ unifyContextGraph (ContextGraph graph) = fmap ContextGraph $ fmap fst <$> runSta
 
 -- like normal `solveType` but using edges of the graph
 -- given that `SolvedType` entries map to edges in the graph, this needs to solve over _every_ edge
-solveType' :: forall s. (Ord s, Show s) => Graph (Type s) -> Type s -> Type s
+solveType' :: forall s. (HasCallStack, Ord s, Show s) => Graph (Type s) -> Type s -> Type s
 solveType' graph type_ =
     let g = fromUndirected graph :: Algebraic.Graph.Graph (Type s)
      in let r = reachable g type_ :: [Type s]
@@ -567,6 +567,7 @@ solveType' graph type_ =
                 [x] -> x
                 multiple -> error $ "Multiple solutions found for " <> showPretty type_ <> ": " <> showPretty multiple <> " in " <> showPretty graph
   where
+    
     isSolved :: Type s -> Bool
     isSolved = hasn't (cosmosOf plate % _As @"UnsolvedType")
 

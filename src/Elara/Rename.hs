@@ -724,7 +724,7 @@ renameLambda :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) 
 renameLambda p@((Pattern (_, argType))) e = do
     (arg, match) <- patternToMatch p e
     argType' <- traverse renameSimpleType argType
-    let arg' = fmap (\arg -> (arg, argType')) arg
+    let arg' = fmap (,argType') arg
     pure (Lambda (TypedLambdaParam <$> arg') match)
 
 desugarBlock :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => NonEmpty DesugaredExpr -> Sem r RenamedExpr
