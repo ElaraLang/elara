@@ -26,7 +26,6 @@ import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
-import Elara.TypeInfer.Monotype qualified as Scalar
 import Elara.TypeInfer.Type qualified as Type
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
@@ -36,6 +35,7 @@ import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
 import Print (debugPretty)
+import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -73,13 +73,13 @@ instance ReportableError ToCoreError where
                 )
                 []
                 []
-    report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (pretty t) [] []
+    report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (todo) [] []
     report (UnsolvedTypeSnuckIn t) = do
         writeReport $
             Err
                 (Just "UnsolvedTypeSnuckIn")
-                (vcat [pretty t, pretty $ prettyCallStack callStack])
-                [ (sourceRegionToDiagnosePosition t.location, Where "Type declared / created here")
+                (vcat [todo, pretty $ prettyCallStack callStack])
+                [ todo
                 ]
                 []
     report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
@@ -184,24 +184,7 @@ typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariab
 typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
--- typeToCore x | trace ("typeToCore " <> (toString $ showPretty x)) False = undefined
-typeToCore (Type.Forall _ _ tv _ t) = do
-    t' <- typeToCore t
-    pure (Core.ForAllTy (TypeVariable tv TypeKind) t')
-typeToCore (Type.VariableType{Type.name}) = pure (Core.TyVarTy (TypeVariable name TypeKind))
-typeToCore (Type.Function{Type.input, Type.output}) = Core.FuncTy <$> typeToCore input <*> typeToCore output
--- typeToCore (Type.List _ t) = Core.AppTy (ConTy listCon) <$> typeToCore t
-typeToCore (Type.Scalar _ Scalar.Text) = pure (ConTy stringCon)
-typeToCore (Type.Scalar _ Scalar.Integer) = pure $ ConTy intCon
-typeToCore (Type.Scalar _ Scalar.Unit) = pure $ ConTy unitCon
-typeToCore (Type.Scalar _ Scalar.Char) = pure $ ConTy charCon
-typeToCore (Type.Scalar _ Scalar.Bool) = pure $ ConTy boolCon
-typeToCore (Type.Custom sr n args) = do
-    args' <- traverse typeToCore args
-    con' <- lookupTyCon n
-    let con = Core.ConTy con'
-    pure (foldl' Core.AppTy con args')
-typeToCore unsolved@(Type.UnsolvedType{}) = throw (UnsolvedTypeSnuckIn unsolved)
+typeToCore _ = todo
 
 conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global $ Identity n) t (Just dc)
@@ -286,8 +269,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
-                    ( if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1')
-                    )
+                    (if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
                     e2'
         AST.Block exprs -> desugarBlock exprs
 

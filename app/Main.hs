@@ -17,8 +17,8 @@ import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
-import Elara.Core.Module (CoreModule)
 import Elara.Core (CoreBind)
+import Elara.Core.Module (CoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
@@ -27,6 +27,8 @@ import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 
 -- import Elara.CoreToIR
+
+import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
@@ -61,7 +63,6 @@ import System.IO (hSetEncoding, openFile, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
-import Elara.Core.LiftClosures (runLiftClosures)
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -122,7 +123,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
-    coreGraph <- uniqueGenToIO  $ structuredDebugToLog $ traverseGraph toANF' coreGraph
+    coreGraph <- uniqueGenToIO $ structuredDebugToLog $ traverseGraph toANF' coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
@@ -207,7 +208,7 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> shuntGraph (Just primOpTable)
                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
-                        >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
+                        -- >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
                         >=> traverseGraphRevTopologically (\(a, b) -> moduleToCore b a)
                         >=> (pure . mapGraph coreToCore)
                         $ graph

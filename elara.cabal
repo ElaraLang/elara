@@ -102,14 +102,6 @@ library
       Elara.Shunt
       Elara.ToCore
       Elara.TypeInfer
-      Elara.TypeInfer.ConstraintSolving
-      Elara.TypeInfer.Context
-      Elara.TypeInfer.Domain
-      Elara.TypeInfer.Error
-      Elara.TypeInfer.Existential
-      Elara.TypeInfer.Infer
-      Elara.TypeInfer.Kind
-      Elara.TypeInfer.Monotype
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
       Elara.Utils
@@ -243,11 +235,8 @@ test-suite elara-test
       Arbitrary.AST
       Arbitrary.Literals
       Arbitrary.Names
-      Arbitrary.Type
       Common
       Infer
-      Infer.Common
-      Infer.ConstraintSolving
       Lex
       Lex.Common
       Lex.Indents

@@ -147,9 +147,4 @@ patternDependencies =
     names _ = []
 
 typeDependencies :: Type SourceRegion -> [Qualified Name]
-typeDependencies =
-    concatMapOf cosmos names
-  where
-    names :: Type SourceRegion -> [Qualified Name]
-    names (Custom{conName}) = [NTypeName . TypeName <$> conName]
-    names _ = []
+typeDependencies _ = [] -- TODO
