@@ -3,11 +3,11 @@
     "diagnose": {
       "flake": false,
       "locked": {
-        "lastModified": 1732206595,
-        "narHash": "sha256-4/QFWqRI/Y+xmtUB/725p7L7gj3w0UfdDA4ZYlpEI/4=",
+        "lastModified": 1732210354,
+        "narHash": "sha256-sDRkSs/sxHjbkXVBsinKMJvJWMnyE648JcvNK94pvt8=",
         "owner": "bristermitten",
         "repo": "diagnose",
-        "rev": "15e7df186867157de936f9268ced5947d21b04dc",
+        "rev": "3dac026c9663f041d0e5df77b73053ff5627af4b",
         "type": "github"
       },
       "original": {
@@ -95,21 +95,6 @@
       "original": {
         "owner": "srid",
         "repo": "flake-root",
-        "type": "github"
-      }
-    },
-    "flake-utils": {
-      "locked": {
-        "lastModified": 1667395993,
-        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
         "type": "github"
       }
     },
@@ -203,25 +188,6 @@
         "type": "github"
       }
     },
-    "megaparsec": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_2"
-      },
-      "locked": {
-        "lastModified": 1732032661,
-        "narHash": "sha256-gMcRuhiGUKnM9HHctMXv3/PFNRBmECnY4o4TJUd9PCA=",
-        "owner": "mrkkrp",
-        "repo": "megaparsec",
-        "rev": "0cae4396a870b7fa5058e957efbec188a224dda5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mrkkrp",
-        "repo": "megaparsec",
-        "type": "github"
-      }
-    },
     "mission-control": {
       "locked": {
         "lastModified": 1727581548,
@@ -295,22 +261,6 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1668443372,
-        "narHash": "sha256-lXNlVyNWwO22/JUdBtUWz68jZB3DM+Jq/irlsbwncI0=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "dad4de1694cd92d9a0e123bfdf134d0047b836a5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_3": {
-      "locked": {
         "lastModified": 1731890469,
         "narHash": "sha256-D1FNZ70NmQEwNxpSSdTXCSklBH1z2isPR84J6DQrJGs=",
         "owner": "nixos",
@@ -325,7 +275,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1730768919,
         "narHash": "sha256-8AKquNnnSaJRXZxc5YmF/WfmxiHX6MMZZasRP6RRQkE=",
@@ -345,7 +295,7 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "gitignore": "gitignore",
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_3",
         "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {
@@ -370,8 +320,7 @@
         "h2jvm": "h2jvm",
         "haskell-flake": "haskell-flake_2",
         "just-flake": "just-flake",
-        "megaparsec": "megaparsec",
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs": "nixpkgs_2",
         "pre-commit-hooks": "pre-commit-hooks",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix_2"

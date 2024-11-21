@@ -37,14 +37,14 @@ loadShuntedExpr source = finalisePipeline . runShuntPipeline $ do
     renamed <- loadRenamedExpr' source
     runReader fakeOperatorTable $ fixExpr renamed
 
--- pipelineResShouldSucceed :: (MonadIO m, Show a) => PipelineRes a -> m a
--- pipelineResShouldSucceed m = do
---     res <- liftIO m
---     case res of
---         (_, Just x) -> pure x
---         (diag, Nothing) -> do
---             annotateShow diag
---             failure
+pipelineResShouldSucceed :: (MonadIO m, Show a) => PipelineRes a -> m a
+pipelineResShouldSucceed m = do
+    res <- liftIO m
+    case res of
+        (_, Just x) -> pure x
+        (diag, Nothing) -> do
+            annotateShow diag
+            failure
 
 operatorRenameState :: RenameState
 operatorRenameState =

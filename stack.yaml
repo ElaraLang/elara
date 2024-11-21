@@ -33,7 +33,7 @@ extra-deps:
   commit: 987e467532531e91ae2dff881b419713606bda5f
 
 - git: https://github.com/bristermitten/diagnose.git
-  commit: 15e7df186867157de936f9268ced5947d21b04dc
+  commit: 3dac026c9663f041d0e5df77b73053ff5627af4b
 
 - Cabal-3.12.1.0
 - Cabal-syntax-3.12.1.0

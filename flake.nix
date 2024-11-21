@@ -15,8 +15,8 @@
     diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    megaparsec.url = "github:mrkkrp/megaparsec";
-    megaparsec.flake = true;
+    # megaparsec.url = "github:mrkkrp/megaparsec";
+    # megaparsec.flake = true;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -43,7 +43,7 @@
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
-            megaparsec.source = inputs.megaparsec;
+            # megaparsec.source = inputs.megaparsec;
             polysemy-test.source = "0.10.0.0";
           };
 
@@ -59,12 +59,13 @@
             incipit-core.jailbreak = true;
             polysemy-resume.jailbreak = true;
             polysemy-time.jailbreak = true;
-            tomland.jailbreak = true;
 
             diagnose = {
-
-              # cabalFlags.megaparsec-compat = true;
-              # jailbreak = true;
+              extraBuildDepends = [
+                # pkgs.haskellPackages
+              ];
+              cabalFlags.megaparsec-compat = true;
+              jailbreak = true;
             };
 
             type-errors = {
@@ -148,7 +149,7 @@
                   postBuild = ''
                     wrapProgram $out/bin/stack \
                       --add-flags "\
-                        --nix \
+                        --no-nix \
                         --system-ghc \
                         --no-install-ghc \
                       "
@@ -167,4 +168,3 @@
       };
     };
 }
-

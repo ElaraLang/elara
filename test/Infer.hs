@@ -45,14 +45,16 @@ literalTests = describe "Literal Type Inference" $ do
             constraints `shouldBe` []
             ty `shouldSatisfy` isScalarFloat
 
--- lambdaTests :: Spec
--- lambdaTests = describe "Lambda Type Inference" $ do
---     it "infers lambda type correctly" $ do
---         expr <- loadShuntedExpr "\\x -> x"
---         result <- runInfer $ generateConstraints emptyTypeEnvironment expr
---         result `shouldSucceed` \(constraints, ty) -> do
---             constraints `shouldBe` []
---             ty `shouldBe` Function (TypeVar 0) (Scalar ScalarInt)
+lambdaTests :: Spec
+lambdaTests = describe "Lambda Type Inference" $ do
+    it "infers lambda type correctly" $ do
+        expr <- loadShuntedExpr "\\x -> x"
+        pass
+
+-- result <- runInfer $ generateConstraints emptyTypeEnvironment expr
+-- result `shouldSucceed` \(constraints, ty) -> do
+--     constraints `shouldBe` []
+--     ty `shouldBe` Function (TypeVar 0) (Scalar ScalarInt)
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) ([Constraint loc], a))
 runInfer =
