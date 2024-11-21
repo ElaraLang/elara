@@ -64,6 +64,7 @@ instance TraversableStream TokenStream where
                 TokenStream
                     { tokenStreamInput = postStr
                     , tokenStreamTokens = postLexemes
+                    , skipIndents = pstateInput.skipIndents
                     }
             , pstateOffset = max pstateOffset o
             , pstateSourcePos = newSourcePos
