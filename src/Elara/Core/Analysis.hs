@@ -32,7 +32,7 @@ findTyCon (Core.ForAllTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
-exprType :: (HasCallStack) => CoreExpr -> Core.Type
+exprType :: HasCallStack => CoreExpr -> Core.Type
 exprType (Var v) = varType v
 exprType (Lit l) = literalType l
 exprType app@(App f _) = case exprType f of

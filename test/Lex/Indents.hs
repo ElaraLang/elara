@@ -4,7 +4,7 @@ module Lex.Indents where
 
 import Lex.Common
 import NeatInterpolation (text)
-import Test.Hspec
+import Test.Syd
 
 spec :: Spec
 spec = do

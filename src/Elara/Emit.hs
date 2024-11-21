@@ -39,6 +39,7 @@ module Elara.Emit where
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core as Core
+import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module
 import Elara.Emit.Utils (createModuleName, generateFieldType)
 import Elara.Logging
@@ -53,7 +54,6 @@ import JVM.Data.Abstract.Type
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.JVMVersion
 import Polysemy
-import Elara.Core.Generic (Bind(..))
 
 emitCoreModule :: Member StructuredDebug r => CoreModule CoreBind -> Sem r ClassFile
 emitCoreModule (CoreModule name decls) = do

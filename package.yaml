@@ -109,7 +109,7 @@ executables:
 
 tests:
   elara-test:
-    defaults: hspec/hspec@main
+    # defaults: sydtest/sydtest@main
     main: Spec.hs
     source-dirs: test
     default-extensions:
@@ -117,6 +117,8 @@ tests:
     ghc-options:
       - -threaded
       - -O0
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
       - elara
       - neat-interpolation
@@ -124,4 +126,5 @@ tests:
       - hspec-megaparsec
       - QuickCheck
       - hedgehog
-      - hspec-hedgehog
+      - sydtest
+      - sydtest-hedgehog

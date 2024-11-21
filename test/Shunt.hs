@@ -1,5 +1,6 @@
 module Shunt where
 
+import Boilerplate
 import Common (diagShouldSucceed)
 import Elara.AST.Generic
 import Elara.AST.Generic.Instances ()
@@ -22,13 +23,11 @@ import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Rename (RenameState (..), renameExpr, runRenamePipeline)
 import Elara.Shunt (Associativity (..), OpInfo (OpInfo), OpTable, fixExpr, mkPrecedence, runShuntPipeline)
 import Hedgehog hiding (Var)
+import HedgehogSyd ()
 import Orphans ()
 import Polysemy.Reader (runReader)
-import Test.Hspec (Spec, describe, it)
-import Test.Hspec.Hedgehog (hedgehog)
-import Boilerplate 
-
-
+import Test.Syd (Spec, describe, it)
+import Test.Syd.Hedgehog ()
 
 shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do
@@ -38,7 +37,7 @@ code `shouldShuntTo` x = withFrozenCallStack $ do
 
 spec :: Spec
 spec = describe "Shunts operators correctly" $ do
-    it "Shunts simple operators into prefix calls" $ hedgehog $ do
+    it "Shunts simple operators into prefix calls" $ property $ do
         let res =
                 functionCall
                     ( functionCall
@@ -51,7 +50,7 @@ spec = describe "Shunts operators correctly" $ do
         "(1) + 2" `shouldShuntTo` res
         "(1) + (2)" `shouldShuntTo` res
         "(1 + 2)" `shouldShuntTo` res
-    it "Shunts repeated operators into prefix calls" $ hedgehog $ do
+    it "Shunts repeated operators into prefix calls" $ property $ do
         let res =
                 -- (+) (((+) 1) 2)) 3
                 functionCall
@@ -73,7 +72,7 @@ spec = describe "Shunts operators correctly" $ do
         "(1 + 2 + 3)" `shouldShuntTo` res
         "((1 + 2) + 3))" `shouldShuntTo` res
 
-    it "Correctly re-shunts operators with different precedences" $ hedgehog $ do
+    it "Correctly re-shunts operators with different precedences" $ property $ do
         let res =
                 functionCall
                     ( functionCall
@@ -91,7 +90,7 @@ spec = describe "Shunts operators correctly" $ do
         "1 + (2 * 3)" `shouldShuntTo` res -- because * has higher precedence, this is the same
         "1 + (2) * (3)" `shouldShuntTo` res -- because * has higher precedence, this is the same
         "(1 + (2 * 3))" `shouldShuntTo` res -- because * has higher precedence, this is the same
-    it "Correctly re-shunts operators with different precedences when overrided by parentheses" $ hedgehog $ do
+    it "Correctly re-shunts operators with different precedences when overrided by parentheses" $ property $ do
         let res =
                 functionCall
                     ( functionCall
@@ -108,7 +107,7 @@ spec = describe "Shunts operators correctly" $ do
         "(1 + 2) * 3" `shouldShuntTo` res -- becomes (1 * 2) + 3 which becomes (+) ((*) 1 2) 3
         "(1 + 2) * (3)" `shouldShuntTo` res
         "((1 + 2)) * (3)" `shouldShuntTo` res
-    it "Shunts the pipe operator properly" $ hedgehog $ do
+    it "Shunts the pipe operator properly" $ property $ do
         {-
             Given infixr 1 |>
             @1 |> 2 |> 3@ should become @1 |> (2 |> 3)@ which is @(|>) 1 ((|>) 2 3)@

@@ -5,12 +5,13 @@ import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Common
 import Elara.AST.Name (ModuleName (..))
 import Elara.Lexer.Token
+import Hedgehog
 import Lex.Common
 import Lex.Indents qualified as Indents
 import NeatInterpolation (text)
 import Relude.Unsafe (read)
-import Test.Hspec
-import Test.Hspec.Hedgehog (forAll, hedgehog, (===))
+import Test.Syd
+import Test.Syd.Hedgehog ()
 
 spec :: Spec
 spec = do
@@ -100,19 +101,19 @@ literals = describe "Lexes literals" $ do
         lexUL [text| "a b" |] <=> [TokenString "a b"]
         lexUL [text| "\"\"" |] <=> [TokenString "\"\""]
 
-    it "Lexes arbitrary integers" $ hedgehog $ do
+    it "Lexes arbitrary integers" $ property $ do
         i <- unIntLiteral <$> forAll genIntLiteral
         lexUL i === [TokenInt (read $ toString i)]
 
-    it "Lexes arbitrary floats" $ hedgehog $ do
+    it "Lexes arbitrary floats" $ property $ do
         i <- unFloatLiteral <$> forAll genFloatLiteral
         lexUL i === [TokenFloat (read $ toString i)]
 
-    it "Lexes arbitrary chars" $ hedgehog $ do
+    it "Lexes arbitrary chars" $ property $ do
         i <- unCharLiteral <$> forAll genCharLiteral
         lexUL i === [TokenChar (read $ toString i)]
 
-    it "Lexes arbitrary strings" $ hedgehog $ do
+    it "Lexes arbitrary strings" $ property $ do
         i <- unStringLiteral <$> forAll genStringLiteral
         lexUL i === [TokenString (read $ toString i)]
 
@@ -182,15 +183,15 @@ identifiers = describe "Lexes identifiers" $ do
         lexUL ".=" <=> [TokenOperatorIdentifier ".="]
         lexUL "A.!." <=> [TokenQOperatorIdentifier (ModuleName (pure "A"), "!.")]
 
-    it "Lexes arbitrary operator identifiers" $ hedgehog $ do
+    it "Lexes arbitrary operator identifiers" $ property $ do
         i <- forAll genOpText
         lexUL i === [TokenOperatorIdentifier i]
 
-    it "Lexes arbitrary variable identifiers" $ hedgehog $ do
+    it "Lexes arbitrary variable identifiers" $ property $ do
         i <- forAll genLowerAlphaText
         lexUL i === [TokenVariableIdentifier i]
 
-    it "Lexes arbitrary constructor identifiers" $ hedgehog $ do
+    it "Lexes arbitrary constructor identifiers" $ property $ do
         i <- forAll genUpperAlphaText
         lexUL i === [TokenConstructorIdentifier i]
 

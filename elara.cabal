@@ -239,6 +239,7 @@ test-suite elara-test
       Arbitrary.Names
       Boilerplate
       Common
+      HedgehogSyd
       Infer
       Lex
       Lex.Common
@@ -267,7 +268,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
@@ -286,8 +287,6 @@ test-suite elara-test
     , h2jvm
     , hashable
     , hedgehog
-    , hspec ==2.*
-    , hspec-hedgehog
     , hspec-megaparsec
     , lens
     , megaparsec
@@ -306,10 +305,11 @@ test-suite elara-test
     , relude
     , safe-exceptions
     , stringsearch
+    , sydtest
+    , sydtest-hedgehog
     , terminal-size
     , text-metrics
     , utf8-string
   mixins:
       base hiding (Prelude)
   default-language: GHC2021
-  build-tool-depends: hspec-discover:hspec-discover == 2.*

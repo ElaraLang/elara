@@ -20,8 +20,8 @@ import Polysemy.Writer (runWriter)
 import Print (showPretty)
 import Region (qualifiedTest, testLocated)
 import Relude.Unsafe ((!!))
-import Test.Hspec
-import Test.Hspec.Hedgehog hiding (Var)
+import Test.Syd
+import Test.Syd.Expectation
 import Prelude hiding (fail)
 
 spec :: Spec

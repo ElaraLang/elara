@@ -71,7 +71,8 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     e' <- toANFCont e
     body' <- toANFCont body
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
-toANFRec other k = do -- DANGER of infinite loop!!! make sure all cases are covered
+toANFRec other k = do
+    -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e
 
 fromANF :: ANF.Expr Core.Var -> Core.CoreExpr

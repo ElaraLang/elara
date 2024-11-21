@@ -1,3 +1,6 @@
+-- Since when was there a warning for orphan type families?
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 This is the second main AST stage, which is very similar to the `Elara.AST.Desugared.Expr` AST, with a few key differences:
 
@@ -5,7 +8,6 @@ This is the second main AST stage, which is very similar to the `Elara.AST.Desug
   * Let bindings have no patterns, they are desugared into lambdas
   * Def and Let declarations are merged into a single entity
 -}
-{-# OPTIONS_GHC -Wno-orphans #-} -- Since when was there a warning for orphan type families?
 module Elara.AST.Desugared where
 
 import Elara.AST.Generic

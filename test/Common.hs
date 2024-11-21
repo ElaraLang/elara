@@ -9,7 +9,7 @@ import Orphans ()
 import Polysemy (Sem, runM)
 import Polysemy.Embed
 import Test.HUnit (assertFailure)
-import Test.Hspec
+import Test.Syd
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe

@@ -15,10 +15,10 @@ import Elara.Pipeline
 import Elara.Prim.Rename
 import Elara.Rename
 import Elara.Shunt
+import Hedgehog
 import Polysemy (Sem, subsume_)
 import Polysemy.Reader
 import Region (qualifiedTest, testLocated)
-import Hedgehog
 
 loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
 loadRenamedExpr = finalisePipeline . loadRenamedExpr'
@@ -37,16 +37,14 @@ loadShuntedExpr source = finalisePipeline . runShuntPipeline $ do
     renamed <- loadRenamedExpr' source
     runReader fakeOperatorTable $ fixExpr renamed
 
-
 -- pipelineResShouldSucceed :: (MonadIO m, Show a) => PipelineRes a -> m a
 -- pipelineResShouldSucceed m = do
 --     res <- liftIO m
---     case res of 
+--     case res of
 --         (_, Just x) -> pure x
 --         (diag, Nothing) -> do
 --             annotateShow diag
 --             failure
-    
 
 operatorRenameState :: RenameState
 operatorRenameState =

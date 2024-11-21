@@ -7,7 +7,7 @@ import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Polysemy
-import Test.Hspec
+import Test.Syd
 
 lex' :: Text -> [Lexeme]
 lex' contents = do

@@ -86,4 +86,3 @@ primOpTable =
         , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "*"), OpInfo (mkPrecedence 7) LeftAssociative)
         , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "/"), OpInfo (mkPrecedence 7) LeftAssociative)
         ]
-

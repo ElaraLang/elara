@@ -9,12 +9,12 @@ import Elara.AST.Pretty
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Core.ANF qualified as ANF
+import Elara.Core.Generic (Bind (..))
+import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Prettyprinter.Render.Terminal qualified as Style
 import Prelude hiding (Alt, group)
-import Elara.Core.Generic (Bind(..))
-import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 
 class Pretty v => PrettyVar v where
     prettyVar ::
@@ -179,8 +179,7 @@ prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case
     TypeVariable name kind -> if withKind then parens (pretty name <+> ":" <+> pretty kind) else pretty name
 
-
--- ANF 
+-- ANF
 
 instance Pretty (ANF.AExpr Var) where
     pretty = prettyExpr . fromANFAtom

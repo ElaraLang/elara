@@ -6,7 +6,7 @@ default:
 
 # Run the project tests with ghcid auto-recompile
 test:
-    stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code"
+    stack build :elara-test --file-watch --fast
 
 # Run the project with ghcid auto-recompile
 run:

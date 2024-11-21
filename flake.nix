@@ -12,7 +12,7 @@
 
     h2jvm.url = "github:ElaraLang/h2jvm";
 
-    diagnose.url = "github:knightzmc/diagnose";
+    diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
     megaparsec.url = "github:mrkkrp/megaparsec";
@@ -59,13 +59,12 @@
             incipit-core.jailbreak = true;
             polysemy-resume.jailbreak = true;
             polysemy-time.jailbreak = true;
+            tomland.jailbreak = true;
 
             diagnose = {
-              extraBuildDepends = [
-                pkgs.haskellPackages.megaparsec_9_6_1
-              ];
-              cabalFlags.megaparsec-compat = true;
-              jailbreak = true;
+
+              # cabalFlags.megaparsec-compat = true;
+              # jailbreak = true;
             };
 
             type-errors = {
@@ -149,7 +148,7 @@
                   postBuild = ''
                     wrapProgram $out/bin/stack \
                       --add-flags "\
-                        --no-nix \
+                        --nix \
                         --system-ghc \
                         --no-install-ghc \
                       "

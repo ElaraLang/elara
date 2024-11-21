@@ -29,7 +29,7 @@ import Data.Map qualified as M
 import Data.Type.Equality ((:~:))
 import Polysemy (Member, Sem)
 import Polysemy.State (State, get, put)
-import Relude hiding (Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState, Constraint)
+import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
 import Relude qualified (id)
 
 import Data.Data (Data)

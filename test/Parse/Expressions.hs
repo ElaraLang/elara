@@ -11,17 +11,17 @@ import Hedgehog hiding (Var)
 import Orphans ()
 import Parse.Common
 import Print (showPrettyUnannotated)
-import Test.Hspec
-import Test.Hspec.Hedgehog (hedgehog)
+import Test.Syd
+import Test.Syd.Hedgehog ()
 
 spec :: Spec
-spec = parallel $ describe "Parses expressions correctly" $ do
+spec = describe "Parses expressions correctly" $ do
     arbitraryExpr
     weirdEdgeCases
 
 weirdEdgeCases :: Spec
 weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
-    it "Parses the funky lambda thing properly" $ hedgehog $ do
+    it "Parses the funky lambda thing properly" $ property $ do
         "(\\x -> x + 2) 3"
             `shouldParseExpr` functionCall
                 ( Expr
@@ -45,7 +45,7 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
                     )
                 )
                 (Expr (Int 3, Nothing))
-    it "Parses the weird let-in thing properly" $ hedgehog $ do
+    it "Parses the weird let-in thing properly" $ property $ do
         "let a  = 0 in {let a  = -98905857 }"
             `shouldParseExpr` Expr
                 ( LetIn
@@ -64,7 +64,7 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
                 )
 
 arbitraryExpr :: Spec
-arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ hedgehog $ do
+arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ property $ do
     expr <- forAll genExpr
     let parsePretty s = fmap stripLocation <$> lexAndParse exprParser s
 

@@ -2,11 +2,11 @@ import Infer qualified
 import Lex qualified
 import Parse qualified
 import Shunt qualified
-import Test.Hspec
+import Test.Syd (sydTest)
 
 main :: IO ()
 main = do
-    hspec spec
+    sydTest spec
 
 spec :: Spec
 spec = parallel $ do
