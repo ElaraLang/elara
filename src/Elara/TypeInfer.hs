@@ -1,5 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Elara.TypeInfer where
 
@@ -86,4 +85,5 @@ inferDeclaration (Declaration ld) = do
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
     inferDeclarationBody' = todo
-   
+
+

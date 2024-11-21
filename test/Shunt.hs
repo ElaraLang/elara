@@ -26,54 +26,13 @@ import Orphans ()
 import Polysemy.Reader (runReader)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (hedgehog)
+import Boilerplate 
 
-loadExpr :: Text -> PipelineRes (Expr 'Shunted)
-loadExpr source = finalisePipeline . runShuntPipeline . runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
-    let fp = "<tests>"
-    tokens <- readTokensWith fp (toString source)
-    parsed <- parsePipeline exprParser fp (toString source, tokens)
-    desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
-    renamed <- runReader Nothing $ runReader (Nothing :: Maybe (Module 'Desugared)) $ renameExpr desugared
-    runReader fakeOperatorTable $ fixExpr renamed
-
-mkFakeVar :: OpName -> VarRef VarName
-mkFakeVar name = Global (generatedLocated Nothing (Qualified (OperatorVarName name) "ShuntTests"))
-
-mkFakeOp :: OpName -> VarRef OpName
-mkFakeOp name = Global (generatedLocated Nothing (Qualified name "ShuntTests"))
-
-operatorRenameState :: RenameState
-operatorRenameState =
-    let mkFakeVarP name = (OperatorVarName name, one $ mkFakeVar name)
-     in primitiveRenameState
-            <> RenameState
-                { varNames =
-                    fromList
-                        [ mkFakeVarP "+"
-                        , mkFakeVarP "-"
-                        , mkFakeVarP "*"
-                        , mkFakeVarP "/"
-                        , mkFakeVarP "|>"
-                        ]
-                , typeNames = fromList []
-                , typeVars = fromList []
-                }
-
-fakeOperatorTable :: OpTable
-fakeOperatorTable =
-    let mkFakeVarP name info = (ignoreLocation $ withName $ mkFakeOp name, info)
-     in fromList
-            [ mkFakeVarP "+" (OpInfo (mkPrecedence 6) LeftAssociative)
-            , mkFakeVarP "-" (OpInfo (mkPrecedence 6) LeftAssociative)
-            , mkFakeVarP "*" (OpInfo (mkPrecedence 7) LeftAssociative)
-            , mkFakeVarP "/" (OpInfo (mkPrecedence 7) LeftAssociative)
-            , mkFakeVarP "|>" (OpInfo (mkPrecedence 1) RightAssociative)
-            ]
 
 shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do
-    y <- liftIO (loadExpr code) >>= diagShouldSucceed
+    y <- liftIO (loadShuntedExpr code) >>= diagShouldSucceed
     let z :: Expr 'UnlocatedShunted = stripLocation y
     z === x
 

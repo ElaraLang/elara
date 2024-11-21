@@ -73,7 +73,7 @@ instance ReportableError ToCoreError where
                 )
                 []
                 []
-    report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (todo) [] []
+    report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") todo [] []
     report (UnsolvedTypeSnuckIn t) = do
         writeReport $
             Err

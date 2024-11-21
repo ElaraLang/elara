@@ -102,6 +102,8 @@ library
       Elara.Shunt
       Elara.ToCore
       Elara.TypeInfer
+      Elara.TypeInfer.ConstraintGeneration
+      Elara.TypeInfer.Environment
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
       Elara.Utils
@@ -235,6 +237,7 @@ test-suite elara-test
       Arbitrary.AST
       Arbitrary.Literals
       Arbitrary.Names
+      Boilerplate
       Common
       Infer
       Lex
@@ -245,6 +248,7 @@ test-suite elara-test
       Parse.Common
       Parse.Expressions
       Parse.Patterns
+      Region
       Shunt
       Paths_elara
   autogen-modules:
