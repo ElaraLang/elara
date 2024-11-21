@@ -33,17 +33,17 @@ generateConstraints env (Expr (Located _ expr', expectedType)) =
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             polyType@(Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env
 
-            -- v
+            -- tv
             fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
             let
-                -- Q1[α/ν]
+                -- Q1[α/tv]
                 instantiatedConstraint =
                     substitute tyVar (TypeVar fresh) constraint
-                -- τ1[α/ν]
+                -- τ1[α/tv]
                 instantiatedMonotype =
                     substitute tyVar (TypeVar fresh) monotype
 
-            -- τ ~ τ1[α/ν]
+            -- τ ~ τ1[α/tv]
             let equalityConstraint = Equality monotype instantiatedMonotype
 
             tell [instantiatedConstraint, equalityConstraint]
