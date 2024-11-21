@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Elara.TypeInfer where
 
@@ -126,7 +127,6 @@ inferDeclaration (Declaration ld) = do
         e' <- inferExpression e (Just maybeExpected')
 
         ctx <- Infer.getAll
-        debugPretty $ simplifyContext (stripLocation ctx)
 
         completed <- completeExpression ctx e'
         push (Annotation (mkGlobal' declName) (completed ^. _Unwrapped % _2))
@@ -193,37 +193,20 @@ completeExpression ::
 completeExpression ctx (Expr (y', t)) = debugWith ("completeExpression: " <> showPretty (y', t)) $ do
     ctx' <- Infer.getAll
 
-    let solveFromGraph' t = do
-            graph <- unifyContextGraph $ simplifyContext (stripLocation ctx')
-
-            -- TODO: solveFromGraph needs to return all the neighbours so we can unify all of them
-            -- unify k with m? -> n?
-            let solved = solveFromGraph graph (stripLocation t)
-            debug ("solveFromGraph solved: " <> showPretty (t, solved))
-            all <- fmap stripLocation <$> Infer.getAll
-            let fromGraph = graphToContext graph
-            let c = fromGraph <> all
-            completed <- complete c solved
-            debug (showPretty (t, completed))
-            pure (t.location <$ completed)
-
-    completedType <- solveFromGraph' t
-
-    -- debug ("completeExpression ctx': " <> showPretty (nubOrd ctx', graph))
     fixedCompletedExpr <-
         traverseOf
             unlocated
             ( \case
-                TypeApplication f t' -> TypeApplication f <$> solveFromGraph' t'
+                TypeApplication f t' -> (pure (TypeApplication f t'))
                 Lambda p e -> do
                     -- stupid
-                    p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> (n,) <$> solveFromGraph' t) p
+                    p' <- traverseOf (unlocated % _Unwrapped) (\(n, t) -> pure ((n,t))) p
                     pure (Lambda p' e)
                 o -> pure o
             )
             y'
-    debug ("completeExpressionDone: " <> showPretty (fixedCompletedExpr, completedType))
-    recursivelyCompletedExpr <- traverseOf gplate (completeExpression ctx') (Expr (fixedCompletedExpr, completedType))
+    debug ("completeExpressionDone: " <> showPretty (fixedCompletedExpr, t))
+    recursivelyCompletedExpr <- traverseOf gplate (completeExpression ctx') (Expr (fixedCompletedExpr, t))
     traverseOf gplate (completePattern ctx') recursivelyCompletedExpr
   where
     completePattern :: HasCallStack => Context SourceRegion -> TypedPattern -> Sem r TypedPattern

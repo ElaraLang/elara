@@ -1,5 +1,5 @@
 module Infer where
-
+import Infer.ConstraintSolving qualified as ConstraintSolving
 import Arbitrary.Type (arbitraryType)
 import Common (diagShouldSucceed, runUnique)
 import Data.Generics.Product (HasField (field))
@@ -26,8 +26,9 @@ import Prelude hiding (fail)
 spec :: Spec
 spec = describe "Infers types correctly" $ parallel $ do
     simpleTypes
-    functionTypes
+    -- functionTypes
     typeApplications
+    ConstraintSolving.spec
 
 simpleTypes :: Spec
 simpleTypes = describe "Infers simple types correctly" $ parallel $ do

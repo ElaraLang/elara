@@ -102,6 +102,7 @@ library
       Elara.Shunt
       Elara.ToCore
       Elara.TypeInfer
+      Elara.TypeInfer.ConstraintSolving
       Elara.TypeInfer.Context
       Elara.TypeInfer.Domain
       Elara.TypeInfer.Error
@@ -246,6 +247,7 @@ test-suite elara-test
       Common
       Infer
       Infer.Common
+      Infer.ConstraintSolving
       Lex
       Lex.Common
       Lex.Indents

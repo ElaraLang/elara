@@ -1,4 +1,4 @@
 import Prelude
 import Option
 import Elara.Prim
-let bbb = let id = \x -> x in id
+let bbb = let id = \x -> x in id id
