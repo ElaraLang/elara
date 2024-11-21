@@ -15,6 +15,7 @@ import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
 import Polysemy.Writer
+import Print (debugColored, debugPretty)
 import TODO (todo)
 
 type InferEffects loc = '[Writer [Constraint loc], Error (InferError loc), UniqueGen]
@@ -29,16 +30,23 @@ generateConstraints env (Expr (Located _ expr', expectedType)) =
         Char c -> pure (Scalar ScalarChar)
         Unit -> pure (Scalar ScalarUnit)
         Var (Located l v) -> do
+            -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             polyType@(Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env
 
-            fresh <- makeUniqueTyVar
-
-            let instantiatedConstraint =
+            -- v
+            fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
+            let
+                -- Q1[α/ν]
+                instantiatedConstraint =
                     substitute tyVar (TypeVar fresh) constraint
+                -- τ1[α/ν]
                 instantiatedMonotype =
                     substitute tyVar (TypeVar fresh) monotype
 
-            tell [instantiatedConstraint]
+            -- τ ~ τ1[α/ν]
+            let equalityConstraint = Equality monotype instantiatedMonotype
+
+            tell [instantiatedConstraint, equalityConstraint]
 
             pure instantiatedMonotype
         Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body -> do
