@@ -1,6 +1,6 @@
 module Infer where
 
-import Boilerplate (loadShuntedExpr)
+import Boilerplate (loadShuntedExpr, pipelineResShouldSucceed)
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Module
 import Elara.AST.Region (Located (Located), generatedSourceRegion)
@@ -13,6 +13,7 @@ import Elara.Prim (primRegion)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
+import Hedgehog (property)
 import Optics.Operators.Unsafe ((^?!))
 import Polysemy (Sem, run, runM, subsume, subsume_)
 import Polysemy.Error (runError)
@@ -22,13 +23,13 @@ import Region (qualifiedTest, testLocated)
 import Relude.Unsafe ((!!))
 import Test.Syd
 import Test.Syd.Expectation
+import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
 
 spec :: Spec
 spec = describe "Infers types correctly" $ parallel $ do
     literalTests
-
--- variableTests
+    lambdaTests
 
 -- Literal Type Inference Tests
 literalTests :: Spec
@@ -48,13 +49,15 @@ literalTests = describe "Literal Type Inference" $ do
 lambdaTests :: Spec
 lambdaTests = describe "Lambda Type Inference" $ do
     it "infers lambda type correctly" $ do
-        expr <- loadShuntedExpr "\\x -> x"
-        pass
+        let expr = loadShuntedExpr "\\x -> x"
+        res <- pipelineResShouldSucceed expr
+        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
 
--- result <- runInfer $ generateConstraints emptyTypeEnvironment expr
--- result `shouldSucceed` \(constraints, ty) -> do
---     constraints `shouldBe` []
---     ty `shouldBe` Function (TypeVar 0) (Scalar ScalarInt)
+        result `shouldSucceed` \(constraints, ty) -> do
+            constraints `shouldBe` []
+            case ty of
+                Function (TypeVar a) (TypeVar b) | a == b -> pass
+                _ -> expectationFailure $ "Expected function type, got: " ++ show ty
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) ([Constraint loc], a))
 runInfer =

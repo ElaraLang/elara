@@ -149,7 +149,7 @@
                   postBuild = ''
                     wrapProgram $out/bin/stack \
                       --add-flags "\
-                        --no-nix \
+                        --nix \
                         --system-ghc \
                         --no-install-ghc \
                       "
