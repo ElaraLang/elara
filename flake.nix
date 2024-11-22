@@ -119,7 +119,7 @@
           programs.ormolu.enable = true;
           programs.nixpkgs-fmt.enable = true;
           programs.cabal-fmt.enable = false;
-          programs.hlint.enable = true;
+          # programs.hlint.enable = true;
 
           # Use fourmolu
           programs.ormolu.package = pkgs.haskellPackages.fourmolu;
