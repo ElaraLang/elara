@@ -171,7 +171,7 @@ library
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
+  default-language: GHC2024
 
 executable elara
   main-is: Main.hs
@@ -229,7 +229,7 @@ executable elara
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
+  default-language: GHC2024
 
 test-suite elara-test
   type: exitcode-stdio-1.0
@@ -313,4 +313,4 @@ test-suite elara-test
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
+  default-language: GHC2024

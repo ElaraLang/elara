@@ -8,7 +8,7 @@ copyright: 2022 Alexander Wood
 license: MIT
 github: ElaraLang/elara
 tested-with: ghc ==9.4.7
-language: GHC2021
+language: GHC2024
 
 extra-source-files:
   - src/Elara/Lexer/Lexer.x
