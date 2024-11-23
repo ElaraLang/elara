@@ -24,32 +24,33 @@ runUnify ::
     Either UnifyError (Substitution loc, Constraint loc)
 runUnify = run . runError
 
+
 prop_unify_type_vars :: Property
 prop_unify_type_vars = property $ do
     a <- forAll $ genUniqueTypeVar
     let typeVar = TypeVar a
     (sub, _) <- evalEither $ runUnify $ unify typeVar typeVar
-    sub === Substitution []
+    sub === Substitution mempty
 
 prop_unify_scalars :: Property
 prop_unify_scalars = property $ do
     a <- forAll $ Gen.enumBounded
     let scalarType = Scalar a
     (sub, _) <- evalEither $ runUnify $ unify scalarType scalarType
-    sub === Substitution []
+    sub === Substitution mempty
 
 prop_unify_self :: Property
 prop_unify_self = property $ do
     a <- forAll genMonotype
     (sub, _) <- evalEither $ runUnify $ unify a a
-    sub === Substitution []
+    sub === Substitution mempty
 
 prop_unify_functions :: Property
 prop_unify_functions = property $ do
     a <- forAll genMonotype
     b <- forAll genMonotype
     (sub, _) <- evalEither $ runUnify $ unify (Function a b) (Function a b)
-    sub === Substitution []
+    sub === Substitution mempty
 
 -- Hedgehog property: Check unification failure for mismatched types
 prop_unify_failure :: Property

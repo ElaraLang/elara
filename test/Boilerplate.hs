@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Boilerplate where
 
 import Common (diagShouldSucceed)
@@ -20,10 +22,18 @@ import Elara.Shunt
 import Error.Diagnose (hasReports)
 import Error.Diagnose.Diagnostic
 import Hedgehog
+import Language.Haskell.TH.Lib (stringE)
+import Language.Haskell.TH.Syntax (Exp, Pat, Q, Lift)
 import Polysemy (Sem, subsume_)
 import Polysemy.Reader
 import Region (qualifiedTest, testLocated)
 import Test.Syd (Expectation, expectationFailure)
+import Hedgehog.Internal.Property (failWith, failDiff)
+import Language.Haskell.TH (pprint)
+import Print (showColored)
+import Hedgehog.Internal.Show (renderValue, mkValue)
+import Print
+import Text.Show
 
 loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
 loadRenamedExpr = finalisePipeline . loadRenamedExpr'
@@ -87,3 +97,16 @@ mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
 
 mkFakeOp :: OpName -> VarRef OpName
 mkFakeOp name = Global (testLocated (qualifiedTest name))
+
+matchPat :: HasCallStack => Q Pat -> Q Exp
+matchPat qpat = do
+    pat <- qpat
+    let msg = Shown $ pprint pat
+    
+    [e|\case $(pure pat) -> pure (); o -> withFrozenCallStack $ failDiff msg o|]
+
+
+newtype Shown = Shown String deriving (Lift)
+
+instance Show Shown where
+    show (Shown s) = s

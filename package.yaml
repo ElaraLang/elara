@@ -128,3 +128,4 @@ tests:
       - hedgehog
       - sydtest
       - sydtest-hedgehog
+      - template-haskell

@@ -30,6 +30,9 @@ showColored = fromString . toString . pShow
 showPretty :: Pretty a => a -> Text
 showPretty = prettyToText
 
+prettyToString :: Pretty a => a -> String
+prettyToString = toString . prettyToText
+
 showPrettyUnannotated :: Pretty a => a -> Text
 showPrettyUnannotated = prettyToUnannotatedText
 

@@ -1,8 +1,12 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 -- | Types used by the type inference engine
 module Elara.TypeInfer.Type where
 
 import Data.Kind qualified as Kind
+import Data.Map qualified as Map
 import Elara.AST.Name
+import Elara.Data.Pretty (Pretty (..), hsep)
 import Elara.TypeInfer.Unique
 
 -- | A type scheme σ
@@ -69,14 +73,25 @@ data Scalar
 
 type DataCon = Qualified TypeName
 
-newtype Substitution loc = Substitution [(UniqueTyVar, Monotype loc)]
-    deriving newtype (Semigroup, Monoid)
+newtype Substitution loc
+    = Substitution
+        (Map UniqueTyVar (Monotype loc))
+    deriving newtype (Monoid)
     deriving stock (Eq, Show)
+
+instance Semigroup (Substitution loc) where
+    Substitution s1 <> Substitution s2 =
+        Substitution $
+            Map.union (fmap (substituteAll (Substitution s1)) s2) s1
+
+substitution :: (UniqueTyVar, Monotype loc) -> Substitution loc
+substitution = Substitution . one
 
 class Substitutable (a :: k -> Kind.Type) where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
     substituteAll :: Substitution loc -> a loc -> a loc
-    substituteAll (Substitution s) a = foldl' (\a (tv, t) -> substitute tv t a) a s
+    substituteAll (Substitution s) a =
+        foldr (\(tv, t) a' -> substitute tv t a') a (Map.toList s)
 
 instance Substitutable Type where
     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
@@ -90,3 +105,30 @@ instance Substitutable Monotype where
     substitute tv t (TypeVar tv') = if tv == tv' then t else TypeVar tv'
     substitute tv t (Scalar s) = Scalar s
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
+    substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)
+
+instance Pretty Scalar where
+    pretty ScalarInt = "Int"
+    pretty ScalarFloat = "Float"
+    pretty ScalarString = "String"
+    pretty ScalarChar = "Char"
+    pretty ScalarUnit = "Unit"
+
+instance Pretty loc => Pretty (Type loc) where
+    pretty (Forall tv c m) = "∀" <> pretty tv <> ". " <> pretty c <> " ⇒ " <> pretty m
+
+instance Pretty loc => Pretty (Constraint loc) where
+    pretty EmptyConstraint = "𝜖"
+    pretty (Conjunction c1 c2) = pretty c1 <> " ∧ " <> pretty c2
+    pretty (Equality m1 m2) = pretty m1 <> " ∼ " <> pretty m2
+
+instance Pretty loc => Pretty (Monotype loc) where
+    pretty (TypeVar tv) = pretty tv
+    pretty (Scalar s) = pretty s
+    pretty (TypeConstructor dc ts) = pretty dc <> " " <> hsep (pretty <$> ts)
+    pretty (Function t1 t2) = pretty t1 <> " → " <> pretty t2
+
+instance Pretty loc => Pretty (Substitution loc) where
+    pretty (Substitution s) = pretty (fmap prettySubstitution (Map.toList s))
+      where
+        prettySubstitution (tv, t) = pretty tv <> " ↦ " <> pretty t
