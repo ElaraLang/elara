@@ -51,7 +51,7 @@ dependencies:
 
 ghc-options:
   # - -Wall
-  # - -W
+  - -W
   # - -Wcompat
   - -Wno-name-shadowing # Shadowing is good, actually
   # - -Weverything

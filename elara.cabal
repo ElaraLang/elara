@@ -104,6 +104,7 @@ library
       Elara.TypeInfer
       Elara.TypeInfer.ConstraintGeneration
       Elara.TypeInfer.Environment
+      Elara.TypeInfer.Ftv
       Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
@@ -133,7 +134,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
   build-tools:
       alex
   build-depends:
@@ -192,7 +193,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
   build-depends:
       aeson
     , algebraic-graphs
@@ -238,10 +239,12 @@ test-suite elara-test
       Arbitrary.AST
       Arbitrary.Literals
       Arbitrary.Names
+      Arbitrary.Type
       Boilerplate
       Common
       HedgehogSyd
       Infer
+      Infer.Unify
       Lex
       Lex.Common
       Lex.Indents
@@ -269,7 +272,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
