@@ -4,31 +4,44 @@ import Data.Map qualified as Map
 import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (TypedLambdaParam (..))
-import Elara.AST.Region (Located (Located))
-import Elara.AST.Shunted (ShuntedExpr)
+import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
+import Elara.AST.Typed (TypedExpr, TypedExpr')
 import Elara.AST.VarRef
 import Elara.Data.Unique (UniqueGen)
-import Elara.TypeInfer.Environment (InferError, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupType)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupType, withLocalType)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution, Type (Forall))
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
+import Polysemy.State
 import Polysemy.Writer
 import Print (debugColored, debugPretty)
 import TODO (todo)
 
-type InferEffects loc = '[Writer (Constraint loc), Error (InferError loc), UniqueGen]
+type InferEffects loc = '[Writer (Constraint loc), State (LocalTypeEnvironment loc), Error (InferError loc), UniqueGen]
 type Infer loc r = Members (InferEffects loc) r
 
-generateConstraints :: Infer loc r => TypeEnvironment loc -> ShuntedExpr -> Sem r (Monotype loc)
-generateConstraints env (Expr (Located _ expr', expectedType)) =
+generateConstraints :: Infer SourceRegion r => TypeEnvironment SourceRegion -> ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
+generateConstraints env (Expr (Located loc expr', expectedType)) = do
+    (typedExpr', monotype) <- generateConstraints' env expr'
+    pure (Expr (Located loc typedExpr', monotype), monotype)
+
+liftMonotype :: Infer loc r => Monotype loc -> Sem r (Type loc)
+liftMonotype m = do
+    fresh <- makeUniqueTyVar
+    -- TODO this is dumb
+    pure $ Forall fresh EmptyConstraint m
+
+generateConstraints' :: Infer SourceRegion r => TypeEnvironment SourceRegion -> ShuntedExpr' -> Sem r (TypedExpr', Monotype SourceRegion)
+generateConstraints' env expr' =
     case expr' of
-        Int i -> pure (Scalar ScalarInt)
-        Float f -> pure (Scalar ScalarFloat)
-        String s -> pure (Scalar ScalarString)
-        Char c -> pure (Scalar ScalarChar)
-        Unit -> pure (Scalar ScalarUnit)
+        Int i -> pure (Int i, Scalar ScalarInt)
+        Float f -> pure (Float f, Scalar ScalarFloat)
+        String s -> pure (String s, Scalar ScalarString)
+        Char c -> pure (Char c, Scalar ScalarChar)
+        Unit -> pure (Unit, Scalar ScalarUnit)
         -- VAR
         Var (Located l v) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
@@ -49,22 +62,23 @@ generateConstraints env (Expr (Located _ expr', expectedType)) =
 
             tell (instantiatedConstraint <> equalityConstraint)
 
-            pure instantiatedMonotype
+            pure (Var (Located l v), instantiatedMonotype)
 
         -- ABS
         Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body -> do
             paramTyVar <- makeUniqueTyVar
 
-            let newEnv = addType (TermVarKey $ Local' paramName) (Forall paramTyVar EmptyConstraint (TypeVar paramTyVar)) env
+            (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
+                generateConstraints env body
 
-            bodyType <- generateConstraints newEnv body
+            let functionType = Function (TypeVar paramTyVar) bodyType
 
-            pure (Function (TypeVar paramTyVar) bodyType)
+            pure (Lambda (Located paramLoc (TypedLambdaParam (paramName, (TypeVar paramTyVar)))) typedBody, functionType)
 
         -- APP
         FunctionCall e1 e2 -> do
-            (c1, t1) <- listen $ generateConstraints env e1
-            (c2, t2) <- listen $ generateConstraints env e2
+            (c1, (e1', t1)) <- listen $ generateConstraints env e1
+            (c2, (e2', t2)) <- listen $ generateConstraints env e2
 
             resultTyVar <- makeUniqueTyVar
 
@@ -73,7 +87,7 @@ generateConstraints env (Expr (Located _ expr', expectedType)) =
 
             tell conjunct
 
-            pure (TypeVar resultTyVar)
+            pure (FunctionCall e1' e2', TypeVar resultTyVar)
 
 tidyConstraint :: Constraint loc -> Constraint loc
 tidyConstraint EmptyConstraint = EmptyConstraint

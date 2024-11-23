@@ -20,7 +20,7 @@ import Elara.AST.VarRef (VarRef, VarRef' (..))
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique)
-import Elara.TypeInfer.Type (Type (..))
+import Elara.TypeInfer.Type (Monotype, Type (..))
 import Optics (foldOf)
 
 type instance ASTLocate' 'Typed = Located
@@ -28,7 +28,7 @@ type instance ASTLocate' 'Typed = Located
 type instance ASTQual 'Typed = Qualified
 
 -- Selections for 'Expr'
-type instance Select "ExprType" 'Typed = Type SourceRegion
+type instance Select "ExprType" 'Typed = Monotype SourceRegion
 
 type instance Select "LambdaPattern" 'Typed = TypedLambdaParam (Unique VarName) 'Typed
 
@@ -50,14 +50,14 @@ type instance Select "List" 'Typed = DataConCantHappen
 type instance Select "Tuple" 'Typed = DataConCantHappen
 type instance Select "BinaryOperator" 'Typed = DataConCantHappen
 
-type instance Select "PatternType" 'Typed = Type SourceRegion
+type instance Select "PatternType" 'Typed = Monotype SourceRegion
 
 type instance Select "VarPat" 'Typed = Unique VarName
 type instance Select "ConPat" 'Typed = Qualified TypeName
 type instance Select "ListPattern" 'Typed = DataConCantHappen
 type instance Select "ConsPattern" 'Typed = DataConCantHappen
 
-type instance Select "TypeApplication" Typed = Type SourceRegion
+type instance Select "TypeApplication" Typed = Monotype SourceRegion
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Typed = NoFieldValue
@@ -115,36 +115,38 @@ instance HasDependencies TypedDeclaration where
             Generic.TypeDeclaration _ (Located _ (Generic.ADT ctors)) _ ->
                 toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
             _ -> []
-    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-        Generic.Value e NoFieldValue NoFieldValue _ ->
-            valueDependencies e
-                <> patternDependencies e
-        Generic.TypeDeclaration _ x _ ->
-            case x of
-                Located _ (Generic.ADT ctors) ->
-                    concatMapOf (each % _2 % each % _1) typeDependencies ctors
-                Located _ (Generic.Alias t) ->
-                    concatMapOf _1 typeDependencies t
+    dependencies decl = []
 
-valueDependencies :: TypedExpr -> [Qualified Name]
-valueDependencies x =
-    concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names x
-        <> concatMapOf (cosmosOnOf (_Unwrapped % _2) gplate) typeDependencies x
-  where
-    names :: TypedExpr' -> [Qualified Name]
-    names (Generic.Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
-    names (Generic.Constructor (Located _ e)) = [NTypeName <$> e]
-    names _ = []
+-- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+-- Generic.Value e NoFieldValue NoFieldValue _ ->
+--     valueDependencies e
+--         <> patternDependencies e
+-- Generic.TypeDeclaration _ x _ ->
+--     case x of
+--         Located _ (Generic.ADT ctors) ->
+--             concatMapOf (each % _2 % each % _1) typeDependencies ctors
+--         Located _ (Generic.Alias t) ->
+--             concatMapOf _1 typeDependencies t
 
-patternDependencies :: TypedExpr -> [Qualified Name]
-patternDependencies =
-    foldOf (gplate % to patternDependencies')
-  where
-    patternDependencies' :: TypedPattern -> [Qualified Name]
-    patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
-    names :: TypedPattern' -> [Qualified Name]
-    names (Generic.ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
-    names _ = []
+-- valueDependencies :: TypedExpr -> [Qualified Name]
+-- valueDependencies x =
+--     concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names x
+--         <> concatMapOf (cosmosOnOf (_Unwrapped % _2) gplate) typeDependencies x
+--   where
+--     names :: TypedExpr' -> [Qualified Name]
+--     names (Generic.Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
+--     names (Generic.Constructor (Located _ e)) = [NTypeName <$> e]
+--     names _ = []
 
-typeDependencies :: Type SourceRegion -> [Qualified Name]
-typeDependencies _ = [] -- TODO
+-- patternDependencies :: TypedExpr -> [Qualified Name]
+-- patternDependencies =
+--     foldOf (gplate % to patternDependencies')
+--   where
+--     patternDependencies' :: TypedPattern -> [Qualified Name]
+--     patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
+--     names :: TypedPattern' -> [Qualified Name]
+--     names (Generic.ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
+--     names _ = []
+
+-- typeDependencies :: Type SourceRegion -> [Qualified Name]
+-- typeDependencies _ = [] -- TODO

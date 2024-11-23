@@ -104,6 +104,7 @@ library
       Elara.TypeInfer
       Elara.TypeInfer.ConstraintGeneration
       Elara.TypeInfer.Environment
+      Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
       Elara.Utils

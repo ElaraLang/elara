@@ -157,33 +157,35 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
                 let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
-                let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
-                registerTyCon tyCon
-                ctors' <- for ctors $ \(Located _ n, t) -> do
-                    t' <- traverse (typeToCore . fst) t
-                    let ctorType =
-                            foldr
-                                (Core.ForAllTy . typedTvToCoreTv)
-                                ( foldr
-                                    Core.FuncTy
-                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
-                                    t'
-                                )
-                                tvs
-                    pure (nameText <$> n, ctorType, tyCon)
-                let ctors'' = fmap (uncurry3 DataCon) ctors'
-                traverse_ registerCtor ctors''
-                pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
+                todo
+            -- let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+            -- registerTyCon tyCon
+            -- ctors' <- for ctors $ \(Located _ n, t) -> do
+            --     t' <- traverse (typeToCore . fst) t
+            --     let ctorType =
+            --             foldr
+            --                 (Core.ForAllTy . typedTvToCoreTv)
+            --                 ( foldr
+            --                     Core.FuncTy
+            --                     (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
+            --                     t'
+            --                 )
+            --                 tvs
+            --     pure (nameText <$> n, ctorType, tyCon)
+            -- let ctors'' = fmap (uncurry3 DataCon) ctors'
+            -- traverse_ registerCtor ctors''
+            -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
             TypeDeclaration tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
-                t' <- typeToCore t
-                let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs
-                pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
+                todo
+    -- t' <- typeToCore t
+    -- let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs
+    -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
     pure $ CoreModule name (catMaybes decls)
 
 typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariable
 typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
 
-typeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
+typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Sem r Core.Type
 typeToCore _ = todo
 
 conToVar :: DataCon -> Core.Var
@@ -196,115 +198,117 @@ mkGlobalRef :: Qualified n -> UnlocatedVarRef n
 mkGlobalRef = Global . Identity
 
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Sem r CoreExpr
-toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
-  where
-    -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
-    moveTypeApplications :: CoreExpr -> CoreExpr
-    moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
-    moveTypeApplications x = x
+toCore = todo
 
-    toCore' :: InnerToCoreC r => TypedExpr' -> Sem r CoreExpr
-    toCore' = \case
-        AST.Int i -> pure $ Lit (Core.Int i)
-        AST.Float f -> pure $ Lit (Core.Double f)
-        AST.String s -> pure $ Lit (Core.String s)
-        AST.Char c -> pure $ Lit (Core.Char c)
-        AST.Unit -> pure $ Lit Core.Unit
-        AST.Var (Located _ vr@((Global l@(Located _ v)))) -> do
-            vt <- ask @VariableTable
-            t <- case M.lookup (NVarName <$> v) vt of
-                Just t -> typeToCore t
-                Nothing -> throw (UnknownVariable (NVarName <<$>> l))
+-- toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
+--   where
+--     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
+--     moveTypeApplications :: CoreExpr -> CoreExpr
+--     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
+--     moveTypeApplications x = x
 
-            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t Nothing)
-        AST.Var (Located _ v@(Local _)) -> do
-            t' <- typeToCore t
-            pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t' Nothing)
-        AST.Constructor v -> do
-            ctor <- lookupCtor v
-            pure $ Core.Var (conToVar ctor)
-        AST.Lambda (Located _ (TypedLambdaParam (vn, t))) body -> do
-            t'' <- typeToCore t
+--     toCore' :: InnerToCoreC r => TypedExpr' -> Sem r CoreExpr
+--     toCore' = \case
+--         AST.Int i -> pure $ Lit (Core.Int i)
+--         AST.Float f -> pure $ Lit (Core.Double f)
+--         AST.String s -> pure $ Lit (Core.String s)
+--         AST.Char c -> pure $ Lit (Core.Char c)
+--         AST.Unit -> pure $ Lit Core.Unit
+--         AST.Var (Located _ vr@((Global l@(Located _ v)))) -> do
+--             vt <- ask @VariableTable
+--             t <- case M.lookup (NVarName <$> v) vt of
+--                 Just t -> typeToCore t
+--                 Nothing -> throw (UnknownVariable (NVarName <<$>> l))
 
-            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'' Nothing) <$> toCore body
-        AST.FunctionCall e1 e2 -> do
-            e1' <- toCore e1
-            e2' <- toCore e2
-            pure (App e1' e2')
-        AST.TypeApplication e1 t1 -> do
-            e1' <- toCore e1
-            t1' <- typeToCore t1
-            pure (Core.TyApp e1' t1')
-        AST.If cond ifTrue ifFalse -> do
-            cond' <- toCore cond
-            ifTrue' <- toCore ifTrue
-            ifFalse' <- toCore ifFalse
-            pure $
-                Core.Match
-                    cond'
-                    Nothing
-                    [ (Core.DataAlt trueCtor, [], ifTrue')
-                    , (Core.DataAlt falseCtor, [], ifFalse')
-                    ]
-        -- AST.List [] -> do
-        --     t' <- typeToCore t
-        --     let ref = mkGlobalRef emptyListCtorName
-        --     pure $ Core.Var (Core.Id ref t' Nothing)
-        -- AST.List (x : xs) -> do
-        --     x' <- toCore x
-        --     xs' <- toCore' (AST.List xs)
-        --     let ref = mkGlobalRef consCtorName
-        --     consType' <- consType
-        --     pure $
-        --         Core.App
-        --             (Core.App (Core.Var $ Core.Id ref consType' Nothing) x') -- x
-        --             xs'
-        AST.Match e pats -> desugarMatch e pats
-        AST.Let{} -> throw (LetInTopLevel le)
-        AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
-            e1' <- toCore e1
-            e2' <- toCore e2
-            let isRecursive = False -- todo
-            let ref = mkLocalRef (nameText <$> vn)
-            t' <- typeToCore (typeOf e1)
-            pure $
-                Core.Let
-                    (if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
-                    e2'
-        AST.Block exprs -> desugarBlock exprs
+--             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t Nothing)
+--         AST.Var (Located _ v@(Local _)) -> do
+--             t' <- typeToCore t
+--             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t' Nothing)
+--         AST.Constructor v -> do
+--             ctor <- lookupCtor v
+--             pure $ Core.Var (conToVar ctor)
+--         AST.Lambda (Located _ (TypedLambdaParam (vn, t))) body -> do
+--             t'' <- typeToCore t
 
-stripForAll :: Core.Type -> Core.Type
-stripForAll (Core.ForAllTy _ t) = stripForAll t
-stripForAll t = t
+--             Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'' Nothing) <$> toCore body
+--         AST.FunctionCall e1 e2 -> do
+--             e1' <- toCore e1
+--             e2' <- toCore e2
+--             pure (App e1' e2')
+--         AST.TypeApplication e1 t1 -> do
+--             e1' <- toCore e1
+--             t1' <- typeToCore t1
+--             pure (Core.TyApp e1' t1')
+--         AST.If cond ifTrue ifFalse -> do
+--             cond' <- toCore cond
+--             ifTrue' <- toCore ifTrue
+--             ifFalse' <- toCore ifFalse
+--             pure $
+--                 Core.Match
+--                     cond'
+--                     Nothing
+--                     [ (Core.DataAlt trueCtor, [], ifTrue')
+--                     , (Core.DataAlt falseCtor, [], ifFalse')
+--                     ]
+--         -- AST.List [] -> do
+--         --     t' <- typeToCore t
+--         --     let ref = mkGlobalRef emptyListCtorName
+--         --     pure $ Core.Var (Core.Id ref t' Nothing)
+--         -- AST.List (x : xs) -> do
+--         --     x' <- toCore x
+--         --     xs' <- toCore' (AST.List xs)
+--         --     let ref = mkGlobalRef consCtorName
+--         --     consType' <- consType
+--         --     pure $
+--         --         Core.App
+--         --             (Core.App (Core.Var $ Core.Id ref consType' Nothing) x') -- x
+--         --             xs'
+--         AST.Match e pats -> desugarMatch e pats
+--         AST.Let{} -> throw (LetInTopLevel le)
+--         AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
+--             e1' <- toCore e1
+--             e2' <- toCore e2
+--             let isRecursive = False -- todo
+--             let ref = mkLocalRef (nameText <$> vn)
+--             t' <- typeToCore (typeOf e1)
+--             pure $
+--                 Core.Let
+--                     (if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
+--                     e2'
+--         AST.Block exprs -> desugarBlock exprs
 
-desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
-desugarMatch e pats = do
-    e' <- toCore e
-    bind' <- mkBindName e
+-- stripForAll :: Core.Type -> Core.Type
+-- stripForAll (Core.ForAllTy _ t) = stripForAll t
+-- stripForAll t = t
 
-    pats' <- for pats $ \(p, branch) -> do
-        (con, vars) <- patternToCore p
+-- desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
+-- desugarMatch e pats = do
+--     e' <- toCore e
+--     bind' <- mkBindName e
 
-        branch' <- toCore branch
-        pure (con, vars, branch')
+--     pats' <- for pats $ \(p, branch) -> do
+--         (con, vars) <- patternToCore p
 
-    pure $ Core.Match e' (Just bind') pats'
-  where
-    patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
-    patternToCore (Pattern (Located _ p, t)) = do
-        t' <- typeToCore t
-        case p of
-            AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])
-            AST.FloatPattern f -> pure (Core.LitAlt $ Core.Double f, [])
-            AST.StringPattern s -> pure (Core.LitAlt $ Core.String s, [])
-            AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
-            AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
-            AST.WildcardPattern -> pure (Core.DEFAULT, [])
-            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t' Nothing])
-            AST.ConstructorPattern cn pats -> do
-                c <- lookupCtor cn
-                pats' <- for pats patternToCore
-                pure (Core.DataAlt c, pats' >>= snd)
+--         branch' <- toCore branch
+--         pure (con, vars, branch')
+
+--     pure $ Core.Match e' (Just bind') pats'
+--   where
+--     patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
+--     patternToCore (Pattern (Located _ p, t)) = do
+--         t' <- typeToCore t
+--         case p of
+--             AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])
+--             AST.FloatPattern f -> pure (Core.LitAlt $ Core.Double f, [])
+--             AST.StringPattern s -> pure (Core.LitAlt $ Core.String s, [])
+--             AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
+--             AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
+--             AST.WildcardPattern -> pure (Core.DEFAULT, [])
+--             AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t' Nothing])
+--             AST.ConstructorPattern cn pats -> do
+--                 c <- lookupCtor cn
+--                 pats' <- for pats patternToCore
+--                 pure (Core.DataAlt c, pats' >>= snd)
 
 -- AST.ListPattern [] -> do
 --     t' <- typeToCore t
@@ -318,15 +322,15 @@ desugarMatch e pats = do
 --     vars' <- snd <$> patternToCore xs
 --     pure (Core.DataAlt $ DataCon consCtorName (ConTy listCon) listCon, vars <> vars')
 
-mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
-mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
-    t' <- typeToCore t
-    unique <- makeUnique (nameText $ varRefVal vn)
-    pure (Core.Id (mkLocalRef unique) t' Nothing)
-mkBindName (AST.Expr (_, t)) = do
-    t' <- typeToCore t
-    unique <- makeUnique "bind"
-    pure (Core.Id (mkLocalRef unique) t' Nothing)
+-- mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
+-- mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
+--     t' <- typeToCore t
+--     unique <- makeUnique (nameText $ varRefVal vn)
+--     pure (Core.Id (mkLocalRef unique) t' Nothing)
+-- mkBindName (AST.Expr (_, t)) = do
+--     t' <- typeToCore t
+--     unique <- makeUnique "bind"
+--     pure (Core.Id (mkLocalRef unique) t' Nothing)
 
 desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (a :| []) = toCore a

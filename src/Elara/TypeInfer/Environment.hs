@@ -4,9 +4,12 @@ import Control.Monad.Error.Class (MonadError (throwError))
 import Data.Map qualified as Map
 import Elara.AST.Name
 import Elara.AST.VarRef
+import Elara.Data.Unique
 import Elara.TypeInfer.Type
 import Polysemy (Member, Sem)
 import Polysemy.Error
+import Polysemy.State
+import Polysemy.State.Extra
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
@@ -38,3 +41,17 @@ lookupType key env'@(TypeEnvironment env) =
 data InferError loc
     = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
     deriving (Show)
+
+data LocalTypeEnvironment loc
+    = LocalTypeEnvironment
+        (Map (Unique VarName) (Monotype loc))
+    deriving (Show)
+
+emptyLocalTypeEnvironment :: LocalTypeEnvironment loc
+emptyLocalTypeEnvironment = LocalTypeEnvironment Map.empty
+
+addLocalType :: Unique VarName -> Monotype loc -> LocalTypeEnvironment loc -> LocalTypeEnvironment loc
+addLocalType var ty (LocalTypeEnvironment env) = LocalTypeEnvironment (Map.insert var ty env)
+
+withLocalType :: Member (State (LocalTypeEnvironment loc)) r => Unique VarName -> Monotype loc -> Sem r a -> Sem r a
+withLocalType var ty = locally (addLocalType var ty)

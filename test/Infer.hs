@@ -19,6 +19,7 @@ import Hedgehog.Range qualified as Range
 import Optics.Operators.Unsafe ((^?!))
 import Polysemy (Sem, run, runM, subsume, subsume_)
 import Polysemy.Error (runError)
+import Polysemy.State (evalState, runState)
 import Polysemy.Writer (runWriter)
 import Print (showColored, showPretty)
 import Region (qualifiedTest, testLocated)
@@ -40,13 +41,13 @@ literalTests :: Spec
 literalTests = describe "Literal Type Inference" $ do
     it "infers Int type correctly" $ do
         result <- runInfer $ generateConstraints emptyTypeEnvironment (mkIntExpr 42)
-        result `shouldSucceed` \(constraints, ty) -> do
+        result `shouldSucceed` \(constraints, (intExp, ty)) -> do
             constraints `shouldBe` mempty
             ty `shouldSatisfy` isScalarInt
 
     it "infers Float type correctly" $ do
         result <- runInfer $ generateConstraints emptyTypeEnvironment (mkFloatExpr 42.0)
-        result `shouldSucceed` \(constraints, ty) -> do
+        result `shouldSucceed` \(constraints, (exp, ty)) -> do
             constraints `shouldBe` mempty
             ty `shouldSatisfy` isScalarFloat
 
@@ -57,7 +58,7 @@ lambdaTests = describe "Lambda Type Inference" $ do
         res <- pipelineResShouldSucceed expr
         result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
 
-        result `shouldSucceed` \(constraint, ty) -> do
+        result `shouldSucceed` \(constraint, (exp, ty)) -> do
             (tv1, tv2) <- case constraint of
                 Equality tv1 tv2 -> pure (tv1, tv2)
                 _ -> expectationFailure $ "Expected equality constraint, got: " ++ show constraint
@@ -70,7 +71,7 @@ lambdaTests = describe "Lambda Type Inference" $ do
         res <- pipelineResShouldSucceed expr
         result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
 
-        result `shouldSucceed` \(constraint, ty) -> do
+        result `shouldSucceed` \(constraint, (exp, ty)) -> do
             (tv1, tv2) <- case constraint of
                 Conjunction (Equality tv1 tv2) (Equality function1 function2) -> pure (tv1, tv2)
                 _ -> expectationFailure $ "Expected equality constraint, got: " ++ showColored constraint
@@ -88,9 +89,9 @@ prop_literalTypesInvariants = property $ do
                 , mkStringExpr <$> Gen.text (Range.linear 0 100) Gen.alphaNum
                 ]
 
-    (constraint, exprType) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
+    (constraint, (exp, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
 
-    case exprType of
+    case ty of
         Scalar _ -> pass
         _ -> failure
 
@@ -100,6 +101,7 @@ runInfer =
         . runM @IO
         . uniqueGenToIO
         . runError
+        . evalState emptyLocalTypeEnvironment
         . runWriter
         . subsume_
 
