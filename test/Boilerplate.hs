@@ -5,7 +5,7 @@ module Boilerplate where
 import Common (diagShouldSucceed)
 import Elara.AST.Generic
 import Elara.AST.Module
-import Elara.AST.Name
+import Elara.AST.Name hiding (Name)
 import Elara.AST.Select
 import Elara.AST.VarRef
 import Elara.Data.Pretty (prettyToText)
@@ -22,17 +22,19 @@ import Elara.Shunt
 import Error.Diagnose (hasReports)
 import Error.Diagnose.Diagnostic
 import Hedgehog
+import Language.Haskell.TH
+
+import Hedgehog.Internal.Property (failDiff, failWith)
+import Hedgehog.Internal.Show (mkValue, renderValue)
+import Language.Haskell.TH (pprint)
 import Language.Haskell.TH.Lib (stringE)
-import Language.Haskell.TH.Syntax (Exp, Pat, Q, Lift)
+import Language.Haskell.TH.Syntax (Exp, Lift, Name (..), NameFlavour (..), Pat, Q)
 import Polysemy (Sem, subsume_)
 import Polysemy.Reader
+import Print
+import Print (showColored)
 import Region (qualifiedTest, testLocated)
 import Test.Syd (Expectation, expectationFailure)
-import Hedgehog.Internal.Property (failWith, failDiff)
-import Language.Haskell.TH (pprint)
-import Print (showColored)
-import Hedgehog.Internal.Show (renderValue, mkValue)
-import Print
 import Text.Show
 
 loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
@@ -98,15 +100,24 @@ mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
 mkFakeOp :: OpName -> VarRef OpName
 mkFakeOp name = Global (testLocated (qualifiedTest name))
 
-matchPat :: HasCallStack => Q Pat -> Q Exp
-matchPat qpat = do
+ensureExpressionMatches :: HasCallStack => Q Pat -> Q Exp
+ensureExpressionMatches qpat = do
     pat <- qpat
-    let msg = Shown $ pprint pat
-    
-    [e|\case $(pure pat) -> pure (); o -> withFrozenCallStack $ failDiff msg o|]
+    let msg = Shown $ pprint (stripQualifiers pat)
 
+    [e|\case $(pure pat) -> pure (); o -> withFrozenCallStack $ failDiff msg o|]
 
 newtype Shown = Shown String deriving (Lift)
 
 instance Show Shown where
     show (Shown s) = s
+
+stripQualifiers :: Pat -> Pat
+stripQualifiers = transformOf gplate $ \case
+    ConP name t ps -> ConP (stripQualifiersName name) t ps
+    x -> x
+  where
+    stripQualifiersName :: Name -> Name
+    stripQualifiersName (Name x (NameQ _)) = Name x NameS
+    stripQualifiersName (Name x (NameG{})) = Name x NameS
+    stripQualifiersName n = n
