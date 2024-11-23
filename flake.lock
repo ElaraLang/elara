@@ -98,6 +98,22 @@
         "type": "github"
       }
     },
+    "fourmolu": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1730733209,
+        "narHash": "sha256-J1PpAbRT6OWg1zlLr/edxwhU6wkQZ4j7QXWdU02oEMI=",
+        "owner": "fourmolu",
+        "repo": "fourmolu",
+        "rev": "78056311a86c9f5484b2613259df0348e094634d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fourmolu",
+        "repo": "fourmolu",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -333,6 +349,7 @@
         "diagnose": "diagnose",
         "flake-parts": "flake-parts",
         "flake-root": "flake-root",
+        "fourmolu": "fourmolu",
         "h2jvm": "h2jvm",
         "haskell-flake": "haskell-flake_2",
         "hlint": "hlint",

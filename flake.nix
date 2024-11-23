@@ -17,6 +17,9 @@
 
     hlint.url = "github:ndmitchell/hlint";
     hlint.flake = false;
+
+    fourmolu.url = "github:fourmolu/fourmolu";
+    fourmolu.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -46,6 +49,7 @@
             # megaparsec.source = inputs.megaparsec;
             polysemy-test.source = "0.10.0.0";
             hlint.source = inputs.hlint;
+            fourmolu.source = "0.16.2.0";
           };
 
           settings = {
@@ -96,13 +100,12 @@
           };
         };
 
+
         checks = {
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
-            settings = {
-              treefmt.package = config.treefmt.build.wrapper;
-            };
             hooks = {
+              treefmt.package = config.treefmt.build.wrapper;
               treefmt.enable = true;
             };
           };
@@ -117,14 +120,9 @@
           inherit (config.flake-root) projectRootFile;
           package = pkgs.treefmt;
 
-          programs.ormolu.enable = true;
+          programs.fourmolu.enable = true;
           programs.nixpkgs-fmt.enable = true;
           programs.cabal-fmt.enable = false;
-
-
-          # Use fourmolu
-          programs.ormolu.package = pkgs.haskellPackages.fourmolu;
-
         };
 
 
