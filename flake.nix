@@ -15,8 +15,8 @@
     diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    # megaparsec.url = "github:mrkkrp/megaparsec";
-    # megaparsec.flake = true;
+    hlint.url = "github:ndmitchell/hlint";
+    hlint.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -45,10 +45,11 @@
             diagnose.source = inputs.diagnose;
             # megaparsec.source = inputs.megaparsec;
             polysemy-test.source = "0.10.0.0";
+            hlint.source = inputs.hlint;
           };
 
           settings = {
-
+            hlint.jailbreak = true;
             fourmolu.check = false;
             polysemy-test.jailbreak = true;
             polysemy-conc.jailbreak = true;
@@ -119,7 +120,7 @@
           programs.ormolu.enable = true;
           programs.nixpkgs-fmt.enable = true;
           programs.cabal-fmt.enable = false;
-          programs.hlint.enable = false;
+
 
           # Use fourmolu
           programs.ormolu.package = pkgs.haskellPackages.fourmolu;

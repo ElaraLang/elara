@@ -173,6 +173,22 @@
         "type": "github"
       }
     },
+    "hlint": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1729435405,
+        "narHash": "sha256-IqGhE9pAaK6CtVTPrsOpWvZMkvICng8pwv6KSGVAg9I=",
+        "owner": "ndmitchell",
+        "repo": "hlint",
+        "rev": "ad9a1f8485eb34d40a59cc0bd1457d03fbffd50d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ndmitchell",
+        "repo": "hlint",
+        "type": "github"
+      }
+    },
     "just-flake": {
       "locked": {
         "lastModified": 1713316411,
@@ -319,6 +335,7 @@
         "flake-root": "flake-root",
         "h2jvm": "h2jvm",
         "haskell-flake": "haskell-flake_2",
+        "hlint": "hlint",
         "just-flake": "just-flake",
         "nixpkgs": "nixpkgs_2",
         "pre-commit-hooks": "pre-commit-hooks",
@@ -384,11 +401,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1732187120,
-        "narHash": "sha256-XdW2mYXvPHYtZ8oQqO3tRYtxx7kI0Hs3NU64IwAtD68=",
+        "lastModified": 1732292307,
+        "narHash": "sha256-5WSng844vXt8uytT5djmqBCkopyle6ciFgteuA9bJpw=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "37f8f47cb618eddee0c0dd31a582b1cd3013c7f6",
+        "rev": "705df92694af7093dfbb27109ce16d828a79155f",
         "type": "github"
       },
       "original": {
