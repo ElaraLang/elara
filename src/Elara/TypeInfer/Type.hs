@@ -1,6 +1,7 @@
 -- | Types used by the type inference engine
 module Elara.TypeInfer.Type where
 
+import Data.Kind qualified as Kind
 import Elara.AST.Name
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
 import Elara.TypeInfer.Unique
@@ -21,6 +22,15 @@ data Constraint loc
       Equality (Monotype loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 
+instance Semigroup (Constraint loc) where
+    EmptyConstraint <> c = c
+    c <> EmptyConstraint = c
+    c1 <> c2 | c1 == c2 = c1 -- Reflexivity
+    c1 <> c2 = Conjunction c1 c2
+
+instance Monoid (Constraint loc) where
+    mempty = EmptyConstraint
+
 -- | An axiom scheme QQ
 data AxiomScheme loc
     = -- | The empty axiom scheme 𝜖
@@ -28,6 +38,7 @@ data AxiomScheme loc
     | -- | The conjunction of two axiom schemes, QQ₁ ∧ QQ₂
       ConjunctionAxiomScheme (AxiomScheme loc) (AxiomScheme loc)
     | -- | A universal quantification of an axiom scheme, ∀α. QQ ⇒ QQ
+      -- Practically this could be a declaration like @forall a. Eq a => Eq [a]@
       ForallAxiomScheme
         -- | Type variable to be quantified
         UniqueTyVar
@@ -60,8 +71,12 @@ data Scalar
 
 type DataCon = Qualified TypeName
 
-class Substitutable a where
+data Substitution loc = Substitution [(UniqueTyVar, Monotype loc)]
+
+class Substitutable (a :: k -> Kind.Type) where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
+    substituteAll :: Substitution loc -> a loc -> a loc
+    substituteAll (Substitution s) a = foldl' (\a (tv, t) -> substitute tv t a) a s
 
 instance Substitutable Type where
     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
