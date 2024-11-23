@@ -16,6 +16,7 @@ import Elara.TypeInfer.Type
 import Hedgehog (Property, assert, evalEither, evalEitherM, evalIO, failure, forAll, property)
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
+import Infer.Unify qualified as Unify
 import Optics.Operators.Unsafe ((^?!))
 import Polysemy (Sem, run, runM, subsume, subsume_)
 import Polysemy.Error (runError)
@@ -30,11 +31,12 @@ import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
 
 spec :: Spec
-spec = describe "Infers types correctly" $ parallel $ do
+spec = describe "Infers types correctly" $ do
     literalTests
     lambdaTests
 
     it "infers literals" prop_literalTypesInvariants
+    Unify.spec
 
 -- Literal Type Inference Tests
 literalTests :: Spec

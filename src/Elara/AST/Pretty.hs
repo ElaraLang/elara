@@ -45,8 +45,7 @@ prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr el
 
         long =
             align
-                ( "\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
-                )
+                ("\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body))
 
 prettyFunctionCall :: (?contextFree :: Bool, Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
 prettyFunctionCall e1' e2' = parens (if ?contextFree then short else group (flatAlt long short))

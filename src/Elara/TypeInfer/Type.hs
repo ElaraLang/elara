@@ -3,9 +3,7 @@ module Elara.TypeInfer.Type where
 
 import Data.Kind qualified as Kind
 import Elara.AST.Name
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
 import Elara.TypeInfer.Unique
-import Prelude hiding (Constraint)
 
 -- | A type scheme σ
 data Type loc
@@ -67,11 +65,13 @@ data Scalar
     | ScalarString
     | ScalarChar
     | ScalarUnit
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Generic, Show, Eq, Ord, Enum, Bounded)
 
 type DataCon = Qualified TypeName
 
-data Substitution loc = Substitution [(UniqueTyVar, Monotype loc)]
+newtype Substitution loc = Substitution [(UniqueTyVar, Monotype loc)]
+    deriving newtype (Semigroup, Monoid)
+    deriving stock (Eq, Show)
 
 class Substitutable (a :: k -> Kind.Type) where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc

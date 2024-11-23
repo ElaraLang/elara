@@ -11,7 +11,8 @@ import Elara.AST.Typed (TypedExpr, TypedExpr')
 import Elara.AST.VarRef
 import Elara.Data.Unique (UniqueGen)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
-import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution, Type (Forall))
+import Elara.TypeInfer.Ftv (occurs)
+import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (Forall))
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
@@ -95,9 +96,61 @@ tidyConstraint (Conjunction x (Conjunction y z)) | x == y = Conjunction (tidyCon
 tidyConstraint (Conjunction c1 c2) = Conjunction (tidyConstraint c1) (tidyConstraint c2)
 tidyConstraint (Equality x y) = Equality x y
 
--- unifyConstraints :: [Constraint loc] ->
+solveConstraints :: AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
+solveConstraints axioms given wanted = do
+    (substitution, simplifiedWanted) <- unifyEquality wanted
 
--- simplifyConstraints :: AxiomScheme loc -> Constraint loc -> Constraint loc -> (Constraint loc, Substitution loc)
--- simplifyConstraints axioms given wanted = (residual, subst)
---   where
---     (residual, subst) = todo
+    -- let simplifiedGiven = substitute substitution given
+
+    -- let simplifiedWanted' = substitute substitution simplifiedWanted
+
+    -- let (entailable, residualWanted) = entail axioms simplifiedGiven simplifiedWanted'
+
+    pure (todo, substitution)
+
+unifyEquality :: Constraint loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unifyEquality (Equality a b) = unify a b
+unifyEquality c = pure (mempty, c)
+
+unify :: HasCallStack => Monotype loc -> Monotype loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unify (TypeVar a) (TypeVar b) | a == b = pure (mempty, EmptyConstraint)
+unify (TypeVar a) b =
+    if occurs a b
+        then throw OccursCheckFailed
+        else pure (Substitution [(a, b)], EmptyConstraint)
+unify a (TypeVar b) = unify (TypeVar b) a -- swap to avoid duplication
+unify (Scalar a) (Scalar b) =
+    if a == b
+        then pure (mempty, EmptyConstraint)
+        else throw ScalarMismatch
+unify (TypeConstructor a as) (TypeConstructor b bs)
+    | a /= b = throw TypeConstructorMismatch
+    | length as /= length bs = throw ArityMismatch
+    | otherwise = unifyMany as bs
+unify (Function a b) (Function c d) = do
+    (s1, c1) <- unify a c
+    (s2, c2) <- unify (substituteAll s1 b) (substituteAll s1 d)
+    pure (s1 <> s2, c1 <> c2)
+unify a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
+
+unifyMany ::
+    HasCallStack =>
+    [Monotype loc] ->
+    [Monotype loc] ->
+    Sem
+        '[Error UnifyError]
+        (Substitution loc, Constraint loc)
+unifyMany [] _ = pure (mempty, EmptyConstraint)
+unifyMany _ [] = pure (mempty, EmptyConstraint)
+unifyMany (a : as) (b : bs) = do
+    (s1, c1) <- unify a b
+    (s2, c2) <- unifyMany (fmap (substituteAll s1) as) (fmap (substituteAll s1) bs)
+    pure (s1 <> s2, c1 <> c2)
+
+data UnifyError
+    = OccursCheckFailed
+    | ScalarMismatch
+    | TypeConstructorMismatch
+    | ArityMismatch
+    | UnificationFailed String
+    deriving (Eq, Show)

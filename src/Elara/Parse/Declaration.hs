@@ -42,8 +42,7 @@ defDec modName = fmapLocated Declaration $ do
         ( Declaration'
             modName
             name
-            ( DeclarationBody declBody
-            )
+            (DeclarationBody declBody)
         )
 
 letDec :: Located ModuleName -> Parser FrontendDeclaration
