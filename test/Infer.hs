@@ -1,7 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Infer where
 
-import Boilerplate (loadShuntedExpr, pipelineResShouldSucceed)
+import Boilerplate (ensureExpressionMatches, loadShuntedExpr, pipelineResShouldSucceed)
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Module
 import Elara.AST.Region (Located (Located), generatedSourceRegion)
@@ -14,8 +15,9 @@ import Elara.Prim (primRegion)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
-import Hedgehog (Property, assert, evalEither, evalEitherM, evalIO, failure, forAll, property, (===), annotate)
+import Hedgehog (Property, annotate, assert, evalEither, evalEitherM, evalIO, failure, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
+import Hedgehog.Internal.Property (failWith)
 import Hedgehog.Range qualified as Range
 import Infer.Unify qualified as Unify
 import Optics.Operators.Unsafe ((^?!))
@@ -23,16 +25,13 @@ import Polysemy (Sem, run, runM, subsume, subsume_)
 import Polysemy.Error (runError)
 import Polysemy.State (evalState, runState)
 import Polysemy.Writer (runWriter)
-import Print (showColored, showPretty, printColored)
+import Print (prettyToString, printColored, showColored, showPretty)
 import Region (qualifiedTest, testLocated)
 import Relude.Unsafe ((!!))
 import Test.Syd
 import Test.Syd.Expectation
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
-import Hedgehog.Internal.Property (failWith)
-import Print (prettyToString)
-import Boilerplate (matchPat)
 
 spec :: Spec
 spec = describe "Infers types correctly" $ do
@@ -78,7 +77,7 @@ lambdaTests = describe "Lambda Type Inference" $ do
         (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
         (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
         substituteAll subst ty === Scalar ScalarInt
-    
+
     it "infers nested identity function correctly" $ property $ do
         let expr = loadShuntedExpr "(\\x -> (\\y -> y) x) 42"
         res <- liftIO $ pipelineResShouldSucceed expr
@@ -98,12 +97,9 @@ prop_literalTypesInvariants = property $ do
                 , mkStringExpr <$> Gen.text (Range.linear 0 100) Gen.alphaNum
                 ]
 
-    (constraint, (exp, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
+    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
 
-    $(matchPat [p|Scalar _|]) ty
-    -- case ty of
-    --     Scalar _ -> pass
-    --     _ -> failure
+    $(ensureExpressionMatches [p|Scalar ScalarInt|]) ty
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) (Constraint loc, a))
 runInfer =
@@ -122,7 +118,6 @@ shouldSucceed ::
     IO b
 shouldSucceed (Left err) _ = withFrozenCallStack $ expectationFailure $ "Inference failed: " ++ show err
 shouldSucceed (Right result) assertion = assertion result
-
 
 -- Utility Matchers
 isScalarInt :: Monotype loc -> Bool
