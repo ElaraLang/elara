@@ -4,8 +4,6 @@
     systems.url = "github:nix-systems/default";
     flake-parts.url = "github:hercules-ci/flake-parts";
     haskell-flake.url = "github:srid/haskell-flake";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     flake-root.url = "github:srid/flake-root";
     just-flake.url = "github:juspay/just-flake";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
@@ -29,7 +27,6 @@
 
       imports = [
         inputs.haskell-flake.flakeModule
-        inputs.treefmt-nix.flakeModule
         inputs.flake-root.flakeModule
         inputs.just-flake.flakeModule
       ];
@@ -49,7 +46,7 @@
             # megaparsec.source = inputs.megaparsec;
             polysemy-test.source = "0.10.0.0";
             hlint.source = inputs.hlint;
-            fourmolu.source = "0.16.2.0";
+            fourmolu.source = inputs.fourmolu;
           };
 
           settings = {
@@ -93,8 +90,8 @@
 
           devShell = {
             tools = hp: {
-              treefmt = config.treefmt.build.wrapper;
-            } // config.treefmt.build.programs;
+              # treefmt = config.treefmt.build.wrapper;
+            };
 
             hlsCheck.enable = false;
           };
@@ -105,7 +102,7 @@
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
-              treefmt.package = config.treefmt.build.wrapper;
+              # treefmt.package = config.treefmt.build.wrapper;
               treefmt.enable = true;
             };
           };
@@ -116,14 +113,6 @@
         };
 
 
-        treefmt.config = {
-          inherit (config.flake-root) projectRootFile;
-          package = pkgs.treefmt;
-
-          programs.fourmolu.enable = true;
-          programs.nixpkgs-fmt.enable = true;
-          programs.cabal-fmt.enable = false;
-        };
 
 
         packages.default = self'.packages.elara;
@@ -136,7 +125,7 @@
           ];
           inherit (self.checks.${system}.pre-commit-check) shellHook;
 
-          nativeBuildInputs = [ pkgs.just pkgs.convco ];
+          nativeBuildInputs = [ pkgs.just pkgs.convco pkgs.treefmt ];
 
           buildInputs =
             let
