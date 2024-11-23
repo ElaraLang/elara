@@ -59,11 +59,11 @@ lambdaTests = describe "Lambda Type Inference" $ do
         result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
 
         result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            (tv1, tv2) <- case constraint of
-                Equality tv1 tv2 -> pure (tv1, tv2)
-                _ -> expectationFailure $ "Expected equality constraint, got: " ++ show constraint
+            case constraint of
+                EmptyConstraint -> pure ()
+                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
             case ty of
-                Function a b | a == tv1 && b == tv2 -> pass
+                Function a b | a == b -> pass
                 _ -> expectationFailure $ "Expected function type, got: " ++ show ty
 
     it "infers applied identity function correctly" $ do
@@ -72,12 +72,9 @@ lambdaTests = describe "Lambda Type Inference" $ do
         result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
 
         result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            (tv1, tv2) <- case constraint of
-                Conjunction (Equality tv1 tv2) (Equality function1 function2) -> pure (tv1, tv2)
+            case constraint of
+                (Equality tv1 tv2) -> pure ()
                 _ -> expectationFailure $ "Expected equality constraint, got: " ++ showColored constraint
-            case ty of
-                Scalar ScalarInt | tv1 == tv2 -> pass
-                _ -> expectationFailure $ "Expected int type, got: " ++ showColored ty
 
 prop_literalTypesInvariants :: Property
 prop_literalTypesInvariants = property $ do

@@ -10,7 +10,7 @@ import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Typed (TypedExpr, TypedExpr')
 import Elara.AST.VarRef
 import Elara.Data.Unique (UniqueGen)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupType, withLocalType)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution, Type (Forall))
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy
@@ -28,12 +28,6 @@ generateConstraints env (Expr (Located loc expr', expectedType)) = do
     (typedExpr', monotype) <- generateConstraints' env expr'
     pure (Expr (Located loc typedExpr', monotype), monotype)
 
-liftMonotype :: Infer loc r => Monotype loc -> Sem r (Type loc)
-liftMonotype m = do
-    fresh <- makeUniqueTyVar
-    -- TODO this is dumb
-    pure $ Forall fresh EmptyConstraint m
-
 generateConstraints' :: Infer SourceRegion r => TypeEnvironment SourceRegion -> ShuntedExpr' -> Sem r (TypedExpr', Monotype SourceRegion)
 generateConstraints' env expr' =
     case expr' of
@@ -43,6 +37,11 @@ generateConstraints' env expr' =
         Char c -> pure (Char c, Scalar ScalarChar)
         Unit -> pure (Unit, Scalar ScalarUnit)
         -- VAR
+        -- local variables
+        Var v'@(Located l (Local (Located l2 v))) -> do
+            local <- lookupLocalVar v
+            pure (Var v', local)
+        -- global variables
         Var (Located l v) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             polyType@(Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env

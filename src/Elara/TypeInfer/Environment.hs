@@ -40,6 +40,7 @@ lookupType key env'@(TypeEnvironment env) =
 -- | An error that can occur during type inference
 data InferError loc
     = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
+    | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
     deriving (Show)
 
 data LocalTypeEnvironment loc
@@ -55,3 +56,17 @@ addLocalType var ty (LocalTypeEnvironment env) = LocalTypeEnvironment (Map.inser
 
 withLocalType :: Member (State (LocalTypeEnvironment loc)) r => Unique VarName -> Monotype loc -> Sem r a -> Sem r a
 withLocalType var ty = locally (addLocalType var ty)
+
+lookupLocalVarType :: Member (Error (InferError loc)) r => Unique VarName -> LocalTypeEnvironment loc -> Sem r (Monotype loc)
+lookupLocalVarType var (LocalTypeEnvironment env) =
+    case Map.lookup var env of
+        Just ty -> pure ty
+        Nothing -> throw (UnboundLocalVar var (LocalTypeEnvironment env))
+
+lookupLocalVar ::
+    ( Member (State (LocalTypeEnvironment loc)) r
+    , Member (Error (InferError loc)) r
+    ) =>
+    Unique VarName ->
+    Sem r (Monotype loc)
+lookupLocalVar name = get >>= lookupLocalVarType name
