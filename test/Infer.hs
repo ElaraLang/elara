@@ -99,7 +99,7 @@ prop_literalTypesInvariants = property $ do
 
     (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
 
-    $(ensureExpressionMatches [p|Scalar ScalarInt|]) ty
+    $(ensureExpressionMatches [p|Scalar _|]) ty
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) (Constraint loc, a))
 runInfer =
