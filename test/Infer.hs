@@ -32,12 +32,13 @@ import Test.Syd
 import Test.Syd.Expectation
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
+import Boilerplate (shouldMatch)
 
 spec :: Spec
 spec = describe "Infers types correctly" $ do
     literalTests
     lambdaTests
-
+    letInTests 
     it "infers literals" prop_literalTypesInvariants
     Unify.spec
 
@@ -87,6 +88,39 @@ lambdaTests = describe "Lambda Type Inference" $ do
         annotate $ prettyToString newConstraint
         annotate $ prettyToString subst
         substituteAll subst ty === Scalar ScalarInt
+
+letInTests :: Spec
+letInTests = describe "Let In Type Inference" $ do
+    it "infers let in type correctly" $ do
+        let expr = loadShuntedExpr "let x = 42 in x"
+        res <- pipelineResShouldSucceed expr
+        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+
+        result `shouldSucceed` \(constraint, (exp, ty)) -> do
+            case constraint of
+                EmptyConstraint -> pure ()
+                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
+            ty `shouldSatisfy` isScalarInt
+
+    it "infers let in type correctly with shadowing" $ do
+        let expr = loadShuntedExpr "let x = 42 in let x = 43 in x"
+        res <- pipelineResShouldSucceed expr
+        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+
+        result `shouldSucceed` \(constraint, (exp, ty)) -> do
+            case constraint of
+                EmptyConstraint -> pure ()
+                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
+            ty `shouldSatisfy` isScalarInt
+
+    it "infers let in type correctly with shadowing and lambda" $ do
+        let expr = loadShuntedExpr "let x = 42 in let f = \\x -> x in f x"
+        res <- pipelineResShouldSucceed expr
+        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+
+        result `shouldSucceed` \(constraint, (exp, ty)) -> do
+            ty `shouldSatisfy` isScalarInt
+
 
 prop_literalTypesInvariants :: Property
 prop_literalTypesInvariants = property $ do

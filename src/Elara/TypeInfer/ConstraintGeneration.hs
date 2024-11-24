@@ -19,7 +19,7 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State
 import Polysemy.Writer
-import Print (debugColored, debugPretty, prettyToString, showPretty)
+import Print (debugPretty)
 import TODO (todo)
 
 type InferEffects loc = '[Writer (Constraint loc), State (LocalTypeEnvironment loc), Error (InferError loc), UniqueGen]
@@ -91,6 +91,20 @@ generateConstraints' env expr' =
             tell equalityConstraint
 
             pure (FunctionCall e1' e2', TypeVar resultTyVar)
+
+        -- LET
+        {-
+        Q ; Γ ⊢ e1 : τ1 Q ; Γ, (x :τ1) ⊢ e2 : τ2
+        ----------------------------------------------
+                Q ; Γ ⊢ let x = e1 in e2 : τ2
+        -}
+        LetIn (Located loc varName) NoFieldValue varExpr body -> do
+            (typedVarExpr, varType) <- generateConstraints env varExpr
+
+            withLocalType varName varType $ do
+                (typedBody, bodyType) <- generateConstraints env body
+
+                pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
 
 solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do

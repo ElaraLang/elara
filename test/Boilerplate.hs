@@ -35,7 +35,9 @@ import Print
 import Print (showColored)
 import Region (qualifiedTest, testLocated)
 import Test.Syd (Expectation, expectationFailure)
+import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Show
+import Control.Exception (throwIO)
 
 loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
 loadRenamedExpr = finalisePipeline . loadRenamedExpr'
@@ -106,6 +108,13 @@ ensureExpressionMatches qpat = do
     let msg = Shown $ pprint (stripQualifiers pat)
 
     [e|\case $(pure pat) -> pure (); o -> withFrozenCallStack $ failDiff msg o|]
+
+-- | like 'ensureExpressionMatches', but for Expectations rather than Hedgehog properties
+shouldMatch :: HasCallStack => Q Pat -> Q Exp
+shouldMatch qpat = do
+    pat <- qpat
+    let msg = pprint (stripQualifiers pat)
+    [|\case $(pure pat) -> pure (); o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg |]
 
 newtype Shown = Shown String deriving (Lift)
 
