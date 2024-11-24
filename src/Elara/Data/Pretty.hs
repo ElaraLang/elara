@@ -149,7 +149,7 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => Pretty (a, b, c, 
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => Pretty (a, b, c, d, e, f) where
     pretty (a, b, c, d, e, f) = tupled [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f]
 
-instance {-# OVERLAPS #-} PP.Pretty a => Pretty a where
+instance {-# OVERLAPPABLE #-}  PP.Pretty a => Pretty a where
     pretty = PP.pretty
 
 escapeChar :: IsString s => Char -> s

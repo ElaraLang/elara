@@ -9,16 +9,17 @@ import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Typed (TypedExpr, TypedExpr')
 import Elara.AST.VarRef
+import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (Forall), substitution)
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
+import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
 import Polysemy.State
 import Polysemy.Writer
-import Print (debugColored, debugPretty)
+import Print (debugColored, debugPretty, prettyToString, showPretty)
 import TODO (todo)
 
 type InferEffects loc = '[Writer (Constraint loc), State (LocalTypeEnvironment loc), Error (InferError loc), UniqueGen]
@@ -45,8 +46,9 @@ generateConstraints' env expr' =
         -- global variables
         Var (Located l v) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            polyType@(Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env
+            (Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env
 
+            debugPretty ("Constraint for " <> pretty v <> "= " <> pretty constraint)
             -- tv
             fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
             let
@@ -71,32 +73,26 @@ generateConstraints' env expr' =
             (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
                 generateConstraints env body
 
-            let functionType = Function (TypeVar paramTyVar) bodyType
+            let functionType = (TypeVar paramTyVar) `Function` bodyType
 
-            pure (Lambda (Located paramLoc (TypedLambdaParam (paramName, (TypeVar paramTyVar)))) typedBody, functionType)
+            pure
+                ( Lambda (Located paramLoc (TypedLambdaParam (paramName, (TypeVar paramTyVar)))) typedBody
+                , functionType
+                )
 
         -- APP
         FunctionCall e1 e2 -> do
-            (c1, (e1', t1)) <- listen $ generateConstraints env e1
-            (c2, (e2', t2)) <- listen $ generateConstraints env e2
+            (e1', t1) <- generateConstraints env e1
+            (e2', t2) <- generateConstraints env e2
 
             resultTyVar <- makeUniqueTyVar
 
             let equalityConstraint = Equality t1 (Function t2 (TypeVar resultTyVar))
-            let conjunct = mconcat [c1, c2, equalityConstraint]
-
-            tell conjunct
+            tell equalityConstraint
 
             pure (FunctionCall e1' e2', TypeVar resultTyVar)
 
-tidyConstraint :: Constraint loc -> Constraint loc
-tidyConstraint EmptyConstraint = EmptyConstraint
-tidyConstraint (Conjunction x y) | x == y = tidyConstraint x
-tidyConstraint (Conjunction x (Conjunction y z)) | x == y = Conjunction (tidyConstraint x) (tidyConstraint z)
-tidyConstraint (Conjunction c1 c2) = Conjunction (tidyConstraint c1) (tidyConstraint c2)
-tidyConstraint (Equality x y) = Equality x y
-
-solveConstraints :: AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
+solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do
     (substitution, simplifiedWanted) <- unifyEquality wanted
 
@@ -108,21 +104,21 @@ solveConstraints axioms given wanted = do
 
     pure (todo, substitution)
 
-unifyEquality :: Constraint loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unifyEquality :: Pretty loc => Constraint loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
 unifyEquality (Equality a b) = unify a b
 unifyEquality (Conjunction a b) = do
+    -- a lot of this is duplicated from unifyMany which is a bit annoying
     (s1, c1) <- unifyEquality a
-    (s2, c2) <- unifyEquality b
+    -- apply s1 to b before unifying
+    (s2, c2) <- unifyEquality (substituteAll s1 b)
     pure (s1 <> s2, c1 <> c2)
-unifyEquality c = pure (mempty, c)
+unifyEquality EmptyConstraint = pure (mempty, EmptyConstraint)
 
-unify :: HasCallStack => Monotype loc -> Monotype loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
-unify (TypeVar a) (TypeVar b) | a == b = pure (mempty, EmptyConstraint)
-unify (TypeVar a) b =
-    if occurs a b
-        then throw OccursCheckFailed
-        else pure (substitution (a, b), EmptyConstraint)
-unify a (TypeVar b) = unify (TypeVar b) a -- swap to avoid duplication
+unify ::
+    HasCallStack =>
+    Monotype loc -> Monotype loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unify (TypeVar a) b = (,EmptyConstraint) <$> bind a b
+unify a (TypeVar b) = (,EmptyConstraint) <$> bind b a
 unify (Scalar a) (Scalar b) =
     if a == b
         then pure (mempty, EmptyConstraint)
@@ -131,27 +127,25 @@ unify (TypeConstructor a as) (TypeConstructor b bs)
     | a /= b = throw TypeConstructorMismatch
     | length as /= length bs = throw ArityMismatch
     | otherwise = unifyMany as bs
-unify (Function a b) (Function c d) = do
-    (s1, c1) <- unify a c
-    (s2, c2) <- unify (substituteAll s1 b) (substituteAll s1 d)
-    pure (s1 <> s2, c1 <> c2)
+unify (Function a b) (Function c d) = unifyMany [a, b] [c, d]
 unify a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
+
+bind :: Member (Error UnifyError) r => UniqueTyVar -> Monotype loc -> Sem r (Substitution loc)
+bind a t | t == TypeVar a = pure mempty
+bind a t | occurs a t = throw OccursCheckFailed
+bind a t = pure $ substitution (a, t)
 
 unifyMany ::
     HasCallStack =>
     [Monotype loc] ->
     [Monotype loc] ->
-    Sem
-        '[Error UnifyError]
-        (Substitution loc, Constraint loc)
-unifyMany [] _ = pure (mempty, EmptyConstraint)
-unifyMany _ [] = pure (mempty, EmptyConstraint)
+    Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unifyMany [] [] = pure (mempty, EmptyConstraint)
+unifyMany [] _ = throw UnifyMismatch
+unifyMany _ [] = throw UnifyMismatch
 unifyMany (a : as) (b : bs) = do
-    (s1, c1) <- unify a b
-    let as' = fmap (substituteAll s1) as
-    let bs' = fmap (substituteAll s1) bs
-    (s2, c2) <- unifyMany as' bs'
-
+    (s1 :: Substitution loc, c1) <- unify a b
+    (s2, c2) <- unifyMany (fmap (substituteAll s1) as) (fmap (substituteAll s1) bs)
     pure (s1 <> s2, c1 <> c2)
 
 data UnifyError
@@ -160,4 +154,5 @@ data UnifyError
     | TypeConstructorMismatch
     | ArityMismatch
     | UnificationFailed String
+    | UnifyMismatch
     deriving (Eq, Show)

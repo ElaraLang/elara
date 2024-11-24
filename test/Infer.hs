@@ -78,10 +78,11 @@ lambdaTests = describe "Lambda Type Inference" $ do
         (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
         substituteAll subst ty === Scalar ScalarInt
 
-    it "infers nested identity function correctly" $ property $ do
+    withoutRetries $ it "infers nested identity function correctly" $  property $ do
         let expr = loadShuntedExpr "(\\x -> (\\y -> y) x) 42"
         res <- liftIO $ pipelineResShouldSucceed expr
         (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+        annotate $ prettyToString constraint
         (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
         annotate $ prettyToString newConstraint
         annotate $ prettyToString subst
@@ -103,8 +104,7 @@ prop_literalTypesInvariants = property $ do
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) (Constraint loc, a))
 runInfer =
-    fmap (\x -> fmap (\(cons, y) -> (tidyConstraint cons, y)) x)
-        . runM @IO
+        runM @IO
         . uniqueGenToIO
         . runError
         . evalState emptyLocalTypeEnvironment
