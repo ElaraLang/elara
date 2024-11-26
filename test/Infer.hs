@@ -29,6 +29,7 @@ spec = describe "Infers types correctly" $ do
     lambdaTests
     letInTests
     ifElseTests
+    recursionTests
     it "infers literals" prop_literalTypesInvariants
     Unify.spec
 
@@ -48,7 +49,7 @@ literalTests = describe "Literal Type Inference" $ do
             $(shouldMatch [p|(Scalar ScalarFloat)|]) ty
 
 lambdaTests :: Spec
-lambdaTests = describe "Lambda Type Inference" $ do
+lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
     it "infers lambda type correctly" $ do
         let expr = loadShuntedExpr "\\x -> x"
         res <- pipelineResShouldSucceed expr
@@ -67,13 +68,13 @@ lambdaTests = describe "Lambda Type Inference" $ do
 
         expr === Scalar ScalarInt
 
-    withoutRetries $ it "infers nested identity function correctly" $ property $ do
+    it "infers nested identity function correctly" $ property $ do
         expr <- inferFully "(\\x -> (\\y -> y) x) 42"
 
         expr === Scalar ScalarInt
 
 letInTests :: Spec
-letInTests = describe "Let In Type Inference" $ do
+letInTests =withoutRetries $ describe "Let In Type Inference" $ do
     it "infers let in type correctly" $ property $ do
         expr <- inferFully "let x = 42 in x"
 
@@ -89,10 +90,12 @@ letInTests = describe "Let In Type Inference" $ do
 
         expr === Scalar ScalarInt
 
+recursionTests :: Spec
+recursionTests = withoutRetries $ describe "recursion tests" $ do
     it "recursion" $ property $ do
         expr <- inferFully "let loop x = if x == 0 then x else loop (x - 1) in loop"
 
-        expr === Scalar ScalarInt
+        expr === Function (Scalar ScalarInt) (Scalar ScalarInt)
 
 ifElseTests :: Spec
 ifElseTests = describe "If Else Type Inference" $ do
@@ -100,7 +103,6 @@ ifElseTests = describe "If Else Type Inference" $ do
         expr <- inferFully "if True then 42 else 43"
 
         expr === Scalar ScalarInt
-    
 
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc
