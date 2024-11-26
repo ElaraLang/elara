@@ -8,7 +8,7 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Select
 import Elara.AST.VarRef
-import Elara.Data.Pretty (prettyToText)
+import Elara.Data.Pretty (Doc, prettyToText)
 import Elara.Data.TopologicalGraph
 import Elara.Desugar
 import Elara.Lexer.Pipeline
@@ -24,12 +24,17 @@ import Error.Diagnose.Diagnostic
 import Hedgehog
 import Language.Haskell.TH
 
+import Control.Exception (throwIO)
+import Elara.Data.Pretty (AnsiStyle)
+import Elara.Error
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Hedgehog.Internal.Show (mkValue, renderValue)
 import Language.Haskell.TH (pprint)
 import Language.Haskell.TH.Lib (stringE)
 import Language.Haskell.TH.Syntax (Exp, Lift, Name (..), NameFlavour (..), Pat, Q)
-import Polysemy (Sem, subsume_)
+import Polysemy (Embed, Member, Sem, raise, raise_, subsume, subsume_)
+import Polysemy.Log
+import Polysemy.Maybe
 import Polysemy.Reader
 import Print
 import Print (showColored)
@@ -37,14 +42,21 @@ import Region (qualifiedTest, testLocated)
 import Test.Syd (Expectation, expectationFailure)
 import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Show
-import Control.Exception (throwIO)
 
 loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
 loadRenamedExpr = finalisePipeline . loadRenamedExpr'
 
-loadRenamedExpr' :: _ => Text -> Sem _ (Expr 'Renamed)
+loadRenamedExpr' ::
+    forall w.
+    ( Member (DiagnosticWriter (Doc AnsiStyle)) w
+    , Member MaybeE w
+    , Member (Embed IO) w
+    , Member Log w
+    ) =>
+    Text -> Sem w (Expr 'Renamed)
 loadRenamedExpr' source = runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
     let fp = "<tests>"
+    Elara.Error.addFile fp (toString source)
     tokens <- readTokensWith fp (toString source)
     parsed <- parsePipeline exprParser fp (toString source, tokens)
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
@@ -57,7 +69,7 @@ loadShuntedExpr source = finalisePipeline . runShuntPipeline $ do
     runReader fakeOperatorTable $ fixExpr renamed
 
 pipelineResShouldSucceed :: (Show a, _) => PipelineRes a -> IO a
-pipelineResShouldSucceed m = withFrozenCallStack $ do
+pipelineResShouldSucceed m = do
     (d, x) <- m
     when (hasReports d) $
         expectationFailure $
@@ -67,6 +79,15 @@ pipelineResShouldSucceed m = withFrozenCallStack $ do
     case x of
         Just ok -> pure ok
         Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+
+evalPipelineRes :: (MonadTest m, MonadIO m) => PipelineRes a -> m a
+evalPipelineRes m = do
+    (d, x) <- liftIO m
+    diagShouldSucceed (d, x)
+
+    case x of
+        Just ok -> pure ok
+        Nothing -> failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
 
 operatorRenameState :: RenameState
 operatorRenameState =
@@ -114,7 +135,7 @@ shouldMatch :: HasCallStack => Q Pat -> Q Exp
 shouldMatch qpat = do
     pat <- qpat
     let msg = pprint (stripQualifiers pat)
-    [|\case $(pure pat) -> pure (); o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg |]
+    [|\case $(pure pat) -> pure (); o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg|]
 
 newtype Shown = Shown String deriving (Lift)
 
