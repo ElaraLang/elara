@@ -159,21 +159,28 @@ generateConstraints' env expr' =
             pure (If typedCond typedThen typedElse, thenType)
         TypeApplication e ty -> do
             error "i dont know what to do with type applications yet sorry"
+
+        -- MATCH
+        -- (match (e: τ) with { p1 -> e1; ...; pn -> en }) : τr
         Match e cases -> do
+            -- Q ; Γ ⊢ e : τ
             (typedE, eType) <- generateConstraints env e
 
+            -- τr
             resultTyVar <- makeUniqueTyVar
 
             cases' <- for cases $ \(pattern, body) -> scoped $ do
-                tell EmptyConstraint
-
+                -- Q ; Γ ⊢ p1 : τ1
                 (typedPattern, patternType) <- generatePatternConstraints pattern
 
+                -- τ1 ~ τ
                 let equalityConstraint = Equality eType patternType
                 tell equalityConstraint
 
+                -- Q ; Γ ⊢ e1 : τ2
                 (typedBody, bodyType) <- generateConstraints env body
 
+                -- τ2 ~ τr
                 tell (Equality bodyType (TypeVar resultTyVar))
 
                 pure (typedPattern, typedBody)
