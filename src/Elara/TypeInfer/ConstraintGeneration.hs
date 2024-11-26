@@ -209,6 +209,11 @@ generatePatternConstraints' :: Infer SourceRegion r => ShuntedPattern' -> Sem r 
 generatePatternConstraints' pattern' =
     case pattern' of
         WildcardPattern -> pure (WildcardPattern, Scalar ScalarUnit)
+        UnitPattern -> pure (UnitPattern, Scalar ScalarUnit)
+        IntegerPattern i -> pure (IntegerPattern i, Scalar ScalarInt)
+        FloatPattern f -> pure (FloatPattern f, Scalar ScalarFloat)
+        StringPattern s -> pure (StringPattern s, Scalar ScalarString)
+        CharPattern c -> pure (CharPattern c, Scalar ScalarChar)
         VarPattern (Located loc varName) -> do
             varType <- makeUniqueTyVar
             modify (addLocalType (NormalVarName <$> varName) (TypeVar varType))
