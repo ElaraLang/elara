@@ -2,6 +2,7 @@
 
 module Prelude (
     module Relude,
+    for,
     (:~:),
     (<<$),
     ($>>),
@@ -98,6 +99,7 @@ import Optics (
  )
 import Optics.Operators ((%~), (.~), (?~), (^.), (^..), (^?))
 import Optics.State.Operators ((%=), (?=))
+import Data.Traversable (for)
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f

@@ -1,23 +1,29 @@
+{-# LANGUAGE NoPatternSynonyms #-}
+
 module Elara.TypeInfer.ConstraintGeneration where
 
 import Data.Map qualified as Map
-import Elara.AST.Generic (Expr (..), Expr' (..))
+import Data.Traversable (for)
+import Elara.AST.Generic (Expr (..), Expr' (..), Pattern' (WildcardPattern))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
-import Elara.AST.Generic.Types (TypedLambdaParam (..))
+import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
+import Elara.AST.Generic.Types qualified as Syntax
+import Elara.AST.Name (LowerAlphaName (LowerAlphaName), VarName (..))
 import Elara.AST.Region (Located (Located), SourceRegion)
-import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr')
+import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
-import Elara.AST.Typed (TypedExpr, TypedExpr')
+import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique (UniqueGen)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
+import Elara.Data.Unique (Unique, UniqueGen)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
 import Polysemy.State
+import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
 import Print (debugPretty)
 import TODO (todo)
@@ -153,6 +159,63 @@ generateConstraints' env expr' =
             tell equalityConstraint1
 
             pure (If typedCond typedThen typedElse, thenType)
+        TypeApplication e ty -> do
+            error "i dont know what to do with type applications yet sorry"
+        Match e cases -> do
+            (typedE, eType) <- generateConstraints env e
+
+            resultTyVar <- makeUniqueTyVar
+
+            cases' <- for cases $ \(pattern, body) -> scoped $ do
+                tell EmptyConstraint
+
+                (typedPattern, patternType) <- generatePatternConstraints pattern
+
+                let equalityConstraint = Equality eType patternType
+                tell equalityConstraint
+
+                (typedBody, bodyType) <- generateConstraints env body
+
+                tell (Equality bodyType (TypeVar resultTyVar))
+
+                pure (typedPattern, typedBody)
+
+            pure (Match typedE cases', TypeVar resultTyVar)
+        Block exprs -> do
+            vals <- for exprs $ \expr -> do
+                generateConstraints env expr
+
+            let exprs = fmap fst vals
+
+            let exprTypes = fmap snd vals
+
+            pure $ ((Syntax.Block exprs), last exprTypes)
+        Let (Located loc varName) NoFieldValue varExpr -> do
+            recursiveVar <- makeUniqueTyVar
+            (typedVarExpr, varType) <- withLocalType varName (TypeVar recursiveVar) $ do
+                generateConstraints env varExpr
+
+            let recursiveConstraint = Equality (TypeVar recursiveVar) varType
+            tell recursiveConstraint
+
+            modify (addLocalType varName varType)
+
+            pure (Let (Located loc varName) NoFieldValue typedVarExpr, varType)
+
+generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Sem r (TypedPattern, Monotype SourceRegion)
+generatePatternConstraints (Pattern (Located loc pattern', expectedType)) = do
+    (typedPattern', monotype) <- generatePatternConstraints' pattern'
+    pure (Pattern (Located loc typedPattern', monotype), monotype)
+
+generatePatternConstraints' :: Infer SourceRegion r => ShuntedPattern' -> Sem r (TypedPattern', Monotype SourceRegion)
+generatePatternConstraints' pattern' =
+    case pattern' of
+        WildcardPattern -> pure (WildcardPattern, Scalar ScalarUnit)
+        VarPattern (Located loc varName) -> do
+            varType <- makeUniqueTyVar
+            modify (addLocalType (NormalVarName <$> varName) (TypeVar varType))
+
+            pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
 
 solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do
