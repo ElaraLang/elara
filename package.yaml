@@ -126,6 +126,6 @@ tests:
       - hspec-megaparsec
       - QuickCheck
       - hedgehog
-      - sydtest
+      - sydtest >= 0.18.0.0
       - sydtest-hedgehog
       - template-haskell

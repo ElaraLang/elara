@@ -309,7 +309,7 @@ test-suite elara-test
     , relude
     , safe-exceptions
     , stringsearch
-    , sydtest
+    , sydtest >=0.18.0.0
     , sydtest-hedgehog
     , template-haskell
     , terminal-size
