@@ -2,21 +2,19 @@
 
 module Elara.TypeInfer.ConstraintGeneration where
 
-import Data.Map qualified as Map
-import Data.Traversable (for)
-import Elara.AST.Generic (Expr (..), Expr' (..), Pattern' (WildcardPattern))
+import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
 import Elara.AST.Generic.Types qualified as Syntax
-import Elara.AST.Name (LowerAlphaName (LowerAlphaName), VarName (..))
+import Elara.AST.Name (VarName (..))
 import Elara.AST.Region (Located (Located), SourceRegion)
 import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
+import Elara.Data.Unique (UniqueGen)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
