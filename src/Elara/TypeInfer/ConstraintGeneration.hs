@@ -14,7 +14,7 @@ import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupType, withLocalType)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment (LocalTypeEnvironment), TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
@@ -175,7 +175,7 @@ generateConstraints' expr' =
             -- τr
             resultTyVar <- makeUniqueTyVar
 
-            cases' <- for cases $ \(pattern, body) -> scoped $ do
+            cases' <- for cases $ \(pattern, body) -> scoped @(LocalTypeEnvironment _) $ do
                 -- Q ; Γ ⊢ p1 : τ1
                 (typedPattern, patternType) <- generatePatternConstraints pattern
 
