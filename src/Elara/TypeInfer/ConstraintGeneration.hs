@@ -11,9 +11,9 @@ import Elara.AST.Typed (TypedExpr, TypedExpr')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (TermVarKey), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType, lookupLocalVar, lookupLocalVarType, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
-import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (Forall), substitution)
+import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy
 import Polysemy.Error
@@ -38,33 +38,59 @@ generateConstraints' env expr' =
         String s -> pure (String s, Scalar ScalarString)
         Char c -> pure (Char c, Scalar ScalarChar)
         Unit -> pure (Unit, Scalar ScalarUnit)
+        Constructor (Located loc name) -> do
+            -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
+            varType <- lookupType (DataConKey $ stripLocation name) env
+            case varType of
+                Lifted monotype -> pure (Constructor (Located loc name), monotype)
+                (Forall tyVar constraint monotype) -> do
+                    debugPretty ("Constraint for " <> pretty name <> "= " <> pretty constraint)
+                    -- tv
+                    fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
+                    let
+                        -- Q1[α/tv]
+                        instantiatedConstraint =
+                            substitute tyVar (TypeVar fresh) constraint
+                        -- τ1[α/tv]
+                        instantiatedMonotype =
+                            substitute tyVar (TypeVar fresh) monotype
+
+                    -- τ ~ τ1[α/tv]
+                    let equalityConstraint = Equality monotype instantiatedMonotype
+
+                    tell (instantiatedConstraint <> equalityConstraint)
+
+                    pure (Constructor (Located loc name), instantiatedMonotype)
+
         -- VAR
         -- local variables
-        Var v'@(Located l (Local (Located l2 v))) -> do
+        Var v'@(Located _ (Local (Located _ v))) -> do
             local <- lookupLocalVar v
             pure (Var v', local)
         -- global variables
         Var (Located l v) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            (Forall tyVar constraint monotype) <- lookupType (TermVarKey $ stripLocation v) env
+            varType <- lookupType (TermVarKey $ stripLocation v) env
+            case varType of
+                Lifted monotype -> pure (Var (Located l v), monotype)
+                (Forall tyVar constraint monotype) -> do
+                    debugPretty ("Constraint for " <> pretty v <> "= " <> pretty constraint)
+                    -- tv
+                    fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
+                    let
+                        -- Q1[α/tv]
+                        instantiatedConstraint =
+                            substitute tyVar (TypeVar fresh) constraint
+                        -- τ1[α/tv]
+                        instantiatedMonotype =
+                            substitute tyVar (TypeVar fresh) monotype
 
-            debugPretty ("Constraint for " <> pretty v <> "= " <> pretty constraint)
-            -- tv
-            fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
-            let
-                -- Q1[α/tv]
-                instantiatedConstraint =
-                    substitute tyVar (TypeVar fresh) constraint
-                -- τ1[α/tv]
-                instantiatedMonotype =
-                    substitute tyVar (TypeVar fresh) monotype
+                    -- τ ~ τ1[α/tv]
+                    let equalityConstraint = Equality monotype instantiatedMonotype
 
-            -- τ ~ τ1[α/tv]
-            let equalityConstraint = Equality monotype instantiatedMonotype
+                    tell (instantiatedConstraint <> equalityConstraint)
 
-            tell (instantiatedConstraint <> equalityConstraint)
-
-            pure (Var (Located l v), instantiatedMonotype)
+                    pure (Var (Located l v), instantiatedMonotype)
 
         -- ABS
         Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body -> do
@@ -97,14 +123,36 @@ generateConstraints' env expr' =
         Q ; Γ ⊢ e1 : τ1 Q ; Γ, (x :τ1) ⊢ e2 : τ2
         ----------------------------------------------
                 Q ; Γ ⊢ let x = e1 in e2 : τ2
+
+        (except not quite because lets are recursive)
         -}
         LetIn (Located loc varName) NoFieldValue varExpr body -> do
-            (typedVarExpr, varType) <- generateConstraints env varExpr
+            recursiveVar <- makeUniqueTyVar
+            (typedVarExpr, varType) <- withLocalType varName (TypeVar recursiveVar) $ do
+                generateConstraints env varExpr
 
-            withLocalType varName varType $ do
-                (typedBody, bodyType) <- generateConstraints env body
+            let recursiveConstraint = Equality (TypeVar recursiveVar) varType
+            tell recursiveConstraint
 
-                pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
+            (typedBody, bodyType) <-
+                withLocalType varName (TypeVar recursiveVar) $
+                    generateConstraints env body
+
+            pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
+
+        -- IF
+        If cond then' else' -> do
+            (typedCond, condType) <- generateConstraints env cond
+            (typedThen, thenType) <- generateConstraints env then'
+            (typedElse, elseType) <- generateConstraints env else'
+
+            let equalityConstraint = Equality condType (Scalar ScalarBool)
+            tell equalityConstraint
+
+            let equalityConstraint1 = Equality thenType elseType
+            tell equalityConstraint1
+
+            pure (If typedCond typedThen typedElse, thenType)
 
 solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do

@@ -3,7 +3,7 @@
 module Boilerplate where
 
 import Common (diagShouldSucceed)
-import Elara.AST.Generic
+import Elara.AST.Generic hiding (TypeVar)
 import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Select
@@ -25,8 +25,14 @@ import Hedgehog
 import Language.Haskell.TH
 
 import Control.Exception (throwIO)
+import Elara.AST.StripLocation
 import Elara.Data.Pretty (AnsiStyle)
+import Elara.Data.Unique (unsafeMkUnique)
 import Elara.Error
+import Elara.Prim (primModuleName)
+import Elara.TypeInfer.Environment
+import Elara.TypeInfer.Environment (TypeEnvironment (TypeEnvironment))
+import Elara.TypeInfer.Type
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Hedgehog.Internal.Show (mkValue, renderValue)
 import Language.Haskell.TH (pprint)
@@ -101,6 +107,7 @@ operatorRenameState =
                         , mkFakeVarP "*"
                         , mkFakeVarP "/"
                         , mkFakeVarP "|>"
+                        , mkFakeVarP "=="
                         ]
                 , typeNames = fromList []
                 , typeVars = fromList []
@@ -115,7 +122,20 @@ fakeOperatorTable =
             , mkFakeVarP "*" (OpInfo (mkPrecedence 7) LeftAssociative)
             , mkFakeVarP "/" (OpInfo (mkPrecedence 7) LeftAssociative)
             , mkFakeVarP "|>" (OpInfo (mkPrecedence 1) RightAssociative)
+            , mkFakeVarP "==" (OpInfo (mkPrecedence 4) NonAssociative)
             ]
+
+fakeTypeEnvironment :: TypeEnvironment loc
+fakeTypeEnvironment =
+    emptyTypeEnvironment
+        & addType (TermVarKey (stripLocation $ mkFakeVar "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (stripLocation $ mkFakeVar "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (stripLocation $ mkFakeVar "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (stripLocation $ mkFakeVar "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (stripLocation $ mkFakeVar "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (stripLocation $ mkFakeVar "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarBool))))
+        & addType (DataConKey (Qualified "True" primModuleName)) (Lifted (Scalar ScalarBool))
+        & addType (DataConKey (Qualified "False" primModuleName)) (Lifted (Scalar ScalarBool))
 
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))

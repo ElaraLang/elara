@@ -2,35 +2,24 @@
 
 module Infer where
 
-import Boilerplate (ensureExpressionMatches, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
+import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironment, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
-import Elara.AST.Module
-import Elara.AST.Region (Located (Located), generatedSourceRegion)
-import Elara.AST.Select (LocatedAST (Shunted))
 import Elara.AST.Shunted
-import Elara.AST.VarRef
 import Elara.Data.Unique (uniqueGenToIO)
-import Elara.Pipeline
-import Elara.Prim (primRegion)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
-import GHC.Stack (withFrozenCallStack)
-import Hedgehog (Property, annotate, assert, evalEither, evalEitherM, evalIO, failure, forAll, property, (===))
+import Hedgehog (Property, annotate, evalEither, evalEitherM, evalIO, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
-import Hedgehog.Internal.Property (failWith)
 import Hedgehog.Range qualified as Range
 import Infer.Unify qualified as Unify
-import Optics.Operators.Unsafe ((^?!))
-import Polysemy (Sem, run, runM, subsume, subsume_)
+import Polysemy (Sem, runM, subsume_)
 import Polysemy.Error (runError)
-import Polysemy.State (evalState, runState)
+import Polysemy.State (evalState)
 import Polysemy.Writer (runWriter)
-import Print (prettyToString, printColored, printPretty, showColored, showPretty)
-import Region (qualifiedTest, testLocated)
-import Relude.Unsafe ((!!))
+import Print (prettyToString)
+import Region (testLocated)
 import Test.Syd
-import Test.Syd.Expectation
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
 
@@ -39,6 +28,7 @@ spec = describe "Infers types correctly" $ do
     literalTests
     lambdaTests
     letInTests
+    ifElseTests
     it "infers literals" prop_literalTypesInvariants
     Unify.spec
 
@@ -100,17 +90,26 @@ letInTests = describe "Let In Type Inference" $ do
         expr === Scalar ScalarInt
 
     it "recursion" $ property $ do
-        expr <- inferFully "let f = \\x -> if x == 0 then 0 else f (x - 1) in f 10"
+        expr <- inferFully "let loop x = if x == 0 then x else loop (x - 1) in loop"
 
         expr === Scalar ScalarInt
 
-inferFully exprSrc = withFrozenCallStack $ do
+ifElseTests :: Spec
+ifElseTests = describe "If Else Type Inference" $ do
+    it "infers if else type correctly" $ property $ do
+        expr <- inferFully "if True then 42 else 43"
+
+        expr === Scalar ScalarInt
+    
+
+inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc
-    res <- liftIO $ pipelineResShouldSucceed expr
-    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+    res <- evalPipelineRes expr
+    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints fakeTypeEnvironment res
     annotate $ prettyToString constraint
     (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
     annotate $ prettyToString newConstraint
+    newConstraint === EmptyConstraint -- there should be no residual
     annotate $ prettyToString subst
     pure (substituteAll subst ty)
 
@@ -124,7 +123,7 @@ prop_literalTypesInvariants = property $ do
                 , mkStringExpr <$> Gen.text (Range.linear 0 100) Gen.alphaNum
                 ]
 
-    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints emptyTypeEnvironment literalGen
+    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints fakeTypeEnvironment literalGen
 
     $(ensureExpressionMatches [p|Scalar _|]) ty
 

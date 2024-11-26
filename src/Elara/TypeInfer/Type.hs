@@ -12,6 +12,7 @@ import Elara.TypeInfer.Unique
 -- | A type scheme σ
 data Type loc
     = Forall UniqueTyVar (Constraint loc) (Monotype loc)
+    | Lifted (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 
 -- | A constraint Q
@@ -69,6 +70,7 @@ data Scalar
     | ScalarString
     | ScalarChar
     | ScalarUnit
+    | ScalarBool
     deriving (Generic, Show, Eq, Ord, Enum, Bounded)
 
 type DataCon = Qualified TypeName
@@ -111,13 +113,13 @@ instance Substitutable Monotype where
 instance Substitutable Substitution where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
 
-
 instance Pretty Scalar where
     pretty ScalarInt = "Int"
     pretty ScalarFloat = "Float"
     pretty ScalarString = "String"
     pretty ScalarChar = "Char"
     pretty ScalarUnit = "Unit"
+    pretty ScalarBool = "Bool"
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Forall tv c m) = "∀" <> pretty tv <> ". " <> pretty c <> " ⇒ " <> pretty m
