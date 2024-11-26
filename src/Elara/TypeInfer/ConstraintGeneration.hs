@@ -26,16 +26,22 @@ import Polysemy.Writer
 import Print (debugPretty)
 import TODO (todo)
 
-type InferEffects loc = '[Writer (Constraint loc), State (LocalTypeEnvironment loc), Error (InferError loc), UniqueGen]
+type InferEffects loc =
+    '[ Writer (Constraint loc)
+     , State (LocalTypeEnvironment loc)
+     , State (TypeEnvironment loc)
+     , Error (InferError loc)
+     , UniqueGen
+     ]
 type Infer loc r = Members (InferEffects loc) r
 
-generateConstraints :: Infer SourceRegion r => TypeEnvironment SourceRegion -> ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
-generateConstraints env (Expr (Located loc expr', expectedType)) = do
-    (typedExpr', monotype) <- generateConstraints' env expr'
+generateConstraints :: Infer SourceRegion r => ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
+generateConstraints (Expr (Located loc expr', expectedType)) = do
+    (typedExpr', monotype) <- generateConstraints' expr'
     pure (Expr (Located loc typedExpr', monotype), monotype)
 
-generateConstraints' :: Infer SourceRegion r => TypeEnvironment SourceRegion -> ShuntedExpr' -> Sem r (TypedExpr', Monotype SourceRegion)
-generateConstraints' env expr' =
+generateConstraints' :: Infer SourceRegion r => ShuntedExpr' -> Sem r (TypedExpr', Monotype SourceRegion)
+generateConstraints' expr' =
     case expr' of
         Int i -> pure (Int i, Scalar ScalarInt)
         Float f -> pure (Float f, Scalar ScalarFloat)
@@ -44,7 +50,7 @@ generateConstraints' env expr' =
         Unit -> pure (Unit, Scalar ScalarUnit)
         Constructor (Located loc name) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            varType <- lookupType (DataConKey $ stripLocation name) env
+            varType <- lookupType (DataConKey $ stripLocation name)
             case varType of
                 Lifted monotype -> pure (Constructor (Located loc name), monotype)
                 (Forall tyVar constraint monotype) -> do
@@ -74,7 +80,7 @@ generateConstraints' env expr' =
         -- global variables
         Var (Located l v) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            varType <- lookupType (TermVarKey $ stripLocation v) env
+            varType <- lookupType (TermVarKey $ stripLocation v)
             case varType of
                 Lifted monotype -> pure (Var (Located l v), monotype)
                 (Forall tyVar constraint monotype) -> do
@@ -101,7 +107,7 @@ generateConstraints' env expr' =
             paramTyVar <- makeUniqueTyVar
 
             (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
-                generateConstraints env body
+                generateConstraints body
 
             let functionType = (TypeVar paramTyVar) `Function` bodyType
 
@@ -112,8 +118,8 @@ generateConstraints' env expr' =
 
         -- APP
         FunctionCall e1 e2 -> do
-            (e1', t1) <- generateConstraints env e1
-            (e2', t2) <- generateConstraints env e2
+            (e1', t1) <- generateConstraints e1
+            (e2', t2) <- generateConstraints e2
 
             resultTyVar <- makeUniqueTyVar
 
@@ -133,22 +139,22 @@ generateConstraints' env expr' =
         LetIn (Located loc varName) NoFieldValue varExpr body -> do
             recursiveVar <- makeUniqueTyVar
             (typedVarExpr, varType) <- withLocalType varName (TypeVar recursiveVar) $ do
-                generateConstraints env varExpr
+                generateConstraints varExpr
 
             let recursiveConstraint = Equality (TypeVar recursiveVar) varType
             tell recursiveConstraint
 
             (typedBody, bodyType) <-
                 withLocalType varName (TypeVar recursiveVar) $
-                    generateConstraints env body
+                    generateConstraints body
 
             pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
 
         -- IF
         If cond then' else' -> do
-            (typedCond, condType) <- generateConstraints env cond
-            (typedThen, thenType) <- generateConstraints env then'
-            (typedElse, elseType) <- generateConstraints env else'
+            (typedCond, condType) <- generateConstraints cond
+            (typedThen, thenType) <- generateConstraints then'
+            (typedElse, elseType) <- generateConstraints else'
 
             let equalityConstraint = Equality condType (Scalar ScalarBool)
             tell equalityConstraint
@@ -164,7 +170,7 @@ generateConstraints' env expr' =
         -- (match (e: τ) with { p1 -> e1; ...; pn -> en }) : τr
         Match e cases -> do
             -- Q ; Γ ⊢ e : τ
-            (typedE, eType) <- generateConstraints env e
+            (typedE, eType) <- generateConstraints e
 
             -- τr
             resultTyVar <- makeUniqueTyVar
@@ -178,7 +184,7 @@ generateConstraints' env expr' =
                 tell equalityConstraint
 
                 -- Q ; Γ ⊢ e1 : τ2
-                (typedBody, bodyType) <- generateConstraints env body
+                (typedBody, bodyType) <- generateConstraints body
 
                 -- τ2 ~ τr
                 tell (Equality bodyType (TypeVar resultTyVar))
@@ -188,7 +194,7 @@ generateConstraints' env expr' =
             pure (Match typedE cases', TypeVar resultTyVar)
         Block exprs -> do
             vals <- for exprs $ \expr -> do
-                generateConstraints env expr
+                generateConstraints expr
 
             let exprs = fmap fst vals
 
@@ -198,7 +204,7 @@ generateConstraints' env expr' =
         Let (Located loc varName) NoFieldValue varExpr -> do
             recursiveVar <- makeUniqueTyVar
             (typedVarExpr, varType) <- withLocalType varName (TypeVar recursiveVar) $ do
-                generateConstraints env varExpr
+                generateConstraints varExpr
 
             let recursiveConstraint = Equality (TypeVar recursiveVar) varType
             tell recursiveConstraint
@@ -226,6 +232,12 @@ generatePatternConstraints' pattern' =
             modify (addLocalType (NormalVarName <$> varName) (TypeVar varType))
 
             pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
+        ConstructorPattern (Located _ ctor) args -> do
+            t <- lookupType (DataConKey ctor)
+
+            -- TODO unify the type of the constructor with the args
+
+            pure _
 
 solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do

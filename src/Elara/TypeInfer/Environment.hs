@@ -31,8 +31,13 @@ data TypeEnvKey loc
 addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
-lookupType :: Member (Error (InferError loc)) r => TypeEnvKey loc -> TypeEnvironment loc -> Sem r (Type loc)
-lookupType key env'@(TypeEnvironment env) =
+lookupType ::
+    ( Member (Error (InferError loc)) r
+    , Member (State (TypeEnvironment loc)) r
+    ) =>
+    TypeEnvKey loc -> Sem r (Type loc)
+lookupType key = do
+    env'@(TypeEnvironment env) <- get
     case Map.lookup key env of
         Just ty -> pure ty
         Nothing -> throw (UnboundTermVar key env')
