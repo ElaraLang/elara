@@ -1,5 +1,6 @@
 module Common where
 
+import Control.Exception (throwIO)
 import Elara.AST.Generic
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
@@ -10,6 +11,7 @@ import Polysemy (Sem, runM)
 import Polysemy.Embed
 import Test.HUnit (assertFailure)
 import Test.Syd
+import Test.Syd.Run
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe
@@ -35,3 +37,7 @@ diagShouldFail (d, x) = liftIO $ do
 
 runUnique :: MonadIO m => Sem [UniqueGen, Embed IO] a -> m a
 runUnique = liftIO . runM @IO . uniqueGenToIO
+
+shouldBeRight :: (HasCallStack, Show a, Show b, Eq a) => Either a b -> IO b
+shouldBeRight (Right x) = pure x
+shouldBeRight actual@(Left x) = throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow actual) ("Right _")

@@ -2,7 +2,7 @@
 
 module Infer where
 
-import Boilerplate (ensureExpressionMatches, loadShuntedExpr, pipelineResShouldSucceed)
+import Boilerplate (ensureExpressionMatches, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Module
 import Elara.AST.Region (Located (Located), generatedSourceRegion)
@@ -15,6 +15,7 @@ import Elara.Prim (primRegion)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
+import GHC.Stack (withFrozenCallStack)
 import Hedgehog (Property, annotate, assert, evalEither, evalEitherM, evalIO, failure, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Internal.Property (failWith)
@@ -25,20 +26,19 @@ import Polysemy (Sem, run, runM, subsume, subsume_)
 import Polysemy.Error (runError)
 import Polysemy.State (evalState, runState)
 import Polysemy.Writer (runWriter)
-import Print (prettyToString, printColored, showColored, showPretty)
+import Print (prettyToString, printColored, printPretty, showColored, showPretty)
 import Region (qualifiedTest, testLocated)
 import Relude.Unsafe ((!!))
 import Test.Syd
 import Test.Syd.Expectation
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
-import Boilerplate (shouldMatch)
 
 spec :: Spec
 spec = describe "Infers types correctly" $ do
     literalTests
     lambdaTests
-    letInTests 
+    letInTests
     it "infers literals" prop_literalTypesInvariants
     Unify.spec
 
@@ -49,13 +49,13 @@ literalTests = describe "Literal Type Inference" $ do
         result <- runInfer $ generateConstraints emptyTypeEnvironment (mkIntExpr 42)
         result `shouldSucceed` \(constraints, (intExp, ty)) -> do
             constraints `shouldBe` mempty
-            ty `shouldSatisfy` isScalarInt
+            $(shouldMatch [p|(Scalar ScalarInt)|]) ty
 
     it "infers Float type correctly" $ do
         result <- runInfer $ generateConstraints emptyTypeEnvironment (mkFloatExpr 42.0)
         result `shouldSucceed` \(constraints, (exp, ty)) -> do
             constraints `shouldBe` mempty
-            ty `shouldSatisfy` isScalarFloat
+            $(shouldMatch [p|(Scalar ScalarFloat)|]) ty
 
 lambdaTests :: Spec
 lambdaTests = describe "Lambda Type Inference" $ do
@@ -73,54 +73,41 @@ lambdaTests = describe "Lambda Type Inference" $ do
                 _ -> expectationFailure $ "Expected function type, got: " ++ show ty
 
     it "infers applied identity function correctly" $ property $ do
-        let expr = loadShuntedExpr "(\\x -> x) 42"
-        res <- liftIO $ pipelineResShouldSucceed expr
-        (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
-        (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
-        substituteAll subst ty === Scalar ScalarInt
+        expr <- inferFully "(\\x -> x) 42"
 
-    withoutRetries $ it "infers nested identity function correctly" $  property $ do
-        let expr = loadShuntedExpr "(\\x -> (\\y -> y) x) 42"
-        res <- liftIO $ pipelineResShouldSucceed expr
-        (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
-        annotate $ prettyToString constraint
-        (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
-        annotate $ prettyToString newConstraint
-        annotate $ prettyToString subst
-        substituteAll subst ty === Scalar ScalarInt
+        expr === Scalar ScalarInt
+
+    withoutRetries $ it "infers nested identity function correctly" $ property $ do
+        expr <- inferFully "(\\x -> (\\y -> y) x) 42"
+
+        expr === Scalar ScalarInt
 
 letInTests :: Spec
 letInTests = describe "Let In Type Inference" $ do
-    it "infers let in type correctly" $ do
-        let expr = loadShuntedExpr "let x = 42 in x"
-        res <- pipelineResShouldSucceed expr
-        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+    it "infers let in type correctly" $ property $ do
+        expr <- inferFully "let x = 42 in x"
 
-        result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            case constraint of
-                EmptyConstraint -> pure ()
-                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
-            ty `shouldSatisfy` isScalarInt
+        expr === Scalar ScalarInt
 
-    it "infers let in type correctly with shadowing" $ do
-        let expr = loadShuntedExpr "let x = 42 in let x = 43 in x"
-        res <- pipelineResShouldSucceed expr
-        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+    it "infers let in type correctly with shadowing" $ property $ do
+        expr <- inferFully "let x = 42 in let x = 43 in x"
 
-        result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            case constraint of
-                EmptyConstraint -> pure ()
-                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
-            ty `shouldSatisfy` isScalarInt
+        expr === Scalar ScalarInt
 
-    it "infers let in type correctly with shadowing and lambda" $ do
-        let expr = loadShuntedExpr "let x = 42 in let f = \\x -> x in f x"
-        res <- pipelineResShouldSucceed expr
-        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+    it "infers let in type correctly with shadowing and lambda" $ property $ do
+        expr <- inferFully "let x = 42 in let f = \\x -> x in f x"
 
-        result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            ty `shouldSatisfy` isScalarInt
+        expr === Scalar ScalarInt
 
+inferFully exprSrc = do
+    let expr = loadShuntedExpr exprSrc
+    res <- liftIO $ pipelineResShouldSucceed expr
+    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+    annotate $ prettyToString constraint
+    (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
+    annotate $ prettyToString newConstraint
+    annotate $ prettyToString subst
+    pure (substituteAll subst ty)
 
 prop_literalTypesInvariants :: Property
 prop_literalTypesInvariants = property $ do
@@ -138,7 +125,7 @@ prop_literalTypesInvariants = property $ do
 
 runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) (Constraint loc, a))
 runInfer =
-        runM @IO
+    runM @IO
         . uniqueGenToIO
         . runError
         . evalState emptyLocalTypeEnvironment
@@ -151,16 +138,7 @@ shouldSucceed ::
     ((Constraint loc, a) -> IO b) ->
     IO b
 shouldSucceed (Left err) _ = withFrozenCallStack $ expectationFailure $ "Inference failed: " ++ show err
-shouldSucceed (Right result) assertion = assertion result
-
--- Utility Matchers
-isScalarInt :: Monotype loc -> Bool
-isScalarInt (Scalar ScalarInt) = True
-isScalarInt _ = False
-
-isScalarFloat :: Monotype loc -> Bool
-isScalarFloat (Scalar ScalarFloat) = True
-isScalarFloat _ = False
+shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
 
 mkIntExpr :: Int -> ShuntedExpr
 mkIntExpr i = mkExpr (Int $ fromIntegral i)
