@@ -99,7 +99,12 @@ letInTests = describe "Let In Type Inference" $ do
 
         expr === Scalar ScalarInt
 
-inferFully exprSrc = do
+    it "recursion" $ property $ do
+        expr <- inferFully "let f = \\x -> if x == 0 then 0 else f (x - 1) in f 10"
+
+        expr === Scalar ScalarInt
+
+inferFully exprSrc = withFrozenCallStack $ do
     let expr = loadShuntedExpr exprSrc
     res <- liftIO $ pipelineResShouldSucceed expr
     (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
