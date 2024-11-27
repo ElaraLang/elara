@@ -232,12 +232,39 @@ generatePatternConstraints' pattern' =
             modify (addLocalType (NormalVarName <$> varName) (TypeVar varType))
 
             pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
-        ConstructorPattern (Located _ ctor) args -> do
+        ConstructorPattern ctor'@(Located _ ctor) args -> do
             t <- lookupType (DataConKey ctor)
 
-            -- TODO unify the type of the constructor with the args
+            -- if we have a constructor @Ctor : x -> y -> Z@
+            -- and pattern @Ctor a b@
+            -- we need to generate @a : x@ and @b : y@
+            -- we do this by making one big constraint out of fresh type variables @a_1 -> @b_1 -> ... -> Z@
+            -- and emitting a single equality constraint @x -> y -> Z = a_1 -> b_1 -> ... -> Z@
 
-            pure _
+            args' <- for args $ \arg -> do
+                generatePatternConstraints arg
+
+            res <- makeUniqueTyVar
+
+            let argsFunction = foldr Function (TypeVar res) (fmap snd args')
+
+            case t of
+                Lifted monoCtor -> do
+                    tell (Equality monoCtor argsFunction)
+
+                    pure (ConstructorPattern ctor' (fmap fst args'), monoCtor)
+                Forall tyVar constraint monoCtor -> do
+                    fresh <- makeUniqueTyVar
+
+                    let
+                        instantiatedConstraint =
+                            substitute tyVar (TypeVar fresh) constraint
+                        instantiatedMonotype =
+                            substitute tyVar (TypeVar fresh) monoCtor
+
+                    tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
+
+                    pure (ConstructorPattern ctor' (fmap fst args'), instantiatedMonotype)
 
 solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do
