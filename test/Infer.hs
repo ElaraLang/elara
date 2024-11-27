@@ -37,13 +37,13 @@ spec = describe "Infers types correctly" $ do
 literalTests :: Spec
 literalTests = describe "Literal Type Inference" $ do
     it "infers Int type correctly" $ do
-        result <- runInfer $ generateConstraints emptyTypeEnvironment (mkIntExpr 42)
+        result <- runInfer $ generateConstraints (mkIntExpr 42)
         result `shouldSucceed` \(constraints, (intExp, ty)) -> do
             constraints `shouldBe` mempty
             $(shouldMatch [p|(Scalar ScalarInt)|]) ty
 
     it "infers Float type correctly" $ do
-        result <- runInfer $ generateConstraints emptyTypeEnvironment (mkFloatExpr 42.0)
+        result <- runInfer $ generateConstraints (mkFloatExpr 42.0)
         result `shouldSucceed` \(constraints, (exp, ty)) -> do
             constraints `shouldBe` mempty
             $(shouldMatch [p|(Scalar ScalarFloat)|]) ty
@@ -53,7 +53,7 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
     it "infers lambda type correctly" $ do
         let expr = loadShuntedExpr "\\x -> x"
         res <- pipelineResShouldSucceed expr
-        result <- liftIO $ runInfer $ generateConstraints emptyTypeEnvironment res
+        result <- liftIO $ runInfer $ generateConstraints res
 
         result `shouldSucceed` \(constraint, (exp, ty)) -> do
             case constraint of
@@ -74,7 +74,7 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
         expr === Scalar ScalarInt
 
 letInTests :: Spec
-letInTests =withoutRetries $ describe "Let In Type Inference" $ do
+letInTests = withoutRetries $ describe "Let In Type Inference" $ do
     it "infers let in type correctly" $ property $ do
         expr <- inferFully "let x = 42 in x"
 
@@ -107,7 +107,7 @@ ifElseTests = describe "If Else Type Inference" $ do
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc
     res <- evalPipelineRes expr
-    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints fakeTypeEnvironment res
+    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints res
     annotate $ prettyToString constraint
     (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
     annotate $ prettyToString newConstraint
@@ -125,7 +125,7 @@ prop_literalTypesInvariants = property $ do
                 , mkStringExpr <$> Gen.text (Range.linear 0 100) Gen.alphaNum
                 ]
 
-    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints fakeTypeEnvironment literalGen
+    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints literalGen
 
     $(ensureExpressionMatches [p|Scalar _|]) ty
 
@@ -135,6 +135,7 @@ runInfer =
         . uniqueGenToIO
         . runError
         . evalState emptyLocalTypeEnvironment
+        . evalState fakeTypeEnvironment
         . runWriter
         . subsume_
 
