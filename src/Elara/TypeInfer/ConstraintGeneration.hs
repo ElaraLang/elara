@@ -84,7 +84,6 @@ generateConstraints' expr' =
             case varType of
                 Lifted monotype -> pure (Var (Located l v), monotype)
                 (Forall tyVar constraint monotype) -> do
-                    debugPretty ("Constraint for " <> pretty v <> "= " <> pretty constraint)
                     -- tv
                     fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
                     let
