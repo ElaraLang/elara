@@ -5,7 +5,9 @@ import Data.Map qualified as Map
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Data.Unique
+import Elara.Error
 import Elara.TypeInfer.Type
+import Error.Diagnose
 import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
@@ -33,7 +35,6 @@ addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
 addType' key ty = modify (addType key ty)
 
-
 lookupType ::
     ( Member (Error (InferError loc)) r
     , Member (State (TypeEnvironment loc)) r
@@ -44,12 +45,6 @@ lookupType key = do
     case Map.lookup key env of
         Just ty -> pure ty
         Nothing -> throw (UnboundTermVar key env')
-
--- | An error that can occur during type inference
-data InferError loc
-    = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
-    | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
-    deriving (Show)
 
 data LocalTypeEnvironment loc
     = LocalTypeEnvironment
@@ -78,3 +73,15 @@ lookupLocalVar ::
     Unique VarName ->
     Sem r (Monotype loc)
 lookupLocalVar name = get >>= lookupLocalVarType name
+
+-- | An error that can occur during type inference
+data InferError loc
+    = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
+    | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
+    deriving (Show)
+
+instance ReportableError (InferError loc) where
+    report (UnboundTermVar key env) =
+        writeReport $ Err (Nothing) ("Unbound term variable") [] []
+    report (UnboundLocalVar var env) =
+        writeReport $ Err (Nothing) ("Unbound local variable") [] []

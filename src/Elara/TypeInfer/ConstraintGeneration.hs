@@ -14,10 +14,12 @@ import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen)
+import Elara.Error (ReportableError (..), writeReport)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
+import Error.Diagnose
 import Polysemy
 import Polysemy.Error
 import Polysemy.State
@@ -53,17 +55,17 @@ generateConstraints' expr' =
             varType <- lookupType (DataConKey $ stripLocation name)
             case varType of
                 Lifted monotype -> pure (Constructor (Located loc name), monotype)
-                (Forall tyVar constraint monotype) -> do
+                (Forall tyVars constraint monotype) -> do
                     debugPretty ("Constraint for " <> pretty name <> "= " <> pretty constraint)
                     -- tv
                     fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            substitute tyVar (TypeVar fresh) constraint
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            substitute tyVar (TypeVar fresh) monotype
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -83,16 +85,16 @@ generateConstraints' expr' =
             varType <- lookupType (TermVarKey $ stripLocation v)
             case varType of
                 Lifted monotype -> pure (Var (Located l vr), monotype)
-                (Forall tyVar constraint monotype) -> do
+                (Forall tyVars constraint monotype) -> do
                     -- tv
                     fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            substitute tyVar (TypeVar fresh) constraint
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            substitute tyVar (TypeVar fresh) monotype
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -252,20 +254,20 @@ generatePatternConstraints' pattern' =
                     tell (Equality monoCtor argsFunction)
 
                     pure (ConstructorPattern ctor' (fmap fst args'), monoCtor)
-                Forall tyVar constraint monoCtor -> do
+                Forall tyVars constraint monoCtor -> do
                     fresh <- makeUniqueTyVar
 
                     let
                         instantiatedConstraint =
-                            substitute tyVar (TypeVar fresh) constraint
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
                         instantiatedMonotype =
-                            substitute tyVar (TypeVar fresh) monoCtor
+                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monoCtor tyVars
 
                     tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
 
                     pure (ConstructorPattern ctor' (fmap fst args'), instantiatedMonotype)
 
-solveConstraints :: Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem '[Error UnifyError] (Constraint loc, Substitution loc)
+solveConstraints :: Member (Error UnifyError) r => Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
 solveConstraints axioms given wanted = do
     (substitution, simplifiedWanted) <- unifyEquality wanted
 
@@ -277,7 +279,7 @@ solveConstraints axioms given wanted = do
 
     pure (todo, substitution)
 
-unifyEquality :: Pretty loc => Constraint loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+unifyEquality :: Member (Error UnifyError) r => Pretty loc => Constraint loc -> Sem r (Substitution loc, Constraint loc)
 unifyEquality (Equality a b) = unify a b
 unifyEquality (Conjunction a b) = do
     -- a lot of this is duplicated from unifyMany which is a bit annoying
@@ -289,7 +291,8 @@ unifyEquality EmptyConstraint = pure (mempty, EmptyConstraint)
 
 unify ::
     HasCallStack =>
-    Monotype loc -> Monotype loc -> Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+    Member (Error UnifyError) r =>
+    Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
 unify (TypeVar a) b = (,EmptyConstraint) <$> bind a b
 unify a (TypeVar b) = (,EmptyConstraint) <$> bind b a
 unify (Scalar a) (Scalar b) =
@@ -310,9 +313,10 @@ bind a t = pure $ substitution (a, t)
 
 unifyMany ::
     HasCallStack =>
+    Member (Error UnifyError) r =>
     [Monotype loc] ->
     [Monotype loc] ->
-    Sem '[Error UnifyError] (Substitution loc, Constraint loc)
+    Sem r (Substitution loc, Constraint loc)
 unifyMany [] [] = pure (mempty, EmptyConstraint)
 unifyMany [] _ = throw UnifyMismatch
 unifyMany _ [] = throw UnifyMismatch
@@ -328,4 +332,8 @@ data UnifyError
     | ArityMismatch
     | UnificationFailed String
     | UnifyMismatch
+    | UnresolvedConstraint (Constraint SourceRegion)
     deriving (Eq, Show)
+
+instance ReportableError UnifyError where
+    report y = writeReport $ Err (Nothing) (show y) [] []

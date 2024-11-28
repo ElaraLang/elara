@@ -30,7 +30,7 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (Monotype (TypeVar), Type (..))
+import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Type (..), Substitutable (substituteAll))
 
 import Elara.AST.Shunted as Shunted
 import Elara.AST.StripLocation (StripLocation (..))
@@ -43,14 +43,17 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (fullListName, primRegion)
-import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
-import Elara.TypeInfer.Environment (TypeEnvKey (..), addType, addType', withLocalType)
+import Elara.TypeInfer.ConstraintGeneration (Infer, UnifyError (..), generateConstraints, solveConstraints)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType, addType', withLocalType)
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
+import Polysemy.Writer (listen)
 import Print
 import TODO
+import Elara.TypeInfer.Ftv
+import Data.Set (difference)
 
 type InferPipelineEffects = '[StructuredDebug, State InferState, UniqueGen]
 
@@ -96,20 +99,42 @@ inferDeclaration (Declaration ld) = do
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
-            e' <- inferValue name e
-            pure (Value name e' NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
+            (typedExpr, polytype) <- inferValue name e
+            debugPretty polytype
+            pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
 
 inferValue ::
     forall r.
-    (HasCallStack, Member UniqueGen r) =>
+    ( HasCallStack
+    , Member UniqueGen r
+    , Infer SourceRegion r
+    , Member (Error UnifyError) r
+    ) =>
     Located (Qualified VarName) ->
     ShuntedExpr ->
-    Sem r TypedExpr
+    Sem r (TypedExpr, Type SourceRegion)
 inferValue valueName valueExpr = do
     -- generate
     a <- makeUniqueTyVar
-    -- addType' (TermVarKey (valueName ^. unlocated)) (Lifted $ TypeVar a)
-    -- t <- withLocalType (valueName ^. unlocated) (TypeVar a) $ do
-    --     generateConstraints valueExpr
+    addType' (TermVarKey (valueName ^. unlocated)) (Lifted $ TypeVar a)
+    (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
 
-    pure _
+    let eq = Equality (TypeVar a) t
+    (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> constraint)
+    when (finalConstraint /= EmptyConstraint) do
+        throw (UnresolvedConstraint finalConstraint)
+    
+    let newType = substituteAll subst t
+
+    generalized <- generalize newType
+
+    pure (typedExpr, generalized)
+
+
+generalize :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Sem r (Type SourceRegion)
+generalize ty = do
+    env <- get
+    let freeVars = ftv ty
+    let envVars = freeVars `difference` ftv env
+    let generalized = Forall (toList envVars) EmptyConstraint ty
+    pure generalized

@@ -5,7 +5,6 @@ import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
-import Relude.Extra (bimapF)
 import Prelude hiding (Alt)
 
 import Elara.Core.Generic qualified as G
