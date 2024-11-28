@@ -121,7 +121,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
                     pure (Var (Located l vr), instantiatedMonotype)
 
         -- ABS
-        lam@(Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
+        (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
             paramTyVar <- makeUniqueTyVar
 
             (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
