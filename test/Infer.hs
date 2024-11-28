@@ -12,13 +12,14 @@ import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
 import Hedgehog (Property, annotate, evalEither, evalEitherM, evalIO, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
+import Hedgehog.Internal.Property (failWith)
 import Hedgehog.Range qualified as Range
 import Infer.Unify qualified as Unify
 import Polysemy (Sem, runM, subsume_)
 import Polysemy.Error (runError)
 import Polysemy.State (evalState)
 import Polysemy.Writer (runWriter)
-import Print (prettyToString)
+import Print (prettyToString, showPretty)
 import Region (testLocated)
 import Test.Syd
 import Test.Syd.Hedgehog ()
@@ -51,18 +52,12 @@ literalTests = describe "Literal Type Inference" $ do
 
 lambdaTests :: Spec
 lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
-    it "infers lambda type correctly" $ do
-        let expr = loadShuntedExpr "\\x -> x"
-        res <- pipelineResShouldSucceed expr
-        result <- liftIO $ runInfer $ generateConstraints res
+    it "infers lambda type correctly" $ property $ do
+        expr <- inferFully "\\x -> x"
 
-        result `shouldSucceed` \(constraint, (exp, ty)) -> do
-            case constraint of
-                EmptyConstraint -> pure ()
-                _ -> expectationFailure $ "Expected empty constraint, got: " ++ show constraint
-            case ty of
-                Function a b | a == b -> pass
-                _ -> expectationFailure $ "Expected function type, got: " ++ show ty
+        case expr of
+            Function a b | a == b -> pure ()
+            other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
     it "infers applied identity function correctly" $ property $ do
         expr <- inferFully "(\\x -> x) 42"
