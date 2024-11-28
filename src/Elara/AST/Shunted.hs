@@ -14,7 +14,7 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Select (LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef, VarRef' (..))
@@ -111,25 +111,26 @@ type ShuntedDeclarationBody' = DeclarationBody' 'Shunted
 
 type ShuntedTypeDeclaration = TypeDeclaration 'Shunted
 
--- instance HasDependencies ShuntedDeclaration where
---     type Key ShuntedDeclaration = Qualified Name
+instance HasDependencies ShuntedDeclaration where
+    type Key ShuntedDeclaration = Qualified Name
 
---     keys sd =
---         case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
---             TypeDeclaration name _ (Located _ (ADT ctors)) _ ->
---                 toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
---             _ -> []
---     dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
---         Value name e NoFieldValue t _ ->
---             valueDependencies e
---                 <> patternDependencies e
---                 <> (maybeToList t >>= typeDependencies)
---         TypeDeclaration _ x _ ->
---             case x of
---                 Located _ (ADT ctors) ->
---                     concatMapOf (each % _2 % each) typeDependencies ctors
---                 Located _ (Alias t) ->
---                     typeDependencies t
+    keys sd =
+        let theDeclName = Qualified (sd ^. declarationName % unlocated) (sd ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
+         in theDeclName :| case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+                TypeDeclaration name _ (Located _ (ADT ctors)) _ ->
+                    toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
+                _ -> []
+    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+        Value name e NoFieldValue t _ ->
+            valueDependencies e
+                <> patternDependencies e
+                <> (maybeToList t >>= typeDependencies)
+        TypeDeclaration n _ x _ ->
+            case x of
+                Located _ (ADT ctors) ->
+                    concatMapOf (each % _2 % each) typeDependencies ctors
+                Located _ (Alias t) ->
+                    typeDependencies t
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =
