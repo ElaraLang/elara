@@ -156,13 +156,13 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
         (except not quite because lets are recursive)
         -}
         LetIn (Located loc varName) NoFieldValue varExpr body -> do
-            -- recursiveVar <- makeUniqueTyVar
+            recursiveVar <- makeUniqueTyVar
             (typedVarExpr, varType) <-
-                -- withLocalType varName (TypeVar recursiveVar) $
-                generateConstraints varExpr
+                withLocalType varName (TypeVar recursiveVar) $
+                    generateConstraints varExpr
 
-            -- let recursiveConstraint = Equality (TypeVar recursiveVar) varType
-            -- tell recursiveConstraint
+            let recursiveConstraint = Equality (TypeVar recursiveVar) varType
+            tell recursiveConstraint
 
             (typedBody, bodyType) <-
                 withLocalType varName (varType) $
@@ -315,10 +315,10 @@ unify ::
     Pretty (Constraint loc) =>
     Member (Error (UnifyError loc)) r =>
     Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
-unify a b =  debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
-        r <- unify' a b
-        debug ("unify result: " <> pretty r)
-        pure r
+unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
+    r <- unify' a b
+    debug ("unify result: " <> pretty r)
+    pure r
   where
     unify' ::
         HasCallStack =>
