@@ -25,11 +25,14 @@ data TypeEnvKey loc
     = -- | A data constructor K
       DataConKey DataCon
     | -- | A term variable x
-      TermVarKey (UnlocatedVarRef VarName)
+      TermVarKey (Qualified VarName)
     deriving (Show, Eq, Ord)
 
 addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
+
+addType' key ty = modify (addType key ty)
+
 
 lookupType ::
     ( Member (Error (InferError loc)) r

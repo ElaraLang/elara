@@ -78,11 +78,11 @@ generateConstraints' expr' =
             local <- lookupLocalVar v
             pure (Var v', local)
         -- global variables
-        Var (Located l v) -> do
+        Var (Located l vr@(Global (Located _ v))) -> do
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             varType <- lookupType (TermVarKey $ stripLocation v)
             case varType of
-                Lifted monotype -> pure (Var (Located l v), monotype)
+                Lifted monotype -> pure (Var (Located l vr), monotype)
                 (Forall tyVar constraint monotype) -> do
                     -- tv
                     fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
@@ -99,7 +99,7 @@ generateConstraints' expr' =
 
                     tell (instantiatedConstraint <> equalityConstraint)
 
-                    pure (Var (Located l v), instantiatedMonotype)
+                    pure (Var (Located l vr), instantiatedMonotype)
 
         -- ABS
         Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body -> do

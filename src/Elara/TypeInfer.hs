@@ -18,6 +18,7 @@ import Elara.AST.Generic.Types (
     Declaration (Declaration),
     Declaration' (Declaration'),
     DeclarationBody (DeclarationBody),
+    DeclarationBody' (..),
  )
 import Elara.AST.Kinded
 import Elara.AST.Module
@@ -29,7 +30,7 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (Type (..))
+import Elara.TypeInfer.Type (Monotype (TypeVar), Type (..))
 
 import Elara.AST.Shunted as Shunted
 import Elara.AST.StripLocation (StripLocation (..))
@@ -42,6 +43,9 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (fullListName, primRegion)
+import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
+import Elara.TypeInfer.Environment (TypeEnvKey (..), addType, addType', withLocalType)
+import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
@@ -91,4 +95,22 @@ inferDeclaration (Declaration ld) = do
         Located (Qualified Name) ->
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
-    inferDeclarationBody' = todo
+    inferDeclarationBody' declName declBody = case declBody of
+        Value e NoFieldValue valueType annotations -> do
+            e' <- inferValue declName e
+            pure (Value e' NoFieldValue NoFieldValue NoFieldValue)
+
+inferValue ::
+    forall r.
+    (HasCallStack, Member UniqueGen r) =>
+    Located (Qualified Name) ->
+    ShuntedExpr ->
+    Sem r TypedExpr
+inferValue valueName valueExpr = do
+    -- generate
+    a <- makeUniqueTyVar
+    addType' (TermVarKey (valueName ^. unlocated)) (TypeVar a)
+    t <- withLocalType (valueName ^. unlocated) (TypeVar a) $ do
+        generateConstraints valueExpr
+
+    pure ()
