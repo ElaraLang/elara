@@ -10,8 +10,8 @@ import Hedgehog.Range qualified as Range
 import Region (qualifiedTest)
 
 -- | contrary to what the name suggests, this will NOT be unique :)
-genUniqueTypeVar :: Gen UniqueTyVar
-genUniqueTypeVar = unsafeMkUnique Nothing <$> Gen.integral (Range.linear 0 100)
+genUniqueTypeVar :: Gen TypeVariable
+genUniqueTypeVar = UnificationVar <$> (unsafeMkUnique Nothing <$> Gen.integral (Range.linear 0 100))
 
 typeConstructorNames :: [TypeName]
 typeConstructorNames = ["List", "Maybe", "Pair", "Box", "IO"]

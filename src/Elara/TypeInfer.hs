@@ -30,7 +30,7 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Substitutable (substituteAll), Type (..))
+import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Substitutable (substituteAll), Type (..), TypeVariable (..))
 
 import Data.Set (difference)
 import Elara.AST.Shunted as Shunted
@@ -122,7 +122,7 @@ inferValue ::
     Sem r (TypedExpr, Type SourceRegion)
 inferValue valueName valueExpr = do
     -- generate
-    a <- makeUniqueTyVar
+    a <- UnificationVar <$> makeUniqueTyVar
     addType' (TermVarKey (valueName ^. unlocated)) (Lifted $ TypeVar a)
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
     debug $ "Generated constraints: " <> pretty constraint <> " for " <> pretty valueName
@@ -142,5 +142,8 @@ generalize ty = do
     env <- get
     let freeVars = ftv ty
     let envVars = freeVars `difference` ftv env
-    let generalized = Forall (toList envVars) EmptyConstraint ty
+    envVarsAsUniVars <- for (toList envVars) $ \case 
+            UnificationVar a -> pure a
+            SkolemVar a -> error "Skolem vars should not be in the environment"
+    let generalized = Forall (toList envVarsAsUniVars) EmptyConstraint ty
     pure generalized

@@ -9,6 +9,9 @@ import Elara.AST.Name
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
 import Elara.TypeInfer.Unique
 
+data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
+    deriving (Generic, Show, Eq, Ord)
+
 -- | A type scheme σ
 data Type loc
     = Forall [UniqueTyVar] (Constraint loc) (Monotype loc)
@@ -54,7 +57,7 @@ data AxiomScheme loc
 -- | A monotype τ
 data Monotype loc
     = -- | A type variable tv
-      TypeVar UniqueTyVar
+      TypeVar TypeVariable
     | -- | A scalar
       Scalar Scalar
     | -- | A type constructor
@@ -77,7 +80,7 @@ type DataCon = Qualified TypeName
 
 newtype Substitution loc
     = Substitution
-        (Map UniqueTyVar (Monotype loc))
+        (Map TypeVariable (Monotype loc))
     deriving newtype (Monoid)
     deriving stock (Eq, Show)
 
@@ -86,11 +89,11 @@ instance Semigroup (Substitution loc) where
     Substitution s1 <> Substitution s2 =
         Substitution (Map.map (substituteAll (Substitution s1)) s2 <> s1)
 
-substitution :: (UniqueTyVar, Monotype loc) -> Substitution loc
+substitution :: (TypeVariable, Monotype loc) -> Substitution loc
 substitution = Substitution . one
 
 class Substitutable (a :: k -> Kind.Type) where
-    substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
+    substitute :: TypeVariable -> Monotype loc -> a loc -> a loc
 
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
     substituteAll (Substitution s) a = fix a
@@ -108,7 +111,12 @@ instance Substitutable Constraint where
     substitute tv t (Equality m1 m2) = Equality (substitute tv t m1) (substitute tv t m2)
 
 instance Substitutable Monotype where
-    substitute tv t (TypeVar tv') = if tv == tv' then t else TypeVar tv'
+    substitute tv t (TypeVar tv'@(UnificationVar _)) = 
+        if tv == tv' then t else TypeVar tv'
+    substitute tv _ (TypeVar tv'@(SkolemVar _)) = 
+        -- Prevent substitution of skolem variables
+        if tv == tv' then error "Cannot substitute skolem variable"
+        else TypeVar tv'
     substitute _ _ (Scalar s) = Scalar s
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
     substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)
@@ -137,6 +145,10 @@ instance Pretty (Monotype loc) where
     pretty (Scalar s) = pretty s
     pretty (TypeConstructor dc ts) = pretty dc <> " " <> hsep (pretty <$> ts)
     pretty (Function t1 t2) = pretty t1 <> " → " <> pretty t2
+
+instance Pretty TypeVariable where
+    pretty (UnificationVar tv) = pretty tv
+    pretty (SkolemVar tv) = pretty tv
 
 instance Pretty (Substitution loc) where
     pretty (Substitution s) = pretty (fmap prettySubstitution (Map.toList s))

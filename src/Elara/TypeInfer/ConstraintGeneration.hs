@@ -19,7 +19,7 @@ import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (occurs)
-import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), substitution)
+import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Error.Diagnose
 import Polysemy
@@ -27,7 +27,7 @@ import Polysemy.Error
 import Polysemy.State
 import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
-import Print (debugPretty)
+import Print (debugPretty, showPretty)
 import TODO (todo)
 
 type InferEffects loc =
@@ -71,14 +71,14 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
                 Lifted monotype -> pure (Constructor (Located loc name), monotype)
                 (Forall tyVars constraint monotype) -> do
                     -- tv
-                    fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
+                    fresh <- UnificationVar <$> makeUniqueTyVar -- make a fresh type variable for the type of the variable
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monotype tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -91,7 +91,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
         -- local variables
         Var v'@(Located _ (Local (Located _ v))) -> do
             local <- lookupLocalVar v
-            fresh <- makeUniqueTyVar
+            fresh <- UnificationVar <$> makeUniqueTyVar
             let constraint = Equality local (TypeVar fresh)
             tell constraint
             debug ("generateConstraints: " <> pretty v <> " has type " <> pretty local <> ", creating constraint " <> pretty constraint)
@@ -104,14 +104,14 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
                 Lifted monotype -> pure (Var (Located l vr), monotype)
                 (Forall tyVars constraint monotype) -> do
                     -- tv
-                    fresh <- makeUniqueTyVar -- make a fresh type variable for the type of the variable
+                    fresh <- UnificationVar <$> makeUniqueTyVar -- make a fresh type variable for the type of the variable
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monotype tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -122,7 +122,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
 
         -- ABS
         (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
-            paramTyVar <- makeUniqueTyVar
+            paramTyVar <- SkolemVar <$> makeUniqueTyVar
 
             (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
                 generateConstraints body
@@ -139,7 +139,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
             (e1', t1) <- generateConstraints e1
             (e2', t2) <- generateConstraints e2
 
-            resultTyVar <- makeUniqueTyVar
+            resultTyVar <- UnificationVar <$> makeUniqueTyVar
 
             let equalityConstraint = Equality t1 (Function t2 (TypeVar resultTyVar))
             debug (pretty equalityConstraint)
@@ -156,7 +156,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
         (except not quite because lets are recursive)
         -}
         LetIn (Located loc varName) NoFieldValue varExpr body -> do
-            recursiveVar <- makeUniqueTyVar
+            recursiveVar <- UnificationVar <$> makeUniqueTyVar
             (typedVarExpr, varType) <-
                 withLocalType varName (TypeVar recursiveVar) $
                     generateConstraints varExpr
@@ -193,7 +193,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
             (typedE, eType) <- generateConstraints e
 
             -- τr
-            resultTyVar <- makeUniqueTyVar
+            resultTyVar <- UnificationVar <$> makeUniqueTyVar
 
             cases' <- for cases $ \(pattern, body) -> scoped @(LocalTypeEnvironment _) $ do
                 -- Q ; Γ ⊢ p1 : τ1
@@ -222,7 +222,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
 
             pure $ ((Syntax.Block exprs), last exprTypes)
         Let (Located loc varName) NoFieldValue varExpr -> do
-            recursiveVar <- makeUniqueTyVar
+            recursiveVar <- UnificationVar <$> makeUniqueTyVar
             (typedVarExpr, varType) <- withLocalType varName (TypeVar recursiveVar) $ do
                 generateConstraints varExpr
 
@@ -248,7 +248,7 @@ generatePatternConstraints' pattern' =
         StringPattern s -> pure (StringPattern s, Scalar ScalarString)
         CharPattern c -> pure (CharPattern c, Scalar ScalarChar)
         VarPattern (Located loc varName) -> do
-            varType <- makeUniqueTyVar
+            varType <- UnificationVar <$> makeUniqueTyVar
             modify (addLocalType (NormalVarName <$> varName) (TypeVar varType))
 
             pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
@@ -264,7 +264,7 @@ generatePatternConstraints' pattern' =
             args' <- for args $ \arg -> do
                 generatePatternConstraints arg
 
-            res <- makeUniqueTyVar
+            res <- UnificationVar <$> makeUniqueTyVar
 
             let argsFunction = foldr Function (TypeVar res) (fmap snd args')
 
@@ -274,13 +274,13 @@ generatePatternConstraints' pattern' =
 
                     pure (ConstructorPattern ctor' (fmap fst args'), monoCtor)
                 Forall tyVars constraint monoCtor -> do
-                    fresh <- makeUniqueTyVar
+                    fresh <- UnificationVar <$> makeUniqueTyVar
 
                     let
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute tyVar (TypeVar fresh)) monoCtor tyVars
+                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monoCtor tyVars
 
                     tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
 
@@ -326,6 +326,7 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
         Member (Error (UnifyError loc)) r =>
         Pretty (Constraint loc) =>
         Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
+
     unify' (TypeVar a) b = (,EmptyConstraint) <$> bind a b
     unify' a (TypeVar b) = (,EmptyConstraint) <$> bind b a
     unify' (Scalar a) (Scalar b) =
@@ -341,11 +342,17 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
 
 bind ::
     (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
-    UniqueTyVar -> Monotype loc -> Sem r (Substitution loc)
+    TypeVariable -> Monotype loc -> Sem r (Substitution loc)
 bind a t = do
     debug $ "bind " <> pretty a <> " to " <> pretty t
     bind' a t
   where
+    bind' ::
+        (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
+        TypeVariable -> Monotype loc -> Sem r (Substitution loc)
+    bind' (SkolemVar v) (TypeVar (SkolemVar v2)) | v == v2 = pure mempty
+    bind' (SkolemVar v) (TypeVar (SkolemVar v2)) = throw $ UnificationFailed $ "Cannot unify distinct skolem variables " <> showPretty v <> " and " <> showPretty v2
+    bind' (SkolemVar v) (TypeVar tv) = throw $ UnificationFailed $ "Cannot bind skolem variable " <> showPretty v <> " to type variable " <> showPretty tv
     bind' a t | t == TypeVar a = pure mempty
     bind' a t | occurs a t = throw (OccursCheckFailed a t)
     bind' a t = pure $ substitution (a, t)
@@ -366,11 +373,11 @@ unifyMany (a : as) (b : bs) = debugWith ("unifyMany: " <> pretty a <> " with" <>
     pure (s1 <> s2, c1 <> c2)
 
 data UnifyError loc
-    = HasCallStack => OccursCheckFailed UniqueTyVar (Monotype loc)
+    = HasCallStack => OccursCheckFailed TypeVariable (Monotype loc)
     | ScalarMismatch
     | TypeConstructorMismatch
     | ArityMismatch
-    | UnificationFailed String
+    | UnificationFailed Text
     | UnifyMismatch
     | UnresolvedConstraint (Constraint SourceRegion)
 
