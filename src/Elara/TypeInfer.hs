@@ -30,8 +30,9 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Type (..), Substitutable (substituteAll))
+import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Substitutable (substituteAll), Type (..))
 
+import Data.Set (difference)
 import Elara.AST.Shunted as Shunted
 import Elara.AST.StripLocation (StripLocation (..))
 import Elara.AST.Typed as Typed
@@ -43,38 +44,44 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (fullListName, primRegion)
-import Elara.TypeInfer.ConstraintGeneration (Infer, UnifyError (..), generateConstraints, solveConstraints)
+import Elara.TypeInfer.ConstraintGeneration (Infer, InferEffects, UnifyError (..), generateConstraints, runInferEffects, solveConstraints)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType, addType', withLocalType)
+import Elara.TypeInfer.Ftv
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Print
-import TODO
-import Elara.TypeInfer.Ftv
-import Data.Set (difference)
+import Relude.Extra.Type (type (++))
+import Elara.Data.Pretty
 
-type InferPipelineEffects = '[StructuredDebug, State InferState, UniqueGen]
+type InferPipelineEffects = '[StructuredDebug, State InferState, UniqueGen, Error (UnifyError SourceRegion)] ++ (InferEffects SourceRegion)
 
 runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
-    e
-        & subsume_
-        & structuredDebugToLog
-        & evalState initialInferState
-        & uniqueGenToIO
+    let e' =
+            e
+                & subsume_
+                & structuredDebugToLog
+                & evalState initialInferState
+                & uniqueGenToIO
+                & runErrorOrReport @(UnifyError SourceRegion)
+
+    snd <$> runInferEffects e'
 
 inferModule ::
     forall r.
-    Members InferPipelineEffects r =>
+    (Members InferPipelineEffects r, Infer SourceRegion r) =>
     Module 'Shunted ->
-    Sem r (Module 'Typed, Map (Qualified Name) (Type SourceRegion))
-inferModule m = todo
+    Sem r (Module 'Typed)
+inferModule m = do
+    m' <- traverseModuleRevTopologically inferDeclaration m
+    pure (m')
 
 inferDeclaration ::
     forall r.
-    (HasCallStack, Member UniqueGen r, _) =>
+    (HasCallStack, Members InferPipelineEffects r, Infer SourceRegion r) =>
     ShuntedDeclaration ->
     Sem r TypedDeclaration
 inferDeclaration (Declaration ld) = do
@@ -108,7 +115,7 @@ inferValue ::
     ( HasCallStack
     , Member UniqueGen r
     , Infer SourceRegion r
-    , Member (Error UnifyError) r
+    , Member (Error (UnifyError SourceRegion)) r
     ) =>
     Located (Qualified VarName) ->
     ShuntedExpr ->
@@ -118,18 +125,17 @@ inferValue valueName valueExpr = do
     a <- makeUniqueTyVar
     addType' (TermVarKey (valueName ^. unlocated)) (Lifted $ TypeVar a)
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
-
+    debug $ "Generated constraints: " <> pretty constraint <> " for " <> pretty valueName
     let eq = Equality (TypeVar a) t
     (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> constraint)
     when (finalConstraint /= EmptyConstraint) do
         throw (UnresolvedConstraint finalConstraint)
-    
+
     let newType = substituteAll subst t
 
     generalized <- generalize newType
 
     pure (typedExpr, generalized)
-
 
 generalize :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Sem r (Type SourceRegion)
 generalize ty = do

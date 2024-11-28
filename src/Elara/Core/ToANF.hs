@@ -32,7 +32,7 @@ type ToANF r = (Members [UniqueGen, StructuredDebug] r, Pretty (Core.Expr Core.V
 
 toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 toANF expr =
-    debugWith ("toANF " <> showPretty expr) $
+    debugWith ("toANF " <> pretty expr) $
         toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
 
 toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
@@ -44,7 +44,7 @@ toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
 toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
 toANF' (Core.Lam b e) k = toANFRec e $ \e' -> lift $ k $ ANF.Lam b (ANF.CExpr e')
-toANF' other k = debugWith ("toANF' " <> showPretty other <> ": ") $ evalContT $ do
+toANF' other k = debugWith ("toANF' " <> pretty other <> ": ") $ evalContT $ do
     v <- lift $ makeUnique "var"
     let id = Core.Id (Local' v) (exprType other) Nothing
 

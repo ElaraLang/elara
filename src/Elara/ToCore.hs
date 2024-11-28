@@ -133,7 +133,7 @@ type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
 
 type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
 
-type InnerToCoreEffects = [State CtorSymbolTable, Reader VariableTable, Error ToCoreError, UniqueGen]
+type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
 
 type ToCoreC r = (Members ToCoreEffects r)
 type InnerToCoreC r = (Members InnerToCoreEffects r)
@@ -144,8 +144,8 @@ runToCorePipeline =
         . runErrorOrReport
         . evalState primCtorSymbolTable
 
-moduleToCore :: HasCallStack => VariableTable -> ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
-moduleToCore vt (Module (Located _ m)) = runReader vt $ do
+moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
+moduleToCore (Module (Located _ m)) = do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do

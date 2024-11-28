@@ -6,6 +6,7 @@ import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironmen
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Shunted
 import Elara.Data.Unique (uniqueGenToIO)
+import Elara.Logging (ignoreStructuredDebug)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
@@ -73,6 +74,11 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
 
         expr === Scalar ScalarInt
 
+    it "infers id id correctly" $ property $ do
+        expr <- inferFully "let id = \\x -> x in id id"
+
+        expr === Function (Scalar ScalarInt) (Scalar ScalarInt)
+
 letInTests :: Spec
 letInTests = withoutRetries $ describe "Let In Type Inference" $ do
     it "infers let in type correctly" $ property $ do
@@ -106,6 +112,7 @@ ifElseTests = describe "If Else Type Inference" $ do
 
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc
+    annotate $ toString exprSrc
     res <- evalPipelineRes expr
     (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints res
     annotate $ prettyToString constraint
@@ -137,6 +144,7 @@ runInfer =
         . evalState emptyLocalTypeEnvironment
         . evalState fakeTypeEnvironment
         . runWriter
+        . ignoreStructuredDebug
         . subsume_
 
 shouldSucceed ::

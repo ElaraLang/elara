@@ -16,7 +16,7 @@ genUniqueTypeVar = unsafeMkUnique Nothing <$> Gen.integral (Range.linear 0 100)
 typeConstructorNames :: [TypeName]
 typeConstructorNames = ["List", "Maybe", "Pair", "Box", "IO"]
 
-genMonotype :: Gen (Monotype loc)
+genMonotype :: Gen (Monotype ())
 genMonotype =
     Gen.recursive
         Gen.choice

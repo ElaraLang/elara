@@ -209,7 +209,7 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
                         -- >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
-                        >=> traverseGraphRevTopologically (\(a, b) -> moduleToCore b a)
+                        >=> traverseGraphRevTopologically (moduleToCore)
                         >=> (pure . mapGraph coreToCore)
                         $ graph
                     )

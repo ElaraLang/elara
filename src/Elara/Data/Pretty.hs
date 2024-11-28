@@ -39,11 +39,11 @@ blockParensIf :: Bool -> Doc ann -> Doc ann
 blockParensIf True = braces
 blockParensIf False = identity
 
-listToText :: Pretty a => [a] -> Doc AnsiStyle
+listToText :: forall a. Pretty a => [a] -> Doc AnsiStyle
 listToText elements =
     vsep (fmap prettyEntry elements)
   where
-    prettyEntry entry = "• " <> align (pretty entry)
+    prettyEntry entry = "• " <> align (pretty @a entry)
 
 prettyToText :: Pretty a => a -> Text
 prettyToText = renderStrict True Width.defaultWidth
@@ -149,7 +149,7 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => Pretty (a, b, c, 
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => Pretty (a, b, c, d, e, f) where
     pretty (a, b, c, d, e, f) = tupled [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f]
 
-instance {-# OVERLAPPABLE #-}  PP.Pretty a => Pretty a where
+instance {-# OVERLAPPABLE #-} PP.Pretty a => Pretty a where
     pretty = PP.pretty
 
 escapeChar :: IsString s => Char -> s

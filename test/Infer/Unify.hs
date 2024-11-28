@@ -10,6 +10,7 @@ import Polysemy
 import Polysemy.Error
 import Test.Syd
 import Test.Syd.Hedgehog ()
+import Elara.Logging (structuredDebugToLog, ignoreStructuredDebug, StructuredDebug)
 
 spec :: Spec
 spec = describe "Type unification" $ do
@@ -20,22 +21,22 @@ spec = describe "Type unification" $ do
     it "fails to unify mismatched types" prop_unify_failure
 
 runUnify ::
-    Sem '[Error UnifyError] (Substitution loc, Constraint loc) ->
-    Either UnifyError (Substitution loc, Constraint loc)
-runUnify = run . runError
+    Sem '[StructuredDebug, Error (UnifyError loc)] (Substitution loc, Constraint loc) ->
+    Either (UnifyError loc) (Substitution loc, Constraint loc)
+runUnify = run . runError . ignoreStructuredDebug
 
 
 prop_unify_type_vars :: Property
 prop_unify_type_vars = property $ do
     a <- forAll $ genUniqueTypeVar
-    let typeVar = TypeVar a
+    let typeVar :: Monotype () = TypeVar a
     (sub, _) <- evalEither $ runUnify $ unify typeVar typeVar
     sub === Substitution mempty
 
 prop_unify_scalars :: Property
 prop_unify_scalars = property $ do
     a <- forAll $ Gen.enumBounded
-    let scalarType = Scalar a
+    let scalarType:: Monotype ()  = Scalar a
     (sub, _) <- evalEither $ runUnify $ unify scalarType scalarType
     sub === Substitution mempty
 
