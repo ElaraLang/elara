@@ -128,12 +128,12 @@ fakeOperatorTable =
 fakeTypeEnvironment :: TypeEnvironment loc
 fakeTypeEnvironment =
     emptyTypeEnvironment
-        & addType (TermVarKey (stripLocation $ mkFakeVar "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (stripLocation $ mkFakeVar "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (stripLocation $ mkFakeVar "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (stripLocation $ mkFakeVar "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (stripLocation $ mkFakeVar "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (stripLocation $ mkFakeVar "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarBool))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+        & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarBool))))
         & addType (DataConKey (Qualified "True" primModuleName)) (Lifted (Scalar ScalarBool))
         & addType (DataConKey (Qualified "False" primModuleName)) (Lifted (Scalar ScalarBool))
 
