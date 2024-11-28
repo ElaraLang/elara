@@ -22,7 +22,7 @@ import Elara.AST.Generic.Types (
  )
 import Elara.AST.Kinded
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..))
+import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..), VarName)
 import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -84,33 +84,32 @@ inferDeclaration (Declaration ld) = do
                     DeclarationBody
                         <$> traverseOf
                             unlocated
-                            (inferDeclarationBody' (d' ^. field' @"name"))
+                            (inferDeclarationBody')
                             ldb
-                pure (Declaration' (d' ^. field' @"moduleName") (d' ^. field' @"name") db')
+                pure (Declaration' (d' ^. field' @"moduleName") db')
             )
             ld
   where
     inferDeclarationBody' ::
         HasCallStack =>
-        Located (Qualified Name) ->
         ShuntedDeclarationBody' ->
         Sem r TypedDeclarationBody'
-    inferDeclarationBody' declName declBody = case declBody of
-        Value e NoFieldValue valueType annotations -> do
-            e' <- inferValue declName e
-            pure (Value e' NoFieldValue NoFieldValue NoFieldValue)
+    inferDeclarationBody' declBody = case declBody of
+        Value name e NoFieldValue valueType annotations -> do
+            e' <- inferValue name e
+            pure (Value name e' NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
 
 inferValue ::
     forall r.
     (HasCallStack, Member UniqueGen r) =>
-    Located (Qualified Name) ->
+    Located (Qualified VarName) ->
     ShuntedExpr ->
     Sem r TypedExpr
 inferValue valueName valueExpr = do
     -- generate
     a <- makeUniqueTyVar
-    addType' (TermVarKey (valueName ^. unlocated)) (TypeVar a)
-    t <- withLocalType (valueName ^. unlocated) (TypeVar a) $ do
-        generateConstraints valueExpr
+    -- addType' (TermVarKey (valueName ^. unlocated)) (Lifted $ TypeVar a)
+    -- t <- withLocalType (valueName ^. unlocated) (TypeVar a) $ do
+    --     generateConstraints valueExpr
 
-    pure ()
+    pure _

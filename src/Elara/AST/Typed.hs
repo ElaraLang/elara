@@ -13,7 +13,7 @@ import Data.Generics.Wrapped
 import Elara.AST.Generic (ASTLocate', ASTQual, Select, TypedLambdaParam)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified, TypeName (..), VarName)
+import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.VarRef (VarRef, VarRef' (..))
@@ -71,6 +71,9 @@ type instance Select "ADTParam" 'Typed = (Type SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name
+type instance Select "AnyName" Typed = Name
+type instance Select "TypeName" Typed = TypeName
+type instance Select "ValueName" Typed = Qualified VarName
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Typed = Unique LowerAlphaName
@@ -111,10 +114,11 @@ instance HasDependencies TypedDeclaration where
     type Key TypedDeclaration = Qualified Name
 
     keys sd =
-        view (_Unwrapped % unlocated % field' @"name" % unlocated) sd :| case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-            Generic.TypeDeclaration _ (Located _ (Generic.ADT ctors)) _ ->
-                toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
-            _ -> []
+        let theDeclName = Qualified (sd ^. Generic.declarationName % unlocated) (sd ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
+         in theDeclName :| case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+                Generic.TypeDeclaration _ _ (Located _ (Generic.ADT ctors)) _ ->
+                    toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
+                _ -> []
     dependencies decl = []
 
 -- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of

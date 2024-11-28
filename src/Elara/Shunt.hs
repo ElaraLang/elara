@@ -202,14 +202,17 @@ createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
 
     addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Sem r ()
     addDeclsToOpTable' (Declaration (Located _ decl)) = do
-        let declName = Global $ IgnoreLocation $ decl ^. field' @"name"
         case decl ^. field' @"body" % _Unwrapped % unlocated of
-            Value{_valueAnnotations = (ValueDeclAnnotations (Just fixity))} -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
-            TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
+            Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
+                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (NVarName <<$>> _valueName)
+                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+            TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
+                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (sequenceA $ (Qualified (NTypeName <$> name) (decl ^. field' @"moduleName" % unlocated)))
+                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
             _ -> pass
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
-infixDeclToOpInfo (InfixDeclaration prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+infixDeclToOpInfo (InfixDeclaration name prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
   where
     convAssoc LeftAssoc = LeftAssociative
     convAssoc RightAssoc = RightAssociative
@@ -244,7 +247,7 @@ shuntDeclaration (Declaration decl) =
             unlocated
             ( \(decl' :: RenamedDeclaration') -> do
                 body' <- shuntDeclarationBody (decl' ^. field' @"body")
-                pure (Declaration' (decl' ^. field' @"moduleName") (decl' ^. field' @"name") body')
+                pure (Declaration' (decl' ^. field' @"moduleName") body')
             )
             decl
 
@@ -256,11 +259,11 @@ shuntDeclarationBody ::
 shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
   where
     shuntDeclarationBody' :: RenamedDeclarationBody' -> Sem r ShuntedDeclarationBody'
-    shuntDeclarationBody' (Value e _ ty ann) = do
+    shuntDeclarationBody' (Value name e _ ty ann) = do
         shunted <- fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
-    shuntDeclarationBody' (TypeDeclaration vars ty ann) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+        pure (Value name shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
+    shuntDeclarationBody' (TypeDeclaration name vars ty ann) = pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
 
 fixExpr :: Members InnerShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
 fixExpr e = do

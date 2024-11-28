@@ -73,6 +73,9 @@ type instance Select "ADTParam" 'Shunted = ShuntedType
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Shunted = Qualified Name
+type instance Select "AnyName" Shunted = Name
+type instance Select "TypeName" Shunted = TypeName
+type instance Select "ValueName" Shunted = Qualified VarName
 
 -- Selections for 'Type'
 type instance Select "TypeKind" 'Shunted = NoFieldValue
@@ -108,25 +111,25 @@ type ShuntedDeclarationBody' = DeclarationBody' 'Shunted
 
 type ShuntedTypeDeclaration = TypeDeclaration 'Shunted
 
-instance HasDependencies ShuntedDeclaration where
-    type Key ShuntedDeclaration = Qualified Name
+-- instance HasDependencies ShuntedDeclaration where
+--     type Key ShuntedDeclaration = Qualified Name
 
-    keys sd =
-        view (_Unwrapped % unlocated % field' @"name" % unlocated) sd :| case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-            TypeDeclaration _ (Located _ (ADT ctors)) _ ->
-                toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
-            _ -> []
-    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-        Value e NoFieldValue t _ ->
-            valueDependencies e
-                <> patternDependencies e
-                <> (maybeToList t >>= typeDependencies)
-        TypeDeclaration _ x _ ->
-            case x of
-                Located _ (ADT ctors) ->
-                    concatMapOf (each % _2 % each) typeDependencies ctors
-                Located _ (Alias t) ->
-                    typeDependencies t
+--     keys sd =
+--         case sd ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+--             TypeDeclaration name _ (Located _ (ADT ctors)) _ ->
+--                 toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
+--             _ -> []
+--     dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+--         Value name e NoFieldValue t _ ->
+--             valueDependencies e
+--                 <> patternDependencies e
+--                 <> (maybeToList t >>= typeDependencies)
+--         TypeDeclaration _ x _ ->
+--             case x of
+--                 Located _ (ADT ctors) ->
+--                     concatMapOf (each % _2 % each) typeDependencies ctors
+--                 Located _ (Alias t) ->
+--                     typeDependencies t
 
 valueDependencies :: ShuntedExpr -> [Qualified Name]
 valueDependencies =

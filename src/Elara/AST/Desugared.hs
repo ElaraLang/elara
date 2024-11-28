@@ -59,6 +59,9 @@ type instance Select "TypeApplication" 'Desugared = DesugaredType
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Desugared = Name
+type instance Select "AnyName" 'Desugared = Name
+type instance Select "TypeName" 'Desugared = TypeName
+type instance Select "ValueName" 'Desugared = VarName
 
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Desugared = NoFieldValue

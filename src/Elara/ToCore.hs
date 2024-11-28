@@ -149,14 +149,13 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
-        let declName = decl ^. _Unwrapped % unlocated % field' @"name" % unlocated % to (fmap nameText)
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-            Value v _ _ _ -> do
+            Value n v _ _ _ -> do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
-                let var = Core.Id (mkGlobalRef (nameText <$> decl ^. _Unwrapped % unlocated % field' @"name" % unlocated)) ty Nothing
+                let var = Core.Id (mkGlobalRef (nameText <$> n ^. unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
-            TypeDeclaration tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
+            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 todo
             -- let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
             -- registerTyCon tyCon
@@ -175,7 +174,7 @@ moduleToCore vt (Module (Located _ m)) = runReader vt $ do
             -- let ctors'' = fmap (uncurry3 DataCon) ctors'
             -- traverse_ registerCtor ctors''
             -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
-            TypeDeclaration tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
+            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 todo
     -- t' <- typeToCore t
     -- let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs

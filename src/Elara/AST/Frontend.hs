@@ -67,6 +67,9 @@ type instance Select "InfixDecl" 'Frontend = InfixDeclaration 'Frontend
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Frontend = Name
+type instance Select "AnyName" 'Frontend = Name
+type instance Select "TypeName" 'Frontend = TypeName
+type instance Select "ValueName" 'Frontend = VarName
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Frontend = LowerAlphaName

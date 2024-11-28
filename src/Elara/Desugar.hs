@@ -10,6 +10,7 @@ import Elara.AST.Frontend
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
+import Elara.AST.Name (HasName (name))
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
@@ -29,7 +30,7 @@ import Prelude hiding (Op)
 
 data DesugarError
     = DefWithoutLet DesugaredType
-    | InfixWithoutDeclaration Name SourceRegion (ValueDeclAnnotations Desugared)
+    | InfixWithoutDeclaration (Located Name) SourceRegion (ValueDeclAnnotations Desugared)
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | DuplicateAnnotations (ValueDeclAnnotations Desugared) (ValueDeclAnnotations Desugared)
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
@@ -93,21 +94,21 @@ data PartialDeclaration
     = -- | A partial declaration with just a def line
       JustDef
         -- | Name of the declaration
-        Name
+        (Located VarName)
         -- | The *overall* region of the declaration, not just the body!
         SourceRegion
         DesugaredType
         (Maybe (ValueDeclAnnotations Desugared))
     | JustLet
-        Name
+        (Located VarName)
         SourceRegion
         DesugaredExpr
         (Maybe (ValueDeclAnnotations Desugared))
     | JustInfix
-        Name
+        (Located Name)
         SourceRegion
         (ValueDeclAnnotations Desugared)
-    | AllDecl Name SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
+    | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
     | Immediate Name DesugaredDeclarationBody
     deriving (Typeable, Show)
 
@@ -130,11 +131,11 @@ makeLenses ''DesugarState
 resolvePartialDeclaration :: PartialDeclaration -> Desugar DesugaredDeclarationBody
 resolvePartialDeclaration (Immediate _ a) = pure a
 resolvePartialDeclaration ((JustDef _ _ ty _)) = throw (DefWithoutLet ty)
-resolvePartialDeclaration ((JustLet _ sr e ann)) = pure (DeclarationBody (Located sr (Value e NoFieldValue Nothing (resolveAnn ann))))
-resolvePartialDeclaration ((AllDecl _ sr ty e ann)) =
+resolvePartialDeclaration ((JustLet n sr e ann)) = pure (DeclarationBody (Located sr (Value n e NoFieldValue Nothing (resolveAnn ann))))
+resolvePartialDeclaration ((AllDecl n sr ty e ann)) =
     pure
         ( DeclarationBody
-            (Located sr (Value e NoFieldValue (Just ty) ann))
+            (Located sr (Value n e NoFieldValue (Just ty) ann))
         )
 resolvePartialDeclaration (JustInfix n sr v) = throw (InfixWithoutDeclaration n sr v)
 
@@ -159,7 +160,7 @@ desugarDeclarations mn decls = do
     genPartials decls
     completePartials mn
 
-assertPartialNamesEqual :: (PartialDeclaration, Name) -> (PartialDeclaration, Name) -> Desugar Name
+assertPartialNamesEqual :: Eq a => (PartialDeclaration, a) -> (PartialDeclaration, a) -> Desugar a
 assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 == n2 then pure n2 else throw (PartialNamesNotEqual p1 p2)
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
@@ -169,17 +170,17 @@ resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
 mergePartials p1@(JustInfix n sr i) p2@(JustDef n' sr' ty Nothing) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (JustDef n'' (sr <> sr') ty (Just i))
+    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    pure (JustDef n' (sr <> sr') ty (Just i))
 mergePartials p2@(JustDef n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (JustDef n'' (sr <> sr') ty (Just i))
+    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    pure (JustDef n' (sr <> sr') ty (Just i))
 mergePartials p1@(JustInfix n sr i) p2@(JustLet n' sr' ty Nothing) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (JustLet n'' (sr <> sr') ty (Just i))
+    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    pure (JustLet n' (sr <> sr') ty (Just i))
 mergePartials p2@(JustLet n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
-    pure (JustLet n'' (sr <> sr') ty (Just i))
+    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    pure (JustLet n' (sr <> sr') ty (Just i))
 mergePartials p1@(JustDef n sr ty mAnn) p2@(JustLet n' sr' e mAnn') = do
     n'' <- assertPartialNamesEqual (p1, n) (p2, n')
     ann <- resolveDupeInfixes mAnn mAnn'
@@ -200,33 +201,33 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
         genPartial' :: FrontendDeclarationBody' -> Desugar ()
         genPartial' db = do
             partial <- genPartial'' db
-            let f = insertWithM mergePartials (IgnoreLocation (decl ^. field' @"name")) partial
+            let f = insertWithM mergePartials (IgnoreLocation ( db ^. declarationBody'Name)) partial
             modifyM (traverseOf partialDeclarations f)
-
+        
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
-        genPartial'' (InfixDecl (InfixDeclaration p a)) = do
-            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration p a))
+        genPartial'' (InfixDecl (InfixDeclaration n p a)) = do
+            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a))
 
-            pure (JustInfix (decl ^. field' @"name" % unlocated) wholeDeclRegion infix'')
-        genPartial'' (Value e pats _ valueAnnotations) = do
+            pure (JustInfix (n) wholeDeclRegion infix'')
+        genPartial'' (Value n e pats _ valueAnnotations) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
             let ann = coerceValueDeclAnnotations @Frontend @Desugared valueAnnotations
 
-            pure (JustLet (decl ^. field' @"name" % unlocated :: Name) wholeDeclRegion body (Just ann))
-        genPartial'' (ValueTypeDef ty) = do
+            pure (JustLet (n) wholeDeclRegion body (Just ann))
+        genPartial'' (ValueTypeDef n ty) = do
             ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
-            pure (JustDef (decl ^. field' @"name" % unlocated) wholeDeclRegion ty' Nothing)
-        genPartial'' (TypeDeclaration vars typeDecl typeAnnotations) = do
+            pure (JustDef (n) wholeDeclRegion ty' Nothing)
+        genPartial'' (TypeDeclaration n vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
                 traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % _1 % unlocated) desugarType t
                 traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each % _Unwrapped % _1 % unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
             let ann = coerceTypeDeclAnnotations @Frontend @Desugared typeAnnotations
-            let decl' = TypeDeclaration vars typeDecl' ann
+            let decl' = TypeDeclaration n vars typeDecl' ann
             let bodyLoc = decl ^. the @"body" % _Unwrapped % sourceRegion
-            pure (Immediate (decl ^. field' @"name" % unlocated) (DeclarationBody (Located bodyLoc decl')))
+            pure (Immediate (n ^. unlocated % to NTypeName) (DeclarationBody (Located bodyLoc decl')))
 
 desugarType :: FrontendType' -> Desugar DesugaredType'
 desugarType x = pure (unsafeCoerce x)
@@ -239,7 +240,7 @@ completePartials mn = do
             ( \declName partial -> do
                 body <- resolvePartialDeclaration partial
                 let locatedName = declName ^. _IgnoreLocation
-                let declaration' = Declaration' mn locatedName body
+                let declaration' = Declaration' mn body
                 let overallLocation = locatedName ^. sourceRegion <> body ^. _Unwrapped % sourceRegion
                 pure (Declaration (Located overallLocation declaration'))
             )

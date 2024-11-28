@@ -51,9 +51,12 @@ instance Pretty UnknownPretty where
 
 instance
     ( Pretty (Expr ast)
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "TypeVar" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (Select "DeclarationName" ast)))
-    , Pretty (CleanupLocated (ASTLocate' ast (TypeDeclaration ast)))
+    , Pretty (ASTLocate ast (Select "TypeVar" ast))
+    , Pretty (ASTLocate ast (Select "DeclarationName" ast))
+    , Pretty (ASTLocate ast (Select "AnyName" ast))
+    , Pretty (ASTLocate ast (Select "ValueName" ast))
+    , Pretty (ASTLocate ast (Select "TypeName" ast))
+    , Pretty (ASTLocate ast (TypeDeclaration ast))
     , Pretty (Select "ValueTypeDef" ast)
     , Pretty (Select "InfixDecl" ast)
     , Pretty valueType
@@ -61,15 +64,15 @@ instance
     , valueType ~ UnwrapMaybe (Select "ValueType" ast)
     , Pretty exprType
     , exprType ~ UnwrapMaybe (Select "ExprType" ast)
-    , (ToMaybe (Select "ExprType" ast) (Maybe exprType))
+    , ToMaybe (Select "ExprType" ast) (Maybe exprType)
     , RUnlocate (ast :: b)
     ) =>
     Pretty (Declaration' ast)
     where
-    pretty (Declaration' _ n b) =
+    pretty (Declaration' _ b) =
         let val = b ^. _Unwrapped
             y = rUnlocate @b @ast @(DeclarationBody' ast) val
-         in prettyDB n y
+         in prettyDB y
       where
         -- The type of a 'Value' can appear in 2 places: Either as a field in 'Value''s constructor, or as the second field of the 'Expr' tuple
         -- We know that only one will ever exist at a time (in theory, this isn't a formal invariant) so need to find a way of handling both cases
@@ -77,16 +80,18 @@ instance
         -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
         -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
-        prettyDB n (Value e@(Expr (_, t)) _ t' ann) =
+        prettyDB (Value n e@(Expr (_, t)) _ t' ann) =
             let typeOfE =
-                    UnknownPretty
+                    ( UnknownPretty
                         <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
-                            <|> UnknownPretty
-                        <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
+                    )
+                        <|> ( UnknownPretty
+                                <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
+                            )
              in prettyValueDeclaration n e typeOfE ann
-        prettyDB n (TypeDeclaration vars t ann) = prettyTypeDeclaration n vars t ann
-        prettyDB n (ValueTypeDef t) = prettyValueTypeDef n t
-        prettyDB n (InfixDecl f) = pretty f <+> pretty n
+        prettyDB (TypeDeclaration n vars t ann) = prettyTypeDeclaration n vars t ann
+        prettyDB (ValueTypeDef n t) = prettyValueTypeDef n t
+        prettyDB (InfixDecl f) = pretty f
 
 instance
     ( Pretty (Select "Alias" ast)
@@ -296,17 +301,18 @@ instance
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
 
-instance RUnlocate ast => Pretty (ValueDeclAnnotations ast) where
+instance (Pretty (ASTLocate ast (Select "AnyName" ast)), RUnlocate ast) => Pretty (ValueDeclAnnotations ast) where
     pretty (ValueDeclAnnotations v) = braces ("Operator fixity:" <+> maybe "None" pretty v)
 
-instance RUnlocate (ast :: b) => Pretty (InfixDeclaration ast) where
-    pretty (InfixDeclaration prec assoc) =
+instance (Pretty (ASTLocate ast (Select "AnyName" ast)), RUnlocate (ast :: b)) => Pretty (InfixDeclaration ast) where
+    pretty (InfixDeclaration name prec assoc) =
         ( case rUnlocate @b @ast assoc of
             LeftAssoc -> "infixl"
             RightAssoc -> "infixr"
             NonAssoc -> "infix"
         )
             <+> pretty @Int (rUnlocate @b @ast prec)
+            <+> pretty name
 
 instance
     ( Pretty v
