@@ -33,7 +33,7 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.TypeInfer.ConstraintGeneration (UnifyError (..), generateConstraints, runInferEffects, solveConstraints)
-import Elara.TypeInfer.Convert (astTypeToInferType, TypeConvertError)
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToInferType)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
@@ -104,7 +104,6 @@ inferDeclaration (Declaration ld) = do
         Value name e NoFieldValue valueType annotations -> do
             expectedType <- traverse astTypeToInferType valueType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
-            debugPretty (name, polytype)
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
 
@@ -131,7 +130,6 @@ inferValue valueName valueExpr expectedType = do
     let expectedTypeConstraint = case expectedType of
             Just (Lifted t') -> Equality t' t
             _ -> EmptyConstraint
-
 
     (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> expectedTypeConstraint <> constraint)
 
