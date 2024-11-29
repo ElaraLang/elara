@@ -14,7 +14,6 @@ import Elara.Parse.Primitives
 
 import Elara.Parse.Indents (lineSeparator)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
-import Text.Megaparsec.Debug
 
 module' :: Parser (Module 'Frontend)
 module' = fmapLocated Module $ do
