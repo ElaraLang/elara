@@ -1,11 +1,13 @@
 module Elara.Logging where
 
 import Data.Text qualified as Text
+import Elara.Data.Pretty
 import Polysemy
 import Polysemy.Log qualified as Log
 import Polysemy.State (State, evalState, get, put)
 import Print (elaraDebug)
-import Elara.Data.Pretty
+
+type DebugLog = Log.DataLog (Doc AnsiStyle)
 
 data StructuredDebug m a where
     Debug :: HasCallStack => Doc AnsiStyle -> StructuredDebug m ()
@@ -23,28 +25,31 @@ debugWithResult msg act = debugWith msg $ do
     debug ("Result: " <> pretty res)
     pure res
 
-structuredDebugToLog :: forall r a. Member Log.Log r => Sem (StructuredDebug : r) a -> Sem r a
+structuredDebugToLog :: forall r a. Member (Log.DataLog (Doc AnsiStyle)) r => Sem (StructuredDebug : r) a -> Sem r a
 structuredDebugToLog =
     if not elaraDebug
         then raise_ . interpretH (\case Debug _ -> pureT (); DebugWith _ act -> runTSimple act)
         else
             subsume_
                 . evalState 0
-                . reinterpret2H @StructuredDebug @(State Int) @Log.Log @r
+                . reinterpret2H @StructuredDebug @(State Int) @(Log.DataLog (Doc AnsiStyle)) @r
                     ( \case
                         Debug msg -> do
                             depth <- get
-                            Log.debug $ Text.replicate depth "│ " <> prettyToText msg
+                            let prefix = stimes depth "│ "
+                            let indentedMsg = prefix <> (hang (2 * depth) msg)
+                            Log.dataLog $ indentedMsg
                             pureT ()
                         DebugWith msg act -> do
                             depth <- get
-                            Log.debug $ Text.replicate depth "│ " <> prettyToText msg
+                            let prefix = stimes depth "│ "
+                            let indentedMsg = prefix <> (hang (2 * depth) msg)
+                            Log.dataLog $ indentedMsg
                             put $ depth + 1
                             a <- runTSimple act
                             put depth
                             pure a
                     )
-
 
 ignoreStructuredDebug :: Sem (StructuredDebug : r) a -> Sem r a
 ignoreStructuredDebug = interpretH $ \case

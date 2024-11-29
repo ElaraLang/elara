@@ -42,6 +42,7 @@ import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
 import Print (showPretty, debugPretty)
+import Elara.Logging (StructuredDebug, debug, structuredDebugToLog)
 
 data RenameError
     = UnknownModule ModuleName
@@ -222,7 +223,7 @@ type RenamePipelineEffects =
      , Error RenameError
      , Reader (TopologicalGraph (Module 'Desugared))
      , UniqueGen
-     , Log.Log
+     , StructuredDebug
      ]
 
 type Rename r = Members RenamePipelineEffects r
@@ -317,7 +318,7 @@ sortDeclarations = pure
 
 rename :: Rename r => Module 'Desugared -> Sem r (Module 'Renamed)
 rename m = do
-    Log.debug $ "Renaming module " <> showPretty (m ^. _Unwrapped % unlocated % field' @"name")
+    debug $ "Renaming module " <> pretty (m ^. _Unwrapped % unlocated % field' @"name")
     traverseOf
         (_Unwrapped % unlocated)
         ( \m' -> do

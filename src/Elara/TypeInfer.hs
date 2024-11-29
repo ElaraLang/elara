@@ -2,11 +2,7 @@
 
 module Elara.TypeInfer where
 
-import Data.Containers.ListUtils (nubOrd)
 import Data.Generics.Product
-import Data.Generics.Wrapped
-import Data.List ((\\))
-import Data.Map qualified as Map
 import Elara.AST.Generic (
     Declaration (Declaration),
     Declaration' (Declaration'),
@@ -15,15 +11,11 @@ import Elara.AST.Generic (
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Generic.Types (
-    Declaration (Declaration),
-    Declaration' (Declaration'),
-    DeclarationBody (DeclarationBody),
     DeclarationBody' (..),
  )
-import Elara.AST.Kinded
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (nameText), Qualified (..), VarName)
-import Elara.AST.Region (IgnoreLocation (..), Located (Located), SourceRegion, unlocated)
+import Elara.AST.Name (Qualified (..), VarName)
+import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -32,27 +24,21 @@ import Elara.AST.Select (
  )
 import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype, Substitutable (substituteAll), Type (..), TypeVariable (..))
 
-import Data.Set (difference)
 import Elara.AST.Shunted as Shunted
-import Elara.AST.StripLocation (StripLocation (..))
 import Elara.AST.Typed as Typed
-import Elara.AST.VarRef (VarRef' (..), mkGlobal')
-import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Kind.Infer (InferState, inferKind, inferTypeKind, initialInferState)
+import Elara.Data.Kind.Infer (InferState, initialInferState)
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Prim (fullListName, primRegion)
 import Elara.TypeInfer.ConstraintGeneration (UnifyError (..), generateConstraints, runInferEffects, solveConstraints)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType, addType', withLocalType)
-import Elara.TypeInfer.Ftv
+import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy hiding (transform)
-import Polysemy.Error (Error, mapError, throw)
+import Polysemy.Error (Error, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Print
@@ -65,7 +51,6 @@ runInferPipeline e = do
     let e' =
             e
                 & subsume_
-                & structuredDebugToLog
                 & evalState initialInferState
                 & uniqueGenToIO
                 & runErrorOrReport @(UnifyError SourceRegion)

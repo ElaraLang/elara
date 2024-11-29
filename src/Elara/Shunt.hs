@@ -179,8 +179,8 @@ fixOperators opTable o = do
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Log.Log]
-type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable, Log.Log]
+type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
+type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
 runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
 runShuntPipeline s =

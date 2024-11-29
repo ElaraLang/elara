@@ -11,14 +11,15 @@ module Elara.Pipeline where
 import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, Members, Sem, runM, subsume_)
-import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel)
+import Polysemy (Effect, Embed, Members, Sem, runM, subsume_, interpret, InterpreterFor, raise_)
+import Polysemy.Log (Log, Severity (..), interpretLogStdoutLevel, DataLog, interpretDataLog, interpretDataLogStdoutWith)
 import Polysemy.Maybe (MaybeE, runMaybe)
 import Polysemy.Time.Interpreter.Ghc
 import Print (elaraDebug)
+import Elara.Logging
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
-type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), Log, Embed IO]
+type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), StructuredDebug, Embed IO]
 
 type IsPipeline r = Members PipelineResultEff r
 
@@ -34,6 +35,9 @@ finalisePipeline =
     runM @IO
         . runDiagnosticWriter
         . runMaybe
-        . interpretTimeGhc
-        . interpretLogStdoutLevel (Just $ if elaraDebug then Debug else Info)
+        . (if elaraDebug then interpretDataLogStdoutWith prettyToText else destroyDataLog)
+        . structuredDebugToLog
         . subsume_
+
+destroyDataLog :: InterpreterFor (DataLog (Doc AnsiStyle)) r
+destroyDataLog = interpretDataLog (\_ -> pass)

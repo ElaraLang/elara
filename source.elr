@@ -1,4 +1,4 @@
 import Prelude
 import Option
 import Elara.Prim
-let bbb = let id = (\x -> x) in id id
+let bbb = let loop x = if x == 0 then x else loop (x - 1) in loop

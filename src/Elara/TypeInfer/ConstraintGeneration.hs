@@ -39,7 +39,6 @@ runInferEffects e = do
         . evalState emptyLocalTypeEnvironment
         . evalState emptyTypeEnvironment
         . runWriter
-        . structuredDebugToLog
         . subsume_
 
 generateConstraints :: Infer SourceRegion r => ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
@@ -70,6 +69,8 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
                 Global (Located _ n) -> lookupType (TermVarKey n)
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             instantiated <- instantiate varType
+
+        
 
             pure (Var v', instantiated)
         -- ABS
@@ -247,16 +248,18 @@ generatePatternConstraints' pattern' =
 
 instantiate :: forall r loc. Infer loc r => Type loc -> Sem r (Monotype loc)
 instantiate (Lifted t) = pure t
-instantiate (Polytype (Forall tyVars constraint t)) = do
-    fresh <- UnificationVar <$> makeUniqueTyVar
+instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty t) $ do
+    fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
+    let substitution = Substitution $ fromList $ zip tyVars (fmap TypeVar fresh)
     let
         instantiatedConstraint =
-            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) constraint tyVars
+            substituteAll substitution constraint
         instantiatedMonotype =
-            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) t tyVars
+            substituteAll substitution t
 
     -- τ ~ τ1[α/tv] (doesn't work and breaks everything)
-    -- let equalityConstraint = Equality t instantiatedMonotype
+    let equalityConstraint = Equality t instantiatedMonotype
+
 
     tell (instantiatedConstraint)
     pure instantiatedMonotype
