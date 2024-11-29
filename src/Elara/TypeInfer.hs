@@ -22,7 +22,7 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype, Substitutable (substituteAll), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype (..), Substitutable (substituteAll), Type (..), TypeVariable (..))
 
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
@@ -123,11 +123,13 @@ inferValue ::
 inferValue valueName valueExpr expectedType = do
     -- generate
     expected <- case expectedType of
-        Just (Lifted t) -> pure t
-        _ -> TypeVar . UnificationVar <$> makeUniqueTyVar
-    addType' (TermVarKey (valueName)) (Lifted expected)
+        Just t -> pure t
+        Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
+    expectedAsMono <- instantiate expected
+    addType' (TermVarKey (valueName)) expected
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
-    let constraint' = constraint <> Equality expected t
+
+    let constraint' = constraint <> Equality expectedAsMono t
     let tch = fuv t <> fuv constraint'
     debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
     debug $ "Type: " <> pretty t
@@ -140,6 +142,6 @@ inferValue valueName valueExpr expectedType = do
 
     let newType = substituteAll subst t
 
-    generalized <- generalise newType
+    generalized <- generalise (removeSkolems newType)
 
     pure (typedExpr, generalized)
