@@ -19,33 +19,24 @@ import Elara.Pipeline
 import Elara.Prim.Rename
 import Elara.Rename
 import Elara.Shunt
-import Error.Diagnose (hasReports)
 import Error.Diagnose.Diagnostic
 import Hedgehog
 import Language.Haskell.TH
 
 import Control.Exception (throwIO)
-import Elara.AST.StripLocation
 import Elara.Data.Pretty (AnsiStyle)
-import Elara.Data.Unique (unsafeMkUnique)
 import Elara.Error
+import Elara.Logging
 import Elara.Prim (primModuleName)
 import Elara.TypeInfer.Environment
-import Elara.TypeInfer.Environment (TypeEnvironment (TypeEnvironment))
 import Elara.TypeInfer.Type
 import Hedgehog.Internal.Property (failDiff, failWith)
-import Hedgehog.Internal.Show (mkValue, renderValue)
-import Language.Haskell.TH (pprint)
-import Language.Haskell.TH.Lib (stringE)
-import Language.Haskell.TH.Syntax (Exp, Lift, Name (..), NameFlavour (..), Pat, Q)
-import Polysemy (Embed, Member, Sem, raise, raise_, subsume, subsume_)
-import Polysemy.Log
+import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
+import Polysemy (Embed, Member, Sem)
 import Polysemy.Maybe
 import Polysemy.Reader
-import Print
-import Print (showColored)
 import Region (qualifiedTest, testLocated)
-import Test.Syd (Expectation, expectationFailure)
+import Test.Syd (expectationFailure)
 import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Show
 
@@ -57,7 +48,7 @@ loadRenamedExpr' ::
     ( Member (DiagnosticWriter (Doc AnsiStyle)) w
     , Member MaybeE w
     , Member (Embed IO) w
-    , Member Log w
+    , Member StructuredDebug w
     ) =>
     Text -> Sem w (Expr 'Renamed)
 loadRenamedExpr' source = runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do

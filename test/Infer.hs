@@ -116,7 +116,7 @@ inferFully exprSrc = do
     res <- evalPipelineRes expr
     (_, ty) <- evalPipelineRes $ finalisePipeline $ runInferPipeline $ ignoreStructuredDebug $ do
         put fakeTypeEnvironment -- devious and evil
-        inferValue (qualifiedTest "test") res
+        inferValue (qualifiedTest "test") res Nothing
     pure ty
 
 prop_literalTypesInvariants :: Property

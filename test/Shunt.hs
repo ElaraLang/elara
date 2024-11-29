@@ -5,27 +5,12 @@ import Common (diagShouldSucceed)
 import Elara.AST.Generic
 import Elara.AST.Generic.Instances ()
 import Elara.AST.Generic.Pattern (functionCall, int, var)
-import Elara.AST.Module
-import Elara.AST.Name (OpName (..), Qualified (..), VarName (OperatorVarName))
-import Elara.AST.Region (generatedLocated)
-import Elara.AST.Select (LocatedAST (..), UnlocatedAST (UnlocatedShunted))
+import Elara.AST.Select (UnlocatedAST (UnlocatedShunted))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
-import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation, withName)
-import Elara.Data.TopologicalGraph
-import Elara.Desugar (desugarExpr, runDesugar, runDesugarPipeline)
-import Elara.Lexer.Pipeline (runLexPipeline)
-import Elara.Lexer.Reader (readTokensWith)
-import Elara.Parse (parsePipeline, runParsePipeline)
-import Elara.Parse.Expression (exprParser)
-import Elara.Pipeline (PipelineRes, finalisePipeline)
-import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Rename (RenameState (..), renameExpr, runRenamePipeline)
-import Elara.Shunt (Associativity (..), OpInfo (OpInfo), OpTable, fixExpr, mkPrecedence, runShuntPipeline)
 import Hedgehog hiding (Var)
 import HedgehogSyd ()
 import Orphans ()
-import Polysemy.Reader (runReader)
 import Test.Syd (Spec, describe, it)
 import Test.Syd.Hedgehog ()
 
