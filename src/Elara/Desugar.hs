@@ -160,8 +160,8 @@ desugarDeclarations mn decls = do
     genPartials decls
     completePartials mn
 
-assertPartialNamesEqual :: Eq a => (PartialDeclaration, a) -> (PartialDeclaration, a) -> Desugar a
-assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 == n2 then pure n2 else throw (PartialNamesNotEqual p1 p2)
+assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDeclaration, Located a) -> Desugar ()
+assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pure () else throw (PartialNamesNotEqual p1 p2)
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
 resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throw (DuplicateAnnotations a b)
@@ -170,25 +170,25 @@ resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
 mergePartials p1@(JustInfix n sr i) p2@(JustDef n' sr' ty Nothing) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
     pure (JustDef n' (sr <> sr') ty (Just i))
 mergePartials p2@(JustDef n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
     pure (JustDef n' (sr <> sr') ty (Just i))
 mergePartials p1@(JustInfix n sr i) p2@(JustLet n' sr' ty Nothing) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
     pure (JustLet n' (sr <> sr') ty (Just i))
 mergePartials p2@(JustLet n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
+    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
     pure (JustLet n' (sr <> sr') ty (Just i))
 mergePartials p1@(JustDef n sr ty mAnn) p2@(JustLet n' sr' e mAnn') = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    assertPartialNamesEqual (p1, n) (p2, n')
     ann <- resolveDupeInfixes mAnn mAnn'
-    pure (AllDecl n'' (sr <> sr') ty e ann)
+    pure (AllDecl n' (sr <> sr') ty e ann)
 mergePartials p1@(JustLet n sr e mAnn) p2@(JustDef n' sr' ty mAnn') = do
-    n'' <- assertPartialNamesEqual (p1, n) (p2, n')
+    assertPartialNamesEqual (p1, n) (p2, n')
     ann <- resolveDupeInfixes mAnn mAnn'
-    pure (AllDecl n'' (sr <> sr') ty e ann)
+    pure (AllDecl n' (sr <> sr') ty e ann)
 mergePartials l r = throw (DuplicateDeclaration l r)
 
 genPartials :: [FrontendDeclaration] -> Desugar ()
@@ -201,9 +201,9 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
         genPartial' :: FrontendDeclarationBody' -> Desugar ()
         genPartial' db = do
             partial <- genPartial'' db
-            let f = insertWithM mergePartials (IgnoreLocation ( db ^. declarationBody'Name)) partial
+            let f = insertWithM mergePartials (IgnoreLocation (db ^. declarationBody'Name)) partial
             modifyM (traverseOf partialDeclarations f)
-        
+
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
         genPartial'' (InfixDecl (InfixDeclaration n p a)) = do
             let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a))
