@@ -4,6 +4,7 @@ import Control.Monad.Error.Class (MonadError (throwError))
 import Data.Map qualified as Map
 import Elara.AST.Name
 import Elara.AST.VarRef
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
 import Elara.TypeInfer.Type
@@ -12,6 +13,7 @@ import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
 import Polysemy.State.Extra
+import Print (showPretty)
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
@@ -29,6 +31,10 @@ data TypeEnvKey loc
     | -- | A term variable x
       TermVarKey (Qualified VarName)
     deriving (Show, Eq, Ord)
+
+instance Pretty (TypeEnvKey loc) where
+    pretty (DataConKey con) = pretty con
+    pretty (TermVarKey name) = pretty name
 
 addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
@@ -81,7 +87,12 @@ data InferError loc
     deriving (Show)
 
 instance ReportableError (InferError loc) where
-    report (UnboundTermVar key env) =
-        writeReport $ Err (Nothing) ("Unbound term variable") [] []
+    report (UnboundTermVar (TermVarKey key) (TypeEnvironment env)) =
+        writeReport $
+            Err
+                (Nothing)
+                ("Unbound term variable " <> pretty key)
+                []
+                [Note $ "Possible names:" <> listToText (pretty <$> Map.keys env)]
     report (UnboundLocalVar var env) =
         writeReport $ Err (Nothing) ("Unbound local variable") [] []
