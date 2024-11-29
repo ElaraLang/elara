@@ -83,7 +83,7 @@ expression :: Parser FrontendExpr
 expression =
     try unit
         <|> (try tuple <?> "tuple expression")
-        <|> (parensExpr <?> "parenthesized expression")
+        <|> (try parensExpr <?> "parenthesized expression")
         <|> (list <?> "list")
         <|> (ifElse <?> "if expression")
         <|> (letInExpression <?> "let-in expression")
