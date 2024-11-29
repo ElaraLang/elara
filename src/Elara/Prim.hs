@@ -13,6 +13,7 @@ import Elara.Data.Unique (UniqueGen)
 import Elara.Shunt
 import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
 import Polysemy
+import Elara.TypeInfer.Environment (TypeEnvironment)
 
 consName :: TypeName
 consName = "::"

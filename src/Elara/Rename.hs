@@ -41,7 +41,7 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import Print (showPretty)
+import Print (showPretty, debugPretty)
 
 data RenameError
     = UnknownModule ModuleName
@@ -381,8 +381,9 @@ addDeclarationToContext _ decl = do
         insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
 
     let global :: name -> VarRef name
-        global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) <$ decl ^. _Unwrapped)
-    case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated % declarationBody'Name % unlocated of
+        global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) 
+            <$ decl ^. _Unwrapped)
+    case decl ^. declarationName ^. unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 
