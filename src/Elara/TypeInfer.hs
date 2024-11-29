@@ -143,7 +143,7 @@ generalize ty = do
     let freeVars = ftv ty
     let envVars = freeVars `difference` ftv env
     envVarsAsUniVars <- for (toList envVars) $ \case 
-            UnificationVar a -> pure a
-            SkolemVar a -> error "Skolem vars should not be in the environment"
+            UnificationVar a -> pure $ SkolemVar a
+            SkolemVar a -> pure $ SkolemVar a
     let generalized = Forall (toList envVarsAsUniVars) EmptyConstraint ty
     pure generalized

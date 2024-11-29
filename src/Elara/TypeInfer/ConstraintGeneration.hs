@@ -75,10 +75,10 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monotype tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -108,10 +108,10 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
                     let
                         -- Q1[α/tv]
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) constraint tyVars
                         -- τ1[α/tv]
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monotype tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) monotype tyVars
 
                     -- τ ~ τ1[α/tv]
                     let equalityConstraint = Equality monotype instantiatedMonotype
@@ -122,7 +122,7 @@ generateConstraints' expr' = debugWith ("generateConstraints: " <> pretty expr')
 
         -- ABS
         (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
-            paramTyVar <- SkolemVar <$> makeUniqueTyVar
+            paramTyVar <- UnificationVar <$> makeUniqueTyVar
 
             (typedBody, bodyType) <- withLocalType paramName (TypeVar paramTyVar) $ do
                 generateConstraints body
@@ -278,9 +278,9 @@ generatePatternConstraints' pattern' =
 
                     let
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) constraint tyVars
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute (UnificationVar tyVar) (TypeVar fresh)) monoCtor tyVars
+                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) monoCtor tyVars
 
                     tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
 

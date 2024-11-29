@@ -14,7 +14,7 @@ data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
 
 -- | A type scheme σ
 data Type loc
-    = Forall [UniqueTyVar] (Constraint loc) (Monotype loc)
+    = Forall [TypeVariable] (Constraint loc) (Monotype loc)
     | Lifted (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 

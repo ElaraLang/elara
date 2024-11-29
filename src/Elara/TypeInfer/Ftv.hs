@@ -15,7 +15,7 @@ instance Ftv (Monotype loc) where
     ftv (Function t1 t2) = ftv t1 <> ftv t2
 
 instance Ftv (Type loc) where
-    ftv (Forall tv _ t) = ftv t `difference`  fromList (UnificationVar <$> tv)
+    ftv (Forall tv _ t) = ftv t `difference`  fromList (tv)
     ftv (Lifted t) = ftv t
 
 instance Ftv (TypeEnvironment loc) where
