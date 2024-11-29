@@ -16,12 +16,11 @@ import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
-import Elara.AST.VarRef (VarRef, VarRef' (..))
+import Elara.AST.VarRef (VarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Monotype, Type (..))
-import Optics (foldOf)
 
 type instance ASTLocate' 'Typed = Located
 

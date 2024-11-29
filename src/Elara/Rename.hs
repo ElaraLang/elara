@@ -36,13 +36,11 @@ import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
 import Optics (anyOf, filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem, subsume)
 import Polysemy.Error (Error, note, throw)
-import Polysemy.Log qualified as Log
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import Print (showPretty, debugPretty)
-import Elara.Logging (StructuredDebug, debug, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, debug)
 
 data RenameError
     = UnknownModule ModuleName

@@ -2,11 +2,8 @@
 module Elara.Core.ANF where
 
 import Data.Data (Data)
-import Elara.AST.Pretty (prettyBlockExpr)
 import Elara.Core (AltCon, Literal, Type)
 import Elara.Core.Generic qualified as G
-import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles
 import Prelude hiding (Alt, group)
 
 data AExpr b

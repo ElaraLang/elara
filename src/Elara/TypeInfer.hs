@@ -42,7 +42,6 @@ import Polysemy hiding (transform)
 import Polysemy.Error (Error, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
-import Print
 import Relude.Extra.Type (type (++))
 
 type InferPipelineEffects =

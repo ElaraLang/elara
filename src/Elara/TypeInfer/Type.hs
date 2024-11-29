@@ -119,7 +119,7 @@ class Substitutable (a :: Kind.Type -> Kind.Type) where
 --     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
 
 instance Substitutable Constraint where
-    substitute tv t EmptyConstraint = EmptyConstraint
+    substitute _ _ EmptyConstraint = EmptyConstraint
     substitute tv t (Conjunction c1 c2) = Conjunction (substitute tv t c1) (substitute tv t c2)
     substitute tv t (Equality m1 m2) = Equality (substitute tv t m1) (substitute tv t m2)
 

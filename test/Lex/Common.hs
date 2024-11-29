@@ -3,7 +3,7 @@
 module Lex.Common where
 
 import Elara.AST.Region (unlocated)
-import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
+import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Polysemy

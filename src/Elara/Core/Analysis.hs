@@ -7,9 +7,7 @@ import Data.List (maximum)
 import Data.Set qualified as Set
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
-import Elara.Data.Pretty
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
-import Print (showPretty)
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"

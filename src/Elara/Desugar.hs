@@ -10,7 +10,6 @@ import Elara.AST.Frontend
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (HasName (name))
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select

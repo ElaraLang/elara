@@ -1,6 +1,6 @@
 module Polysemy.Lens where
 
-import Optics (A_Getter, Is)
+import Optics (A_Getter)
 import Polysemy
 import Polysemy.State
 

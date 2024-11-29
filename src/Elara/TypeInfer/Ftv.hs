@@ -2,7 +2,6 @@ module Elara.TypeInfer.Ftv where
 
 import Data.Set (difference, member)
 import Elara.TypeInfer.Type (Monotype (..), Type (..), TypeVariable (..), Polytype (..))
-import Elara.TypeInfer.Unique
 import Elara.TypeInfer.Environment (TypeEnvironment (..))
 
 class Ftv a where

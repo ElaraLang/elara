@@ -29,11 +29,9 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
 import Polysemy (Member, Members, Sem, subsume_)
 import Polysemy.Error (Error, throw)
-import Polysemy.Log qualified as Log
 import Polysemy.Reader hiding (Local)
 import Polysemy.State (State, execState, modify)
 import Polysemy.Writer hiding (pass)
-import Print (showPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo

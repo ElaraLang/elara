@@ -1,7 +1,6 @@
 module Elara.Core.LiftClosures where
 
 import Data.Set qualified as Set
-import Data.Traversable (for)
 import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF as ANF

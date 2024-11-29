@@ -6,14 +6,10 @@ The compiler will then replace these with the actual primitive functions.
 module Elara.Prim where
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (..), VarOrConName (..))
-import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
+import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Unique (UniqueGen)
 import Elara.Shunt
-import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
-import Polysemy
-import Elara.TypeInfer.Environment (TypeEnvironment)
 
 consName :: TypeName
 consName = "::"

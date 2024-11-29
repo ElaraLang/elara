@@ -1,6 +1,5 @@
 module Elara.Logging where
 
-import Data.Text qualified as Text
 import Elara.Data.Pretty
 import Polysemy
 import Polysemy.Log qualified as Log

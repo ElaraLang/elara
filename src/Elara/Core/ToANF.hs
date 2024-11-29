@@ -1,7 +1,6 @@
 module Elara.Core.ToANF where
 
 import Control.Monad.Cont
-import Data.Traversable (for)
 import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
@@ -11,7 +10,6 @@ import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Logging (StructuredDebug, debugWith)
 import Polysemy
-import Print (showPretty)
 
 {- | Convert a Core expression to ANF
 For example:

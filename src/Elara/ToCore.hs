@@ -4,37 +4,30 @@ module Elara.ToCore where
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map qualified as M
-import Data.Traversable (for)
 import Elara.AST.Generic as AST
-import Elara.AST.Generic.Common
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (..), Qualified (..), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (..), Qualified (..), TypeName)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
-import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local))
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (..))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat)
 import Elara.Data.TopologicalGraph
-import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
+import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Type qualified as Type
-import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
-import Error.Diagnose.Report (Marker (..))
 import Polysemy (Members, Sem)
 import Polysemy.Error
-import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
-import Print (debugPretty)
 import TODO (todo)
 
 data ToCoreError

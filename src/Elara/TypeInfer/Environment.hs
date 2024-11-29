@@ -1,9 +1,7 @@
 module Elara.TypeInfer.Environment where
 
-import Control.Monad.Error.Class (MonadError (throwError))
 import Data.Map qualified as Map
 import Elara.AST.Name
-import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
@@ -13,7 +11,6 @@ import Polysemy (Member, Sem)
 import Polysemy.Error
 import Polysemy.State
 import Polysemy.State.Extra
-import Print (showPretty)
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc

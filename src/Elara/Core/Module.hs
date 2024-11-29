@@ -8,8 +8,8 @@ module Elara.Core.Module where
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName, Qualified)
 import Elara.AST.Pretty (prettyBlockExpr)
-import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
-import Elara.Core.Pretty (prettyTy, prettyTypeVariables, prettyVdefg)
+import Elara.Core (DataCon, Type, TypeVariable)
+import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)

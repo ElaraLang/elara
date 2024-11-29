@@ -24,7 +24,6 @@ import Control.Monad (foldM)
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
-import Data.Traversable (for)
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Kinded

@@ -33,7 +33,6 @@ import Polysemy.State (State, get, put)
 import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
 import Relude qualified (id)
 
-import Data.Data (Data)
 import Data.Function ((&))
 import Data.Generics.Sum
 import Optics (

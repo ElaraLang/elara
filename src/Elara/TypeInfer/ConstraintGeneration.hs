@@ -16,7 +16,7 @@ import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (Ftv (..), occurs)
