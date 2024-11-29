@@ -33,7 +33,7 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.TypeInfer.ConstraintGeneration
-import Elara.TypeInfer.Convert (TypeConvertError, astTypeToInferType)
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
@@ -102,7 +102,8 @@ inferDeclaration (Declaration ld) = do
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
-            expectedType <- traverse astTypeToInferType valueType
+            expectedType <- traverse astTypeToGeneralisedInferType valueType
+            debug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)

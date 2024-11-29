@@ -1,13 +1,17 @@
 module Elara.TypeInfer.Generalise where
-import Elara.TypeInfer.Monad
-import Elara.AST.Region
-import Elara.TypeInfer.Type
-import Polysemy
-import Elara.TypeInfer.Ftv
-import Polysemy.State
+
+import Data.Generics.Sum (AsAny (_As))
 import Data.Set (difference)
-import Elara.Logging
+import Elara.AST.Region
 import Elara.Data.Pretty
+import Elara.Logging
+import Elara.TypeInfer.Ftv
+import Elara.TypeInfer.Monad
+import Elara.TypeInfer.Type
+import Elara.TypeInfer.Unique (UniqueTyVar)
+import Optics
+import Polysemy
+import Polysemy.State
 
 generalise :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Sem r (Polytype SourceRegion)
 generalise ty = do
@@ -17,7 +21,7 @@ generalise ty = do
     debug $ "env: " <> pretty env
     debug $ "ftv env: " <> pretty (ftv env)
     let envVars = freeVars `difference` ftv env
-    
-    
-    let generalized = Forall (toList envVars) EmptyConstraint ty
+    let uniVars = envVars ^.. folded % (_As @"UnificationVar")
+
+    let generalized = Forall (toList uniVars) EmptyConstraint ty
     pure generalized

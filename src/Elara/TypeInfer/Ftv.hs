@@ -19,7 +19,7 @@ instance Ftv (Type loc) where
     ftv (Lifted t) = ftv t
 
 instance Ftv (Polytype loc) where
-    ftv (Forall tvs _ t) = ftv t `difference` fromList tvs
+    ftv (Forall tvs _ t) = ftv t `difference` ( fromList (SkolemVar <$> tvs))
 
 instance Ftv (TypeEnvironment loc) where
     ftv (TypeEnvironment env) = foldMap ftv env

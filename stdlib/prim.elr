@@ -1,8 +1,5 @@
 module Elara.Prim
 
-def (==) : a -> a -> Bool
-let (==) = elaraPrimitive "=="
-
 def (-) : Int -> Int -> Int
 let (-) = elaraPrimitive "-"
 

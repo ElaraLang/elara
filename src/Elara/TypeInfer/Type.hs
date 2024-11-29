@@ -20,7 +20,7 @@ data Type loc
     deriving (Generic, Show, Eq, Ord)
 
 data Polytype loc
-    = Forall [TypeVariable] (Constraint loc) (Monotype loc)
+    = Forall [UniqueTyVar] (Constraint loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 
 -- | A constraint Q
