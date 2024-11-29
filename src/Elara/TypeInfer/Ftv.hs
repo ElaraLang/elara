@@ -1,7 +1,7 @@
 module Elara.TypeInfer.Ftv where
 
 import Data.Set (difference, member)
-import Elara.TypeInfer.Type (Monotype (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Monotype (..), Type (..), TypeVariable (..), Polytype (..))
 import Elara.TypeInfer.Unique
 import Elara.TypeInfer.Environment (TypeEnvironment (..))
 
@@ -15,8 +15,11 @@ instance Ftv (Monotype loc) where
     ftv (Function t1 t2) = ftv t1 <> ftv t2
 
 instance Ftv (Type loc) where
-    ftv (Forall tv _ t) = ftv t `difference`  fromList (tv)
+    ftv (Polytype t) = ftv t
     ftv (Lifted t) = ftv t
+
+instance Ftv (Polytype loc) where
+    ftv (Forall tvs _ t) = ftv t `difference` fromList tvs
 
 instance Ftv (TypeEnvironment loc) where
     ftv (TypeEnvironment env) = foldMap ftv env

@@ -17,6 +17,12 @@ debug msg = send $ Debug msg
 debugWith :: HasCallStack => Member StructuredDebug r => Doc AnsiStyle -> Sem r a -> Sem r a
 debugWith msg act = send $ DebugWith msg act
 
+debugWithResult :: (Member StructuredDebug r, Pretty a) => Doc AnsiStyle -> Sem r a -> Sem r a
+debugWithResult msg act = debugWith msg $ do
+    res <- act
+    debug ("Result: " <> pretty res)
+    pure res
+
 structuredDebugToLog :: forall r a. Member Log.Log r => Sem (StructuredDebug : r) a -> Sem r a
 structuredDebugToLog =
     if not elaraDebug

@@ -48,19 +48,19 @@ lookupType key = do
 
 data LocalTypeEnvironment loc
     = LocalTypeEnvironment
-        (Map (Unique VarName) (Monotype loc))
+        (Map (Unique VarName) (Type loc))
     deriving (Show)
 
 emptyLocalTypeEnvironment :: LocalTypeEnvironment loc
 emptyLocalTypeEnvironment = LocalTypeEnvironment Map.empty
 
-addLocalType :: Unique VarName -> Monotype loc -> LocalTypeEnvironment loc -> LocalTypeEnvironment loc
+addLocalType :: Unique VarName -> Type loc -> LocalTypeEnvironment loc -> LocalTypeEnvironment loc
 addLocalType var ty (LocalTypeEnvironment env) = LocalTypeEnvironment (Map.insert var ty env)
 
-withLocalType :: Member (State (LocalTypeEnvironment loc)) r => Unique VarName -> Monotype loc -> Sem r a -> Sem r a
+withLocalType :: Member (State (LocalTypeEnvironment loc)) r => Unique VarName -> Type loc -> Sem r a -> Sem r a
 withLocalType var ty = locally (addLocalType var ty)
 
-lookupLocalVarType :: Member (Error (InferError loc)) r => Unique VarName -> LocalTypeEnvironment loc -> Sem r (Monotype loc)
+lookupLocalVarType :: Member (Error (InferError loc)) r => Unique VarName -> LocalTypeEnvironment loc -> Sem r (Type loc)
 lookupLocalVarType var (LocalTypeEnvironment env) =
     case Map.lookup var env of
         Just ty -> pure ty
@@ -71,7 +71,7 @@ lookupLocalVar ::
     , Member (Error (InferError loc)) r
     ) =>
     Unique VarName ->
-    Sem r (Monotype loc)
+    Sem r (Type loc)
 lookupLocalVar name = get >>= lookupLocalVarType name
 
 -- | An error that can occur during type inference

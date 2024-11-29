@@ -15,8 +15,12 @@ data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
 
 -- | A type scheme σ
 data Type loc
-    = Forall [TypeVariable] (Constraint loc) (Monotype loc)
+    = Polytype !(Polytype loc)
     | Lifted (Monotype loc)
+    deriving (Generic, Show, Eq, Ord)
+
+data Polytype loc
+    = Forall [TypeVariable] (Constraint loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 
 -- | A constraint Q
@@ -56,7 +60,7 @@ data AxiomScheme loc
     deriving (Generic, Show, Eq, Ord)
 
 -- | A monotype τ
-data Monotype loc
+data Monotype (loc :: Kind.Type)
     = -- | A type variable tv
       TypeVar TypeVariable
     | -- | A scalar
@@ -93,7 +97,7 @@ instance Semigroup (Substitution loc) where
 substitution :: (TypeVariable, Monotype loc) -> Substitution loc
 substitution = Substitution . one
 
-class Substitutable (a :: k -> Kind.Type) where
+class Substitutable (a :: Kind.Type -> Kind.Type) where
     substitute :: TypeVariable -> Monotype loc -> a loc -> a loc
 
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
@@ -118,7 +122,7 @@ instance Substitutable Monotype where
         -- Prevent substitution of skolem variables
         if tv == tv'
             then error "Cannot substitute skolem variable"
-            else TypeVar tv'
+            else TypeVar tv
     substitute _ _ (Scalar s) = Scalar s
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
     substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)
@@ -135,8 +139,12 @@ instance Pretty Scalar where
     pretty ScalarBool = Style.scalar "Bool"
 
 instance Pretty loc => Pretty (Type loc) where
-    pretty (Forall tv c m) = "∀" <> pretty tv <> ". " <> pretty c <> " ⇒ " <> pretty m
+    pretty (Polytype poly) = pretty poly
     pretty (Lifted m) = pretty m
+
+instance Pretty loc => Pretty (Polytype loc) where
+    pretty (Forall [] c m) = pretty c <> " ⇒ " <> pretty m
+    pretty (Forall tv c m) = "∀" <> pretty tv <> ". " <> pretty c <> " ⇒ " <> pretty m
 
 instance Pretty loc => Pretty (Constraint loc) where
     pretty EmptyConstraint = Style.builtin "𝜖"

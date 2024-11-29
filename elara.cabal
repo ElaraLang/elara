@@ -105,6 +105,8 @@ library
       Elara.TypeInfer.ConstraintGeneration
       Elara.TypeInfer.Environment
       Elara.TypeInfer.Ftv
+      Elara.TypeInfer.Generalise
+      Elara.TypeInfer.Monad
       Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique

@@ -6,9 +6,12 @@ import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironmen
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Shunted
 import Elara.Data.Unique (uniqueGenToIO)
-import Elara.Logging (ignoreStructuredDebug)
+import Elara.Logging (ignoreStructuredDebug, structuredDebugToLog)
+import Elara.Pipeline (finalisePipeline)
+import Elara.TypeInfer (inferValue, runInferPipeline)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment
+import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type
 import Hedgehog (Property, annotate, evalEither, evalEitherM, evalIO, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
@@ -17,10 +20,10 @@ import Hedgehog.Range qualified as Range
 import Infer.Unify qualified as Unify
 import Polysemy (Sem, runM, subsume_)
 import Polysemy.Error (runError)
-import Polysemy.State (evalState)
+import Polysemy.State (evalState, put)
 import Polysemy.Writer (runWriter)
 import Print (prettyToString, showPretty)
-import Region (testLocated)
+import Region (qualifiedTest, testLocated)
 import Test.Syd
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
@@ -56,66 +59,65 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
         expr <- inferFully "\\x -> x"
 
         case expr of
-            Function a b | a == b -> pure ()
+            Forall [a] EmptyConstraint (Function (TypeVar b) (TypeVar c)) | a == b && b == c -> pure ()
             other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
     it "infers applied identity function correctly" $ property $ do
         expr <- inferFully "(\\x -> x) 42"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
     it "infers nested identity function correctly" $ property $ do
         expr <- inferFully "(\\x -> (\\y -> y) x) 42"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
     it "infers id id correctly" $ property $ do
         expr <- inferFully "let id = \\x -> x in id id"
 
-        expr === Function (Scalar ScalarInt) (Scalar ScalarInt)
+        case expr of
+            Forall [a] EmptyConstraint (Function (TypeVar b) (TypeVar c)) | a == b && b == c -> pure ()
+            other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
 letInTests :: Spec
 letInTests = withoutRetries $ describe "Let In Type Inference" $ do
     it "infers let in type correctly" $ property $ do
         expr <- inferFully "let x = 42 in x"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
     it "infers let in type correctly with shadowing" $ property $ do
         expr <- inferFully "let x = 42 in let x = 43 in x"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
     it "infers let in type correctly with shadowing and lambda" $ property $ do
         expr <- inferFully "let x = 42 in let f = \\x -> x in f x"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
 recursionTests :: Spec
 recursionTests = withoutRetries $ describe "recursion tests" $ do
     it "recursion" $ property $ do
         expr <- inferFully "let loop x = if x == 0 then x else loop (x - 1) in loop"
 
-        expr === Function (Scalar ScalarInt) (Scalar ScalarInt)
+        expr === Forall [] EmptyConstraint (Function (Scalar ScalarInt) (Scalar ScalarInt))
 
 ifElseTests :: Spec
 ifElseTests = describe "If Else Type Inference" $ do
     it "infers if else type correctly" $ property $ do
         expr <- inferFully "if True then 42 else 43"
 
-        expr === Scalar ScalarInt
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc
     annotate $ toString exprSrc
     res <- evalPipelineRes expr
-    (constraint, (exp, ty)) <- evalEitherM $ liftIO $ runInfer $ generateConstraints res
-    annotate $ prettyToString constraint
-    (subst, newConstraint) <- evalEither $ Unify.runUnify $ unifyEquality constraint
-    annotate $ prettyToString newConstraint
-    newConstraint === EmptyConstraint -- there should be no residual
-    annotate $ prettyToString subst
-    pure (substituteAll subst ty)
+    (_, ty) <- evalPipelineRes $ finalisePipeline $ runInferPipeline $ ignoreStructuredDebug $ do
+        put fakeTypeEnvironment -- devious and evil
+        inferValue (qualifiedTest "test") res
+    pure ty
 
 prop_literalTypesInvariants :: Property
 prop_literalTypesInvariants = property $ do
