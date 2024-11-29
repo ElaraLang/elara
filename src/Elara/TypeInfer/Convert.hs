@@ -4,10 +4,11 @@ import Elara.AST.Generic.Types qualified as Generic
 import Elara.AST.Name
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.Shunted (ShuntedType, ShuntedType')
+import Elara.Error (ReportableError (..))
+import Elara.Prim (boolName, charName, intName, mkPrimQual, stringName)
 import Elara.TypeInfer.Type
 import Polysemy
 import Polysemy.Error
-import Elara.Error (ReportableError (..))
 
 astTypeToInferType :: Member (Error TypeConvertError) r => ShuntedType -> Sem r (Type SourceRegion)
 astTypeToInferType (Generic.Type (Located loc t, kind)) =
@@ -38,6 +39,18 @@ astTypeToInferType' loc (Generic.TypeConstructorApplication ctor arg) = do
         TypeConstructor name args -> do
             pure $ Lifted $ TypeConstructor name (args ++ [arg'])
         other -> throw $ NotSupported "Type constructor application is only supported for type constructors"
+-- primitive types
+-- this will be removed soon as we remove primitives from the typechecker
+astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual stringName = do
+    pure $ Lifted $ Scalar ScalarString
+astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual intName = do
+    pure $ Lifted $ Scalar ScalarInt
+astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual boolName = do
+    pure $ Lifted $ Scalar ScalarBool
+astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual charName = do
+    pure $ Lifted $ Scalar ScalarChar
+
+-- custom types
 astTypeToInferType' loc (Generic.UserDefinedType name) = do
     pure $ Lifted $ TypeConstructor (name ^. unlocated) []
 
