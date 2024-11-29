@@ -1,6 +1,7 @@
 module Infer.Unify where
 
 import Arbitrary.Type (genMonotype, genUniqueTypeVar)
+import Elara.Logging (StructuredDebug, ignoreStructuredDebug, structuredDebugToLog)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Type
 import Hedgehog (Gen, Property, evalEither, forAll, property, (===))
@@ -8,9 +9,9 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Polysemy
 import Polysemy.Error
+import Polysemy.Reader (runReader)
 import Test.Syd
 import Test.Syd.Hedgehog ()
-import Elara.Logging (structuredDebugToLog, ignoreStructuredDebug, StructuredDebug)
 
 spec :: Spec
 spec = describe "Type unification" $ do
@@ -20,37 +21,33 @@ spec = describe "Type unification" $ do
     it "unifies self" prop_unify_self
     it "fails to unify mismatched types" prop_unify_failure
 
-runUnify ::
-    Sem '[StructuredDebug, Error (UnifyError loc)] (Substitution loc, Constraint loc) ->
-    Either (UnifyError loc) (Substitution loc, Constraint loc)
-runUnify = run . runError . ignoreStructuredDebug
-
+runUnify = run . runError . ignoreStructuredDebug . runReader mempty
 
 prop_unify_type_vars :: Property
 prop_unify_type_vars = property $ do
     a <- forAll $ genUniqueTypeVar
     let typeVar :: Monotype () = TypeVar a
-    (sub, _) <- evalEither $ runUnify $ unify typeVar typeVar
+    (_, sub) <- evalEither $ runUnify $ unify typeVar typeVar
     sub === Substitution mempty
 
 prop_unify_scalars :: Property
 prop_unify_scalars = property $ do
     a <- forAll $ Gen.enumBounded
-    let scalarType:: Monotype ()  = Scalar a
-    (sub, _) <- evalEither $ runUnify $ unify scalarType scalarType
+    let scalarType :: Monotype () = Scalar a
+    (_, sub) <- evalEither $ runUnify $ unify scalarType scalarType
     sub === Substitution mempty
 
 prop_unify_self :: Property
 prop_unify_self = property $ do
     a <- forAll genMonotype
-    (sub, _) <- evalEither $ runUnify $ unify a a
+    (_, sub) <- evalEither $ runUnify $ unify a a
     sub === Substitution mempty
 
 prop_unify_functions :: Property
 prop_unify_functions = property $ do
     a <- forAll genMonotype
     b <- forAll genMonotype
-    (sub, _) <- evalEither $ runUnify $ unify (Function a b) (Function a b)
+    (_, sub) <- evalEither $ runUnify $ unify (Function a b) (Function a b)
     sub === Substitution mempty
 
 -- Hedgehog property: Check unification failure for mismatched types
