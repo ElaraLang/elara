@@ -137,7 +137,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-tools:
       alex
   build-depends:
@@ -196,7 +196,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , algebraic-graphs

@@ -78,6 +78,10 @@ ghc-options:
   - -fplugin=Polysemy.Plugin
   - -fwrite-ide-info
   - -hiedir=.hie
+  - -threaded
+  - -O0
+  - -rtsopts
+  - -with-rtsopts=-N
 
 default-extensions:
   - OverloadedStrings
@@ -101,9 +105,6 @@ executables:
   elara:
     main: Main.hs
     source-dirs: app
-    ghc-options:
-      - -threaded
-      - -O0
     dependencies:
       - elara
 
@@ -114,11 +115,6 @@ tests:
     source-dirs: test
     default-extensions:
       - QuasiQuotes
-    ghc-options:
-      - -threaded
-      - -O0
-      - -rtsopts
-      - -with-rtsopts=-N
     dependencies:
       - elara
       - neat-interpolation
