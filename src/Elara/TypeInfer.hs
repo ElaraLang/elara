@@ -32,9 +32,10 @@ import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.TypeInfer.ConstraintGeneration (UnifyError (..), generateConstraints, runInferEffects, solveConstraints)
+import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToInferType)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
+import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
@@ -103,6 +104,7 @@ inferDeclaration (Declaration ld) = do
         Value name e NoFieldValue valueType annotations -> do
             expectedType <- traverse astTypeToInferType valueType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
+            debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
 
@@ -119,21 +121,21 @@ inferValue ::
     Sem r (TypedExpr, Polytype SourceRegion)
 inferValue valueName valueExpr expectedType = do
     -- generate
-    a <- UnificationVar <$> makeUniqueTyVar
-    addType' (TermVarKey (valueName)) (Lifted $ TypeVar a)
+    expected <- case expectedType of
+        Just (Lifted t) -> pure t
+        _ -> TypeVar . UnificationVar <$> makeUniqueTyVar
+    addType' (TermVarKey (valueName)) (Lifted expected)
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
-    debug $ "Generated constraints: " <> pretty constraint <> " for " <> pretty valueName
+    let constraint' = constraint <> Equality expected t
+    let tch = fuv t <> fuv constraint'
+    debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
     debug $ "Type: " <> pretty t
-    let eq = Equality (TypeVar a) t
+    debug $ "tch: " <> pretty tch
 
-    let expectedTypeConstraint = case expectedType of
-            Just (Lifted t') -> Equality t' t
-            _ -> EmptyConstraint
-
-    (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> expectedTypeConstraint <> constraint)
+    (finalConstraint, subst) <- solveConstraint mempty tch (constraint')
 
     when (finalConstraint /= EmptyConstraint) do
-        throw (UnresolvedConstraint finalConstraint)
+        throw (UnresolvedConstraint valueName finalConstraint)
 
     let newType = substituteAll subst t
 

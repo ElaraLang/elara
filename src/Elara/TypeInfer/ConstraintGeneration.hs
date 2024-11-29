@@ -2,12 +2,15 @@
 
 module Elara.TypeInfer.ConstraintGeneration where
 
-import Data.Set (isSubsetOf)
+import Data.Foldable (foldrM)
+import Data.Generics.Product (HasAny (the), HasType (typed))
+import Data.Generics.Wrapped (_Unwrapped)
+import Data.Set (isSubsetOf, member)
 import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
 import Elara.AST.Generic.Types qualified as Syntax
-import Elara.AST.Name (VarName (..))
+import Elara.AST.Name (Qualified, VarName (..))
 import Elara.AST.Region (Located (Located), SourceRegion)
 import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
@@ -19,18 +22,19 @@ import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
-import Elara.TypeInfer.Ftv (Ftv (..), occurs)
+import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv), occurs)
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), substitution)
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
+import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), reduce, substitution)
+import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Error.Diagnose
 import Polysemy
 import Polysemy.Error
+import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
 import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
-import Print (showPretty)
+import Print (debugPretty, showPretty)
 
 runInferEffects :: forall r a loc. IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
 runInferEffects e = do
@@ -119,13 +123,14 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             tell recursiveConstraint
 
             -- TODO: we need to check if e1 is closed here before generalising _everything_
+
             env <- get
             let freeVarsInExpr = ftv varType
                 freeVarsInEnv = ftv env
 
             debug (pretty freeVarsInExpr <> " vs " <> pretty freeVarsInEnv)
             maybeGeneralised <-
-                if freeVarsInExpr `isSubsetOf` freeVarsInEnv
+                if True
                     then do
                         generalised <- generalise varType
                         debug (pretty varType <> " -> generalised: " <> pretty generalised)
@@ -246,9 +251,9 @@ generatePatternConstraints' pattern' =
 
                     let
                         instantiatedConstraint =
-                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) constraint tyVars
+                            foldr (\tyVar -> substitute (view typed tyVar) (TypeVar fresh)) constraint tyVars
                         instantiatedMonotype =
-                            foldr (\tyVar -> substitute (tyVar) (TypeVar fresh)) monoCtor tyVars
+                            foldr (\tyVar -> substitute (view typed tyVar) (TypeVar fresh)) monoCtor tyVars
 
                     tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
 
@@ -258,7 +263,7 @@ instantiate :: forall r loc. Infer loc r => Type loc -> Sem r (Monotype loc)
 instantiate (Lifted t) = pure t
 instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty t) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
-    let substitution = Substitution $ fromList $ zip tyVars (fmap TypeVar fresh)
+    let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap TypeVar fresh)
     let
         instantiatedConstraint =
             substituteAll substitution constraint
@@ -268,36 +273,80 @@ instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: "
     tell instantiatedConstraint
     pure instantiatedMonotype
 
-solveConstraints :: (Member (Error (UnifyError loc)) r, Member StructuredDebug r) => Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
-solveConstraints axioms given wanted = do
-    (substitution, simplifiedWanted) <- unifyEquality wanted
+solveConstraint :: (Member (Error (UnifyError a)) r, Member StructuredDebug r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Sem r (Constraint a, Substitution a)
+solveConstraint given tch wanted = debugWith ("solveConstraint: given: " <> pretty given <> " wanted: " <> pretty wanted) $ do
+    (residual, unifier) <- simplifyConstraint given tch wanted
+    debug ("solveConstraint: " <> pretty residual)
+    let residual' = reduce residual
+    debug ("solveConstraint reduced: " <> pretty residual')
 
-    -- let simplifiedGiven = substitute substitution given
+    debug ("solveConstraint: unifier: " <> pretty unifier)
+    pure (residual', unifier)
 
-    -- let simplifiedWanted' = substitute substitution simplifiedWanted
+simplifyConstraint ::
+    ( Member (Error (UnifyError loc)) r
+    , Member StructuredDebug r
+    , Pretty loc
+    ) =>
+    Constraint loc -> Set UniqueTyVar -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
+simplifyConstraint given tch wanted = do
+    givenSubst <- (reduceGiven given)
+    debug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
+    runReader tch (solve (substituteAll givenSubst wanted))
 
-    -- let (entailable, residualWanted) = entail axioms simplifiedGiven simplifiedWanted'
+reduceGiven :: (Pretty loc, Member (Error (UnifyError loc)) r, Member StructuredDebug r) => Constraint loc -> Sem r (Substitution loc)
+reduceGiven (Equality a b) = unifyGiven a b
+reduceGiven (Conjunction a b) = do
+    s1 <- reduceGiven a
+    s2 <- reduceGiven (substituteAll s1 b)
+    pure (s1 <> s2)
+reduceGiven EmptyConstraint = pure mempty
 
-    pure (simplifiedWanted, substitution)
-
-unifyEquality :: (Member (Error (UnifyError loc)) r, Member StructuredDebug r) => Pretty loc => Constraint loc -> Sem r (Substitution loc, Constraint loc)
-unifyEquality (Equality a b) = unify a b
-unifyEquality (Conjunction a b) = debugWith ("unifyEquality: " <> pretty a <> " ^ " <> pretty b) $ do
+solve ::
+    (Member (Error (UnifyError loc)) r, Member StructuredDebug r, Member (Reader (Set UniqueTyVar)) r) =>
+    Pretty loc =>
+    Constraint loc ->
+    Sem r (Constraint loc, Substitution loc)
+solve (Equality a b) = unify a b
+solve (Conjunction a b) = debugWith ("solve: " <> pretty a <> " ^ " <> pretty b) $ do
     -- a lot of this is duplicated from unifyMany which is a bit annoying
-    (s1, c1) <- unifyEquality a
-    debug ("unifyEquality produced: " <> pretty s1 <> ", " <> pretty c1)
+    (c1, s1) <- solve a
+    debug ("solve produced: " <> pretty s1)
     -- apply s1 to b before unifying
-    (s2, c2) <- unifyEquality (substituteAll s1 b)
-    pure (s1 <> s2, c1 <> c2)
-unifyEquality EmptyConstraint = pure (mempty, EmptyConstraint)
+    (c2, s2) <- solve (substituteAll s1 b)
+    pure (c1 <> c2, s1 <> s2)
+solve EmptyConstraint = pure (mempty)
+
+unifyGiven ::
+    (Pretty loc, Member (Error (UnifyError loc)) r, Member StructuredDebug r) =>
+    Monotype loc -> Monotype loc -> Sem r (Substitution loc)
+unifyGiven (TypeVar a) b = bindGiven a b
+unifyGiven a (TypeVar b) = bindGiven b a
+unifyGiven (TypeConstructor a as) (TypeConstructor b bs)
+    | a /= b = throw TypeConstructorMismatch
+    | length as /= length bs = throw ArityMismatch
+    | otherwise = unifyGivenMany as bs
+unifyGiven (Function a b) (Function c d) = unifyGivenMany [a, b] [c, d]
+unifyGiven (Scalar a) (Scalar b) =
+    if a == b
+        then pure (mempty)
+        else throw ScalarMismatch
+unifyGiven a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
+
+unifyGivenMany xs ys = foldrM go mempty (zip xs ys)
+  where
+    go (a, b) s = do
+        s' <- unifyGiven (substituteAll s a) (substituteAll s b)
+        pure (s <> s')
 
 unify ::
     HasCallStack =>
     Member StructuredDebug r =>
     Pretty (Constraint loc) =>
     Member (Error (UnifyError loc)) r =>
-    Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
-unify a b | a == b = pure (mempty, EmptyConstraint)
+    Member (Reader (Set UniqueTyVar)) r =>
+    Pretty loc =>
+    Monotype loc -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
 unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     r <- unify' a b
     debug ("unify result: " <> pretty r)
@@ -308,13 +357,16 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
         Member StructuredDebug r =>
         Member (Error (UnifyError loc)) r =>
         Pretty (Constraint loc) =>
-        Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
+        Member (Reader (Set UniqueTyVar)) r =>
+        Pretty loc =>
+        Monotype loc -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
 
-    unify' (TypeVar a) b = (,EmptyConstraint) <$> bind a b
-    unify' a (TypeVar b) = (,EmptyConstraint) <$> bind b a
+    unify' (TypeVar a) (TypeVar b) | a == b = pure (mempty, mempty)
+    unify' (TypeVar (UnificationVar a)) b = unifyVar a b
+    unify' a (TypeVar (UnificationVar b)) = unifyVar b a
     unify' (Scalar a) (Scalar b) =
         if a == b
-            then pure (mempty, EmptyConstraint)
+            then pure (mempty)
             else throw ScalarMismatch
     unify' (TypeConstructor a as) (TypeConstructor b bs)
         | a /= b = throw TypeConstructorMismatch
@@ -323,37 +375,49 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     unify' (Function a b) (Function c d) = unifyMany [a, b] [c, d]
     unify' a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
 
-bind ::
+bindGiven ::
     (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
     TypeVariable -> Monotype loc -> Sem r (Substitution loc)
-bind a t = do
-    debug $ "bind " <> pretty a <> " to " <> pretty t
-    bind' a t
+bindGiven a t =
+    if member a (ftv t)
+        then throw (OccursCheckFailed a t)
+        else pure (substitution (tvValue a, t))
   where
-    bind' ::
-        (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
-        TypeVariable -> Monotype loc -> Sem r (Substitution loc)
-    bind' (SkolemVar v) (TypeVar (SkolemVar v2)) | v == v2 = pure mempty
-    bind' (SkolemVar v) (TypeVar (SkolemVar v2)) = throw $ UnificationFailed $ "Cannot unify distinct skolem variables " <> showPretty v <> " and " <> showPretty v2
-    bind' (SkolemVar v) (TypeVar tv) = throw $ UnificationFailed $ "Cannot bind skolem variable " <> showPretty v <> " to type variable " <> showPretty tv
-    bind' a t | t == TypeVar a = pure mempty
-    bind' a t | occurs a t = throw (OccursCheckFailed a t)
-    bind' a t = pure $ substitution (a, t)
+    tvValue (UnificationVar a) = a
+    tvValue (SkolemVar a) = a
+
+unifyVar ::
+    forall loc r.
+    (Member StructuredDebug r, Member (Error (UnifyError loc)) r, Member (Reader (Set UniqueTyVar)) r) =>
+    UniqueTyVar -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
+unifyVar a t = do
+    debug $ "bind " <> pretty a <> " to " <> pretty t
+    bindVar a t
+  where
+    bindVar :: UniqueTyVar -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
+    bindVar tv t | member tv (fuv t) = throw (OccursCheckFailed (UnificationVar tv) t)
+    bindVar tv t = do
+        tch <- ask
+        debug ("bindVar " <> pretty tv <> " to " <> pretty t <> " with " <> pretty tch)
+        if member tv tch
+            then pure (mempty, substitution (tv, t))
+            else pure (Equality (TypeVar $ UnificationVar tv) t, mempty)
 
 unifyMany ::
-    (HasCallStack, Member StructuredDebug r) =>
+    (HasCallStack, Member StructuredDebug r, Pretty loc, Member (Reader (Set UniqueTyVar)) r) =>
     Member (Error (UnifyError loc)) r =>
-    Pretty (Constraint loc) =>
     [Monotype loc] ->
     [Monotype loc] ->
-    Sem r (Substitution loc, Constraint loc)
-unifyMany [] [] = pure (mempty, EmptyConstraint)
+    Sem r (Constraint loc, Substitution loc)
+unifyMany [] [] = pure (mempty, mempty)
 unifyMany [] _ = throw UnifyMismatch
 unifyMany _ [] = throw UnifyMismatch
 unifyMany (a : as) (b : bs) = debugWith ("unifyMany: " <> pretty a <> " with " <> pretty b) $ do
-    (s1, c1) <- unify a b
-    (s2, c2) <- unifyMany (fmap (substituteAll s1) as) (fmap (substituteAll s1) bs)
-    pure (s1 <> s2, c1 <> c2)
+    (c1, s1) <- unify a b
+    debug ("unifyMany produced: " <> pretty (c1, s1))
+    debug ("unifyMany: as: " <> pretty as <> " bs: " <> pretty bs)
+    (c2, s2) <- unifyMany (fmap (substituteAll s1) as) (fmap (substituteAll s1) bs)
+    pure (c1 <> c2, s1 <> s2)
 
 data UnifyError loc
     = HasCallStack => OccursCheckFailed TypeVariable (Monotype loc)
@@ -362,7 +426,7 @@ data UnifyError loc
     | ArityMismatch
     | UnificationFailed Text
     | UnifyMismatch
-    | UnresolvedConstraint (Constraint SourceRegion)
+    | UnresolvedConstraint (Qualified VarName) (Constraint SourceRegion)
 
 deriving instance Show (UnifyError loc)
 

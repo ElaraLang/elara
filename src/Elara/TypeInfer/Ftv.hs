@@ -1,8 +1,9 @@
 module Elara.TypeInfer.Ftv where
 
 import Data.Set (difference, member)
-import Elara.TypeInfer.Type (Monotype (..), Type (..), TypeVariable (..), Polytype (..))
+import Elara.TypeInfer.Type (Monotype (..), Type (..), TypeVariable (..), Polytype (..), Constraint (..))
 import Elara.TypeInfer.Environment (TypeEnvironment (..))
+import Elara.TypeInfer.Unique (UniqueTyVar)
 
 class Ftv a where
     ftv :: a -> Set TypeVariable
@@ -25,3 +26,19 @@ instance Ftv (TypeEnvironment loc) where
 
 occurs :: Ftv a => TypeVariable -> a -> Bool
 occurs tv a = tv `member` ftv a
+
+
+class Fuv a where
+    fuv :: a -> Set UniqueTyVar
+
+instance Fuv (Monotype loc) where
+    fuv (TypeVar (SkolemVar _)) = mempty
+    fuv (TypeVar (UnificationVar tv)) = one tv
+    fuv (Scalar _) = mempty
+    fuv (TypeConstructor _ ts) = foldMap fuv ts
+    fuv (Function t1 t2) = fuv t1 <> fuv t2
+
+instance Fuv (Constraint loc) where
+    fuv (Equality t1 t2) = fuv t1 <> fuv t2
+    fuv (EmptyConstraint) = mempty
+    fuv (Conjunction a b) = fuv a <> fuv b

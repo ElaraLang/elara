@@ -34,18 +34,19 @@ data Constraint loc
     deriving (Generic, Show, Eq, Ord)
 
 instance Semigroup (Constraint loc) where
-    EmptyConstraint <> c = simplifyConstraint c
-    c <> EmptyConstraint = simplifyConstraint c
-    c1 <> c2 | c1 == c2 = simplifyConstraint c1 -- Reflexivity
-    c1 <> c2 = simplifyConstraint (Conjunction c1 c2)
+    EmptyConstraint <> c = c
+    c <> EmptyConstraint = c
+    c1 <> c2 | c1 == c2 = c1 -- Reflexivity
+    c1 <> c2 = (Conjunction c1 c2)
 
-simplifyConstraint :: Constraint loc -> Constraint loc
-simplifyConstraint (Equality a b) | a == b = EmptyConstraint
-simplifyConstraint (Conjunction EmptyConstraint EmptyConstraint) = EmptyConstraint
-simplifyConstraint (Conjunction EmptyConstraint a) = simplifyConstraint a
-simplifyConstraint (Conjunction a EmptyConstraint) = simplifyConstraint a
-simplifyConstraint (Conjunction a b) = Conjunction (simplifyConstraint a) (simplifyConstraint b)
-simplifyConstraint x = x
+reduce :: Constraint a -> Constraint a
+reduce (Conjunction q1 q2) = reduce1 (Conjunction (reduce q1) (reduce q2))
+  where
+    reduce1 (Conjunction EmptyConstraint EmptyConstraint) = EmptyConstraint
+    reduce1 (Conjunction EmptyConstraint q) = q
+    reduce1 (Conjunction q EmptyConstraint) = q
+    reduce1 q = q
+reduce q = q
 
 instance Monoid (Constraint loc) where
     mempty = EmptyConstraint
@@ -93,27 +94,23 @@ type DataCon = Qualified TypeName
 
 newtype Substitution loc
     = Substitution
-        (Map TypeVariable (Monotype loc))
+        (Map UniqueTyVar (Monotype loc))
     deriving newtype (Monoid)
     deriving stock (Eq, Show)
 
 instance Semigroup (Substitution loc) where
     -- When composing s1 <> s2, we need to apply s1 to all types in s2
     Substitution s1 <> Substitution s2 =
-        Substitution (Map.map (substituteAll (Substitution s1)) s2 <> Map.map (substituteAll (Substitution s2)) s1)
+        Substitution $ (fmap (substituteAll (Substitution s1)) s2) <> s1
 
-substitution :: (TypeVariable, Monotype loc) -> Substitution loc
+substitution :: (UniqueTyVar, Monotype loc) -> Substitution loc
 substitution = Substitution . one
 
 class Substitutable (a :: Kind.Type -> Kind.Type) where
-    substitute :: TypeVariable -> Monotype loc -> a loc -> a loc
+    substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
 
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
-    substituteAll (Substitution s) a = fix a
-      where
-        fix t =
-            let t' = foldl' (\acc (k, v) -> substitute k v acc) t (Map.toList s)
-             in if t == t' then t else fix t'
+    substituteAll (Substitution s) a = foldr (uncurry substitute) a (Map.toList s)
 
 -- instance Substitutable Type where
 --     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
@@ -124,13 +121,9 @@ instance Substitutable Constraint where
     substitute tv t (Equality m1 m2) = Equality (substitute tv t m1) (substitute tv t m2)
 
 instance Substitutable Monotype where
-    substitute tv t (TypeVar tv'@(UnificationVar _)) =
-        if tv == tv' then t else TypeVar tv'
-    substitute tv _ (TypeVar tv'@(SkolemVar _)) =
-        -- Prevent substitution of skolem variables
-        if tv == tv'
-            then error "Cannot substitute skolem variable"
-            else TypeVar tv
+    substitute _ _ (TypeVar (SkolemVar v)) = TypeVar (SkolemVar v)
+    substitute tv t (TypeVar (UnificationVar v)) | tv == v = t
+    substitute _ _ (TypeVar tv) = TypeVar tv
     substitute _ _ (Scalar s) = Scalar s
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
     substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)

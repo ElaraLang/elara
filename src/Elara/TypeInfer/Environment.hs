@@ -18,6 +18,9 @@ newtype TypeEnvironment loc
         (Map (TypeEnvKey loc) (Type loc))
     deriving (Show)
 
+instance Pretty loc => Pretty (TypeEnvironment loc) where
+    pretty (TypeEnvironment env) = listToText (pretty <$> Map.toList env)
+
 emptyTypeEnvironment :: TypeEnvironment loc
 emptyTypeEnvironment = TypeEnvironment Map.empty
 

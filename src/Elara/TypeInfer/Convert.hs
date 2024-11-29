@@ -17,7 +17,7 @@ astTypeToInferType (Generic.Type (Located loc t, kind)) =
 astTypeToInferType' :: Member (Error TypeConvertError) r => SourceRegion -> ShuntedType' -> Sem r (Type SourceRegion)
 astTypeToInferType' loc (Generic.TypeVar name) = do
     let tv = fmap (Just . nameText) (name ^. unlocated)
-    pure $ Lifted $ TypeVar (UnificationVar $ tv)
+    pure $ Lifted $ TypeVar (SkolemVar $ tv) -- idk if this should ever be a type variable? i dont think so
 astTypeToInferType' loc (Generic.FunctionType i o) = do
     i' <- astTypeToInferType i >>= assertMonotype
     o' <- astTypeToInferType o >>= assertMonotype
