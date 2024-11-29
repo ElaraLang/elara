@@ -7,6 +7,7 @@ import Data.Kind qualified as Kind
 import Data.Map qualified as Map
 import Elara.AST.Name
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
+import Elara.Data.Pretty.Styles qualified as Style
 import Elara.TypeInfer.Unique
 
 data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
@@ -111,12 +112,13 @@ instance Substitutable Constraint where
     substitute tv t (Equality m1 m2) = Equality (substitute tv t m1) (substitute tv t m2)
 
 instance Substitutable Monotype where
-    substitute tv t (TypeVar tv'@(UnificationVar _)) = 
+    substitute tv t (TypeVar tv'@(UnificationVar _)) =
         if tv == tv' then t else TypeVar tv'
-    substitute tv _ (TypeVar tv'@(SkolemVar _)) = 
+    substitute tv _ (TypeVar tv'@(SkolemVar _)) =
         -- Prevent substitution of skolem variables
-        if tv == tv' then error "Cannot substitute skolem variable"
-        else TypeVar tv'
+        if tv == tv'
+            then error "Cannot substitute skolem variable"
+            else TypeVar tv'
     substitute _ _ (Scalar s) = Scalar s
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
     substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)
@@ -125,26 +127,29 @@ instance Substitutable Substitution where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
 
 instance Pretty Scalar where
-    pretty ScalarInt = "Int"
-    pretty ScalarFloat = "Float"
-    pretty ScalarString = "String"
-    pretty ScalarChar = "Char"
-    pretty ScalarUnit = "Unit"
-    pretty ScalarBool = "Bool"
+    pretty ScalarInt = Style.scalar "Int"
+    pretty ScalarFloat = Style.scalar "Float"
+    pretty ScalarString = Style.scalar "String"
+    pretty ScalarChar = Style.scalar "Char"
+    pretty ScalarUnit = Style.scalar "Unit"
+    pretty ScalarBool = Style.scalar "Bool"
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Forall tv c m) = "∀" <> pretty tv <> ". " <> pretty c <> " ⇒ " <> pretty m
+    pretty (Lifted m) = pretty m
 
 instance Pretty loc => Pretty (Constraint loc) where
-    pretty EmptyConstraint = "𝜖"
+    pretty EmptyConstraint = Style.builtin "𝜖"
+    pretty (Conjunction EmptyConstraint c) = pretty c
+    pretty (Conjunction c EmptyConstraint) = pretty c
     pretty (Conjunction c1 c2) = parens (pretty c1) <> " ∧ " <> parens (pretty c2)
     pretty (Equality m1 m2) = pretty m1 <> " ∼ " <> pretty m2
 
 instance Pretty (Monotype loc) where
-    pretty (TypeVar tv) = pretty tv
+    pretty (TypeVar tv) = Style.varName (pretty tv)
     pretty (Scalar s) = pretty s
-    pretty (TypeConstructor dc ts) = pretty dc <> " " <> hsep (pretty <$> ts)
-    pretty (Function t1 t2) = pretty t1 <> " → " <> pretty t2
+    pretty (TypeConstructor dc ts) = Style.typeName (pretty dc) <> " " <> hsep (pretty <$> ts)
+    pretty (Function t1 t2) = pretty t1 <> (Style.operator " → ") <> pretty t2
 
 instance Pretty TypeVariable where
     pretty (UnificationVar tv) = pretty tv
