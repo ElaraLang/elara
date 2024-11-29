@@ -153,7 +153,7 @@ instance Pretty (Monotype loc) where
 
 instance Pretty TypeVariable where
     pretty (UnificationVar tv) = pretty tv
-    pretty (SkolemVar tv) = pretty tv
+    pretty (SkolemVar tv) = "#" <> pretty tv
 
 instance Pretty (Substitution loc) where
     pretty (Substitution s) = pretty (fmap prettySubstitution (Map.toList s))
