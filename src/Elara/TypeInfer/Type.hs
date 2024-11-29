@@ -34,10 +34,18 @@ data Constraint loc
     deriving (Generic, Show, Eq, Ord)
 
 instance Semigroup (Constraint loc) where
-    EmptyConstraint <> c = c
-    c <> EmptyConstraint = c
-    c1 <> c2 | c1 == c2 = c1 -- Reflexivity
-    c1 <> c2 = Conjunction c1 c2
+    EmptyConstraint <> c = simplifyConstraint c
+    c <> EmptyConstraint = simplifyConstraint c
+    c1 <> c2 | c1 == c2 = simplifyConstraint c1 -- Reflexivity
+    c1 <> c2 = simplifyConstraint (Conjunction c1 c2)
+
+simplifyConstraint :: Constraint loc -> Constraint loc
+simplifyConstraint (Equality a b) | a == b = EmptyConstraint
+simplifyConstraint (Conjunction EmptyConstraint EmptyConstraint) = EmptyConstraint
+simplifyConstraint (Conjunction EmptyConstraint a) = simplifyConstraint a
+simplifyConstraint (Conjunction a EmptyConstraint) = simplifyConstraint a
+simplifyConstraint (Conjunction a b) = Conjunction (simplifyConstraint a) (simplifyConstraint b)
+simplifyConstraint x = x
 
 instance Monoid (Constraint loc) where
     mempty = EmptyConstraint
@@ -92,7 +100,7 @@ newtype Substitution loc
 instance Semigroup (Substitution loc) where
     -- When composing s1 <> s2, we need to apply s1 to all types in s2
     Substitution s1 <> Substitution s2 =
-        Substitution (Map.map (substituteAll (Substitution s1)) s2 <> s1)
+        Substitution (Map.map (substituteAll (Substitution s1)) s2 <> Map.map (substituteAll (Substitution s2)) s1)
 
 substitution :: (TypeVariable, Monotype loc) -> Substitution loc
 substitution = Substitution . one

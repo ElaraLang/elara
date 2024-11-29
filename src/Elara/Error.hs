@@ -1,3 +1,4 @@
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.Error (ReportableError (..), addPosition, concatDiagnostics, module Elara.Error.Effect, runErrorOrReport, reportMaybe) where
@@ -12,6 +13,8 @@ import Prelude hiding (asks, readFile)
 
 class ReportableError e where
     report :: Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
+    default report :: Show e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
+    report e = writeReport (Err Nothing (show e) [] [])
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes

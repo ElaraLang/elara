@@ -33,6 +33,7 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.TypeInfer.ConstraintGeneration (UnifyError (..), generateConstraints, runInferEffects, solveConstraints)
+import Elara.TypeInfer.Convert (astTypeToInferType, TypeConvertError)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
@@ -44,7 +45,14 @@ import Polysemy.Writer (listen)
 import Print
 import Relude.Extra.Type (type (++))
 
-type InferPipelineEffects = '[StructuredDebug, State InferState, UniqueGen, Error (UnifyError SourceRegion)] ++ (InferEffects SourceRegion)
+type InferPipelineEffects =
+    '[ StructuredDebug
+     , State InferState
+     , UniqueGen
+     , Error (UnifyError SourceRegion)
+     , Error (TypeConvertError)
+     ]
+        ++ (InferEffects SourceRegion)
 
 runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
 runInferPipeline e = do
@@ -54,6 +62,7 @@ runInferPipeline e = do
                 & evalState initialInferState
                 & uniqueGenToIO
                 & runErrorOrReport @(UnifyError SourceRegion)
+                & runErrorOrReport @(TypeConvertError)
 
     snd <$> runInferEffects e'
 
@@ -93,8 +102,10 @@ inferDeclaration (Declaration ld) = do
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
-            (typedExpr, polytype) <- inferValue (name ^. unlocated) e
-            debugPretty polytype
+            expectedType <- traverse astTypeToInferType valueType
+            (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
+            debugPretty (name, polytype)
+            addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
 
 inferValue ::
@@ -106,15 +117,24 @@ inferValue ::
     ) =>
     (Qualified VarName) ->
     ShuntedExpr ->
+    Maybe (Type SourceRegion) ->
     Sem r (TypedExpr, Polytype SourceRegion)
-inferValue valueName valueExpr = do
+inferValue valueName valueExpr expectedType = do
     -- generate
     a <- UnificationVar <$> makeUniqueTyVar
     addType' (TermVarKey (valueName)) (Lifted $ TypeVar a)
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
     debug $ "Generated constraints: " <> pretty constraint <> " for " <> pretty valueName
+    debug $ "Type: " <> pretty t
     let eq = Equality (TypeVar a) t
-    (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> constraint)
+
+    let expectedTypeConstraint = case expectedType of
+            Just (Lifted t') -> Equality t' t
+            _ -> EmptyConstraint
+
+
+    (finalConstraint, subst) <- solveConstraints EmptyAxiomScheme EmptyConstraint (eq <> expectedTypeConstraint <> constraint)
+
     when (finalConstraint /= EmptyConstraint) do
         throw (UnresolvedConstraint finalConstraint)
 

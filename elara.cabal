@@ -103,6 +103,7 @@ library
       Elara.ToCore
       Elara.TypeInfer
       Elara.TypeInfer.ConstraintGeneration
+      Elara.TypeInfer.Convert
       Elara.TypeInfer.Environment
       Elara.TypeInfer.Ftv
       Elara.TypeInfer.Generalise

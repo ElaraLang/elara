@@ -2,6 +2,7 @@
 
 module Elara.TypeInfer.ConstraintGeneration where
 
+import Data.Set (isSubsetOf)
 import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
@@ -18,7 +19,7 @@ import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, structuredDebugToLog)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
-import Elara.TypeInfer.Ftv (occurs)
+import Elara.TypeInfer.Ftv (Ftv (..), occurs)
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), substitution)
@@ -70,8 +71,6 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             instantiated <- instantiate varType
 
-        
-
             pure (Var v', instantiated)
         -- ABS
         (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
@@ -120,12 +119,21 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             tell recursiveConstraint
 
             -- TODO: we need to check if e1 is closed here before generalising _everything_
+            env <- get
+            let freeVarsInExpr = ftv varType
+                freeVarsInEnv = ftv env
 
-            generalised <- generalise varType
-            debug ("generalised: " <> pretty generalised)
+            debug (pretty freeVarsInExpr <> " vs " <> pretty freeVarsInEnv)
+            maybeGeneralised <-
+                if freeVarsInExpr `isSubsetOf` freeVarsInEnv
+                    then do
+                        generalised <- generalise varType
+                        debug (pretty varType <> " -> generalised: " <> pretty generalised)
+                        pure (Polytype generalised)
+                    else pure (Lifted varType)
 
             (typedBody, bodyType) <-
-                withLocalType varName (Polytype generalised) $
+                withLocalType varName (maybeGeneralised) $
                     generateConstraints body
 
             pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
@@ -257,11 +265,7 @@ instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: "
         instantiatedMonotype =
             substituteAll substitution t
 
-    -- τ ~ τ1[α/tv] (doesn't work and breaks everything)
-    let equalityConstraint = Equality t instantiatedMonotype
-
-
-    tell (instantiatedConstraint)
+    tell instantiatedConstraint
     pure instantiatedMonotype
 
 solveConstraints :: (Member (Error (UnifyError loc)) r, Member StructuredDebug r) => Pretty loc => AxiomScheme loc -> Constraint loc -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
@@ -281,7 +285,7 @@ unifyEquality (Equality a b) = unify a b
 unifyEquality (Conjunction a b) = debugWith ("unifyEquality: " <> pretty a <> " ^ " <> pretty b) $ do
     -- a lot of this is duplicated from unifyMany which is a bit annoying
     (s1, c1) <- unifyEquality a
-    debug ("unifyEquality: " <> pretty s1 <> ", " <> pretty c1)
+    debug ("unifyEquality produced: " <> pretty s1 <> ", " <> pretty c1)
     -- apply s1 to b before unifying
     (s2, c2) <- unifyEquality (substituteAll s1 b)
     pure (s1 <> s2, c1 <> c2)
@@ -293,6 +297,7 @@ unify ::
     Pretty (Constraint loc) =>
     Member (Error (UnifyError loc)) r =>
     Monotype loc -> Monotype loc -> Sem r (Substitution loc, Constraint loc)
+unify a b | a == b = pure (mempty, EmptyConstraint)
 unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     r <- unify' a b
     debug ("unify result: " <> pretty r)
