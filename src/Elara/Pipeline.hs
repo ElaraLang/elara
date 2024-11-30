@@ -10,12 +10,12 @@ module Elara.Pipeline where
 
 import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
+import Elara.Logging
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, Members, Sem, runM, subsume_, InterpreterFor)
+import Polysemy (Effect, Embed, InterpreterFor, Members, Sem, runM, subsume_)
 import Polysemy.Log (DataLog, interpretDataLog, interpretDataLogStdoutWith)
 import Polysemy.Maybe (MaybeE, runMaybe)
 import Print (elaraDebug)
-import Elara.Logging
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
 type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), StructuredDebug, Embed IO]

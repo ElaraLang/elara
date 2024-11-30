@@ -386,4 +386,3 @@ instance ASTLocate' ast ~ Located => HasSourceRegion (Expr ast) where
 deriving instance (Eq v, Eq (Select "PatternType" ast)) => Eq (TypedLambdaParam v ast)
 deriving instance (Ord v, Ord (Select "PatternType" ast)) => Ord (TypedLambdaParam v ast)
 deriving instance (Show v, Show (Select "PatternType" ast)) => Show (TypedLambdaParam v ast)
-

@@ -35,6 +35,7 @@ import Relude qualified (id)
 
 import Data.Function ((&))
 import Data.Generics.Sum
+import Data.Traversable (for)
 import Optics (
     A_Fold,
     AffineTraversal,
@@ -98,7 +99,6 @@ import Optics (
  )
 import Optics.Operators ((%~), (.~), (?~), (^.), (^..), (^?))
 import Optics.State.Operators ((%=), (?=))
-import Data.Traversable (for)
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f

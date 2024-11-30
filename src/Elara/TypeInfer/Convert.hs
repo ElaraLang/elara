@@ -26,7 +26,6 @@ astTypeToInferType t@(Generic.Type (Located loc t', kind)) = do
     asInferType <- astTypeToInferType' loc t'
     pure $ Lifted asInferType
 
-
 convertTyVar name = fmap (Just . nameText) (name ^. unlocated)
 
 astTypeToInferType' :: Member (Error TypeConvertError) r => SourceRegion -> ShuntedType' -> Sem r (Monotype SourceRegion)

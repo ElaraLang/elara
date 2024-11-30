@@ -82,7 +82,6 @@ type instance Select "AnyName" Renamed = Name
 type instance Select "TypeName" Renamed = TypeName
 type instance Select "ValueName" Renamed = Qualified VarName
 
-
 -- Selections for 'Type'
 type instance Select "TypeVar" Renamed = Unique LowerAlphaName
 

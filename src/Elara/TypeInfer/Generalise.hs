@@ -25,15 +25,13 @@ generalise ty = do
     let generalized = Forall (toList uniVars) EmptyConstraint ty
     pure generalized
 
-
-
 removeSkolems ty = do
     let ftvs = ftv ty
 
     transformOf
-                gplate
-                ( \case
-                    TypeVar tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar (UnificationVar tv')
-                    other -> other
-                )
-                ty
+        gplate
+        ( \case
+            TypeVar tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar (UnificationVar tv')
+            other -> other
+        )
+        ty

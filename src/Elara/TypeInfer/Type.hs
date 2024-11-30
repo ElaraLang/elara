@@ -168,4 +168,3 @@ instance Pretty (Substitution loc) where
     pretty (Substitution s) = pretty (fmap prettySubstitution (Map.toList s))
       where
         prettySubstitution (tv, t) = pretty tv <> " ↦ " <> pretty t
-

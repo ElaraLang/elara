@@ -55,7 +55,7 @@ module Elara.AST.Generic.Types (
     declarationBody'Name,
     declarationBodyName,
     declaration'Name,
-    declarationName
+    declarationName,
 )
 where
 
@@ -242,7 +242,6 @@ declarationName ::
     _ =>
     Getter (Declaration ast) (ASTLocate ast Name)
 declarationName = _Unwrapped % rUnlocated @_ @ast % declaration'Name @ast
-
 
 newtype ValueDeclAnnotations ast = ValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration ast)

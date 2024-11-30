@@ -30,6 +30,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes
+import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
@@ -40,7 +41,6 @@ import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import Elara.Logging (StructuredDebug, debug)
 
 data RenameError
     = UnknownModule ModuleName
@@ -380,8 +380,11 @@ addDeclarationToContext _ decl = do
         insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
 
     let global :: name -> VarRef name
-        global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) 
-            <$ decl ^. _Unwrapped)
+        global vn =
+            Global
+                ( Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
+                    <$ decl ^. _Unwrapped
+                )
     case decl ^. declarationName ^. unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ insertMerging vn (global vn)

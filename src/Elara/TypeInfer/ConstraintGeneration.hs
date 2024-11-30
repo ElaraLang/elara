@@ -130,8 +130,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
                         (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
                         (\v -> v == varName)
                         varExpr
-            
-      
+
             debug ("isRecursive?: " <> pretty isRecursive)
             maybeGeneralised <-
                 if not isRecursive
