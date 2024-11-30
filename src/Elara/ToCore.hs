@@ -178,7 +178,20 @@ typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariab
 typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Sem r Core.Type
-typeToCore _ = todo
+typeToCore (Type.TypeVar (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore (Type.TypeVar (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore (Type.Scalar Type.ScalarInt) = pure $ Core.ConTy intCon
+typeToCore (Type.Scalar Type.ScalarFloat) = pure $ Core.ConTy floatCon
+typeToCore (Type.Scalar Type.ScalarString) = pure $ Core.ConTy stringCon
+typeToCore (Type.Scalar Type.ScalarChar) = pure $ Core.ConTy charCon
+typeToCore (Type.Scalar Type.ScalarUnit) = pure $ Core.ConTy unitCon
+typeToCore (Type.Scalar Type.ScalarBool) = pure $ Core.ConTy boolCon
+typeToCore (Type.Function t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
+typeToCore (Type.TypeConstructor qn ts) = do
+    tyCon <- lookupTyCon (fmap (view _Unwrapped) qn)
+    ts' <- traverse typeToCore ts
+    pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
+
 
 conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global $ Identity n) t (Just dc)
