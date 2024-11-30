@@ -101,16 +101,42 @@ typeCheckC (ANF.App f x) = do
                 else throw $ TypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
         other -> throw $ TypeMismatch (Core.FuncTy fType xType) other ((fromANFAtom f), (fromANFAtom x))
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
-typeCheckC (ANF.Match _ _ alts) = do
-    todo
+typeCheckC (ANF.Match e of' alts) = scoped $ do
+    eType <- typeCheckA e
+    whenJust of' $ \v -> modify (\s -> s{scope = Set.insert v (scope s)})
+    altTypes <- for alts $ \(con, bs, e) -> do
+        case con of
+            Core.DEFAULT -> do
+                eType' <- typeCheck e
+                pure eType'
+            Core.LitAlt lit -> do
+                let litType = typeCheckLit lit
+                eType' <- typeCheck e
+                if litType == eType
+                    then pure eType'
+                    else throw $ TypeMismatch litType eType ((fromANF e), (fromANF e))
+            Core.DataAlt con' -> do
+                let conType = Core.ConTy (con'.dataConDataType)
+                eType' <- typeCheck e
+                -- TODO more robust type checking here with the binders and stuff
+                if conType == eType
+                    then pure eType'
+                    else throw $ TypeMismatch conType eType ((fromANF e), (fromANF e))
+
+    case altTypes of
+        [] -> error "empty match? how do we handle this"
+        x : _ -> pure $ x
+
+typeCheckLit :: Core.Literal -> Core.Type
+typeCheckLit lit = case lit of
+    Core.Int _ -> Core.ConTy intCon
+    Core.String _ -> Core.ConTy stringCon
+    Core.Char _ -> Core.ConTy charCon
+    Core.Double _ -> Core.ConTy doubleCon
+    Core.Unit -> Core.ConTy unitCon
 
 typeCheckA :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.AExpr Var -> Sem r Core.Type
-typeCheckA (ANF.Lit lit) = case lit of
-    Core.Int _ -> pure $ Core.ConTy intCon
-    Core.String _ -> pure $ Core.ConTy stringCon
-    Core.Char _ -> pure $ Core.ConTy charCon
-    Core.Double _ -> pure $ Core.ConTy doubleCon
-    Core.Unit -> pure $ Core.ConTy unitCon
+typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
 typeCheckA (ANF.Var (Id (Global _) t _)) = pure t
 typeCheckA (ANF.Var v) = do
