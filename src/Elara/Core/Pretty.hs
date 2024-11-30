@@ -45,7 +45,7 @@ instance PrettyVar Var where
 
     prettyVarArg = \case
         TyVar (TypeVariable tv _) -> parens (punctuation "@" <> pretty tv)
-        v -> prettyVar False True v
+        v -> prettyVar True True v
 
 instance PrettyVar Type where
     prettyVar withType withParens = \case
@@ -61,8 +61,8 @@ instance {-# OVERLAPS #-} PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> Doc AnsiStyle
-prettyTLLam b e@(Lam _ _) = punctuation "\\" <+> prettyVarArg b <+> prettyLam e
-prettyTLLam b e = punctuation "\\" <+> prettyVarArg b <+> punctuation "->" <+> prettyExpr e
+prettyTLLam b e@(Lam _ _) = punctuation "\\" <> prettyVarArg b <+> prettyLam e
+prettyTLLam b e = punctuation "\\" <> prettyVarArg b <+> punctuation "->" <+> prettyExpr e
 
 prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
