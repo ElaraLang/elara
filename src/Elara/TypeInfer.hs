@@ -151,7 +151,7 @@ inferValue valueName valueExpr expectedType = do
 newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
 
 instance Substitutable SubstitutableExpr SourceRegion where
-    substitute tv t (SubstitutableExpr (Generic.Expr (e, exprType :: Monotype SourceRegion))) = do
+    substitute tv t (SubstitutableExpr (Generic.Expr (e, exprType))) = do
         let exprType' = substitute tv t exprType
         let e' =
                 -- recursively apply subst to the children
