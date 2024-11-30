@@ -8,6 +8,7 @@ import Data.Data (Data)
 import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
 import Polysemy (Member, Sem, interpret, makeSem, reinterpret)
+import Polysemy.AtomicState (AtomicState, atomicGet, atomicPut, atomicStateToIO)
 import Polysemy.Embed (Embed)
 import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
@@ -62,28 +63,21 @@ resetGlobalUniqueSupply = writeIORef globalUniqueSupply freshUniqueSupply
 data UniqueGen m a where
     NewUniqueNum :: UniqueGen m Int
 
-runFreshUniqueSupply :: Sem (UniqueGen ': r) a -> Sem r a
-runFreshUniqueSupply = evalState freshUniqueSupply . uniqueGenToState
+-- runFreshUniqueSupply :: Sem (UniqueGen ': r) a -> Sem r a
+-- runFreshUniqueSupply = evalState freshUniqueSupply . uniqueGenToState
 
-uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (State UniqueSupply : r) a
+uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (AtomicState UniqueSupply : r) a
 uniqueGenToState = reinterpret $ \case
     NewUniqueNum -> do
-        (UniqueSupply us) <- get
+        (UniqueSupply us) <- atomicGet
         case us of
             [] -> error "Ran out of unique IDs! Should be impossible."
             (i : is) -> do
-                put (UniqueSupply is)
+                atomicPut (UniqueSupply is)
                 pure i
 
 uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
-uniqueGenToIO = interpret $ \case
-    NewUniqueNum -> do
-        us <- liftIO (readIORef globalUniqueSupply)
-        case _uniqueSupplyUniques us of
-            [] -> error "Ran out of unique IDs! Should be impossible."
-            (i : is) -> do
-                liftIO (writeIORef globalUniqueSupply (UniqueSupply is))
-                pure i
+uniqueGenToIO = fmap snd . atomicStateToIO freshUniqueSupply . uniqueGenToState
 
 makeSem ''UniqueGen
 makeLenses ''UniqueSupply
