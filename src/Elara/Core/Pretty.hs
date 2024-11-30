@@ -91,7 +91,7 @@ prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
 prettyExpr2 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr2 (Var v) = prettyVar True False v
+prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
