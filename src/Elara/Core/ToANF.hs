@@ -36,12 +36,22 @@ toANF expr =
 toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
 toANFCont e = ContT $ \k -> toANF' e k
 
-toANF' :: ToANF r => Core.CoreExpr -> (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) -> Sem r (ANF.Expr Core.Var)
+{- | Convert a Core expression to an atomic expression in ANF,
+accepting a continuation to handle the rest of the expression
+-}
+toANF' ::
+    ToANF r =>
+    Core.CoreExpr ->
+    (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) ->
+    Sem r (ANF.Expr Core.Var)
 toANF' (Core.Lit l) k = k $ ANF.Lit l
 toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
 toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
-toANF' (Core.Lam b e) k = toANFRec e $ \e' -> lift $ k $ ANF.Lam b (ANF.CExpr e')
+toANF' (Core.Lam b e) cont = evalContT $ do
+    -- convert the body to ANF, making sure to not lift it out too far
+    e' <- lift $ toANFRec e (pure . ANF.CExpr)
+    lift $ cont $ ANF.Lam b e'
 toANF' other k = debugWith ("toANF' " <> pretty other <> ": ") $ evalContT $ do
     v <- lift $ makeUnique "var"
     let id = Core.Id (Local' v) (exprType other) Nothing
