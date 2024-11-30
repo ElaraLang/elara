@@ -96,7 +96,7 @@ prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (expr v)) => Elara.Core.Generic.Bind v expr -> Doc AnsiStyle
-prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg (Recursive bindings) = "Rec" <+> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 instance (PrettyVar v, Pretty (e v)) => Pretty (Elara.Core.Generic.Bind v e) where
