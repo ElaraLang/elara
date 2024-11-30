@@ -13,8 +13,8 @@ import Prelude hiding (asks, readFile)
 
 class ReportableError e where
     report :: Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
-    default report :: Show e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
-    report e = writeReport (Err Nothing (show e) [] [])
+    default report :: Pretty e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
+    report e = writeReport (Err Nothing (pretty e) [] [])
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes

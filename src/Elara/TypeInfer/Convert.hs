@@ -10,6 +10,7 @@ import Elara.Prim (boolName, charName, intName, mkPrimQual, stringName)
 import Elara.TypeInfer.Type
 import Polysemy
 import Polysemy.Error
+import Elara.Data.Pretty
 
 astTypeToGeneralisedInferType :: Member (Error TypeConvertError) r => ShuntedType -> Sem r (Type SourceRegion)
 astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
@@ -74,6 +75,8 @@ assertMonotype (Polytype t) = throw (HigherRankTypesNotSupported t)
 data TypeConvertError
     = HigherRankTypesNotSupported (Polytype SourceRegion)
     | NotSupported Text
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+instance Pretty TypeConvertError
 
 instance ReportableError TypeConvertError

@@ -59,6 +59,7 @@ library
       Elara.Core.Module
       Elara.Core.Pretty
       Elara.Core.ToANF
+      Elara.Core.TypeCheck
       Elara.CoreToCore
       Elara.Data.Kind
       Elara.Data.Kind.Infer

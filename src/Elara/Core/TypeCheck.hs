@@ -31,15 +31,9 @@ data TypeCheckError
     | UnificationError CoreExpr CoreExpr
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
-instance Pretty TypeCheckError where
-    pretty = \case
-        UnboundVariable v -> "Unbound variable: " <> pretty v
-        TypeMismatch e1 e2 -> "Type mismatch: " <> pretty e1 <> " and " <> pretty e2
-        UnificationError e1 e2 -> "Unification error: " <> pretty e1 <> " and " <> pretty e2
-        InfiniteType v e -> "Infinite type: " <> pretty v <> " and " <> pretty e
-        OccursCheck v e -> "Occurs check: " <> pretty v <> " and " <> pretty e
+instance Pretty TypeCheckError 
 
 instance ReportableError TypeCheckError
 
