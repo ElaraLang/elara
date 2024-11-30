@@ -107,7 +107,7 @@ prettyVdef (v, e) =
     group $
         vsep
             [ prettyVar True False v <+> "="
-            , indent indentDepth (pretty e)
+            , flatAlt (indent indentDepth (pretty e)) (pretty e)
             ]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
