@@ -8,7 +8,7 @@ import Elara.Core.Analysis (exprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique
-import Elara.Logging (StructuredDebug, debugWith)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Polysemy
 
 {- | Convert a Core expression to ANF
@@ -26,12 +26,19 @@ becomes:
 -- toANF :: Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 -- toANF expr = (toANF' expr pure)
 
-type ToANF r = (Members [UniqueGen, StructuredDebug] r, Pretty (Core.Expr Core.Var))
+type ToANF r =
+    ( Members [UniqueGen, StructuredDebug] r
+    , Pretty (Core.Expr Core.Var)
+    , Pretty Core.Var
+    , Pretty (ANF.AExpr Core.Var)
+    , Pretty (ANF.CExpr Core.Var)
+    , Pretty (ANF.Expr Core.Var)
+    )
 
 toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
 toANF expr =
     debugWith ("toANF " <> pretty expr) $
-        toANF' expr (\e -> pure (ANF.CExpr $ ANF.AExpr e))
+        toANFRec expr (pure . ANF.CExpr)
 
 toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
 toANFCont e = ContT $ \k -> toANF' e k
@@ -78,10 +85,12 @@ toANFRec (Core.Match bind as cases) k = evalContT $ do
         e' <- lift $ toANFRec e (pure . ANF.CExpr)
         pure (con, bs, e')
     k $ ANF.Match bind as cases'
-toANFRec (Core.Let (NonRecursive (b, e)) body) _ = evalContT $ do
+toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
+    lift $ debug $ "ToANF-ing" <> pretty b
     e' <- toANFCont e
-    body' <- toANFCont body
-    pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
+    body' <- lift $ toANFRec body k
+    lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
+    pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (body')
 toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
     bs' <- for bs $ \(b, e) -> do
         e' <- toANFCont e
