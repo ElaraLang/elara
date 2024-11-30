@@ -156,8 +156,8 @@ instance Substitutable SubstitutableExpr SourceRegion where
         let e' =
                 -- recursively apply subst to the children
                 over
-                    (gplate @TypedExpr @TypedExpr')
-                    (\exp -> getExpr (substitute tv t (SubstitutableExpr exp)))
+                    (gplate @(Monotype SourceRegion) @TypedExpr')
+                    (\exp -> (substitute tv t exp))
                     (e ^. unlocated)
 
         SubstitutableExpr (Generic.Expr (e' <$ e, exprType'))
