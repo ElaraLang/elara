@@ -30,16 +30,14 @@ runLiftClosures (CoreModule m decls) = do
 {- | Lift closures in a Core expression. This turns all closures into top-level functions.
 For example:
 @
-let f = \foo -> foo (\bar -> bar foo)
+let add5 x =
+    let f y = x + y
+    in f 5
 @
 becomes:
 @
-let f = \foo -> foo ((\foo -> \bar -> bar foo) foo)
-@
-and then:
-@
-let f' = \foo -> \bar -> bar foo
-let f = \foo -> foo f'
+let add5_f x y = x + y
+let add5 x = add5_f x 5
 @
 -}
 liftClosures :: LiftClosures r => Expr Core.Var -> Sem r (Expr Core.Var)
@@ -85,7 +83,10 @@ liftClosuresA' env (ANF.Lam v e) = do
             pure $ Lam v e'
         else do
             v' <- makeUnique "closure"
-            let id = Core.Id (Local' v') (exprType (fromANF e)) Nothing
+            let lambdaType = case v of
+                    Core.Id _ t _ -> t `Core.FuncTy` exprType (fromANF e)
+                    Core.TyVar _ -> error "liftClosuresA': TyVar"
+            let id = Core.Id (Local' v') lambdaType Nothing
             tell [(id, ANF.AExpr $ Lam v e)]
             pure $ Var id
 liftClosuresA' env (ANF.TyApp e t) = do
