@@ -208,7 +208,7 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> shuntGraph (Just primOpTable)
                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
-                        -- >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
+                        >=> dumpIf identity dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
                         >=> traverseGraphRevTopologically (moduleToCore)
                         >=> (pure . mapGraph coreToCore)
                         $ graph

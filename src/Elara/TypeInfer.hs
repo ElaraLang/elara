@@ -22,7 +22,7 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype (..), Substitutable (substituteAll), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
@@ -146,4 +146,18 @@ inferValue valueName valueExpr expectedType = do
 
     generalized <- generalise (removeSkolems newType)
 
-    pure (typedExpr, generalized)
+    pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
+
+newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
+
+instance Substitutable SubstitutableExpr SourceRegion where
+    substitute tv t (SubstitutableExpr (Generic.Expr (e, exprType :: Monotype SourceRegion))) = do
+        let exprType' = substitute tv t exprType
+        let e' =
+                -- recursively apply subst to the children
+                over
+                    (gplate @TypedExpr @TypedExpr')
+                    (\exp -> getExpr (substitute tv t (SubstitutableExpr exp)))
+                    (e ^. unlocated)
+
+        SubstitutableExpr (Generic.Expr (e' <$ e, exprType'))

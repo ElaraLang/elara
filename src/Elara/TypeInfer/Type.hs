@@ -106,7 +106,7 @@ instance Semigroup (Substitution loc) where
 substitution :: (UniqueTyVar, Monotype loc) -> Substitution loc
 substitution = Substitution . one
 
-class Substitutable (a :: Kind.Type -> Kind.Type) where
+class Substitutable (a :: Kind.Type -> Kind.Type) loc where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
 
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
@@ -115,12 +115,12 @@ class Substitutable (a :: Kind.Type -> Kind.Type) where
 -- instance Substitutable Type where
 --     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
 
-instance Substitutable Constraint where
+instance Substitutable Constraint loc where
     substitute _ _ EmptyConstraint = EmptyConstraint
     substitute tv t (Conjunction c1 c2) = Conjunction (substitute tv t c1) (substitute tv t c2)
     substitute tv t (Equality m1 m2) = Equality (substitute tv t m1) (substitute tv t m2)
 
-instance Substitutable Monotype where
+instance Substitutable Monotype loc where
     substitute _ _ (TypeVar (SkolemVar v)) = TypeVar (SkolemVar v)
     substitute tv t (TypeVar (UnificationVar v)) | tv == v = t
     substitute _ _ (TypeVar tv) = TypeVar tv
@@ -128,7 +128,7 @@ instance Substitutable Monotype where
     substitute tv t (TypeConstructor dc ts) = TypeConstructor dc (substitute tv t <$> ts)
     substitute tv t (Function t1 t2) = Function (substitute tv t t1) (substitute tv t t2)
 
-instance Substitutable Substitution where
+instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
 
 instance Pretty Scalar where
@@ -168,3 +168,4 @@ instance Pretty (Substitution loc) where
     pretty (Substitution s) = pretty (fmap prettySubstitution (Map.toList s))
       where
         prettySubstitution (tv, t) = pretty tv <> " ↦ " <> pretty t
+
