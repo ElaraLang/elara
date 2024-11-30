@@ -3,15 +3,16 @@
 module Elara.TypeInfer.ConstraintGeneration where
 
 import Data.Foldable (foldrM)
-import Data.Generics.Product (HasAny (the), HasType (typed))
+import Data.Generics.Product (HasType (typed))
+import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped (_Unwrapped)
-import Data.Set (isSubsetOf, member)
+import Data.Set (member)
 import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
 import Elara.AST.Generic.Types qualified as Syntax
 import Elara.AST.Name (Qualified, VarName (..))
-import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
@@ -22,19 +23,19 @@ import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
-import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv), occurs)
+import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (AxiomScheme, Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), reduce, substitution)
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), reduce, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Error.Diagnose
+import Optics (anyOf)
 import Polysemy
 import Polysemy.Error
 import Polysemy.Reader (Reader, ask, runReader)
 import Polysemy.State
 import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
-import Print (debugPretty, showPretty)
 
 runInferEffects :: forall r a loc. IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
 runInferEffects e = do
@@ -124,13 +125,16 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
             -- TODO: we need to check if e1 is closed here before generalising _everything_
 
-            env <- get
-            let freeVarsInExpr = ftv varType
-                freeVarsInEnv = ftv env
-
-            debug (pretty freeVarsInExpr <> " vs " <> pretty freeVarsInEnv)
+            let isRecursive =
+                    anyOf
+                        (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
+                        (\v -> v == varName)
+                        varExpr
+            
+      
+            debug ("isRecursive?: " <> pretty isRecursive)
             maybeGeneralised <-
-                if True
+                if not isRecursive
                     then do
                         generalised <- generalise varType
                         debug (pretty varType <> " -> generalised: " <> pretty generalised)
@@ -274,14 +278,19 @@ instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: "
     pure instantiatedMonotype
 
 solveConstraint :: (Member (Error (UnifyError a)) r, Member StructuredDebug r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Sem r (Constraint a, Substitution a)
-solveConstraint given tch wanted = debugWith ("solveConstraint: given: " <> pretty given <> " wanted: " <> pretty wanted) $ do
-    (residual, unifier) <- simplifyConstraint given tch wanted
-    debug ("solveConstraint: " <> pretty residual)
-    let residual' = reduce residual
-    debug ("solveConstraint reduced: " <> pretty residual')
+solveConstraint given tch wanted = debugWith
+    ( "solveConstraint: "
+        <> vsep
+            ["given: " <> pretty given, " wanted: " <> pretty wanted]
+    )
+    $ do
+        (residual, unifier) <- simplifyConstraint given tch wanted
+        debug ("solveConstraint: " <> pretty residual)
+        let residual' = reduce residual
+        debug ("solveConstraint reduced: " <> pretty residual')
 
-    debug ("solveConstraint: unifier: " <> pretty unifier)
-    pure (residual', unifier)
+        debug ("solveConstraint: unifier: " <> pretty unifier)
+        pure (residual', unifier)
 
 simplifyConstraint ::
     ( Member (Error (UnifyError loc)) r

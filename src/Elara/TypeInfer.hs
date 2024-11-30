@@ -142,6 +142,8 @@ inferValue valueName valueExpr expectedType = do
 
     let newType = substituteAll subst t
 
+    debug $ "Substituted type: " <> pretty newType <> " from " <> pretty t <> " with " <> pretty subst
+
     generalized <- generalise (removeSkolems newType)
 
     pure (typedExpr, generalized)

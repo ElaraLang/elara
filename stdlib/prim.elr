@@ -3,5 +3,8 @@ module Elara.Prim
 def (-) : Int -> Int -> Int
 let (-) = elaraPrimitive "-"
 
+def (==) : a -> a -> Bool
+let (==) = elaraPrimitive "=="
+
 def elaraPrimitive : String -> a
 let elaraPrimitive = elaraPrimitive
