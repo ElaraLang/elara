@@ -20,7 +20,7 @@ dependencies:
   - relude
   - aeson
   - lens
-  - optics
+  - optics >= 0.4.1
   - generic-optics
   - containers
   - bytestring
