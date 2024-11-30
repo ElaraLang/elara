@@ -29,6 +29,7 @@ import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 -- import Elara.CoreToIR
 
 import Elara.Core.LiftClosures (runLiftClosures)
+import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
@@ -125,6 +126,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
     coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
     coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
+    runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
