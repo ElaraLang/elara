@@ -2,6 +2,7 @@
 module Elara.ToCore where
 
 import Data.Generics.Product
+import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped
 import Data.Map qualified as M
 import Elara.AST.Generic as AST
@@ -27,6 +28,7 @@ import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Type qualified as Type
 import Error.Diagnose (Report (..))
+import Optics
 import Polysemy (Members, Sem)
 import Polysemy.Error
 import Polysemy.State
@@ -256,7 +258,12 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
-            let isRecursive = False -- todo
+            -- TODO: we need to detect mutually recursive bindings
+            let isRecursive =
+                    anyOf
+                        (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
+                        (\v -> v == vn)
+                        e1
             let ref = mkLocalRef (nameText <$> vn)
             t' <- typeToCore (typeOf e1)
             pure $
