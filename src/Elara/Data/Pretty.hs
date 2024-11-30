@@ -222,7 +222,10 @@ instance (GPretty f, Constructor c) => GPretty (C1 c f) where
 
 instance (GPretty f, Selector s) => GPretty (S1 s f) where
     gprettyPrec _ s@(M1 a) =
-        [(pretty (selName s)) <+> Styles.operator "=" <+> sep (gprettyPrec 0 a)]
+        let name = selName s
+         in case name of
+                "" -> gprettyPrec 0 a
+                _ -> [pretty name <+> Styles.operator "=" <+> sep (gprettyPrec 0 a)]
 
 instance GPretty f => GPretty (D1 c f) where
     gprettyPrec p (M1 x) = gprettyPrec p x
