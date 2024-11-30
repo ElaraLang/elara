@@ -38,6 +38,8 @@ import Data.Generics.Sum
 import Data.Traversable (for)
 import Optics (
     A_Fold,
+    A_Setter,
+    A_Traversal,
     AffineTraversal,
     AffineTraversal',
     At (..),
@@ -82,6 +84,7 @@ import Optics (
     simple,
     to,
     toListOf,
+    transformMOf,
     transformOf,
     traversalVL,
     traverseOf,
@@ -139,6 +142,7 @@ cosmosOnOf d p = d % cosmosOf p
 transform :: Plated a => (a -> a) -> a -> a
 transform = transformOf plate
 
+transformOf' :: Is k A_Traversal => Optic k is s a1 a2 b -> (a2 -> b) -> s -> a1
 transformOf' optic f a = runIdentity $ traverseOf optic (fmap Identity f) a
 
 concatMapOf :: Is k A_Fold => Optic' k is a1 a2 -> (a2 -> [b]) -> a1 -> [b]
