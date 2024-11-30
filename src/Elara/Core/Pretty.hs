@@ -80,7 +80,7 @@ prettyExpr (Let bindings e) =
             ]
 prettyExpr (Match e of' alts) =
     vsep
-        [ keyword "case" <+> prettyExpr e <+> pretty ((keyword "of" <+>) . prettyVBind <$> of')
+        [ keyword "case" <+> prettyExpr e <+> (keyword "of") <+> pretty (prettyVBind <$> of')
         , indent indentDepth (prettyAlts alts)
         ]
 prettyExpr other = prettyExpr1 other
