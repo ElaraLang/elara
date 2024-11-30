@@ -52,10 +52,11 @@ lookupType key = do
         Just ty -> pure ty
         Nothing -> throw (UnboundTermVar key env')
 
-data LocalTypeEnvironment loc
+newtype LocalTypeEnvironment loc
     = LocalTypeEnvironment
         (Map (Unique VarName) (Type loc))
     deriving (Show)
+    deriving newtype (Pretty)
 
 emptyLocalTypeEnvironment :: LocalTypeEnvironment loc
 emptyLocalTypeEnvironment = LocalTypeEnvironment Map.empty
@@ -84,9 +85,11 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 data InferError loc
     = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
-    deriving (Show)
+    deriving (Show, Generic)
 
-instance ReportableError (InferError loc) where
+instance Pretty loc => Pretty (InferError loc)
+
+instance Pretty loc => ReportableError (InferError loc) where
     report (UnboundTermVar (TermVarKey key) (TypeEnvironment env)) =
         writeReport $
             Err
@@ -94,5 +97,4 @@ instance ReportableError (InferError loc) where
                 ("Unbound term variable " <> pretty key)
                 []
                 [Note $ "Possible names:" <> listToText (pretty <$> Map.keys env)]
-    report (UnboundLocalVar var env) =
-        writeReport $ Err (Nothing) ("Unbound local variable") [] []
+    report o = defaultReport o

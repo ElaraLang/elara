@@ -37,7 +37,7 @@ import Polysemy.State
 import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
 
-runInferEffects :: forall r a loc. IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
+runInferEffects :: forall r a loc. Pretty loc => IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
 runInferEffects e = do
     e
         & uniqueGenToIO
