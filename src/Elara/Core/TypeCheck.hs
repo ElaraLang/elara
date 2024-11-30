@@ -10,24 +10,23 @@ import Elara.Core.ANF qualified as ANF
 
 import Data.Set qualified as Set
 
-import Data.Map qualified as Map
 import Elara.AST.VarRef
-import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
+import Elara.Core (CoreExpr, Var (..))
 import Elara.Core qualified as Core
 import Elara.Core.Generic
 import Elara.Core.Module
-import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
+import Elara.Core.ToANF (fromANF, fromANFAtom)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Prim.Core
 import Polysemy
 import Polysemy.Error
-import Polysemy.State (State, evalState, gets, modify)
+import Polysemy.State (State, evalState, get, modify)
 import Polysemy.State.Extra (locally, scoped)
 import TODO (todo)
 
 data TypeCheckError
-    = UnboundVariable Var (Set.Set Var)
+    = UnboundVariable Var (Set.Set (UnlocatedVarRef Text))
     | TypeMismatch
         { expected :: Core.Type
         , actual :: Core.Type
@@ -48,10 +47,19 @@ instance Pretty TypeCheckError
 instance ReportableError TypeCheckError
 
 data TcState = TcState
-    { scope :: Set.Set Var
+    { scope :: Set.Set (UnlocatedVarRef Text)
     -- ^ The 'Var' already holds the variable's type so we don't need to track that.
     -- However we do need to track scoping, as an optimisation could pull a variable out of scope
     }
+
+addToScope :: Var -> TcState -> TcState
+addToScope (Id name _ _) s = s{scope = Set.insert name (scope s)}
+addToScope _ s = s
+
+isInScope :: Var -> TcState -> Bool
+isInScope (Id name@(Local _) _ _) s = Set.member name (scope s)
+isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
+isInScope _ _ = False
 
 typeCheckCoreModule :: Member (Error TypeCheckError) r => CoreModule (Bind Var ANF.Expr) -> Sem r ()
 typeCheckCoreModule (CoreModule n m) = do
@@ -60,12 +68,12 @@ typeCheckCoreModule (CoreModule n m) = do
     _ <- evalState initialState $ do
         for_ m $ \case
             CoreValue (NonRecursive (v, e)) -> scoped $ do
-                modify (\s -> s{scope = Set.insert v (scope s)})
+                modify (addToScope v)
                 eType <- typeCheck e
                 pure ()
             CoreValue (Recursive bs) -> scoped $ do
                 for_ bs $ \(v, e) -> do
-                    modify (\s -> s{scope = Set.insert v (scope s)})
+                    modify (addToScope v)
 
                 for_ bs $ \(v, e) -> typeCheck e
             CoreType _ -> pure ()
@@ -81,12 +89,12 @@ typeCheck (ANF.Let bind in') = do
     case bind of
         NonRecursive (v, e) -> do
             eType <- typeCheckC e
-            locally ((\s -> s{scope = Set.insert v (scope s)})) $
+            locally (addToScope v) $
                 typeCheck in'
-        Recursive binds -> do
+        Recursive binds -> scoped $ do
             let vars = map fst binds
-            modify (\s -> s{scope = Set.union (Set.fromList vars) (scope s)})
-            for_ binds $ \(v, e) -> typeCheckC e
+            for_ vars $ \v -> modify (addToScope v)
+            for_ binds $ \(_, e) -> typeCheckC e
             typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
@@ -103,7 +111,7 @@ typeCheckC (ANF.App f x) = do
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC (ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
-    whenJust of' $ \v -> modify (\s -> s{scope = Set.insert v (scope s)})
+    whenJust of' $ \v -> modify (addToScope v)
     altTypes <- for alts $ \(con, bs, e) -> do
         case con of
             Core.DEFAULT -> do
@@ -138,16 +146,16 @@ typeCheckLit lit = case lit of
 typeCheckA :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.AExpr Var -> Sem r Core.Type
 typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
-typeCheckA (ANF.Var (Id (Global _) t _)) = pure t
 typeCheckA (ANF.Var v) = do
-    env <- gets scope
-    case Set.member v env of
+    env <- get
+
+    case isInScope v env of
         True -> pure (varType v)
-        False -> throw $ UnboundVariable v env
+        False -> throw $ UnboundVariable v (env.scope)
 typeCheckA (ANF.Lam v body) = do
     let t = varType v
 
-    eType <- locally (\s -> s{scope = Set.insert v (s.scope)}) $ typeCheck body
+    eType <- locally (addToScope v) $ typeCheck body
     pure $ Core.FuncTy t eType
 typeCheckA (ANF.TyApp e t) = do
     eType <- typeCheckA e
