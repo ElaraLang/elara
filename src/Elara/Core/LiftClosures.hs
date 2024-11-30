@@ -9,14 +9,16 @@ import Elara.Core.Generic (Bind (..), traverseBind)
 import Elara.Core.Generic qualified as G
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF (fromANF)
+import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen, makeUnique)
+import Elara.Logging (StructuredDebug, debug)
 import Polysemy
 import Polysemy.Writer (Writer, runWriter, tell)
 import Prelude hiding (Alt)
 
-type LiftClosures r = Members '[UniqueGen, Writer [(Core.Var, CExpr Core.Var)]] r
+type LiftClosures r = Members '[UniqueGen, Writer [(Core.Var, CExpr Core.Var)], StructuredDebug] r
 
-runLiftClosures :: Member UniqueGen r => CoreModule (G.Bind Core.Var ANF.Expr) -> Sem r (CoreModule (G.Bind Core.Var ANF.Expr))
+runLiftClosures :: (Member UniqueGen r, Member StructuredDebug r) => CoreModule (G.Bind Core.Var ANF.Expr) -> Sem r (CoreModule (G.Bind Core.Var ANF.Expr))
 runLiftClosures (CoreModule m decls) = do
     (closures, decls') <- runWriter $ for decls $ \decl -> do
         case decl of
@@ -44,7 +46,9 @@ liftClosures :: LiftClosures r => Expr Core.Var -> Sem r (Expr Core.Var)
 liftClosures = liftClosures' Set.empty
 
 liftClosures' :: LiftClosures r => Set.Set Core.Var -> ANF.Expr Core.Var -> Sem r (ANF.Expr Core.Var)
-liftClosures' env (ANF.Let (NonRecursive (v, e)) e') = do
+liftClosures' env exp@(ANF.Let (NonRecursive (v, e)) e') = do
+    debug $ "Lifting closure: " <> pretty v
+    debug $ "free: " <> pretty (freeCoreVars e)
     e' <- liftClosures' (Set.insert v env) e'
     pure $ Let (NonRecursive (v, e)) e'
 liftClosures' env (ANF.Let (Recursive bs) e) = do
@@ -77,7 +81,7 @@ liftClosuresA' _ other@(ANF.Var{}) = pure other
 liftClosuresA' _ (ANF.Lit l) = pure $ Lit l
 liftClosuresA' env (ANF.Lam v e) = do
     let freeVars = freeCoreVars e `Set.difference` env
-    if Set.null freeVars
+    if True
         then do
             e' <- liftClosures' env e
             pure $ Lam v e'
