@@ -70,7 +70,7 @@ liftClosuresC' env (ANF.AExpr e) = AExpr <$> liftClosuresA' env e
 liftClosuresC' env (ANF.Match e v alts) = do
     e' <- liftClosuresA' env e
     alts' <- for alts $ \(con, bs, e) -> do
-        e' <- liftClosuresC' (env <> Set.fromList bs) e
+        e' <- liftClosures' (env <> Set.fromList bs) e
         pure (con, bs, e')
     pure $ Match e' v alts'
 

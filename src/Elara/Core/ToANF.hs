@@ -61,11 +61,14 @@ toANFRec (Core.App f x) k = evalContT $ do
     k (ANF.App f' x')
 toANFRec (Core.Match bind as cases) k = evalContT $ do
     bind <- toANFCont bind
+    -- we need to take care here that we don't lift any expressions out too far from the match
+    -- as this could lead to incorrect results as we strictly evaluate
+
     cases' <- for cases $ \(con, bs, e) -> do
-        e' <- toANFCont e
-        pure (con, bs, ANF.AExpr e')
+        e' <- lift $ toANFRec e (pure . ANF.CExpr)
+        pure (con, bs, e')
     k $ ANF.Match bind as cases'
-toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
+toANFRec (Core.Let (NonRecursive (b, e)) body) _ = evalContT $ do
     e' <- toANFCont e
     body' <- toANFCont body
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
@@ -80,7 +83,9 @@ fromANF (ANF.CExpr e) = fromANFCExpr e
 
 fromANFCExpr :: ANF.CExpr Core.Var -> Core.CoreExpr
 fromANFCExpr (ANF.App f x) = Core.App (fromANFAtom f) (fromANFAtom x)
-fromANFCExpr (ANF.Match e b alts) = Core.Match (fromANFAtom e) b $ fmap (\(con, bs, e) -> (con, bs, fromANFCExpr e)) alts
+fromANFCExpr (ANF.Match e b alts) =
+    Core.Match (fromANFAtom e) b $
+        fmap (\(con, bs, e) -> (con, bs, fromANF e)) alts
 fromANFCExpr (ANF.AExpr e) = fromANFAtom e
 
 fromANFAtom :: ANF.AExpr Core.Var -> Core.Expr Core.Var

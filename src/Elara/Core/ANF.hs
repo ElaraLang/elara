@@ -6,6 +6,7 @@ import Elara.Core (AltCon, Literal, Type)
 import Elara.Core.Generic qualified as G
 import Prelude hiding (Alt, group)
 
+-- | An atomic expression
 data AExpr b
     = Var b
     | Lit Literal
@@ -14,12 +15,14 @@ data AExpr b
     | TyLam Type (AExpr b)
     deriving (Show, Eq, Data, Typeable, Generic)
 
+-- | A combinator expression
 data CExpr b
     = App (AExpr b) (AExpr b)
     | AExpr (AExpr b)
     | Match (AExpr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Typeable, Generic)
 
+-- | A "top level" expression, which is either a let binding or a CExpr
 data Expr b
     = Let (Bind b) (Expr b)
     | CExpr (CExpr b)
@@ -27,4 +30,4 @@ data Expr b
 
 type Bind b = G.Bind b CExpr
 
-type Alt b = (AltCon, [b], CExpr b)
+type Alt b = (AltCon, [b], Expr b)
