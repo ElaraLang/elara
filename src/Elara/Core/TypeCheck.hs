@@ -10,68 +10,84 @@ import Elara.Core.ANF qualified as ANF
 
 import Data.Set qualified as Set
 
+import Data.Map qualified as Map
+import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
 import Elara.Core qualified as Core
+import Elara.Core.Generic
+import Elara.Core.Module
+import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
+import Elara.Data.Pretty
+import Elara.Error
+import Elara.Prim.Core
 import Polysemy
 import Polysemy.Error
-import Elara.Core.Generic
+import Polysemy.State (State, evalState, gets, modify)
+import Polysemy.State.Extra (locally, scoped)
 import TODO (todo)
-import Elara.Prim.Core
-import Polysemy.State (gets, evalState, modify, State)
-import qualified Data.Map as Map
-import Polysemy.State.Extra (locally)
-import Elara.Core.ToANF (fromANFCExpr, fromANFAtom, fromANF)
-import Elara.Core.Module
-import Elara.Error
-import Elara.Data.Pretty
 
 data TypeCheckError
     = UnboundVariable Var
-    | TypeMismatch CoreExpr CoreExpr
+    | TypeMismatch
+        { expected :: Core.Type
+        , actual :: Core.Type
+        , source :: (CoreExpr, CoreExpr)
+        }
+    | TypeMismatchIncompleteExpected
+        { incompleteExpected :: Text
+        , actual :: Core.Type
+        , source :: (CoreExpr, CoreExpr)
+        }
     | UnificationError CoreExpr CoreExpr
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
     deriving (Show, Eq, Generic)
 
-instance Pretty TypeCheckError 
+instance Pretty TypeCheckError
 
 instance ReportableError TypeCheckError
 
 data TcState = TcState
-    { env :: Map Var Core.Type
+    { scope :: Set.Set Var
+    -- ^ The 'Var' already holds the variable's type so we don't need to track that.
+    -- However we do need to track scoping, as an optimisation could pull a variable out of scope
     }
-
-
 
 typeCheckCoreModule :: Member (Error TypeCheckError) r => CoreModule (Bind Var ANF.Expr) -> Sem r ()
 typeCheckCoreModule (CoreModule n m) = do
-    -- let vType (Id _ t _) = [t]
-    --     vType (TyVar _) = []
-    -- let env = Map.fromList $ flip concatMap m $ \case
-    --         CoreValue (NonRecursive (v, e)) -> [(v, fromANF e)]
-    --         CoreValue (Recursive bs) -> map (\(v, e) -> (v, fromANF e)) bs
-    --         CoreType _ -> []
+    let initialState = TcState{scope = mempty}
 
-    let initialState = TcState {env = mempty}
-    
     _ <- evalState initialState $ do
         for_ m $ \case
-            CoreValue (NonRecursive (v, e)) -> do
+            CoreValue (NonRecursive (v, e)) -> scoped $ do
+                modify (\s -> s{scope = Set.insert v (scope s)})
                 eType <- typeCheck e
-                modify (\s -> s {env = Map.insert v eType (env s)})
-            CoreValue (Recursive bs) -> do
+                pure ()
+            CoreValue (Recursive bs) -> scoped $ do
                 for_ bs $ \(v, e) -> do
-                    eType <- typeCheck e
-                    modify (\s -> s {env = Map.insert v eType (env s)})
-            CoreType _ -> pure ()
-    
-    pure ()
-    
+                    modify (\s -> s{scope = Set.insert v (scope s)})
 
+                for_ bs $ \(v, e) -> typeCheck e
+            CoreType _ -> pure ()
+
+    pure ()
+
+varType :: Var -> Core.Type
+varType (TyVar _) = error "TyVar"
+varType (Id _ t _) = t
 
 typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.Expr Var -> Sem r (Core.Type)
-typeCheck (ANF.Let _ _ ) = do
-    todo
+typeCheck (ANF.Let bind in') = do
+    case bind of
+        NonRecursive (v, e) -> do
+            eType <- typeCheckC e
+            locally ((\s -> s{scope = Set.insert v (scope s)})) $
+                typeCheck in'
+        Recursive binds -> do
+            let vars = map fst binds
+            modify (\s -> s{scope = Set.union (Set.fromList vars) (scope s)})
+            for_ binds $ \(v, e) -> typeCheckC e
+            typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
 typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.CExpr Var -> Sem r Core.Type
@@ -81,15 +97,12 @@ typeCheckC (ANF.App f x) = do
     case fType of
         Core.FuncTy argType retType -> do
             if argType == xType
-                then if retType == xType
-                    then pure retType
-                    else throw $ TypeMismatch (fromANFAtom f) (fromANFAtom x)
-                else throw $ TypeMismatch (fromANFAtom f) (fromANFAtom x)
-        _ -> throw $ TypeMismatch (fromANFAtom f) (fromANFAtom x)
+                then pure retType
+                else throw $ TypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
+        other -> throw $ TypeMismatch (Core.FuncTy fType xType) other ((fromANFAtom f), (fromANFAtom x))
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC (ANF.Match _ _ alts) = do
     todo
-
 
 typeCheckA :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.AExpr Var -> Sem r Core.Type
 typeCheckA (ANF.Lit lit) = case lit of
@@ -98,21 +111,29 @@ typeCheckA (ANF.Lit lit) = case lit of
     Core.Char _ -> pure $ Core.ConTy charCon
     Core.Double _ -> pure $ Core.ConTy doubleCon
     Core.Unit -> pure $ Core.ConTy unitCon
+-- Globally qualified vars are always in scope
+typeCheckA (ANF.Var (Id (Global _) t _)) = pure t
 typeCheckA (ANF.Var v) = do
-    env <- gets env
-    case Map.lookup v env of
-        Just t -> pure t
-        Nothing -> throw $ UnboundVariable v
+    env <- gets scope
+    case Set.member v env of
+        True -> pure (varType v)
+        False -> throw $ UnboundVariable v
 typeCheckA (ANF.Lam v e) = do
     case v of
         TyVar _ -> error "typeCheckA: TyVar"
         Id _ t _ -> do
-            eType <- locally (\s -> s {env = Map.insert v t (env s)}) $ typeCheck e
+            eType <- locally (\s -> s{scope = Set.insert v (s.scope)}) $ typeCheck e
             pure $ Core.FuncTy t eType
 typeCheckA (ANF.TyApp e t) = do
     eType <- typeCheckA e
     case eType of
         Core.ForAllTy tv t' -> pure $ Core.substTypeVar tv t t'
-        t' -> throw $ TypeMismatch (fromANFAtom e) (fromANFAtom e) -- TODO: better error message
+        t' ->
+            throw $
+                TypeMismatchIncompleteExpected
+                    { incompleteExpected = "A polymorphic type"
+                    , actual = t'
+                    , source = (fromANFAtom e, fromANFAtom (ANF.TyApp e t))
+                    }
 typeCheckA (ANF.TyLam t e) = do
     todo
