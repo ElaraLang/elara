@@ -110,7 +110,9 @@ class Substitutable (a :: Kind.Type -> Kind.Type) loc where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
 
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
-    substituteAll (Substitution s) a = foldr (uncurry substitute) a (Map.toList s)
+    substituteAll (Substitution s) a =
+        let subst = foldr (uncurry substitute) a (Map.toList s)
+         in if subst == a then a else substituteAll (Substitution s) subst
 
 -- instance Substitutable Type where
 --     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
