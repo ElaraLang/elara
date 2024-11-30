@@ -82,6 +82,12 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) _ = evalContT $ do
     e' <- toANFCont e
     body' <- toANFCont body
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (ANF.CExpr $ ANF.AExpr body')
+toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
+    bs' <- for bs $ \(b, e) -> do
+        e' <- toANFCont e
+        pure (b, ANF.AExpr e')
+    body' <- toANFCont body
+    pure $ ANF.Let (Recursive bs') (ANF.CExpr $ ANF.AExpr body')
 toANFRec other k = do
     -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e
