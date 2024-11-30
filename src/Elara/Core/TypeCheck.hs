@@ -27,7 +27,7 @@ import Polysemy.State.Extra (locally, scoped)
 import TODO (todo)
 
 data TypeCheckError
-    = UnboundVariable Var
+    = UnboundVariable Var (Set.Set Var)
     | TypeMismatch
         { expected :: Core.Type
         , actual :: Core.Type
@@ -117,13 +117,12 @@ typeCheckA (ANF.Var v) = do
     env <- gets scope
     case Set.member v env of
         True -> pure (varType v)
-        False -> throw $ UnboundVariable v
-typeCheckA (ANF.Lam v e) = do
-    case v of
-        TyVar _ -> error "typeCheckA: TyVar"
-        Id _ t _ -> do
-            eType <- locally (\s -> s{scope = Set.insert v (s.scope)}) $ typeCheck e
-            pure $ Core.FuncTy t eType
+        False -> throw $ UnboundVariable v env
+typeCheckA (ANF.Lam v body) = do
+    let t = varType v
+
+    eType <- locally (\s -> s{scope = Set.insert v (s.scope)}) $ typeCheck body
+    pure $ Core.FuncTy t eType
 typeCheckA (ANF.TyApp e t) = do
     eType <- typeCheckA e
     case eType of
