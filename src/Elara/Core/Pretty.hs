@@ -61,13 +61,19 @@ instance {-# OVERLAPS #-} PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> Doc AnsiStyle
-prettyTLLam b e@(Lam _ _) = punctuation "\\" <> prettyVarArg b <+> prettyLam e
-prettyTLLam b e = punctuation "\\" <> prettyVarArg b <+> punctuation "->" <+> prettyExpr e
+prettyTLLam b e =
+    let (params, body) = collectLamParams b e
+     in group $
+            vsep
+                [ hsep [punctuation "\\", sep params, punctuation "->"]
+                , flatAlt (indent indentDepth (prettyExpr body)) (prettyExpr body)
+                ]
 
-prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
-prettyLam (Lam b e) = prettyVarArg b <+> punctuation "->" <+> prettyLam e
-prettyLam e = pretty e
+collectLamParams :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> ([Doc AnsiStyle], Expr v2)
+collectLamParams first (Lam b e) =
+    let (params, body) = collectLamParams b e
+     in (prettyVarArg first : params, body)
+collectLamParams first e = ([prettyVarArg first], e)
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
@@ -79,10 +85,12 @@ prettyExpr (Let bindings e) =
             , prettyExpr e
             ]
 prettyExpr (Match e of' alts) =
-    vsep
-        [ keyword "case" <+> prettyExpr e <+> (keyword "of") <+> pretty (prettyVBind <$> of')
-        , indent indentDepth (prettyAlts alts)
-        ]
+    group $
+        vsep
+            [ keyword "match" <+> prettyExpr e <+> keyword "with" <+> (maybe "" pretty of') <> lbrace
+            , indent indentDepth $ sep (punctuate semi (map prettyAlt alts))
+            , rbrace
+            ]
 prettyExpr other = prettyExpr1 other
 
 prettyExpr1 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
@@ -96,7 +104,13 @@ prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (expr v)) => Elara.Core.Generic.Bind v expr -> Doc AnsiStyle
-prettyVdefg (Recursive bindings) = "Rec" <+> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg (Recursive bindings) =
+    "Rec"
+        <+> lbrace
+        <+> line
+        <> indent indentDepth (vsep (punctuate semi (prettyVdef <$> bindings)))
+            <+> line
+        <> rbrace
 prettyVdefg (NonRecursive b) = prettyVdef b
 
 instance (PrettyVar v, Pretty (e v)) => Pretty (Elara.Core.Generic.Bind v e) where
@@ -115,13 +129,14 @@ prettyVBind = prettyVar False True
 
 prettyAlts :: PrettyVar v => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = let ?contextFree = False in prettyBlockExpr (prettyAlt <$> alts)
-  where
-    prettyAlt (con, vars, e) =
-        pretty @AltCon con
-            <+> hsep (prettyVarArg <$> vars)
+
+prettyAlt :: (PrettyVar a, PrettyVar v) => (AltCon, [a], Expr v) -> Doc AnsiStyle
+prettyAlt (con, vars, e) =
+    pretty @AltCon con
+        <> (if null vars then "" else space <> hsep (prettyVarArg <$> vars))
             <+> "->"
             <+> line
-            <+> hang indentDepth (prettyExpr e)
+        <> indent indentDepth (prettyExpr e)
 
 instance Pretty Literal where
     pretty :: Literal -> Doc AnsiStyle
