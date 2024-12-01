@@ -45,10 +45,19 @@ let add5 x = add5_f x 5
 liftClosures :: LiftClosures r => Expr Core.Var -> Sem r (Expr Core.Var)
 liftClosures = liftClosures' Set.empty
 
+closedVariables e = filerLocal $ freeCoreVars e
+  where
+    filerLocal =
+        Set.filter
+            ( \case
+                Core.Id (Local _) _ _ -> True
+                _ -> False
+            )
+
 liftClosures' :: LiftClosures r => Set.Set Core.Var -> ANF.Expr Core.Var -> Sem r (ANF.Expr Core.Var)
 liftClosures' env exp@(ANF.Let (NonRecursive (v, e)) e') = do
     debug $ "Lifting closure: " <> pretty v
-    debug $ "free: " <> pretty (freeCoreVars e)
+    debug $ "closed: " <> pretty (closedVariables e)
     e' <- liftClosures' (Set.insert v env) e'
     pure $ Let (NonRecursive (v, e)) e'
 liftClosures' env (ANF.Let (Recursive bs) e) = do
