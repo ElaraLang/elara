@@ -45,8 +45,7 @@ prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr el
 
         long =
             align
-                ( "\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body)
-                )
+                ("\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body))
 
 prettyFunctionCall :: (?contextFree :: Bool, Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
 prettyFunctionCall e1' e2' = parens (if ?contextFree then short else group (flatAlt long short))
@@ -146,7 +145,7 @@ prettyList l =
 prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)
 
-prettyValueDeclaration :: (Pretty a1, Pretty a2, Pretty a3, Pretty (InfixDeclaration ast)) => a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
+prettyValueDeclaration :: forall ast a1 a2 a3. (Pretty a1, Pretty a2, Pretty a3, Pretty (InfixDeclaration ast)) => a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
 prettyValueDeclaration name e expectedType anns =
     let defLine = prettyValueTypeDef name <$> expectedType
         annLine = prettyValueDeclAnnotations anns

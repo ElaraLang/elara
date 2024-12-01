@@ -8,7 +8,7 @@ copyright: 2022 Alexander Wood
 license: MIT
 github: ElaraLang/elara
 tested-with: ghc ==9.4.7
-language: GHC2021
+language: GHC2024
 
 extra-source-files:
   - src/Elara/Lexer/Lexer.x
@@ -20,7 +20,7 @@ dependencies:
   - relude
   - aeson
   - lens
-  - optics
+  - optics >= 0.4.1
   - generic-optics
   - containers
   - bytestring
@@ -47,36 +47,41 @@ dependencies:
   - process
   - stringsearch
   - text-metrics
+  - algebraic-graphs
 
 ghc-options:
-  - -Wall
+  # - -Wall
   - -W
-  - -Wcompat
+  # - -Wcompat
   - -Wno-name-shadowing # Shadowing is good, actually
   # - -Weverything
   # - -Werror=incomplete-patterns
-  - -Werror=incomplete-uni-patterns
-  - -Wredundant-constraints
-  - -Wunused-imports
-  - -Wunused-foralls
-  - -Wmissing-fields
-  - -Winaccessible-code
-  - -Wincomplete-record-updates
-  - -Wpartial-fields
+  # - -Werror=incomplete-uni-patterns
+  # - -Wredundant-constraints
+  # - -Wunused-imports
+  # - -Wunused-foralls
+  # - -Wmissing-fields
+  # - -Winaccessible-code
+  # - -Wincomplete-record-updates
+  # - -Wpartial-fields
   - -Wno-partial-type-signatures
   # - -Werror=missing-home-modules
   - -Widentities
   # - -Wmissing-export-lists
   - -optP-Wno-nonportable-include-path # Fix annoying error on macOS
-  - -feager-blackholing
+  # - -feager-blackholing
   - -fdefer-typed-holes
   - -fno-show-valid-hole-fits
-  - -j4 +RTS -A32m -RTS
-  - -flate-specialise
-  - -fspecialise-aggressively
+  # - -j4 +RTS -A32m -RTS
+  # - -flate-specialise
+  # - -fspecialise-aggressively
   - -fplugin=Polysemy.Plugin
   - -fwrite-ide-info
   - -hiedir=.hie
+  - -threaded
+  - -O0
+  - -rtsopts
+  - -with-rtsopts=-N
 
 default-extensions:
   - OverloadedStrings
@@ -100,21 +105,16 @@ executables:
   elara:
     main: Main.hs
     source-dirs: app
-    ghc-options:
-      - -threaded
     dependencies:
       - elara
 
 tests:
   elara-test:
-    defaults: hspec/hspec@main
+    # defaults: sydtest/sydtest@main
     main: Spec.hs
     source-dirs: test
     default-extensions:
       - QuasiQuotes
-    ghc-options:
-      - -threaded
-      - -O0
     dependencies:
       - elara
       - neat-interpolation
@@ -122,4 +122,6 @@ tests:
       - hspec-megaparsec
       - QuickCheck
       - hedgehog
-      - hspec-hedgehog
+      - sydtest >= 0.18.0.0
+      - sydtest-hedgehog
+      - template-haskell

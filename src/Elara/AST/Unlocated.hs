@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Elara.AST.Unlocated where
 
@@ -45,6 +46,7 @@ type family Replace (needle :: LocatedAST) (replacement :: UnlocatedAST) (haysta
     Replace needle replacement (DeclarationBody needle) = DeclarationBody replacement
     Replace needle replacement (DeclarationBody' needle) = DeclarationBody' replacement
     Replace needle replacement [list] = [Replace needle replacement list]
+    Replace needle replacement (NonEmpty list) = NonEmpty (Replace needle replacement list)
     Replace needle replacement (a, b) = (Replace needle replacement a, Replace needle replacement b)
     Replace needle replacement (a, b, c) = (Replace needle replacement a, Replace needle replacement b, Replace needle replacement c)
     Replace needle replacement (Maybe maybe) = Maybe (Replace needle replacement maybe)

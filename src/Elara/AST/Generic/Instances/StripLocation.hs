@@ -200,8 +200,7 @@ instance
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( ASTLocate' ast1 ~ Located
     , ASTLocate' ast2 ~ Unlocated
-    , ( StripLocation (Select "Infixed" ast1) (Select "Infixed" ast2)
-      )
+    , (StripLocation (Select "Infixed" ast1) (Select "Infixed" ast2))
     , ( StripLocation
             (CleanupLocated (Located (Select "SymOp" ast1)))
             (Select "SymOp" ast2)

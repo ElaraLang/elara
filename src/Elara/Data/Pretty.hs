@@ -1,4 +1,5 @@
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -19,8 +20,10 @@ module Elara.Data.Pretty (
 where
 
 import Data.Map qualified as Map (toList)
+import Elara.Data.Pretty.Styles qualified as Styles
 import Elara.Width qualified as Width
 import Error.Diagnose (Annotation, defaultStyle)
+import GHC.Generics
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
 import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal (AnsiStyle)
@@ -39,11 +42,11 @@ blockParensIf :: Bool -> Doc ann -> Doc ann
 blockParensIf True = braces
 blockParensIf False = identity
 
-listToText :: Pretty a => [a] -> Doc AnsiStyle
+listToText :: forall a. Pretty a => [a] -> Doc AnsiStyle
 listToText elements =
     vsep (fmap prettyEntry elements)
   where
-    prettyEntry entry = "• " <> align (pretty entry)
+    prettyEntry entry = "• " <> align (pretty @a entry)
 
 prettyToText :: Pretty a => a -> Text
 prettyToText = renderStrict True Width.defaultWidth
@@ -98,8 +101,8 @@ bracedBlock b = do
 
 class Pretty a where
     pretty :: a -> Doc AnsiStyle
-    default pretty :: Show a => a -> Doc AnsiStyle
-    pretty = pretty @Text . show
+    default pretty :: (Generic a, GPretty (Rep a)) => a -> Doc AnsiStyle
+    pretty = sep . gprettyPrec 0 . from
 
 instance Pretty (Doc (Annotation AnsiStyle)) where
     pretty = pretty . reAnnotate defaultStyle
@@ -146,7 +149,10 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d) => Pretty (a, b, c, d) where
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => Pretty (a, b, c, d, e) where
     pretty (a, b, c, d, e) = tupled [pretty a, pretty b, pretty c, pretty d, pretty e]
 
-instance {-# OVERLAPS #-} PP.Pretty a => Pretty a where
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => Pretty (a, b, c, d, e, f) where
+    pretty (a, b, c, d, e, f) = tupled [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f]
+
+instance {-# OVERLAPPABLE #-} PP.Pretty a => Pretty a where
     pretty = PP.pretty
 
 escapeChar :: IsString s => Char -> s
@@ -180,3 +186,46 @@ instance (Pretty k, Pretty v) => Pretty (Map k v) where
 
 instance Pretty s => Pretty (Set s) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
+
+-- Generic instances
+
+-- I borrowed a lot of this from https://github.com/tanakh/generic-pretty/blob/master/src/Text/PrettyPrint/Generic.hs
+-- so thank you :)
+
+class GPretty f where
+    -- | Pretty print a `Generic` value
+    gprettyPrec :: Int -> f a -> [Doc AnsiStyle]
+
+instance (GPretty f, GPretty g) => GPretty (f :+: g) where
+    gprettyPrec p (L1 x) = gprettyPrec p x
+    gprettyPrec p (R1 x) = gprettyPrec p x
+
+instance (GPretty f, GPretty g) => GPretty (f :*: g) where
+    gprettyPrec p (x :*: y) = gprettyPrec p x <> gprettyPrec p y
+
+instance Pretty a => GPretty (K1 i a) where
+    gprettyPrec _ (K1 x) = [pretty x]
+
+instance GPretty U1 where
+    gprettyPrec _ U1 = mempty
+
+instance (GPretty f, Constructor c) => GPretty (C1 c f) where
+    gprettyPrec p c@(M1 a)
+        | conIsRecord c =
+            [con <+> encloseSep (lbrace <> space) (space <> rbrace) (comma <> space) es]
+        | null es = [con]
+        | p == 0 = [con <+> align (sep es)]
+        | otherwise = [parens $ con <+> align (sep es)]
+      where
+        con = Styles.constructor $ pretty (conName c)
+        es = gprettyPrec (p + 1) a
+
+instance (GPretty f, Selector s) => GPretty (S1 s f) where
+    gprettyPrec _ s@(M1 a) =
+        let name = selName s
+         in case name of
+                "" -> gprettyPrec 0 a
+                _ -> [pretty name <+> Styles.operator "=" <+> sep (gprettyPrec 0 a)]
+
+instance GPretty f => GPretty (D1 c f) where
+    gprettyPrec p (M1 x) = gprettyPrec p x

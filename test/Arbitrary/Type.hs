@@ -1,22 +1,28 @@
 module Arbitrary.Type where
 
-import Elara.TypeInfer.Monotype qualified as Scalar
+import Elara.AST.Name
+import Elara.Data.Unique (unsafeMkUnique)
 import Elara.TypeInfer.Type
-import Hedgehog
+import Elara.TypeInfer.Unique
+import Hedgehog (Gen)
 import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Region (qualifiedTest)
 
-arbitraryType :: Gen (Type ())
-arbitraryType =
+-- | contrary to what the name suggests, this will NOT be unique :)
+genUniqueTypeVar :: Gen TypeVariable
+genUniqueTypeVar = UnificationVar <$> (unsafeMkUnique Nothing <$> Gen.integral (Range.linear 0 100))
+
+typeConstructorNames :: [TypeName]
+typeConstructorNames = ["List", "Maybe", "Pair", "Box", "IO"]
+
+genMonotype :: Gen (Monotype ())
+genMonotype =
     Gen.recursive
         Gen.choice
-        [ Scalar ()
-            <$> Gen.choice
-                [ pure Scalar.Unit
-                , pure Scalar.Bool
-                , pure Scalar.Integer
-                , pure Scalar.Real
-                , pure Scalar.Char
-                , pure Scalar.Text
-                ]
+        [ TypeVar <$> genUniqueTypeVar
+        , Scalar <$> Gen.enumBounded
         ]
-        [Gen.subterm2 arbitraryType arbitraryType (Function ())]
+        [ TypeConstructor <$> Gen.element (qualifiedTest <$> typeConstructorNames) <*> Gen.list (Range.linear 0 2) genMonotype
+        , Function <$> genMonotype <*> genMonotype
+        ]

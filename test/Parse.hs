@@ -3,9 +3,9 @@ module Parse where
 import Orphans ()
 import Parse.Expressions qualified as Expressions
 import Parse.Patterns qualified as Patterns
-import Test.Hspec
+import Test.Syd
 
 spec :: Spec
-spec = parallel $ do
+spec = do
     Patterns.spec
     Expressions.spec

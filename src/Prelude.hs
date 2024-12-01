@@ -2,6 +2,7 @@
 
 module Prelude (
     module Relude,
+    for,
     (:~:),
     (<<$),
     ($>>),
@@ -20,6 +21,8 @@ module Prelude (
     transform,
     transformOf',
     concatMapOf,
+    AsConstructor (..),
+    AsConstructor' (..),
 )
 where
 
@@ -27,14 +30,16 @@ import Data.Map qualified as M
 import Data.Type.Equality ((:~:))
 import Polysemy (Member, Sem)
 import Polysemy.State (State, get, put)
-import Relude hiding (Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
+import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
 import Relude qualified (id)
 
 import Data.Function ((&))
-
-import Data.Data (Data)
+import Data.Generics.Sum
+import Data.Traversable (for)
 import Optics (
     A_Fold,
+    A_Setter,
+    A_Traversal,
     AffineTraversal,
     AffineTraversal',
     At (..),
@@ -79,6 +84,7 @@ import Optics (
     simple,
     to,
     toListOf,
+    transformMOf,
     transformOf,
     traversalVL,
     traverseOf,
@@ -136,6 +142,7 @@ cosmosOnOf d p = d % cosmosOf p
 transform :: Plated a => (a -> a) -> a -> a
 transform = transformOf plate
 
+transformOf' :: Is k A_Traversal => Optic k is s a1 a2 b -> (a2 -> b) -> s -> a1
 transformOf' optic f a = runIdentity $ traverseOf optic (fmap Identity f) a
 
 concatMapOf :: Is k A_Fold => Optic' k is a1 a2 -> (a2 -> [b]) -> a1 -> [b]

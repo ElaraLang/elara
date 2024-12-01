@@ -17,17 +17,24 @@ import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
+import Elara.Core (CoreBind)
 import Elara.Core.Module (CoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
-import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
+
+-- import Elara.CoreToIR
+
+import Elara.Core.LiftClosures (runLiftClosures)
+import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
+import Elara.Logging
 import Elara.Parse
 import Elara.Pipeline (IsPipeline, finalisePipeline)
 import Elara.Prim
@@ -117,27 +124,40 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
+    coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
+    coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
+    runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
-    classes <- runReader java8 (emitGraph coreGraph)
-    for_ classes $ \(mn, classes') -> do
-        putTextLn ("Compiling " <> showPretty mn <> "...")
-        for_ classes' $ \class' -> do
-            converted <- runErrorOrReport $ fromEither $ convert class'
-            let bs = runPut (writeBinary converted)
-            let fp = "build/" <> suitableFilePath class'.name
-            liftIO $ createAndWriteFile fp bs
-            putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
-        putTextLn ("Successfully compiled " <> showPretty mn <> "!")
+    for_ coreGraph $ \coreModule -> do
+        putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
+        -- class' <- structuredDebugToLog (emitCoreModule coreModule)
+        pass
+    -- putTextLn (showPretty class')
+    -- converted <- runErrorOrReport $ fromEither $ convert class'
+    -- let bs = runPut (writeBinary converted)
+    -- let fp = "build/" <> suitableFilePath class'.name
+    -- liftIO $ createAndWriteFile fp bs
+    -- putTextLn ("Compiled " <> showPretty (class'.name) <> " to " <> toText fp <> "!")
+    -- classes <- runReader java8 (emitGraph coreGraph)
+    -- for_ classes $ \(mn, classes') -> do
+    --     putTextLn ("Compiling " <> showPretty mn <> "...")
+    --     for_ classes' $ \class' -> do
+    --         converted <- runErrorOrReport $ fromEither $ convert class'
+    --         let bs = runPut (writeBinary converted)
+    --         let fp = "build/" <> suitableFilePath class'.name
+    --         liftIO $ createAndWriteFile fp bs
+    --         putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
+    --     putTextLn ("Successfully compiled " <> showPretty mn <> "!")
 
     end <- liftIO getCPUTime
     let t :: Double
         t = fromIntegral (end - start) * 1e-9
     printPretty
         ( Style.varName "Successfully" <+> "compiled "
-            <> Style.punctuation (pretty (length classes))
+            <> Style.punctuation (pretty (length coreGraph))
             <> " classes in "
             <> Style.punctuation
                 ( fromString (printf "%.2f" t)
@@ -145,15 +165,15 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
                 )
         )
 
-    when run $ liftIO $ do
-        printPretty (Style.varName "Running code...")
-        -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
-        let process =
-                if os == "mingw32"
-                    then shell "java -noverify -cp ../jvm-stdlib;. Main"
-                    else shell "java -noverify -cp ../jvm-stdlib:. Main"
-        x <- readCreateProcess process{cwd = Just "./build"} ""
-        putStrLn x
+-- when run $ liftIO $ do
+--     printPretty (Style.varName "Running code...")
+--     -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
+--     let process =
+--             if os == "mingw32"
+--                 then shell "java -noverify -cp ../jvm-stdlib;. Main"
+--                 else shell "java -noverify -cp ../jvm-stdlib:. Main"
+--     x <- readCreateProcess process{cwd = Just "./build"} ""
+--     putStrLn x
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do
@@ -179,7 +199,7 @@ loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParse
         liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".desugared.elr"
     pure desugared
 
-processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph CoreModule)
+processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph (CoreModule CoreBind))
 processModules graph (dumpShunted, dumpTyped) =
     runToCorePipeline $
         runInferPipeline $
@@ -191,8 +211,8 @@ processModules graph (dumpShunted, dumpTyped) =
                         >=> shuntGraph (Just primOpTable)
                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
                         >=> traverseGraphRevTopologically inferModule
-                        >=> dumpIf fst dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
-                        >=> traverseGraphRevTopologically (\(a, b) -> moduleToCore b a)
+                        >=> dumpIf identity dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
+                        >=> traverseGraphRevTopologically (moduleToCore)
                         >=> (pure . mapGraph coreToCore)
                         $ graph
                     )

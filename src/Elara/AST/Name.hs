@@ -5,13 +5,13 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Name where
 
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
+import Data.Generics.Product
 import Data.Text qualified as T (intercalate)
 import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
@@ -55,10 +55,6 @@ newtype TypeName = TypeName Text
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data, IsString, Generic)
 
-makePrisms ''LowerAlphaName
-makePrisms ''TypeName
-makePrisms ''OpName
-
 data VarOrConName
     = VarName LowerAlphaName
     | ConName TypeName
@@ -70,9 +66,6 @@ data Name
     deriving (Show, Eq, Ord, Data, Generic)
 
 type UniqueName = Unique Name
-
-makeLenses ''Name
-makePrisms ''Name
 
 class NameLike name where
     -- | Get the name as a Text. This will not include qualification, if present
@@ -181,11 +174,11 @@ data MaybeQualified name = MaybeQualified
     { _maybeQualifiedName :: name
     , _maybeQualifiedQualifier :: Maybe ModuleName
     }
-    deriving (Ord, Show, Eq, Data, Functor, Foldable, Traversable)
+    deriving (Ord, Show, Eq, Data, Functor, Foldable, Traversable, Generic)
 
 data Qualified name = Qualified
     { _qualifiedName :: name
-    , _qualifiedQualifier :: ModuleName
+    , qualifier :: ModuleName
     }
     deriving (Show, Eq, Data, Ord, Generic, Functor, Foldable, Traversable)
 
@@ -198,12 +191,7 @@ unqualified =
 newtype Unqualified name = Unqualified
     { _unqualifiedName :: name
     }
-    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable)
-
-makeFields ''MaybeQualified
-makeFields ''Qualified
-makeFields ''Unqualified
-makePrisms ''Unqualified
+    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable, Generic)
 
 instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     pretty (MaybeQualified n (Just m)) = pretty m <> "." <> pretty n
@@ -261,3 +249,24 @@ instance ToJSON Name
 instance Hashable b => Hashable (Qualified b)
 
 instance Hashable ModuleName
+
+class HasName a n | a -> n where
+    name :: Lens' a n
+
+instance HasName (MaybeQualified n) n where
+    name = field @"_maybeQualifiedName"
+
+instance HasName (Qualified n) n where
+    name = field @"_qualifiedName"
+
+instance HasName (Unqualified n) n where
+    name = field @"_unqualifiedName"
+
+instance HasName Name Name where
+    name = lensVL identity
+
+class ContainsName a n | a -> n where
+    containedName :: Getter a n
+
+-- instance HasName a n => ContainsName a n where
+--     containedName = castOptic name

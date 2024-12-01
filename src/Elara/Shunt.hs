@@ -29,11 +29,9 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose
 import Polysemy (Member, Members, Sem, subsume_)
 import Polysemy.Error (Error, throw)
-import Polysemy.Log qualified as Log
 import Polysemy.Reader hiding (Local)
 import Polysemy.State (State, execState, modify)
 import Polysemy.Writer hiding (pass)
-import Print (showPretty)
 import Prelude hiding (modify')
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
@@ -154,7 +152,6 @@ fixOperators opTable o = do
 
     reassoc' :: SourceRegion -> RenamedBinaryOperator -> RenamedExpr -> RenamedExpr -> Sem r RenamedExpr'
     reassoc' sr o1 e1 r@(InExpr (BinaryOperator (o2, e2, e3))) = do
-        Log.debug $ "reassoc': " <> showPretty (o1, e1, r)
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
         case compare info1.precedence info2.precedence of
@@ -180,8 +177,8 @@ fixOperators opTable o = do
                 pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Log.Log]
-type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable, Log.Log]
+type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
+type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
 runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
 runShuntPipeline s =
@@ -203,14 +200,17 @@ createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
 
     addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Sem r ()
     addDeclsToOpTable' (Declaration (Located _ decl)) = do
-        let declName = Global $ IgnoreLocation $ decl ^. field' @"name"
         case decl ^. field' @"body" % _Unwrapped % unlocated of
-            Value{_valueAnnotations = (ValueDeclAnnotations (Just fixity))} -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
-            TypeDeclaration _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) -> modify $ Map.insert declName (infixDeclToOpInfo fixity)
+            Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
+                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (NVarName <<$>> _valueName)
+                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+            TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
+                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (sequenceA $ (Qualified (NTypeName <$> name) (decl ^. field' @"moduleName" % unlocated)))
+                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
             _ -> pass
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
-infixDeclToOpInfo (InfixDeclaration prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+infixDeclToOpInfo (InfixDeclaration name prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
   where
     convAssoc LeftAssoc = LeftAssociative
     convAssoc RightAssoc = RightAssociative
@@ -245,7 +245,7 @@ shuntDeclaration (Declaration decl) =
             unlocated
             ( \(decl' :: RenamedDeclaration') -> do
                 body' <- shuntDeclarationBody (decl' ^. field' @"body")
-                pure (Declaration' (decl' ^. field' @"moduleName") (decl' ^. field' @"name") body')
+                pure (Declaration' (decl' ^. field' @"moduleName") body')
             )
             decl
 
@@ -257,11 +257,11 @@ shuntDeclarationBody ::
 shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
   where
     shuntDeclarationBody' :: RenamedDeclarationBody' -> Sem r ShuntedDeclarationBody'
-    shuntDeclarationBody' (Value e _ ty ann) = do
+    shuntDeclarationBody' (Value name e _ ty ann) = do
         shunted <- fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
-    shuntDeclarationBody' (TypeDeclaration vars ty ann) = pure (TypeDeclaration vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+        pure (Value name shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
+    shuntDeclarationBody' (TypeDeclaration name vars ty ann) = pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
 
 fixExpr :: Members InnerShuntPipelineEffects r => RenamedExpr -> Sem r ShuntedExpr
 fixExpr e = do
@@ -285,7 +285,10 @@ shuntExpr (Expr (le, t)) = do
     shuntExpr' Unit = pure Unit
     shuntExpr' (Var v) = pure (Var v)
     shuntExpr' (Constructor v) = pure (Constructor v)
-    shuntExpr' (Lambda n e) = Lambda n <$> fixExpr e
+    shuntExpr' (Lambda n e) = do
+        e' <- fixExpr e
+        n' <- traverseOf unlocated (\(TypedLambdaParam (v, t)) -> pure $ TypedLambdaParam (v, coerceType <$> t)) n
+        pure (Lambda n' e')
     shuntExpr' (FunctionCall f x) = FunctionCall <$> fixExpr f <*> fixExpr x
     shuntExpr' (TypeApplication e t) = TypeApplication <$> fixExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
@@ -306,16 +309,13 @@ shuntExpr (Expr (le, t)) = do
                     let z = case inName of
                             Global (Located l' (Qualified (VarName n) m)) ->
                                 Var
-                                    ( Located l' (Global (Located l' (Qualified (NormalVarName n) m)))
-                                    )
+                                    (Located l' (Global (Located l' (Qualified (NormalVarName n) m))))
                             Global (Located l' (Qualified (ConName n) m)) ->
                                 Constructor
-                                    ( Located l' (Qualified n m)
-                                    )
+                                    (Located l' (Qualified n m))
                             Local (Located l' (Unique (VarName n) i)) ->
                                 Var
-                                    ( Located l' (Local (Located l' (Unique (NormalVarName n) i)))
-                                    )
+                                    (Located l' (Local (Located l' (Unique (NormalVarName n) i))))
                             Local (Located _ (Unique (ConName _1) _)) -> error "Shouldn't have local con names"
                     z `withLocationOf` (operator ^. _Unwrapped)
 

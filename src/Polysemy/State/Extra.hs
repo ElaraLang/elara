@@ -6,7 +6,7 @@ Particularly useful with the optics functions that operate on @Monad[Reader/Stat
 -}
 module Polysemy.State.Extra where
 
-import Optics (A_Getter, Is, set)
+import Optics (A_Getter, set)
 import Polysemy
 import Polysemy.State as P (State (Get, Put), get, gets, modify', put)
 

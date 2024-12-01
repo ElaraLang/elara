@@ -8,27 +8,27 @@ module Elara.Core.Module where
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName, Qualified)
 import Elara.AST.Pretty (prettyBlockExpr)
-import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
-import Elara.Core.Pretty (prettyTy, prettyTypeVariables, prettyVdefg)
+import Elara.Core (DataCon, Type, TypeVariable)
+import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 
-data CoreModule = CoreModule
+data CoreModule bind = CoreModule
     { name :: !ModuleName
-    , declarations :: ![CoreDeclaration]
+    , declarations :: ![CoreDeclaration bind]
     }
     deriving (Generic)
 
-instance HasDependencies CoreModule where
-    type Key CoreModule = ModuleName
+instance HasDependencies (CoreModule bind) where
+    type Key (CoreModule bind) = ModuleName
     key = view (field @"name")
 
     dependencies = const [] -- TODO
 
-data CoreDeclaration
-    = CoreValue CoreBind
+data CoreDeclaration bind
+    = CoreValue bind
     | CoreType CoreTypeDecl
 
 data CoreTypeDecl = CoreTypeDecl
@@ -42,15 +42,15 @@ data CoreTypeDeclBody
     = CoreTypeAlias Type
     | CoreDataDecl [DataCon]
 
-instance Pretty CoreModule where
+instance Pretty bind => Pretty (CoreModule bind) where
     pretty (CoreModule name decls) =
         "module"
             <+> pretty name
             <> hardline
             <> nest indentDepth (bracedBlock decls)
 
-instance Pretty CoreDeclaration where
-    pretty (CoreValue v) = prettyVdefg v
+instance Pretty bind => Pretty (CoreDeclaration bind) where
+    pretty (CoreValue v) = pretty v
     pretty (CoreType t) = prettyTdef t
 
 prettyTdef :: CoreTypeDecl -> Doc AnsiStyle

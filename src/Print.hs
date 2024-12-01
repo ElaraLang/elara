@@ -15,7 +15,7 @@ import Text.Pretty.Simple (
  )
 
 elaraDebug :: Bool
-elaraDebug = False
+elaraDebug = True
 {-# INLINE elaraDebug #-}
 
 printColored :: (Show a, MonadIO m) => a -> m ()
@@ -29,6 +29,9 @@ showColored = fromString . toString . pShow
 
 showPretty :: Pretty a => a -> Text
 showPretty = prettyToText
+
+prettyToString :: Pretty a => a -> String
+prettyToString = toString . prettyToText
 
 showPrettyUnannotated :: Pretty a => a -> Text
 showPrettyUnannotated = prettyToUnannotatedText

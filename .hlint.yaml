@@ -15,8 +15,6 @@
       - "-XGHC2021"
       - "-XExplicitNamespaces"
 
-# - ignore: { name: Redundant bracket } # Unfortunately until we get GHC 9.6 working,
-# we can't stop fourmolu from adding the redundant constraint brackets, so our only hope is to disable this warning
 - ignore:
       name: Use head
 - ignore:

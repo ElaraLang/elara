@@ -6,11 +6,11 @@ default:
 
 # Run the project tests with ghcid auto-recompile
 test:
-    stack build :elara-test --file-watch --fast --ghc-options="-O0 -fbyte-code"
+    stack build :elara-test --file-watch --fast
 
 # Run the project with ghcid auto-recompile
 run:
-   stack build --file-watch --fast --ghc-options='-O1 -fbyte-code' --exec "elara --dump-shunted --dump-core --dump-typed --run"
+   stack build :elara --file-watch --fast --exec "elara --dump-shunted --dump-core --dump-typed --run"
 
 # Start Hoogle server for project dependencies
 docs:

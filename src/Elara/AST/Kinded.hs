@@ -1,10 +1,11 @@
 {-# LANGUAGE UndecidableInstances #-}
+-- Since when was there a warning for orphan type families?
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Like 'Elara.AST.Shunted' but post-kind inference so the kinds of types are always known
 module Elara.AST.Kinded where
 
-import Elara.AST.Generic (ASTLocate', ASTQual, Select)
-import Elara.AST.Generic qualified as Generic
+import Elara.AST.Generic
 import Elara.AST.Name (Qualified)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (LocatedAST (Kinded, MidKinded, Shunted))
@@ -32,8 +33,8 @@ type family ReplaceMidKinded x r where
     ReplaceMidKinded "ADTParam" r = MidKindedType
     ReplaceMidKinded x r = r
 
-type KindedTypeDeclaration = Generic.TypeDeclaration 'Kinded
-type MidKindedTypeDeclaration = Generic.TypeDeclaration 'MidKinded
-type KindedType = Generic.Type 'Kinded
-type KindedType' = Generic.Type' 'Kinded
-type MidKindedType = Generic.Type 'MidKinded
+type KindedTypeDeclaration = TypeDeclaration 'Kinded
+type MidKindedTypeDeclaration = TypeDeclaration 'MidKinded
+type KindedType = Type 'Kinded
+type KindedType' = Type' 'Kinded
+type MidKindedType = Type 'MidKinded

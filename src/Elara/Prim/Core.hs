@@ -41,6 +41,9 @@ boolCon = TyCon (mkPrimQual "Bool") Prim
 intCon :: TyCon
 intCon = TyCon (mkPrimQual "Int") Prim
 
+floatCon :: TyCon
+floatCon = TyCon (mkPrimQual "Float") Prim
+
 stringCon :: TyCon
 stringCon = TyCon (mkPrimQual "String") Prim
 
@@ -49,6 +52,9 @@ unitCon = TyCon (mkPrimQual "()") Prim
 
 charCon :: TyCon
 charCon = TyCon (mkPrimQual "Char") Prim
+
+doubleCon :: TyCon
+doubleCon = TyCon (mkPrimQual "Double") Prim
 
 ioCon :: TyCon
 ioCon = TyCon (mkPrimQual "IO") Prim

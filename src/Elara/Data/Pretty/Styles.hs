@@ -29,3 +29,6 @@ typeName = annotate (color Yellow)
 
 varName :: Doc AnsiStyle -> Doc AnsiStyle
 varName = annotate (color Green)
+
+constructor :: Doc AnsiStyle -> Doc AnsiStyle
+constructor = annotate (underlined <> colorDull Yellow)

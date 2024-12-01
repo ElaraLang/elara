@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -53,8 +53,13 @@ library
       Elara.AST.VarRef
       Elara.Core
       Elara.Core.Analysis
+      Elara.Core.ANF
+      Elara.Core.Generic
+      Elara.Core.LiftClosures
       Elara.Core.Module
       Elara.Core.Pretty
+      Elara.Core.ToANF
+      Elara.Core.TypeCheck
       Elara.CoreToCore
       Elara.Data.Kind
       Elara.Data.Kind.Infer
@@ -65,18 +70,7 @@ library
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Emit
-      Elara.Emit.ADT
-      Elara.Emit.Error
-      Elara.Emit.Expr
-      Elara.Emit.Lambda
-      Elara.Emit.Method
-      Elara.Emit.Method.Descriptor
-      Elara.Emit.Monad
-      Elara.Emit.Operator
-      Elara.Emit.Params
-      Elara.Emit.State
       Elara.Emit.Utils
-      Elara.Emit.Var
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
@@ -86,6 +80,7 @@ library
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
+      Elara.Logging
       Elara.Parse
       Elara.Parse.Combinators
       Elara.Parse.Declaration
@@ -108,12 +103,13 @@ library
       Elara.Shunt
       Elara.ToCore
       Elara.TypeInfer
-      Elara.TypeInfer.Context
-      Elara.TypeInfer.Domain
-      Elara.TypeInfer.Error
-      Elara.TypeInfer.Existential
-      Elara.TypeInfer.Infer
-      Elara.TypeInfer.Monotype
+      Elara.TypeInfer.ConstraintGeneration
+      Elara.TypeInfer.Convert
+      Elara.TypeInfer.Environment
+      Elara.TypeInfer.Ftv
+      Elara.TypeInfer.Generalise
+      Elara.TypeInfer.Monad
+      Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
       Elara.Utils
@@ -142,11 +138,12 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-tools:
       alex
   build-depends:
       aeson
+    , algebraic-graphs
     , array
     , base
     , binary
@@ -161,7 +158,7 @@ library
     , lens
     , megaparsec
     , mtl
-    , optics
+    , optics >=0.4.1
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -179,7 +176,7 @@ library
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
+  default-language: GHC2024
 
 executable elara
   main-is: Main.hs
@@ -200,9 +197,10 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , algebraic-graphs
     , array
     , base
     , binary
@@ -218,7 +216,7 @@ executable elara
     , lens
     , megaparsec
     , mtl
-    , optics
+    , optics >=0.4.1
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -236,7 +234,7 @@ executable elara
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
+  default-language: GHC2024
 
 test-suite elara-test
   type: exitcode-stdio-1.0
@@ -246,9 +244,11 @@ test-suite elara-test
       Arbitrary.Literals
       Arbitrary.Names
       Arbitrary.Type
+      Boilerplate
       Common
+      HedgehogSyd
       Infer
-      Infer.Common
+      Infer.Unify
       Lex
       Lex.Common
       Lex.Indents
@@ -257,6 +257,7 @@ test-suite elara-test
       Parse.Common
       Parse.Expressions
       Parse.Patterns
+      Region
       Shunt
       Paths_elara
   autogen-modules:
@@ -275,11 +276,12 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -Wall -W -Wcompat -Wno-name-shadowing -Werror=incomplete-uni-patterns -Wredundant-constraints -Wunused-imports -Wunused-foralls -Wmissing-fields -Winaccessible-code -Wincomplete-record-updates -Wpartial-fields -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -feager-blackholing -fdefer-typed-holes -fno-show-valid-hole-fits -j4 +RTS -A32m -RTS -flate-specialise -fspecialise-aggressively -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
     , aeson
+    , algebraic-graphs
     , array
     , base
     , binary
@@ -293,14 +295,12 @@ test-suite elara-test
     , h2jvm
     , hashable
     , hedgehog
-    , hspec ==2.*
-    , hspec-hedgehog
     , hspec-megaparsec
     , lens
     , megaparsec
     , mtl
     , neat-interpolation
-    , optics
+    , optics >=0.4.1
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -313,10 +313,12 @@ test-suite elara-test
     , relude
     , safe-exceptions
     , stringsearch
+    , sydtest >=0.18.0.0
+    , sydtest-hedgehog
+    , template-haskell
     , terminal-size
     , text-metrics
     , utf8-string
   mixins:
       base hiding (Prelude)
-  default-language: GHC2021
-  build-tool-depends: hspec-discover:hspec-discover == 2.*
+  default-language: GHC2024

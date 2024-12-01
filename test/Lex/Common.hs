@@ -3,11 +3,11 @@
 module Lex.Common where
 
 import Elara.AST.Region (unlocated)
-import Elara.Lexer.Pipeline (runLexPipeline, runLexPipelinePure)
+import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Polysemy
-import Test.Hspec
+import Test.Syd
 
 lex' :: Text -> [Lexeme]
 lex' contents = do
@@ -23,8 +23,9 @@ lexUL = fmap (view unlocated) . lex'
 
 -- | Like '<~>', but converts Indent/Dedents to LeftBrace/RightBrace
 (<~!~>) :: Text -> Text -> Expectation
-(<~!~>) = shouldBe `on` (fmap convert . lexUL)
+(<~!~>) = withFrozenCallStack (shouldBe `on` (fmap convert . lexUL))
   where
     convert TokenIndent = TokenLeftBrace
     convert TokenDedent = TokenRightBrace
+    convert TokenLineSeparator = TokenSemicolon
     convert t = t

@@ -6,17 +6,10 @@ The compiler will then replace these with the actual primitive functions.
 module Elara.Prim where
 
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (..), VarOrConName (..))
-import Elara.AST.Region (IgnoreLocation (IgnoreLocation), Located, SourceRegion, generatedLocated, generatedSourceRegion)
+import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Unique (UniqueGen)
 import Elara.Shunt
-import Elara.TypeInfer.Context (Context, Entry (Annotation))
-import Elara.TypeInfer.Domain (Domain (..))
-import Elara.TypeInfer.Monotype (Scalar (..))
-import Elara.TypeInfer.Type (Type (..))
-import Elara.TypeInfer.Unique (makeUniqueTyVarWith)
-import Polysemy
 
 consName :: TypeName
 consName = "::"
@@ -90,37 +83,3 @@ primOpTable =
         , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "*"), OpInfo (mkPrecedence 7) LeftAssociative)
         , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "/"), OpInfo (mkPrecedence 7) LeftAssociative)
         ]
-
-primitiveTCContext :: Member UniqueGen r => Sem r (Context SourceRegion)
-primitiveTCContext = do
-    let easies =
-            [ Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName stringName)))
-                (Scalar primRegion Text)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName intName)))
-                (Scalar primRegion Integer)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName charName)))
-                (Scalar primRegion Char)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName boolName)))
-                (Scalar primRegion Bool)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName ioName)))
-                (Custom primRegion (mkPrimQual "IO") [])
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName trueName)))
-                (Scalar primRegion Bool)
-            , Annotation
-                (Global (IgnoreLocation $ mkPrimVarRef (NTypeName falseName)))
-                (Scalar primRegion Bool)
-            ]
-
-    primTyVarName <- makeUniqueTyVarWith "a"
-    let elaraPrimitive =
-            Annotation -- elaraPrimitive :: forall a. String -> a
-                (Global (IgnoreLocation $ mkPrimVarRef (NVarName fetchPrimitiveName)))
-                (Forall primRegion primRegion primTyVarName Type (Function primRegion (Scalar primRegion Text) (VariableType primRegion primTyVarName)))
-
-    pure (elaraPrimitive : easies)

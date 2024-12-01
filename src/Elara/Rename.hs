@@ -20,7 +20,7 @@ import Elara.AST.Desugared
 import Elara.AST.Generic hiding (moduleName)
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (HasQualifier (qualifier), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), NameLike (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), NameLike (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, sourceRegionToDiagnosePosition, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
@@ -30,18 +30,17 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes
+import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
 import Optics (anyOf, filteredBy, traverseOf_)
 import Polysemy (Member, Members, Sem, subsume)
 import Polysemy.Error (Error, note, throw)
-import Polysemy.Log qualified as Log
 import Polysemy.Reader hiding (Local)
 import Polysemy.State
 import Polysemy.State.Extra
 import Polysemy.Utils (withModified)
-import Print (showPretty)
 
 data RenameError
     = UnknownModule ModuleName
@@ -61,6 +60,7 @@ data RenameError
     | AmbiguousTypeName (Located Name) (NonEmpty (VarRef TypeName))
     | NativeDefUnsupported (Located DesugaredDeclaration')
     | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
+    | UnknownCurrentModule
 
 instance ReportableError RenameError where
     report (UnknownModule mn) =
@@ -109,7 +109,7 @@ instance ReportableError RenameError where
                             [ Hint $
                                 vsep
                                     [ "This name is defined in the following modules, but none of them are imported:"
-                                    , hsep (punctuate comma (ns ^.. each % _As @"Global" % unlocated % qualifier % to pretty))
+                                    , hsep (punctuate comma (ns ^.. each % _As @"Global" % unlocated % field' @"qualifier" % to pretty))
                                     , "Try importing one of the modules."
                                     ]
                             ]
@@ -194,6 +194,13 @@ instance ReportableError RenameError where
                 , Hint $
                     "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports"
                 ]
+    report UnknownCurrentModule =
+        writeReport $
+            Err
+                Nothing
+                "Unknown current module (internal error!)"
+                []
+                []
 
 data RenameState = RenameState
     { varNames :: Map VarName (NonEmpty (VarRef VarName))
@@ -214,7 +221,7 @@ type RenamePipelineEffects =
      , Error RenameError
      , Reader (TopologicalGraph (Module 'Desugared))
      , UniqueGen
-     , Log.Log
+     , StructuredDebug
      ]
 
 type Rename r = Members RenamePipelineEffects r
@@ -254,6 +261,13 @@ qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
         Just ((Global (Located sr' (Qualified n' m))) :| []) -> pure $ Located sr' (Qualified n' m)
         Just ((Local _) :| []) -> error "can't have local type names"
         Just many -> throw $ AmbiguousTypeName (Located sr (NTypeName n)) many
+
+askCurrentModule :: InnerRename r => Sem r (Module 'Desugared)
+askCurrentModule = do
+    m <- ask
+    case m of
+        Nothing -> throw $ UnknownCurrentModule
+        Just m -> pure m
 
 lookupGenericName ::
     InnerRename r =>
@@ -302,7 +316,7 @@ sortDeclarations = pure
 
 rename :: Rename r => Module 'Desugared -> Sem r (Module 'Renamed)
 rename m = do
-    Log.debug $ "Renaming module " <> showPretty (m ^. _Unwrapped % unlocated % field' @"name")
+    debug $ "Renaming module " <> pretty (m ^. _Unwrapped % unlocated % field' @"name")
     traverseOf
         (_Unwrapped % unlocated)
         ( \m' -> do
@@ -350,7 +364,10 @@ addModuleToContext mn exposing = do
         note
             (UnknownModule mn)
             (moduleFromName mn modules)
-    let isExposingL = _Unwrapped % unlocated % field' @"name" % unlocated % to (isExposingAndExists imported)
+    let isExposingL =
+            declarationName
+                % unlocated
+                % to (isExposingAndExists imported)
     let exposed = case exposing of
             ExposingAll -> imported ^. _Unwrapped % unlocated % field' @"declarations"
             ExposingSome _ -> imported ^.. _Unwrapped % unlocated % field' @"declarations" % folded % filteredBy isExposingL
@@ -363,14 +380,18 @@ addDeclarationToContext _ decl = do
         insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
 
     let global :: name -> VarRef name
-        global vn = Global (Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated) <$ decl ^. _Unwrapped)
-    case decl ^. _Unwrapped % unlocated % field' @"name" % unlocated of
+        global vn =
+            Global
+                ( Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
+                    <$ decl ^. _Unwrapped
+                )
+    case decl ^. declarationName ^. unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 
     case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
-        TypeDeclaration _ (Located _ (ADT ctors)) _ -> do
+        TypeDeclaration name _ (Located _ (ADT ctors)) _ -> do
             traverseOf_ (each % _1 % unlocated) (\tn -> modify $ over (the @"typeNames") $ insertMerging tn (global tn)) ctors
         _ -> pass
 
@@ -389,9 +410,9 @@ elementExistsInModule :: Module 'Desugared -> Name -> Bool
 elementExistsInModule m' n' =
     any
         ( \d ->
-            d ^. _Unwrapped % unlocated % field' @"name" % unlocated == n'
+            d ^. declarationName % unlocated == n'
                 || case d ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-                    TypeDeclaration _ (Located _ (ADT ctors)) _ -> anyOf (each % _1 % unlocated) (\n -> NTypeName n == n') ctors
+                    TypeDeclaration name _ (Located _ (ADT ctors)) _ -> anyOf (each % _1 % unlocated) (\n -> NTypeName n == n') ctors
                     _ -> False
         )
         (m' ^. _Unwrapped % unlocated % field' @"declarations")
@@ -448,26 +469,30 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
     renameDeclaration' :: InnerRename r => DesugaredDeclaration' -> Sem r RenamedDeclaration'
     renameDeclaration' fd = do
         -- qualify the name with the module name
-        let name' =
-                -- sequenceA @Qualified @Located
-                over
-                    unlocated
-                    (\n -> Qualified n (fd ^. field' @"moduleName" % unlocated))
-                    (fd ^. field' @"name")
+        -- let name' =
+        --         -- sequenceA @Qualified @Located
+        --         over
+        --             unlocated
+        --             (\n -> Qualified n (fd ^. field' @"moduleName" % unlocated))
+        --             (fd ^. declaration'Name)
         body' <- runReader (Just decl) $ renameDeclarationBody (fd ^. field' @"body")
 
-        pure $ Declaration' (fd ^. field' @"moduleName") name' body'
+        pure $ Declaration' (fd ^. field' @"moduleName") body'
 
     renameDeclarationBody :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody -> Sem r RenamedDeclarationBody
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
 
     renameDeclarationBody' :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredDeclarationBody' -> Sem r RenamedDeclarationBody'
-    renameDeclarationBody' (Value val _ ty ann) = scoped $ do
+    renameDeclarationBody' (Value name val _ ty ann) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType True)) ty
         val' <- renameExpr val
         let ann' = coerceValueDeclAnnotations ann
-        pure $ Value val' NoFieldValue ty' ann'
-    renameDeclarationBody' (TypeDeclaration vars ty ann) = do
+        thisModule <- askCurrentModule
+        let qualifiedName =
+                sequenceA $
+                    Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
+        pure $ Value qualifiedName val' NoFieldValue ty' ann'
+    renameDeclarationBody' (TypeDeclaration name vars ty ann) = do
         vars' <- traverse uniquify vars
         let varAliases = zip vars vars' :: [(Located LowerAlphaName, Located (Unique LowerAlphaName))]
         let addAllVarAliases s =
@@ -479,7 +504,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         withModified addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
             let ann' = coerceTypeDeclAnnotations ann
-            pure $ TypeDeclaration vars' ty' ann'
+            pure $ TypeDeclaration name vars' ty' ann'
 
 renameTypeDeclaration :: InnerRename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do
@@ -491,6 +516,9 @@ renameTypeDeclaration thisMod (ADT constructors) = do
             (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % _1 % unlocated) (renameType False) y)
             constructors
     pure $ ADT constructors'
+
+renameSimpleType :: InnerRename r => DesugaredType -> Sem r RenamedType
+renameSimpleType = traverseOf (_Unwrapped % _1 % unlocated) (renameType False)
 
 -- | Renames a type, qualifying type constructors and type variables where necessary
 renameType ::
@@ -718,9 +746,11 @@ For example,
  @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
 renameLambda :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
-renameLambda p e = do
+renameLambda p@((Pattern (_, argType))) e = do
     (arg, match) <- patternToMatch p e
-    pure (Lambda arg match)
+    argType' <- traverse renameSimpleType argType
+    let arg' = fmap (,argType') arg
+    pure (Lambda (TypedLambdaParam <$> arg') match)
 
 desugarBlock :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => NonEmpty DesugaredExpr -> Sem r RenamedExpr
 desugarBlock (e@(Expr' (Let{})) :| []) = do

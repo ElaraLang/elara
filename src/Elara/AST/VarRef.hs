@@ -35,6 +35,10 @@ varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
 
+unlocatedVarRefVal :: UnlocatedVarRef n -> n
+unlocatedVarRefVal (Global n) = runIdentity $ fmap (view name) n
+unlocatedVarRefVal (Local n) = runIdentity $ fmap (view uniqueVal) n
+
 varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
 varRefVal' = traversalVL $ \f ->
     \case

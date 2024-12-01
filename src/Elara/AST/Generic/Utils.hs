@@ -5,7 +5,6 @@ module Elara.AST.Generic.Utils where
 
 import Data.Kind qualified as Kind
 import Elara.AST.Generic.Common
-import Elara.AST.Generic.Types (Select)
 import Elara.AST.Region
 
 {- | When fields may be optional, we need a way of representing that generally. This class does that.

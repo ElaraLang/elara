@@ -6,9 +6,15 @@ module Elara.Core.Pretty where
 
 import Elara.AST.Name (unqualified)
 import Elara.AST.Pretty
+import Elara.AST.VarRef
 import Elara.Core
+import Elara.Core.ANF qualified as ANF
+import Elara.Core.Generic (Bind (..))
+import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
-import Prelude hiding (Alt)
+import Elara.Data.Pretty.Styles
+import Prettyprinter.Render.Terminal qualified as Style
+import Prelude hiding (Alt, group)
 
 class Pretty v => PrettyVar v where
     prettyVar ::
@@ -29,11 +35,17 @@ instance Pretty Var where
 instance PrettyVar Var where
     prettyVar withType withParens = \case
         TyVar tv -> prettyTypeVariable withType tv
-        Id name t _ -> if withType then (if withParens then parens else identity) (pretty name <+> ":" <+> pretty t) else pretty name
+        Id name t _ ->
+            let style = case name of (Global _) -> Style.color Style.Green; (Local _) -> Style.color Style.Blue
+             in if withType
+                    then
+                        (if withParens then parens else identity)
+                            (annotate style (pretty name) <+> punctuation ":" <+> pretty t)
+                    else annotate style $ pretty name
 
     prettyVarArg = \case
-        TyVar (TypeVariable tv _) -> parens ("@" <> pretty tv)
-        v -> prettyVar False True v
+        TyVar (TypeVariable tv _) -> parens (punctuation "@" <> pretty tv)
+        v -> prettyVar True True v
 
 instance PrettyVar Type where
     prettyVar withType withParens = \case
@@ -42,34 +54,47 @@ instance PrettyVar Type where
         other -> prettyVar withType withParens other
 
     prettyVarArg = \case
-        TyVarTy (TypeVariable tv _) -> parens ("@" <> pretty tv)
+        TyVarTy (TypeVariable tv _) -> parens (punctuation "@" <> pretty tv)
         v -> prettyVar True True v
 
 instance {-# OVERLAPS #-} PrettyVar v => Pretty (Expr v) where
     pretty = prettyExpr
 
 prettyTLLam :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> Doc AnsiStyle
-prettyTLLam b e@(Lam _ _) = "\\" <+> prettyVarArg b <+> prettyLam e
-prettyTLLam b e = "\\" <+> prettyVarArg b <+> "->" <+> prettyExpr e
+prettyTLLam b e =
+    let (params, body) = collectLamParams b e
+     in group $
+            vsep
+                [ hsep [punctuation "\\", sep params, punctuation "->"]
+                , flatAlt (indent indentDepth (prettyExpr body)) (prettyExpr body)
+                ]
 
-prettyLam :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyLam (Lam b e@(Lam _ _)) = prettyVarArg b <+> prettyLam e
-prettyLam (Lam b e) = prettyVarArg b <+> "->" <+> prettyLam e
-prettyLam e = pretty e
+collectLamParams :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> ([Doc AnsiStyle], Expr v2)
+collectLamParams first (Lam b e) =
+    let (params, body) = collectLamParams b e
+     in (prettyVarArg first : params, body)
+collectLamParams first e = ([prettyVarArg first], e)
 
 prettyExpr :: (Pretty (Expr v), PrettyVar v, HasCallStack) => Expr v -> Doc AnsiStyle
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (TyLam b e) = prettyTLLam b e
-prettyExpr (Let bindings e) = "let" <+> prettyVdefg bindings <+> "in" <+> prettyExpr e
+prettyExpr (Let bindings e) =
+    group $
+        vsep
+            [ keyword "let" <+> prettyVdefg bindings <+> keyword "in"
+            , prettyExpr e
+            ]
 prettyExpr (Match e of' alts) =
-    vsep
-        [ "case" <+> prettyExpr e <+> pretty (("of" <+>) . prettyVBind <$> of')
-        , indent indentDepth (prettyAlts alts)
-        ]
+    group $
+        vsep
+            [ keyword "match" <+> prettyExpr e <+> keyword "with" <+> (maybe "" pretty of') <> lbrace
+            , indent indentDepth $ sep (punctuate semi (map prettyAlt alts))
+            , rbrace
+            ]
 prettyExpr other = prettyExpr1 other
 
 prettyExpr1 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
-prettyExpr1 (TyApp f t) = prettyExpr1 f <+> "@" <> prettyTy2 t
+prettyExpr1 (TyApp f t) = prettyExpr1 f <+> punctuation "@" <> prettyTy2 t
 prettyExpr1 (App f x) = prettyExpr1 f <+> prettyExpr2 x
 prettyExpr1 e = prettyExpr2 e
 
@@ -78,25 +103,40 @@ prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
 prettyExpr2 e = parens (prettyExpr e)
 
-prettyVdefg :: (PrettyVar v, Pretty (Expr v)) => Bind v -> Doc AnsiStyle
-prettyVdefg (Recursive bindings) = "Rec" <> let ?contextFree = False in prettyBlockExpr (prettyVdef <$> bindings)
+prettyVdefg :: (PrettyVar v, Pretty (expr v)) => Elara.Core.Generic.Bind v expr -> Doc AnsiStyle
+prettyVdefg (Recursive bindings) =
+    "Rec"
+        <+> lbrace
+        <+> line
+        <> indent indentDepth (vsep (punctuate semi (prettyVdef <$> bindings)))
+            <+> line
+        <> rbrace
 prettyVdefg (NonRecursive b) = prettyVdef b
 
-prettyVdef :: (PrettyVar v, Pretty (Expr v)) => (v, Expr v) -> Doc AnsiStyle
-prettyVdef (v, e) = vsep [prettyVar True False v, indent indentDepth ("=" <+> prettyExpr e)]
+instance (PrettyVar v, Pretty (e v)) => Pretty (Elara.Core.Generic.Bind v e) where
+    pretty = prettyVdefg
+
+prettyVdef :: (PrettyVar v, Pretty (expr v)) => (v, expr v) -> Doc AnsiStyle
+prettyVdef (v, e) =
+    group $
+        vsep
+            [ prettyVar True False v <+> "="
+            , flatAlt (indent indentDepth (pretty e)) (pretty e)
+            ]
 
 prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
-prettyVBind = prettyVar True True
+prettyVBind = prettyVar False True
 
 prettyAlts :: PrettyVar v => [Alt v] -> Doc AnsiStyle
 prettyAlts alts = let ?contextFree = False in prettyBlockExpr (prettyAlt <$> alts)
-  where
-    prettyAlt (con, vars, e) =
-        pretty @AltCon con
-            <+> hsep (prettyVarArg <$> vars)
+
+prettyAlt :: (PrettyVar a, PrettyVar v) => (AltCon, [a], Expr v) -> Doc AnsiStyle
+prettyAlt (con, vars, e) =
+    pretty @AltCon con
+        <> (if null vars then "" else space <> hsep (prettyVarArg <$> vars))
             <+> "->"
             <+> line
-            <+> hang indentDepth (prettyExpr e)
+        <> indent indentDepth (prettyExpr e)
 
 instance Pretty Literal where
     pretty :: Literal -> Doc AnsiStyle
@@ -141,7 +181,7 @@ instance Pretty TyConDetails where
 instance Pretty AltCon where
     pretty :: AltCon -> Doc AnsiStyle
     pretty = \case
-        DataAlt d -> pretty d
+        DataAlt (DataCon name t _) -> pretty name
         LitAlt l -> pretty l
         DEFAULT -> "DEFAULT"
 
@@ -153,3 +193,14 @@ instance Pretty DataCon where
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case
     TypeVariable name kind -> if withKind then parens (pretty name <+> ":" <+> pretty kind) else pretty name
+
+-- ANF
+
+instance Pretty (ANF.AExpr Var) where
+    pretty = prettyExpr . fromANFAtom
+
+instance Pretty (ANF.CExpr Var) where
+    pretty = prettyExpr . fromANFCExpr
+
+instance Pretty (ANF.Expr Var) where
+    pretty = prettyExpr . fromANF

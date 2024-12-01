@@ -4,19 +4,20 @@
     systems.url = "github:nix-systems/default";
     flake-parts.url = "github:hercules-ci/flake-parts";
     haskell-flake.url = "github:srid/haskell-flake";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     flake-root.url = "github:srid/flake-root";
     just-flake.url = "github:juspay/just-flake";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
     h2jvm.url = "github:ElaraLang/h2jvm";
 
-    diagnose.url = "github:knightzmc/diagnose";
+    diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    megaparsec.url = "github:mrkkrp/megaparsec";
-    megaparsec.flake = true;
+    hlint.url = "github:ndmitchell/hlint";
+    hlint.flake = false;
+
+    fourmolu.url = "github:fourmolu/fourmolu";
+    fourmolu.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -26,7 +27,6 @@
 
       imports = [
         inputs.haskell-flake.flakeModule
-        inputs.treefmt-nix.flakeModule
         inputs.flake-root.flakeModule
         inputs.just-flake.flakeModule
       ];
@@ -37,26 +37,34 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc965;
+          basePackages = pkgs.haskell.packages.ghc910;
 
 
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
-            megaparsec.source = inputs.megaparsec;
-            polysemy-test.source = "0.9.0.0";
+            # megaparsec.source = inputs.megaparsec;
+            polysemy-test.source = "0.10.0.0";
+            hlint.source = inputs.hlint;
+            fourmolu.source = inputs.fourmolu;
           };
 
           settings = {
-
+            hlint.jailbreak = true;
             fourmolu.check = false;
             polysemy-test.jailbreak = true;
             polysemy-conc.jailbreak = true;
+            polysemy-conc.check = false;
             polysemy-log.jailbreak = true;
+            polysemy-plugin.jailbreak = true;
+            incipit-base.jailbreak = true;
+            incipit-core.jailbreak = true;
+            polysemy-resume.jailbreak = true;
+            polysemy-time.jailbreak = true;
 
             diagnose = {
               extraBuildDepends = [
-                pkgs.haskellPackages.megaparsec_9_6_1
+                # pkgs.haskellPackages
               ];
               cabalFlags.megaparsec-compat = true;
               jailbreak = true;
@@ -82,20 +90,19 @@
 
           devShell = {
             tools = hp: {
-              treefmt = config.treefmt.build.wrapper;
-            } // config.treefmt.build.programs;
+              # treefmt = config.treefmt.build.wrapper;
+            };
 
             hlsCheck.enable = false;
           };
         };
 
+
         checks = {
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
-            settings = {
-              treefmt.package = config.treefmt.build.wrapper;
-            };
             hooks = {
+              # treefmt.package = config.treefmt.build.wrapper;
               treefmt.enable = true;
             };
           };
@@ -106,19 +113,6 @@
         };
 
 
-        treefmt.config = {
-          inherit (config.flake-root) projectRootFile;
-          package = pkgs.treefmt;
-
-          programs.ormolu.enable = true;
-          programs.nixpkgs-fmt.enable = true;
-          programs.cabal-fmt.enable = false;
-          programs.hlint.enable = true;
-
-          # Use fourmolu
-          programs.ormolu.package = pkgs.haskellPackages.fourmolu;
-
-        };
 
 
         packages.default = self'.packages.elara;
@@ -131,7 +125,7 @@
           ];
           inherit (self.checks.${system}.pre-commit-check) shellHook;
 
-          nativeBuildInputs = [ pkgs.just pkgs.convco ];
+          nativeBuildInputs = [ pkgs.just pkgs.convco pkgs.treefmt ];
 
           buildInputs =
             let
@@ -143,7 +137,7 @@
                   postBuild = ''
                     wrapProgram $out/bin/stack \
                       --add-flags "\
-                        --no-nix \
+                        --nix \
                         --system-ghc \
                         --no-install-ghc \
                       "
@@ -162,4 +156,3 @@
       };
     };
 }
-

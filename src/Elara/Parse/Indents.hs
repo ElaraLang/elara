@@ -10,7 +10,6 @@ import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (Parser, token_)
 
 import Text.Megaparsec (try)
-import Text.Megaparsec.Debug
 
 lineSeparator :: Parser ()
 lineSeparator = token_ TokenLineSeparator <|> token_ TokenSemicolon

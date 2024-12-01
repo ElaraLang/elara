@@ -1,165 +1,165 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Infer where
 
-import Arbitrary.Type (arbitraryType)
-import Common (diagShouldSucceed, runUnique)
-import Data.Generics.Product (HasField (field))
-import Data.Generics.Sum (AsConstructor' (_Ctor'))
-import Data.Generics.Wrapped (_Unwrapped)
-import Elara.AST.Generic.Types
-import Elara.AST.Region (unlocated)
-import Elara.AST.Select (LocatedAST (..))
-import Elara.TypeInfer.Domain qualified as Domain
-import Elara.TypeInfer.Monotype qualified as Scalar
-import Elara.TypeInfer.Type (applicableTyApp)
-import Elara.TypeInfer.Type as Type (Type (..), structuralEq)
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
-import Infer.Common
-import Print (printPretty)
-import Relude.Unsafe ((!!))
-import Test.Hspec
-import Test.Hspec.Hedgehog
+import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironment, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
+import Elara.AST.Generic.Types (Expr (..), Expr' (..))
+import Elara.AST.Shunted
+import Elara.Data.Unique (uniqueGenToIO)
+import Elara.Logging (ignoreStructuredDebug, structuredDebugToLog)
+import Elara.Pipeline (finalisePipeline)
+import Elara.TypeInfer (inferValue, runInferPipeline)
+import Elara.TypeInfer.ConstraintGeneration
+import Elara.TypeInfer.Environment
+import Elara.TypeInfer.Monad
+import Elara.TypeInfer.Type
+import Hedgehog (Property, annotate, evalEither, evalEitherM, evalIO, forAll, property, (===))
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Internal.Property (failWith)
+import Hedgehog.Range qualified as Range
+import Infer.Unify qualified as Unify
+import Polysemy (Sem, runM, subsume_)
+import Polysemy.Error (runError)
+import Polysemy.State (evalState, put)
+import Polysemy.Writer (runWriter)
+import Print (prettyToString, showPretty)
+import Region (qualifiedTest, testLocated)
+import Test.Syd
+import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
 
 spec :: Spec
-spec = describe "Infers types correctly" $ parallel $ do
-    simpleTypes
-    functionTypes
-    typeApplications
+spec = describe "Infers types correctly" $ do
+    literalTests
+    lambdaTests
+    letInTests
+    ifElseTests
+    recursionTests
+    it "infers literals" prop_literalTypesInvariants
+    Unify.spec
 
-simpleTypes :: Spec
-simpleTypes = describe "Infers simple types correctly" $ parallel $ do
-    it "Infers Int literals correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "1" "Int"
-        case t of
-            Scalar () Scalar.Integer -> pass
-            o -> fail o
+-- Literal Type Inference Tests
+literalTests :: Spec
+literalTests = describe "Literal Type Inference" $ do
+    it "infers Int type correctly" $ do
+        result <- runInfer $ generateConstraints (mkIntExpr 42)
+        result `shouldSucceed` \(constraints, (intExp, ty)) -> do
+            constraints `shouldBe` mempty
+            $(shouldMatch [p|(Scalar ScalarInt)|]) ty
 
-    it "Infers Unit literals correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "()" "()"
-        case t of
-            Scalar () Scalar.Unit -> pass
-            o -> fail o
+    it "infers Float type correctly" $ do
+        result <- runInfer $ generateConstraints (mkFloatExpr 42.0)
+        result `shouldSucceed` \(constraints, (exp, ty)) -> do
+            constraints `shouldBe` mempty
+            $(shouldMatch [p|(Scalar ScalarFloat)|]) ty
 
-    it "Infers Real literals correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "1.0" "Real"
-        case t of
-            Scalar () Scalar.Real -> pass
-            o -> fail o
+lambdaTests :: Spec
+lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
+    it "infers lambda type correctly" $ property $ do
+        expr <- inferFully "\\x -> x"
 
-    it "Infers Text literals correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "\"hello\"" "Text"
-        case t of
-            Scalar () Scalar.Text -> pass
-            o -> fail o
+        case expr of
+            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pure ()
+            other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
-    it "Infers Char literals correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "'c'" "Text"
-        case t of
-            Scalar () Scalar.Char -> pass
-            o -> fail o
+    it "infers applied identity function correctly" $ property $ do
+        expr <- inferFully "(\\x -> x) 42"
 
-functionTypes :: Spec
-functionTypes = describe "Infers function types correctly" $ modifyMaxSuccess (const 1) $ do
-    it "Infers identity function correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "\\x -> x" "forall a. a -> a"
-        case t of
-            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
-            o -> fail o
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-    it "Infers nested identity function correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in id" "forall a. a -> a"
-        case t of
-            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
-            o -> fail o
+    it "infers nested identity function correctly" $ property $ do
+        expr <- inferFully "(\\x -> (\\y -> y) x) 42"
 
-    it "Infers VERY nested identity function correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in id id id id id id id id id id id" "forall a. a -> a"
-        case t of
-            (Forall' a Domain.Type (Function' (VariableType' a') (VariableType' a''))) | a == a' && a == a'' -> pass
-            o -> fail o
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-    it "Infers fix-point function correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let fix = \\f -> f (fix f) in fix" "forall a b. (a -> b) -> b"
-        case t of
-            Forall'
-                a
-                Domain.Type
-                ( Forall'
-                        b
-                        Domain.Type
-                        (Function' (Function' (VariableType' a') (VariableType' b')) (VariableType' b''))
-                    ) | a == a' && b == b' && b == b'' -> pass
-            o -> fail o
+    it "infers id id correctly" $ property $ do
+        expr <- inferFully "let id = \\x -> x in id id"
 
-    it "Infers polymorphic lets correctly" $ hedgehog $ do
-        (t, fail) <- inferSpec "let id = \\x -> x in (id 1, id ())" "(Int, ())"
-        case t of
-            Tuple' (Scalar () Scalar.Integer :| [Scalar () Scalar.Unit]) -> pass
-            o -> fail o
+        case expr of
+            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pure ()
+            other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
-    it "Correctly adds type applications when referring to another polymorphic function" $ hedgehog $ do
-        (mod, _) <-
-            liftIO
-                ( inferModuleFully @Text
-                    "let id_ x = x; let id = id_; def id2 : Int -> Int; let id2 = id_; def id3: (a -> a) -> (a -> a); let id3 = id_;"
-                )
-                >>= diagShouldSucceed
-        let decls =
-                mod
-                    ^.. _Unwrapped
-                    % unlocated
-                    % field @"declarations"
-                    % folded
-                    % _Unwrapped
-                    % unlocated
-                    % field @"body"
-                    % _Unwrapped
-                    % unlocated
-                    % (_Ctor' @"Value" @(DeclarationBody' Typed))
-                    % _1
+letInTests :: Spec
+letInTests = withoutRetries $ describe "Let In Type Inference" $ do
+    it "infers let in type correctly" $ property $ do
+        expr <- inferFully "let x = 42 in x"
 
-        let idDecl = decls !! 1 ^. _Unwrapped % _1 % unlocated
-        let id2Decl = decls !! 2 ^. _Unwrapped % _1 % unlocated
-        let id3Decl = decls !! 3 ^. _Unwrapped % _1 % unlocated
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-        printPretty decls
+    it "infers let in type correctly with shadowing" $ property $ do
+        expr <- inferFully "let x = 42 in let x = 43 in x"
 
-        case idDecl of
-            (Elara.AST.Generic.Types.Var _) -> pass
-            o -> failTypeMismatch "id" "Main.id @a" o
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-        case id2Decl of
-            (TypeApplication _ (Scalar{scalar = Scalar.Integer})) -> pass
-            o -> failTypeMismatch "id" "Main.id @Int" o
+    it "infers let in type correctly with shadowing and lambda" $ property $ do
+        expr <- inferFully "let x = 42 in let f = \\x -> x in f x"
 
-        case id3Decl of
-            (TypeApplication _ (Function _ a b)) | a `structuralEq` b -> pass
-            o -> failTypeMismatch "id" "Main.id @(a -> a)" o
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-typeApplications :: Spec
-typeApplications = describe "Correctly determines which type applications to add" $ do
-    it "Doesn't add unnecessary ty-apps with monotypes" $ hedgehog $ do
-        Scalar () Scalar.Integer `applicableTyApp` Scalar () Scalar.Integer === []
-        Scalar () Scalar.Integer `applicableTyApp` Scalar () Scalar.Char === []
+recursionTests :: Spec
+recursionTests = withoutRetries $ describe "recursion tests" $ do
+    it "recursion" $ property $ do
+        expr <- inferFully "let loop x = if x == 0 then x else loop (x - 1) in loop"
 
-    it "Doesn't add unnecessary ty-apps with polymorphic types" $ hedgehog $ do
-        n <- runUnique makeUniqueTyVar
-        Forall () () n Domain.Type (Scalar () Scalar.Char) `applicableTyApp` Scalar () Scalar.Integer === []
+        expr === Forall [] EmptyConstraint (Function (Scalar ScalarInt) (Scalar ScalarInt))
 
-    it "Adds ty-apps to forall a. a" $ hedgehog $ do
-        n <- runUnique makeUniqueTyVar
-        someT <- forAll arbitraryType
-        Forall () () n Domain.Type (VariableType () n) `applicableTyApp` someT === [someT]
+ifElseTests :: Spec
+ifElseTests = describe "If Else Type Inference" $ do
+    it "infers if else type correctly" $ property $ do
+        expr <- inferFully "if True then 42 else 43"
 
-    it "Adds ty-apps to forall a. a -> a" $ hedgehog $ do
-        n <- runUnique makeUniqueTyVar
-        someT <- forAll arbitraryType
-        let forAllT = Forall () () n Domain.Type (Function () (VariableType () n) (VariableType () n))
+        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
 
-        -- forall `applicableTyApp` someT === [] -- usages like this should really throw an error
-        forAllT `applicableTyApp` Function () someT someT === [someT]
+inferFully exprSrc = do
+    let expr = loadShuntedExpr exprSrc
+    annotate $ toString exprSrc
+    res <- evalPipelineRes expr
+    (_, ty) <- evalPipelineRes $ finalisePipeline $ runInferPipeline $ ignoreStructuredDebug $ do
+        put fakeTypeEnvironment -- devious and evil
+        inferValue (qualifiedTest "test") res Nothing
+    pure ty
 
-        -- instantiating forall a. a -> a to forall b. (b -> b) -> b -> b should give us [b -> b]
-        n2 <- runUnique makeUniqueTyVar
-        let n2Var = VariableType () n2
-        forAllT `applicableTyApp` Forall () () n2 Domain.Type (Function () (Function () n2Var n2Var) (Function () n2Var n2Var)) === [Function () n2Var n2Var]
+prop_literalTypesInvariants :: Property
+prop_literalTypesInvariants = property $ do
+    literalGen <-
+        forAll $
+            Gen.choice
+                [ mkIntExpr <$> Gen.int (Range.linear minBound maxBound)
+                , mkFloatExpr <$> Gen.double (Range.linearFrac (-1000) 1000)
+                , mkStringExpr <$> Gen.text (Range.linear 0 100) Gen.alphaNum
+                ]
+
+    (_, (_, ty)) <- evalEitherM $ evalIO $ runInfer $ generateConstraints literalGen
+
+    $(ensureExpressionMatches [p|Scalar _|]) ty
+
+runInfer :: Sem (InferEffects loc) a -> IO (Either (InferError loc) (Constraint loc, a))
+runInfer =
+    runM @IO
+        . uniqueGenToIO
+        . runError
+        . evalState emptyLocalTypeEnvironment
+        . evalState fakeTypeEnvironment
+        . runWriter
+        . ignoreStructuredDebug
+        . subsume_
+
+shouldSucceed ::
+    (HasCallStack, Show (InferError loc)) =>
+    Either (InferError loc) (Constraint loc, a) ->
+    ((Constraint loc, a) -> IO b) ->
+    IO b
+shouldSucceed (Left err) _ = withFrozenCallStack $ expectationFailure $ "Inference failed: " ++ show err
+shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
+
+mkIntExpr :: Int -> ShuntedExpr
+mkIntExpr i = mkExpr (Int $ fromIntegral i)
+
+mkFloatExpr :: Double -> ShuntedExpr
+mkFloatExpr f = mkExpr (Float f)
+
+mkStringExpr :: Text -> ShuntedExpr
+mkStringExpr s = mkExpr (String s)
+
+mkExpr :: ShuntedExpr' -> ShuntedExpr
+mkExpr expr = Expr (testLocated expr, Nothing)

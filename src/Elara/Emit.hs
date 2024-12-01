@@ -1,192 +1,107 @@
-{-# LANGUAGE OverloadedLists #-}
+{- | Emits JVM bytecode from the Core AST
 
-{- | Emits JVM bytecode from Elara AST.
-Conventions:
-* We always uncurry functions, so a function of type a -> b -> c is compiled to a JVM function c f(a, b).
-This means that currying can be avoided in a lot of cases (through arity analysis),
-  skipping the overhead of creating a lambda and calling repeated invoke() functions
+The emitting process:
+Every module is translated to a class file.
+For each declaration, we turn it into a field if it is a value (i.e. a zero argument function, including IO actions),
+or a method if it is a function.
+
+*Translation of functions to methods:*
+
+The emitter will eta expand declarations:
+@ let id = \x -> x@
+will be translated to:
+@ public static Object id(Object x) { return x; }@
+
+however it does not do any complex analysis on the code:
+@ let add x =
+    if x == 0 then \y -> y else \y -> x + y
+@
+The higher order function here _can_ be avoided if we rearrange the code into:
+@ let add = \x -> \y ->
+    if x == 0 then y else x + y
+@
+but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
+
+@ public static Func add(int x) {
+    if (x == 0) {
+        return (y) -> y;
+    } else {
+        return (y) -> x + y;
+    }
+}
+@
+
+What this means is that the emitted method's arity will always match the declared arity of the function
+(i.e. how many directly nested lambdas there are)
 -}
 module Elara.Emit where
 
-import Data.Generics.Product
-import Elara.AST.Name (ModuleName (..))
-import Elara.AST.VarRef (varRefVal)
-import Elara.Core (Bind (..), Expr (Var), Type (..), Var (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule)
-import Elara.Core.Pretty ()
-import Elara.Data.Pretty
-import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraphRevTopologically_)
-import Elara.Data.Unique
-import Elara.Emit.ADT (generateADTClasses)
-import Elara.Emit.Error
-import Elara.Emit.Expr
-import Elara.Emit.Lambda (etaExpandN)
-import Elara.Emit.Method (createMethod, createMethodWith, createMethodWithCodeBuilder, etaExpandNIntoMethod)
-import Elara.Emit.Method.Descriptor
-import Elara.Emit.Monad
-import Elara.Emit.Operator (translateOperatorName)
-import Elara.Emit.Params
-import Elara.Emit.State (MethodCreationState, initialMethodCreationState)
-import Elara.Emit.Utils
-import Elara.Emit.Var (JVMBinder (..), JVMExpr, transformTopLevelJVMLambdas, transformTopLevelLambdas)
-import Elara.Error (DiagnosticWriter, runErrorOrReport)
-import Elara.ToCore (stripForAll)
-import JVM.Data.Abstract.Builder
-import JVM.Data.Abstract.Builder.Code hiding (code)
+import Elara.AST.Name
+import Elara.AST.VarRef
+import Elara.Core as Core
+import Elara.Core.Generic (Bind (..))
+import Elara.Core.Module
+import Elara.Emit.Utils (createModuleName, generateFieldType)
+import Elara.Logging
+import JVM.Data.Abstract.Builder (ClassBuilder, addField, addMethod, runClassBuilder)
+import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit', runCodeBuilder)
 import JVM.Data.Abstract.ClassFile
-import JVM.Data.Abstract.ClassFile.AccessFlags
-import JVM.Data.Abstract.ClassFile.Field
+import JVM.Data.Abstract.ClassFile.Field (ClassFileField (ClassFileField), ConstantValue (ConstantInteger), FieldAttribute (ConstantValue))
 import JVM.Data.Abstract.ClassFile.Method
 import JVM.Data.Abstract.Descriptor
-import JVM.Data.Abstract.Instruction (Instruction, Instruction' (..))
-import JVM.Data.Abstract.Name (QualifiedClassName)
-import JVM.Data.Abstract.Type as JVM (ClassInfoType (ClassInfoType), FieldType (ArrayFieldType, ObjectFieldType))
+import JVM.Data.Abstract.Instruction
+import JVM.Data.Abstract.Type
+import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.JVMVersion
 import Polysemy
-import Polysemy.Error
-import Polysemy.Log (Log)
-import Polysemy.Log qualified as Log
-import Polysemy.Maybe
-import Polysemy.Reader
-import Polysemy.State
-import Polysemy.Writer (runWriter, tell)
-import Print (showPretty)
 
-liftState :: Member (State CLInitState) r => Sem (State MethodCreationState : r) a -> Sem r a
-liftState act = do
-    (CLInitState s) <- get @CLInitState
-    (s', x) <- runState s act
-    put $ CLInitState s'
-    pure x
+emitCoreModule :: Member StructuredDebug r => CoreModule CoreBind -> Sem r ClassFile
+emitCoreModule (CoreModule name decls) = do
+    (clf, _) <- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -> do
+        emitCoreDecl decl
+        pass
 
-emitGraph :: forall r. Emit r => TopologicalGraph CoreModule -> Sem r [(ModuleName, [ClassFile])]
-emitGraph g = do
-    let tellMod = emitModule >=> tell . one
-    fst <$> runWriter (traverseGraphRevTopologically_ tellMod g)
+    pure clf
 
-runInnerEmit ::
-    ( Member (Embed IO) r
-    , Member (DiagnosticWriter (Doc AnsiStyle)) r
-    , Member MaybeE r
-    ) =>
-    QualifiedClassName ->
-    i ->
-    Sem (Error EmitError : UniqueGen : State CLInitState : Reader GenParams : Reader i : Reader QualifiedClassName : CodeBuilder : r) a ->
-    Sem r (a, CLInitState, [CodeAttribute], [Instruction])
-runInnerEmit name version x = do
-    ((clinitState, a), attrs, inst) <-
-        runCodeBuilder
-            . runReader name
-            . runReader version
-            . runReader defaultGenParams
-            . runState @CLInitState (CLInitState (initialMethodCreationState name))
-            . uniqueGenToIO
-            . runErrorOrReport
-            $ x
-    pure (a, clinitState, attrs, inst)
-
-emitModule :: forall r. Emit r => CoreModule -> Sem r (ModuleName, [ClassFile])
-emitModule m = fmap swap $ runMultiClassBuilder $ do
-    Log.debug $ "Emitting module " <> showPretty (m ^. field @"name") <> "..."
-    let name = createModuleName (m ^. field' @"name")
-    version <- ask @JVMVersion
-    addClass name $ do
-        addAccessFlag Public
-        (_, clinitState, attrs, clinit) <-
-            runInnerEmit name version $
-                addDeclarationsAndMain m
-
-        runReader defaultGenParams $ addClinit clinitState attrs clinit
-
-    pure
-        ( m ^. field @"name"
-        )
-
-addDeclarationsAndMain :: (InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreModule -> Sem r ()
-addDeclarationsAndMain m = do
-    traverse_ addDeclaration (m ^. field @"declarations")
-    when (isMainModule m) (addMethod (generateMainMethod m))
-
-addClinit :: (Member ClassBuilder r, Member (Reader GenParams) r) => CLInitState -> [CodeAttribute] -> [Instruction] -> Sem r ()
-addClinit (CLInitState s) attrs = createMethodWith (MethodDescriptor [] VoidReturn) [MPublic, MStatic] "<clinit>" attrs s
-
-addDeclaration :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => CoreDeclaration -> Sem r ()
-addDeclaration declBody = case declBody of
+emitCoreDecl :: (Member ClassBuilder r, Member StructuredDebug r) => CoreDeclaration CoreBind -> Sem r ()
+emitCoreDecl decl = case decl of
     CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
-        Log.debug $ "Emitting non-recursive declaration " <> showPretty name <> ", with type " <> showPretty type' <> "..."
-        let declName = translateOperatorName $ runIdentity (varRefVal name)
-        if typeIsValue type'
-            then do
-                let fieldType = generateFieldType type'
-                let field = ClassFileField [FPublic, FStatic] declName fieldType []
-                Log.debug $ "Creating field " <> showPretty declName <> " of type " <> showPretty fieldType <> "..."
-                addField field
-                let e' = transformTopLevelLambdas e
-                addStaticFieldInitialiser field e'
-            else do
-                descriptor <- generateNamedMethodDescriptor type' e
-                -- Whenever we have a function declaration we do 2 things
-                -- Turn it into a hidden method _name, doing the actual logic
-                -- Create a getter method name, which just returns _name wrapped into a Func
-                case stripForAll type' of
-                    FuncTy{} -> do
-                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
-                        thisName <- ask @QualifiedClassName
-                        y <- transformTopLevelJVMLambdas <$> etaExpandNIntoMethod e type' thisName
-                        Log.debug $ "Transformed lambda expression: " <> showPretty y
-                        createMethod thisName descriptor ("_" <> declName) y
-                        let getterDescriptor = NamedMethodDescriptor [] (TypeReturn (ObjectFieldType "Elara.Func"))
-                        Log.debug $ "Creating getter method " <> showPretty declName <> " with signature " <> showPretty getterDescriptor <> "..."
-                        createMethodWithCodeBuilder thisName getterDescriptor [MPublic, MStatic] declName $ do
-                            Log.debug $ "Getting static field " <> showPretty declName <> "..."
-                            inst <- etaExpandN (Var $ Normal n) type' thisName
-                            emit' inst
-                            Log.debug $ "Returning static field " <> showPretty declName <> "..."
-                        Log.debug "=="
-                    _ -> do
-                        Log.debug $ "Creating method " <> showPretty declName <> " with signature " <> showPretty descriptor <> "..."
-                        let y = transformTopLevelLambdas e
-                        Log.debug $ "Transformed lambda expression: " <> showPretty y
-                        thisName <- ask @QualifiedClassName
-                        createMethod thisName descriptor declName y
-        Log.debug $ "Emitted non-recursive declaration " <> showPretty name
-    CoreType decl -> do
-        generateADTClasses decl
-    _ -> undefined
+        let declName = runIdentity (varRefVal name)
+        case e of
+            Core.Lit (Core.Int i) -> do
+                addField $ ClassFileField [] declName (ObjectFieldType "java.lang.Integer") [ConstantValue (ConstantInteger (fromIntegral i))]
+            e -> do
+                (_, attrs, code) <- runCodeBuilder (emitCoreExpr e)
+                addMethod $ ClassFileMethod [] declName (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object"))) (fromList [Code $ CodeAttributeData 100 100 code [] attrs])
+        pass
+    _ -> pass
 
-isMainModule :: CoreModule -> Bool
-isMainModule m = m ^. field @"name" == ModuleName ("Main" :| [])
+emitCoreExpr e = case e of
+    Core.Lit s -> do
+        emitValue s
+    (App ((Var ((Id (Global' (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "println"))) -> do
+        emit'
+            [ InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
+            ]
+    (App ((Var ((Id (Global' (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
+        emit'
+            [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
+            ]
+    v@(Var ((Id (Global' qn@(Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
+    Core.App f x -> do
+        emitCoreExpr x
+        emitCoreExpr f
+    other -> pass
 
--- | Adds an initialiser for a static field to <clinit>
-addStaticFieldInitialiser :: (HasCallStack, InnerEmit r, Member CodeBuilder r, Member (Reader GenParams) r) => ClassFileField -> JVMExpr -> Sem r ()
-addStaticFieldInitialiser (ClassFileField _ name fieldType _) e = do
-    Log.debug $ "Adding initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "..."
-    liftState $ generateInstructions e
-
-    cn <- ask @QualifiedClassName
-    emit $ PutStatic (ClassInfoType cn) name fieldType
-    Log.debug $ "Added initialiser for field " <> showPretty name <> " of type " <> showPretty fieldType <> "."
-
--- | Generates a main method, which merely loads a IO action field called main and runs it
-generateMainMethod :: CoreModule -> ClassFileMethod
-generateMainMethod m =
-    ClassFileMethod
-        [MPublic, MStatic]
-        "main"
-        ( MethodDescriptor
-            [ArrayFieldType (ObjectFieldType "java.lang.String")]
-            VoidReturn
-        )
-        [ Code $
-            CodeAttributeData
-                { maxStack = 1 -- TODO: calculate this
-                , maxLocals = 1 -- TODO: calculate this too
-                , code =
-                    [ GetStatic (ClassInfoType (createModuleName (m ^. field @"name"))) "main" (ObjectFieldType "Elara.IO")
-                    , InvokeVirtual (ClassInfoType "Elara.IO") "run" (MethodDescriptor [] VoidReturn)
-                    , Return
-                    ]
-                , exceptionTable = []
-                , codeAttributes = []
-                }
-        ]
+emitValue :: Member CodeBuilder r => Literal -> Sem r ()
+emitValue s = case s of
+    Core.Int i ->
+        emit'
+            [ LDC (LDCInt (fromIntegral i))
+            , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
+            ]
+    Core.String s ->
+        emit'
+            [ LDC (LDCString s)
+            ]
+    _ -> error "Not implemented"
