@@ -10,25 +10,26 @@ import Data.Map qualified as M
 import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common (NoFieldValue (..))
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (LowerAlphaName, Name (..), NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal, pattern UnlocatedGlobal, pattern UnlocatedLocal)
+import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal, pattern UnlocatedGlobal, pattern UnlocatedLocal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (CoreTypeDecl), CoreTypeDeclBody (CoreDataDecl))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat)
 import Elara.Data.TopologicalGraph
-import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
+import Elara.Data.Unique (UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
 import Elara.TypeInfer.Type qualified as Type
+import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Optics
 import Polysemy (Members, Sem)
@@ -156,24 +157,31 @@ moduleToCore (Module (Located _ m)) = do
                 let rec = isRecursive (n ^. unlocated) v (_As @"Global" % unlocated)
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
-                todo
-            -- let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
-            -- registerTyCon tyCon
-            -- ctors' <- for ctors $ \(Located _ n, t) -> do
-            --     t' <- traverse (typeToCore . fst) t
-            --     let ctorType =
-            --             foldr
-            --                 (Core.ForAllTy . typedTvToCoreTv)
-            --                 ( foldr
-            --                     Core.FuncTy
-            --                     (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
-            --                     t'
-            --                 )
-            --                 tvs
-            --     pure (nameText <$> n, ctorType, tyCon)
-            -- let ctors'' = fmap (uncurry3 DataCon) ctors'
-            -- traverse_ registerCtor ctors''
-            -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreDataDecl (toList ctors''))
+                let cleanedTypeDeclName = fmap nameText $ (n ^. unlocated)
+                let tyCon = TyCon cleanedTypeDeclName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                registerTyCon tyCon
+                ctors' <- for ctors $ \(Located _ n, t) -> do
+                    t' <- traverse (typeToCore . fst) t
+                    let ctorType =
+                            foldr
+                                (Core.ForAllTy . typedTvToCoreTv)
+                                ( foldr
+                                    Core.FuncTy
+                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
+                                    t'
+                                )
+                                tvs
+                    pure (nameText <$> n, ctorType, tyCon)
+                let ctors'' = fmap (uncurry3 DataCon) ctors'
+                traverse_ registerCtor ctors''
+                pure $
+                    Just $
+                        CoreType $
+                            CoreTypeDecl
+                                cleanedTypeDeclName
+                                kind
+                                (fmap typedTvToCoreTv tvs)
+                                (CoreDataDecl (toList ctors''))
             TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 todo
     -- t' <- typeToCore t
