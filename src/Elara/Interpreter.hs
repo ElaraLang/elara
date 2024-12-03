@@ -2,7 +2,7 @@
 module Elara.Interpreter where
 
 import Data.Map qualified as Map
-import Elara.AST.Name (ModuleName (..), Qualified (..), VarName)
+import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core hiding (Literal (..))
 import Elara.Core qualified as Core
@@ -10,14 +10,13 @@ import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module
 import Elara.Data.Pretty
 import Elara.Error (ReportableError, runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Elara.Pipeline
 import Elara.Prim.Core (falseCtor, fetchPrimitiveName, trueCtor, unitCtor)
 import Polysemy hiding (run)
 import Polysemy.Error
 import Polysemy.State
 import Polysemy.State.Extra
-import Print (prettyToString)
 
 type Interpreter r = Members InterpreterEffects r
 
