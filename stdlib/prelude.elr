@@ -2,3 +2,6 @@ module Prelude
 import Elara.Prim
 import List
 
+
+def (|>) : a -> (a -> b) -> b
+let (|>) x f = f x

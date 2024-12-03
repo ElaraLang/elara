@@ -22,7 +22,7 @@ import Elara.Core.Module (CoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 
@@ -135,7 +135,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
     runInterpreter $ do
-        for_ coreGraph $ \mod -> do
+        flip traverseGraphRevTopologically_ coreGraph $ \mod -> do
             Interpreter.loadModule mod
         when run $ do
             Interpreter.run

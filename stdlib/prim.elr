@@ -2,6 +2,8 @@ module Elara.Prim
 
 type Bool = True | False
 
+type List a = Nil | Cons a (List a)
+
 def (-) : Int -> Int -> Int
 let (-) = elaraPrimitive "-"
 
