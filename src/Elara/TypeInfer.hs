@@ -26,7 +26,7 @@ import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Mo
 
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Kind.Infer (InferState, initialInferState)
+import Elara.Data.Kind.Infer (InferState, initialInferState, inferKind, KindInferError)
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
@@ -40,7 +40,7 @@ import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Unique (makeUniqueTyVar)
 import Polysemy hiding (transform)
-import Polysemy.Error (Error, throw)
+import Polysemy.Error (Error, throw, mapError)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Relude.Extra.Type (type (++))
@@ -51,6 +51,7 @@ type InferPipelineEffects =
      , UniqueGen
      , Error (UnifyError SourceRegion)
      , Error (TypeConvertError)
+     , Error KindInferError
      ]
         ++ (InferEffects SourceRegion)
 
@@ -63,6 +64,7 @@ runInferPipeline e = do
                 & uniqueGenToIO
                 & runErrorOrReport @(UnifyError SourceRegion)
                 & runErrorOrReport @(TypeConvertError)
+                & runErrorOrReport @(KindInferError)
 
     snd <$> runInferEffects e'
 
@@ -108,6 +110,17 @@ inferDeclaration (Declaration ld) = do
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
+
+        TypeDeclaration (name) tyVars body anns -> do
+            (kind, decl') <-  (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
+            case body^.unlocated of 
+                -- Generic.Alias t -> do
+                --     (t', k) <- astTypeToInferType t
+                --     push (Annotation (mkGlobal' declName) t')
+                --     let ann' = Generic.TypeDeclAnnotations{infixTypeDecl = coerceInfixDeclaration <$> ann.infixTypeDecl, kindAnn = k}
+                --     pure $ TypeDeclaration tvs (Located sr (Alias (t', kind))) ann'
+
+        
 
 inferValue ::
     forall r.
