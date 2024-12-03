@@ -8,7 +8,7 @@ module Elara.Core.Module where
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName, Qualified)
 import Elara.AST.Pretty (prettyBlockExpr)
-import Elara.Core (DataCon, Type, TypeVariable)
+import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
 import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
@@ -21,15 +21,18 @@ data CoreModule bind = CoreModule
     }
     deriving (Generic)
 
-instance HasDependencies (CoreModule bind) where
+-- the constraint is necessary for 'gplate' to be able to find the fields correctly
+instance bind ~ CoreBind => HasDependencies (CoreModule bind) where
     type Key (CoreModule bind) = ModuleName
     key = view (field @"name")
 
-    dependencies = const [] -- TODO
+    dependencies m = do
+        m ^.. field @"declarations" % (gplate @(Qualified Text)) % field @"qualifier"
 
 data CoreDeclaration bind
     = CoreValue bind
     | CoreType CoreTypeDecl
+    deriving (Generic)
 
 data CoreTypeDecl = CoreTypeDecl
     { ctdName :: !(Qualified Text)
@@ -37,10 +40,12 @@ data CoreTypeDecl = CoreTypeDecl
     , typeVars :: ![TypeVariable]
     , typeBody :: CoreTypeDeclBody
     }
+    deriving (Generic)
 
 data CoreTypeDeclBody
     = CoreTypeAlias Type
     | CoreDataDecl [DataCon]
+    deriving (Generic)
 
 instance Pretty bind => Pretty (CoreModule bind) where
     pretty (CoreModule name decls) =
