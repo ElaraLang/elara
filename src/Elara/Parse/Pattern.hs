@@ -11,15 +11,23 @@ import Elara.Parse.Names (conName, varId)
 import Elara.Parse.Primitives (Parser, inParens, located, token_)
 import Text.Megaparsec (choice, sepEndBy, try, (<?>))
 
+atomicPatParser :: Parser FrontendPattern
+atomicPatParser =
+    choice
+        [ try literalPattern
+        , varPattern
+        , wildcardPattern
+        , inParens rpat
+        , unaryConstructorPattern
+        , listPattern
+        ]
+
 patParser :: Parser FrontendPattern
 patParser =
     choice
-        [ try literalPattern
+        [ try constructorPattern
+        , try atomicPatParser
         , inParens rpat
-        , varPattern
-        , constructorPattern
-        , wildcardPattern
-        , listPattern
         ]
 
 rpat :: Parser FrontendPattern
@@ -65,11 +73,16 @@ listPattern = locatedPattern $ do
 
 --     pure $ ConsPattern head' tail'
 
+unaryConstructorPattern :: Parser FrontendPattern
+unaryConstructorPattern = locatedPattern $ do
+    con <- located conName
+    pure $ ConstructorPattern con []
+
 constructorPattern :: Parser FrontendPattern
 constructorPattern = locatedPattern $ do
     con <- located conName
 
-    args <- many patParser
+    args <- many atomicPatParser
     pure $ ConstructorPattern con args
 
 literalPattern :: Parser FrontendPattern

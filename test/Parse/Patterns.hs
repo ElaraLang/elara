@@ -22,9 +22,9 @@ spec = describe "Parses patterns correctly" $ do
         let parsePretty s = fmap stripLocation <$> lexAndParse patParser s
         trippingParse expr showPrettyUnannotated parsePretty
 
--- terminalPatterns
--- consPatterns
--- constructorPatterns
+    terminalPatterns
+    consPatterns
+    constructorPatterns
 
 terminalPatterns :: Spec
 terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
@@ -107,6 +107,7 @@ constructorPatterns = describe "Parses constructor parens" $ do
                     [Pattern (VarPattern "one", Nothing), Pattern (VarPattern "two", Nothing)]
                 , Nothing
                 )
+    
 
     it "Parses nested constructor patterns correctly" $ property $ do
         "(TwoArgs (OneArg one) (OneArg two))"
@@ -125,6 +126,16 @@ constructorPatterns = describe "Parses constructor parens" $ do
                             [Pattern (VarPattern "two", Nothing)]
                         , Nothing
                         )
+                    ]
+                , Nothing
+                )
+    it "Parses nested unary constructor patterns correctly" $ property $ do
+        "Tuple2 Nil _"
+            `shouldParsePattern` Pattern
+                ( ConstructorPattern
+                    "Tuple2"
+                    [ Pattern (ConstructorPattern "Nil" [], Nothing)
+                    , Pattern (WildcardPattern, Nothing)
                     ]
                 , Nothing
                 )
