@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
@@ -13,7 +15,7 @@ import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (Global, Local), varRefVal, pattern UnlocatedGlobal, pattern UnlocatedLocal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
@@ -150,7 +152,7 @@ moduleToCore (Module (Located _ m)) = do
             Value n v _ _ _ -> do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
-                let var = Core.Id (mkGlobalRef (nameText <$> n ^. unlocated)) ty Nothing
+                let var = Core.Id (UnlocatedGlobal (nameText <$> n ^. unlocated)) ty Nothing
                 pure $ Just $ CoreValue $ NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 todo
@@ -199,12 +201,6 @@ typeToCore (Type.TypeConstructor qn ts) = do
 conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global $ Identity n) t (Just dc)
 
-mkLocalRef :: Unique n -> UnlocatedVarRef n
-mkLocalRef = Local . Identity
-
-mkGlobalRef :: Qualified n -> UnlocatedVarRef n
-mkGlobalRef = Global . Identity
-
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Sem r CoreExpr
 toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
   where
@@ -233,7 +229,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.Lambda (Located _ (TypedLambdaParam (vn, t))) body -> do
             t'' <- typeToCore t
 
-            Core.Lam (Core.Id (mkLocalRef (nameText <$> vn)) t'' Nothing) <$> toCore body
+            Core.Lam (Core.Id (UnlocatedLocal (nameText <$> vn)) t'' Nothing) <$> toCore body
         AST.FunctionCall e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
@@ -264,7 +260,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                         (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
                         (\v -> v == vn)
                         e1
-            let ref = mkLocalRef (nameText <$> vn)
+            let ref = UnlocatedLocal (nameText <$> vn)
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
@@ -299,7 +295,7 @@ desugarMatch e pats = do
             AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
             AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
             AST.WildcardPattern -> pure (Core.DEFAULT, [])
-            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (mkLocalRef (view (to nameText) <$> vn)) t' Nothing])
+            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (UnlocatedLocal (view (to nameText) <$> vn)) t' Nothing])
             AST.ConstructorPattern cn pats -> do
                 c <- lookupCtor cn
                 pats' <- for pats patternToCore
@@ -309,11 +305,11 @@ mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
     t' <- typeToCore t
     unique <- makeUnique (nameText $ varRefVal vn)
-    pure (Core.Id (mkLocalRef unique) t' Nothing)
+    pure (Core.Id (UnlocatedLocal unique) t' Nothing)
 mkBindName (AST.Expr (_, t)) = do
     t' <- typeToCore t
     unique <- makeUnique "bind"
-    pure (Core.Id (mkLocalRef unique) t' Nothing)
+    pure (Core.Id (UnlocatedLocal unique) t' Nothing)
 
 desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
 desugarBlock (a :| []) = toCore a
