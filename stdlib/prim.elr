@@ -1,5 +1,7 @@
 module Elara.Prim
 
+type Bool = True | False
+
 def (-) : Int -> Int -> Int
 let (-) = elaraPrimitive "-"
 
