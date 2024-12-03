@@ -88,7 +88,12 @@ instance Pretty (Sem InterpreterEffects a) where
 instance Pretty Value where
     pretty (Closure _ p _) = "Closure accepting" <+> pretty p
     pretty (RecClosure _ n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p
-    pretty (Ctor c args) = pretty (c.name) <+> pretty args
+    pretty (Int i) = pretty i
+    pretty (String s) = pretty '"' <> pretty s <> pretty '"'
+    pretty (Char c) = pretty c
+    pretty (Double d) = pretty d
+    pretty (Ctor c []) = (pretty (c.name))
+    pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
     pretty p = gpretty p
 
 primOps =
@@ -144,7 +149,10 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                 interpretExpr e
         PrimOp "println" -> do
             pure $ IOAction $ do
-                putStrLn (prettyToString a')
+                let asString = case a' of
+                        String s -> s
+                        other -> prettyToText other
+                putTextLn asString
                 pure (Ctor unitCtor [])
         PrimOp "negate" -> do
             case a' of
