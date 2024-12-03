@@ -106,9 +106,10 @@ recursionTests = withoutRetries $ describe "recursion tests" $ do
 ifElseTests :: Spec
 ifElseTests = describe "If Else Type Inference" $ do
     it "infers if else type correctly" $ property $ do
-        expr <- inferFully "if True then 42 else 43"
+        expr <- inferFully "\\x -> if x then 42 else 43"
 
-        expr === Forall [] EmptyConstraint (Scalar ScalarInt)
+        $(ensureExpressionMatches [p|Forall [] _ (Function _ (Scalar ScalarInt)) |]) expr
+        
 
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc

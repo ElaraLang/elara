@@ -422,7 +422,7 @@ unifyVar a t = do
     bindVar tv t | member tv (fuv t) = throw (OccursCheckFailed (UnificationVar tv) t)
     bindVar tv t = do
         tch <- ask
-        debug ("bindVar " <> pretty tv <> " to " <> pretty t <> " with " <> pretty tch)
+        debug ("bindVar " <> pretty tv <> " to " <> pretty t)
         if member tv tch
             then pure (mempty, substitution (tv, t))
             else pure (Equality (TypeVar $ UnificationVar tv) t, mempty)
@@ -451,7 +451,7 @@ data UnifyError loc
     | UnificationFailed (Monotype loc, Monotype loc)
     | UnifyMismatch
     | UnresolvedConstraint (Qualified VarName) (Constraint SourceRegion)
-    deriving (Generic)
+    deriving (Generic, Show)
 
 instance Pretty (UnifyError loc)
 
