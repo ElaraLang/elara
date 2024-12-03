@@ -153,7 +153,8 @@ moduleToCore (Module (Located _ m)) = do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
                 let var = Core.Id (UnlocatedGlobal (nameText <$> n ^. unlocated)) ty Nothing
-                pure $ Just $ CoreValue $ NonRecursive (var, v')
+                let rec = isRecursive (n ^. unlocated) v (_As @"Global" % unlocated)
+                pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
                 todo
             -- let tyCon = TyCon declName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
@@ -255,22 +256,22 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             e1' <- toCore e1
             e2' <- toCore e2
             -- TODO: we need to detect mutually recursive bindings
-            let isRecursive =
-                    anyOf
-                        (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
-                        (\v -> v == vn)
-                        e1
             let ref = UnlocatedLocal (nameText <$> vn)
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
-                    (if isRecursive then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
+                    (if isRecursive vn e1 (_As @"Local" % unlocated) then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
                     e2'
         AST.Block exprs -> desugarBlock exprs
 
--- stripForAll :: Core.Type -> Core.Type
--- stripForAll (Core.ForAllTy _ t) = stripForAll t
--- stripForAll t = t
+{- | Check if a variable is recursive in an expression
+Takes the name of the variable, the expression, and a lens to the variable name (Local or Global usually)
+-}
+isRecursive vn e1 l =
+    anyOf
+        (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % l)
+        (\v -> v == vn)
+        e1
 
 desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
