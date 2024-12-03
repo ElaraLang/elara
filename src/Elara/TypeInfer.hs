@@ -14,36 +14,38 @@ import Elara.AST.Generic.Types (
     DeclarationBody' (..),
  )
 import Elara.AST.Module
-import Elara.AST.Name (Qualified (..), VarName)
-import Elara.AST.Region (SourceRegion, unlocated)
+import Elara.AST.Name (LowerAlphaName, NameLike (nameText), Qualified (..), VarName)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 
+import Elara.AST.Kinded
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Kind.Infer (InferState, initialInferState, inferKind, KindInferError)
+import Elara.Data.Kind.Infer (InferState, KindInferError, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Pretty
-import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.TypeInfer.ConstraintGeneration
-import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType)
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
+import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy hiding (transform)
-import Polysemy.Error (Error, throw, mapError)
+import Polysemy.Error (Error, mapError, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Relude.Extra.Type (type (++))
+import TODO
 
 type InferPipelineEffects =
     '[ StructuredDebug
@@ -104,23 +106,52 @@ inferDeclaration (Declaration ld) = do
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
-            expectedType <- traverse astTypeToGeneralisedInferType valueType
+            expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
             debug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
-
         TypeDeclaration (name) tyVars body anns -> do
-            (kind, decl') <-  (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
-            case body^.unlocated of 
-                -- Generic.Alias t -> do
-                --     (t', k) <- astTypeToInferType t
-                --     push (Annotation (mkGlobal' declName) t')
-                --     let ann' = Generic.TypeDeclAnnotations{infixTypeDecl = coerceInfixDeclaration <$> ann.infixTypeDecl, kindAnn = k}
-                --     pure $ TypeDeclaration tvs (Located sr (Alias (t', kind))) ann'
+            (kind, decl') <- (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
+            case decl' of
+                Generic.Alias t -> do
+                    (t') <- astTypeToInferType t
+                    -- addType' (TypeVarKey (name ^. unlocated)) t'
+                    todo
+                Generic.ADT ctors -> do
+                    let tyVars' = fmap createTypeVar tyVars
+                    let typeConstructorType = TypeConstructor (name ^. unlocated) (fmap (TypeVar . UnificationVar) tyVars')
 
-        
+                    let inferCtor (ctorName, t :: [KindedType]) = do
+                            t' <- traverse astTypeToInferTypeWithKind t
+                            let ctorType =
+                                    foldr
+                                        (\a b -> Function a b)
+                                        typeConstructorType
+                                        (fst <$> t')
+                            addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
+
+                            pure (ctorName, t')
+
+                    ctors' <- traverse inferCtor ctors
+                    let ann' =
+                            Generic.TypeDeclAnnotations
+                                { infixTypeDecl =
+                                    Generic.coerceInfixDeclaration
+                                        <$> anns.infixTypeDecl
+                                , kindAnn = kind
+                                }
+                    pure
+                        ( TypeDeclaration
+                            name
+                            (zipWith ((<$)) tyVars' tyVars)
+                            ((Generic.ADT ctors') <$ body)
+                            ann'
+                        )
+
+createTypeVar :: Located (Unique LowerAlphaName) -> UniqueTyVar
+createTypeVar (Located _ u) = (fmap (Just . nameText) u)
 
 inferValue ::
     forall r.

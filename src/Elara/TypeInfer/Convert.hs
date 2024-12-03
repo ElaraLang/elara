@@ -2,9 +2,11 @@ module Elara.TypeInfer.Convert where
 
 import Elara.AST.Generic.Types (freeTypeVars)
 import Elara.AST.Generic.Types qualified as Generic
+import Elara.AST.Kinded
 import Elara.AST.Name
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.Shunted (ShuntedType, ShuntedType')
+import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (..))
 import Elara.Prim (boolName, charName, intName, mkPrimQual, stringName)
@@ -12,7 +14,7 @@ import Elara.TypeInfer.Type
 import Polysemy
 import Polysemy.Error
 
-astTypeToGeneralisedInferType :: Member (Error TypeConvertError) r => ShuntedType -> Sem r (Type SourceRegion)
+astTypeToGeneralisedInferType :: Member (Error TypeConvertError) r => KindedType -> Sem r (Type SourceRegion)
 astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
     let ftvs = freeTypeVars t
     let skolems = fmap convertTyVar ftvs
@@ -22,33 +24,38 @@ astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
         [] -> pure $ Lifted asInferType
         _ -> pure $ Polytype (Forall skolems EmptyConstraint asInferType)
 
-astTypeToInferType :: Member (Error TypeConvertError) r => ShuntedType -> Sem r (Type SourceRegion)
+astTypeToInferType :: Member (Error TypeConvertError) r => KindedType -> Sem r (Monotype SourceRegion)
 astTypeToInferType t@(Generic.Type (Located loc t', kind)) = do
     asInferType <- astTypeToInferType' loc t'
-    pure $ Lifted asInferType
+    pure asInferType
+
+astTypeToInferTypeWithKind :: Member (Error TypeConvertError) r => KindedType -> Sem r (Monotype SourceRegion, ElaraKind)
+astTypeToInferTypeWithKind t@(Generic.Type (Located loc t', kind)) = do
+    asInferType <- astTypeToInferType' loc t'
+    pure (asInferType, kind)
 
 convertTyVar name = fmap (Just . nameText) (name ^. unlocated)
 
-astTypeToInferType' :: Member (Error TypeConvertError) r => SourceRegion -> ShuntedType' -> Sem r (Monotype SourceRegion)
+astTypeToInferType' :: Member (Error TypeConvertError) r => SourceRegion -> KindedType' -> Sem r (Monotype SourceRegion)
 astTypeToInferType' loc (Generic.TypeVar name) = do
     pure $ TypeVar $ SkolemVar $ convertTyVar name -- idk if this should ever be a type variable? i dont think so
 astTypeToInferType' loc (Generic.FunctionType i o) = do
-    i' <- astTypeToInferType i >>= assertMonotype
-    o' <- astTypeToInferType o >>= assertMonotype
+    i' <- astTypeToInferType i
+    o' <- astTypeToInferType o
     pure $ Function i' o'
 astTypeToInferType' loc (Generic.UnitType) = do
     pure $ Scalar ScalarUnit
 astTypeToInferType' loc (Generic.TupleType ts) = do
-    ts' <- traverse (astTypeToInferType >=> assertMonotype) ts
+    ts' <- traverse (astTypeToInferType) ts
     throw $ NotSupported "Tuple types are not supported yet"
 astTypeToInferType' loc (Generic.ListType t) = do
-    t' <- astTypeToInferType t >>= assertMonotype
+    t' <- astTypeToInferType t
     throw $ NotSupported "List types are not supported yet"
 astTypeToInferType' loc (Generic.RecordType fields) = do
     throw $ NotSupported "Record types are not supported yet"
 astTypeToInferType' loc (Generic.TypeConstructorApplication ctor arg) = do
-    ctor' <- astTypeToInferType ctor >>= assertMonotype
-    arg' <- astTypeToInferType arg >>= assertMonotype
+    ctor' <- astTypeToInferType ctor
+    arg' <- astTypeToInferType arg
     case ctor' of
         TypeConstructor name args -> do
             pure $ TypeConstructor name (args ++ [arg'])

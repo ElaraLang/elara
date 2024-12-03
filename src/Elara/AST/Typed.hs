@@ -21,6 +21,7 @@ import Elara.Data.Kind (ElaraKind)
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Monotype, Type (..))
+import Elara.TypeInfer.Unique
 
 type instance ASTLocate' 'Typed = Located
 
@@ -66,16 +67,16 @@ type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
 type instance Select "InfixDecl" 'Typed = DataConCantHappen
 type instance Select "Alias" 'Typed = (Type SourceRegion, ElaraKind)
-type instance Select "ADTParam" 'Typed = (Type SourceRegion, ElaraKind)
+type instance Select "ADTParam" 'Typed = (Monotype SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name
 type instance Select "AnyName" Typed = Name
-type instance Select "TypeName" Typed = TypeName
+type instance Select "TypeName" Typed = Qualified TypeName
 type instance Select "ValueName" Typed = Qualified VarName
 
 -- Selections for 'Type'
-type instance Select "TypeVar" 'Typed = Unique LowerAlphaName
+type instance Select "TypeVar" 'Typed = UniqueTyVar
 type instance Select "TypeKind" 'Typed = ElaraKind
 type instance Select "KindAnnotation" 'Typed = ElaraKind
 

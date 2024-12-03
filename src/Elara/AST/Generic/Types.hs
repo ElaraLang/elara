@@ -253,7 +253,13 @@ data TypeDeclAnnotations ast = TypeDeclAnnotations
     }
 
 data TypeDeclaration ast
-    = ADT (NonEmpty (ASTLocate ast (Select "ConstructorName" ast), [Select "ADTParam" ast]))
+    = ADT
+        ( NonEmpty
+            -- Non-empty list of constructors
+            ( ASTLocate ast (Select "ConstructorName" ast) -- Constructor name
+            , [Select "ADTParam" ast] -- Constructor parameters
+            )
+        )
     | Alias !(Select "Alias" ast)
     deriving (Generic)
 

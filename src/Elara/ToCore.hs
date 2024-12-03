@@ -182,7 +182,7 @@ moduleToCore (Module (Located _ m)) = do
     pure $ CoreModule name (catMaybes decls)
 
 typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariable
-typedTvToCoreTv (Located _ ((n :: Unique LowerAlphaName))) = TypeVariable (Just . nameText <$> n) TypeKind
+typedTvToCoreTv (Located _ tv) = TypeVariable tv TypeKind
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Sem r Core.Type
 typeToCore (Type.TypeVar (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
