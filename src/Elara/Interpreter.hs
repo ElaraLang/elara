@@ -94,7 +94,7 @@ instance Pretty Value where
 primOps =
     Map.fromList
         [ ("==", 2)
-        , ("-", 2)
+        , ("+", 2)
         , (">>=", 2)
         ]
 
@@ -146,14 +146,18 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
             pure $ IOAction $ do
                 putStrLn (prettyToString a')
                 pure (Ctor unitCtor [])
+        PrimOp "negate" -> do
+            case a' of
+                Int i -> pure $ Int (-i)
+                Double d -> pure $ Double (-d)
+                _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
         PartialApplication (PrimOp "==") fst -> do
             pure $ (boolValue (a' == fst))
-        PartialApplication (PrimOp "-") fst -> do
+        PartialApplication (PrimOp "+") fst -> do
             case (a', fst) of
-                (Int a, Int b) -> pure $ Int (a - b)
-                (Double a, Double b) -> pure $ Double (a - b)
+                (Int a, Int b) -> pure $ Int (a + b)
+                (Double a, Double b) -> pure $ Double (a + b)
                 _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
-        
         PartialApplication (PrimOp ">>=") fst -> do
             case fst of
                 IOAction io -> do
@@ -173,7 +177,6 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                                     interpretExpr e
                             _ -> throw $ NotAFunction a'
                 _ -> throw TypeMismatch{expected = "IO", actual = a'}
-        
         PrimOp primName -> do
             case Map.lookup primName primOps of
                 Just 1 -> error "1-arg primop Should be handled here"

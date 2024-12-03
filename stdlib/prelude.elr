@@ -5,3 +5,6 @@ import List
 
 def (|>) : a -> (a -> b) -> b
 let (|>) x f = f x
+
+def (*>) : IO a -> IO b -> IO b
+let (*>) = \x y -> x >>= \_ -> y
