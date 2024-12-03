@@ -4,4 +4,5 @@ import Elara.Prim
 import List
 
 let add1 = \x -> x - 1
-let main = println (map add1 [1, 2, 3])
+
+let main = println (map add1 [1, 2, 3]) >>= (\_ -> println "hi")

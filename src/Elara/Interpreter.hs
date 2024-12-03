@@ -66,7 +66,7 @@ data Value
         }
     | PrimOp Text
     | PartialApplication Value Value
-    | IOAction (IO Value)
+    | IOAction (Sem InterpreterEffects Value)
     deriving (Generic)
 
 instance Eq Value where
@@ -82,7 +82,7 @@ instance Eq Value where
     _ == _ = False
 
 -- bit of a hack
-instance Pretty (IO a) where
+instance Pretty (Sem InterpreterEffects a) where
     pretty _ = "<IO>"
 
 instance Pretty Value where
@@ -95,6 +95,7 @@ primOps =
     Map.fromList
         [ ("==", 2)
         , ("-", 2)
+        , (">>=", 2)
         ]
 
 boolValue :: Bool -> Value
@@ -152,6 +153,27 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                 (Int a, Int b) -> pure $ Int (a - b)
                 (Double a, Double b) -> pure $ Double (a - b)
                 _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
+        
+        PartialApplication (PrimOp ">>=") fst -> do
+            case fst of
+                IOAction io -> do
+                    pure $ IOAction $ do
+                        val <- io
+                        case a' of -- this sucks
+                            Closure env p e -> do
+                                let env' = Map.insert p val env
+                                scoped $ do
+                                    modify (\s -> s{bindings = env'})
+                                    interpretExpr e
+                            RecClosure env n p e -> do
+                                let env' = Map.insert p val env
+                                let env'' = Map.insert n (RecClosure env' n p e) env'
+                                scoped $ do
+                                    modify (\s -> s{bindings = env''})
+                                    interpretExpr e
+                            _ -> throw $ NotAFunction a'
+                _ -> throw TypeMismatch{expected = "IO", actual = a'}
+        
         PrimOp primName -> do
             case Map.lookup primName primOps of
                 Just 1 -> error "1-arg primop Should be handled here"
@@ -224,7 +246,7 @@ loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pure ()
 
 evalIO :: Interpreter r => Value -> Sem r Value
 evalIO (IOAction io) = do
-    val <- embed io
+    val <- subsume_ io
     evalIO val
 evalIO other = pure other
 
