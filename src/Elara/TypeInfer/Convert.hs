@@ -38,7 +38,7 @@ convertTyVar name = fmap (Just . nameText) (name ^. unlocated)
 
 astTypeToInferType' :: Member (Error TypeConvertError) r => SourceRegion -> KindedType' -> Sem r (Monotype SourceRegion)
 astTypeToInferType' loc (Generic.TypeVar name) = do
-    pure $ TypeVar $ SkolemVar $ convertTyVar name -- idk if this should ever be a type variable? i dont think so
+    pure $ TypeVar $ UnificationVar $ convertTyVar name -- idk if this should ever be a skolem variable? i dont think so
 astTypeToInferType' loc (Generic.FunctionType i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
