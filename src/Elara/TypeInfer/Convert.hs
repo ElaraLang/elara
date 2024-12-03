@@ -66,8 +66,6 @@ astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkP
     pure $ Scalar ScalarString
 astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual intName = do
     pure $ Scalar ScalarInt
-astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual boolName = do
-    pure $ Scalar ScalarBool
 astTypeToInferType' loc (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual charName = do
     pure $ Scalar ScalarChar
 

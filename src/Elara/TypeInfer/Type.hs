@@ -87,7 +87,6 @@ data Scalar
     | ScalarString
     | ScalarChar
     | ScalarUnit
-    | ScalarBool
     deriving (Generic, Show, Eq, Ord, Enum, Bounded)
 
 type DataCon = Qualified TypeName
@@ -139,7 +138,6 @@ instance Pretty Scalar where
     pretty ScalarString = Style.scalar "String"
     pretty ScalarChar = Style.scalar "Char"
     pretty ScalarUnit = Style.scalar "Unit"
-    pretty ScalarBool = Style.scalar "Bool"
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Polytype poly) = pretty poly

@@ -22,6 +22,7 @@ import Elara.Data.Unique (uniqueGenToIO)
 import Elara.Error (ReportableError (..), defaultReport, runErrorOrReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Pipeline
+import Elara.Prim (boolName, mkPrimQual)
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
@@ -152,7 +153,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             (typedThen, thenType) <- generateConstraints then'
             (typedElse, elseType) <- generateConstraints else'
 
-            let equalityConstraint = Equality condType (Scalar ScalarBool)
+            let equalityConstraint = Equality condType (TypeConstructor (mkPrimQual boolName) [])
             tell equalityConstraint
 
             let equalityConstraint1 = Equality thenType elseType
