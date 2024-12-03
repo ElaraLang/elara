@@ -173,7 +173,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
             cases' <- for cases $ \(pattern, body) -> scoped @(LocalTypeEnvironment _) $ do
                 -- Q ; Γ ⊢ p1 : τ1
-                (typedPattern, patternType) <- generatePatternConstraints pattern
+                (typedPattern, patternType) <- generatePatternConstraints pattern eType
 
                 -- τ1 ~ τ
                 let equalityConstraint = Equality eType patternType
@@ -209,15 +209,28 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
             pure (Let (Located loc varName) NoFieldValue typedVarExpr, varType)
 
-generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Sem r (TypedPattern, Monotype SourceRegion)
-generatePatternConstraints (Pattern (Located loc pattern', expectedType)) = do
-    (typedPattern', monotype) <- generatePatternConstraints' pattern'
+{- | Generate constraints for a pattern, returning the typed pattern and the type of the pattern, and generating constraints for the pattern
+We define the type of a pattern as the type of values it can match against, rather than its "signature"
+
+For example, in the case of a simple option type @type Option a = Some a | None@,
+we say that the pattern `Some x` has type `Option a` rather than @a -> Option a@
+-}
+generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Monotype SourceRegion -> Sem r (TypedPattern, Monotype SourceRegion)
+generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over = do
+    (typedPattern', monotype) <- generatePatternConstraints' pattern' over
     pure (Pattern (Located loc typedPattern', monotype), monotype)
 
-generatePatternConstraints' :: Infer SourceRegion r => ShuntedPattern' -> Sem r (TypedPattern', Monotype SourceRegion)
-generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
+generatePatternConstraints' ::
+    Infer SourceRegion r =>
+    ShuntedPattern' ->
+    -- | the type of the pattern we are matching against
+    -- For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
+    -- This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
+    Monotype SourceRegion ->
+    Sem r (TypedPattern', Monotype SourceRegion)
+generatePatternConstraints' pattern' over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
     case pattern' of
-        WildcardPattern -> pure (WildcardPattern, Scalar ScalarUnit)
+        WildcardPattern -> pure (WildcardPattern, over)
         UnitPattern -> pure (UnitPattern, Scalar ScalarUnit)
         IntegerPattern i -> pure (IntegerPattern i, Scalar ScalarInt)
         FloatPattern f -> pure (FloatPattern f, Scalar ScalarFloat)
@@ -226,6 +239,7 @@ generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstrai
         VarPattern (Located loc varName) -> do
             varType <- UnificationVar <$> makeUniqueTyVar
             modify (addLocalType (NormalVarName <$> varName) (Lifted $ TypeVar varType))
+            tell (Equality over (TypeVar varType))
 
             pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
         ConstructorPattern ctor'@(Located _ ctor) args -> do
@@ -238,7 +252,8 @@ generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstrai
             -- and emitting a single equality constraint @x -> y -> Z = a_1 -> b_1 -> ... -> Z@
 
             args' <- for args $ \arg -> do
-                generatePatternConstraints arg
+                argVar <- UnificationVar <$> makeUniqueTyVar
+                generatePatternConstraints arg (TypeVar argVar)
 
             res <- UnificationVar <$> makeUniqueTyVar
 
@@ -248,7 +263,7 @@ generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstrai
                 Lifted monoCtor -> do
                     tell (Equality monoCtor argsFunction)
 
-                    pure (ConstructorPattern ctor' (fmap fst args'), monoCtor)
+                    pure (ConstructorPattern ctor' (fmap fst args'), over)
                 Polytype (Forall tyVars constraint monoCtor) -> do
                     fresh <- UnificationVar <$> makeUniqueTyVar
 
@@ -260,7 +275,7 @@ generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstrai
 
                     tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
 
-                    pure (ConstructorPattern ctor' (fmap fst args'), instantiatedMonotype)
+                    pure (ConstructorPattern ctor' (fmap fst args'), over)
 
 instantiate :: forall r loc. Infer loc r => Type loc -> Sem r (Monotype loc)
 instantiate (Lifted t) = pure t
