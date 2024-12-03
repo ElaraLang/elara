@@ -75,6 +75,14 @@ toANF' (CoreModule name decls) = CoreModule name <$> traverse f decls
     f (CoreValue v) = CoreValue <$> traverseBind pure toANF v
     f (CoreType t) = pure (CoreType t)
 
+unANF ::
+    CoreModule (Elara.Core.Generic.Bind Var ANF.Expr) ->
+    CoreModule (Elara.Core.Generic.Bind Var Expr)
+unANF (CoreModule name decls) = CoreModule name (fmap f decls)
+  where
+    f (CoreValue v) = CoreValue (mapBind identity fromANF v)
+    f (CoreType t) = CoreType t
+
 coreToCore :: CoreModule CoreBind -> CoreModule CoreBind
 coreToCore (CoreModule name decls) = CoreModule name (fmap f decls)
   where

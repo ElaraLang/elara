@@ -74,6 +74,7 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Interpreter
       Elara.Lexer.Char
       Elara.Lexer.Lexer
       Elara.Lexer.Pipeline

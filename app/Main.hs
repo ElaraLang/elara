@@ -64,6 +64,8 @@ import System.IO (hSetEncoding, openFile, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
+import Elara.Interpreter (runInterpreter)
+import qualified Elara.Interpreter as Interpreter
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -127,14 +129,16 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
     coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
     runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
+    coreGraph <- traverseGraph (pure . unANF) coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
-    for_ coreGraph $ \coreModule -> do
-        putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
-        -- class' <- structuredDebugToLog (emitCoreModule coreModule)
-        pass
+    runInterpreter $ do
+        for_ coreGraph $ \mod -> do
+            Interpreter.loadModule mod
+        when run $ do
+            Interpreter.run
     -- putTextLn (showPretty class')
     -- converted <- runErrorOrReport $ fromEither $ convert class'
     -- let bs = runPut (writeBinary converted)
