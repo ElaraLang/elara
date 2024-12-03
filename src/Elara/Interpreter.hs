@@ -1,7 +1,6 @@
 -- | Simple interpreter for the Core language
 module Elara.Interpreter where
 
-import Control.Concurrent (threadDelay)
 import Data.Map qualified as Map
 import Elara.AST.Name (ModuleName (..), Qualified (..), VarName)
 import Elara.AST.VarRef
@@ -33,7 +32,7 @@ instance Pretty ElaraState
 
 data InterpreterError
     = UnboundVariable (UnlocatedVarRef Text) ElaraState
-    | NotAClosure Value
+    | NotAFunction Value
     | UnknownPrimitive Text
     | UnhandledExpr CoreExpr
     | NoMainFound ElaraState
@@ -52,7 +51,8 @@ data Value
     | String Text
     | Char Char
     | Double Double
-    | Ctor DataCon [Value]
+    | -- | Data constructor invocation
+      Ctor DataCon [Value]
     | Closure
         { env :: Map (UnlocatedVarRef Text) Value -- Captured environment
         , param :: UnlocatedVarRef Text -- Parameter name
@@ -88,6 +88,7 @@ instance Pretty (IO a) where
 instance Pretty Value where
     pretty (Closure _ p _) = "Closure accepting" <+> pretty p
     pretty (RecClosure _ n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p
+    pretty (Ctor c args) = pretty (c.name) <+> pretty args
     pretty p = gpretty p
 
 primOps =
@@ -156,7 +157,11 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                 Just 1 -> error "1-arg primop Should be handled here"
                 Just _ -> pure $ PartialApplication f' a'
                 Nothing -> throw $ UnknownPrimitive primName
-        other -> throw $ NotAClosure other
+        Ctor c args | typeArity (c.dataConType) < length args -> do
+            throw $ NotAFunction f'
+        Ctor c args -> do
+            pure $ Ctor c (args <> [a'])
+        other -> throw $ NotAFunction other
 interpretExpr (Match e of' alts) = debugWith ("Matching " <> pretty e) $ do
     e' <- interpretExpr e
     whenJust of' $ \(Id v _ _) -> do
@@ -199,13 +204,23 @@ interpretBinding (Recursive bs) = debugWith ("Interpreting letrec" <+> pretty bs
 
 -- | Load a module into the interpreter
 loadModule :: Interpreter r => CoreModule CoreBind -> Sem r ()
-loadModule (CoreModule _ decls) = do
+loadModule (CoreModule name decls) = do
     for_
         decls
-        ( \(CoreValue v) -> do
-            interpretBinding v
+        ( \case
+            (CoreValue v) -> do
+                interpretBinding v
+            (CoreType decl) -> loadTypeDecl decl
         )
+    newEnv <- gets bindings
+    debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty newEnv
     pure ()
+
+loadTypeDecl :: Interpreter r => CoreTypeDecl -> Sem r ()
+loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl cons)) = do
+    for_ cons $ \con@(DataCon name _ _) -> do
+        modify (\s -> s{bindings = Map.insert (UnlocatedGlobal name) (Ctor con []) (bindings s)})
+loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pure ()
 
 evalIO :: Interpreter r => Value -> Sem r Value
 evalIO (IOAction io) = do
