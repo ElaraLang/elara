@@ -202,10 +202,10 @@ createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
     addDeclsToOpTable' (Declaration (Located _ decl)) = do
         case decl ^. field' @"body" % _Unwrapped % unlocated of
             Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
-                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (NVarName <<$>> _valueName)
+                let nameRef = Global $ IgnoreLocation $ (NVarName <<$>> _valueName)
                  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
             TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
-                let nameRef :: IgnoreLocVarRef Name = Global $ IgnoreLocation $ (sequenceA $ (Qualified (NTypeName <$> name) (decl ^. field' @"moduleName" % unlocated)))
+                let nameRef = Global $ IgnoreLocation $ (((NTypeName <<$>> name)))
                  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
             _ -> pass
 

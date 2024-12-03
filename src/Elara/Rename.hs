@@ -504,7 +504,11 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         withModified addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
             let ann' = coerceTypeDeclAnnotations ann
-            pure $ TypeDeclaration name vars' ty' ann'
+            thisModule <- askCurrentModule
+            let qualifiedName =
+                    sequenceA $
+                        Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
+            pure $ TypeDeclaration qualifiedName vars' ty' ann'
 
 renameTypeDeclaration :: InnerRename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do

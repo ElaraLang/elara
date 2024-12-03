@@ -74,7 +74,7 @@ type instance Select "ADTParam" 'Shunted = ShuntedType
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Shunted = Qualified Name
 type instance Select "AnyName" Shunted = Name
-type instance Select "TypeName" Shunted = TypeName
+type instance Select "TypeName" Shunted = Qualified TypeName
 type instance Select "ValueName" Shunted = Qualified VarName
 
 -- Selections for 'Type'

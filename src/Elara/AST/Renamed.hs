@@ -79,7 +79,7 @@ newtype RenamedTypeDeclAnnotations = RenamedTypeDeclAnnotations
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" Renamed = Qualified Name
 type instance Select "AnyName" Renamed = Name
-type instance Select "TypeName" Renamed = TypeName
+type instance Select "TypeName" Renamed = Qualified TypeName
 type instance Select "ValueName" Renamed = Qualified VarName
 
 -- Selections for 'Type'
