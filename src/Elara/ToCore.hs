@@ -21,10 +21,11 @@ import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (CoreTypeDecl), CoreTypeDeclBody (CoreDataDecl))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Data.Pretty (Pretty (..), vcat)
+import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
+import Elara.Logging
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
@@ -32,7 +33,7 @@ import Elara.TypeInfer.Type qualified as Type
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Optics
-import Polysemy (Members, Sem)
+import Polysemy (Members, Sem, subsume)
 import Polysemy.Error
 import Polysemy.State
 import TODO (todo)
@@ -131,34 +132,36 @@ lookupTyCon qn = do
 
 type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
 
-type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
+type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
 
-type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen]
+type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
 
 type ToCoreC r = (Members ToCoreEffects r)
 type InnerToCoreC r = (Members InnerToCoreEffects r)
 
 runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
 runToCorePipeline =
-    uniqueGenToIO
+    subsume
+        . uniqueGenToIO
         . runErrorOrReport
         . evalState primCtorSymbolTable
 
 moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
-moduleToCore (Module (Located _ m)) = do
+moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-            Value n v _ _ _ -> do
+            Value n v _ _ _ -> debugWith ("Value decl: " <+> pretty n) $ do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
                 let var = Core.Id (UnlocatedGlobal (nameText <$> n ^. unlocated)) ty Nothing
                 let rec = isRecursive (n ^. unlocated) v (_As @"Global" % unlocated)
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
-            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> do
+            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = fmap nameText $ (n ^. unlocated)
                 let tyCon = TyCon cleanedTypeDeclName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                debug (pretty tyCon)
                 registerTyCon tyCon
                 ctors' <- for ctors $ \(Located _ n, t) -> do
                     t' <- traverse (typeToCore . fst) t
@@ -200,9 +203,8 @@ typeToCore (Type.Scalar Type.ScalarFloat) = pure $ Core.ConTy floatCon
 typeToCore (Type.Scalar Type.ScalarString) = pure $ Core.ConTy stringCon
 typeToCore (Type.Scalar Type.ScalarChar) = pure $ Core.ConTy charCon
 typeToCore (Type.Scalar Type.ScalarUnit) = pure $ Core.ConTy unitCon
-typeToCore (Type.Scalar Type.ScalarBool) = pure $ Core.ConTy boolCon
 typeToCore (Type.Function t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
-typeToCore (Type.TypeConstructor qn ts) = do
+typeToCore (Type.TypeConstructor qn ts) = debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
     tyCon <- lookupTyCon (fmap (view _Unwrapped) qn)
     ts' <- traverse typeToCore ts
     pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
