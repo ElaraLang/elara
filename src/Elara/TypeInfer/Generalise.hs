@@ -5,12 +5,12 @@ import Data.Set (difference, member)
 import Elara.AST.Region
 import Elara.Data.Pretty
 import Elara.Logging
+import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Ftv
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type
 import Polysemy hiding (transform)
 import Polysemy.State
-import Elara.TypeInfer.Environment
 
 generalise :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Sem r (Polytype SourceRegion)
 generalise ty = do
