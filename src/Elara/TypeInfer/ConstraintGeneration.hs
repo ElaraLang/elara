@@ -19,7 +19,7 @@ import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (uniqueGenToIO)
-import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
+import Elara.Error (ReportableError (..), defaultReport, runErrorOrReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Pipeline
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
@@ -215,7 +215,7 @@ generatePatternConstraints (Pattern (Located loc pattern', expectedType)) = do
     pure (Pattern (Located loc typedPattern', monotype), monotype)
 
 generatePatternConstraints' :: Infer SourceRegion r => ShuntedPattern' -> Sem r (TypedPattern', Monotype SourceRegion)
-generatePatternConstraints' pattern' =
+generatePatternConstraints' pattern' = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
     case pattern' of
         WildcardPattern -> pure (WildcardPattern, Scalar ScalarUnit)
         UnitPattern -> pure (UnitPattern, Scalar ScalarUnit)
@@ -339,7 +339,7 @@ unifyGiven (Scalar a) (Scalar b) =
     if a == b
         then pure (mempty)
         else throw ScalarMismatch
-unifyGiven a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
+unifyGiven a b = throw $ UnificationFailed (a, b)
 
 unifyGivenMany xs ys = foldrM go mempty (zip xs ys)
   where
@@ -381,7 +381,7 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
         | length as /= length bs = throw ArityMismatch
         | otherwise = unifyMany as bs
     unify' (Function a b) (Function c d) = unifyMany [a, b] [c, d]
-    unify' a b = throw $ UnificationFailed $ "Unification failed: " <> show a <> " and " <> show b
+    unify' a b = throw $ UnificationFailed (a, b)
 
 bindGiven ::
     (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
@@ -428,15 +428,16 @@ unifyMany (a : as) (b : bs) = debugWith ("unifyMany: " <> pretty a <> " with " <
     pure (c1 <> c2, s1 <> s2)
 
 data UnifyError loc
-    = HasCallStack => OccursCheckFailed TypeVariable (Monotype loc)
+    = OccursCheckFailed TypeVariable (Monotype loc)
     | ScalarMismatch
     | TypeConstructorMismatch
     | ArityMismatch
-    | UnificationFailed Text
+    | UnificationFailed (Monotype loc, Monotype loc)
     | UnifyMismatch
     | UnresolvedConstraint (Qualified VarName) (Constraint SourceRegion)
+    deriving (Generic)
 
-deriving instance Show (UnifyError loc)
+instance Pretty (UnifyError loc)
 
 instance ReportableError (UnifyError loc) where
     report (OccursCheckFailed a t) =
@@ -446,4 +447,4 @@ instance ReportableError (UnifyError loc) where
                 ("Occurs check failed: " <> pretty a <> " in " <> pretty t)
                 []
                 []
-    report y = writeReport $ Err (Nothing) (show y) [] []
+    report y = defaultReport y
