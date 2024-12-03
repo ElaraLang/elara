@@ -8,3 +8,6 @@ let (==) = elaraPrimitive "=="
 
 def elaraPrimitive : String -> a
 let elaraPrimitive = elaraPrimitive
+
+def println : a -> IO ()
+let println = elaraPrimitive "println"

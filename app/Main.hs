@@ -32,6 +32,8 @@ import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
+import Elara.Interpreter (runInterpreter)
+import Elara.Interpreter qualified as Interpreter
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Logging
@@ -64,8 +66,6 @@ import System.IO (hSetEncoding, openFile, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
-import Elara.Interpreter (runInterpreter)
-import qualified Elara.Interpreter as Interpreter
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -126,10 +126,10 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
-    coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
-    coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
-    runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
-    coreGraph <- traverseGraph (pure . unANF) coreGraph
+    -- coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
+    -- coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
+    -- runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
+    -- coreGraph <- traverseGraph (pure . unANF) coreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"

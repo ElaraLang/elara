@@ -65,6 +65,12 @@ trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon
 falseCtor :: DataCon
 falseCtor = DataCon falseCtorName (ConTy boolCon) boolCon
 
+unitCtor :: DataCon
+unitCtor = DataCon unitConName (ConTy unitCon) unitCon
+
+unitConName :: Qualified Text
+unitConName = mkPrimQual "()"
+
 undefinedId :: Member UniqueGen r => Sem r Var
 undefinedId = do
     a <- makeUnique (Just "a")
