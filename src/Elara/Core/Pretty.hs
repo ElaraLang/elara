@@ -135,7 +135,7 @@ prettyAlt (con, vars, e) =
     pretty @AltCon con
         <> (if null vars then "" else space <> hsep (prettyVarArg <$> vars))
             <+> "->"
-            <+> line
+        <> line
         <> indent indentDepth (prettyExpr e)
 
 instance Pretty Literal where

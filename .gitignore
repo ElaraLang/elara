@@ -65,3 +65,4 @@ just-flake.just
 # Elara! :D
 build/
 *.class
+elara.log
