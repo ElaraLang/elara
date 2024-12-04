@@ -27,7 +27,7 @@ import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLo
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), reduce, substitution)
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Scalar (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), functionMonotypeResult, reduce, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Error.Diagnose
 import Optics (anyOf)
@@ -219,6 +219,7 @@ we say that the pattern `Some x` has type `Option a` rather than @a -> Option a@
 generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Monotype SourceRegion -> Sem r (TypedPattern, Monotype SourceRegion)
 generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over = do
     (typedPattern', monotype) <- generatePatternConstraints' pattern' over
+    tell (Equality monotype over)
     pure (Pattern (Located loc typedPattern', monotype), monotype)
 
 generatePatternConstraints' ::
@@ -244,7 +245,9 @@ generatePatternConstraints' pattern' over = debugWithResult ("generatePatternCon
 
             pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
         ConstructorPattern ctor'@(Located _ ctor) args -> do
+            -- lookup the signature of the constructor
             t <- lookupType (DataConKey ctor)
+            debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
 
             -- if we have a constructor @Ctor : x -> y -> Z@
             -- and pattern @Ctor a b@
@@ -256,31 +259,20 @@ generatePatternConstraints' pattern' over = debugWithResult ("generatePatternCon
                 argVar <- UnificationVar <$> makeUniqueTyVar
                 generatePatternConstraints arg (TypeVar argVar)
 
-            res <- UnificationVar <$> makeUniqueTyVar
+            instantiatedT <- instantiate t
+            let res = functionMonotypeResult instantiatedT
 
-            let argsFunction = foldr Function (TypeVar res) (fmap snd args')
+            let argsFunction = foldr Function (res) (fmap snd args')
+            debug $ "generatePatternConstraints (ConstructorPattern): argsFunction = " <> pretty argsFunction
+            let equality = Equality instantiatedT argsFunction
+            tell equality
+            debug ("generatePatternConstraints (ConstructorPattern): equality = " <> pretty equality)
 
-            case t of
-                Lifted monoCtor -> do
-                    tell (Equality monoCtor argsFunction)
+            pure (ConstructorPattern ctor' (fmap fst args'), res)
 
-                    pure (ConstructorPattern ctor' (fmap fst args'), over)
-                Polytype (Forall tyVars constraint monoCtor) -> do
-                    fresh <- UnificationVar <$> makeUniqueTyVar
-
-                    let
-                        instantiatedConstraint =
-                            foldr (\tyVar -> substitute (view typed tyVar) (TypeVar fresh)) constraint tyVars
-                        instantiatedMonotype =
-                            foldr (\tyVar -> substitute (view typed tyVar) (TypeVar fresh)) monoCtor tyVars
-
-                    tell (instantiatedConstraint <> Equality instantiatedMonotype argsFunction)
-
-                    pure (ConstructorPattern ctor' (fmap fst args'), over)
-
-instantiate :: forall r loc. Infer loc r => Type loc -> Sem r (Monotype loc)
+instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Sem r (Monotype loc)
 instantiate (Lifted t) = pure t
-instantiate (Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty t) $ do
+instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
     let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap TypeVar fresh)
     let

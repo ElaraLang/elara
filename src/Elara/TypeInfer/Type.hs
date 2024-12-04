@@ -80,6 +80,10 @@ data Monotype (loc :: Kind.Type)
       Function (Monotype loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
 
+functionMonotypeResult :: Monotype loc -> Monotype loc
+functionMonotypeResult = \case
+    Function _ b -> functionMonotypeResult b
+    t -> t
 -- | A scalar type
 data Scalar
     = ScalarInt
