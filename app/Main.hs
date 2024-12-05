@@ -127,12 +127,15 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
     coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
-    coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
-    runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
-    coreGraph <- traverseGraph (pure . unANF) coreGraph
+    anfCoreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
+
+    coreGraph <- traverseGraph (pure . unANF) anfCoreGraph
 
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
+
+    -- type check the core graph _after_ dumping for debugging purposes
+    runErrorOrReport $ traverseGraph_ typeCheckCoreModule anfCoreGraph
 
     runInterpreter $ do
         flip traverseGraphRevTopologically_ coreGraph $ \mod -> do
