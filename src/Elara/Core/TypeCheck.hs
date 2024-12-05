@@ -13,12 +13,15 @@ import Data.Set qualified as Set
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
 import Elara.Core qualified as Core
+import Elara.Core.Analysis (freeCoreVars, freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module
 import Elara.Core.ToANF (fromANF, fromANFAtom)
 import Elara.Data.Pretty
 import Elara.Error
+import Elara.Logging (StructuredDebug, debug)
 import Elara.Prim.Core
+import Elara.TypeInfer.Type (Polytype (Forall), functionMonotypeResult)
 import Polysemy
 import Polysemy.Error
 import Polysemy.State (State, evalState, get, modify)
@@ -26,7 +29,7 @@ import Polysemy.State.Extra (locally, scoped)
 import TODO (todo)
 
 data TypeCheckError
-    = UnboundVariable Var (Set.Set (UnlocatedVarRef Text))
+    = UnknownVariable Var (Set.Set (UnlocatedVarRef Text))
     | TypeMismatch
         { expected :: Core.Type
         , actual :: Core.Type
@@ -61,7 +64,7 @@ isInScope (Id name@(Local _) _ _) s = Set.member name (scope s)
 isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
 isInScope _ _ = False
 
-typeCheckCoreModule :: Member (Error TypeCheckError) r => CoreModule (Bind Var ANF.Expr) -> Sem r ()
+typeCheckCoreModule :: (Member (Error TypeCheckError) r, Member StructuredDebug r) => CoreModule (Bind Var ANF.Expr) -> Sem r ()
 typeCheckCoreModule (CoreModule n m) = do
     let initialState = TcState{scope = mempty}
 
@@ -84,7 +87,7 @@ varType :: Var -> Core.Type
 varType (TyVar _) = error "TyVar"
 varType (Id _ t _) = t
 
-typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.Expr Var -> Sem r (Core.Type)
+typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) => ANF.Expr Var -> Sem r (Core.Type)
 typeCheck (ANF.Let bind in') = do
     case bind of
         NonRecursive (v, e) -> do
@@ -98,7 +101,7 @@ typeCheck (ANF.Let bind in') = do
             typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
-typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.CExpr Var -> Sem r Core.Type
+typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) => ANF.CExpr Var -> Sem r Core.Type
 typeCheckC (ANF.App f x) = do
     fType <- typeCheckA f
     xType <- typeCheckA x
@@ -113,6 +116,7 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
     whenJust of' $ \v -> modify (addToScope v)
     altTypes <- for alts $ \(con, bs, e) -> do
+        for_ bs $ \v -> modify (addToScope v)
         case con of
             Core.DEFAULT -> do
                 eType' <- typeCheck e
@@ -124,12 +128,19 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
                     then pure eType'
                     else throw $ TypeMismatch litType eType ((fromANF e), (fromANF e))
             Core.DataAlt con' -> do
-                let conType = Core.ConTy (con'.dataConDataType)
+                let conType = Core.functionTypeResult $ con'.dataConType
+                debug $ "conType: " <> pretty conType
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
-                if conType == eType
+                debug $ "eType': " <> pretty eType'
+                if generalize eType `equalUnderSubst` generalize conType
                     then pure eType'
-                    else throw $ TypeMismatch conType eType ((fromANF e), (fromANF e))
+                    else
+                        throw $
+                            TypeMismatchIncompleteExpected
+                                (prettyToText conType)
+                                eType
+                                ((fromANF e), (fromANF e))
 
     case altTypes of
         [] -> error "empty match? how do we handle this"
@@ -143,15 +154,16 @@ typeCheckLit lit = case lit of
     Core.Double _ -> Core.ConTy doubleCon
     Core.Unit -> Core.ConTy unitCon
 
-typeCheckA :: (Member (Error TypeCheckError) r, Member (State TcState) r) => ANF.AExpr Var -> Sem r Core.Type
+typeCheckA ::
+    (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) =>
+    ANF.AExpr Var -> Sem r Core.Type
 typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
 typeCheckA (ANF.Var v) = do
     env <- get
-
     case isInScope v env of
         True -> pure (varType v)
-        False -> throw $ UnboundVariable v (env.scope)
+        False -> throw $ UnknownVariable v (env.scope)
 typeCheckA (ANF.Lam v body) = do
     let t = varType v
 
@@ -170,3 +182,21 @@ typeCheckA (ANF.TyApp e t) = do
                     }
 typeCheckA (ANF.TyLam t e) = do
     todo
+
+{- | Relation that defines 2 types as equal iff they are equal under a substitution of type variables
+For example @forall a. a@ and @forall b. b@ are equal in this relation,
+but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
+-}
+equalUnderSubst :: Core.Type -> Core.Type -> Bool
+equalUnderSubst (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
+    equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)
+equalUnderSubst (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
+    equalUnderSubst a1 a2 && equalUnderSubst b1 b2
+equalUnderSubst (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
+    equalUnderSubst a1 a2 && equalUnderSubst b1 b2
+equalUnderSubst (Core.ConTy c1) (Core.ConTy c2) = c1 == c2
+equalUnderSubst (Core.TyVarTy tv1) (Core.TyVarTy tv2) = tv1 == tv2
+equalUnderSubst _ _ = False
+
+generalize :: Core.Type -> Core.Type
+generalize t = let ftv = freeTypeVars t in foldr Core.ForAllTy t ftv

@@ -94,3 +94,10 @@ instance FreeCoreVars ANF.Expr where
 freeCoreVarsBind :: (FreeCoreVars ast, Ord a) => Bind a ast -> Set a
 freeCoreVarsBind (NonRecursive (_, e)) = freeCoreVars e
 freeCoreVarsBind (Recursive bs) = foldMap (freeCoreVars . snd) bs
+
+freeTypeVars :: Core.Type -> Set Core.TypeVariable
+freeTypeVars (Core.TyVarTy tv) = one tv
+freeTypeVars (Core.ConTy _) = Set.empty
+freeTypeVars (Core.FuncTy a b) = freeTypeVars a <> freeTypeVars b
+freeTypeVars (Core.ForAllTy tv t) = Set.delete tv (freeTypeVars t)
+freeTypeVars (Core.AppTy a b) = freeTypeVars a <> freeTypeVars b
