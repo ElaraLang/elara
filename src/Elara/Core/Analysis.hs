@@ -7,7 +7,9 @@ import Data.List (maximum)
 import Data.Set qualified as Set
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
+import Elara.Data.Pretty
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
+import Print (showPretty)
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"
@@ -30,12 +32,13 @@ findTyCon (Core.ForAllTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
-exprType :: HasCallStack => CoreExpr -> Core.Type
+exprType :: (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) => CoreExpr -> Core.Type
 exprType (Var v) = varType v
 exprType (Lit l) = literalType l
 exprType app@(App f _) = case exprType f of
     Core.FuncTy _ t -> t
-    t -> error $ "exprType: expected function type, got " <> show t <> " in " <> show app
+    Core.ForAllTy _ t -> t
+    t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
 exprType (TyApp f t) = case exprType f of
     Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
     t' -> error $ "exprType: expected forall type, got " <> show t' <> " in " <> show (TyApp f t)

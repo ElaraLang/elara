@@ -33,6 +33,7 @@ type ToANF r =
     , Pretty (ANF.AExpr Core.Var)
     , Pretty (ANF.CExpr Core.Var)
     , Pretty (ANF.Expr Core.Var)
+    , Pretty Core.Type
     )
 
 toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
