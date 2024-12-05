@@ -307,9 +307,11 @@ desugarMatch e pats = do
             AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
             AST.WildcardPattern -> pure (Core.DEFAULT, [])
             AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (UnlocatedLocal (view (to nameText) <$> vn)) t' Nothing])
-            AST.ConstructorPattern cn pats -> do
+            AST.ConstructorPattern cn pats -> debugWithResult ("patternToCore (ConstructorPattern): cn =" <+> pretty cn) $ do
                 c <- lookupCtor cn
+                debug ("patternToCore (ConstructorPattern): c =" <+> pretty c)
                 pats' <- for pats patternToCore
+                debug ("patternToCore (ConstructorPattern): pats' =" <+> pretty pats')
                 pure (Core.DataAlt c, pats' >>= snd)
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var

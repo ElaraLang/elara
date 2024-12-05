@@ -13,6 +13,7 @@ import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Polysemy hiding (transform)
+import qualified Elara.Core as Core
 
 type CoreExprPass = CoreExpr -> CoreExpr
 
@@ -68,8 +69,8 @@ fullCoreToCoreExpr = fix' coreToCoreExpr
 -- toANF :: CoreModule -> CoreModule
 toANF' ::
     ToANF r =>
-    CoreModule (Elara.Core.Generic.Bind Var Expr) ->
-    Sem r (CoreModule (Elara.Core.Generic.Bind Var ANF.Expr))
+    CoreModule (Elara.Core.Generic.Bind Var Core.Expr) ->
+    Sem r (CoreModule (ANF.TopLevelBind Var))
 toANF' (CoreModule name decls) = CoreModule name <$> traverse f decls
   where
     f (CoreValue v) = CoreValue <$> traverseBind pure toANF v

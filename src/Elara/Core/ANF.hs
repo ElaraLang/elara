@@ -29,5 +29,6 @@ data Expr b
     deriving (Show, Eq, Data, Typeable, Generic)
 
 type Bind b = G.Bind b CExpr
+type TopLevelBind b = G.Bind b Expr
 
 type Alt b = (AltCon, [b], Expr b)
