@@ -32,22 +32,22 @@ findTyCon (Core.ForAllTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
-exprType :: (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) => CoreExpr -> Core.Type
-exprType (Var v) = varType v
-exprType (Lit l) = literalType l
-exprType app@(App f _) = case exprType f of
+guesstimateExprType :: (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) => CoreExpr -> Core.Type
+guesstimateExprType (Var v) = varType v
+guesstimateExprType (Lit l) = literalType l
+guesstimateExprType app@(App f _) = case guesstimateExprType f of
     Core.FuncTy _ t -> t
     Core.ForAllTy _ t -> t
     t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
-exprType (TyApp f t) = case exprType f of
+guesstimateExprType (TyApp f t) = case guesstimateExprType f of
     Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
     t' -> error $ "exprType: expected forall type, got " <> show t' <> " in " <> show (TyApp f t)
-exprType (Lam b e) = Core.FuncTy (varType b) (exprType e)
-exprType (TyLam _ e) = exprType e
-exprType (Let _ e) = exprType e
-exprType (Match _ _ alts) = case alts of
+guesstimateExprType (Lam b e) = Core.FuncTy (varType b) (guesstimateExprType e)
+guesstimateExprType (TyLam _ e) = guesstimateExprType e
+guesstimateExprType (Let _ e) = guesstimateExprType e
+guesstimateExprType (Match _ _ alts) = case alts of
     [] -> error "exprType: empty match"
-    (_, _, e) : _ -> exprType e
+    (_, _, e) : _ -> guesstimateExprType e
 
 varType :: Var -> Core.Type
 varType (TyVar tv) = Core.TyVarTy tv

@@ -97,7 +97,7 @@ liftClosuresA' env (ANF.Lam v e) = do
         else do
             v' <- makeUnique "closure"
             let lambdaType = case v of
-                    Core.Id _ t _ -> t `Core.FuncTy` exprType (fromANF e)
+                    Core.Id _ t _ -> t `Core.FuncTy` guesstimateExprType (fromANF e)
                     Core.TyVar _ -> error "liftClosuresA': TyVar"
             let id = Core.Id (Local' v') lambdaType Nothing
             tell [(id, ANF.AExpr $ Lam v e)]

@@ -4,7 +4,7 @@ import Control.Monad.Cont
 import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
-import Elara.Core.Analysis (exprType)
+import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique
@@ -60,12 +60,14 @@ toANF' (Core.Lam b e) cont = evalContT $ do
     -- convert the body to ANF, making sure to not lift it out too far
     e' <- lift $ toANFRec e (pure . ANF.CExpr)
     lift $ cont $ ANF.Lam b e'
-toANF' other k = debugWith ("toANF' " <> pretty other <> ": ") $ evalContT $ do
+toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
     v <- lift $ makeUnique "var"
-    let id = Core.Id (Local' v) (exprType other) Nothing
 
-    l' <- lift $ k $ ANF.Var id
     lift $ toANFRec other $ \e -> do
+        let id = Core.Id (Local' v) (guesstimateExprType (fromANFCExpr e)) Nothing
+
+        l' <- lift $ k $ ANF.Var id
+        lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
         pure $ ANF.Let (NonRecursive (id, e)) l'
 
 toANFRec ::
