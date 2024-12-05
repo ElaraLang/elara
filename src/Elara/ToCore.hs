@@ -160,20 +160,26 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = fmap nameText $ (n ^. unlocated)
-                let tyCon = TyCon cleanedTypeDeclName (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                let tyCon =
+                        TyCon
+                            cleanedTypeDeclName
+                            ( TyADT
+                                (ctors ^.. each % _1 % unlocated % to (fmap nameText))
+                            )
                 debug (pretty tyCon)
                 registerTyCon tyCon
-                ctors' <- for ctors $ \(Located _ n, t) -> do
-                    t' <- traverse (typeToCore . fst) t
+                ctors' <- for ctors $ \(Located _ n, ctorArgs) -> do
+                    ctorArgs' <- traverse (typeToCore . fst) ctorArgs
                     let ctorType =
                             foldr
                                 (Core.ForAllTy . typedTvToCoreTv)
                                 ( foldr
                                     Core.FuncTy
                                     (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
-                                    t'
+                                    ctorArgs'
                                 )
                                 tvs
+                    debug $ "Ctor: " <+> pretty n <+> " with type: " <+> pretty ctorType
                     pure (nameText <$> n, ctorType, tyCon)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
