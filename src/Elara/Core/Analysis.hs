@@ -8,7 +8,7 @@ import Data.Set qualified as Set
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
 import Elara.Data.Pretty
-import Elara.Logging (TraceableFn)
+import Elara.Logging (TraceableFn (..))
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
 import Print (showPretty)
 
@@ -34,23 +34,25 @@ findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
 guesstimateExprType :: (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) => TraceableFn "guesstimateExprType" CoreExpr Core.Type
-guesstimateExprType self (Var v) = pure $ varType v
-guesstimateExprType self (Lit l) = pure $ literalType l
-guesstimateExprType self app@(App f _) =
-    self f <&> \case
-        Core.FuncTy _ t -> t
-        Core.ForAllTy _ t -> t
-        t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
-guesstimateExprType self (TyApp f t) =
-    self f <&> \case
-        Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
-        t' -> error $ "exprType: expected forall type, got " <> show t' <> " in " <> show (TyApp f t)
-guesstimateExprType self (Lam b e) = Core.FuncTy (varType b) <$> (self e)
-guesstimateExprType self (TyLam _ e) = self e
-guesstimateExprType self (Let _ e) = self e
-guesstimateExprType self (Match _ _ alts) = case alts of
-    [] -> error "exprType: empty match"
-    (_, _, e) : _ -> self e
+guesstimateExprType = TraceableFn $ \self v ->
+    case v of
+        (Var v) -> pure $ varType v
+        (Lit l) -> pure $ literalType l
+        app@(App f _) ->
+            self f <&> \case
+                Core.FuncTy _ t -> t
+                Core.ForAllTy _ t -> t
+                t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
+        (TyApp f t) ->
+            self f <&> \case
+                Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
+                t' -> error $ "exprType: expected forall type, got " <> show t' <> " in " <> show (TyApp f t)
+        (Lam b e) -> Core.FuncTy (varType b) <$> (self e)
+        (TyLam _ e) -> self e
+        (Let _ e) -> self e
+        (Match _ _ alts) -> case alts of
+            [] -> error "exprType: empty match"
+            (_, _, e) : _ -> self e
 
 varType :: Var -> Core.Type
 varType (TyVar tv) = Core.TyVarTy tv
