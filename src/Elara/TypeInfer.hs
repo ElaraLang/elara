@@ -169,7 +169,7 @@ inferValue valueName valueExpr expectedType = do
     expected <- case expectedType of
         Just t -> pure t
         Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
-    expectedAsMono <- instantiate expected
+    (expectedAsMono, tyApps) <- instantiate expected
     addType' (TermVarKey (valueName)) expected
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
 

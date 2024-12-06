@@ -65,19 +65,41 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             varType <- lookupType (DataConKey $ stripLocation name)
 
-            instantiated <- instantiate varType
+            (instantiated, typeApps) <- instantiate varType
 
-            pure (Constructor (Located loc name), instantiated)
+            let ctor = (Constructor (Located loc name), instantiated)
+
+            let withApps =
+                    foldl'
+                        ( \(expr :: TypedExpr', exprType) tv ->
+                            let expr' :: TypedExpr = Expr (Located loc expr, exprType)
+                             in (TypeApplication expr' (TypeVar tv), exprType)
+                        )
+                        ctor
+                        typeApps
+
+            pure withApps
 
         -- VAR
-        Var v'@(Located _ varName) -> do
+        Var v'@(Located loc varName) -> do
             varType <- case varName of
                 Local (Located _ n) -> lookupLocalVar n
                 Global (Located _ n) -> lookupType (TermVarKey n)
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            instantiated <- instantiate varType
+            (instantiated, tyApps) <- instantiate varType
 
-            pure (Var v', instantiated)
+            let instantiated' = (Var v', instantiated)
+
+            let withApps =
+                    foldl'
+                        ( \(expr :: TypedExpr', exprType) tv ->
+                            let expr' :: TypedExpr = Expr (Located loc expr, exprType)
+                             in (TypeApplication expr' (TypeVar tv), exprType)
+                        )
+                        instantiated'
+                        tyApps
+
+            pure withApps
         -- ABS
         (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
             paramTyVar <- UnificationVar <$> makeUniqueTyVar
@@ -259,7 +281,7 @@ generatePatternConstraints' pattern' over = debugWithResult ("generatePatternCon
                 argVar <- UnificationVar <$> makeUniqueTyVar
                 generatePatternConstraints arg (TypeVar argVar)
 
-            instantiatedT <- instantiate t
+            (instantiatedT, typeApps) <- instantiate t
             let res = functionMonotypeResult instantiatedT
 
             let argsFunction = foldr Function (res) (fmap snd args')
@@ -270,8 +292,8 @@ generatePatternConstraints' pattern' over = debugWithResult ("generatePatternCon
 
             pure (ConstructorPattern ctor' (fmap fst args'), res)
 
-instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Sem r (Monotype loc)
-instantiate (Lifted t) = pure t
+instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Sem r (Monotype loc, [TypeVariable])
+instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
     let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap TypeVar fresh)
@@ -282,7 +304,7 @@ instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate
             substituteAll substitution t
 
     tell instantiatedConstraint
-    pure instantiatedMonotype
+    pure (instantiatedMonotype, fresh)
 
 solveConstraint :: (Member (Error (UnifyError a)) r, Member StructuredDebug r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Sem r (Constraint a, Substitution a)
 solveConstraint given tch wanted = debugWith
