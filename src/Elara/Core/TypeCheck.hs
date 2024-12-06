@@ -26,6 +26,7 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State (State, evalState, get, modify)
 import Polysemy.State.Extra (locally, scoped)
+import Print (prettyToString)
 import TODO (todo)
 
 data TypeCheckError
@@ -108,17 +109,11 @@ typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> prett
     xType <- typeCheckA x
     debug $ "xType: " <> pretty xType
     case fType of
-        Core.ForAllTy tv t -> do
-            -- this is probably wrong lol
-            let t' = Core.substTypeVar tv xType t
-            debug $ "t': " <> pretty t'
-            retType <- typeCheckC (ANF.App (ANF.TyApp f xType) x)
-            pure retType
         Core.FuncTy argType retType -> do
-            if argType == xType
+            if generalize argType `equalUnderSubst` generalize xType
                 then pure retType
                 else throw $ CoreTypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
-        other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something" ) other ((fromANFAtom f), (fromANFAtom x))
+        other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other ((fromANFAtom f), (fromANFAtom x))
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC (ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
@@ -146,8 +141,8 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
                     else
                         throw $
                             CoreTypeMismatch
-                                (conType)
-                                eType
+                                (generalize conType)
+                                (generalize eType)
                                 ((fromANF e), (fromANF e))
 
     case altTypes of
@@ -203,7 +198,9 @@ equalUnderSubst (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
 equalUnderSubst (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
 equalUnderSubst (Core.ConTy c1) (Core.ConTy c2) = c1 == c2
-equalUnderSubst (Core.TyVarTy tv1) (Core.TyVarTy tv2) = tv1 == tv2
+-- At this point (after substituting foralls), a type variable should match anything
+equalUnderSubst (Core.TyVarTy _) _ = True
+equalUnderSubst _ (Core.TyVarTy _) = True
 equalUnderSubst _ _ = False
 
 generalize :: Core.Type -> Core.Type
