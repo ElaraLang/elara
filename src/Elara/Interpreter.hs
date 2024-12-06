@@ -241,6 +241,7 @@ interpretBinding (Recursive bs) = debugWith ("Interpreting letrec" <+> pretty bs
 -- | Load a module into the interpreter
 loadModule :: Interpreter r => CoreModule CoreBind -> Sem r ()
 loadModule (CoreModule name decls) = do
+    oldBindings <- gets bindings
     for_
         decls
         ( \case
@@ -249,7 +250,7 @@ loadModule (CoreModule name decls) = do
             (CoreType decl) -> loadTypeDecl decl
         )
     newEnv <- gets bindings
-    debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty newEnv
+    debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
     pure ()
 
 loadTypeDecl :: Interpreter r => CoreTypeDecl -> Sem r ()
