@@ -114,6 +114,9 @@ interpretExpr (Lit (Core.Double d)) = pure $ Double d
 interpretExpr (Lit Core.Unit) = pure $ Ctor unitCtor []
 interpretExpr (App (Var (Id (UnlocatedGlobal primName) _ _)) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
     pure $ PrimOp primArg
+-- elaraPrimitive should be called with a tyapp - i.e. `elaraPrimitive @T "f"`
+interpretExpr (App (TyApp (Var (Id (UnlocatedGlobal primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
+    pure $ PrimOp primArg
 interpretExpr (Var (Id v _ _)) = do
     s <- get
     case Map.lookup v (bindings s) of
@@ -218,6 +221,7 @@ interpretExpr (Match e of' alts) = debugWith ("Matching " <> pretty e) $ do
                 _ -> go rest
         go ((DEFAULT, _, branchBody) : _) = interpretExpr branchBody
     go alts
+interpretExpr (TyApp e _) = interpretExpr e -- lol
 interpretExpr other = throw $ UnhandledExpr other
 
 interpretBinding :: Interpreter r => CoreBind -> Sem r ()
