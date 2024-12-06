@@ -16,7 +16,7 @@ import Elara.Core qualified as Core
 import Elara.Core.Analysis (freeCoreVars, freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module
-import Elara.Core.ToANF (fromANF, fromANFAtom)
+import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Logging (StructuredDebug, debug, debugWith)
@@ -44,6 +44,7 @@ data TypeCheckError
     | UnificationError CoreExpr CoreExpr
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
+    | PatternMatchMissingBinders Core.AltCon Core.Type [Var] CoreExpr
     deriving (Show, Eq, Generic)
 
 instance Pretty TypeCheckError
@@ -115,7 +116,7 @@ typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> prett
                 else throw $ CoreTypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
         other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other ((fromANFAtom f), (fromANFAtom x))
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
-typeCheckC (ANF.Match e of' alts) = scoped $ do
+typeCheckC match@(ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
     whenJust of' $ \v -> modify (addToScope v)
     altTypes <- for alts $ \(con, bs, e) -> do
@@ -133,6 +134,9 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult $ con'.dataConType
                 debug $ "conType: " <> pretty conType <+> (parens $ pretty $ generalize con'.dataConType)
+                when (length bs /= (length $ Core.functionTypeArgs con'.dataConType)) $
+                    throw $
+                        PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
                 debug $ "eType': " <> pretty eType'
