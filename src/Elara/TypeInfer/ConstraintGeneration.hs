@@ -88,7 +88,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
             (instantiated, tyApps) <- instantiate varType
 
-            let instantiated' = (Var v', instantiated)
+            let instantiated' = (Var (Located loc (varName, varType)), instantiated)
 
             let withApps =
                     foldl'

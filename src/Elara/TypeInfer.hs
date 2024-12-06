@@ -111,7 +111,7 @@ inferDeclaration (Declaration ld) = do
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
-            pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
+            pure (Value name typedExpr NoFieldValue (Polytype polytype) (Generic.coerceValueDeclAnnotations annotations))
         TypeDeclaration (name) tyVars body anns -> do
             (kind, decl') <- (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
             case decl' of

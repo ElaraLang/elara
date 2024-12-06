@@ -156,7 +156,7 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
                 let var = Core.Id (UnlocatedGlobal (nameText <$> n ^. unlocated)) ty Nothing
-                let rec = isRecursive (n ^. unlocated) v (_As @"Global" % unlocated)
+                let rec = isRecursive (n ^. unlocated) v (_1 % _As @"Global" % unlocated)
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = fmap nameText $ (n ^. unlocated)
@@ -172,10 +172,10 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                     ctorArgs' <- traverse (typeToCore . fst) ctorArgs
                     let ctorType =
                             foldr
-                                (Core.ForAllTy . typedTvToCoreTv)
+                                (Core.ForAllTy . mkTypeVar . view unlocated)
                                 ( foldr
                                     Core.FuncTy
-                                    (foldr (flip Core.AppTy . TyVarTy . typedTvToCoreTv) (ConTy tyCon) tvs)
+                                    (foldr (flip Core.AppTy . TyVarTy . mkTypeVar . view unlocated) (ConTy tyCon) tvs)
                                     ctorArgs'
                                 )
                                 tvs
@@ -189,7 +189,7 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                             CoreTypeDecl
                                 cleanedTypeDeclName
                                 kind
-                                (fmap typedTvToCoreTv tvs)
+                                (tvs ^.. each % unlocated % to mkTypeVar)
                                 (CoreDataDecl (toList ctors''))
             TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 todo
@@ -198,8 +198,18 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
     -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
     pure $ CoreModule name (catMaybes decls)
 
-typedTvToCoreTv :: ASTLocate 'Typed (Select "TypeVar" 'Typed) -> Core.TypeVariable
-typedTvToCoreTv (Located _ tv) = TypeVariable tv TypeKind
+mkTypeVar :: Select "TypeVar" 'Typed -> Core.TypeVariable
+mkTypeVar tv = TypeVariable tv TypeKind
+
+polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Sem r Core.Type
+polytypeToCore (Type.Forall tvs constraints t) = do
+    t' <- typeToCore t
+    let tvs' = fmap mkTypeVar tvs
+    pure $ foldr (\acc t -> Core.ForAllTy acc t) t' tvs'
+
+eitherTypeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
+eitherTypeToCore (Type.Polytype p) = polytypeToCore p
+eitherTypeToCore (Type.Lifted t) = typeToCore t
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Sem r Core.Type
 typeToCore (Type.TypeVar (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
@@ -233,12 +243,12 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.String s -> pure $ Lit (Core.String s)
         AST.Char c -> pure $ Lit (Core.Char c)
         AST.Unit -> pure $ Lit Core.Unit
-        AST.Var (Located _ vr@((Global _))) -> do
-            t' <- typeToCore t
+        AST.Var (Located _ ((vr@(Global _), t))) -> do
+            t' <- eitherTypeToCore t
 
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t' Nothing)
-        AST.Var (Located _ v@(Local _)) -> do
-            t' <- typeToCore t
+        AST.Var (Located _ (v@(Local _), t)) -> do
+            t' <- eitherTypeToCore t
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation v) t' Nothing)
         AST.Constructor v -> do
             ctor <- lookupCtor v
@@ -276,7 +286,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             t' <- typeToCore (typeOf e1)
             pure $
                 Core.Let
-                    (if isRecursive vn e1 (_As @"Local" % unlocated) then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
+                    (if isRecursive vn e1 (_1 % _As @"Local" % unlocated) then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
                     e2'
         AST.Block exprs -> desugarBlock exprs
 
@@ -321,8 +331,8 @@ desugarMatch e pats = do
                 pure (Core.DataAlt c, pats' >>= snd)
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
-mkBindName (AST.Expr (Located _ (AST.Var (Located _ vn)), t)) = do
-    t' <- typeToCore t
+mkBindName (AST.Expr (Located _ (AST.Var (Located _ (vn, varType))), t)) = do
+    t' <- eitherTypeToCore varType
     unique <- makeUnique (nameText $ varRefVal vn)
     pure (Core.Id (UnlocatedLocal unique) t' Nothing)
 mkBindName (AST.Expr (_, t)) = do
