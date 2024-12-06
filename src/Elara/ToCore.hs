@@ -175,7 +175,7 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                                 (Core.ForAllTy . mkTypeVar . view unlocated)
                                 ( foldr
                                     Core.FuncTy
-                                    (foldr (flip Core.AppTy . TyVarTy . mkTypeVar . view unlocated) (ConTy tyCon) tvs)
+                                    (flipfoldl' (flip Core.AppTy . TyVarTy . mkTypeVar . view unlocated) (ConTy tyCon) tvs)
                                     ctorArgs'
                                 )
                                 tvs
