@@ -82,11 +82,12 @@ instance
         -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
         prettyDB (Value n e@(Expr (_, t)) _ t' ann) =
             let typeOfE =
+                    -- Prioritise the type in the declaration (as this is either a type the user explicitly wrote, or a generalised version)
                     ( UnknownPretty
-                        <$> (toMaybe t :: Maybe exprType) -- Prioritise the type in the expression
+                        <$> (toMaybe t' :: Maybe valueType)
                     )
                         <|> ( UnknownPretty
-                                <$> (toMaybe t' :: Maybe valueType) -- Otherwise, use the type in the declaration
+                                <$> (toMaybe t :: Maybe exprType) -- If it's not in the declaration, use the type of the expression
                             )
              in prettyValueDeclaration n e typeOfE ann
         prettyDB (TypeDeclaration n vars t ann) = prettyTypeDeclaration n vars t ann
