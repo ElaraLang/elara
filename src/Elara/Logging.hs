@@ -1,6 +1,10 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Elara.Logging where
 
 import Elara.Data.Pretty
+import GHC.Exts
+import GHC.TypeLits (KnownSymbol (..), symbolVal)
 import Polysemy
 import Polysemy.Log qualified as Log
 import Polysemy.State (State, evalState, get, put)
@@ -54,3 +58,37 @@ ignoreStructuredDebug :: Sem (StructuredDebug : r) a -> Sem r a
 ignoreStructuredDebug = interpretH $ \case
     Debug _ -> pureT ()
     DebugWith _ act -> runTSimple act
+
+{- | Inspired by https://x.com/Quelklef/status/1860188828876583146 !
+A recursive, pure function, which can be traced with a monadic effect.
+-}
+type TraceableFn (name :: Symbol) a b = forall m. Monad m => (a -> m b) -> a -> m b
+
+-- | Purely run a traceable function, without any tracing
+runTraceable :: TraceableFn name a b -> a -> b
+runTraceable f a = runIdentity $ do
+    f' <- f (pure . runTraceable f) a
+    pure f'
+
+-- | Run a traceable function with structured debug tracing
+traceFn ::
+    forall (name :: Symbol) a b r.
+    (Pretty a, Pretty b, Member StructuredDebug r, KnownSymbol name) =>
+    TraceableFn name a b -> (a -> Sem r b)
+traceFn f a = do
+    let p = symbolVal (Proxy @name)
+    res <- debugWith (pretty p <> ":" <+> pretty a) $ do
+        f (traceFn @name @a @b @r f) a
+    debug $ pretty res
+    pure res
+
+fib :: TraceableFn "fib" Int Int
+fib _ 0 = pure 0
+fib _ 1 = pure 1
+fib f n = do
+    a <- f (n - 1)
+    b <- f (n - 2)
+    pure $ a + b
+
+x :: Sem '[StructuredDebug] Int
+x = traceFn @"fib" fib 10

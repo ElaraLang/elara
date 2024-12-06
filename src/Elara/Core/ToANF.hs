@@ -8,7 +8,7 @@ import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique
-import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
 import Polysemy
 
 {- | Convert a Core expression to ANF
@@ -64,7 +64,8 @@ toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
     v <- lift $ makeUnique "var"
 
     lift $ toANFRec other $ \e -> do
-        let id = Core.Id (Local' v) (guesstimateExprType (fromANFCExpr e)) Nothing
+        exprType <- lift $ traceFn guesstimateExprType (fromANFCExpr e)
+        let id = Core.Id (Local' v) (exprType) Nothing
 
         l' <- lift $ k $ ANF.Var id
         lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
