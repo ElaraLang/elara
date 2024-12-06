@@ -19,7 +19,7 @@ import Elara.Core.Module
 import Elara.Core.ToANF (fromANF, fromANFAtom)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Logging (StructuredDebug, debug)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Elara.Prim.Core
 import Elara.TypeInfer.Type (Polytype (Forall), functionMonotypeResult)
 import Polysemy
@@ -30,12 +30,12 @@ import TODO (todo)
 
 data TypeCheckError
     = UnknownVariable Var (Set.Set (UnlocatedVarRef Text))
-    | TypeMismatch
+    | CoreTypeMismatch
         { expected :: Core.Type
         , actual :: Core.Type
         , source :: (CoreExpr, CoreExpr)
         }
-    | TypeMismatchIncompleteExpected
+    | CoreTypeMismatchIncompleteExpected
         { incompleteExpected :: Text
         , actual :: Core.Type
         , source :: (CoreExpr, CoreExpr)
@@ -102,15 +102,23 @@ typeCheck (ANF.Let bind in') = do
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
 typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) => ANF.CExpr Var -> Sem r Core.Type
-typeCheckC (ANF.App f x) = do
+typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> pretty (fromANFAtom x)) $ do
     fType <- typeCheckA f
+    debug $ "fType: " <> pretty fType
     xType <- typeCheckA x
+    debug $ "xType: " <> pretty xType
     case fType of
+        Core.ForAllTy tv t -> do
+            -- this is probably wrong lol
+            let t' = Core.substTypeVar tv xType t
+            debug $ "t': " <> pretty t'
+            retType <- typeCheckC (ANF.App (ANF.TyApp f xType) x)
+            pure retType
         Core.FuncTy argType retType -> do
             if argType == xType
                 then pure retType
-                else throw $ TypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
-        other -> throw $ TypeMismatch (Core.FuncTy fType xType) other ((fromANFAtom f), (fromANFAtom x))
+                else throw $ CoreTypeMismatch argType xType ((fromANFAtom f), (fromANFAtom x))
+        other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something" ) other ((fromANFAtom f), (fromANFAtom x))
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC (ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
@@ -126,10 +134,10 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 if litType == eType
                     then pure eType'
-                    else throw $ TypeMismatch litType eType ((fromANF e), (fromANF e))
+                    else throw $ CoreTypeMismatch litType eType ((fromANF e), (fromANF e))
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult $ con'.dataConType
-                debug $ "conType: " <> pretty conType
+                debug $ "conType: " <> pretty conType <+> (parens $ pretty $ generalize con'.dataConType)
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
                 debug $ "eType': " <> pretty eType'
@@ -137,8 +145,8 @@ typeCheckC (ANF.Match e of' alts) = scoped $ do
                     then pure eType'
                     else
                         throw $
-                            TypeMismatchIncompleteExpected
-                                (prettyToText conType)
+                            CoreTypeMismatch
+                                (conType)
                                 eType
                                 ((fromANF e), (fromANF e))
 
@@ -175,7 +183,7 @@ typeCheckA (ANF.TyApp e t) = do
         Core.ForAllTy tv t' -> pure $ Core.substTypeVar tv t t'
         t' ->
             throw $
-                TypeMismatchIncompleteExpected
+                CoreTypeMismatchIncompleteExpected
                     { incompleteExpected = "A polymorphic type"
                     , actual = t'
                     , source = (fromANFAtom e, fromANFAtom (ANF.TyApp e t))

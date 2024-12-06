@@ -33,16 +33,19 @@ findTyCon (Core.ForAllTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
-guesstimateExprType :: (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) => TraceableFn "guesstimateExprType" CoreExpr Core.Type
+guesstimateExprType ::
+    (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) =>
+    TraceableFn "guesstimateExprType" CoreExpr Core.Type
 guesstimateExprType = TraceableFn $ \self v ->
     case v of
         (Var v) -> pure $ varType v
         (Lit l) -> pure $ literalType l
         app@(App f _) ->
-            self f <&> \case
-                Core.FuncTy _ t -> t
-                Core.ForAllTy _ t -> t
-                t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
+            self f
+                <&> ( flip overForAll $ \case
+                        Core.FuncTy _ t -> t
+                        t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
+                    )
         (TyApp f t) ->
             self f <&> \case
                 Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
@@ -53,6 +56,14 @@ guesstimateExprType = TraceableFn $ \self v ->
         (Match _ _ alts) -> case alts of
             [] -> error "exprType: empty match"
             (_, _, e) : _ -> self e
+
+{- | Applies a function over the monotype of a potential forall expression
+For example, given a type `forall a. a -> a`, `overForAll` would apply the function to `a -> a`
+Or for @forall a b c. a -> b -> c@, it would apply the function to @a -> b -> c@
+-}
+overForAll :: Core.Type -> (Core.Type -> Core.Type) -> Core.Type
+overForAll (Core.ForAllTy tv t) f = Core.ForAllTy tv (overForAll t f)
+overForAll t f = f t
 
 varType :: Var -> Core.Type
 varType (TyVar tv) = Core.TyVarTy tv
