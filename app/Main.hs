@@ -126,11 +126,14 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
+    when dumpCore $ do
+        liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
     coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
     anfCoreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
 
     coreGraph <- traverseGraph (pure . unANF) anfCoreGraph
 
+    -- override the core graph with the processed one
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
