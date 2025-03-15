@@ -13,11 +13,11 @@
     diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    hlint.url = "github:ndmitchell/hlint";
-    hlint.flake = false;
-
     fourmolu.url = "github:fourmolu/fourmolu";
     fourmolu.flake = false;
+
+    all-cabal-hashes.url = "github:commercialhaskell/all-cabal-hashes/hackage";
+all-cabal-hashes.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -37,7 +37,13 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc910;
+          basePackages = pkgs.haskell.packages.ghc910.override {
+            all-cabal-hashes = inputs.all-cabal-hashes;
+            overrides =  (self: super: {
+              # hlint = self.hlint_3_8;
+              # ghc-lib-parser = self.ghc-lib-parser_9_12_1_20241218;
+            });
+          };
 
 
           packages = {
@@ -45,13 +51,18 @@
             diagnose.source = inputs.diagnose;
             # megaparsec.source = inputs.megaparsec;
             polysemy-test.source = "0.10.0.0";
-            hlint.source = inputs.hlint;
-            fourmolu.source = inputs.fourmolu;
+            fourmolu.source = "0.18.0.0";
+            hlint.source = "3.10";
+            ghc-lib-parser.source = "9.12.1.20250314";
+            ghc-lib-parser-ex.source = "9.12.0.0";
+ormolu.source = "0.8.0.0";
+Cabal-syntax.source = "3.14.1.0";
           };
 
           settings = {
-            hlint.jailbreak = true;
+            ghc-lib-parser.buildFromSdist = true;
             fourmolu.check = false;
+            fourmolu.jailbreak = true;
             polysemy-test.jailbreak = true;
             polysemy-conc.jailbreak = true;
             polysemy-conc.check = false;
@@ -86,6 +97,8 @@
             };
 
             crypton-x509 = { check = false; };
+
+# haskell-language-server.cabalFlags = { ormolu = false;};
           };
 
           devShell = {
