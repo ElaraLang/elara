@@ -14,7 +14,7 @@
     diagnose.flake = false;
 
     all-cabal-hashes.url = "github:commercialhaskell/all-cabal-hashes/hackage";
-all-cabal-hashes.flake = false;
+    all-cabal-hashes.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -42,34 +42,30 @@ all-cabal-hashes.flake = false;
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
-            # megaparsec.source = inputs.megaparsec;
-            polysemy-test.source = "0.10.0.0";
+
             fourmolu.source = "0.18.0.0";
             hlint.source = "3.10";
             ghc-lib-parser.source = "9.12.1.20250314";
             ghc-lib-parser-ex.source = "9.12.0.0";
-ormolu.source = "0.8.0.0";
-Cabal-syntax.source = "3.14.1.0";
+            ormolu.source = "0.8.0.0";
+            Cabal-syntax.source = "3.14.1.0";
+
+            polysemy-test.source = "0.10.0.1";
+
+            polysemy-time.source = "0.7.0.1";
+            polysemy-resume.source = "0.9.0.1";
+            polysemy-conc.source = "0.14.1.1";
           };
 
           settings = {
             ghc-lib-parser.buildFromSdist = true;
             fourmolu.check = false;
             fourmolu.jailbreak = true;
-            polysemy-test.jailbreak = true;
-            polysemy-conc.jailbreak = true;
-            polysemy-conc.check = false;
             polysemy-log.jailbreak = true;
-            polysemy-plugin.jailbreak = true;
             incipit-base.jailbreak = true;
             incipit-core.jailbreak = true;
-            polysemy-resume.jailbreak = true;
-            polysemy-time.jailbreak = true;
 
             diagnose = {
-              extraBuildDepends = [
-                # pkgs.haskellPackages
-              ];
               cabalFlags.megaparsec-compat = true;
               jailbreak = true;
             };
@@ -91,14 +87,9 @@ Cabal-syntax.source = "3.14.1.0";
 
             crypton-x509 = { check = false; };
 
-# haskell-language-server.cabalFlags = { ormolu = false;};
           };
 
           devShell = {
-            tools = hp: {
-              # treefmt = config.treefmt.build.wrapper;
-            };
-
             hlsCheck.enable = false;
           };
         };
@@ -117,7 +108,6 @@ Cabal-syntax.source = "3.14.1.0";
         just-flake.features = {
           treefmt.enable = true;
         };
-
 
 
 
