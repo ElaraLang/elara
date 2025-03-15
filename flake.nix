@@ -13,9 +13,6 @@
     diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    fourmolu.url = "github:fourmolu/fourmolu";
-    fourmolu.flake = false;
-
     all-cabal-hashes.url = "github:commercialhaskell/all-cabal-hashes/hackage";
 all-cabal-hashes.flake = false;
   };
@@ -38,11 +35,7 @@ all-cabal-hashes.flake = false;
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
           basePackages = pkgs.haskell.packages.ghc910.override {
-            all-cabal-hashes = inputs.all-cabal-hashes;
-            overrides =  (self: super: {
-              # hlint = self.hlint_3_8;
-              # ghc-lib-parser = self.ghc-lib-parser_9_12_1_20241218;
-            });
+            all-cabal-hashes = inputs.all-cabal-hashes; # we need this so that the later x.source = y sections work
           };
 
 
