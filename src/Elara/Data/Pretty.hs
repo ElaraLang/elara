@@ -159,6 +159,9 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => Pretty 
 instance {-# OVERLAPPABLE #-} PP.Pretty a => Pretty a where
     pretty = PP.pretty
 
+instance Pretty CallStack where
+    pretty = pretty . prettyCallStack
+
 escapeChar :: IsString s => Char -> s
 escapeChar c = case c of
     '\a' -> "\\a"
