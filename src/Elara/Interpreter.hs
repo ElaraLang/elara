@@ -2,6 +2,7 @@
 module Elara.Interpreter where
 
 import Data.Map qualified as Map
+import Data.Text qualified as Text
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core hiding (Literal (..))
@@ -149,6 +150,8 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
             scoped $ do
                 modify (\s -> s{bindings = env'})
                 interpretExpr e
+        PrimOp "toString" -> do
+            pure $ String (prettyToText a')
         PrimOp "println" -> do
             pure $ IOAction $ do
                 let asString = case a' of
@@ -161,8 +164,27 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                 Int i -> pure $ Int (-i)
                 Double d -> pure $ Double (-d)
                 _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
+        PrimOp "stringIsEmpty" -> do
+            case a' of
+                String s -> pure $ boolValue (Text.null s)
+                _ -> throw TypeMismatch{expected = "String", actual = a'}
+        PrimOp "stringHead" -> do
+            case a' of
+                String s -> pure $ Char (Text.head s)
+                _ -> throw TypeMismatch{expected = "String", actual = a'}
+        PrimOp "stringTail" -> do
+            case a' of
+                String s -> pure $ String (Text.tail s)
+                _ -> throw TypeMismatch{expected = "String", actual = a'}
+
+        -- stringCons fst a'
+        PartialApplication (PrimOp "stringCons") fst -> do
+            case (fst, a') of
+                (Char c, String s) -> pure $ String (Text.cons c s)
+                _ -> throw TypeMismatch{expected = "Char and String", actual = a'}
+        -- (==) fst a'
         PartialApplication (PrimOp "==") fst -> do
-            pure $ (boolValue (a' == fst))
+            pure (boolValue (a' == fst))
         PartialApplication (PrimOp "+") fst -> do
             case (a', fst) of
                 (Int a, Int b) -> pure $ Int (a + b)
@@ -272,7 +294,7 @@ run :: Interpreter r => Sem r ()
 run = do
     s <- get
     case Map.lookup (UnlocatedGlobal (Qualified "main" (ModuleName ("Main" :| [])))) (s.bindings) of
-        Just (val) -> do
+        Just val -> do
             evalIO val
             pure ()
         _ -> throw $ NoMainFound s
