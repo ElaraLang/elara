@@ -160,7 +160,7 @@ inferValue ::
     , Infer SourceRegion r
     , Member (Error (UnifyError SourceRegion)) r
     ) =>
-    (Qualified VarName) ->
+    Qualified VarName ->
     ShuntedExpr ->
     Maybe (Type SourceRegion) ->
     Sem r (TypedExpr, Polytype SourceRegion)
@@ -170,7 +170,8 @@ inferValue valueName valueExpr expectedType = do
         Just t -> pure t
         Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
     (expectedAsMono, tyApps) <- instantiate expected
-    addType' (TermVarKey (valueName)) expected
+    debug $ "Instantiated expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
+    addType' (TermVarKey valueName) expected
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
 
     let constraint' = constraint <> Equality expectedAsMono t
@@ -179,7 +180,7 @@ inferValue valueName valueExpr expectedType = do
     debug $ "Type: " <> pretty t
     debug $ "tch: " <> pretty tch
 
-    (finalConstraint, subst) <- solveConstraint mempty tch (constraint')
+    (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
     when (finalConstraint /= EmptyConstraint) do
         throw (UnresolvedConstraint valueName finalConstraint)

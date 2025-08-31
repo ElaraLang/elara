@@ -285,9 +285,15 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
             -- TODO: we need to detect mutually recursive bindings
             let ref = UnlocatedLocal (nameText <$> vn)
             t' <- typeToCore (typeOf e1)
+            debug $ "Let-binding" <+> pretty vn <+> ":" <+> pretty (typeOf e1) <+> "=" <+> pretty e1'
+            let bindingIsRecursive = isRecursive vn e1 (_1 % _As @"Local" % unlocated)
+            debug $ "Recursive?" <+> pretty bindingIsRecursive
             pure $
                 Core.Let
-                    (if isRecursive vn e1 (_1 % _As @"Local" % unlocated) then Recursive [(Core.Id ref t' Nothing, e1')] else NonRecursive (Core.Id ref t' Nothing, e1'))
+                    ( if bindingIsRecursive
+                        then Recursive [(Core.Id ref t' Nothing, e1')]
+                        else NonRecursive (Core.Id ref t' Nothing, e1')
+                    )
                     e2'
         AST.Block exprs -> desugarBlock exprs
 
