@@ -134,8 +134,7 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
 fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
-fixOperators opTable o = do
-    reassoc o
+fixOperators opTable o = reassoc o
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
     withLocationOf' s repl = over (_Unwrapped % _1) (repl <$) s
@@ -192,22 +191,20 @@ runShuntPipeline s =
         pure a
 
 createOpTable :: IsPipeline r => Maybe OpTable -> TopologicalGraph (Module 'Renamed) -> Sem r OpTable
-createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ do
-    traverseGraph_ addDeclsToOpTable graph
+createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ traverseGraph_ addDeclsToOpTable graph
   where
     addDeclsToOpTable :: Member (State OpTable) r => Module 'Renamed -> Sem r ()
     addDeclsToOpTable = traverseModule_ addDeclsToOpTable'
 
     addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Sem r ()
-    addDeclsToOpTable' (Declaration (Located _ decl)) = do
-        case decl ^. field' @"body" % _Unwrapped % unlocated of
-            Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
-                let nameRef = Global $ IgnoreLocation $ (NVarName <<$>> _valueName)
-                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
-            TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
-                let nameRef = Global $ IgnoreLocation $ (((NTypeName <<$>> name)))
-                 in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
-            _ -> pass
+    addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
+        Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
+            let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
+             in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+        TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
+            let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
+             in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+        _ -> pass
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
 infixDeclToOpInfo (InfixDeclaration name prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
@@ -274,8 +271,7 @@ shuntExpr ::
     Members InnerShuntPipelineEffects r =>
     RenamedExpr ->
     Sem r ShuntedExpr
-shuntExpr (Expr (le, t)) = do
-    (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le
+shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le
   where
     shuntExpr' :: RenamedExpr' -> Sem r ShuntedExpr'
     shuntExpr' (Int l) = pure (Int l)

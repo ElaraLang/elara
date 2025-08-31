@@ -26,6 +26,7 @@ generalise ty = do
     let generalized = Forall (toList uniVars) EmptyConstraint ty
     pure generalized
 
+removeSkolems :: Monotype loc -> Monotype loc
 removeSkolems ty = do
     let ftvs = ftv ty
 
