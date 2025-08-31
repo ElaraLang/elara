@@ -29,7 +29,7 @@ import Polysemy
 import Polysemy.Error
 import Polysemy.State (State, evalState, get, modify)
 import Polysemy.State.Extra (locally, scoped)
-import Print (prettyToString)
+import Print (prettyToString, showPretty)
 import TODO (todo)
 
 data TypeCheckError
@@ -38,6 +38,7 @@ data TypeCheckError
         { expected :: Core.Type
         , actual :: Core.Type
         , source :: (CoreExpr, CoreExpr)
+        , errorCallStack :: CallStack
         }
     | CoreTypeMismatchIncompleteExpected
         { incompleteExpected :: Text
@@ -48,7 +49,7 @@ data TypeCheckError
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
     | PatternMatchMissingBinders {alt :: Core.AltCon, altType :: Core.Type, providedBinders :: [Var], expr :: CoreExpr}
-    deriving (Show, Eq, Generic)
+    deriving (Show, Generic)
 
 instance Pretty TypeCheckError
 
@@ -96,7 +97,7 @@ varType :: Var -> Core.Type
 varType (TyVar _) = error "TyVar"
 varType (Id _ t _) = t
 
-typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) => ANF.Expr Var -> Sem r Core.Type
+typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r, HasCallStack) => ANF.Expr Var -> Sem r Core.Type
 typeCheck (ANF.Let bind in') = case bind of
     NonRecursive (v, e) -> debugWith ("typeCheck NonRecursive Let: " <> pretty v) $ do
         eType <- typeCheckC e
@@ -109,7 +110,7 @@ typeCheck (ANF.Let bind in') = case bind of
         typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
-typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) => ANF.CExpr Var -> Sem r Core.Type
+typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r, HasCallStack) => ANF.CExpr Var -> Sem r Core.Type
 typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> pretty (fromANFAtom x)) $ do
     fType <- typeCheckA f
     debug $ "fType: " <> pretty fType
@@ -119,7 +120,7 @@ typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> prett
         Core.FuncTy argType retType -> do
             if generalize argType `equalUnderSubst` generalize xType
                 then pure retType
-                else throw $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x)
+                else throw $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x) callStack
         other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC match@(ANF.Match e of' alts) = scoped $ do
@@ -135,7 +136,7 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 if litType == eType
                     then pure eType'
-                    else throw $ CoreTypeMismatch litType eType (fromANF e, fromANF e)
+                    else throw $ CoreTypeMismatch litType eType (fromANF e, fromANF e) callStack
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
                 debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
@@ -145,7 +146,11 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
                 debug $ "eType': " <> pretty eType'
-                if generalize eType `equalUnderSubst` generalize conType
+                let generalizedEType = generalize eType
+                let generalizedConType = generalize conType
+                debug $ "generalized:" <+> pretty generalizedEType <+> "and" <+> pretty generalizedConType
+                debug $ "equal?" <+> pretty (generalizedEType `equalUnderSubst` generalizedConType)
+                if generalizedEType `equalUnderSubst` generalizedConType
                     then pure eType'
                     else
                         throw $
@@ -153,6 +158,7 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                                 (generalize conType)
                                 (generalize eType)
                                 (fromANF e, fromANF e)
+                                callStack
 
     case altTypes of
         [] -> error "empty match? how do we handle this"
@@ -199,17 +205,21 @@ For example @forall a. a@ and @forall b. b@ are equal in this relation,
 but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
 -}
 equalUnderSubst :: Core.Type -> Core.Type -> Bool
+equalUnderSubst x y | trace (toString ("equalUnderSubst: " <> showPretty x <> " ?= " <> showPretty y)) False = undefined
+equalUnderSubst x y | x == y = True
 equalUnderSubst (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
     equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)
 equalUnderSubst (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
 equalUnderSubst (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
-equalUnderSubst (Core.ConTy c1) (Core.ConTy c2) = c1 == c2
+equalUnderSubst (Core.ConTy c1) (Core.ConTy c2) =
+    trace (toString ("Comparing constructors: " <> show c1 <> " and " <> show c2)) $
+        c1 == c2
 -- At this point (after substituting foralls), a type variable should match anything
 equalUnderSubst (Core.TyVarTy _) _ = True
 equalUnderSubst _ (Core.TyVarTy _) = True
-equalUnderSubst _ _ = False
+equalUnderSubst x y = error $ "Incomparable types: " <> showPretty x <> " and " <> showPretty y
 
 generalize :: Core.Type -> Core.Type
 generalize t = let ftv = freeTypeVars t in foldr Core.ForAllTy t ftv

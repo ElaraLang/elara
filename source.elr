@@ -2,10 +2,8 @@ import Prelude
 import Option
 import Elara.Prim
 import List
+import Tuple
 
-type Pair a b = Pair a b
 
 
-let nextTo = \x -> Pair (x + 1) (x - 1)
-
-let main = println (map nextTo [1, 2, 3]) *> ( println "hi")
+let main = (println (listToString (zip [1, 2, 3] [4,5,6])))

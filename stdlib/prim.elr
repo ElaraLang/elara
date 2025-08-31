@@ -4,6 +4,9 @@ type Bool = True | False
 
 type List a = Nil | Cons a (List a)
 
+type Tuple2 a b = Tuple2 a b
+
+
 def (+) : Int -> Int -> Int
 let (+) = elaraPrimitive "+"
 
@@ -24,3 +27,18 @@ let println = elaraPrimitive "println"
 
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) = elaraPrimitive ">>="
+
+def stringHead : String -> Char
+let stringHead = elaraPrimitive "stringHead"
+
+def stringTail : String -> String
+let stringTail = elaraPrimitive "stringTail"
+
+def stringCons : Char -> String -> String
+let stringCons = elaraPrimitive "stringCons"
+
+def stringIsEmpty : String -> Bool
+let stringIsEmpty = elaraPrimitive "stringIsEmpty"
+
+def toString : a -> String
+let toString = elaraPrimitive "toString"
