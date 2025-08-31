@@ -1,1 +1,10 @@
 module Option
+import Elara.Prim
+
+type Option a = Some a | None
+
+def isSome : Option a -> Bool
+let isSome opt =
+    match opt with
+        Some _ -> True
+        None -> False

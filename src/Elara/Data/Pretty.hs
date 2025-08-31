@@ -9,6 +9,7 @@ module Elara.Data.Pretty (
     parensIf,
     blockParensIf,
     Pretty (..),
+    gpretty,
     module Pretty,
     module Prettyprinter.Render.Terminal,
     listToText,
@@ -102,7 +103,10 @@ bracedBlock b = do
 class Pretty a where
     pretty :: a -> Doc AnsiStyle
     default pretty :: (Generic a, GPretty (Rep a)) => a -> Doc AnsiStyle
-    pretty = sep . gprettyPrec 0 . from
+    pretty = gpretty
+
+gpretty :: (Generic a, GPretty (Rep a)) => a -> Doc AnsiStyle
+gpretty = sep . gprettyPrec 0 . from
 
 instance Pretty (Doc (Annotation AnsiStyle)) where
     pretty = pretty . reAnnotate defaultStyle
@@ -154,6 +158,9 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => Pretty 
 
 instance {-# OVERLAPPABLE #-} PP.Pretty a => Pretty a where
     pretty = PP.pretty
+
+instance Pretty CallStack where
+    pretty = pretty . prettyCallStack
 
 escapeChar :: IsString s => Char -> s
 escapeChar c = case c of

@@ -11,7 +11,7 @@ import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF (fromANF)
 import Elara.Data.Pretty
 import Elara.Data.Unique (UniqueGen, makeUnique)
-import Elara.Logging (StructuredDebug, debug)
+import Elara.Logging (StructuredDebug, debug, traceFn)
 import Polysemy
 import Polysemy.Writer (Writer, runWriter, tell)
 import Prelude hiding (Alt)
@@ -96,9 +96,11 @@ liftClosuresA' env (ANF.Lam v e) = do
             pure $ Lam v e'
         else do
             v' <- makeUnique "closure"
-            let lambdaType = case v of
-                    Core.Id _ t _ -> t `Core.FuncTy` exprType (fromANF e)
-                    Core.TyVar _ -> error "liftClosuresA': TyVar"
+            lambdaType <- case v of
+                Core.Id _ t _ -> do
+                    guessedType <- traceFn guesstimateExprType (fromANF e)
+                    pure $ t `Core.FuncTy` guessedType
+                Core.TyVar _ -> error "liftClosuresA': TyVar"
             let id = Core.Id (Local' v') lambdaType Nothing
             tell [(id, ANF.AExpr $ Lam v e)]
             pure $ Var id

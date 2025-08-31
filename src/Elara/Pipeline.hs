@@ -8,14 +8,16 @@ This acts as the entrypoint to the stage, bringing each stage into a common abst
 -}
 module Elara.Pipeline where
 
+import Data.Text.IO qualified as Text
 import Elara.Data.Pretty
 import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
 import Elara.Logging
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, InterpreterFor, Members, Sem, runM, subsume_)
+import Polysemy (Effect, Embed, InterpreterFor, Member, Members, Sem, embed, runM, subsume_)
 import Polysemy.Log (DataLog, interpretDataLog, interpretDataLogStdoutWith)
 import Polysemy.Maybe (MaybeE, runMaybe)
-import Print (elaraDebug)
+import Print (elaraDebug, printPretty)
+import System.IO (openFile)
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
 type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), StructuredDebug, Embed IO]
@@ -34,9 +36,22 @@ finalisePipeline =
     runM @IO
         . runDiagnosticWriter
         . runMaybe
-        . (if elaraDebug then interpretDataLogStdoutWith prettyToText else destroyDataLog)
+        . (if elaraDebug then logToStdoutAndFile else destroyDataLog)
         . structuredDebugToLog
         . subsume_
+
+logToStdoutAndFile :: Member (Embed IO) r => InterpreterFor (DataLog (Doc AnsiStyle)) r
+logToStdoutAndFile sem = do
+    -- reset log
+    embed $ writeFileText "elara.log" ""
+    handle <- embed (openFile "elara.log" WriteMode)
+    embed $ hSetBuffering handle LineBuffering
+    interpretDataLog
+        ( \x -> do
+            embed $ printPretty x
+            embed $ Text.hPutStrLn handle (prettyToUnannotatedText x)
+        )
+        sem
 
 destroyDataLog :: InterpreterFor (DataLog (Doc AnsiStyle)) r
 destroyDataLog = interpretDataLog (\_ -> pass)

@@ -70,17 +70,21 @@ data DataCon = DataCon
     , dataConType :: Type
     -- ^ The type of the data constructor, i.e. `type Foo a = Bar a` would have a data constructor with type `a -> Foo a`
     , dataConDataType :: TyCon
-    -- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a data constructor with type `Foo a`. This should be identical to @functionTypeResult . dataConType@
+    -- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a DataCon for `Bar a` with @dataConDataType = Foo a@. This should be identical to @functionTypeResult . dataConType@
     }
     deriving (Show, Eq, Data, Generic, Ord)
 
 data Type
-    = TyVarTy TypeVariable
-    | FuncTy Type Type
-    | AppTy Type Type
-    | -- | A type constructor
+    = -- | A type variable, @a@
+      TyVarTy TypeVariable
+    | -- | A function type, @t -> t'@
+      FuncTy Type Type
+    | -- | An application of a type constructor, @TC t@
+      AppTy Type Type
+    | -- | A type constructor, @TC@
       ConTy TyCon
-    | ForAllTy !TypeVariable !Type
+    | -- | A forall quantified type, @forall a. T@
+      ForAllTy !TypeVariable !Type
     deriving (Show, Eq, Data, Ord, Generic)
 
 data TyCon

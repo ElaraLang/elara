@@ -66,13 +66,14 @@ initialInferState =
         }
 
 data KindInferError
-    = HasCallStack => UnknownKind (Qualified TypeName) (Map (Qualified TypeName) ElaraKind)
-    | HasCallStack => UnboundVar TypeVar (Map (Either (Qualified TypeName) TypeVar) KindVar)
+    = UnknownKind (Qualified TypeName) (Map (Qualified TypeName) ElaraKind)
+    | UnboundVar TypeVar (Map (Either (Qualified TypeName) TypeVar) KindVar)
     | CannotUnify ElaraKind ElaraKind
     | NotFunctionKind ElaraKind
     | OccursCheckFailed KindVar ElaraKind
+    deriving (Generic)
 
-deriving instance Show KindInferError
+instance Pretty KindInferError
 
 instance ReportableError KindInferError where
     report (UnknownKind name kinds) =
@@ -187,7 +188,9 @@ infer kindEnv decls = do
                 todo
         pure (kind, body')
 
-inferKind :: (Member (State InferState) r, Member (Error KindInferError) r, Member UniqueGen r) => Qualified TypeName -> [Located TypeVar] -> ShuntedTypeDeclaration -> Sem r (ElaraKind, KindedTypeDeclaration)
+inferKind ::
+    (Member (State InferState) r, Member (Error KindInferError) r, Member UniqueGen r) =>
+    Qualified TypeName -> [Located TypeVar] -> ShuntedTypeDeclaration -> Sem r (ElaraKind, KindedTypeDeclaration)
 inferKind name tvs t = do
     kindVar <- makeUniqueId
     declareNamedType name kindVar

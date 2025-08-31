@@ -1,2 +1,22 @@
 module List
 import Elara.Prim
+import Tuple
+import String
+
+def zip : List a -> List b -> List (Tuple2 a b)
+let zip l1 l2 =
+    match (l1, l2) with
+        Tuple2 Nil _ -> Nil
+        Tuple2 _ Nil -> Nil
+        Tuple2 (Cons x xs) (Cons y ys) -> Cons (Tuple2 x y) (zip xs ys)
+
+def listToString : List a -> String
+let listToString l =
+    let go l_ =
+        match l_ with
+            Nil -> ""
+            Cons x Nil -> toString x
+            Cons x xs -> toString x ++ ", " ++ go xs
+    match l with
+            Nil -> "[]"
+            Cons x xs -> "[" ++ go (Cons x xs) ++ "]"

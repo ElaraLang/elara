@@ -30,7 +30,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen, makeUnique, uniqueGenToIO)
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Error.Codes qualified as Codes
-import Elara.Logging (StructuredDebug, debug)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Elara.Pipeline
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Error.Diagnose (Marker (This, Where), Note (..), Report (Err))
@@ -504,7 +504,11 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         withModified addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
             let ann' = coerceTypeDeclAnnotations ann
-            pure $ TypeDeclaration name vars' ty' ann'
+            thisModule <- askCurrentModule
+            let qualifiedName =
+                    sequenceA $
+                        Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
+            pure $ TypeDeclaration qualifiedName vars' ty' ann'
 
 renameTypeDeclaration :: InnerRename r => ModuleName -> DesugaredTypeDeclaration -> Sem r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do
@@ -523,9 +527,10 @@ renameSimpleType = traverseOf (_Unwrapped % _1 % unlocated) (renameType False)
 -- | Renames a type, qualifying type constructors and type variables where necessary
 renameType ::
     InnerRename r =>
-    -- | If new type variables are allowed - if False, this will throw an error if a type variable is not in scope
-    -- This is useful for type declarations, where something like @type Invalid a = b@ would clearly be invalid
-    -- But for local type annotations, we want to allow this, as it may be valid
+    {- | If new type variables are allowed - if False, this will throw an error if a type variable is not in scope
+    This is useful for type declarations, where something like @type Invalid a = b@ would clearly be invalid
+    But for local type annotations, we want to allow this, as it may be valid
+    -}
     Bool ->
     DesugaredType' ->
     Sem r RenamedType'
@@ -609,7 +614,7 @@ renameExpr (Expr le@(Located loc _, _)) =
             createConses [] = lastCons
             createConses (x' : xs') = cons x' (createConses xs')
         pure (createConses (toList xs') ^. _Unwrapped % _1 % unlocated)
-    renameExpr' (LetIn vn _ e body) = do
+    renameExpr' (LetIn vn _ e body) = debugWith ("renameExpr' " <> pretty vn) $ do
         vn' <- uniquify vn
         withModified (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local vn')) $ do
             exp' <- renameExpr e
@@ -757,13 +762,14 @@ desugarBlock (e@(Expr' (Let{})) :| []) = do
     decl <- ask @(Maybe DesugaredDeclaration)
     throw (BlockEndsWithLet e (fmap (view (_Unwrapped % unlocated % the @"body")) decl))
 desugarBlock (e :| []) = renameExpr e
-desugarBlock (Expr (Located l (Let n p val), a) :| (xs1 : xs')) = do
-    val' <- renameExpr val
-    a' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)) a
+desugarBlock (exp@(Expr (Located l (Let n p val), a)) :| (xs1 : xs')) = debugWith ("desugarBlock: " <> pretty exp) $ do
     n' <- uniquify n
-    xs' <- withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local n')) $ do
-        desugarBlock (xs1 :| xs')
-    pure $ Expr (Located l (LetIn n' p val' xs'), a')
+    -- TODO this is almost identical to the normal let case
+    withModified (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local n')) $ do
+        val' <- renameExpr val
+        a' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType False)) a
+        block <- desugarBlock (xs1 :| xs')
+        pure $ Expr (Located l (LetIn n' p val' block), a')
 desugarBlock xs = do
     let loc = spanningRegion' (xs <&> (^. _Unwrapped % _1 % sourceRegion))
     xs' <- traverse renameExpr xs

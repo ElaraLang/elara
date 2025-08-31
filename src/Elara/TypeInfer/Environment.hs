@@ -39,6 +39,7 @@ instance Pretty (TypeEnvKey loc) where
 addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
+addType' :: Member (State (TypeEnvironment loc)) r => TypeEnvKey loc -> Type loc -> Sem r ()
 addType' key ty = modify (addType key ty)
 
 lookupType ::

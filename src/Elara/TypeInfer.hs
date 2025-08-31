@@ -14,36 +14,38 @@ import Elara.AST.Generic.Types (
     DeclarationBody' (..),
  )
 import Elara.AST.Module
-import Elara.AST.Name (Qualified (..), VarName)
-import Elara.AST.Region (SourceRegion, unlocated)
+import Elara.AST.Name (LowerAlphaName, NameLike (nameText), Qualified (..), VarName)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
         Typed
     ),
  )
-import Elara.TypeInfer.Type (AxiomScheme (EmptyAxiomScheme), Constraint (..), Monotype (TypeVar), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 
+import Elara.AST.Kinded
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Kind.Infer (InferState, initialInferState)
+import Elara.Data.Kind.Infer (InferState, KindInferError, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Pretty
-import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.TypeInfer.ConstraintGeneration
-import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType)
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
 import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Unique (makeUniqueTyVar)
+import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Relude.Extra.Type (type (++))
+import TODO
 
 type InferPipelineEffects =
     '[ StructuredDebug
@@ -51,6 +53,7 @@ type InferPipelineEffects =
      , UniqueGen
      , Error (UnifyError SourceRegion)
      , Error (TypeConvertError)
+     , Error KindInferError
      ]
         ++ (InferEffects SourceRegion)
 
@@ -63,6 +66,7 @@ runInferPipeline e = do
                 & uniqueGenToIO
                 & runErrorOrReport @(UnifyError SourceRegion)
                 & runErrorOrReport @(TypeConvertError)
+                & runErrorOrReport @(KindInferError)
 
     snd <$> runInferEffects e'
 
@@ -102,12 +106,52 @@ inferDeclaration (Declaration ld) = do
         Sem r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
-            expectedType <- traverse astTypeToGeneralisedInferType valueType
+            expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
             debug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
-            pure (Value name typedExpr NoFieldValue NoFieldValue (Generic.coerceValueDeclAnnotations annotations))
+            pure (Value name typedExpr NoFieldValue (Polytype polytype) (Generic.coerceValueDeclAnnotations annotations))
+        TypeDeclaration (name) tyVars body anns -> do
+            (kind, decl') <- (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
+            case decl' of
+                Generic.Alias t -> do
+                    _ <- astTypeToInferType t
+                    -- addType' (TypeVarKey (name ^. unlocated)) t'
+                    todo
+                Generic.ADT ctors -> do
+                    let tyVars' = fmap createTypeVar tyVars
+                    let typeConstructorType = TypeConstructor (name ^. unlocated) (fmap (TypeVar . UnificationVar) tyVars')
+
+                    let inferCtor (ctorName, t :: [KindedType]) = do
+                            t' <- traverse astTypeToInferTypeWithKind t
+                            let ctorType =
+                                    foldr
+                                        (\a b -> Function a b)
+                                        typeConstructorType
+                                        (fst <$> t')
+                            addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
+
+                            pure (ctorName, t')
+
+                    ctors' <- traverse inferCtor ctors
+                    let ann' =
+                            Generic.TypeDeclAnnotations
+                                { infixTypeDecl =
+                                    Generic.coerceInfixDeclaration
+                                        <$> anns.infixTypeDecl
+                                , kindAnn = kind
+                                }
+                    pure
+                        ( TypeDeclaration
+                            name
+                            (zipWith ((<$)) tyVars' tyVars)
+                            ((Generic.ADT ctors') <$ body)
+                            ann'
+                        )
+
+createTypeVar :: Located (Unique LowerAlphaName) -> UniqueTyVar
+createTypeVar (Located _ u) = (fmap (Just . nameText) u)
 
 inferValue ::
     forall r.
@@ -116,7 +160,7 @@ inferValue ::
     , Infer SourceRegion r
     , Member (Error (UnifyError SourceRegion)) r
     ) =>
-    (Qualified VarName) ->
+    Qualified VarName ->
     ShuntedExpr ->
     Maybe (Type SourceRegion) ->
     Sem r (TypedExpr, Polytype SourceRegion)
@@ -125,8 +169,11 @@ inferValue valueName valueExpr expectedType = do
     expected <- case expectedType of
         Just t -> pure t
         Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
-    expectedAsMono <- instantiate expected
-    addType' (TermVarKey (valueName)) expected
+    -- When we have an expected type (e.g., from a user annotation), skolemise
+    -- its quantified variables so they cannot unify with concrete types.
+    expectedAsMono <- skolemise expected
+    debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
+    addType' (TermVarKey valueName) expected
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
 
     let constraint' = constraint <> Equality expectedAsMono t
@@ -135,7 +182,7 @@ inferValue valueName valueExpr expectedType = do
     debug $ "Type: " <> pretty t
     debug $ "tch: " <> pretty tch
 
-    (finalConstraint, subst) <- solveConstraint mempty tch (constraint')
+    (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
     when (finalConstraint /= EmptyConstraint) do
         throw (UnresolvedConstraint valueName finalConstraint)
@@ -147,6 +194,17 @@ inferValue valueName valueExpr expectedType = do
     generalized <- generalise (removeSkolems newType)
 
     pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
+
+-- Replace all quantified variables in a type scheme with rigid skolem variables.
+-- This prevents ill-typed programs from unifying annotated polymorphic variables
+-- with concrete types during checking.
+skolemise :: forall r. Type SourceRegion -> Sem r (Monotype SourceRegion)
+skolemise = \case
+    Lifted t -> pure t
+    Polytype (Forall tyVars _ t) -> do
+        -- Build a substitution mapping each quantified variable α to a rigid skolem #α
+        let pairs = zip (fmap (view typed) tyVars) (TypeVar . SkolemVar <$> tyVars)
+        pure $ foldl' (\acc (tv, rep) -> substitute tv rep acc) t pairs
 
 newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
 

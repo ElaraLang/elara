@@ -1,0 +1,8 @@
+module String
+import Elara.Prim
+def (++) : String -> String -> String
+let (++) s1 s2 = 
+    if stringIsEmpty s1 then s2
+    else if stringIsEmpty s2 then s1
+    else match (stringHead s1) with
+        c -> stringCons c (stringTail s1 ++ s2)

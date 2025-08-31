@@ -22,7 +22,7 @@ import Elara.Core.Module (CoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraph_)
+import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
 
@@ -32,6 +32,8 @@ import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
+import Elara.Interpreter (runInterpreter)
+import Elara.Interpreter qualified as Interpreter
 import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Logging
@@ -60,7 +62,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing, doesFileExist, listDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath
-import System.IO (hSetEncoding, openFile, utf8)
+import System.IO (hSetEncoding, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
@@ -98,15 +100,16 @@ main = run `finally` cleanup
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
-dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph :: (HasCallStack, Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
             let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
-            fileHandle <- openFile fileName WriteMode
             let rendered = layoutSmart defaultLayoutOptions contents
-            renderIO fileHandle rendered
-            hFlush fileHandle
+            withFile fileName WriteMode $ \fileHandle -> do
+                hSetEncoding fileHandle utf8
+                renderIO fileHandle rendered
+                hFlush fileHandle
 
     traverseGraph_ dump graph
 
@@ -124,17 +127,25 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 
     let graph = createGraph (source : stdlibMods)
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
+    when dumpCore $ do
+        liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
     coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
-    coreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
-    runErrorOrReport $ traverseGraph_ typeCheckCoreModule coreGraph
+    anfCoreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
 
+    coreGraph <- traverseGraph (pure . unANF) anfCoreGraph
+
+    -- override the core graph with the processed one
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
 
-    for_ coreGraph $ \coreModule -> do
-        putTextLn ("Compiling " <> showPretty (coreModule ^. field' @"name") <> "...")
-        -- class' <- structuredDebugToLog (emitCoreModule coreModule)
-        pass
+    -- type check the core graph _after_ dumping for debugging purposes
+    runErrorOrReport $ traverseGraph_ typeCheckCoreModule anfCoreGraph
+
+    runInterpreter $ do
+        flip traverseGraphRevTopologically_ coreGraph $ \mod -> do
+            Interpreter.loadModule mod
+        when run $ do
+            Interpreter.run
     -- putTextLn (showPretty class')
     -- converted <- runErrorOrReport $ fromEither $ convert class'
     -- let bs = runPut (writeBinary converted)
@@ -175,11 +186,10 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 --     x <- readCreateProcess process{cwd = Just "./build"} ""
 --     putStrLn x
 
-createAndWriteFile :: FilePath -> LByteString -> IO ()
-createAndWriteFile path content = do
-    createDirectoryIfMissing True $ takeDirectory path
-
-    writeFileLBS path content
+-- createAndWriteFile :: FilePath -> LByteString -> IO ()
+-- createAndWriteFile path content = do
+--     createDirectoryIfMissing True $ takeDirectory path
+--     writeFileLBS path content
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply

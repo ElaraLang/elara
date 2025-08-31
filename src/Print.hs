@@ -6,13 +6,13 @@ module Print where
 
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
 import Elara.Data.Pretty
-import Prettyprinter.Render.Terminal (putDoc)
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
     defaultOutputOptionsDarkBg,
     pPrintOpt,
     pShow,
  )
+import qualified Elara.Width as Width
 
 elaraDebug :: Bool
 elaraDebug = True
@@ -22,7 +22,9 @@ printColored :: (Show a, MonadIO m) => a -> m ()
 printColored = pPrintOpt NoCheckColorTty defaultOutputOptionsDarkBg
 
 printPretty :: (Pretty a, MonadIO m) => a -> m ()
-printPretty p = liftIO (putDoc (pretty p) *> putStrLn "")
+printPretty p = liftIO $ do
+    width <- Width.getWidth 
+    putTextLn $ renderStrict True width (pretty p)
 
 showColored :: (Show a, IsString s) => a -> s
 showColored = fromString . toString . pShow

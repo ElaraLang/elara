@@ -13,14 +13,16 @@ import Data.Generics.Wrapped
 import Elara.AST.Generic (ASTLocate', ASTQual, Select, TypedLambdaParam)
 import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName)
+import Elara.AST.Name (Name (..), OpName, Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
-import Elara.AST.VarRef (VarRef)
+import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Monotype, Type (..))
+import Elara.TypeInfer.Unique
+import Optics (foldOf)
 
 type instance ASTLocate' 'Typed = Located
 
@@ -33,7 +35,8 @@ type instance Select "LambdaPattern" 'Typed = TypedLambdaParam (Unique VarName) 
 
 type instance Select "LetPattern" 'Typed = NoFieldValue
 
-type instance Select "VarRef" 'Typed = VarRef VarName
+-- VarRefs may have polytypes
+type instance Select "VarRef" 'Typed = (VarRef VarName, Type SourceRegion)
 
 type instance Select "ConRef" 'Typed = Qualified TypeName
 
@@ -61,21 +64,21 @@ type instance Select "TypeApplication" Typed = Monotype SourceRegion
 -- Selections for 'DeclarationBody'
 type instance Select "ValuePatterns" 'Typed = NoFieldValue
 
-type instance Select "ValueType" 'Typed = NoFieldValue -- types are kept in the expression rather than declarations now
+type instance Select "ValueType" 'Typed = Type SourceRegion
 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
 type instance Select "InfixDecl" 'Typed = DataConCantHappen
 type instance Select "Alias" 'Typed = (Type SourceRegion, ElaraKind)
-type instance Select "ADTParam" 'Typed = (Type SourceRegion, ElaraKind)
+type instance Select "ADTParam" 'Typed = (Monotype SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name
 type instance Select "AnyName" Typed = Name
-type instance Select "TypeName" Typed = TypeName
+type instance Select "TypeName" Typed = Qualified TypeName
 type instance Select "ValueName" Typed = Qualified VarName
 
 -- Selections for 'Type'
-type instance Select "TypeVar" 'Typed = Unique LowerAlphaName
+type instance Select "TypeVar" 'Typed = UniqueTyVar
 type instance Select "TypeKind" 'Typed = ElaraKind
 type instance Select "KindAnnotation" 'Typed = ElaraKind
 
@@ -118,38 +121,40 @@ instance HasDependencies TypedDeclaration where
                 Generic.TypeDeclaration _ _ (Located _ (Generic.ADT ctors)) _ ->
                     toList (NTypeName <<$>> (ctors ^.. each % _1 % unlocated))
                 _ -> []
-    dependencies decl = []
+    dependencies decl = case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+        Generic.Value _ e NoFieldValue type' _ ->
+            valueDependencies e
+                <> patternDependencies e
+                <> typeDependencies type'
+        Generic.TypeDeclaration _ _ x _ ->
+            case x of
+                Located _ (Generic.ADT ctors) ->
+                    ctors ^.. each % _2 % each % _1 % gplate @(Qualified TypeName) % to (NTypeName <$>)
+                Located _ (Generic.Alias t) ->
+                    t ^.. gplate @(Qualified TypeName) % to (NTypeName <$>)
 
--- case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
--- Generic.Value e NoFieldValue NoFieldValue _ ->
---     valueDependencies e
---         <> patternDependencies e
--- Generic.TypeDeclaration _ x _ ->
---     case x of
---         Located _ (Generic.ADT ctors) ->
---             concatMapOf (each % _2 % each % _1) typeDependencies ctors
---         Located _ (Generic.Alias t) ->
---             concatMapOf _1 typeDependencies t
+valueDependencies :: TypedExpr -> [Qualified Name]
+valueDependencies x =
+    concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names x
+        <> concatMapOf (cosmosOnOf (_Unwrapped % _2) gplate) monotypeDependencies x
+  where
+    names :: TypedExpr' -> [Qualified Name]
+    names (Generic.Var (Located _ (Global e, t))) = (NVarName <<$>> [e ^. unlocated]) <> typeDependencies t
+    names (Generic.Constructor (Located _ e)) = [NTypeName <$> e]
+    names _ = []
 
--- valueDependencies :: TypedExpr -> [Qualified Name]
--- valueDependencies x =
---     concatMapOf (cosmosOn (_Unwrapped % _1 % unlocated)) names x
---         <> concatMapOf (cosmosOnOf (_Unwrapped % _2) gplate) typeDependencies x
---   where
---     names :: TypedExpr' -> [Qualified Name]
---     names (Generic.Var (Located _ (Global e))) = NVarName <<$>> [e ^. unlocated]
---     names (Generic.Constructor (Located _ e)) = [NTypeName <$> e]
---     names _ = []
+patternDependencies :: TypedExpr -> [Qualified Name]
+patternDependencies =
+    foldOf (gplate % to patternDependencies')
+  where
+    patternDependencies' :: TypedPattern -> [Qualified Name]
+    patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
+    names :: TypedPattern' -> [Qualified Name]
+    names (Generic.ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
+    names _ = []
 
--- patternDependencies :: TypedExpr -> [Qualified Name]
--- patternDependencies =
---     foldOf (gplate % to patternDependencies')
---   where
---     patternDependencies' :: TypedPattern -> [Qualified Name]
---     patternDependencies' = concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
---     names :: TypedPattern' -> [Qualified Name]
---     names (Generic.ConstructorPattern (Located _ e) _) = [NTypeName <$> e]
---     names _ = []
+monotypeDependencies :: Monotype SourceRegion -> [Qualified Name]
+monotypeDependencies t = t ^.. gplate @(Qualified TypeName) % to (NTypeName <$>)
 
--- typeDependencies :: Type SourceRegion -> [Qualified Name]
--- typeDependencies _ = [] -- TODO
+typeDependencies :: Type SourceRegion -> [Qualified Name]
+typeDependencies t = t ^.. gplate @(Qualified TypeName) % to (NTypeName <$>)

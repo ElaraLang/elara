@@ -13,11 +13,8 @@
     diagnose.url = "github:bristermitten/diagnose";
     diagnose.flake = false;
 
-    hlint.url = "github:ndmitchell/hlint";
-    hlint.flake = false;
-
-    fourmolu.url = "github:fourmolu/fourmolu";
-    fourmolu.flake = false;
+    # all-cabal-hashes.url = "github:commercialhaskell/all-cabal-hashes/hackage";
+    # all-cabal-hashes.flake = false;
   };
 
   outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
@@ -37,35 +34,27 @@
 
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
 
-          basePackages = pkgs.haskell.packages.ghc910;
+          basePackages = pkgs.haskell.packages.ghc912;
 
 
           packages = {
             h2jvm.source = inputs.h2jvm;
             diagnose.source = inputs.diagnose;
-            # megaparsec.source = inputs.megaparsec;
-            polysemy-test.source = "0.10.0.0";
-            hlint.source = inputs.hlint;
-            fourmolu.source = inputs.fourmolu;
+            ghc-tcplugins-extra.source = "0.5";
+
           };
 
           settings = {
-            hlint.jailbreak = true;
-            fourmolu.check = false;
-            polysemy-test.jailbreak = true;
-            polysemy-conc.jailbreak = true;
-            polysemy-conc.check = false;
+
             polysemy-log.jailbreak = true;
-            polysemy-plugin.jailbreak = true;
             incipit-base.jailbreak = true;
             incipit-core.jailbreak = true;
-            polysemy-resume.jailbreak = true;
+            polysemy-test.jailbreak = true;
             polysemy-time.jailbreak = true;
+            polysemy-resume.jailbreak = true;
+            polysemy-conc.jailbreak = true;
 
             diagnose = {
-              extraBuildDepends = [
-                # pkgs.haskellPackages
-              ];
               cabalFlags.megaparsec-compat = true;
               jailbreak = true;
             };
@@ -81,18 +70,14 @@
               check = false;
             };
 
-            ghcid = {
-              separateBinOutput = false;
-            };
 
-            crypton-x509 = { check = false; };
+
+            optics.check = false;
+            generic-optics.check = false;
+
           };
 
           devShell = {
-            tools = hp: {
-              # treefmt = config.treefmt.build.wrapper;
-            };
-
             hlsCheck.enable = false;
           };
         };
@@ -111,7 +96,6 @@
         just-flake.features = {
           treefmt.enable = true;
         };
-
 
 
 

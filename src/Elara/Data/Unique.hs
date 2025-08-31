@@ -40,11 +40,13 @@ instance ToJSON UniqueId
 instance Show UniqueId where
     show (UniqueId (Unique _ uniqueId)) = Text.Show.show uniqueId
 
-instance Eq (Unique a) where
-    (==) = (==) `on` view uniqueId
+instance Eq a => Eq (Unique a) where
+    (Unique a i) == (Unique b j) = i == j && a == b
 
-instance Ord (Unique a) where
-    compare = compare `on` view uniqueId
+instance Ord a => Ord (Unique a) where
+    compare (Unique a i) (Unique b j) = case compare i j of
+        EQ -> compare a b
+        other -> other
 
 newtype UniqueSupply = UniqueSupply
     { _uniqueSupplyUniques :: [Int]

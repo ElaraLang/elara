@@ -4,11 +4,11 @@ import Control.Monad.Cont
 import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
-import Elara.Core.Analysis (exprType)
+import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique
-import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
 import Polysemy
 
 {- | Convert a Core expression to ANF
@@ -33,6 +33,7 @@ type ToANF r =
     , Pretty (ANF.AExpr Core.Var)
     , Pretty (ANF.CExpr Core.Var)
     , Pretty (ANF.Expr Core.Var)
+    , Pretty Core.Type
     )
 
 toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
@@ -59,12 +60,15 @@ toANF' (Core.Lam b e) cont = evalContT $ do
     -- convert the body to ANF, making sure to not lift it out too far
     e' <- lift $ toANFRec e (pure . ANF.CExpr)
     lift $ cont $ ANF.Lam b e'
-toANF' other k = debugWith ("toANF' " <> pretty other <> ": ") $ evalContT $ do
+toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
     v <- lift $ makeUnique "var"
-    let id = Core.Id (Local' v) (exprType other) Nothing
 
-    l' <- lift $ k $ ANF.Var id
     lift $ toANFRec other $ \e -> do
+        exprType <- lift $ traceFn guesstimateExprType (fromANFCExpr e)
+        let id = Core.Id (Local' v) (exprType) Nothing
+
+        l' <- lift $ k $ ANF.Var id
+        lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
         pure $ ANF.Let (NonRecursive (id, e)) l'
 
 toANFRec ::
@@ -91,12 +95,17 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     body' <- lift $ toANFRec body k
     lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (body')
+-- Important: do not hoist non-recursive lets for the body outside of a recursive let.
+-- The recursive bindings must be in scope for the entire body, so convert the body
+-- to a full ANF expression (not an atom) and keep it wrapped by the recursive let.
 toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
+    -- Convert recursive bindings to ANF atoms
     bs' <- for bs $ \(b, e) -> do
         e' <- toANFCont e
         pure (b, ANF.AExpr e')
-    body' <- toANFCont body
-    pure $ ANF.Let (Recursive bs') (ANF.CExpr $ ANF.AExpr body')
+    -- Convert the body without forcing it to an atom, to avoid hoisting
+    bodyExpr <- lift $ toANFRec body (pure . ANF.CExpr)
+    pure $ ANF.Let (Recursive bs') bodyExpr
 toANFRec other k = do
     -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e

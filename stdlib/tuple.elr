@@ -1,0 +1,5 @@
+module Tuple
+
+import Elara.Prim
+
+let fst (Tuple2 a b) = a

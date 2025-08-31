@@ -1,9 +1,13 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Elara.Error (ReportableError (..), defaultReport, addPosition, concatDiagnostics, module Elara.Error.Effect, runErrorOrReport, reportMaybe) where
 
 import Elara.Data.Pretty
+import Elara.Error.Codes
 import Elara.Error.Effect
 import Error.Diagnose
 import Polysemy
@@ -12,12 +16,21 @@ import Polysemy.Maybe (MaybeE, justE, nothingE)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where
+    errorCode :: e -> Maybe ErrorCode
+    errorCode = const Nothing
     report :: Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
     default report :: Pretty e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
-    report e = defaultReport e
+    report = defaultReport
 
-defaultReport :: Pretty e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
-defaultReport e = writeReport (Err Nothing (pretty e) [] [])
+defaultReport ::
+    (ReportableError e, Pretty e) =>
+    Member (DiagnosticWriter (Doc AnsiStyle)) r =>
+    e -> Sem r ()
+defaultReport e =
+    {-# HLINT ignore "Use id" #-}
+    -- i love impredicative types
+    let code = (\x -> x) <$> errorCode e
+     in writeReport (Err code (pretty e) [] [])
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes

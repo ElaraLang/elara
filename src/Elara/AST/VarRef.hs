@@ -31,6 +31,14 @@ pattern Local' n = Local (Identity n)
 
 {-# COMPLETE Global', Local' #-}
 
+pattern UnlocatedGlobal :: Qualified n -> UnlocatedVarRef n
+pattern UnlocatedGlobal n = Global (Identity n)
+
+pattern UnlocatedLocal :: Unique n -> UnlocatedVarRef n
+pattern UnlocatedLocal n = Local (Identity n)
+
+{-# COMPLETE UnlocatedGlobal, UnlocatedLocal #-}
+
 varRefVal :: Functor c => VarRef' c n -> c n
 varRefVal (Global n) = fmap (view name) n
 varRefVal (Local n) = fmap (view uniqueVal) n
@@ -48,24 +56,6 @@ varRefVal' = traversalVL $ \f ->
 ignoreLocation :: VarRef n -> IgnoreLocVarRef n
 ignoreLocation (Global n) = Global (IgnoreLocation n)
 ignoreLocation (Local n) = Local (IgnoreLocation n)
-
-mkLocal :: ToName n => Located (Unique n) -> VarRef Name
-mkLocal n = Local (toName <<$>> n)
-
-mkLocal' :: ToName n => Located (Unique n) -> IgnoreLocVarRef Name
-mkLocal' n = Local (toName <<$>> IgnoreLocation n)
-
-mkGlobal :: ToName n => Located (Qualified n) -> VarRef Name
-mkGlobal n = Global (toName <<$>> n)
-
-mkGlobal' :: ToName n => Located (Qualified n) -> IgnoreLocVarRef Name
-mkGlobal' n = Global (toName <<$>> IgnoreLocation n)
-
-mkGlobalUnlocated :: ToName n => Qualified n -> UnlocatedVarRef Name
-mkGlobalUnlocated n = Global (Identity (toName <$> n))
-
-mkLocalUnlocated :: ToName n => Unique n -> UnlocatedVarRef Name
-mkLocalUnlocated n = Local (Identity (toName <$> n))
 
 withName :: ToName n => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)

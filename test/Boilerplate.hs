@@ -27,7 +27,7 @@ import Control.Exception (throwIO)
 import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error
 import Elara.Logging
-import Elara.Prim (primModuleName)
+import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
 import Hedgehog.Internal.Property (failDiff, failWith)
@@ -118,15 +118,16 @@ fakeOperatorTable =
 
 fakeTypeEnvironment :: TypeEnvironment loc
 fakeTypeEnvironment =
-    emptyTypeEnvironment
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-        & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarBool))))
-        & addType (DataConKey (Qualified "True" primModuleName)) (Lifted (Scalar ScalarBool))
-        & addType (DataConKey (Qualified "False" primModuleName)) (Lifted (Scalar ScalarBool))
+    let scalarBool = TypeConstructor (mkPrimQual boolName) []
+     in emptyTypeEnvironment
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) scalarBool)))
+            & addType (DataConKey (Qualified "True" primModuleName)) (Lifted (scalarBool))
+            & addType (DataConKey (Qualified "False" primModuleName)) (Lifted (scalarBool))
 
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))

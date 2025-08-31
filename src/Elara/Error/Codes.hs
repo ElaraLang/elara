@@ -76,6 +76,13 @@ samePrecedence = "E2001"
 unknownPrecedence :: ErrorCode
 unknownPrecedence = "W2001"
 
+-- Type check errors
+unknownVariableTC :: ErrorCode
+unknownVariableTC = "E3001"
+
+coreTypeMismatch :: ErrorCode
+coreTypeMismatch = "E3002"
+
 invokeStaticLocal :: ErrorCode
 invokeStaticLocal = "E4001"
 

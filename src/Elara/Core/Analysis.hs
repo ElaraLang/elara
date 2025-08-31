@@ -7,7 +7,10 @@ import Data.List (maximum)
 import Data.Set qualified as Set
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
+import Elara.Data.Pretty
+import Elara.Logging (TraceableFn (..))
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
+import Print (showPretty)
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"
@@ -30,21 +33,37 @@ findTyCon (Core.ForAllTy _ t) = findTyCon t
 findTyCon (Core.AppTy t _) = findTyCon t
 findTyCon _ = Nothing
 
-exprType :: HasCallStack => CoreExpr -> Core.Type
-exprType (Var v) = varType v
-exprType (Lit l) = literalType l
-exprType app@(App f _) = case exprType f of
-    Core.FuncTy _ t -> t
-    t -> error $ "exprType: expected function type, got " <> show t <> " in " <> show app
-exprType (TyApp f t) = case exprType f of
-    Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
-    t' -> error $ "exprType: expected forall type, got " <> show t' <> " in " <> show (TyApp f t)
-exprType (Lam b e) = Core.FuncTy (varType b) (exprType e)
-exprType (TyLam _ e) = exprType e
-exprType (Let _ e) = exprType e
-exprType (Match _ _ alts) = case alts of
-    [] -> error "exprType: empty match"
-    (_, _, e) : _ -> exprType e
+guesstimateExprType ::
+    (HasCallStack, Pretty Core.Type, Pretty (Expr Var)) =>
+    TraceableFn "guesstimateExprType" CoreExpr Core.Type
+guesstimateExprType = TraceableFn $ \self v ->
+    case v of
+        (Var v) -> pure $ varType v
+        (Lit l) -> pure $ literalType l
+        app@(App f _) ->
+            self f
+                <&> ( flip overForAll $ \case
+                        Core.FuncTy _ t -> t
+                        t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
+                    )
+        (TyApp f t) ->
+            self f <&> \case
+                Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
+                t' -> error $ "exprType: expected forall type, got " <> showPretty t' <> " in " <> showPretty (TyApp f t)
+        (Lam b e) -> Core.FuncTy (varType b) <$> (self e)
+        (TyLam _ e) -> self e
+        (Let _ e) -> self e
+        (Match _ _ alts) -> case alts of
+            [] -> error "exprType: empty match"
+            (_, _, e) : _ -> self e
+
+{- | Applies a function over the monotype of a potential forall expression
+For example, given a type `forall a. a -> a`, `overForAll` would apply the function to `a -> a`
+Or for @forall a b c. a -> b -> c@, it would apply the function to @a -> b -> c@
+-}
+overForAll :: Core.Type -> (Core.Type -> Core.Type) -> Core.Type
+overForAll (Core.ForAllTy tv t) f = Core.ForAllTy tv (overForAll t f)
+overForAll t f = f t
 
 varType :: Var -> Core.Type
 varType (TyVar tv) = Core.TyVarTy tv
@@ -91,3 +110,10 @@ instance FreeCoreVars ANF.Expr where
 freeCoreVarsBind :: (FreeCoreVars ast, Ord a) => Bind a ast -> Set a
 freeCoreVarsBind (NonRecursive (_, e)) = freeCoreVars e
 freeCoreVarsBind (Recursive bs) = foldMap (freeCoreVars . snd) bs
+
+freeTypeVars :: Core.Type -> Set Core.TypeVariable
+freeTypeVars (Core.TyVarTy tv) = one tv
+freeTypeVars (Core.ConTy _) = Set.empty
+freeTypeVars (Core.FuncTy a b) = freeTypeVars a <> freeTypeVars b
+freeTypeVars (Core.ForAllTy tv t) = Set.delete tv (freeTypeVars t)
+freeTypeVars (Core.AppTy a b) = freeTypeVars a <> freeTypeVars b

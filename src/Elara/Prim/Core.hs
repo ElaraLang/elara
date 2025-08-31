@@ -36,7 +36,7 @@ fetchPrimitiveName :: Qualified Text
 fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]))
 
 boolCon :: TyCon
-boolCon = TyCon (mkPrimQual "Bool") Prim
+boolCon = TyCon (mkPrimQual "Bool") (TyADT [trueCtorName, falseCtorName])
 
 intCon :: TyCon
 intCon = TyCon (mkPrimQual "Int") Prim
@@ -64,6 +64,12 @@ trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon
 
 falseCtor :: DataCon
 falseCtor = DataCon falseCtorName (ConTy boolCon) boolCon
+
+unitCtor :: DataCon
+unitCtor = DataCon unitConName (ConTy unitCon) unitCon
+
+unitConName :: Qualified Text
+unitConName = mkPrimQual "()"
 
 undefinedId :: Member UniqueGen r => Sem r Var
 undefinedId = do
