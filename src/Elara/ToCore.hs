@@ -29,6 +29,7 @@ import Elara.Logging
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
+import Elara.ToCore.Match qualified as Match
 import Elara.TypeInfer.Type qualified as Type
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
@@ -301,34 +302,33 @@ isRecursive vn e1 l =
 
 desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
 desugarMatch e pats = do
+    -- Scrutinee to Core and bind it to a fresh local, as Core.Match expects.
     e' <- toCore e
-    bind' <- mkBindName e
+    s0 <- mkBindName e
 
-    pats' <- for pats $ \(p, branch) -> do
-        (con, vars) <- patternToCore p
+    -- Compile RHSs first; build a 1-column matrix from (pattern, rhsCore).
+    branches <- for pats $ \(p, rhs) -> do
+        rhs' <- toCore rhs
+        pure (p, rhs')
 
-        branch' <- toCore branch
-        pure (con, vars, branch')
+    let matrix = Match.buildMatrix1 branches
 
-    pure $ Core.Match e' (Just bind') pats'
-  where
-    patternToCore :: HasCallStack => InnerToCoreC r => TypedPattern -> Sem r (Core.AltCon, [Core.Var])
-    patternToCore (Pattern (Located _ p, t)) = do
-        t' <- typeToCore t
-        case p of
-            AST.IntegerPattern i -> pure (Core.LitAlt $ Core.Int i, [])
-            AST.FloatPattern f -> pure (Core.LitAlt $ Core.Double f, [])
-            AST.StringPattern s -> pure (Core.LitAlt $ Core.String s, [])
-            AST.CharPattern c -> pure (Core.LitAlt $ Core.Char c, [])
-            AST.UnitPattern -> pure (Core.LitAlt Core.Unit, [])
-            AST.WildcardPattern -> pure (Core.DEFAULT, [])
-            AST.VarPattern (Located _ vn) -> pure (Core.DEFAULT, [Core.Id (UnlocatedLocal (view (to nameText) <$> vn)) t' Nothing])
-            AST.ConstructorPattern cn pats -> debugWithResult ("patternToCore (ConstructorPattern): cn =" <+> pretty cn) $ do
-                c <- lookupCtor cn
-                debug ("patternToCore (ConstructorPattern): c =" <+> pretty c)
-                pats' <- for pats patternToCore
-                debug ("patternToCore (ConstructorPattern): pats' =" <+> pretty pats')
-                pure (Core.DataAlt c, pats' >>= snd)
+    -- Resolve constructors by qualified text from the current constructor table.
+    let resolveByText qn = do
+            table <- get @CtorSymbolTable
+            case M.lookup qn (table.dataCons) of
+                Just ctor -> pure ctor
+                Nothing -> throw (UnknownPrimConstructor qn)
+
+    -- Fresh locals used for constructor field binders within the matrix compiler.
+    let freshLocal base ty = do
+            u <- makeUnique base
+            pure (Core.Id (UnlocatedLocal u) ty Nothing)
+
+    compiled <- Match.compileMatrix resolveByText freshLocal [s0] matrix
+
+    -- Bind the scrutinee to s0 before the compiled match to avoid a redundant DEFAULT match.
+    pure $ Core.Let (NonRecursive (s0, e')) compiled
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ (vn, varType))), t)) = do

@@ -44,7 +44,7 @@ data TypeCheckError
     | UnificationError CoreExpr CoreExpr
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
-    | PatternMatchMissingBinders Core.AltCon Core.Type [Var] CoreExpr
+    | PatternMatchMissingBinders {alt :: Core.AltCon, altType :: Core.Type, providedBinders :: [Var], expr :: CoreExpr}
     deriving (Show, Eq, Generic)
 
 instance Pretty TypeCheckError
@@ -53,8 +53,9 @@ instance ReportableError TypeCheckError
 
 data TcState = TcState
     { scope :: Set.Set (UnlocatedVarRef Text)
-    -- ^ The 'Var' already holds the variable's type so we don't need to track that.
-    -- However we do need to track scoping, as an optimisation could pull a variable out of scope
+    {- ^ The 'Var' already holds the variable's type so we don't need to track that.
+    However we do need to track scoping, as an optimisation could pull a variable out of scope
+    -}
     }
 
 addToScope :: Var -> TcState -> TcState
@@ -134,7 +135,7 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult $ con'.dataConType
                 debug $ "conType: " <> pretty conType <+> (parens $ pretty $ generalize con'.dataConType)
-                when (length bs /= (length $ Core.functionTypeArgs con'.dataConType)) $
+                when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $
                     throw $
                         PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
                 eType' <- typeCheck e
