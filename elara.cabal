@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -103,6 +103,7 @@ library
       Elara.Rename
       Elara.Shunt
       Elara.ToCore
+      Elara.ToCore.Match
       Elara.TypeInfer
       Elara.TypeInfer.ConstraintGeneration
       Elara.TypeInfer.Convert
@@ -140,8 +141,8 @@ library
       TypeApplications
       PartialTypeSignatures
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
-  build-tools:
-      alex
+  build-tool-depends:
+      alex:alex
   build-depends:
       aeson
     , algebraic-graphs
@@ -157,6 +158,7 @@ library
     , h2jvm
     , hashable
     , lens
+    , matrix
     , megaparsec
     , mtl
     , optics >=0.4.1
@@ -215,6 +217,7 @@ executable elara
     , h2jvm
     , hashable
     , lens
+    , matrix
     , megaparsec
     , mtl
     , optics >=0.4.1
@@ -298,6 +301,7 @@ test-suite elara-test
     , hedgehog
     , hspec-megaparsec
     , lens
+    , matrix
     , megaparsec
     , mtl
     , neat-interpolation

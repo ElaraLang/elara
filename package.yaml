@@ -23,6 +23,7 @@ dependencies:
   - optics >= 0.4.1
   - generic-optics
   - containers
+  - matrix
   - bytestring
   - utf8-string
   - array

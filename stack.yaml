@@ -1,17 +1,16 @@
 packages:
   - .
 
-snapshot: nightly-2024-10-24 # GHC 9.6.4
-compiler: ghc-9.10.1 # Comes with Cabal-3.10.3.0
-
+snapshot: nightly-2025-08-30
+compiler: ghc-9.12.2 
 
 flags:
   diagnose:
     megaparsec-compat: true
   unix:
     os-string: true
-  file-io:
-    os-string: true
+#  file-io:
+#    os-string: true
   directory:
     os-string: true
 
@@ -35,12 +34,13 @@ extra-deps:
 - git: https://github.com/bristermitten/diagnose.git
   commit: 3dac026c9663f041d0e5df77b73053ff5627af4b
 
-- Cabal-3.12.1.0
-- Cabal-syntax-3.12.1.0
 - directory-1.3.8.3
 - filepath-1.5.2.0
 - haskeline-0.8.2.1
 - process-1.6.19.0
 - unix-2.8.5.1
 - attoparsec-0.14.4
-- polysemy-time-0.7.0.0@sha256:da0a87c16fa520710e883e9669d55ea262643783eda492d1a1bc7b1a3cc63786,4123
+
+- Cabal-3.14.2.0@sha256:f98aa86a37b9920dc6dfc8d79119a10df69542734f158a1c66ff144592f1d004,14148
+- polysemy-time-0.7.0.1@sha256:d702e9ca40ef76c3ef04845f4290d3d2db9745a82b670d8acef7521d107b1d0f,4123
+- Cabal-syntax-3.14.2.0@sha256:16766e2cd18f98bf259d2caf2b507764ebdfff0b16c2fb5b293fc57c1137af6f,7380
