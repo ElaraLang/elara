@@ -36,7 +36,7 @@ fetchPrimitiveName :: Qualified Text
 fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]))
 
 boolCon :: TyCon
-boolCon = TyCon (mkPrimQual "Bool") Prim
+boolCon = TyCon (mkPrimQual "Bool") (TyADT [trueCtorName, falseCtorName])
 
 intCon :: TyCon
 intCon = TyCon (mkPrimQual "Int") Prim
