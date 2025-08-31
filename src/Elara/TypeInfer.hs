@@ -41,7 +41,7 @@ import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy hiding (transform)
-import Polysemy.Error (Error, mapError, throw)
+import Polysemy.Error (Error, throw)
 import Polysemy.State
 import Polysemy.Writer (listen)
 import Relude.Extra.Type (type (++))
@@ -116,7 +116,7 @@ inferDeclaration (Declaration ld) = do
             (kind, decl') <- (inferKind (name ^. unlocated) tyVars (body ^. unlocated))
             case decl' of
                 Generic.Alias t -> do
-                    (t') <- astTypeToInferType t
+                    _ <- astTypeToInferType t
                     -- addType' (TypeVarKey (name ^. unlocated)) t'
                     todo
                 Generic.ADT ctors -> do
@@ -169,8 +169,10 @@ inferValue valueName valueExpr expectedType = do
     expected <- case expectedType of
         Just t -> pure t
         Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
-    (expectedAsMono, tyApps) <- instantiate expected
-    debug $ "Instantiated expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
+    -- When we have an expected type (e.g., from a user annotation), skolemise
+    -- its quantified variables so they cannot unify with concrete types.
+    expectedAsMono <- skolemise expected
+    debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
     addType' (TermVarKey valueName) expected
     (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
 
@@ -192,6 +194,17 @@ inferValue valueName valueExpr expectedType = do
     generalized <- generalise (removeSkolems newType)
 
     pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
+
+-- Replace all quantified variables in a type scheme with rigid skolem variables.
+-- This prevents ill-typed programs from unifying annotated polymorphic variables
+-- with concrete types during checking.
+skolemise :: forall r. Type SourceRegion -> Sem r (Monotype SourceRegion)
+skolemise = \case
+    Lifted t -> pure t
+    Polytype (Forall tyVars _ t) -> do
+        -- Build a substitution mapping each quantified variable α to a rigid skolem #α
+        let pairs = zip (fmap (view typed) tyVars) (TypeVar . SkolemVar <$> tyVars)
+        pure $ foldl' (\acc (tv, rep) -> substitute tv rep acc) t pairs
 
 newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
 
