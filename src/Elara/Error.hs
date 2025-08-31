@@ -17,6 +17,7 @@ import Prelude hiding (asks, readFile)
 
 class ReportableError e where
     errorCode :: e -> Maybe ErrorCode
+    errorCode = const Nothing
     report :: Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
     default report :: Pretty e => Member (DiagnosticWriter (Doc AnsiStyle)) r => e -> Sem r ()
     report = defaultReport
