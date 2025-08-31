@@ -13,13 +13,28 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :sparkles: Add a function to calculate ("infer"?) the type of a core expression - ([34ac8e6](https://github.com/ElaraLang/elara/commit/34ac8e633e92cb8343b92f6389f7680c870d4eb0)) 
 - *(core)* :sparkles: Core type checking! - ([72cac00](https://github.com/ElaraLang/elara/commit/72cac00c63ae90e7baedb6342261b1e631d2ffd9)) 
 - *(core)* :sparkles: Add match inference for core tc - ([17af4fc](https://github.com/ElaraLang/elara/commit/17af4fc8d9e41338955bdcf0404283904214d367)) 
+- *(core)* :bug: Fix/improve core type checking of patterns - ([fe74822](https://github.com/ElaraLang/elara/commit/fe74822ecd5e6dcbe1c8b7b4fdbc15bd2dc9ab72)) 
+- *(core)* :safety_vest: Add a check for pattern matches missing binders in core typecheck - ([9f6eac6](https://github.com/ElaraLang/elara/commit/9f6eac69f6622529cff0325f3c79a27c3f346d6c)) 
+- *(interpreter)* :sparkles: It works! Mostly - ([49d49a2](https://github.com/ElaraLang/elara/commit/49d49a23d762961e8b028d5223d021eb0949201f)) 
+- *(interpreter)* :sparkles: Interpreter correctly handles type applications now! - ([6e23029](https://github.com/ElaraLang/elara/commit/6e230296cae98d4d05cc7e290c860552a2ebb1ff)) 
+- *(interpreter)* Add more prim ops - ([f165b89](https://github.com/ElaraLang/elara/commit/f165b89235abf4cc511c20fa58fbef2ae6f5ea35)) 
+- *(interpreter)* Make stringCons primitive work - ([6e0db02](https://github.com/ElaraLang/elara/commit/6e0db02b4b26a7f481f39e93b50797f5bdb5cb19)) 
+- *(logging)* Write logs to a file because they're getting big! And properly use terminal width now - ([3fe538c](https://github.com/ElaraLang/elara/commit/3fe538c928aa795d65e2e006bce390382df927c6)) 
+- *(pattern-matching)* Make pattern matching compilation work... - ([b15cc93](https://github.com/ElaraLang/elara/commit/b15cc937f2c580ede3ad40c8f2f4ddcb4e4e6b86)) 
+- *(pretty)* Add Pretty CallStack instance - ([5644720](https://github.com/ElaraLang/elara/commit/56447201839ba9c9c340e4f23d8fa56d687bc595)) 
+- *(stdlib)* General stdlib improvements - ([5acb092](https://github.com/ElaraLang/elara/commit/5acb092f56a8a3a9d6fc401497109babe1f9c26b)) 
 - *(to-core)* :zap: Add a core-to-core pass which removes reundant let-in's - ([0d3bc53](https://github.com/ElaraLang/elara/commit/0d3bc5397c8b6754c3ebd2c64373844249d78684)) 
 - *(to-core)* :sparkles: Get very basic (and probably super buggy) conversion to ANF working! - ([2283e6c](https://github.com/ElaraLang/elara/commit/2283e6c089058a6d2a80617a3f4c177b62e772e4)) 
 - *(to-core)* :sparkles: Start to reimplement to-core phase - ([7e46451](https://github.com/ElaraLang/elara/commit/7e46451412cc79c9dba40281d85b8e721923038b)) 
 - *(to-core)* :sparkles: Add the main conversion functionality back - ([35201bd](https://github.com/ElaraLang/elara/commit/35201bda746ed2aef70e7cda3b513fc053f49801)) 
 - *(to-core)* :sparkles: Implement recursive let detection for to-core - ([8c72069](https://github.com/ElaraLang/elara/commit/8c72069ff3aba2fb72206de4ce9ee9b5202f7574)) 
+- *(to-core)* Add ADT to-core back - ([f831ee5](https://github.com/ElaraLang/elara/commit/f831ee523d97fce5069ee8ebc7c67768c5df3f3b)) 
 - *(type-infer)* :lipstick: Improve output of NotFunctionType error - ([2508123](https://github.com/ElaraLang/elara/commit/25081239a78878b089460c85e2c0465072b0ccb2)) 
+- *(type-infer)* Basic type inference for ADTs - ([c259e89](https://github.com/ElaraLang/elara/commit/c259e89c348f33b0067619e2cbe8d3ce963250d3)) 
+- *(type-infer)* :sparkles: Add type applications! - ([542189b](https://github.com/ElaraLang/elara/commit/542189b1e391d2c9c2cf840dac0678a43a9483ce)) 
 - :sparkles: Add pretty instance for 6-tuple - ([1189208](https://github.com/ElaraLang/elara/commit/118920892de6df9abac0afc92ff733203f01765f)) 
+- :sparkles: Allow certain AST elements to be assigned polytypes - ([43022fe](https://github.com/ElaraLang/elara/commit/43022fe145869564df71a763160b870992a1b762)) 
+- Add more error codes - ([0792ed4](https://github.com/ElaraLang/elara/commit/0792ed499722d5e5628a0cb689a74576ff6d7f1a)) 
 
 ### 🐛 Bug Fixes
 
@@ -27,17 +42,32 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :bug: Fix recursive lets (aptly) infinite looping when being converted to ANF - ([34a0633](https://github.com/ElaraLang/elara/commit/34a063303e27f825a41787172ee4366ef8c75a4e)) 
 - *(core)* :bug: Fix ToANF incorrectly handling lets - ([6dec072](https://github.com/ElaraLang/elara/commit/6dec0726cf8052869ff5f400d38c192bc18e2019)) 
 - *(core)* :bug: Fix core typecheck incorrectly reporting unbound vars - ([b5e0972](https://github.com/ElaraLang/elara/commit/b5e0972800eaee8c5f40c800bd9ce5c2257e2fa0)) 
+- *(core)* :bug: Fix/implement 'HasDependencies (CoreModule bind)' - ([9230cd1](https://github.com/ElaraLang/elara/commit/9230cd101020bb1bad4476a7422982bcc9320907)) 
+- *(core)* :bug: Fix `exprType` for polymorphic function applications - ([29fe7cc](https://github.com/ElaraLang/elara/commit/29fe7cc0fe087cee15bbee9efba86a26e83a9372)) 
+- *(core)* :bug: Fix core type checking for some cases - ([c0c0c01](https://github.com/ElaraLang/elara/commit/c0c0c01cfe67851c276052157fc53cbcb22ee26f)) 
+- *(flake)* :bug: Update flake.lock and flake.nix for dependency resolution (NO MORE DEPENDENCY HELL) - ([3762c6d](https://github.com/ElaraLang/elara/commit/3762c6d0e8f830b450699353ce27f9c975b2ff63)) 
+- *(flake)* Tidy up nix and fix various dependency bugs - ([65bd7d4](https://github.com/ElaraLang/elara/commit/65bd7d4e8c130dd631df5aca4a3c6294855fb20b)) 
 - *(logging)* :bug: Fix call stacks in logging - ([d3e4620](https://github.com/ElaraLang/elara/commit/d3e4620b9bfc069972393c8a31e3b773002b7d04)) 
+- *(main)* Fix file locked error when dumping certain information - ([bd87a13](https://github.com/ElaraLang/elara/commit/bd87a132b083b23cca49066b8b57314dc91d279e)) 
 - *(parser)* :bug: Fix type declaration parsing wrt indents - ([53f148b](https://github.com/ElaraLang/elara/commit/53f148beae28c2ef2465cc2fdd080206f556b2d9)) 
 - *(parser)* :bug: Fix operators as variables (eg `(+)`) not being correctly parsed - ([55de02d](https://github.com/ElaraLang/elara/commit/55de02dcaeb34707588f2824b12a1f25bc6e382c)) 
+- *(parser)* :bug: Fix Nested Constructor Patterns not being correctly parsed - ([bfae8ac](https://github.com/ElaraLang/elara/commit/bfae8acea7d3225329b40f1e588361d2f01a1451)) 
+- *(rename)* Fix renaming of recursive lets in a block - ([264db37](https://github.com/ElaraLang/elara/commit/264db37d935fef117d5183b28280b48613631faa)) 
+- *(renamer)* Now qualifies type names - ([0c25cad](https://github.com/ElaraLang/elara/commit/0c25cade010b873a4a3fead0cc3df7dad5b64f3e)) 
 - *(stdlib)* :pencil2: Fix a "typo" in source.elr (so that it works) - ([9e1f1fd](https://github.com/ElaraLang/elara/commit/9e1f1fd78c435d78117de605a05f3442c654b823)) 
 - *(tests)* :test_tube: Fix the unit tests not compiling / succeeding - ([730e828](https://github.com/ElaraLang/elara/commit/730e828cd6bfd09e3d05cc5361b0030a55a7b364)) 
 - *(to-core)* :bug: Fix ANF conversion in core not correctly handling match expressions - ([6cc25cd](https://github.com/ElaraLang/elara/commit/6cc25cdafde330f383ecbdbcc9b0e639ba3fcc28)) 
+- *(to-core)* :bug: Fix global recursive bindings not being created as recursive - ([ad3216f](https://github.com/ElaraLang/elara/commit/ad3216f2b2a9f6dd1dd44967d44c34ecb635d1bb)) 
+- *(to-core)* :label: Fix ANF Core type mismatch errors - ([7e39c4e](https://github.com/ElaraLang/elara/commit/7e39c4e44b57d58e63876070411bd211915a8746)) 
+- *(to-core)* :bug: Fix order of type variables/foralls when converting data constructors to core - ([c9982f0](https://github.com/ElaraLang/elara/commit/c9982f06007679620dd3a70b359c8346858d5d01)) 
+- *(to-core)* :bug: Fix recursive lets not being converted to ANF properly - ([3ffd19b](https://github.com/ElaraLang/elara/commit/3ffd19b13719acff03d505d907d38bb3d49dd431)) 
 - *(type-infer)* :bug: Fix type applications not being added in places they should - ([2c50294](https://github.com/ElaraLang/elara/commit/2c502945c3e28bc337252b99594f2946bcee9bd4)) 
 - *(type-infer)* :bug: Improve handling of skolems wrt generalisation - ([db45ce3](https://github.com/ElaraLang/elara/commit/db45ce3b06a2106f9e870c34817986c6222187e0)) 
 - *(type-infer)* :bug: Ensure that _every_ type in the AST has the substitution applied - ([48acad9](https://github.com/ElaraLang/elara/commit/48acad921cc524e5d3423de868e3def6517b4ae1)) 
 - *(type-infer)* :label: Fix type errors / missing Pretty instances - ([9350f9e](https://github.com/ElaraLang/elara/commit/9350f9edb1b4a496f8a26bd2d7ac15e890ec8ad4)) 
 - *(type-infer)* :bug: Fix substitutions not being properly propagated - ([9aa552f](https://github.com/ElaraLang/elara/commit/9aa552f8e5653a88fbb6f8beac2400007f9278b5)) 
+- *(type-infer)* :bug: Fix constraint generation for constructor patterns - ([35420e9](https://github.com/ElaraLang/elara/commit/35420e92c124eae0fbf4eb34b03f332e70ca8ac3)) 
+- *(type-infer)* :bug: Fix constraint generation for constructor patterns sometimes leaving things unsolved - ([39b6c47](https://github.com/ElaraLang/elara/commit/39b6c47bebb2139a7580a5d5c6567101a3c8d8e7)) 
 - Fix class names - ([4082462](https://github.com/ElaraLang/elara/commit/4082462f84f2507fa8ba4a06f8221bd4cc242192)) 
 - Fix a possible bug in Stream.hs - ([7d25b00](https://github.com/ElaraLang/elara/commit/7d25b00d8bb20b32674d6365c20ae33b7fb1c164)) 
 - Fix imports - ([cca1e0e](https://github.com/ElaraLang/elara/commit/cca1e0e71f8d52ba4a20658e1e5fa14ae51e0c1e)) 
@@ -59,6 +89,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix test compilation - ([86c98ce](https://github.com/ElaraLang/elara/commit/86c98cecdd32711d750d8f4a05a745add63e034b)) 
 - Fix tests compiling again - ([6df8797](https://github.com/ElaraLang/elara/commit/6df8797f1da0a458c71eafa777f84feca34d2827)) 
 - Fix generic prettying of selectors - ([be53bff](https://github.com/ElaraLang/elara/commit/be53bff813fc5df71a34fafcc2ebb99800913569)) 
+- Correct information about bool type constructor - ([b9ea2ed](https://github.com/ElaraLang/elara/commit/b9ea2ed7da1de90fc5c4a72d1a6ee27f1af1abb8)) 
+- Fix unique implementation having a questionable Eq/Ord Instance - ([162734a](https://github.com/ElaraLang/elara/commit/162734a197fb2efa837007ef7fcc70f6c91c2ca7)) 
 
 ### 🚜 Refactor
 
@@ -66,17 +98,33 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(codegen)* :lipstick: Improve pretty instance for NamedMethodDescriptor - ([6b5e843](https://github.com/ElaraLang/elara/commit/6b5e843a3c474011a07357fcd92d059eb11e8030)) 
 - *(codegen)* :loud_sound: Use StructuredLog in codegen - ([e65670a](https://github.com/ElaraLang/elara/commit/e65670a4dd42ff9350406c349455a305a9e2a3da)) 
 - *(codegen)* :loud_sound: Improve the logging a little bit by removing some of the now-redundant "X Complete" logs - ([61747db](https://github.com/ElaraLang/elara/commit/61747db9f98cab969e76faeff21adce3caa72b24)) 
+- *(core)* :recycle: Rename `exprType` to `guesstimateExprType` - ([299ea21](https://github.com/ElaraLang/elara/commit/299ea2137e7dbfca2f40843f50a68d0305d30fd3)) 
+- *(errors)* Make error reporting a bit more flexible - ([2e08bf5](https://github.com/ElaraLang/elara/commit/2e08bf594e3d8bdc8cc862680ee8376adb8b9691)) 
+- *(errors)* Update ReportableError class to improve default error handling - ([846f6eb](https://github.com/ElaraLang/elara/commit/846f6ebee48b340fd20f029e255ea261bbcb276d)) 
 - *(lexer)* :recycle: Change lexer to distinguish between manual and automatic semicolon tokens - ([613783b](https://github.com/ElaraLang/elara/commit/613783b4ff953f032e735c18020e2d8577e9295a)) 
 - *(logging)* :recycle: Extract a function `defaultReport` providing a usable default `ReportableError` implementation - ([ad408da](https://github.com/ElaraLang/elara/commit/ad408da87c24da6a79c2e79bfe2430d62ebcbb16)) 
+- *(logging)* :loud_sound: Make sure that core dumps _always_ happen even if typechecking fails - ([ba1bab2](https://github.com/ElaraLang/elara/commit/ba1bab2f4683d5df8691cadb45d0b2e81f507e11)) 
+- *(logging)* :loud_sound: Further improve core dump logs on errors - ([02d4a0b](https://github.com/ElaraLang/elara/commit/02d4a0b7b60cbdfaa38348dc1432585b79139542)) 
 - *(parser)* :mute: Remove debug logging from parser - ([61b6c3c](https://github.com/ElaraLang/elara/commit/61b6c3c1d514a837952c7ab73489c6177a01f382)) 
 - *(renamer)* :recycle: Desugar tuple literals into normal data constructors - ([9452cc7](https://github.com/ElaraLang/elara/commit/9452cc7e5bd7fc762be6c932621f2b1bafcc30e0)) 
 - *(to-core)* :loud_sound: Improve error messages in Core.Analysis.exprType - ([86e4f40](https://github.com/ElaraLang/elara/commit/86e4f40791f385010615dccc84367e775184f7db)) 
+- *(type-check)* Improve type checking for non-recursive lets and enhance error reporting - ([f6dcef1](https://github.com/ElaraLang/elara/commit/f6dcef1e6cad5fb571e0e52be5f345363ff3c354)) 
+- *(type-infer)* Improve debug output - ([18aa644](https://github.com/ElaraLang/elara/commit/18aa644db55440f2a7a2306e1c4a519f3e99d467)) 
+- *(type-infer)* Enhance type inference by implementing skolemisation for expected types - ([c7cb69a](https://github.com/ElaraLang/elara/commit/c7cb69abd5004f44b128bcfa580f9dd6d51464f6)) 
 - :loud_sound: Refactor structured (i.e. potentially nested) logging into its own effect - ([6492cb2](https://github.com/ElaraLang/elara/commit/6492cb266d6d3c2ffa8603fb201a985b221039b3)) 
 - :recycle: Tidy up a lot of the generic AST code, including removing usages of `unsafeCoerce` - ([a58941f](https://github.com/ElaraLang/elara/commit/a58941f10fafe83ee204c9ba89e89cec904c642d)) 
 - :recycle: More tidying - ([b73678b](https://github.com/ElaraLang/elara/commit/b73678b2bca855dbabe0b4338fa41f63a0ac521f)) 
 - Refactor typed ast to only store monotypes - ([a5afa80](https://github.com/ElaraLang/elara/commit/a5afa80022e642fa5036b63e788168b77d2b36de)) 
 - Refactor ast naming to be "simpler" and make more invalid states unrepresentable - ([af37b2b](https://github.com/ElaraLang/elara/commit/af37b2b09b206014692fc158e047c00bb3099f5b)) 
 - Refactor the logging to be a bit cleaner - ([a0faa0a](https://github.com/ElaraLang/elara/commit/a0faa0af349131a465e6ddfbb3c0f17c2b633ab2)) 
+- :recycle: Tidy up VarRef, removing dead functions and introducing more pattern synonyms - ([6e85f1a](https://github.com/ElaraLang/elara/commit/6e85f1a93b8d468adbf057f0fed58124faddeaf0)) 
+- Refactor + and - primops - ([a6d6831](https://github.com/ElaraLang/elara/commit/a6d6831a4e5fa460d8696f6361630301c8767ec8)) 
+- :loud_sound: Change priority of pretty printing `ValueType`s - ([fd4070b](https://github.com/ElaraLang/elara/commit/fd4070b30ce7db4811c777170477d64af14d0fcd)) 
+- Minor tidy up - ([51a4f42](https://github.com/ElaraLang/elara/commit/51a4f425f4340eef2d3baa01d22d5acd434d12c1)) 
+
+### 📚 Documentation
+
+- *(core)* :memo: Slightly improve Core.Type documentation - ([ef5e95f](https://github.com/ElaraLang/elara/commit/ef5e95f4d49420fe93cf6f56ff41e6be3d155c6d)) 
 
 ### 🎨 Styling
 
@@ -90,12 +138,17 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :lipstick: Change prettyprinting of Core let rec - ([62007ef](https://github.com/ElaraLang/elara/commit/62007efd22e336812b017e6ffbc86f2230c061fe)) 
 - *(core)* :art: Remove the annoying spacing in core dumps after `=` - ([23b0157](https://github.com/ElaraLang/elara/commit/23b015785da167fad38f4da70028387fbad5207a)) 
 - *(core)* :art: Improve core prettyprinting a lot - ([8b9ecaa](https://github.com/ElaraLang/elara/commit/8b9ecaaf6896dfeb1c5fa025e41da17299cc7c22)) 
+- *(interpreter)* :loud_sound: Only log the _new_ bindings when interpreting a module - ([b5ab05e](https://github.com/ElaraLang/elara/commit/b5ab05e92ec2245ca8405daf49468ede57dddc31)) 
+- *(lexer)* :pencil2: Fix typo - ([0401dfe](https://github.com/ElaraLang/elara/commit/0401dfe99c588eae8c02b84bf5153bbe0df7f8d5)) 
 - *(parser)* :mute: Remove debug logging from parser - ([5878aa7](https://github.com/ElaraLang/elara/commit/5878aa7a760e35bde772a008bae76bf1dde84224)) 
 - *(to-core)* :mute: Remove old debug message - ([eda6d02](https://github.com/ElaraLang/elara/commit/eda6d02197fd1e57653362d2960cd8e36ded82ec)) 
+- *(to-core)* :loud_sound: Improve debug logging for ToCore - ([7c5e6dc](https://github.com/ElaraLang/elara/commit/7c5e6dc0691e371720d1c301bb601cf492fc7496)) 
+- *(to-core)* :art: Format code and add some debug logging - ([14d19f7](https://github.com/ElaraLang/elara/commit/14d19f798c01a94e54194c102d0940f76c7e606f)) 
 
 ### 🧪 Testing
 
 - *(type-infer)* :white_check_mark: Improve behaviour of applicableTyApp and test cases - ([06ad585](https://github.com/ElaraLang/elara/commit/06ad585f6d548bef257ea10eccd592394bd21e14)) 
+- :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
 
 ### Build
 
@@ -104,6 +157,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :building_construction: Make build flags consistent between tests and executables - ([997f2f1](https://github.com/ElaraLang/elara/commit/997f2f1d680e468315c4cf4a29068c0abdee816e)) 
 - :arrow_up: Update `optics` - ([eb35403](https://github.com/ElaraLang/elara/commit/eb3540318dbbd1a33081c34d538d2c360a68adcb)) 
 - :label: Add a type signature to `transformOf'` - ([d9e50db](https://github.com/ElaraLang/elara/commit/d9e50dbaa8922fa9f6c5358fe6a78a4135e05aad)) 
+- :arrow_up: Fix dependencies in Nix and use GHC 9.12 - ([e2a6322](https://github.com/ElaraLang/elara/commit/e2a63223f8833e5a468120b429e7576ca8de081a)) 
 
 ## [0.1.0](https://github.com/ElaraLang/elara/compare/v0.0.2..v0.1.0) - 2024-06-01
 
