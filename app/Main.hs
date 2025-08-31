@@ -62,7 +62,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing, doesFileExist, listDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath
-import System.IO (hSetEncoding, openFile, utf8)
+import System.IO (hSetEncoding, utf8)
 import System.Info (os)
 import System.Process
 import Text.Printf
@@ -100,15 +100,16 @@ main = run `finally` cleanup
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
-dumpGraph :: Pretty m => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph :: (HasCallStack, Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
             let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
-            fileHandle <- openFile fileName WriteMode
             let rendered = layoutSmart defaultLayoutOptions contents
-            renderIO fileHandle rendered
-            hFlush fileHandle
+            withFile fileName WriteMode $ \fileHandle -> do
+                hSetEncoding fileHandle utf8
+                renderIO fileHandle rendered
+                hFlush fileHandle
 
     traverseGraph_ dump graph
 
@@ -185,11 +186,10 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 --     x <- readCreateProcess process{cwd = Just "./build"} ""
 --     putStrLn x
 
-createAndWriteFile :: FilePath -> LByteString -> IO ()
-createAndWriteFile path content = do
-    createDirectoryIfMissing True $ takeDirectory path
-
-    writeFileLBS path content
+-- createAndWriteFile :: FilePath -> LByteString -> IO ()
+-- createAndWriteFile path content = do
+--     createDirectoryIfMissing True $ takeDirectory path
+--     writeFileLBS path content
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
