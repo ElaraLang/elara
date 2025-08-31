@@ -95,12 +95,17 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     body' <- lift $ toANFRec body k
     lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (body')
+-- Important: do not hoist non-recursive lets for the body outside of a recursive let.
+-- The recursive bindings must be in scope for the entire body, so convert the body
+-- to a full ANF expression (not an atom) and keep it wrapped by the recursive let.
 toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
+    -- Convert recursive bindings to ANF atoms
     bs' <- for bs $ \(b, e) -> do
         e' <- toANFCont e
         pure (b, ANF.AExpr e')
-    body' <- toANFCont body
-    pure $ ANF.Let (Recursive bs') (ANF.CExpr $ ANF.AExpr body')
+    -- Convert the body without forcing it to an atom, to avoid hoisting
+    bodyExpr <- lift $ toANFRec body (pure . ANF.CExpr)
+    pure $ ANF.Let (Recursive bs') bodyExpr
 toANFRec other k = do
     -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e
