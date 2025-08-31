@@ -101,6 +101,7 @@ primOps =
         [ ("==", 2)
         , ("+", 2)
         , (">>=", 2)
+        , ("stringCons", 2)
         ]
 
 boolValue :: Bool -> Value
