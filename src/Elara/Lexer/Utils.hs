@@ -40,7 +40,7 @@ data ParseState = ParseState
     { _input :: AlexInput
     , _lexSC :: Int -- lexer start code
     , _stringBuf :: String -- temporary storage for strings
-    , _pendingTokens :: [Lexeme] -- right now used when Parser consumes the lookeahead and decided to put it back
+    , _pendingTokens :: [Lexeme] -- right now used when Parser consumes the lookahead and decided to put it back
     , _indentStack :: NonEmpty IndentInfo -- stack of indentation levels
     , _pendingPosition :: TokPosition -- needed when parsing strings, chars, multi-line strings
     }
@@ -223,8 +223,7 @@ Throws an error if the name is not qualified.
 Examples:
 
 >>> splitQualName "Hello.world"
-WAS (ModuleName ("Hello" :| []),"world")
-NOW *** Exception: /var/folders/gd/_tgnljw10lz_95rz3sv5bp4h0000gn/T/extra-file-91583352691-2909-2183: withFile: resource busy (file is locked)
+(ModuleName ("Hello" :| []),"world")
 
 >>> splitQualName "A.B.C"
 (ModuleName ("A" :| ["B"]),"C")
