@@ -2,12 +2,9 @@ cradle:
   cabal:
     - path: "src"
       component: "lib:elara"
-
     - path: "app/Main.hs"
       component: "elara:exe:elara"
-
     - path: "app/Paths_elara.hs"
       component: "elara:exe:elara"
-
     - path: "test"
       component: "elara:test:elara-test"

@@ -247,9 +247,10 @@ generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over =
 generatePatternConstraints' ::
     Infer SourceRegion r =>
     ShuntedPattern' ->
-    -- | the type of the pattern we are matching against
-    -- For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
-    -- This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
+    {- | the type of the pattern we are matching against
+    For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
+    This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
+    -}
     Monotype SourceRegion ->
     Sem r (TypedPattern', Monotype SourceRegion)
 generatePatternConstraints' pattern' over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do

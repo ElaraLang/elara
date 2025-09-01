@@ -107,7 +107,6 @@ constructorPatterns = describe "Parses constructor parens" $ do
                     [Pattern (VarPattern "one", Nothing), Pattern (VarPattern "two", Nothing)]
                 , Nothing
                 )
-    
 
     it "Parses nested constructor patterns correctly" $ property $ do
         "(TwoArgs (OneArg one) (OneArg two))"

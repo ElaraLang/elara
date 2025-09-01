@@ -11,7 +11,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
       # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
       - name: Delete huge unnecessary tools folder
         if: runner.os == 'Linux'
@@ -20,21 +19,17 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           cd /opt
           find . -maxdepth 1 -mindepth 1 '!' -path ./containerd '!' -path ./actionarchivecache '!' -path ./runner '!' -path ./runner-cache -exec rm -rf '{}' ';'
-        
       - uses: DeterminateSystems/nix-installer-action@main
         name: Install Nix
         with:
           extra-conf: |
             trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
             substituters = https://cache.garnix.io?priority=41 https://cache.nixos.org/
-
       - uses: DeterminateSystems/magic-nix-cache-action@main
-
       - uses: cachix/cachix-action@v15
         with:
           name: elara
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-
       - uses: yaxitech/nix-install-pkgs-action@v5
         with:
           packages: "github:srid/nixci"

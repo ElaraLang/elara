@@ -25,14 +25,14 @@ runUnify = run . runError . ignoreStructuredDebug . runReader mempty
 
 prop_unify_type_vars :: Property
 prop_unify_type_vars = property $ do
-    a <- forAll $ genUniqueTypeVar
+    a <- forAll genUniqueTypeVar
     let typeVar :: Monotype () = TypeVar a
     (_, sub) <- evalEither $ runUnify $ unify typeVar typeVar
     sub === Substitution mempty
 
 prop_unify_scalars :: Property
 prop_unify_scalars = property $ do
-    a <- forAll $ Gen.enumBounded
+    a <- forAll Gen.enumBounded
     let scalarType :: Monotype () = Scalar a
     (_, sub) <- evalEither $ runUnify $ unify scalarType scalarType
     sub === Substitution mempty

@@ -57,8 +57,9 @@ data AxiomScheme loc
       EmptyAxiomScheme
     | -- | The conjunction of two axiom schemes, QQ₁ ∧ QQ₂
       ConjunctionAxiomScheme (AxiomScheme loc) (AxiomScheme loc)
-    | -- | A universal quantification of an axiom scheme, ∀α. QQ ⇒ QQ
-      -- Practically this could be a declaration like @forall a. Eq a => Eq [a]@
+    | {- | A universal quantification of an axiom scheme, ∀α. QQ ⇒ QQ
+      Practically this could be a declaration like @forall a. Eq a => Eq [a]@
+      -}
       ForallAxiomScheme
         -- | Type variable to be quantified
         UniqueTyVar
@@ -84,6 +85,7 @@ functionMonotypeResult :: Monotype loc -> Monotype loc
 functionMonotypeResult = \case
     Function _ b -> functionMonotypeResult b
     t -> t
+
 -- | A scalar type
 data Scalar
     = ScalarInt
