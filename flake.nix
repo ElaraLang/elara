@@ -47,7 +47,7 @@
             treefmt = {
               programs.actionlint.enable = true;
               programs.nixfmt.enable = true;
-              programs.fourmolu.enable = builtins.break true;
+              programs.fourmolu.enable = true;
               programs.fourmolu.package = pkgs.haskell.packages.ghc912.fourmolu;
               programs.fourmolu.ghcOpts = [ ];
               programs.hlint.enable = true;
