@@ -9,6 +9,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### 🚀 Features
 
+- *(ci)* Update Nix CI Action to run flake checks - ([112168d](https://github.com/ElaraLang/elara/commit/112168de4b97944bc661ff90c802f16d47854f6a)) 
 - *(core)* :art: Add the primitive `doubleCon` name to Elara.Prim.Core - ([78cf21b](https://github.com/ElaraLang/elara/commit/78cf21bba1c6e27123db80c5c0d62373342ad8fd)) 
 - *(core)* :sparkles: Add a function to calculate ("infer"?) the type of a core expression - ([34ac8e6](https://github.com/ElaraLang/elara/commit/34ac8e633e92cb8343b92f6389f7680c870d4eb0)) 
 - *(core)* :sparkles: Core type checking! - ([72cac00](https://github.com/ElaraLang/elara/commit/72cac00c63ae90e7baedb6342261b1e631d2ffd9)) 
@@ -20,6 +21,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Add more prim ops - ([f165b89](https://github.com/ElaraLang/elara/commit/f165b89235abf4cc511c20fa58fbef2ae6f5ea35)) 
 - *(interpreter)* Make stringCons primitive work - ([6e0db02](https://github.com/ElaraLang/elara/commit/6e0db02b4b26a7f481f39e93b50797f5bdb5cb19)) 
 - *(logging)* Write logs to a file because they're getting big! And properly use terminal width now - ([3fe538c](https://github.com/ElaraLang/elara/commit/3fe538c928aa795d65e2e006bce390382df927c6)) 
+- *(nix)* Enable actionlint in treefmt configuration - ([ce014f6](https://github.com/ElaraLang/elara/commit/ce014f63a4beb4f0a45abe819fb94f33f18944a8)) 
 - *(pattern-matching)* Make pattern matching compilation work... - ([b15cc93](https://github.com/ElaraLang/elara/commit/b15cc937f2c580ede3ad40c8f2f4ddcb4e4e6b86)) 
 - *(pretty)* Add Pretty CallStack instance - ([5644720](https://github.com/ElaraLang/elara/commit/56447201839ba9c9c340e4f23d8fa56d687bc595)) 
 - *(stdlib)* General stdlib improvements - ([5acb092](https://github.com/ElaraLang/elara/commit/5acb092f56a8a3a9d6fc401497109babe1f9c26b)) 
@@ -105,6 +107,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(logging)* :recycle: Extract a function `defaultReport` providing a usable default `ReportableError` implementation - ([ad408da](https://github.com/ElaraLang/elara/commit/ad408da87c24da6a79c2e79bfe2430d62ebcbb16)) 
 - *(logging)* :loud_sound: Make sure that core dumps _always_ happen even if typechecking fails - ([ba1bab2](https://github.com/ElaraLang/elara/commit/ba1bab2f4683d5df8691cadb45d0b2e81f507e11)) 
 - *(logging)* :loud_sound: Further improve core dump logs on errors - ([02d4a0b](https://github.com/ElaraLang/elara/commit/02d4a0b7b60cbdfaa38348dc1432585b79139542)) 
+- *(nix)* :building_construction: Move from haskell-flake to hix - ([fe16f77](https://github.com/ElaraLang/elara/commit/fe16f77513eea306bee9673db4e4ed0664e4e3b2)) 
 - *(parser)* :mute: Remove debug logging from parser - ([61b6c3c](https://github.com/ElaraLang/elara/commit/61b6c3c1d514a837952c7ab73489c6177a01f382)) 
 - *(renamer)* :recycle: Desugar tuple literals into normal data constructors - ([9452cc7](https://github.com/ElaraLang/elara/commit/9452cc7e5bd7fc762be6c932621f2b1bafcc30e0)) 
 - *(to-core)* :loud_sound: Improve error messages in Core.Analysis.exprType - ([86e4f40](https://github.com/ElaraLang/elara/commit/86e4f40791f385010615dccc84367e775184f7db)) 
@@ -144,6 +147,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(to-core)* :mute: Remove old debug message - ([eda6d02](https://github.com/ElaraLang/elara/commit/eda6d02197fd1e57653362d2960cd8e36ded82ec)) 
 - *(to-core)* :loud_sound: Improve debug logging for ToCore - ([7c5e6dc](https://github.com/ElaraLang/elara/commit/7c5e6dc0691e371720d1c301bb601cf492fc7496)) 
 - *(to-core)* :art: Format code and add some debug logging - ([14d19f7](https://github.com/ElaraLang/elara/commit/14d19f798c01a94e54194c102d0940f76c7e606f)) 
+- :art: Format everything with treefmt - ([7f065d1](https://github.com/ElaraLang/elara/commit/7f065d121d8329569354e363c853febb87bef100)) 
+- :art: Format everything with hlint - ([d7f0fd5](https://github.com/ElaraLang/elara/commit/d7f0fd5b9f66efb341184ab4d902af33a84322ef)) 
+- :art: Format everything with fourmolu - ([4d1cf57](https://github.com/ElaraLang/elara/commit/4d1cf57028c83d21ca65efa18d0db7f66e2b4dad)) 
 
 ### 🧪 Testing
 
