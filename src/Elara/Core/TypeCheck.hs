@@ -8,13 +8,11 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 -}
 module Elara.Core.TypeCheck where
 
-import Elara.Core.ANF qualified as ANF
-
 import Data.Set qualified as Set
-
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
 import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (freeCoreVars, freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module

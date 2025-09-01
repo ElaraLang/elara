@@ -17,4 +17,5 @@ type InferEffects loc =
      , UniqueGen
      , StructuredDebug
      ]
+
 type Infer loc r = Members (InferEffects loc) r

@@ -13,12 +13,15 @@ import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Unique (UniqueId)
 
 type instance ASTLocate' 'Kinded = Located
+
 type instance ASTLocate' 'MidKinded = Located
 
 type instance ASTQual 'Kinded = Qualified
+
 type instance ASTQual 'MidKinded = Qualified
 
 type instance Select x 'Kinded = ReplaceKinded x (Select x 'MidKinded)
+
 type instance Select x 'MidKinded = ReplaceMidKinded x (Select x 'Shunted)
 
 type family ReplaceKinded x r where
@@ -34,7 +37,11 @@ type family ReplaceMidKinded x r where
     ReplaceMidKinded x r = r
 
 type KindedTypeDeclaration = TypeDeclaration 'Kinded
+
 type MidKindedTypeDeclaration = TypeDeclaration 'MidKinded
+
 type KindedType = Type 'Kinded
+
 type KindedType' = Type' 'Kinded
+
 type MidKindedType = Type 'MidKinded

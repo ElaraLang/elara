@@ -82,6 +82,7 @@ class ToName name where
 instance ToName VarOrConName where
     toName (VarName n) = NVarName (NormalVarName n)
     toName (ConName n) = NTypeName n
+
 instance ToName VarName where
     toName = NVarName
 

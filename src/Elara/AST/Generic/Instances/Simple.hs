@@ -55,6 +55,7 @@ deriving instance
     Ord (Expr' ast)
 
 deriving instance (Eq (ASTLocate ast (Expr' ast)), Eq (Select "ExprType" ast)) => Eq (Expr ast)
+
 deriving instance (Ord (ASTLocate ast (Expr' ast)), Ord (Select "ExprType" ast)) => Ord (Expr ast)
 
 deriving instance
@@ -78,6 +79,7 @@ deriving instance
     Ord (Pattern' ast)
 
 deriving instance (Eq (ASTLocate ast (Pattern' ast)), Eq (Select "PatternType" ast)) => Eq (Pattern ast)
+
 deriving instance (Ord (ASTLocate ast (Pattern' ast)), Ord (Select "PatternType" ast)) => Ord (Pattern ast)
 
 deriving instance
@@ -120,6 +122,7 @@ deriving instance
     Eq (Declaration' ast)
 
 deriving instance Eq (ASTLocate ast (DeclarationBody' ast)) => Eq (DeclarationBody ast)
+
 deriving instance Ord (ASTLocate ast (BinaryOperator' ast)) => Ord (BinaryOperator ast)
 
 deriving instance
@@ -135,6 +138,7 @@ deriving instance
     , Ord (ASTLocate ast ModuleName)
     ) =>
     Ord (Declaration' ast)
+
 deriving instance Ord (ASTLocate ast (Declaration' ast)) => Ord (Declaration ast)
 
 deriving instance
@@ -175,6 +179,7 @@ deriving instance
     Eq (DeclarationBody' ast)
 
 deriving instance (Eq (InfixDeclaration ast), Eq (Select "KindAnnotation" ast)) => Eq (TypeDeclAnnotations ast)
+
 deriving instance
     ( Eq (ASTLocate ast (Select "AnyName" ast))
     , Eq (ASTLocate ast Int)
@@ -183,6 +188,7 @@ deriving instance
     Eq (InfixDeclaration ast)
 
 deriving instance (Ord (InfixDeclaration ast), Ord (Select "KindAnnotation" ast)) => Ord (TypeDeclAnnotations ast)
+
 deriving instance
     ( Ord (ASTLocate ast (Select "AnyName" ast))
     , Ord (ASTLocate ast Int)
@@ -201,6 +207,7 @@ deriving instance
     , Ord (ASTLocate ast (Select "ConstructorName" ast))
     ) =>
     Ord (TypeDeclaration ast)
+
 deriving instance
     ( Eq (Select "Alias" ast)
     , Eq (Select "ADTParam" ast)
@@ -291,6 +298,7 @@ deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (Declarati
 deriving instance (Show (ASTLocate ast (Select "AnyName" ast)), Show (ASTLocate ast Int), Show (ASTLocate ast AssociativityType)) => Show (InfixDeclaration ast)
 
 deriving instance (Show (InfixDeclaration ast), Show (Select "KindAnnotation" ast)) => Show (TypeDeclAnnotations ast)
+
 deriving instance Show (InfixDeclaration ast) => Show (ValueDeclAnnotations ast)
 
 deriving instance
@@ -384,5 +392,7 @@ instance ASTLocate' ast ~ Located => HasSourceRegion (Expr ast) where
     sourceRegion = _Unwrapped % _1 % sourceRegion
 
 deriving instance (Eq v, Eq (Select "PatternType" ast)) => Eq (TypedLambdaParam v ast)
+
 deriving instance (Ord v, Ord (Select "PatternType" ast)) => Ord (TypedLambdaParam v ast)
+
 deriving instance (Show v, Show (Select "PatternType" ast)) => Show (TypedLambdaParam v ast)

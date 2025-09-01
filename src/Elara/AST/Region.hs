@@ -132,7 +132,9 @@ instance HasSourceRegion (Located a) where
     sourceRegion = lensVL $ \f (Located region x) -> fmap (`Located` x) (f region)
 
 instance FoldableWithIndex Int Located
+
 instance TraversableWithIndex Int Located
+
 instance FunctorWithIndex Int Located
 
 instance Each Int (Located a) (Located b) a b
@@ -189,8 +191,8 @@ spanningRegion regions = do
     SourceRegion (Just file) start end
 
 {- | Get the region that contains all of the given regions.
- This function will throw an error if the regions are in different files.
- If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
+This function will throw an error if the regions are in different files.
+If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
 -}
 spanningRegion' :: NonEmpty SourceRegion -> SourceRegion
 spanningRegion' regions = do

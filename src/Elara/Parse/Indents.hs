@@ -8,7 +8,6 @@ import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (Parser, token_)
-
 import Text.Megaparsec (try)
 
 lineSeparator :: Parser ()

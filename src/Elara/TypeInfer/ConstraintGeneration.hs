@@ -219,7 +219,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
             let exprTypes = fmap snd vals
 
-            pure ((Syntax.Block exprs), last exprTypes)
+            pure (Syntax.Block exprs, last exprTypes)
         Let (Located loc varName) NoFieldValue varExpr -> do
             recursiveVar <- UnificationVar <$> makeUniqueTyVar
             (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar recursiveVar) $ do
@@ -298,8 +298,7 @@ instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
     let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap TypeVar fresh)
-    let
-        instantiatedConstraint =
+    let instantiatedConstraint =
             substituteAll substitution constraint
         instantiatedMonotype =
             substituteAll substitution t

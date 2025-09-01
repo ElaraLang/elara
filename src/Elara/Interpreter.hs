@@ -23,7 +23,7 @@ type Interpreter r = Members InterpreterEffects r
 
 type InterpreterEffects = [State ElaraState, Error InterpreterError, StructuredDebug, Embed IO]
 
-data ElaraState = ElaraState
+newtype ElaraState = ElaraState
     { bindings :: Map (UnlocatedVarRef Text) Value
     }
     deriving (Generic)

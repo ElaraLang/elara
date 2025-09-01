@@ -16,10 +16,10 @@ For example:
 @let main = print (f (g (h 1)))@
 becomes:
 @ let main =
-    let v1 = h 1 in
-    let v2 = g v1 in
-    let v3 = f v2 in
-    print v3
+   let v1 = h 1 in
+   let v2 = g v1 in
+   let v3 = f v2 in
+   print v3
 @
 -}
 

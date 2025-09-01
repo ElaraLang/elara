@@ -1,10 +1,9 @@
 module Elara.Core.Analysis where
 
-import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
-import Elara.Core qualified as Core
-
 import Data.List (maximum)
 import Data.Set qualified as Set
+import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
+import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
 import Elara.Data.Pretty

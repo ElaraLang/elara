@@ -138,6 +138,7 @@ type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, Struc
 type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
 
 type ToCoreC r = (Members ToCoreEffects r)
+
 type InnerToCoreC r = (Members InnerToCoreEffects r)
 
 runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a

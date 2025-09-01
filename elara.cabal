@@ -278,10 +278,13 @@ test-suite elara-test
     , generic-optics
     , h2jvm
     , hashable
+    , hedgehog
+    , hspec-megaparsec
     , lens
     , matrix
     , megaparsec
     , mtl
+    , neat-interpolation
     , optics
     , parser-combinators
     , polysemy
@@ -295,6 +298,9 @@ test-suite elara-test
     , relude
     , safe-exceptions
     , stringsearch
+    , sydtest
+    , sydtest-hedgehog
+    , template-haskell
     , terminal-size
     , text-metrics
     , utf8-string

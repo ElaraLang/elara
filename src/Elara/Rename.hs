@@ -6,7 +6,7 @@ This stage handles:
 1. Renaming all variables, types, and type variables, adding module qualification or unique suffixes to avoid name clashes
 2. Desugaring any "first-class" pattern matches into normal match expressions (eg '\[] -> 1' to '\x -> match x with [] -> 1')
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
-    Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
+   Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
 module Elara.Rename where
 
@@ -113,8 +113,7 @@ instance ReportableError RenameError where
                                     , "Try importing one of the modules."
                                     ]
                             ]
-        let
-            prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(local variable)"
+        let prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(local variable)"
             prettyVarRef (Global (Located _ (Qualified n m))) = pretty (toName n) <+> "(imported from" <+> pretty m <> ")"
             possibleTypos = case m of
                 Nothing -> []
@@ -225,6 +224,7 @@ type RenamePipelineEffects =
      ]
 
 type Rename r = Members RenamePipelineEffects r
+
 type InnerRename r =
     ( Members RenamePipelineEffects r
     , Member (Reader (Maybe (Module 'Desugared))) r -- the module we're renaming
@@ -748,7 +748,7 @@ patternToMatch pat body = do
 This is a little bit special because patterns have to be converted to match expressions
 
 For example,
- @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
+@\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
 renameLambda :: (InnerRename r, Member (Reader (Maybe DesugaredDeclaration)) r) => DesugaredPattern -> DesugaredExpr -> Sem r RenamedExpr'
 renameLambda p@((Pattern (_, argType))) e = do

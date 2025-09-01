@@ -177,6 +177,7 @@ fixOperators opTable = reassoc
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
 type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
+
 type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
 runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
@@ -333,6 +334,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
     shuntExpr' (InParens e) = (^. _Unwrapped % _1 % unlocated) <$> fixExpr e
+
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
   where

@@ -3,32 +3,32 @@
 module Boilerplate where
 
 import Common (diagShouldSucceed)
+import Control.Exception (throwIO)
 import Elara.AST.Generic hiding (TypeVar)
 import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Select
 import Elara.AST.VarRef
-import Elara.Data.Pretty ( Doc, prettyToText, AnsiStyle )
+import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.TopologicalGraph
 import Elara.Desugar
+import Elara.Error
 import Elara.Lexer.Pipeline
 import Elara.Lexer.Reader
+import Elara.Logging
 import Elara.Parse
 import Elara.Parse.Expression
 import Elara.Pipeline
+import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.Prim.Rename
 import Elara.Rename
 import Elara.Shunt
-import Error.Diagnose.Diagnostic
-import Hedgehog
-import Language.Haskell.TH
-
-import Control.Exception (throwIO)import Elara.Error
-import Elara.Logging
-import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
+import Error.Diagnose.Diagnostic
+import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
+import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
 import Polysemy (Embed, Member, Sem)
 import Polysemy.Maybe

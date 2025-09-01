@@ -7,7 +7,6 @@ module Main (
 where
 
 import Control.Exception as E
-
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
@@ -18,18 +17,18 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core (CoreBind)
+
+-- import Elara.CoreToIR
+
+import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Core.Module (CoreModule)
+import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.CoreToCore
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
-
--- import Elara.CoreToIR
-
-import Elara.Core.LiftClosures (runLiftClosures)
-import Elara.Core.TypeCheck (typeCheckCoreModule)
 import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Interpreter (runInterpreter)

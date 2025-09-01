@@ -13,6 +13,7 @@ import Elara.AST.Generic.Common
 import Elara.AST.Generic.Types (
     DeclarationBody' (..),
  )
+import Elara.AST.Kinded
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, NameLike (nameText), Qualified (..), VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
@@ -22,9 +23,6 @@ import Elara.AST.Select (
         Typed
     ),
  )
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
-
-import Elara.AST.Kinded
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.Data.Kind.Infer (InferState, KindInferError, inferKind, inferTypeKind, initialInferState)
@@ -39,6 +37,7 @@ import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Polysemy hiding (transform)
 import Polysemy.Error (Error, throw)
@@ -76,8 +75,7 @@ inferModule ::
     Module 'Shunted ->
     Sem r (Module 'Typed)
 inferModule m = do
-    m' <- traverseModuleRevTopologically inferDeclaration m
-    pure m'
+    traverseModuleRevTopologically inferDeclaration m
 
 inferDeclaration ::
     forall r.
@@ -126,7 +124,7 @@ inferDeclaration (Declaration ld) = do
                     let inferCtor (ctorName, t :: [KindedType]) = do
                             t' <- traverse astTypeToInferTypeWithKind t
                             let ctorType =
-                                    foldr ((\a b -> Function a b) . fst) typeConstructorType t'
+                                    foldr (Function . fst) typeConstructorType t'
                             addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
 
                             pure (ctorName, t')

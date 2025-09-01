@@ -14,20 +14,20 @@ will be translated to:
 
 however it does not do any complex analysis on the code:
 @ let add x =
-    if x == 0 then \y -> y else \y -> x + y
+   if x == 0 then \y -> y else \y -> x + y
 @
 The higher order function here _can_ be avoided if we rearrange the code into:
 @ let add = \x -> \y ->
-    if x == 0 then y else x + y
+   if x == 0 then y else x + y
 @
 but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
 
 @ public static Func add(int x) {
-    if (x == 0) {
-        return (y) -> y;
-    } else {
-        return (y) -> x + y;
-    }
+   if (x == 0) {
+       return (y) -> y;
+   } else {
+       return (y) -> x + y;
+   }
 }
 @
 

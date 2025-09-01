@@ -18,11 +18,10 @@ nativeCallsForConversion = System.IO.nativeNewline == System.IO.CRLF
 
 readFileUniversalNewlineConversion :: FilePath -> IO L.ByteString
 readFileUniversalNewlineConversion =
-    let
-        str_LF = B.pack [10]
+    let str_LF = B.pack [10]
         str_CRLF = B.pack [13, 10]
-     in
-        fmap (S.replace str_CRLF str_LF) . readFileLBS
+     in fmap (S.replace str_CRLF str_LF) . readFileLBS
+
 readFileNativeNewlineConversion :: FilePath -> IO L.ByteString
 readFileNativeNewlineConversion =
     if nativeCallsForConversion

@@ -49,6 +49,7 @@
               programs.nixfmt.enable = true;
               programs.fourmolu.enable = builtins.break true;
               programs.fourmolu.package = pkgs.haskell.packages.ghc912.fourmolu;
+              programs.fourmolu.ghcOpts = [ ];
               programs.hlint.enable = true;
               programs.yamlfmt.enable = true;
               programs.toml-sort.enable = true;
@@ -60,7 +61,6 @@
           {
             # ghcVersions = ["ghc98" "ghc910" "ghc912"];
             compiler = "ghc912";
-            haskellTools = ghc: [ ghc.fourmolu ];
             outputs.devShells = {
               # extending the default devshell to add the pre-commit hooks and some other nice things
               default = config.pkgs.mkShell {

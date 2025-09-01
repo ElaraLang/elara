@@ -3,11 +3,10 @@ module Elara.Core where
 import Data.Data (Data)
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
+import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
 import Prelude hiding (Alt)
-
-import Elara.Core.Generic qualified as G
 
 data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
@@ -53,6 +52,7 @@ type CoreExpr = Expr Var
 type CoreAlt = Alt Var
 
 type CoreBind = Bind Var
+
 type Bind b = G.Bind b Expr
 
 type Alt b = (AltCon, [b], Expr b)
@@ -155,6 +155,7 @@ instance Hashable AltCon
 instance Hashable DataCon
 
 instance Hashable Type
+
 instance Hashable TyCon
 
 instance Hashable TyConDetails

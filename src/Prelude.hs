@@ -26,16 +26,11 @@ module Prelude (
 )
 where
 
-import Data.Map qualified as M
-import Data.Type.Equality ((:~:))
-import Polysemy (Member, Sem)
-import Polysemy.State (State, get, put)
-import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
-import Relude qualified (id)
-
 import Data.Function ((&))
 import Data.Generics.Sum
+import Data.Map qualified as M
 import Data.Traversable (for)
+import Data.Type.Equality ((:~:))
 import Optics (
     A_Fold,
     A_Setter,
@@ -102,6 +97,10 @@ import Optics (
  )
 import Optics.Operators ((%~), (.~), (?~), (^.), (^..), (^?))
 import Optics.State.Operators ((%=), (?=))
+import Polysemy (Member, Sem)
+import Polysemy.State (State, get, put)
+import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
+import Relude qualified (id)
 
 (<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
 a <<$ f = fmap (a <$) f
