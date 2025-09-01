@@ -30,7 +30,9 @@ type instance Select "LetParamName" 'Frontend = VarName
 type instance Select "InParens" 'Frontend = FrontendExpr
 
 type instance Select "List" 'Frontend = [FrontendExpr]
+
 type instance Select "Tuple" 'Frontend = NonEmpty FrontendExpr
+
 type instance Select "BinaryOperator" 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
 
 type instance Select "TypeApplication" 'Frontend = FrontendType
@@ -46,7 +48,9 @@ type instance Select "PatternType" 'Frontend = Maybe FrontendType
 type instance Select "VarPat" 'Frontend = LowerAlphaName
 
 type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
+
 type instance Select "ListPattern" 'Frontend = [FrontendPattern]
+
 type instance Select "ConsPattern" 'Frontend = (FrontendPattern, FrontendPattern)
 
 -- Selections for 'DeclarationBody'
@@ -57,22 +61,29 @@ type instance Select "ValueType" 'Frontend = NoFieldValue
 type instance Select "ValueTypeDef" 'Frontend = FrontendType
 
 type instance Select "Alias" 'Frontend = FrontendType
+
 type instance Select "ADTParam" 'Frontend = FrontendType
 
 type instance Select "ValueDeclAnnotations" 'Frontend = NoFieldValue
+
 type instance Select "TypeDeclAnnotations" 'Frontend = NoFieldValue
+
 type instance Select "KindAnnotation" 'Frontend = NoFieldValue
 
 type instance Select "InfixDecl" 'Frontend = InfixDeclaration 'Frontend
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Frontend = Name
+
 type instance Select "AnyName" 'Frontend = Name
+
 type instance Select "TypeName" 'Frontend = TypeName
+
 type instance Select "ValueName" 'Frontend = VarName
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Frontend = LowerAlphaName
+
 type instance Select "TypeKind" 'Frontend = NoFieldValue
 
 type instance Select "UserDefinedType" 'Frontend = MaybeQualified TypeName

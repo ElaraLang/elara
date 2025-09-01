@@ -134,7 +134,7 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
 fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
-fixOperators opTable o = reassoc o
+fixOperators opTable = reassoc
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
     withLocationOf' s repl = over (_Unwrapped % _1) (repl <$) s
@@ -177,6 +177,7 @@ fixOperators opTable o = reassoc o
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
 type ShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning)]
+
 type InnerShuntPipelineEffects = '[Error ShuntError, Writer (Set ShuntWarning), Reader OpTable]
 
 runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
@@ -333,6 +334,7 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
         cases' <- traverse (bitraverse shuntPattern fixExpr) cases
         pure $ Match e' cases'
     shuntExpr' (InParens e) = (^. _Unwrapped % _1 % unlocated) <$> fixExpr e
+
 shuntPattern :: RenamedPattern -> Sem r ShuntedPattern
 shuntPattern (Pattern (le, t)) = (\x -> Pattern (x, coerceType <$> t)) <$> traverseOf unlocated shuntPattern' le
   where

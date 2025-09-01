@@ -63,7 +63,7 @@ instance
                 Unit -> pure Unit
                 Var v -> pure (Var v)
                 Constructor c -> pure (Constructor c)
-                Lambda ps e -> (Lambda ps <$> traverseOf traverseExpr f e)
+                Lambda ps e -> Lambda ps <$> traverseOf traverseExpr f e
                 FunctionCall e1 e2 -> FunctionCall <$> traverseOf traverseExpr f e1 <*> traverseOf traverseExpr f e2
                 TypeApplication e1 e2 -> TypeApplication <$> traverseOf traverseExpr f e1 <*> pure e2
                 If e1 e2 e3 -> If <$> traverseOf traverseExpr f e1 <*> traverseOf traverseExpr f e2 <*> traverseOf traverseExpr f e3
@@ -72,7 +72,7 @@ instance
                      in List . asDataCon <$> traverseOf (each % traverseExpr) f l'
                 Match e m -> Match <$> traverseOf traverseExpr f e <*> traverseOf (each % _2 % traverseExpr) f m
                 LetIn v p e1 e2 -> (LetIn v p <$> traverseOf traverseExpr f e1) <*> traverseOf traverseExpr f e2
-                Let v p e -> (Let v p <$> traverseOf traverseExpr f e)
+                Let v p e -> Let v p <$> traverseOf traverseExpr f e
                 Block b -> Block <$> traverseOf (each % traverseExpr) f b
                 Tuple t ->
                     let t' = dataConAs @(Select "Tuple" ast) @(NonEmpty (Expr ast)) t

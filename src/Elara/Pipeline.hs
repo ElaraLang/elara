@@ -54,4 +54,4 @@ logToStdoutAndFile sem = do
         sem
 
 destroyDataLog :: InterpreterFor (DataLog (Doc AnsiStyle)) r
-destroyDataLog = interpretDataLog (\_ -> pass)
+destroyDataLog = interpretDataLog (const pass)

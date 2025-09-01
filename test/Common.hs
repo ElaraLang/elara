@@ -40,4 +40,4 @@ runUnique = liftIO . runM @IO . uniqueGenToIO
 
 shouldBeRight :: (HasCallStack, Show a, Show b, Eq a) => Either a b -> IO b
 shouldBeRight (Right x) = pure x
-shouldBeRight actual@(Left x) = throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow actual) ("Right _")
+shouldBeRight actual@(Left x) = throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow actual) "Right _"

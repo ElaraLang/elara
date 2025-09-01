@@ -87,6 +87,7 @@ createEdge m = do
     let mns = keys m
     let mImports = dependencies m
     (m,,mImports) <$> mns
+
 removeNode :: HasDependencies a => Key a -> TopologicalGraph a -> TopologicalGraph a
 removeNode m g = createGraph (filter (\x -> key x /= m) (allEntries g))
 

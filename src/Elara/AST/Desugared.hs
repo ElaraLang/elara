@@ -35,7 +35,9 @@ type instance Select "ConRef" 'Desugared = MaybeQualified TypeName
 type instance Select "LetParamName" 'Desugared = VarName
 
 type instance Select "InParens" 'Desugared = DesugaredExpr
+
 type instance Select "List" 'Desugared = [DesugaredExpr]
+
 type instance Select "Tuple" 'Desugared = NonEmpty DesugaredExpr
 
 type instance Select "BinaryOperator" 'Desugared = (DesugaredBinaryOperator, DesugaredExpr, DesugaredExpr)
@@ -51,16 +53,22 @@ type instance Select "Infixed" 'Desugared = Located (MaybeQualified VarOrConName
 type instance Select "PatternType" 'Desugared = Maybe DesugaredType
 
 type instance Select "VarPat" 'Desugared = LowerAlphaName
+
 type instance Select "ConPat" 'Desugared = MaybeQualified TypeName
+
 type instance Select "ConsPattern" 'Desugared = (DesugaredPattern, DesugaredPattern)
+
 type instance Select "ListPattern" 'Desugared = [DesugaredPattern]
 
 type instance Select "TypeApplication" 'Desugared = DesugaredType
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Desugared = Name
+
 type instance Select "AnyName" 'Desugared = Name
+
 type instance Select "TypeName" 'Desugared = TypeName
+
 type instance Select "ValueName" 'Desugared = VarName
 
 -- Selections for 'DeclarationBody'
@@ -71,13 +79,16 @@ type instance Select "ValueType" 'Desugared = Maybe DesugaredType
 type instance Select "ValueTypeDef" 'Desugared = DataConCantHappen
 
 type instance Select "InfixDecl" 'Desugared = DataConCantHappen
+
 type instance Select "KindAnnotation" 'Desugared = NoFieldValue
 
 type instance Select "Alias" 'Desugared = DesugaredType
+
 type instance Select "ADTParam" 'Desugared = DesugaredType
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Desugared = LowerAlphaName
+
 type instance Select "TypeKind" 'Desugared = NoFieldValue
 
 type instance Select "UserDefinedType" 'Desugared = MaybeQualified TypeName

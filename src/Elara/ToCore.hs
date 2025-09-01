@@ -138,6 +138,7 @@ type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, Struc
 type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
 
 type ToCoreC r = (Members ToCoreEffects r)
+
 type InnerToCoreC r = (Members InnerToCoreEffects r)
 
 runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
@@ -160,7 +161,7 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                 let rec = isRecursive (n ^. unlocated) v (_1 % _As @"Global" % unlocated)
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
-                let cleanedTypeDeclName = fmap nameText $ (n ^. unlocated)
+                let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
                 let tyCon =
                         TyCon
                             cleanedTypeDeclName
@@ -206,7 +207,7 @@ polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -
 polytypeToCore (Type.Forall tvs constraints t) = do
     t' <- typeToCore t
     let tvs' = fmap mkTypeVar tvs
-    pure $ foldr (\acc t -> Core.ForAllTy acc t) t' tvs'
+    pure $ foldr Core.ForAllTy t' tvs'
 
 eitherTypeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
 eitherTypeToCore (Type.Polytype p) = polytypeToCore p
@@ -244,7 +245,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.String s -> pure $ Lit (Core.String s)
         AST.Char c -> pure $ Lit (Core.Char c)
         AST.Unit -> pure $ Lit Core.Unit
-        AST.Var (Located _ ((vr@(Global _), t))) -> do
+        AST.Var (Located _ (vr@(Global _), t)) -> do
             t' <- eitherTypeToCore t
 
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripLocation vr) t' Nothing)
@@ -303,7 +304,7 @@ Takes the name of the variable, the expression, and a lens to the variable name 
 isRecursive vn e1 l =
     anyOf
         (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % l)
-        (\v -> v == vn)
+        (== vn)
         e1
 
 desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr

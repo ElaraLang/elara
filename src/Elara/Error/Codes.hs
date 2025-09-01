@@ -18,10 +18,10 @@ The first digit signals the stage in which the error was thrown:
 - @4@: Code Generation Stage
 
 The remaining digits are arbitrary and should be incremented for each new error or warning.
-   They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
+  They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
 
 Some errors are internal, rather than user-facing (i.e. something internal has gone wrong if they are thrown).
-   These errors' codes should be prefixed with @[Internal]@.
+  These errors' codes should be prefixed with @[Internal]@.
 -}
 type ErrorCode = forall ann. Doc ann
 

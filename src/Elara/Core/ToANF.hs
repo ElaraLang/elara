@@ -16,10 +16,10 @@ For example:
 @let main = print (f (g (h 1)))@
 becomes:
 @ let main =
-    let v1 = h 1 in
-    let v2 = g v1 in
-    let v3 = f v2 in
-    print v3
+   let v1 = h 1 in
+   let v2 = g v1 in
+   let v3 = f v2 in
+   print v3
 @
 -}
 
@@ -65,7 +65,7 @@ toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
 
     lift $ toANFRec other $ \e -> do
         exprType <- lift $ traceFn guesstimateExprType (fromANFCExpr e)
-        let id = Core.Id (Local' v) (exprType) Nothing
+        let id = Core.Id (Local' v) exprType Nothing
 
         l' <- lift $ k $ ANF.Var id
         lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
@@ -94,18 +94,13 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     e' <- toANFCont e
     body' <- lift $ toANFRec body k
     lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
-    pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) (body')
--- Important: do not hoist non-recursive lets for the body outside of a recursive let.
--- The recursive bindings must be in scope for the entire body, so convert the body
--- to a full ANF expression (not an atom) and keep it wrapped by the recursive let.
+    pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) body'
 toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
-    -- Convert recursive bindings to ANF atoms
     bs' <- for bs $ \(b, e) -> do
         e' <- toANFCont e
         pure (b, ANF.AExpr e')
-    -- Convert the body without forcing it to an atom, to avoid hoisting
-    bodyExpr <- lift $ toANFRec body (pure . ANF.CExpr)
-    pure $ ANF.Let (Recursive bs') bodyExpr
+    body' <- toANFCont body
+    pure $ ANF.Let (Recursive bs') (ANF.CExpr $ ANF.AExpr body')
 toANFRec other k = do
     -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e

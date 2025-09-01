@@ -1,142 +1,253 @@
 {
+  description = "Elara Programming Language";
   inputs = {
+    hix = {
+      url = "github:tek/hix?ref=0.9.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    systems.url = "github:nix-systems/default";
+    git-hooks-nix.url = "github:cachix/pre-commit-hooks.nix";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    haskell-flake.url = "github:srid/haskell-flake";
-    flake-root.url = "github:srid/flake-root";
-    just-flake.url = "github:juspay/just-flake";
-    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
-
+    systems.url = "github:nix-systems/default";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
     h2jvm.url = "github:ElaraLang/h2jvm";
+    diagnose = {
+      url = "github:bristermitten/diagnose";
+      flake = false;
+    };
 
-    diagnose.url = "github:bristermitten/diagnose";
-    diagnose.flake = false;
-
-    # all-cabal-hashes.url = "github:commercialhaskell/all-cabal-hashes/hackage";
-    # all-cabal-hashes.flake = false;
   };
 
-  outputs = inputs@{ self, pre-commit-hooks, nixpkgs, ... }:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-
-      systems = import inputs.systems;
-
-      imports = [
-        inputs.haskell-flake.flakeModule
-        inputs.flake-root.flakeModule
-        inputs.just-flake.flakeModule
-      ];
-
-      perSystem = { self', lib, system, config, pkgs, ... }: {
-
-        haskellProjects.default = {
-
-          autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
-
-          basePackages = pkgs.haskell.packages.ghc912;
-
-
-          packages = {
-            h2jvm.source = inputs.h2jvm;
-            diagnose.source = inputs.diagnose;
-            ghc-tcplugins-extra.source = "0.5";
-
+  outputs =
+    {
+      self,
+      hix,
+      h2jvm,
+      flake-parts,
+      git-hooks-nix,
+      ...
+    }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      { ... }:
+      {
+        debug = true;
+        systems = import inputs.systems;
+        imports = [
+          inputs.treefmt-nix.flakeModule
+          inputs.git-hooks-nix.flakeModule
+        ];
+        perSystem =
+          {
+            config,
+            pkgs,
+            lib,
+            ...
+          }:
+          {
+            treefmt = {
+              programs.actionlint.enable = true;
+              programs.nixfmt.enable = true;
+              programs.fourmolu.enable = true;
+              programs.fourmolu.package = pkgs.haskell.packages.ghc912.fourmolu;
+              programs.fourmolu.ghcOpts = [ ];
+              programs.hlint.enable = true;
+              programs.yamlfmt.enable = true;
+              programs.toml-sort.enable = true;
+            };
+            pre-commit.settings.hooks.treefmt.enable = true;
           };
-
-          settings = {
-
-            polysemy-log.jailbreak = true;
-            incipit-base.jailbreak = true;
-            incipit-core.jailbreak = true;
-            polysemy-test.jailbreak = true;
-            polysemy-time.jailbreak = true;
-            polysemy-resume.jailbreak = true;
-            polysemy-conc.jailbreak = true;
-
-            diagnose = {
-              cabalFlags.megaparsec-compat = true;
-              jailbreak = true;
+        flake = hix.lib.flake (
+          { config, ... }:
+          {
+            # ghcVersions = ["ghc98" "ghc910" "ghc912"];
+            compiler = "ghc912";
+            outputs.devShells = {
+              # extending the default devshell to add the pre-commit hooks and some other nice things
+              default = config.pkgs.mkShell {
+                inputsFrom = [
+                  config.outputs.devShells.dev # the devshell that hix provides
+                  self.allSystems.${config.system}.pre-commit.devShell # the pre-commit devshell
+                ];
+                buildInputs = with config.pkgs; [
+                  just
+                  convco
+                  git-cliff
+                  nixfmt
+                ];
+              };
             };
 
-            type-errors = {
-              extraSetupDepends = [ pkgs.haskellPackages.doctest ];
-              extraBuildDepends = [ pkgs.haskellPackages.doctest ];
-              check = false;
-            };
+            overrides =
+              {
+                source,
+                hackage,
+                enable,
+                notest,
+                unbreak,
+                jailbreak,
+                ...
+              }:
+              {
+                h2jvm = source.root h2jvm;
+                unix = enable "os-string";
+                directory = enable "os-string";
+                diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
+                incipit-base = jailbreak;
+                polysemy-conc = jailbreak;
+                polysemy-test = unbreak (jailbreak);
+                polysemy-time = jailbreak;
+                polysemy-resume = jailbreak;
+                polysemy-log = jailbreak;
+                incipit-core = jailbreak;
+                ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
 
-            h2jvm = {
-              # Skip the tests due to conflicting base version
-              check = false;
-            };
+                optics-core = notest; # test fails on ghc 9.12
+                optics = notest; # test fails on ghc 9.12
+                generic-optics = notest; # test fails on ghc 9.12
 
-
-
-            optics.check = false;
-            generic-optics.check = false;
-
-          };
-
-          devShell = {
-            hlsCheck.enable = false;
-          };
-        };
-
-
-        checks = {
-          pre-commit-check = pre-commit-hooks.lib.${system}.run {
-            src = ./.;
-            hooks = {
-              # treefmt.package = config.treefmt.build.wrapper;
-              treefmt.enable = true;
-            };
-          };
-        };
-
-        just-flake.features = {
-          treefmt.enable = true;
-        };
-
-
-
-        packages.default = self'.packages.elara;
-
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [
-            config.haskellProjects.default.outputs.devShell
-            config.flake-root.devShell
-            config.just-flake.outputs.devShell
-          ];
-          inherit (self.checks.${system}.pre-commit-check) shellHook;
-
-          nativeBuildInputs = [ pkgs.just pkgs.convco pkgs.treefmt ];
-
-          buildInputs =
-            let
-              stack-wrapped = pkgs.symlinkJoin
-                {
-                  name = "stack"; # will be available as the usual `stack` in terminal
-                  paths = [ pkgs.stack ];
-                  buildInputs = [ pkgs.makeWrapper ];
-                  postBuild = ''
-                    wrapProgram $out/bin/stack \
-                      --add-flags "\
-                        --nix \
-                        --system-ghc \
-                        --no-install-ghc \
-                      "
-                  '';
+              };
+            packages = {
+              elara = {
+                buildInputs = pkgs: [ pkgs.alex ];
+                src = ./.;
+                description = "See README for more info";
+                cabal = {
+                  author = "Alexander Wood";
+                  build-type = "Simple";
+                  copyright = "2022 Alexander Wood";
+                  license = "MIT";
+                  license-file = "LICENSE";
+                  version = "0.1.0";
+                  meta = {
+                    maintainer = "Alexander Wood <alexljwood24@hotmail.co.uk>";
+                    homepage = "https://github.com/ElaraLang/elara#readme";
+                    synopsis = "See README for more info";
+                  };
+                  language = "GHC2024";
+                  prelude = {
+                    enable = true;
+                    package = "relude";
+                    module = "Prelude";
+                  };
+                  default-extensions = [
+                    "OverloadedStrings"
+                    "OverloadedRecordDot"
+                    "TypeFamilies"
+                    "LambdaCase"
+                    "ImportQualifiedPost"
+                    "DeriveDataTypeable"
+                    "DataKinds"
+                    "DeriveFunctor"
+                    "TypeApplications"
+                    "PartialTypeSignatures"
+                  ];
+                  dependencies = [
+                    "aeson"
+                    "algebraic-graphs"
+                    "array"
+                    "binary"
+                    "bytestring"
+                    "containers"
+                    "diagnose"
+                    "directory"
+                    "filepath"
+                    "generic-optics"
+                    "h2jvm"
+                    "hashable"
+                    "lens"
+                    "matrix"
+                    "megaparsec"
+                    "mtl"
+                    "optics"
+                    "parser-combinators"
+                    "polysemy"
+                    "polysemy-log"
+                    "polysemy-plugin"
+                    "polysemy-time"
+                    "pretty-simple"
+                    "prettyprinter"
+                    "prettyprinter-ansi-terminal"
+                    "process"
+                    "relude"
+                    "safe-exceptions"
+                    "stringsearch"
+                    "terminal-size"
+                    "text-metrics"
+                    "utf8-string"
+                  ];
+                  ghc-options = [
+                    "-W"
+                    "-Wno-name-shadowing"
+                    "-Wno-partial-type-signatures"
+                    "-Widentities"
+                    "-optP-Wno-nonportable-include-path"
+                    "-fdefer-typed-holes"
+                    "-fno-show-valid-hole-fits"
+                    "-fplugin=Polysemy.Plugin"
+                    "-fwrite-ide-info"
+                    "-hiedir=.hie"
+                    "-O0"
+                  ];
                 };
-            in
-            [
-              stack-wrapped
-              pkgs.haskellPackages.haskell-debug-adapter
-              pkgs.haskellPackages.ghci-dap
-              pkgs.haskellPackages.hpack
-              pkgs.git-cliff
-            ];
-        };
+                library = {
+                  enable = true;
+                  source-dirs = "src";
 
-      };
-    };
+                  component = {
+                    build-tools = [
+                      "alex"
+                    ];
+                  };
+                };
+                executables.elara = {
+                  source-dirs = "app";
+
+                };
+                tests.elara-test = {
+                  main = "Spec.hs";
+                  default-extensions = [
+                    "QuasiQuotes"
+                  ];
+                  dependencies = [
+                    "HUnit"
+                    "QuickCheck"
+                    "hedgehog"
+                    "sydtest"
+                    "sydtest-hedgehog"
+                    "template-haskell"
+                    "neat-interpolation"
+                    "hspec-megaparsec"
+                  ];
+                  source-dirs = "test";
+
+                  component = {
+                    other-modules = [
+                      "Arbitrary.AST"
+                      "Arbitrary.Literals"
+                      "Arbitrary.Names"
+                      "Arbitrary.Type"
+                      "Boilerplate"
+                      "Common"
+                      "HedgehogSyd"
+                      "Infer"
+                      "Infer.Unify"
+                      "Lex"
+                      "Lex.Common"
+                      "Lex.Indents"
+                      "Orphans"
+                      "Parse"
+                      "Parse.Common"
+                      "Parse.Expressions"
+                      "Parse.Patterns"
+                      "Region"
+                      "Shunt"
+                    ];
+                  };
+                };
+              };
+            };
+          }
+        );
+      }
+    );
 }

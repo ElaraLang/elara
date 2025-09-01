@@ -3,11 +3,10 @@ module Elara.Core where
 import Data.Data (Data)
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
+import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
 import Prelude hiding (Alt)
-
-import Elara.Core.Generic qualified as G
 
 data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
@@ -37,22 +36,23 @@ instance Plated (Expr b) where
         Lit l -> pure (Lit l)
         App a b -> App <$> f a <*> f b
         TyApp a b -> TyApp <$> f a <*> pure b
-        Lam b e -> (Lam b <$> f e)
+        Lam b e -> Lam b <$> f e
         TyLam t e -> TyLam t <$> f e
-        Let b e -> (Let <$> f' b <*> f e)
+        Let b e -> Let <$> f' b <*> f e
           where
             f' = \case
                 G.Recursive bs -> G.Recursive <$> traverse (traverse f) bs
-                G.NonRecursive (b, e) -> G.NonRecursive <$> ((,) b <$> f e)
+                G.NonRecursive (b, e) -> G.NonRecursive . (,) b <$> f e
         Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
           where
-            traverse3 f (a, b, c) = ((,,) a b <$> f c)
+            traverse3 f (a, b, c) = (,,) a b <$> f c
 
 type CoreExpr = Expr Var
 
 type CoreAlt = Alt Var
 
 type CoreBind = Bind Var
+
 type Bind b = G.Bind b Expr
 
 type Alt b = (AltCon, [b], Expr b)
@@ -155,6 +155,7 @@ instance Hashable AltCon
 instance Hashable DataCon
 
 instance Hashable Type
+
 instance Hashable TyCon
 
 instance Hashable TyConDetails

@@ -59,7 +59,7 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
         expr <- inferFully "\\x -> x"
 
         case expr of
-            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pure ()
+            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pass
             other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
     it "infers applied identity function correctly" $ property $ do
@@ -76,7 +76,7 @@ lambdaTests = withoutRetries $ describe "Lambda Type Inference" $ do
         expr <- inferFully "let id = \\x -> x in id id"
 
         case expr of
-            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pure ()
+            Forall [a] EmptyConstraint (Function (TypeVar (UnificationVar b)) (TypeVar (UnificationVar c))) | a == b && b == c -> pass
             other -> failWith Nothing $ "Expected function type, got: " <> toString (showPretty other)
 
 letInTests :: Spec
@@ -108,8 +108,7 @@ ifElseTests = describe "If Else Type Inference" $ do
     it "infers if else type correctly" $ property $ do
         expr <- inferFully "\\x -> if x then 42 else 43"
 
-        $(ensureExpressionMatches [p|Forall [] _ (Function _ (Scalar ScalarInt)) |]) expr
-        
+        $(ensureExpressionMatches [p|Forall [] _ (Function _ (Scalar ScalarInt))|]) expr
 
 inferFully exprSrc = do
     let expr = loadShuntedExpr exprSrc

@@ -9,21 +9,12 @@ version:        0.1.0
 synopsis:       See README for more info
 description:    See README for more info
 homepage:       https://github.com/ElaraLang/elara#readme
-bug-reports:    https://github.com/ElaraLang/elara/issues
 author:         Alexander Wood
 maintainer:     Alexander Wood <alexljwood24@hotmail.co.uk>
 copyright:      2022 Alexander Wood
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
-tested-with:
-    ghc ==9.4.7
-extra-source-files:
-    src/Elara/Lexer/Lexer.x
-
-source-repository head
-  type: git
-  location: https://github.com/ElaraLang/elara
 
 library
   exposed-modules:
@@ -123,10 +114,6 @@ library
       Prelude
       Print
       TODO
-  other-modules:
-      Paths_elara
-  autogen-modules:
-      Paths_elara
   hs-source-dirs:
       src
   default-extensions:
@@ -140,14 +127,14 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0
   build-tool-depends:
       alex:alex
   build-depends:
       aeson
     , algebraic-graphs
     , array
-    , base
+    , base ==4.*
     , binary
     , bytestring
     , containers
@@ -161,7 +148,7 @@ library
     , matrix
     , megaparsec
     , mtl
-    , optics >=0.4.1
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -183,10 +170,6 @@ library
 
 executable elara
   main-is: Main.hs
-  other-modules:
-      Paths_elara
-  autogen-modules:
-      Paths_elara
   hs-source-dirs:
       app
   default-extensions:
@@ -200,12 +183,12 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , algebraic-graphs
     , array
-    , base
+    , base ==4.*
     , binary
     , bytestring
     , containers
@@ -220,7 +203,7 @@ executable elara
     , matrix
     , megaparsec
     , mtl
-    , optics >=0.4.1
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -263,9 +246,6 @@ test-suite elara-test
       Parse.Patterns
       Region
       Shunt
-      Paths_elara
-  autogen-modules:
-      Paths_elara
   hs-source-dirs:
       test
   default-extensions:
@@ -280,14 +260,14 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -threaded -O0 -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
     , aeson
     , algebraic-graphs
     , array
-    , base
+    , base ==4.*
     , binary
     , bytestring
     , containers
@@ -305,7 +285,7 @@ test-suite elara-test
     , megaparsec
     , mtl
     , neat-interpolation
-    , optics >=0.4.1
+    , optics
     , parser-combinators
     , polysemy
     , polysemy-log
@@ -318,7 +298,7 @@ test-suite elara-test
     , relude
     , safe-exceptions
     , stringsearch
-    , sydtest >=0.18.0.0
+    , sydtest
     , sydtest-hedgehog
     , template-haskell
     , terminal-size

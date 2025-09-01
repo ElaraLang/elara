@@ -33,8 +33,8 @@ runLiftClosures (CoreModule m decls) = do
 For example:
 @
 let add5 x =
-    let f y = x + y
-    in f 5
+   let f y = x + y
+   in f 5
 @
 becomes:
 @

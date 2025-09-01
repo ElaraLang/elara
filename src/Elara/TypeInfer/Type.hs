@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 -- | Types used by the type inference engine
 module Elara.TypeInfer.Type where
 
@@ -37,7 +35,7 @@ instance Semigroup (Constraint loc) where
     EmptyConstraint <> c = c
     c <> EmptyConstraint = c
     c1 <> c2 | c1 == c2 = c1 -- Reflexivity
-    c1 <> c2 = (Conjunction c1 c2)
+    c1 <> c2 = Conjunction c1 c2
 
 reduce :: Constraint a -> Constraint a
 reduce (Conjunction q1 q2) = reduce1 (Conjunction (reduce q1) (reduce q2))
@@ -57,8 +55,9 @@ data AxiomScheme loc
       EmptyAxiomScheme
     | -- | The conjunction of two axiom schemes, QQ₁ ∧ QQ₂
       ConjunctionAxiomScheme (AxiomScheme loc) (AxiomScheme loc)
-    | -- | A universal quantification of an axiom scheme, ∀α. QQ ⇒ QQ
-      -- Practically this could be a declaration like @forall a. Eq a => Eq [a]@
+    | {- | A universal quantification of an axiom scheme, ∀α. QQ ⇒ QQ
+      Practically this could be a declaration like @forall a. Eq a => Eq [a]@
+      -}
       ForallAxiomScheme
         -- | Type variable to be quantified
         UniqueTyVar
@@ -84,6 +83,7 @@ functionMonotypeResult :: Monotype loc -> Monotype loc
 functionMonotypeResult = \case
     Function _ b -> functionMonotypeResult b
     t -> t
+
 -- | A scalar type
 data Scalar
     = ScalarInt
@@ -104,7 +104,7 @@ newtype Substitution loc
 instance Semigroup (Substitution loc) where
     -- When composing s1 <> s2, we need to apply s1 to all types in s2
     Substitution s1 <> Substitution s2 =
-        Substitution $ (fmap (substituteAll (Substitution s1)) s2) <> s1
+        Substitution $ fmap (substituteAll (Substitution s1)) s2 <> s1
 
 substitution :: (UniqueTyVar, Monotype loc) -> Substitution loc
 substitution = Substitution . one
@@ -162,7 +162,7 @@ instance Pretty (Monotype loc) where
     pretty (TypeVar tv) = Style.varName (pretty tv)
     pretty (Scalar s) = pretty s
     pretty (TypeConstructor dc ts) = Style.typeName (pretty dc) <> " " <> hsep (pretty <$> ts)
-    pretty (Function t1 t2) = pretty t1 <> (Style.operator " → ") <> pretty t2
+    pretty (Function t1 t2) = pretty t1 <> Style.operator " → " <> pretty t2
 
 instance Pretty TypeVariable where
     pretty (UnificationVar tv) = pretty tv

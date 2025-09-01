@@ -8,11 +8,10 @@ import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Declaration (declaration)
+import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-
-import Elara.Parse.Indents (lineSeparator)
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
 module' :: Parser (Module 'Frontend)

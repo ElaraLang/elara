@@ -45,7 +45,9 @@ import Polysemy.State
 import TODO (todo)
 
 type KindVar = UniqueId
+
 type TypeVar = Unique LowerAlphaName
+
 data InferState = InferState
     { env :: Map (Either (Qualified TypeName) TypeVar) KindVar
     , kindEnv :: Map (Qualified TypeName) ElaraKind

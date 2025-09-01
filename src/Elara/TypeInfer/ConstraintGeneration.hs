@@ -107,10 +107,10 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             (typedBody, bodyType) <- withLocalType paramName (Lifted $ TypeVar paramTyVar) $ do
                 generateConstraints body
 
-            let functionType = (TypeVar paramTyVar) `Function` bodyType
+            let functionType = TypeVar paramTyVar `Function` bodyType
 
             pure
-                ( Lambda (Located paramLoc (TypedLambdaParam (paramName, (TypeVar paramTyVar)))) typedBody
+                ( Lambda (Located paramLoc (TypedLambdaParam (paramName, TypeVar paramTyVar))) typedBody
                 , functionType
                 )
 
@@ -151,7 +151,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
             let isRecursive =
                     anyOf
                         (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
-                        (\v -> v == varName)
+                        (== varName)
                         varExpr
 
             debug ("isRecursive?: " <> pretty isRecursive)
@@ -164,7 +164,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
                     else pure (Lifted varType)
 
             (typedBody, bodyType) <-
-                withLocalType varName (maybeGeneralised) $
+                withLocalType varName maybeGeneralised $
                     generateConstraints body
 
             pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
@@ -219,7 +219,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
             let exprTypes = fmap snd vals
 
-            pure $ ((Syntax.Block exprs), last exprTypes)
+            pure (Syntax.Block exprs, last exprTypes)
         Let (Located loc varName) NoFieldValue varExpr -> do
             recursiveVar <- UnificationVar <$> makeUniqueTyVar
             (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar recursiveVar) $ do
@@ -247,9 +247,10 @@ generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over =
 generatePatternConstraints' ::
     Infer SourceRegion r =>
     ShuntedPattern' ->
-    -- | the type of the pattern we are matching against
-    -- For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
-    -- This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
+    {- | the type of the pattern we are matching against
+    For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
+    This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
+    -}
     Monotype SourceRegion ->
     Sem r (TypedPattern', Monotype SourceRegion)
 generatePatternConstraints' pattern' over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
@@ -284,7 +285,7 @@ generatePatternConstraints' pattern' over = debugWithResult ("generatePatternCon
             (instantiatedT, typeApps) <- instantiate t
             let res = functionMonotypeResult instantiatedT
 
-            let argsFunction = foldr Function (res) (fmap snd args')
+            let argsFunction = foldr (Function . snd) res args'
             debug $ "generatePatternConstraints (ConstructorPattern): argsFunction = " <> pretty argsFunction
             let equality = Equality instantiatedT argsFunction
             tell equality
@@ -297,8 +298,7 @@ instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
     let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap TypeVar fresh)
-    let
-        instantiatedConstraint =
+    let instantiatedConstraint =
             substituteAll substitution constraint
         instantiatedMonotype =
             substituteAll substitution t
@@ -328,7 +328,7 @@ simplifyConstraint ::
     ) =>
     Constraint loc -> Set UniqueTyVar -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
 simplifyConstraint given tch wanted = do
-    givenSubst <- (reduceGiven given)
+    givenSubst <- reduceGiven given
     debug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
     runReader tch (solve (substituteAll givenSubst wanted))
 
@@ -353,7 +353,7 @@ solve (Conjunction a b) = debugWith ("solve: " <> pretty a <> " ^ " <> pretty b)
     -- apply s1 to b before unifying
     (c2, s2) <- solve (substituteAll s1 b)
     pure (c1 <> c2, s1 <> s2)
-solve EmptyConstraint = pure (mempty)
+solve EmptyConstraint = pure mempty
 
 unifyGiven ::
     (Pretty loc, Member (Error (UnifyError loc)) r, Member StructuredDebug r) =>
@@ -367,7 +367,7 @@ unifyGiven (TypeConstructor a as) (TypeConstructor b bs)
 unifyGiven (Function a b) (Function c d) = unifyGivenMany [a, b] [c, d]
 unifyGiven (Scalar a) (Scalar b) =
     if a == b
-        then pure (mempty)
+        then pure mempty
         else throw ScalarMismatch
 unifyGiven a b = throw $ UnificationFailed (a, b)
 
@@ -404,7 +404,7 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     unify' a (TypeVar (UnificationVar b)) = unifyVar b a
     unify' (Scalar a) (Scalar b) =
         if a == b
-            then pure (mempty)
+            then pure mempty
             else throw ScalarMismatch
     unify' (TypeConstructor a as) (TypeConstructor b bs)
         | a /= b = throw TypeConstructorMismatch
@@ -473,7 +473,7 @@ instance ReportableError (UnifyError loc) where
     report (OccursCheckFailed a t) =
         writeReport $
             Err
-                (Nothing)
+                Nothing
                 ("Occurs check failed: " <> pretty a <> " in " <> pretty t)
                 []
                 []

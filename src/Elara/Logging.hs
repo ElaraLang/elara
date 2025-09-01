@@ -40,14 +40,14 @@ structuredDebugToLog =
                         Debug msg -> do
                             depth <- get
                             let prefix = stimes depth "│ "
-                            let indentedMsg = prefix <> (hang (2 * depth) msg)
-                            Log.dataLog $ indentedMsg
+                            let indentedMsg = prefix <> hang (2 * depth) msg
+                            Log.dataLog indentedMsg
                             pureT ()
                         DebugWith msg act -> do
                             depth <- get
                             let prefix = stimes depth "│ "
-                            let indentedMsg = prefix <> (hang (2 * depth) msg)
-                            Log.dataLog $ indentedMsg
+                            let indentedMsg = prefix <> hang (2 * depth) msg
+                            Log.dataLog indentedMsg
                             put $ depth + 1
                             a <- runTSimple act
                             put depth
@@ -68,8 +68,7 @@ newtype TraceableFn (name :: Symbol) a b
 -- | Purely run a traceable function, without any tracing
 runTraceable :: TraceableFn name a b -> a -> b
 runTraceable (TraceableFn f) a = runIdentity $ do
-    f' <- f (pure . runTraceable (TraceableFn f)) a
-    pure f'
+    f (pure . runTraceable (TraceableFn f)) a
 
 -- | Run a traceable function with structured debug tracing
 traceFn ::

@@ -8,12 +8,12 @@ module Elara.CoreToCore where
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreBind, CoreExpr, Expr (..), Literal (..), Var (..))
+import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Polysemy hiding (transform)
-import qualified Elara.Core as Core
 
 type CoreExprPass = CoreExpr -> CoreExpr
 

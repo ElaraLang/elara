@@ -83,7 +83,7 @@ data NPat
     deriving (Show, Eq)
 
 {- | Pattern matrix backed by 'Data.Matrix'. Invariant:
-  nrows pmPats == length pmRhs == length pmBinds
+ nrows pmPats == length pmRhs == length pmBinds
 -}
 data PMatrix a = PMatrix
     { pmPats :: Mat.Matrix NPat
@@ -210,7 +210,7 @@ stepOnColumn0 resolveCon fresh scruts pm = do
                                     compileMatrix resolveCon fresh (xs ++ restScruts) PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
                         pure (Core.DataAlt dc, xs, body)
                     defAlt <- compileDefault resolveCon fresh s0 restScruts pm defs
-                    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybe [] (: []) defAlt)
+                    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybeToList defAlt)
                 else
                     if not (M.null litM)
                         then do
@@ -264,7 +264,7 @@ stepOnColumn0 resolveCon fresh scruts pm = do
          in (args', catMaybes newBinds)
 
 {- | Build a DEFAULT alternative when default rows exist.
-  'defs' contains triples of (rowIndex, headPat, tailPatterns)
+ 'defs' contains triples of (rowIndex, headPat, tailPatterns)
 -}
 compileDefault ::
     Monad m =>

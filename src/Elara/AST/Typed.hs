@@ -49,14 +49,19 @@ type instance Select "LetParamName" 'Typed = Unique VarName
 type instance Select "InParens" 'Typed = DataConCantHappen
 
 type instance Select "List" 'Typed = DataConCantHappen
+
 type instance Select "Tuple" 'Typed = DataConCantHappen
+
 type instance Select "BinaryOperator" 'Typed = DataConCantHappen
 
 type instance Select "PatternType" 'Typed = Monotype SourceRegion
 
 type instance Select "VarPat" 'Typed = Unique VarName
+
 type instance Select "ConPat" 'Typed = Qualified TypeName
+
 type instance Select "ListPattern" 'Typed = DataConCantHappen
+
 type instance Select "ConsPattern" 'Typed = DataConCantHappen
 
 type instance Select "TypeApplication" Typed = Monotype SourceRegion
@@ -67,19 +72,27 @@ type instance Select "ValuePatterns" 'Typed = NoFieldValue
 type instance Select "ValueType" 'Typed = Type SourceRegion
 
 type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
+
 type instance Select "InfixDecl" 'Typed = DataConCantHappen
+
 type instance Select "Alias" 'Typed = (Type SourceRegion, ElaraKind)
+
 type instance Select "ADTParam" 'Typed = (Monotype SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
 type instance Select "DeclarationName" 'Typed = Qualified Name
+
 type instance Select "AnyName" Typed = Name
+
 type instance Select "TypeName" Typed = Qualified TypeName
+
 type instance Select "ValueName" Typed = Qualified VarName
 
 -- Selections for 'Type'
 type instance Select "TypeVar" 'Typed = UniqueTyVar
+
 type instance Select "TypeKind" 'Typed = ElaraKind
+
 type instance Select "KindAnnotation" 'Typed = ElaraKind
 
 type instance Select "UserDefinedType" 'Typed = Qualified TypeName
