@@ -187,6 +187,9 @@
                     "-fwrite-ide-info"
                     "-hiedir=.hie"
                     "-O0"
+                    "-threaded"
+                    "-rtsopts"
+                    "-with-rtsopts=-N"
                   ];
                 };
                 library = {
