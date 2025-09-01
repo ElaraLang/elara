@@ -266,7 +266,7 @@ askCurrentModule :: InnerRename r => Sem r (Module 'Desugared)
 askCurrentModule = do
     m <- ask
     case m of
-        Nothing -> throw $ UnknownCurrentModule
+        Nothing -> throw UnknownCurrentModule
         Just m -> pure m
 
 lookupGenericName ::
@@ -385,7 +385,7 @@ addDeclarationToContext _ decl = do
                 ( Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
                     <$ decl ^. _Unwrapped
                 )
-    case decl ^. declarationName ^. unlocated of
+    case decl ^. declarationName % unlocated of
         NVarName vn -> modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 

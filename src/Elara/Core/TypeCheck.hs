@@ -59,7 +59,7 @@ instance ReportableError TypeCheckError where
         CoreTypeMismatch{} -> Just Codes.coreTypeMismatch
         _ -> Nothing @Codes.ErrorCode
 
-data TcState = TcState
+newtype TcState = TcState
     { scope :: Set.Set (UnlocatedVarRef Text)
     {- ^ The 'Var' already holds the variable's type so we don't need to track that.
     However we do need to track scoping, as an optimisation could pull a variable out of scope
@@ -83,13 +83,13 @@ typeCheckCoreModule (CoreModule n m) = do
         CoreValue (NonRecursive (v, e)) -> scoped $ do
             modify (addToScope v)
             eType <- typeCheck e
-            pure ()
+            pass
         CoreValue (Recursive bs) -> scoped $ do
             for_ bs $ \(v, e) -> do
                 modify (addToScope v)
 
             for_ bs $ \(v, e) -> typeCheck e
-        CoreType _ -> pure ()
+        CoreType _ -> pass
 
     pass
 
@@ -179,9 +179,12 @@ typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
 typeCheckA (ANF.Var v) = debugWith ("typeCheckA: " <> pretty v) $ do
     env <- get
-    case isInScope v env of
-        True -> pure (varType v)
-        False -> throw $ UnknownVariable v env.scope
+    ( if isInScope v env
+            then
+                pure (varType v)
+            else
+                throw $ UnknownVariable v env.scope
+        )
 typeCheckA (ANF.Lam v body) = do
     let t = varType v
 

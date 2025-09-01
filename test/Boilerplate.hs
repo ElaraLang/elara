@@ -8,7 +8,7 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Select
 import Elara.AST.VarRef
-import Elara.Data.Pretty (Doc, prettyToText)
+import Elara.Data.Pretty ( Doc, prettyToText, AnsiStyle )
 import Elara.Data.TopologicalGraph
 import Elara.Desugar
 import Elara.Lexer.Pipeline
@@ -23,9 +23,7 @@ import Error.Diagnose.Diagnostic
 import Hedgehog
 import Language.Haskell.TH
 
-import Control.Exception (throwIO)
-import Elara.Data.Pretty (AnsiStyle)
-import Elara.Error
+import Control.Exception (throwIO)import Elara.Error
 import Elara.Logging
 import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.TypeInfer.Environment
@@ -126,8 +124,8 @@ fakeTypeEnvironment =
             & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
             & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
             & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) scalarBool)))
-            & addType (DataConKey (Qualified "True" primModuleName)) (Lifted (scalarBool))
-            & addType (DataConKey (Qualified "False" primModuleName)) (Lifted (scalarBool))
+            & addType (DataConKey (Qualified "True" primModuleName)) (Lifted scalarBool)
+            & addType (DataConKey (Qualified "False" primModuleName)) (Lifted scalarBool)
 
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
@@ -140,14 +138,14 @@ ensureExpressionMatches qpat = do
     pat <- qpat
     let msg = Shown $ pprint (stripQualifiers pat)
 
-    [e|\case $(pure pat) -> pure (); o -> withFrozenCallStack $ failDiff msg o|]
+    [e|\case $(pure pat) -> pass; o -> withFrozenCallStack $ failDiff msg o|]
 
 -- | like 'ensureExpressionMatches', but for Expectations rather than Hedgehog properties
 shouldMatch :: HasCallStack => Q Pat -> Q Exp
 shouldMatch qpat = do
     pat <- qpat
     let msg = pprint (stripQualifiers pat)
-    [|\case $(pure pat) -> pure (); o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg|]
+    [|\case $(pure pat) -> pass; o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg|]
 
 newtype Shown = Shown String deriving (Lift)
 

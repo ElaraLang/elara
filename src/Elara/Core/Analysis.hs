@@ -42,7 +42,9 @@ guesstimateExprType = TraceableFn $ \self v ->
         (Lit l) -> pure $ literalType l
         app@(App f _) ->
             self f
-                <&> ( flip overForAll $ \case
+                <&> flip
+                    overForAll
+                    ( \case
                         Core.FuncTy _ t -> t
                         t -> error $ "exprType: expected function type, got " <> showPretty t <> " in " <> showPretty app
                     )
@@ -50,7 +52,7 @@ guesstimateExprType = TraceableFn $ \self v ->
             self f <&> \case
                 Core.ForAllTy tv t' -> Core.substTypeVar tv t t'
                 t' -> error $ "exprType: expected forall type, got " <> showPretty t' <> " in " <> showPretty (TyApp f t)
-        (Lam b e) -> Core.FuncTy (varType b) <$> (self e)
+        (Lam b e) -> Core.FuncTy (varType b) <$> self e
         (TyLam _ e) -> self e
         (Let _ e) -> self e
         (Match _ _ alts) -> case alts of

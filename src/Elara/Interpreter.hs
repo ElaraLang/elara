@@ -92,7 +92,7 @@ instance Pretty Value where
     pretty (String s) = pretty '"' <> pretty s <> pretty '"'
     pretty (Char c) = pretty c
     pretty (Double d) = pretty d
-    pretty (Ctor c []) = (pretty (c.name))
+    pretty (Ctor c []) = pretty (c.name)
     pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
     pretty p = gpretty p
 
@@ -274,13 +274,13 @@ loadModule (CoreModule name decls) = do
         )
     newEnv <- gets bindings
     debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
-    pure ()
+    pass
 
 loadTypeDecl :: Interpreter r => CoreTypeDecl -> Sem r ()
 loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl cons)) = do
     for_ cons $ \con@(DataCon name _ _) -> do
         modify (\s -> s{bindings = Map.insert (UnlocatedGlobal name) (Ctor con []) (bindings s)})
-loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pure ()
+loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass
 
 evalIO :: Interpreter r => Value -> Sem r Value
 evalIO (IOAction io) = do
@@ -297,7 +297,7 @@ run = do
     case Map.lookup (UnlocatedGlobal (Qualified "main" (ModuleName ("Main" :| [])))) (s.bindings) of
         Just val -> do
             evalIO val
-            pure ()
+            pass
         _ -> throw $ NoMainFound s
 
 runInterpreter :: IsPipeline r => Sem (EffectsAsPrefixOf InterpreterEffects r) a -> Sem r a

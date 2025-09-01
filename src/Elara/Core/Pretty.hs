@@ -87,7 +87,7 @@ prettyExpr (Let bindings e) =
 prettyExpr (Match e of' alts) =
     group $
         vsep
-            [ keyword "match" <+> prettyExpr e <+> keyword "with" <+> (maybe "" pretty of') <> lbrace
+            [ keyword "match" <+> prettyExpr e <+> keyword "with" <+> maybe "" pretty of' <> lbrace
             , indent indentDepth $ sep (punctuate semi (map prettyAlt alts))
             , rbrace
             ]
@@ -188,7 +188,7 @@ instance Pretty AltCon where
 instance Pretty DataCon where
     pretty :: DataCon -> Doc AnsiStyle
     pretty = \case
-        DataCon name t _ -> (pretty name <+> ":" <+> pretty t)
+        DataCon name t _ -> pretty name <+> ":" <+> pretty t
 
 prettyTypeVariable :: Bool -> TypeVariable -> Doc AnsiStyle
 prettyTypeVariable withKind = \case

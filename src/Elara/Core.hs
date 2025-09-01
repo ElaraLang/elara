@@ -37,16 +37,16 @@ instance Plated (Expr b) where
         Lit l -> pure (Lit l)
         App a b -> App <$> f a <*> f b
         TyApp a b -> TyApp <$> f a <*> pure b
-        Lam b e -> (Lam b <$> f e)
+        Lam b e -> Lam b <$> f e
         TyLam t e -> TyLam t <$> f e
-        Let b e -> (Let <$> f' b <*> f e)
+        Let b e -> Let <$> f' b <*> f e
           where
             f' = \case
                 G.Recursive bs -> G.Recursive <$> traverse (traverse f) bs
-                G.NonRecursive (b, e) -> G.NonRecursive <$> ((,) b <$> f e)
+                G.NonRecursive (b, e) -> G.NonRecursive . (,) b <$> f e
         Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
           where
-            traverse3 f (a, b, c) = ((,,) a b <$> f c)
+            traverse3 f (a, b, c) = (,,) a b <$> f c
 
 type CoreExpr = Expr Var
 

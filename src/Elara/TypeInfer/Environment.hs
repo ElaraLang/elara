@@ -94,7 +94,7 @@ instance Pretty loc => ReportableError (InferError loc) where
     report (UnboundTermVar (TermVarKey key) (TypeEnvironment env)) =
         writeReport $
             Err
-                (Nothing)
+                Nothing
                 ("Unbound term variable " <> pretty key)
                 []
                 [Note $ "Possible names:" <> listToText (pretty <$> Map.keys env)]

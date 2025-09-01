@@ -160,7 +160,7 @@ desugarDeclarations mn decls = do
     completePartials mn
 
 assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDeclaration, Located a) -> Desugar ()
-assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pure () else throw (PartialNamesNotEqual p1 p2)
+assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throw (PartialNamesNotEqual p1 p2)
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
 resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throw (DuplicateAnnotations a b)
@@ -207,17 +207,17 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
         genPartial'' (InfixDecl (InfixDeclaration n p a)) = do
             let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a))
 
-            pure (JustInfix (n) wholeDeclRegion infix'')
+            pure (JustInfix n wholeDeclRegion infix'')
         genPartial'' (Value n e pats _ valueAnnotations) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
             let ann = coerceValueDeclAnnotations @Frontend @Desugared valueAnnotations
 
-            pure (JustLet (n) wholeDeclRegion body (Just ann))
+            pure (JustLet n wholeDeclRegion body (Just ann))
         genPartial'' (ValueTypeDef n ty) = do
             ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
-            pure (JustDef (n) wholeDeclRegion ty' Nothing)
+            pure (JustDef n wholeDeclRegion ty' Nothing)
         genPartial'' (TypeDeclaration n vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
                 traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % _1 % unlocated) desugarType t

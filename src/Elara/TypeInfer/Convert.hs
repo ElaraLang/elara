@@ -26,8 +26,7 @@ astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
 
 astTypeToInferType :: Member (Error TypeConvertError) r => KindedType -> Sem r (Monotype SourceRegion)
 astTypeToInferType t@(Generic.Type (Located loc t', kind)) = do
-    asInferType <- astTypeToInferType' loc t'
-    pure asInferType
+    astTypeToInferType' loc t'
 
 astTypeToInferTypeWithKind :: Member (Error TypeConvertError) r => KindedType -> Sem r (Monotype SourceRegion, ElaraKind)
 astTypeToInferTypeWithKind t@(Generic.Type (Located loc t', kind)) = do
@@ -43,10 +42,10 @@ astTypeToInferType' loc (Generic.FunctionType i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
     pure $ Function i' o'
-astTypeToInferType' loc (Generic.UnitType) = do
+astTypeToInferType' loc Generic.UnitType = do
     pure $ Scalar ScalarUnit
 astTypeToInferType' loc (Generic.TupleType ts) = do
-    ts' <- traverse (astTypeToInferType) ts
+    ts' <- traverse astTypeToInferType ts
     throw $ NotSupported "Tuple types are not supported yet"
 astTypeToInferType' loc (Generic.ListType t) = do
     t' <- astTypeToInferType t

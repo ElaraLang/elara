@@ -134,7 +134,7 @@ pattern InExpr' loc y <- Expr (Located loc y, _)
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
 fixOperators :: forall r. Members ShuntPipelineEffects r => OpTable -> RenamedExpr -> Sem r RenamedExpr
-fixOperators opTable o = reassoc o
+fixOperators opTable = reassoc
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
     withLocationOf' s repl = over (_Unwrapped % _1) (repl <$) s

@@ -210,7 +210,7 @@ stepOnColumn0 resolveCon fresh scruts pm = do
                                     compileMatrix resolveCon fresh (xs ++ restScruts) PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
                         pure (Core.DataAlt dc, xs, body)
                     defAlt <- compileDefault resolveCon fresh s0 restScruts pm defs
-                    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybe [] (: []) defAlt)
+                    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybeToList defAlt)
                 else
                     if not (M.null litM)
                         then do
