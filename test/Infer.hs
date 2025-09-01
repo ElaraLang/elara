@@ -2,12 +2,11 @@
 
 module Infer where
 
-import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironment, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
+import Boilerplate (ensureExpressionMatches, evalPipelineRes, fakeTypeEnvironment, finalisePipeline, loadShuntedExpr, pipelineResShouldSucceed, shouldMatch)
 import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Shunted
 import Elara.Data.Unique (uniqueGenToIO)
 import Elara.Logging (ignoreStructuredDebug, structuredDebugToLog)
-import Elara.Pipeline (finalisePipeline)
 import Elara.TypeInfer (inferValue, runInferPipeline)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment

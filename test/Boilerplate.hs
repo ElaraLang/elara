@@ -15,10 +15,10 @@ import Elara.Desugar
 import Elara.Error
 import Elara.Lexer.Pipeline
 import Elara.Lexer.Reader
-import Elara.Logging
+import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.Parse
 import Elara.Parse.Expression
-import Elara.Pipeline
+import Elara.Pipeline hiding (finalisePipeline)
 import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.Prim.Rename
 import Elara.Rename
@@ -30,7 +30,7 @@ import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
-import Polysemy (Embed, Member, Sem)
+import Polysemy (Embed, Member, Sem, runM, subsume_)
 import Polysemy.Maybe
 import Polysemy.Reader
 import Region (qualifiedTest, testLocated)
@@ -57,6 +57,15 @@ loadRenamedExpr' source = runRenamePipeline (createGraph []) operatorRenameState
     desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
 
     runReader Nothing $ runReader (Nothing @(Module 'Desugared)) $ renameExpr desugared
+
+-- like the normal finalisePipeline but always with no logging
+finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
+finalisePipeline =
+    runM @IO
+        . runDiagnosticWriter
+        . runMaybe
+        . ignoreStructuredDebug
+        . subsume_
 
 loadShuntedExpr :: Text -> PipelineRes (Expr 'Shunted)
 loadShuntedExpr source = finalisePipeline . runShuntPipeline $ do
