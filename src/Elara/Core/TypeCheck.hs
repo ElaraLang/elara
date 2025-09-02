@@ -206,20 +206,28 @@ For example @forall a. a@ and @forall b. b@ are equal in this relation,
 but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
 -}
 equalUnderSubst :: Core.Type -> Core.Type -> Bool
-equalUnderSubst x y | x == y = True
-equalUnderSubst (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
+equalUnderSubst
+    x
+    y = equalUnderSubst' x y || equalUnderSubst' y x -- reflexive
+
+equalUnderSubst' :: Core.Type -> Core.Type -> Bool
+equalUnderSubst' x y | x == y = True
+-- forall a. T and forall b. U are equal if T/[a=b] == U
+equalUnderSubst' (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
     equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)
-equalUnderSubst (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
+-- eg forall a. List a and List Int should be equal
+equalUnderSubst' (Core.ForAllTy tv1 t1) t2 =
+    equalUnderSubst (Core.substTypeVar tv1 (Core.TyVarTy tv1) t1) t2
+equalUnderSubst' (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
-equalUnderSubst (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
+equalUnderSubst' (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
-equalUnderSubst (Core.ConTy c1) (Core.ConTy c2) =
+equalUnderSubst' (Core.ConTy c1) (Core.ConTy c2) =
     trace (toString ("Comparing constructors: " <> show c1 <> " and " <> show c2)) $
         c1 == c2
 -- At this point (after substituting foralls), a type variable should match anything
-equalUnderSubst (Core.TyVarTy _) _ = True
-equalUnderSubst _ (Core.TyVarTy _) = True
-equalUnderSubst x y = error $ "Incomparable types: " <> showPretty x <> " and " <> showPretty y
+equalUnderSubst' (Core.TyVarTy _) _ = True
+equalUnderSubst' x y = False --
 
 generalize :: Core.Type -> Core.Type
 generalize t = let ftv = freeTypeVars t in foldr Core.ForAllTy t ftv
