@@ -100,6 +100,7 @@ shouldBrace :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
 shouldBrace x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr' ast of
     Block _ -> False
     Let{} -> True
+    LetIn{} -> True
     _ -> False
 
 shouldParen :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool

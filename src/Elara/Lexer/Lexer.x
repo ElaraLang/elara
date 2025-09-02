@@ -33,12 +33,12 @@ $opChar = [\! \# \$ \% \& \* \+ \/ \\ \< \> \? \@ \^ \| \- \~ \= \.]
 $underscore = \_
 $identifier = [$lower $upper $digit $underscore]
 
-@variableIdentifer = [$lower $underscore] $identifier*
+@variableIdentifier = [$lower $underscore] $identifier*
 @typeIdentifier = $upper $identifier*
 @opIdentifier = $opChar+
 
 @qual = (@typeIdentifier \.)+
-@qVariableIdentifer = @qual @variableIdentifer
+@qVariableIdentifier = @qual @variableIdentifier
 @qTypeIdentifier = @qual @typeIdentifier
 @qOpIdentifier = @qual @opIdentifier
 
@@ -75,7 +75,7 @@ tokens :-
       "--" [\ ] .*  			   ;
 
       -- Qualified identifiers have higher precedence than the symbol tokens
-      @qVariableIdentifer    { parametrizedTok TokenQVariableIdentifier splitQualName }
+      @qVariableIdentifier    { parametrizedTok TokenQVariableIdentifier splitQualName }
       @qTypeIdentifier       { parametrizedTok TokenQConstructorIdentifier splitQualName }
       @qOpIdentifier         { parametrizedTok TokenQOperatorIdentifier splitQualName }
       
@@ -139,7 +139,7 @@ tokens :-
       \"                     { beginString }
 
       -- Identifiers
-      @variableIdentifer     { parametrizedTok TokenVariableIdentifier identity}
+      @variableIdentifier     { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
       @opIdentifier          { parametrizedTok TokenOperatorIdentifier identity}
   

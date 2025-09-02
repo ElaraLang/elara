@@ -98,10 +98,11 @@ data Expr' (ast :: a)
     | List !(Select "List" ast)
     | Match (Expr ast) [(Pattern ast, Expr ast)]
     | LetIn
-        (ASTLocate ast (Select "LetParamName" ast))
-        (Select "LetPattern" ast)
-        (Expr ast)
-        (Expr ast)
+        { letInParam :: ASTLocate ast (Select "LetParamName" ast)
+        , letInPattern :: Select "LetPattern" ast
+        , letInValue :: Expr ast
+        , letInBody :: Expr ast
+        }
     | Let
         (ASTLocate ast (Select "LetParamName" ast))
         (Select "LetPattern" ast)

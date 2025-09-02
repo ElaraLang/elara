@@ -75,6 +75,7 @@ library
       Elara.Logging
       Elara.Parse
       Elara.Parse.Combinators
+      Elara.Parse.Debug
       Elara.Parse.Declaration
       Elara.Parse.Error
       Elara.Parse.Expression

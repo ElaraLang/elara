@@ -23,7 +23,7 @@ lexUL = fmap (view unlocated) . lex'
 
 -- | Like '<~>', but converts Indent/Dedents to LeftBrace/RightBrace
 (<~!~>) :: Text -> Text -> Expectation
-(<~!~>) = withFrozenCallStack (shouldBe `on` (fmap convert . lexUL))
+(<~!~>) withIndents withoutIndents = withFrozenCallStack $ (shouldBe `on` (fmap convert . lexUL)) withIndents withoutIndents
   where
     convert TokenIndent = TokenLeftBrace
     convert TokenDedent = TokenRightBrace
