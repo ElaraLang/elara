@@ -3,6 +3,9 @@ module Elara.ReadFile where
 import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
+import Data.HashSet qualified as HashSet
+import Effectful (Eff, IOE)
+import Effectful.FileSystem (FileSystem, listDirectory)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -53,3 +56,10 @@ readFileString path = do
 runReadFilePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
 runReadFilePipeline =
     runErrorOrReport @ReadFileError . subsume_
+
+getInputFiles :: Eff '[FileSystem] (HashSet FilePath)
+getInputFiles = do
+    stdlib <- listDirectory "stdlib"
+    let source = "source.elr"
+
+    pure $ HashSet.fromList (stdlib <> [source])
