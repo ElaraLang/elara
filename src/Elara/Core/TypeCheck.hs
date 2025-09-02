@@ -206,7 +206,6 @@ For example @forall a. a@ and @forall b. b@ are equal in this relation,
 but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
 -}
 equalUnderSubst :: Core.Type -> Core.Type -> Bool
-equalUnderSubst x y | trace (toString ("equalUnderSubst: " <> showPretty x <> " ?= " <> showPretty y)) False = undefined
 equalUnderSubst x y | x == y = True
 equalUnderSubst (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
     equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)
