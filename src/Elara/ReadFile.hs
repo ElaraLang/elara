@@ -5,7 +5,7 @@ import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
 import Data.HashSet qualified as HashSet
 import Effectful (Eff, IOE)
-import Effectful.FileSystem (FileSystem, listDirectory)
+import Effectful.FileSystem (FileSystem, getCurrentDirectory, listDirectory, makeAbsolute, makeRelativeToCurrentDirectory)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -13,6 +13,7 @@ import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error
+import Print (debugPretty)
 import System.IO
 
 -- https://stackoverflow.com/a/6860159
@@ -59,7 +60,7 @@ runReadFilePipeline =
 
 getInputFiles :: Eff '[FileSystem] (HashSet FilePath)
 getInputFiles = do
-    stdlib <- listDirectory "stdlib"
+    stdlib <- fmap ("stdlib/" <>) <$> listDirectory "stdlib"
     let source = "source.elr"
 
     pure $ HashSet.fromList (stdlib <> [source])

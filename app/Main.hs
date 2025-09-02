@@ -7,11 +7,8 @@ module Main (
 where
 
 import Control.Exception as E
-import Data.Binary.Put (runPut)
-import Data.Binary.Write (WriteBinary (..))
 import Data.Generics.Product
 import Data.Generics.Wrapped
-import Data.Traversable (for)
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
@@ -20,7 +17,7 @@ import Elara.Core (CoreBind)
 
 -- import Elara.CoreToIR
 
-import Effectful (raise, runEff, subsume)
+import Effectful (runEff)
 import Effectful.FileSystem (runFileSystem)
 import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Core.Module (CoreModule)
@@ -31,12 +28,9 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
-import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Interpreter (runInterpreter)
 import Elara.Interpreter qualified as Interpreter
-import Elara.Lexer.Reader
-import Elara.Logging
 import Elara.Parse
 import Elara.Pipeline (IsPipeline, finalisePipeline)
 import Elara.Prim
@@ -51,26 +45,17 @@ import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
 import Error.Diagnose (Diagnostic, Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
-import JVM.Data.Abstract.ClassFile qualified as ClassFile
-import JVM.Data.Abstract.Name (suitableFilePath)
-import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad
-import JVM.Data.JVMVersion
 import Polysemy (Member, Sem)
-import Polysemy.Embed (embed)
-import Polysemy.Error (fromEither)
 import Polysemy.Fail
-import Polysemy.Reader
 import Prettyprinter.Render.Text
 import Print
 import Rock qualified
 import System.CPUTime
-import System.Directory (createDirectoryIfMissing, doesFileExist, listDirectory)
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
 import System.FilePath
 import System.IO (hSetEncoding, utf8)
-import System.Info (os)
-import System.Process
 import Text.Printf
 
 outDirName :: IsString s => s
@@ -125,19 +110,17 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     liftIO (createDirectoryIfMissing True outDirName)
 
     files <-
-        liftIO $
-            runEff $
-                runFileSystem $
-                    Rock.runRock Elara.Rules.rules (Rock.fetch Elara.Query.InputFiles)
+        toList
+            <$> liftIO
+                ( runEff $
+                    runFileSystem $
+                        Rock.runRock Elara.Rules.rules (Rock.fetch Elara.Query.InputFiles)
+                )
 
-    -- main file
-    source <- loadModule dumpLexed dumpParsed dumpDesugared "source.elr"
-
-    files <- embed (listDirectory "stdlib" >>= (filterM doesFileExist . fmap ("stdlib/" <>)))
-    stdlibMods <- for files $ \file -> do
+    loadedModules <- for files $ \file -> do
         loadModule dumpLexed dumpParsed dumpDesugared file
 
-    let graph = createGraph (source : stdlibMods)
+    let graph = createGraph $ toList loadedModules
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
     when dumpCore $ do
         liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
