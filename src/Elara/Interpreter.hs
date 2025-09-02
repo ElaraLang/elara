@@ -152,7 +152,11 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                 modify (\s -> s{bindings = env'})
                 interpretExpr e
         PrimOp "toString" -> do
-            pure $ String (prettyToText a')
+            let asText = case a' of
+                    Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
+                        prettyToText (arg1, arg2)
+                    other -> prettyToText other
+            pure $ String asText
         PrimOp "println" -> do
             pure $ IOAction $ do
                 let asString = case a' of
