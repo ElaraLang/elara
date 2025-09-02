@@ -49,6 +49,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :bug: Fix/implement 'HasDependencies (CoreModule bind)' - ([9230cd1](https://github.com/ElaraLang/elara/commit/9230cd101020bb1bad4476a7422982bcc9320907)) 
 - *(core)* :bug: Fix `exprType` for polymorphic function applications - ([29fe7cc](https://github.com/ElaraLang/elara/commit/29fe7cc0fe087cee15bbee9efba86a26e83a9372)) 
 - *(core)* :bug: Fix core type checking for some cases - ([c0c0c01](https://github.com/ElaraLang/elara/commit/c0c0c01cfe67851c276052157fc53cbcb22ee26f)) 
+- *(core)* :bug: Fix recursive let binds not being converted to ANF correctly - ([d6ffdee](https://github.com/ElaraLang/elara/commit/d6ffdee9bcff8039d2d8e969ed1f17007c6f298b)) 
 - *(flake)* :bug: Update flake.lock and flake.nix for dependency resolution (NO MORE DEPENDENCY HELL) - ([3762c6d](https://github.com/ElaraLang/elara/commit/3762c6d0e8f830b450699353ce27f9c975b2ff63)) 
 - *(flake)* Tidy up nix and fix various dependency bugs - ([65bd7d4](https://github.com/ElaraLang/elara/commit/65bd7d4e8c130dd631df5aca4a3c6294855fb20b)) 
 - *(logging)* :bug: Fix call stacks in logging - ([d3e4620](https://github.com/ElaraLang/elara/commit/d3e4620b9bfc069972393c8a31e3b773002b7d04)) 
