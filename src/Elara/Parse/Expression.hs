@@ -203,6 +203,7 @@ letPreamble = do
 letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do
     (name, patterns, e) <- letPreamble
+    optional lineSeparator -- if the body is a nested block, there will be a line separator at the end
     token_ TokenIn
 
     body <- exprBlock element
