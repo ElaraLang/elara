@@ -5,6 +5,12 @@ module Elara.Desugar where
 import Data.Generics.Product (field', the)
 import Data.Generics.Wrapped
 import Data.Map qualified as M
+import Effectful (Eff, inject)
+import Effectful.Error.Static (throwError)
+import Effectful.Error.Static qualified as Eff
+import Effectful.FileSystem (FileSystem)
+import Effectful.State.Extra
+import Effectful.State.Static.Local qualified as Eff
 import Elara.AST.Desugared
 import Elara.AST.Frontend
 import Elara.AST.Generic
@@ -13,133 +19,56 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
-import Elara.Data.Pretty (Pretty (pretty), (<+>))
-import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
-import Elara.Error.Codes qualified as Codes
-import Elara.Pipeline
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty))
+import Elara.Desugar.Error
+import Elara.Error (SomeReportableError, runErrorOrReportEff)
+import Elara.Error.EffectNew (DiagnosticWriter)
+import Elara.Query qualified
 import Elara.Utils (curry3)
-import Error.Diagnose (Marker (..), Note (..), Report (Err))
 import Optics (traverseOf_)
-import Polysemy
-import Polysemy.Error (Error, throw)
-import Polysemy.State (State, evalState)
-import Polysemy.State.Extra
+import Rock qualified
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
-data DesugarError
-    = DefWithoutLet DesugaredType
-    | InfixWithoutDeclaration (Located Name) SourceRegion (ValueDeclAnnotations Desugared)
-    | DuplicateDeclaration PartialDeclaration PartialDeclaration
-    | DuplicateAnnotations (ValueDeclAnnotations Desugared) (ValueDeclAnnotations Desugared)
-    | PartialNamesNotEqual PartialDeclaration PartialDeclaration
-    deriving (Typeable, Show)
+type Desugar a = Eff DesugarPipelineEffects a
 
-instance Exception DesugarError
-
-instance ReportableError DesugarError where
-    report (DefWithoutLet _) =
-        writeReport $ Err (Just Codes.defWithoutLet) "Def without let" [] []
-    report (DuplicateDeclaration a b) =
-        writeReport $
-            Err
-                (Just Codes.duplicateDefinition)
-                ("Duplicate declaration names:" <+> pretty a)
-                [ (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion b, This "Name is used here")
-                , (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion a, This "And also here")
-                ]
-                [ Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
-                , Hint "Rename one of the declarations"
-                ]
-    report (PartialNamesNotEqual a b) =
-        writeReport $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
-    report (InfixWithoutDeclaration n _ l) =
-        writeReport $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
-    report (DuplicateAnnotations a b) =
-        writeReport $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
-
-type Desugar a = Sem DesugarPipelineEffects a
-
-type DesugarPipelineEffects = '[State DesugarState, Error DesugarError]
-
-runDesugar :: Desugar a -> Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a
-runDesugar = subsume_
-
-runDesugarPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf DesugarPipelineEffects r) a -> Sem r a
-runDesugarPipeline =
-    runErrorOrReport @DesugarError
-        . evalState (DesugarState M.empty)
+type DesugarPipelineEffects = '[Eff.State DesugarState, Eff.Error DesugarError]
 
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration
     }
     deriving (Show, Pretty)
 
-{- | A partial declaration stores a desugared part of a declaration
-This allows merging of declarations with the same name
-For example, the code
-@
-def a : Int
-...
-...
-let a = 5
-@
-is legal, and the 2 parts of the declaration need to be merged
-
-Firstly, we create a 'JustDef' after seeing the @def@ line, then we merge this with a 'JustLet' after seeing the @let@ line
-to create a 'Both' declaration, which is then resolved to a 'Desugared.Declaration'
--}
-data PartialDeclaration
-    = -- | A partial declaration with just a def line
-      JustDef
-        -- | Name of the declaration
-        (Located VarName)
-        -- | The *overall* region of the declaration, not just the body!
-        SourceRegion
-        DesugaredType
-        (Maybe (ValueDeclAnnotations Desugared))
-    | JustLet
-        (Located VarName)
-        SourceRegion
-        DesugaredExpr
-        (Maybe (ValueDeclAnnotations Desugared))
-    | JustInfix
-        (Located Name)
-        SourceRegion
-        (ValueDeclAnnotations Desugared)
-    | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
-    | Immediate Name DesugaredDeclarationBody
-    deriving (Typeable, Show)
-
-partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
-partialDeclarationSourceRegion (JustDef _ sr _ _) = sr
-partialDeclarationSourceRegion (JustLet _ sr _ _) = sr
-partialDeclarationSourceRegion (JustInfix _ sr _) = sr
-partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
-partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
-
-instance Pretty PartialDeclaration where
-    pretty (JustDef n _ _ _) = "JustDef" <+> pretty n
-    pretty (JustLet n _ _ _) = "JustLet" <+> pretty n
-    pretty (JustInfix n _ _) = "JustInfix" <+> pretty n
-    pretty (AllDecl n _ _ _ _) = "All" <+> pretty n
-    pretty (Immediate n _) = "Immediate" <+> pretty n
-
 makeLenses ''DesugarState
 
 resolvePartialDeclaration :: PartialDeclaration -> Desugar DesugaredDeclarationBody
 resolvePartialDeclaration (Immediate _ a) = pure a
-resolvePartialDeclaration ((JustDef _ _ ty _)) = throw (DefWithoutLet ty)
+resolvePartialDeclaration ((JustDef _ _ ty _)) = throwError (DefWithoutLet ty)
 resolvePartialDeclaration ((JustLet n sr e ann)) = pure (DeclarationBody (Located sr (Value n e NoFieldValue Nothing (resolveAnn ann))))
 resolvePartialDeclaration ((AllDecl n sr ty e ann)) =
     pure
         ( DeclarationBody
             (Located sr (Value n e NoFieldValue (Just ty) ann))
         )
-resolvePartialDeclaration (JustInfix n sr v) = throw (InfixWithoutDeclaration n sr v)
+resolvePartialDeclaration (JustInfix n sr v) = throwError (InfixWithoutDeclaration n sr v)
 
 resolveAnn :: Maybe (ValueDeclAnnotations Desugared) -> ValueDeclAnnotations Desugared
 resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
+
+getDesugaredModule ::
+    ModuleName ->
+    Eff
+        '[ Eff.Error SomeReportableError
+         , DiagnosticWriter (Doc AnsiStyle)
+         , Rock.Rock Elara.Query.Query
+         , FileSystem
+         , Eff.Error DesugarError
+         ]
+        (Module 'Desugared)
+getDesugaredModule mn = do
+    parsed <- runErrorOrReportEff $ Rock.fetch $ Elara.Query.ParsedModule mn
+
+    inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 
 desugar ::
     Module 'Frontend ->
@@ -160,10 +89,10 @@ desugarDeclarations mn decls = do
     completePartials mn
 
 assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDeclaration, Located a) -> Desugar ()
-assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throw (PartialNamesNotEqual p1 p2)
+assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throwError (PartialNamesNotEqual p1 p2)
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
-resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throw (DuplicateAnnotations a b)
+resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throwError (DuplicateAnnotations a b)
 resolveDupeInfixes (Just (ValueDeclAnnotations a)) (Just (ValueDeclAnnotations b)) = pure (ValueDeclAnnotations (a <|> b))
 resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b))
 
@@ -188,7 +117,7 @@ mergePartials p1@(JustLet n sr e mAnn) p2@(JustDef n' sr' ty mAnn') = do
     assertPartialNamesEqual (p1, n) (p2, n')
     ann <- resolveDupeInfixes mAnn mAnn'
     pure (AllDecl n' (sr <> sr') ty e ann)
-mergePartials l r = throw (DuplicateDeclaration l r)
+mergePartials l r = throwError (DuplicateDeclaration l r)
 
 genPartials :: [FrontendDeclaration] -> Desugar ()
 genPartials = traverseOf_ (each % _Unwrapped) genPartial
@@ -201,6 +130,8 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
         genPartial' db = do
             partial <- genPartial'' db
             let f = insertWithM mergePartials (IgnoreLocation (db ^. declarationBody'Name)) partial
+            let
+                modifyM f = Eff.get >>= (Eff.put <=< f)
             modifyM (traverseOf partialDeclarations f)
 
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration

@@ -1,11 +1,11 @@
 module Elara.Parse where
 
-import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle)
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.FileSystem (FileSystem)
 import Elara.AST.Module (Module)
+import Elara.AST.Name
 import Elara.AST.Select
 import Elara.Data.Pretty
 import Elara.Error (SomeReportableError, runErrorOrReport, runErrorOrReportEff)
@@ -16,7 +16,7 @@ import Elara.Parse.Module (module')
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Query (Query (GetFileContents, LexedFile))
+import Elara.Query (Query (GetFileContents, LexedFile, ModulePath))
 import Elara.ReadFile (FileContents (FileContents))
 import Polysemy
 import Polysemy.Error
@@ -54,6 +54,11 @@ getParsedFileQuery fp = do
     case firstError of
         Left err -> throwError err
         Right mod -> pure mod
+
+getParsedModuleQuery :: ModuleName -> Eff '[FileSystem, Rock Query, Eff.Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), Eff.Error (WParseErrorBundle TokenStream ElaraParseError)] (Module 'Frontend)
+getParsedModuleQuery mn = do
+    fp <- fetch (ModulePath mn)
+    getParsedFileQuery fp
 
 type ParsePipelineEffects = '[Error (WParseErrorBundle TokenStream ElaraParseError)]
 

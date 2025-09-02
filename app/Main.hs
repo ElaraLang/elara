@@ -12,7 +12,7 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import Elara.AST.Module
 import Elara.AST.Name (NameLike (..))
-import Elara.AST.Region (unlocated)
+import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Select
 import Elara.Core (CoreBind)
 import Elara.Error.EffectNew qualified as Eff
@@ -29,7 +29,7 @@ import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
-import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
+import Elara.Desugar (desugar)
 import Elara.Error (
     ReportableError (report),
     runDiagnosticWriter,
@@ -45,6 +45,7 @@ import Elara.Prim
 import Elara.Prim.Rename (primitiveRenameState)
 
 import Effectful.Error.Static (runError)
+import Elara.AST.Generic (Declaration' (moduleName))
 import Elara.Query qualified
 import Elara.ReadFile (readFileString, runReadFilePipeline)
 import Elara.Rename (rename, runRenamePipeline)
@@ -202,23 +203,20 @@ cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
 loadModule :: (IsPipeline r, Member Fail r) => CompilerSettings -> FilePath -> Sem r (Module 'Desugared)
-loadModule settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) fp = runDesugarPipeline . runParsePipeline . runReadFilePipeline $ do
+loadModule settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) fp = do
     putTextLn ("Loading " <> toText fp <> "...")
-    let query = Rock.fetch $ Elara.Query.ParsedFile fp
-    Right (warnings, parsed) <-
+
+    Right (warnings, desugared) <-
         liftIO $
             runEff $
                 runError $
                     Eff.runDiagnosticWriter $
                         runErrorOrReportEff $
                             runFileSystem $
-                                Rock.runRockWith Elara.Rules.rules settings query
+                                Rock.runRockWith Elara.Rules.rules settings $ do
+                                    (Module (Located _ m)) <- Rock.fetch $ Elara.Query.ParsedFile fp
+                                    runErrorOrReportEff $ Rock.fetch $ Elara.Query.DesugaredModule (m.name ^. unlocated)
 
-    when dumpParsed $ do
-        liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".parsed.elr"
-    desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
-    when dumpDesugared $ do
-        liftIO $ dumpGraph (createGraph [desugared]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".desugared.elr"
     pure desugared
 
 processModules :: IsPipeline r => TopologicalGraph (Module 'Desugared) -> (Bool, Bool) -> Sem r (TopologicalGraph (CoreModule CoreBind))

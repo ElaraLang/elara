@@ -8,7 +8,6 @@ module Prelude (
     ($>>),
     (<<&>>),
     insertWithM,
-    modifyM,
     identity,
     module Optics,
     module Optics.Operators,
@@ -117,9 +116,6 @@ insertWithM :: (Ord k, Applicative m) => (a -> a -> m a) -> k -> a -> Map k a ->
 insertWithM f k v m = case M.lookup k m of
     Nothing -> pure (M.insert k v m)
     Just v' -> M.insert k <$> f v v' <*> pure m
-
-modifyM :: Member (State s) r => (s -> Sem r s) -> Sem r ()
-modifyM f = get >>= (put <=< f)
 
 identity :: a -> a
 identity = Relude.id

@@ -61,6 +61,7 @@ library
       Elara.Data.Unique
       Elara.Data.Unwrap
       Elara.Desugar
+      Elara.Desugar.Error
       Elara.Emit
       Elara.Emit.Utils
       Elara.Error
