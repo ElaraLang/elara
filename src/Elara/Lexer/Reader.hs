@@ -4,9 +4,14 @@ import Elara.AST.Region (line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-import Polysemy
-import Polysemy.Error (Error, throw)
-import Polysemy.State
+
+import Data.Text qualified as Text
+import Effectful (Eff, inject, (:>))
+import Effectful.Error.Static
+import Effectful.FileSystem (FileSystem)
+import Effectful.State.Static.Local
+import Elara.Query (Query (GetFileContents))
+import Rock qualified
 
 -- TODO: maybe also define empty Constructor for TokPosition
 -- use it when constructing and here compute position and update it and return complete and correct Token
@@ -23,7 +28,7 @@ readToken = do
         [] ->
             case alexScan (s ^. input) (s ^. lexSC) of
                 AlexEOF -> do
-                    when (s ^. lexSC == stringSC) (throw (UnterminatedStringLiteral s))
+                    when (s ^. lexSC == stringSC) (throwError (UnterminatedStringLiteral s))
                     eof <- fake TokenEOF
                     closeIndents <- cleanIndentation
                     modify (over pendingTokens (<> (closeIndents <> [eof])))
@@ -35,7 +40,7 @@ readToken = do
                 AlexToken inp n act -> do
                     let buf = s ^. input % rest
                     put s{_input = inp}
-                    res <- act n (toText (take n buf))
+                    res <- act n (Text.take n buf)
                     maybe readToken pure res
 
 readTokens :: LexMonad [Lexeme]
@@ -47,9 +52,14 @@ readTokens = do
             next <- readTokens
             pure (tok : next)
 
-readTokensWith :: Member (Error LexerError) r => FilePath -> String -> Sem r [Lexeme]
+readTokensWith :: Error LexerError :> es => FilePath -> Text -> Eff es [Lexeme]
 readTokensWith fp s = do
-    evalState (initialState fp s) (subsume_ readTokens)
+    evalState (initialState fp s) (inject readTokens)
+
+getLexedFile :: FilePath -> Eff '[FileSystem, Rock.Rock Query, Error LexerError] [Lexeme]
+getLexedFile fp = do
+    fileContents <- Rock.fetch (GetFileContents fp)
+    readTokensWith fp fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a
 lexer cont = do

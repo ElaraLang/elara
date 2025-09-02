@@ -112,6 +112,10 @@
                 generic-optics = notest; # test fails on ghc 9.12
 
                 dependent-hashmap = source.root inputs.dependent-hashmap;
+
+                effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
+                effectful-core = jailbreak;
+                effectful-plugin = jailbreak;
               };
             packages = {
               elara = {
@@ -159,7 +163,7 @@
                     "diagnose"
                     "directory"
                     "dependent-hashmap"
-                    "effectful"
+                    "effectful >= 2.6.1.0"
                     "effectful-core"
                     "effectful-plugin"
                     "filepath"

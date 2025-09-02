@@ -7,12 +7,17 @@ import Data.GADT.Show.TH
 import Data.Hashable (hash)
 import Effectful
 import Effectful.FileSystem (FileSystem)
-import Elara.ReadFile (getInputFiles)
-import Rock qualified
+
+import Effectful.Error.Static (Error)
+import Elara.Lexer.Token
+import Elara.Lexer.Utils (LexerError)
+import Rock (Rock)
 
 data Query (es :: [Effect]) a where
     -- | Query to get all the required input files to be passed to the compiler
     InputFiles :: Query '[FileSystem] (HashSet FilePath)
+    GetFileContents :: FilePath -> Query '[FileSystem] Text
+    LexedFile :: FilePath -> Query '[FileSystem, Rock Query, Error LexerError] [Lexeme]
 
 deriving instance Eq (Query es a)
 
@@ -25,17 +30,9 @@ deriveGShow ''Query
 instance Hashable (Query es a) where
     hashWithSalt salt = \case
         InputFiles -> h 0 ()
+        GetFileContents fp -> h 1 fp
+        LexedFile fp -> h 2 fp
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =
             hash tag `hashWithSalt` payload `hashWithSalt` salt
-
-rules :: Rock.Rules Query
-rules key = do
-    case key of
-        InputFiles -> getInputFiles
-
--- runQuery :: (IOE :> es) => Query  -> Eff es a
-runQuery :: Query es a -> Eff es a
-runQuery query =
-    Rock.runRock rules $ Rock.fetch query

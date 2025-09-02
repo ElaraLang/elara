@@ -18,6 +18,7 @@ build-type:     Simple
 
 library
   exposed-modules:
+      Effectful.State.Extra
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Generic
@@ -66,9 +67,9 @@ library
       Elara.Error.Codes
       Elara.Error.Effect
       Elara.Interpreter
+      Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer
-      Elara.Lexer.Pipeline
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
@@ -94,6 +95,7 @@ library
       Elara.Query
       Elara.ReadFile
       Elara.Rename
+      Elara.Rules
       Elara.Shunt
       Elara.ToCore
       Elara.ToCore.Match
@@ -146,7 +148,7 @@ library
     , dependent-sum-template
     , diagnose
     , directory
-    , effectful
+    , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
     , filepath
@@ -208,7 +210,7 @@ executable elara
     , dependent-sum-template
     , diagnose
     , directory
-    , effectful
+    , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
     , elara
@@ -295,7 +297,7 @@ test-suite elara-test
     , dependent-sum-template
     , diagnose
     , directory
-    , effectful
+    , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
     , elara

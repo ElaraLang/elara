@@ -20,6 +20,8 @@ import Elara.Core (CoreBind)
 
 -- import Elara.CoreToIR
 
+import Effectful (raise, runEff, subsume)
+import Effectful.FileSystem (runFileSystem)
 import Elara.Core.LiftClosures (runLiftClosures)
 import Elara.Core.Module (CoreModule)
 import Elara.Core.TypeCheck (typeCheckCoreModule)
@@ -33,15 +35,18 @@ import Elara.Emit
 import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
 import Elara.Interpreter (runInterpreter)
 import Elara.Interpreter qualified as Interpreter
-import Elara.Lexer.Pipeline (runLexPipeline)
 import Elara.Lexer.Reader
 import Elara.Logging
 import Elara.Parse
 import Elara.Pipeline (IsPipeline, finalisePipeline)
 import Elara.Prim
 import Elara.Prim.Rename (primitiveRenameState)
+
+import Effectful.Error.Static (runError)
+import Elara.Query qualified
 import Elara.ReadFile (readFileString, runReadFilePipeline)
 import Elara.Rename (rename, runRenamePipeline)
+import Elara.Rules qualified
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
@@ -51,12 +56,14 @@ import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad
 import JVM.Data.JVMVersion
-import Polysemy (Sem)
+import Polysemy (Member, Sem)
 import Polysemy.Embed (embed)
 import Polysemy.Error (fromEither)
+import Polysemy.Fail
 import Polysemy.Reader
 import Prettyprinter.Render.Text
 import Print
+import Rock qualified
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing, doesFileExist, listDirectory)
 import System.Environment (getEnvironment)
@@ -113,9 +120,15 @@ dumpGraph graph nameFunc suffix = do
     traverseGraph_ dump graph
 
 runElara :: Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ do
+runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ failToEmbed $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
+
+    files <-
+        liftIO $
+            runEff $
+                runFileSystem $
+                    Rock.runRock Elara.Rules.rules (Rock.fetch Elara.Query.InputFiles)
 
     -- main file
     source <- loadModule dumpLexed dumpParsed dumpDesugared "source.elr"
@@ -193,11 +206,17 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
-loadModule :: IsPipeline r => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
-loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runLexPipeline . runReadFilePipeline $ do
+loadModule :: (IsPipeline r, Member Fail r) => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
+loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runReadFilePipeline $ do
     putTextLn ("Loading " <> toText fp <> "...")
     source <- readFileString fp
-    tokens <- readTokensWith fp source
+    Right tokens <-
+        liftIO $
+            runEff $
+                runError $
+                    runFileSystem $
+                        Rock.runRock Elara.Rules.rules (Rock.fetch $ Elara.Query.LexedFile fp)
+
     when dumpLexed $ writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
 
     parsed <- parsePipeline moduleParser fp (source, tokens)
