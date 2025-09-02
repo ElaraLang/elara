@@ -43,3 +43,12 @@ letIndents = describe "Lexes indented let declarations" $ do
             2
                 3|]
             <~!~> "let x = { 1 ; 2 { 3 } }"
+
+    it "Lexes nested lets properly" $ do
+        [text|
+        let x =
+                let y = 
+                        1
+                in y
+        in x|]
+            <~!~> "let x = { let y = { 1 }; in y }; in x"

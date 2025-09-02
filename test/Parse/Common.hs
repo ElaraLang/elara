@@ -4,6 +4,7 @@ import Elara.AST.Generic (Expr, Pattern)
 import Elara.AST.Select (UnlocatedAST (..))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
+import Elara.Data.Pretty (pretty, (<+>))
 import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Parse (parsePipeline, runParsePipelinePure)
@@ -16,7 +17,7 @@ import Elara.Parse.Stream
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
 import Polysemy
-import Print (showPretty)
+import Print (printPretty, showPretty)
 import Test.QuickCheck
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty)
 

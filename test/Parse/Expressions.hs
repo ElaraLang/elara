@@ -8,6 +8,7 @@ import Elara.AST.Name
 import Elara.AST.StripLocation
 import Elara.Parse.Expression (exprParser)
 import Hedgehog hiding (Var)
+import NeatInterpolation (text)
 import Orphans ()
 import Parse.Common
 import Print (showPrettyUnannotated)
@@ -18,6 +19,7 @@ spec :: Spec
 spec = describe "Parses expressions correctly" $ do
     arbitraryExpr
     weirdEdgeCases
+    lets
 
 weirdEdgeCases :: Spec
 weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
@@ -69,3 +71,40 @@ arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ property $ do
     let parsePretty s = fmap stripLocation <$> lexAndParse exprParser s
 
     trippingParse expr showPrettyUnannotated (fmap (fmap stripInParens) . parsePretty)
+
+lets :: Spec
+lets = describe "Parses lets correctly" $ do
+    it "Parses a simple let-in correctly" $ property $ do
+        "let x = 1 in x"
+            `shouldParseExpr` Expr
+                ( LetIn
+                    "x"
+                    []
+                    (Expr (Int 1, Nothing))
+                    (Expr (Var (MaybeQualified "x" Nothing), Nothing))
+                , Nothing
+                )
+
+    it "Parses a nested let correctly" $ property $ do
+        [text|
+        let x =
+                let y = 
+                        1
+                in y
+        in x|]
+            `shouldParseExpr` Expr
+                ( LetIn
+                    "x"
+                    []
+                    ( Expr
+                        ( LetIn
+                            (NormalVarName (LowerAlphaName "y"))
+                            []
+                            (Expr (Int 1, Nothing))
+                            (Expr (Var "y", Nothing))
+                        , Nothing
+                        )
+                    )
+                    (Expr (Var (MaybeQualified "x" Nothing), Nothing))
+                , Nothing
+                )
