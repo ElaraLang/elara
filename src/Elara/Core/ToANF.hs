@@ -95,12 +95,12 @@ toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
     body' <- lift $ toANFRec body k
     lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) body'
-toANFRec (Core.Let (Recursive bs) body) _ = evalContT $ do
-    bs' <- for bs $ \(b, e) -> do
-        e' <- toANFCont e
-        pure (b, ANF.AExpr e')
-    body' <- toANFCont body
-    pure $ ANF.Let (Recursive bs') (ANF.CExpr $ ANF.AExpr body')
+toANFRec (Core.Let (Recursive binds) body) _ = evalContT $ do
+    bs' <- for binds $ \(bindVar, bindValue) -> do
+        e' <- toANFCont bindValue
+        pure (bindVar, ANF.AExpr e')
+    body' <- lift $ toANFRec body (pure . ANF.CExpr)
+    pure $ ANF.Let (Recursive bs') body'
 toANFRec other k = do
     -- DANGER of infinite loop!!! make sure all cases are covered
     toANF' other $ \e -> evalContT $ k $ ANF.AExpr e
