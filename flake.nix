@@ -16,6 +16,12 @@
       flake = false;
     };
 
+    # hackage latest version is broken but this github fork works
+    dependent-hashmap = {
+      url = "github:ElaraLang/dependent-hashmap";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -105,6 +111,7 @@
                 optics = notest; # test fails on ghc 9.12
                 generic-optics = notest; # test fails on ghc 9.12
 
+                dependent-hashmap = source.root inputs.dependent-hashmap;
               };
             packages = {
               elara = {
@@ -169,6 +176,7 @@
                     "prettyprinter-ansi-terminal"
                     "process"
                     "relude"
+                    "rock"
                     "safe-exceptions"
                     "stringsearch"
                     "terminal-size"

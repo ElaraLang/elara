@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "dependent-hashmap": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1756831549,
+        "narHash": "sha256-6FKZUcU+Q8C9frrW6GrxQaJtDhH9H9AH7LlK8RuMIwY=",
+        "owner": "ElaraLang",
+        "repo": "dependent-hashmap",
+        "rev": "15bda8878b0b63f8f295be56037816e5a5551b81",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ElaraLang",
+        "repo": "dependent-hashmap",
+        "type": "github"
+      }
+    },
     "diagnose": {
       "flake": false,
       "locked": {
@@ -233,6 +249,7 @@
     },
     "root": {
       "inputs": {
+        "dependent-hashmap": "dependent-hashmap",
         "diagnose": "diagnose",
         "flake-parts": "flake-parts",
         "git-hooks-nix": "git-hooks-nix",
