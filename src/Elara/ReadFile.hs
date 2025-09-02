@@ -4,8 +4,9 @@ import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
 import Data.HashSet qualified as HashSet
-import Effectful (Eff, IOE)
+import Effectful (Eff, IOE, (:>))
 import Effectful.FileSystem (FileSystem, getCurrentDirectory, listDirectory, makeAbsolute, makeRelativeToCurrentDirectory)
+import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -64,3 +65,16 @@ getInputFiles = do
     let source = "source.elr"
 
     pure $ HashSet.fromList (stdlib <> [source])
+
+runGetFileContentsQuery :: FileSystem :> es => FilePath -> Eff es FileContents
+runGetFileContentsQuery fp = do
+    contents <- Eff.readFile fp
+    let contentsText = decodeUtf8 contents
+    pure $ FileContents fp contentsText
+
+data FileContents = FileContents
+    { filePath :: FilePath
+    , fileContents :: Text
+    }
+    deriving (Eq, Show, Ord, Generic)
+instance Hashable FileContents

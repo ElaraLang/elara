@@ -27,12 +27,17 @@ import Prelude hiding (atomicModifyIORef, newIORef, readIORef)
 
 type Rules f = forall a es. (f es a -> Eff es a)
 
+type RulesWith arg f = forall a es. (arg -> f es a -> Eff es a)
+
 data Rock (f :: [Effect] -> Type -> Type) :: Effect
 type instance DispatchOf (Rock f) = Static NoSideEffects
 newtype instance StaticRep (Rock f) = Rock (forall a es. f es a -> Eff es a)
 
 runRock :: Rules f -> Eff (Rock f : es) a -> Eff es a
 runRock r = evalStaticRep (Rock r)
+
+runRockWith :: RulesWith arg f -> arg -> Eff (Rock f : es) a -> Eff es a
+runRockWith r arg = evalStaticRep (Rock (r arg))
 
 fetch :: (Subset xs es, Rock f :> es) => f xs a -> Eff es a
 fetch key = do

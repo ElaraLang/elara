@@ -166,6 +166,7 @@
                     "effectful >= 2.6.1.0"
                     "effectful-core"
                     "effectful-plugin"
+                    "effectful-th"
                     "filepath"
                     "generic-optics"
                     "h2jvm"

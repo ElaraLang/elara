@@ -11,6 +11,7 @@ import Effectful.Error.Static
 import Effectful.FileSystem (FileSystem)
 import Effectful.State.Static.Local
 import Elara.Query (Query (GetFileContents))
+import Elara.ReadFile (FileContents (FileContents))
 import Rock qualified
 
 -- TODO: maybe also define empty Constructor for TokPosition
@@ -52,14 +53,14 @@ readTokens = do
             next <- readTokens
             pure (tok : next)
 
-readTokensWith :: Error LexerError :> es => FilePath -> Text -> Eff es [Lexeme]
-readTokensWith fp s = do
+readTokensWith :: Error LexerError :> es => FileContents -> Eff es [Lexeme]
+readTokensWith (FileContents fp s) = do
     evalState (initialState fp s) (inject readTokens)
 
 getLexedFile :: FilePath -> Eff '[FileSystem, Rock.Rock Query, Error LexerError] [Lexeme]
 getLexedFile fp = do
     fileContents <- Rock.fetch (GetFileContents fp)
-    readTokensWith fp fileContents
+    readTokensWith fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a
 lexer cont = do

@@ -24,6 +24,7 @@ data RealPosition = Position
     }
     deriving (Show, Eq, Ord, Data, Generic)
 
+instance Hashable RealPosition
 data Position
     = RealPosition !RealPosition
     | GeneratedPosition
@@ -35,11 +36,14 @@ data RealSourceRegion = SourceRegion
     , _endPos :: !RealPosition
     }
     deriving (Show, Eq, Ord, Data, Generic)
+instance Hashable RealSourceRegion
 
 data SourceRegion
     = RealSourceRegion !RealSourceRegion
     | GeneratedRegion !FilePath
     deriving (Show, Eq, Ord, Data, Generic)
+
+instance Hashable SourceRegion
 
 makePrisms ''Position
 makeLenses ''RealPosition
@@ -124,6 +128,8 @@ positionToDiagnosePosition fp (Position ln cn) =
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
+
+instance Hashable a => Hashable (Located a)
 
 class HasSourceRegion a where
     sourceRegion :: Lens' a SourceRegion

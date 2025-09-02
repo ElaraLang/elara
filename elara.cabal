@@ -66,6 +66,7 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Error.EffectNew
       Elara.Interpreter
       Elara.Lexer.Action
       Elara.Lexer.Char
@@ -96,6 +97,7 @@ library
       Elara.ReadFile
       Elara.Rename
       Elara.Rules
+      Elara.Settings
       Elara.Shunt
       Elara.ToCore
       Elara.ToCore.Match
@@ -151,6 +153,7 @@ library
     , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
+    , effectful-th
     , filepath
     , generic-optics
     , h2jvm
@@ -213,6 +216,7 @@ executable elara
     , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
+    , effectful-th
     , elara
     , filepath
     , generic-optics
@@ -300,6 +304,7 @@ test-suite elara-test
     , effectful >=2.6.1.0
     , effectful-core
     , effectful-plugin
+    , effectful-th
     , elara
     , filepath
     , generic-optics

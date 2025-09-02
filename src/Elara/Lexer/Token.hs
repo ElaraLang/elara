@@ -92,7 +92,8 @@ data Token
     | TokenDedent
     | TokenLineSeparator
     | TokenEOF
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+instance Hashable Token
 
 tokenRepr :: Token -> Text
 tokenRepr = \case

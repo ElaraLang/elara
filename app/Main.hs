@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main (
     main,
@@ -14,6 +15,7 @@ import Elara.AST.Name (NameLike (..))
 import Elara.AST.Region (unlocated)
 import Elara.AST.Select
 import Elara.Core (CoreBind)
+import Elara.Error.EffectNew qualified as Eff
 
 -- import Elara.CoreToIR
 
@@ -28,7 +30,13 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, createGraph, mapGraph, traverseGraph, traverseGraphRevTopologically, traverseGraphRevTopologically_, traverseGraph_)
 import Elara.Data.Unique (resetGlobalUniqueSupply, uniqueGenToIO)
 import Elara.Desugar (desugar, runDesugar, runDesugarPipeline)
-import Elara.Error (ReportableError (report), runErrorOrReport, writeReport)
+import Elara.Error (
+    ReportableError (report),
+    runDiagnosticWriter,
+    runErrorOrReport,
+    runErrorOrReportEff,
+    writeReport,
+ )
 import Elara.Interpreter (runInterpreter)
 import Elara.Interpreter qualified as Interpreter
 import Elara.Parse
@@ -41,6 +49,7 @@ import Elara.Query qualified
 import Elara.ReadFile (readFileString, runReadFilePipeline)
 import Elara.Rename (rename, runRenamePipeline)
 import Elara.Rules qualified
+import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..))
 import Elara.Shunt
 import Elara.ToCore (moduleToCore, runToCorePipeline)
 import Elara.TypeInfer
@@ -87,7 +96,10 @@ main = run `finally` cleanup
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
-        s <- runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run
+
+        let compilerSettings =
+                CompilerSettings{dumpSettings = DumpSettings{..}}
+        s <- runElara compilerSettings
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle s
         pass
 
@@ -104,8 +116,8 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-runElara :: Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> IO (Diagnostic (Doc AnsiStyle))
-runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run = fmap fst <$> finalisePipeline $ failToEmbed $ do
+runElara :: CompilerSettings -> IO (Diagnostic (Doc AnsiStyle))
+runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = fmap fst <$> finalisePipeline $ failToEmbed $ do
     start <- liftIO getCPUTime
     liftIO (createDirectoryIfMissing True outDirName)
 
@@ -114,11 +126,11 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
             <$> liftIO
                 ( runEff $
                     runFileSystem $
-                        Rock.runRock Elara.Rules.rules (Rock.fetch Elara.Query.InputFiles)
+                        Rock.runRockWith Elara.Rules.rules settings (Rock.fetch Elara.Query.InputFiles)
                 )
 
     loadedModules <- for files $ \file -> do
-        loadModule dumpLexed dumpParsed dumpDesugared file
+        loadModule settings file
 
     let graph = createGraph $ toList loadedModules
     coreGraph <- processModules graph (dumpShunted, dumpTyped)
@@ -139,7 +151,7 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
     runInterpreter $ do
         flip traverseGraphRevTopologically_ coreGraph $ \mod -> do
             Interpreter.loadModule mod
-        when run $ do
+        when True $ do
             Interpreter.run
     -- putTextLn (showPretty class')
     -- converted <- runErrorOrReport $ fromEither $ convert class'
@@ -189,20 +201,19 @@ runElara dumpLexed dumpParsed dumpDesugared dumpShunted dumpTyped dumpCore run =
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
-loadModule :: (IsPipeline r, Member Fail r) => Bool -> Bool -> Bool -> FilePath -> Sem r (Module 'Desugared)
-loadModule dumpLexed dumpParsed dumpDesugared fp = runDesugarPipeline . runParsePipeline . runReadFilePipeline $ do
+loadModule :: (IsPipeline r, Member Fail r) => CompilerSettings -> FilePath -> Sem r (Module 'Desugared)
+loadModule settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) fp = runDesugarPipeline . runParsePipeline . runReadFilePipeline $ do
     putTextLn ("Loading " <> toText fp <> "...")
-    source <- readFileString fp
-    Right tokens <-
+    let query = Rock.fetch $ Elara.Query.ParsedFile fp
+    Right (warnings, parsed) <-
         liftIO $
             runEff $
                 runError $
-                    runFileSystem $
-                        Rock.runRock Elara.Rules.rules (Rock.fetch $ Elara.Query.LexedFile fp)
+                    Eff.runDiagnosticWriter $
+                        runErrorOrReportEff $
+                            runFileSystem $
+                                Rock.runRockWith Elara.Rules.rules settings query
 
-    when dumpLexed $ writeFileText (outDirName <> "/" <> takeBaseName fp <> ".lexed.elr") (unlines $ map show (view unlocated <$> tokens))
-
-    parsed <- parsePipeline moduleParser fp (source, tokens)
     when dumpParsed $ do
         liftIO $ dumpGraph (createGraph [parsed]) (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".parsed.elr"
     desugared <- runDesugarPipeline $ runDesugar $ desugar parsed
