@@ -21,6 +21,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Add more prim ops - ([f165b89](https://github.com/ElaraLang/elara/commit/f165b89235abf4cc511c20fa58fbef2ae6f5ea35)) 
 - *(interpreter)* Make stringCons primitive work - ([6e0db02](https://github.com/ElaraLang/elara/commit/6e0db02b4b26a7f481f39e93b50797f5bdb5cb19)) 
 - *(logging)* Write logs to a file because they're getting big! And properly use terminal width now - ([3fe538c](https://github.com/ElaraLang/elara/commit/3fe538c928aa795d65e2e006bce390382df927c6)) 
+- *(logging)* Improve pretty output of some elements - ([7e17b22](https://github.com/ElaraLang/elara/commit/7e17b228cca625043d7671e8c88d1f41585fd8cc)) 
 - *(nix)* Enable actionlint in treefmt configuration - ([ce014f6](https://github.com/ElaraLang/elara/commit/ce014f63a4beb4f0a45abe819fb94f33f18944a8)) 
 - *(pattern-matching)* Make pattern matching compilation work... - ([b15cc93](https://github.com/ElaraLang/elara/commit/b15cc937f2c580ede3ad40c8f2f4ddcb4e4e6b86)) 
 - *(pretty)* Add Pretty CallStack instance - ([5644720](https://github.com/ElaraLang/elara/commit/56447201839ba9c9c340e4f23d8fa56d687bc595)) 
@@ -55,6 +56,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :bug: Fix type declaration parsing wrt indents - ([53f148b](https://github.com/ElaraLang/elara/commit/53f148beae28c2ef2465cc2fdd080206f556b2d9)) 
 - *(parser)* :bug: Fix operators as variables (eg `(+)`) not being correctly parsed - ([55de02d](https://github.com/ElaraLang/elara/commit/55de02dcaeb34707588f2824b12a1f25bc6e382c)) 
 - *(parser)* :bug: Fix Nested Constructor Patterns not being correctly parsed - ([bfae8ac](https://github.com/ElaraLang/elara/commit/bfae8acea7d3225329b40f1e588361d2f01a1451)) 
+- *(parser)* :bug: Fix parser incorrectly handling some block inputs - ([fcf89e7](https://github.com/ElaraLang/elara/commit/fcf89e730fef162751034ec3647334a58c9d2bb2)) 
 - *(rename)* Fix renaming of recursive lets in a block - ([264db37](https://github.com/ElaraLang/elara/commit/264db37d935fef117d5183b28280b48613631faa)) 
 - *(renamer)* Now qualifies type names - ([0c25cad](https://github.com/ElaraLang/elara/commit/0c25cade010b873a4a3fead0cc3df7dad5b64f3e)) 
 - *(stdlib)* :pencil2: Fix a "typo" in source.elr (so that it works) - ([9e1f1fd](https://github.com/ElaraLang/elara/commit/9e1f1fd78c435d78117de605a05f3442c654b823)) 
@@ -145,7 +147,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :art: Improve core prettyprinting a lot - ([8b9ecaa](https://github.com/ElaraLang/elara/commit/8b9ecaaf6896dfeb1c5fa025e41da17299cc7c22)) 
 - *(interpreter)* :loud_sound: Only log the _new_ bindings when interpreting a module - ([b5ab05e](https://github.com/ElaraLang/elara/commit/b5ab05e92ec2245ca8405daf49468ede57dddc31)) 
 - *(lexer)* :pencil2: Fix typo - ([0401dfe](https://github.com/ElaraLang/elara/commit/0401dfe99c588eae8c02b84bf5153bbe0df7f8d5)) 
+- *(lexer)* :pencil2: Fix typos in lexer rules names - ([9601045](https://github.com/ElaraLang/elara/commit/9601045e81d04c1e49b83640ae3dbf6e480585d5)) 
 - *(parser)* :mute: Remove debug logging from parser - ([5878aa7](https://github.com/ElaraLang/elara/commit/5878aa7a760e35bde772a008bae76bf1dde84224)) 
+- *(tests)* Make test function slightly more readable - ([0841c00](https://github.com/ElaraLang/elara/commit/0841c00935f2ceaebca6faf459001e1ee1858307)) 
 - *(to-core)* :mute: Remove old debug message - ([eda6d02](https://github.com/ElaraLang/elara/commit/eda6d02197fd1e57653362d2960cd8e36ded82ec)) 
 - *(to-core)* :loud_sound: Improve debug logging for ToCore - ([7c5e6dc](https://github.com/ElaraLang/elara/commit/7c5e6dc0691e371720d1c301bb601cf492fc7496)) 
 - *(to-core)* :art: Format code and add some debug logging - ([14d19f7](https://github.com/ElaraLang/elara/commit/14d19f798c01a94e54194c102d0940f76c7e606f)) 
@@ -155,8 +159,13 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### 🧪 Testing
 
+- *(parser)* :white_check_mark: Improve tests of parser and lexer - ([5aad58c](https://github.com/ElaraLang/elara/commit/5aad58cb93b148eadc1fae34a1a5cee92a6ce966)) 
 - *(type-infer)* :white_check_mark: Improve behaviour of applicableTyApp and test cases - ([06ad585](https://github.com/ElaraLang/elara/commit/06ad585f6d548bef257ea10eccd592394bd21e14)) 
 - :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
+
+### ⚙️ Miscellaneous Tasks
+
+- :fire: Remove old unused Grammar directory - ([f7d2f31](https://github.com/ElaraLang/elara/commit/f7d2f3182d7a9723102baf503b5950d64346c8c8)) 
 
 ### Build
 
@@ -166,6 +175,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :arrow_up: Update `optics` - ([eb35403](https://github.com/ElaraLang/elara/commit/eb3540318dbbd1a33081c34d538d2c360a68adcb)) 
 - :label: Add a type signature to `transformOf'` - ([d9e50db](https://github.com/ElaraLang/elara/commit/d9e50dbaa8922fa9f6c5358fe6a78a4135e05aad)) 
 - :arrow_up: Fix dependencies in Nix and use GHC 9.12 - ([e2a6322](https://github.com/ElaraLang/elara/commit/e2a63223f8833e5a468120b429e7576ca8de081a)) 
+- Update cabal file - ([a50ca82](https://github.com/ElaraLang/elara/commit/a50ca82aeacd55c8d373073d836e170fb31599d2)) 
 
 ## [0.1.0](https://github.com/ElaraLang/elara/compare/v0.0.2..v0.1.0) - 2024-06-01
 
