@@ -8,7 +8,6 @@ import Data.Map qualified as M
 import Effectful (Eff, inject)
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
-import Effectful.FileSystem (FileSystem)
 import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
 import Elara.AST.Desugared
@@ -19,10 +18,11 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty))
+import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Desugar.Error
-import Elara.Error (SomeReportableError, runErrorOrReportEff)
-import Elara.Error.EffectNew (DiagnosticWriter)
+import Elara.Error (runErrorOrReportEff)
+import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
+import Elara.Query (ConsQueryEffects)
 import Elara.Query qualified
 import Elara.Utils (curry3)
 import Optics (traverseOf_)
@@ -58,15 +58,10 @@ resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
 getDesugaredModule ::
     ModuleName ->
     Eff
-        '[ Eff.Error SomeReportableError
-         , DiagnosticWriter (Doc AnsiStyle)
-         , Rock.Rock Elara.Query.Query
-         , FileSystem
-         , Eff.Error DesugarError
-         ]
+        (ConsQueryEffects '[Eff.Error DesugarError])
         (Module 'Desugared)
 getDesugaredModule mn = do
-    parsed <- runErrorOrReportEff $ Rock.fetch $ Elara.Query.ParsedModule mn
+    parsed <- runErrorOrReportEff @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
 
     inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 

@@ -199,6 +199,22 @@ instance
             Just q' -> Style.keyword "as" <+> Style.moduleName (pretty q')
         qual = if q then Style.keyword "qualified" else ""
 
+deriving instance Show (ASTLocate ast (Module' ast)) => Show (Module ast)
+deriving instance (Show (Import ast), Show (Exposing ast), Show (Declaration ast), Show (ASTLocate ast ModuleName)) => Show (Module' ast)
+deriving instance Show (ASTLocate ast (Import' ast)) => Show (Import ast)
+deriving instance
+    ( Show (Exposing ast)
+    , Show (ASTLocate ast ModuleName)
+    ) =>
+    Show (Import' ast)
+deriving instance Show (Exposition ast) => Show (Exposing ast)
+deriving instance
+    ( Show (FullASTQual ast VarName)
+    , Show (FullASTQual ast OpName)
+    , Show (FullASTQual ast TypeName)
+    ) =>
+    Show (Exposition ast)
+
 -- instance ToJSON (ASTLocate ast (Module' ast)) => ToJSON (Module ast)
 -- instance
 --     ( ToJSON (ASTLocate ast ModuleName)

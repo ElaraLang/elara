@@ -1,26 +1,24 @@
 module Elara.Parse where
 
-import Effectful (Eff, inject, (:>))
+import Effectful (Eff)
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
-import Effectful.FileSystem (FileSystem)
 import Elara.AST.Module (Module)
 import Elara.AST.Name
 import Elara.AST.Select
-import Elara.Data.Pretty
-import Elara.Error (SomeReportableError, runErrorOrReport, runErrorOrReportEff)
-import Elara.Error.EffectNew (DiagnosticWriter)
+import Elara.Error (runErrorOrReport, runErrorOrReportEff)
 import Elara.Lexer.Token (Lexeme)
+import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error
 import Elara.Parse.Module (module')
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
-import Elara.Query (Query (GetFileContents, LexedFile, ModulePath))
+import Elara.Query (ConsQueryEffects, Query (GetFileContents, LexedFile, ModulePath))
 import Elara.ReadFile (FileContents (FileContents))
 import Polysemy
 import Polysemy.Error
-import Rock (Rock, fetch)
+import Rock (fetch)
 import Text.Megaparsec (MonadParsec (eof), runParser)
 
 parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module 'Frontend)
@@ -38,16 +36,11 @@ parse p path = fromEither . first WParseErrorBundle . runParser p path
 getParsedFileQuery ::
     FilePath ->
     Eff
-        '[ FileSystem
-         , Rock Query
-         , Eff.Error SomeReportableError
-         , DiagnosticWriter (Doc AnsiStyle)
-         , Eff.Error (WParseErrorBundle TokenStream ElaraParseError)
-         ]
+        (ConsQueryEffects '[Eff.Error (WParseErrorBundle TokenStream ElaraParseError)])
         (Module 'Frontend)
 getParsedFileQuery fp = do
     (FileContents filePath contents) <- fetch (GetFileContents fp)
-    lexemes <- runErrorOrReportEff $ fetch (LexedFile fp)
+    lexemes <- runErrorOrReportEff @LexerError $ fetch (LexedFile fp)
     let tokenStream = createTokenStream contents lexemes
     let parseResult = runParser moduleParser filePath tokenStream
     let firstError = first WParseErrorBundle parseResult
@@ -55,7 +48,11 @@ getParsedFileQuery fp = do
         Left err -> throwError err
         Right mod -> pure mod
 
-getParsedModuleQuery :: ModuleName -> Eff '[FileSystem, Rock Query, Eff.Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), Eff.Error (WParseErrorBundle TokenStream ElaraParseError)] (Module 'Frontend)
+getParsedModuleQuery ::
+    ModuleName ->
+    Eff
+        (ConsQueryEffects '[Eff.Error (WParseErrorBundle TokenStream ElaraParseError)])
+        (Module 'Frontend)
 getParsedModuleQuery mn = do
     fp <- fetch (ModulePath mn)
     getParsedFileQuery fp

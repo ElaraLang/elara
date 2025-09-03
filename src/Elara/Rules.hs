@@ -9,6 +9,7 @@ import Elara.Lexer.Reader (getLexedFile)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
+import Elara.Rename (getRenamedModule)
 import Elara.Settings (CompilerSettings)
 import Print (showPretty)
 import Rock qualified
@@ -41,3 +42,4 @@ rules compilerSettings key = do
                 _ -> error $ "Ambiguous module name: " <> showPretty mn
         ParsedModule mn -> getParsedModuleQuery mn
         DesugaredModule mn -> inject $ getDesugaredModule mn
+        RenamedModule mn -> inject $ getRenamedModule mn

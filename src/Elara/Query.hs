@@ -8,11 +8,14 @@ import Data.Hashable (hash)
 import Effectful
 import Effectful.FileSystem (FileSystem)
 
+import Data.Kind (Constraint)
 import Effectful.Error.Static (Error)
+import Effectful.State.Static.Local
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName)
 import Elara.AST.Select
 import Elara.Data.Pretty (AnsiStyle, Doc)
+import Elara.Data.Unique.Effect qualified as Eff
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error (SomeReportableError)
 import Elara.Error.EffectNew
@@ -21,6 +24,7 @@ import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
 import Elara.ReadFile (FileContents)
+import Elara.Rename.Error (RenameError, RenameState)
 import Elara.Settings (CompilerSettings)
 import Rock (Rock)
 
@@ -32,7 +36,17 @@ type ConsQueryEffects es =
         ': Rock Query
         ': Error SomeReportableError
         ': DiagnosticWriter (Doc AnsiStyle)
+        ': Eff.UniqueGen
         ': es
+
+type QueryEffects :: [Effect] -> Constraint
+type QueryEffects es =
+    ( FileSystem :> es
+    , Rock Query :> es
+    , Error SomeReportableError :> es
+    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Eff.UniqueGen :> es
+    )
 
 data Query (es :: [Effect]) a where
     GetCompilerSettings :: Query '[] CompilerSettings
@@ -49,6 +63,7 @@ data Query (es :: [Effect]) a where
     -- | Query to get a parsed module by module name
     ParsedModule :: ModuleName -> Query (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]) (Module 'Frontend)
     DesugaredModule :: ModuleName -> Query (ConsQueryEffects '[Error DesugarError]) (Module 'Desugared)
+    RenamedModule :: ModuleName -> Query (ConsQueryEffects '[Error RenameError, State RenameState]) (Module 'Renamed)
 
 deriving instance Eq (Query es a)
 

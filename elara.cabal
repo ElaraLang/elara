@@ -59,6 +59,7 @@ library
       Elara.Data.Pretty.Styles
       Elara.Data.TopologicalGraph
       Elara.Data.Unique
+      Elara.Data.Unique.Effect
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Desugar.Error
@@ -97,6 +98,8 @@ library
       Elara.Query
       Elara.ReadFile
       Elara.Rename
+      Elara.Rename.Error
+      Elara.Rename.Imports
       Elara.Rules
       Elara.Settings
       Elara.Shunt
@@ -117,7 +120,6 @@ library
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.State.Extra
-      Polysemy.Utils
       Prelude
       Print
       Rock

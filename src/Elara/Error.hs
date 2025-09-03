@@ -43,6 +43,10 @@ defaultReport e =
      in writeReport (fromMaybe (Err code (pretty e) [] []) report)
 
 data SomeReportableError = forall x. ReportableError x => SomeReportableError x
+instance ReportableError SomeReportableError where
+    errorCode (SomeReportableError e) = errorCode e
+    getReport (SomeReportableError e) = getReport e
+    report (SomeReportableError e) = report e
 
 addPosition :: (Position, Marker msg) -> Report msg -> Report msg
 addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
