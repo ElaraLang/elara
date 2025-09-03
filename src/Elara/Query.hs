@@ -69,7 +69,7 @@ data Query (es :: [Effect]) a where
     RenamedModule :: ModuleName -> Query (ConsQueryEffects '[Error RenameError]) (Module 'Renamed)
     ShuntedModule :: ModuleName -> Query (ConsQueryEffects '[Error ShuntError]) (Module 'Shunted)
     GetOpInfo :: IgnoreLocVarRef Name -> Query (ConsQueryEffects '[]) (Maybe OpInfo)
-    GetOpTableIn :: ModuleName -> Query (ConsQueryEffects '[]) (Maybe OpTable)
+    GetOpTableIn :: ModuleName -> Query (ConsQueryEffects '[]) OpTable
 
 deriving instance Eq (Query es a)
 

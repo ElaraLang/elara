@@ -69,6 +69,7 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName))))
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 
+runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning)]) OpTable
 runGetOpTableInQuery moduleName = do
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule moduleName
     createOpTable mod

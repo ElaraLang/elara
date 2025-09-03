@@ -15,7 +15,7 @@ import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
 import Elara.Settings (CompilerSettings)
-import Elara.Shunt (runGetOpInfoQuery, runGetShuntedModuleQuery)
+import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -53,3 +53,4 @@ rules compilerSettings key = do
             traverse_ report warnings
             pure mod
         GetOpInfo opName -> inject $ runGetOpInfoQuery opName
+        GetOpTableIn mn -> inject $ runGetOpTableInQuery mn
