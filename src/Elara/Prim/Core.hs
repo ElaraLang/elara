@@ -1,13 +1,13 @@
 -- Primitive core names
 module Elara.Prim.Core where
 
+import Effectful
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
-import Elara.Data.Unique
+import Elara.Data.Unique.Effect
 import Elara.Prim (mkPrimQual)
-import Polysemy
 
 trueCtorName :: Qualified Text
 trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
@@ -71,7 +71,7 @@ unitCtor = DataCon unitConName (ConTy unitCon) unitCon
 unitConName :: Qualified Text
 unitConName = mkPrimQual "()"
 
-undefinedId :: Member UniqueGen r => Sem r Var
+undefinedId :: UniqueGen :> r => Eff r Var
 undefinedId = do
     a <- makeUnique (Just "a")
     let tvA = TypeVariable a TypeKind

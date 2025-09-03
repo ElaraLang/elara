@@ -13,11 +13,12 @@ import Elara.Parse.Error
 import Elara.Parse.Module (module')
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
-import Elara.Query (ConsQueryEffects, Query (GetFileContents, LexedFile, ModulePath))
+import Elara.Query (Query (GetFileContents, LexedFile, ModulePath))
+import Elara.Query.Effects (ConsQueryEffects)
 import Elara.ReadFile (FileContents (FileContents))
 import Polysemy
 import Polysemy.Error
-import Rock (fetch)
+import Rock (Rock, fetch)
 import Text.Megaparsec (MonadParsec (eof), runParser)
 
 parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module 'Frontend)
@@ -35,7 +36,11 @@ parse p path = fromEither . first WParseErrorBundle . runParser p path
 getParsedFileQuery ::
     FilePath ->
     Eff
-        (ConsQueryEffects '[Eff.Error (WParseErrorBundle TokenStream ElaraParseError)])
+        ( ConsQueryEffects
+            '[ Eff.Error (WParseErrorBundle TokenStream ElaraParseError)
+             , Rock.Rock Elara.Query.Query
+             ]
+        )
         (Module 'Frontend)
 getParsedFileQuery fp = do
     (FileContents filePath contents) <- fetch (GetFileContents fp)
@@ -50,7 +55,11 @@ getParsedFileQuery fp = do
 getParsedModuleQuery ::
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Eff.Error (WParseErrorBundle TokenStream ElaraParseError)])
+        ( ConsQueryEffects
+            '[ Eff.Error (WParseErrorBundle TokenStream ElaraParseError)
+             , Rock.Rock Elara.Query.Query
+             ]
+        )
         (Module 'Frontend)
 getParsedModuleQuery mn = do
     fp <- fetch (ModulePath mn)

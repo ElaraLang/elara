@@ -1,3 +1,4 @@
+
 {-# LANGUAGE QuantifiedConstraints #-}
 
 module Rock.Memo where
@@ -16,8 +17,11 @@ import Data.IORef.Lifted
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
-import Effectful (Eff, IOE, raise, (:>))
+import Effectful (Eff, Effect, IOE, raise, (:>))
+import Effectful.Concurrent.MVar.Strict (Concurrent, newEmptyMVar', putMVar', readMVar')
+import Effectful.TH (makeEffect)
 import Rock
+import Rock.MemoE
 import Prelude hiding (atomicModifyIORef, newEmptyMVar, newMVar, putMVar, readIORef, readMVar)
 
 -- * Implicit memoisation-
@@ -25,6 +29,9 @@ import Prelude hiding (atomicModifyIORef, newEmptyMVar, newMVar, putMVar, readIO
 -- | Proof that every key permits IO
 class HasIOE f where
     withIOE :: f es a -> (IOE :> es => Eff es a) -> Eff es a
+
+class HasMemoiseE f where
+    withMemoiseE :: f es a -> ((Memoise :> es, Concurrent :> es) => Eff es a) -> Eff es a
 
 {- | Remember what @f@ queries have already been performed and their results in
 a 'DHashMap', and reuse them if a query is performed again a second time.
@@ -34,28 +41,27 @@ might make a query return a different result.
 -}
 memoise ::
     forall f.
-    (forall es. GEq (f es), forall es a. Hashable (f es a), HasIOE f) =>
-    IORef (DHashMap (HideEffects f) MVar) ->
+    (forall es. GEq (f es), forall es a. Hashable (f es a), HasMemoiseE f) =>
     Rules f ->
     Rules f
-memoise startedVar rules (key :: f es a) = withIOE key $ do
-    maybeValueVar <- DHashMap.lookup (HideEffects key) <$> readIORef startedVar
+memoise rules (key :: f es a) = withMemoiseE key $ do
+    maybeValueVar <- DHashMap.lookup (HideEffects key) <$> getStartedVar
     case maybeValueVar of
         Nothing -> do
-            valueVar <- newEmptyMVar
-            join $ atomicModifyIORef startedVar $ \started ->
+            valueVar <- newEmptyMVar'
+            join $ modifyStartedVar $ \started ->
                 case DHashMap.alterLookup (Just . fromMaybe valueVar) (HideEffects key) started of
                     (Nothing, started') ->
                         ( started'
                         , do
                             value <- rules key
-                            putMVar valueVar value
+                            putMVar' valueVar value
                             pure value
                         )
                     (Just valueVar', _started') ->
-                        (started, readMVar valueVar')
+                        (started, readMVar' valueVar')
         Just valueVar ->
-            readMVar valueVar
+            readMVar' valueVar
 
 -- * Explicit memoisation
 

@@ -10,6 +10,7 @@ import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
+import Elara.Query.Effects (ConsQueryEffects)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error

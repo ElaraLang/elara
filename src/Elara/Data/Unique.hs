@@ -7,10 +7,6 @@ import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
-import Polysemy (Member, Sem, interpret, makeSem, reinterpret)
-import Polysemy.AtomicState (AtomicState, atomicGet, atomicPut, atomicStateToIO)
-import Polysemy.Embed (Embed)
-import Polysemy.State (State, evalState, get, put)
 import Text.Show (Show (show))
 
 data Unique a = Unique !a !Int
@@ -62,37 +58,11 @@ globalUniqueSupply = unsafePerformIO (newIORef freshUniqueSupply)
 resetGlobalUniqueSupply :: IO ()
 resetGlobalUniqueSupply = writeIORef globalUniqueSupply freshUniqueSupply
 
-data UniqueGen m a where
-    NewUniqueNum :: UniqueGen m Int
-
--- runFreshUniqueSupply :: Sem (UniqueGen ': r) a -> Sem r a
--- runFreshUniqueSupply = evalState freshUniqueSupply . uniqueGenToState
-
-uniqueGenToState :: Sem (UniqueGen ': r) a -> Sem (AtomicState UniqueSupply : r) a
-uniqueGenToState = reinterpret $ \case
-    NewUniqueNum -> do
-        (UniqueSupply us) <- atomicGet
-        case us of
-            [] -> error "Ran out of unique IDs! Should be impossible."
-            (i : is) -> do
-                atomicPut (UniqueSupply is)
-                pure i
-
-uniqueGenToIO :: Member (Embed IO) r => Sem (UniqueGen ': r) a -> Sem r a
-uniqueGenToIO = fmap snd . atomicStateToIO freshUniqueSupply . uniqueGenToState
-
-makeSem ''UniqueGen
 makeLenses ''UniqueSupply
 makeLenses ''Unique
 
 getUniqueId :: Unique a -> UniqueId
 getUniqueId = UniqueId . void
-
-makeUniqueId :: Member UniqueGen r => Sem r UniqueId
-makeUniqueId = UniqueId <$> makeUnique ()
-
-makeUnique :: Member UniqueGen r => a -> Sem r (Unique a)
-makeUnique a = Unique a <$> newUniqueNum
 
 uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i

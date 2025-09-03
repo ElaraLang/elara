@@ -10,7 +10,6 @@ where
 import Control.Exception as E
 import Elara.AST.Module
 import Elara.AST.Region (Located (..), unlocated)
-import Elara.Error.EffectNew qualified as Eff
 
 -- import Elara.CoreToIR
 
@@ -20,27 +19,28 @@ import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraph_)
 import Elara.Data.Unique (
-    UniqueSupply,
-    freshUniqueSupply,
     resetGlobalUniqueSupply,
  )
 
-import Effectful.Concurrent.MVar.Strict (newMVar', runConcurrent)
+import Effectful.Colog
+import Effectful.Concurrent (runConcurrent)
 import Effectful.Error.Static (Error, runError)
-import Effectful.State.Static.Local qualified as Local
-import Effectful.State.Static.Shared qualified as Shared
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.Logging (structuredDebugToLog)
 import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
+import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..))
-import Elara.Shunt.Error
-import Error.Diagnose (Diagnostic, Report (..), TabSize (..), WithUnicode (..), addReport, defaultStyle, printDiagnostic, printDiagnostic')
+import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
 import Print
 import Rock qualified
+import Rock.Memo (MemoQuery)
+import Rock.Memo qualified
+import Rock.MemoE (memoiseAsIO, memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
@@ -103,45 +103,47 @@ dumpGraph graph nameFunc suffix = do
     traverseGraph_ dump graph
 
 runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => CompilerSettings -> Eff es ()
-runElaraWrapped settings = runConcurrent $ do
-    uniqueVars <- newMVar' freshUniqueSupply
-    Shared.evalStateMVar uniqueVars $
-        runElara settings
+runElaraWrapped settings = uniqueGenToGlobalIO $ do
+    runLogToStdoutAndFile $ runElara settings
 
 runElara ::
     ( Error SomeReportableError :> es
-    , Shared.State UniqueSupply :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , IOE :> es
+    , Log (Doc AnsiStyle) :> es
     ) =>
     CompilerSettings -> Eff es ()
-runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = runFileSystem $
-    uniqueGenToState $
-        Rock.runRockWith Elara.Rules.rules settings $
-            do
-                start <- liftIO getCPUTime
-                liftIO (createDirectoryIfMissing True outDirName)
+runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
+    runFileSystem $
+        uniqueGenToGlobalIO $
+            structuredDebugToLog $
+                runConcurrent $
+                    memoiseRunIO @Elara.Query.Query $
+                        Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules settings)) $
+                            do
+                                start <- liftIO getCPUTime
+                                liftIO (createDirectoryIfMissing True outDirName)
 
-                files <-
-                    toList <$> Rock.fetch Elara.Query.InputFiles
+                                files <-
+                                    toList <$> Rock.fetch Elara.Query.InputFiles
 
-                loadedModules <- for ["source.elr"] $ \file -> do
-                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                    runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule (m.name ^. unlocated)
+                                loadedModules <- for ["source.elr"] $ \file -> do
+                                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
+                                    Rock.fetch $ Elara.Query.TypeCheckedModule (m.name ^. unlocated)
 
-                printPretty loadedModules
-                end <- liftIO getCPUTime
-                let t :: Double
-                    t = fromIntegral (end - start) * 1e-9
-                printPretty
-                    ( Style.varName "Successfully" <+> "compiled "
-                        <> Style.punctuation (pretty (length files))
-                        <> " classes in "
-                        <> Style.punctuation
-                            ( fromString (printf "%.2f" t)
-                                <> "ms!"
-                            )
-                    )
+                                printPretty loadedModules
+                                end <- liftIO getCPUTime
+                                let t :: Double
+                                    t = fromIntegral (end - start) * 1e-9
+                                printPretty
+                                    ( Style.varName "Successfully" <+> "compiled "
+                                        <> Style.punctuation (pretty (length files))
+                                        <> " classes in "
+                                        <> Style.punctuation
+                                            ( fromString (printf "%.2f" t)
+                                                <> "ms!"
+                                            )
+                                    )
 
 -- when run $ liftIO $ do
 --     printPretty (Style.varName "Running code...")

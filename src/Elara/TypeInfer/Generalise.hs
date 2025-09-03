@@ -9,10 +9,11 @@ import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Ftv
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type
-import Polysemy hiding (transform)
-import Polysemy.State
 
-generalise :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Sem r (Polytype SourceRegion)
+import Effectful
+import Effectful.State.Static.Local (get)
+
+generalise :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Eff r (Polytype SourceRegion)
 generalise ty = do
     env <- get @(TypeEnvironment SourceRegion)
     let freeVars = ftv ty

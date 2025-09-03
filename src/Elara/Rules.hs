@@ -16,17 +16,17 @@ import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery)
+import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runGetTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
-import System.FilePath.Lens (basename)
 import Prelude hiding (withFile)
 
-rules :: Rock.RulesWith CompilerSettings Query
+rules :: CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = do
     case key of
         GetCompilerSettings -> pure compilerSettings
-        InputFiles -> getInputFiles
+        InputFiles -> inject getInputFiles
         GetFileContents fp -> runGetFileContentsQuery fp
         LexedFile fp -> inject $ getLexedFile fp
         ParsedFile fp -> inject $ getParsedFileQuery fp
@@ -45,7 +45,7 @@ rules compilerSettings key = do
             case matchingFiles of
                 [fp] -> pure fp
                 _ -> error $ "Ambiguous module name: " <> showPretty mn
-        ParsedModule mn -> getParsedModuleQuery mn
+        ParsedModule mn -> inject $ getParsedModuleQuery mn
         DesugaredModule mn -> inject $ getDesugaredModule mn
         RenamedModule mn -> Local.evalState primitiveRenameState $ inject $ getRenamedModule mn
         ShuntedModule mn -> do
@@ -54,3 +54,5 @@ rules compilerSettings key = do
             pure mod
         GetOpInfo opName -> inject $ runGetOpInfoQuery opName
         GetOpTableIn mn -> inject $ runGetOpTableInQuery mn
+        TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
+        TypeOf key -> inject $ runGetTypeOfQuery key

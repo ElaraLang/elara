@@ -1,21 +1,27 @@
+
+
 module Elara.TypeInfer.Environment where
 
+import Data.GADT.Compare (GEq (..))
+import Data.GADT.Compare.TH (deriveGEq)
+import Data.Kind qualified as Kind
 import Data.Map qualified as Map
+import Data.Type.Equality
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Extra (locally)
+import Effectful.State.Static.Local
 import Elara.AST.Name
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
 import Elara.TypeInfer.Type
 import Error.Diagnose
-import Polysemy (Member, Sem)
-import Polysemy.Error
-import Polysemy.State
-import Polysemy.State.Extra
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
     = TypeEnvironment
-        (Map (TypeEnvKey loc) (Type loc))
+        (Map TypeEnvKey (Type loc))
     deriving (Show)
 
 instance Pretty loc => Pretty (TypeEnvironment loc) where
@@ -25,33 +31,35 @@ emptyTypeEnvironment :: TypeEnvironment loc
 emptyTypeEnvironment = TypeEnvironment Map.empty
 
 -- | A key in the type environment
-data TypeEnvKey loc
+data TypeEnvKey
     = -- | A data constructor K
       DataConKey DataCon
     | -- | A term variable x
       TermVarKey (Qualified VarName)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
 
-instance Pretty (TypeEnvKey loc) where
+instance Hashable  TypeEnvKey
+
+instance Pretty TypeEnvKey where
     pretty (DataConKey con) = pretty con
     pretty (TermVarKey name) = pretty name
 
-addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
+addType :: TypeEnvKey -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
-addType' :: Member (State (TypeEnvironment loc)) r => TypeEnvKey loc -> Type loc -> Sem r ()
+addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Type loc -> Eff r ()
 addType' key ty = modify (addType key ty)
 
 lookupType ::
-    ( Member (Error (InferError loc)) r
-    , Member (State (TypeEnvironment loc)) r
+    ( Error (InferError loc) :> r
+    , State (TypeEnvironment loc) :> r
     ) =>
-    TypeEnvKey loc -> Sem r (Type loc)
+    TypeEnvKey -> Eff r (Type loc)
 lookupType key = do
     env'@(TypeEnvironment env) <- get
     case Map.lookup key env of
         Just ty -> pure ty
-        Nothing -> throw (UnboundTermVar key env')
+        Nothing -> throwError (UnboundTermVar key env')
 
 newtype LocalTypeEnvironment loc
     = LocalTypeEnvironment
@@ -65,26 +73,26 @@ emptyLocalTypeEnvironment = LocalTypeEnvironment Map.empty
 addLocalType :: Unique VarName -> Type loc -> LocalTypeEnvironment loc -> LocalTypeEnvironment loc
 addLocalType var ty (LocalTypeEnvironment env) = LocalTypeEnvironment (Map.insert var ty env)
 
-withLocalType :: Member (State (LocalTypeEnvironment loc)) r => Unique VarName -> Type loc -> Sem r a -> Sem r a
+withLocalType :: State (LocalTypeEnvironment loc) :> r => Unique VarName -> Type loc -> Eff r a -> Eff r a
 withLocalType var ty = locally (addLocalType var ty)
 
-lookupLocalVarType :: Member (Error (InferError loc)) r => Unique VarName -> LocalTypeEnvironment loc -> Sem r (Type loc)
+lookupLocalVarType :: Error (InferError loc) :> r => Unique VarName -> LocalTypeEnvironment loc -> Eff r (Type loc)
 lookupLocalVarType var (LocalTypeEnvironment env) =
     case Map.lookup var env of
         Just ty -> pure ty
-        Nothing -> throw (UnboundLocalVar var (LocalTypeEnvironment env))
+        Nothing -> throwError (UnboundLocalVar var (LocalTypeEnvironment env))
 
 lookupLocalVar ::
-    ( Member (State (LocalTypeEnvironment loc)) r
-    , Member (Error (InferError loc)) r
+    ( State (LocalTypeEnvironment loc) :> r
+    , Error (InferError loc) :> r
     ) =>
     Unique VarName ->
-    Sem r (Type loc)
+    Eff r (Type loc)
 lookupLocalVar name = get >>= lookupLocalVarType name
 
 -- | An error that can occur during type inference
 data InferError loc
-    = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
+    = UnboundTermVar TypeEnvKey (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
     deriving (Show, Generic)
 

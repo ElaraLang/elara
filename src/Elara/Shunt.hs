@@ -8,7 +8,7 @@ module Elara.Shunt where
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
-import Effectful (Eff, inject, (:>))
+import Effectful (Eff, IOE, inject, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.State.Static.Local (execState, modify)
 import Effectful.Writer.Static.Local qualified as Eff
@@ -24,12 +24,13 @@ import Elara.AST.Shunted
 import Elara.AST.VarRef
 import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (runErrorOrReport)
-import Elara.Query (ConsQueryEffects, Query (..), QueryEffects)
+import Elara.Query (Query (..))
+import Elara.Query.Effects
 import Elara.Rename.Error (RenameError)
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
 import Optics (Field4 (_4), Field5 (_5), filtered)
-import Rock (fetch)
+import Rock (Rock, fetch)
 import Prelude hiding (modify')
 
 pattern InExpr :: RenamedExpr' -> RenamedExpr
@@ -38,12 +39,21 @@ pattern InExpr y <- Expr (Located _ y, _)
 pattern InExpr' :: SourceRegion -> RenamedExpr' -> RenamedExpr
 pattern InExpr' loc y <- Expr (Located loc y, _)
 
-runGetShuntedModuleQuery :: ModuleName -> Eff (ConsQueryEffects '[Eff.Error ShuntError, Eff.Writer (Set ShuntWarning)]) (Module 'Shunted)
+runGetShuntedModuleQuery ::
+    ModuleName ->
+    Eff
+        ( ConsQueryEffects
+            '[ Eff.Error ShuntError
+             , Eff.Writer (Set ShuntWarning)
+             , Rock Elara.Query.Query
+             ]
+        )
+        (Module 'Shunted)
 runGetShuntedModuleQuery mn = do
     renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
     shunt renamed
 
-runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[]) (Maybe OpInfo)
+runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
     let matchingBodies =
@@ -69,7 +79,7 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName))))
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 
-runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[]) OpTable
+runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) OpTable
 runGetOpTableInQuery moduleName = do
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule moduleName
     createOpTable mod
@@ -139,7 +149,7 @@ fixOperators = reassoc
                     pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[]) (Maybe OpInfo)
+opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
 opInfo operator = do
     let name = case operator ^. _Unwrapped % unlocated of
             SymOp opName -> ignoreLocation (NVarName . OperatorVarName <$> opName ^. unlocated)
@@ -153,6 +163,7 @@ type ShuntPipelineEffects es =
     ( QueryEffects es
     , Eff.Error ShuntError :> es
     , Eff.Writer (Set ShuntWarning) :> es
+    , Rock Elara.Query.Query :> es
     )
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo

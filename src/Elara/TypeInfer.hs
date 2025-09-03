@@ -3,6 +3,11 @@
 module Elara.TypeInfer where
 
 import Data.Generics.Product
+import Data.Generics.Wrapped (_Unwrapped)
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Static.Local
+import Effectful.Writer.Static.Local (listen, runWriter)
 import Elara.AST.Generic (
     Declaration (Declaration),
     Declaration' (Declaration'),
@@ -15,7 +20,7 @@ import Elara.AST.Generic.Types (
  )
 import Elara.AST.Kinded
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, NameLike (nameText), Qualified (..), VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, NameLike (nameText), Qualified (..), VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -27,61 +32,104 @@ import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.Data.Kind.Infer (InferState, KindInferError, inferKind, inferTypeKind, initialInferState)
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique (Unique)
+import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug)
 import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
+import Elara.Query (Query (..))
+import Elara.Query.Effects
+import Elara.Rename.Error
+import Elara.Shunt.Error (ShuntError)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
-import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
+import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
-import Polysemy hiding (transform)
-import Polysemy.Error (Error, throw)
-import Polysemy.State
-import Polysemy.Writer (listen)
+import Print (showPretty)
 import Relude.Extra.Type (type (++))
+import Rock qualified
 import TODO
 
-type InferPipelineEffects =
-    '[ StructuredDebug
-     , State InferState
-     , UniqueGen
-     , Error (UnifyError SourceRegion)
-     , Error TypeConvertError
-     , Error KindInferError
-     ]
-        ++ InferEffects SourceRegion
+type InferPipelineEffects r =
+    ( StructuredDebug :> r
+    , State InferState :> r
+    , UniqueGen :> r
+    , Error (UnifyError SourceRegion) :> r
+    , Error TypeConvertError :> r
+    , Error KindInferError :> r
+    , Infer SourceRegion r
+    )
 
--- runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
--- runInferPipeline e = do
---     let e' =
---             e
---                 & subsume_
---                 & evalState initialInferState
---                 & uniqueGenToIO
---                 & runErrorOrReport @(UnifyError SourceRegion)
---                 & runErrorOrReport @TypeConvertError
---                 & runErrorOrReport @KindInferError
+runGetTypeCheckedModuleQuery ::
+    ModuleName ->
+    Eff
+        ( ConsQueryEffects
+            '[ Rock.Rock Elara.Query.Query
+             ]
+        )
+        (Module 'Typed)
+runGetTypeCheckedModuleQuery mn = do
+    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule mn
+    r <- runInferEffects $ evalState initialInferState (inferModule shunted)
+    pure (fst r)
 
---     snd <$> runInferEffects e'
+runGetTypeOfQuery :: TypeEnvKey -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Type SourceRegion)
+runGetTypeOfQuery key =
+    case key of
+        TermVarKey varName -> do
+            let mod = varName.qualifier
+            shunted <-
+                runErrorOrReport @ShuntError $
+                    Rock.fetch $
+                        ShuntedModule mod
+            let decl =
+                    shunted ^.. _Unwrapped % unlocated
+
+            _
+
+runInferEffects ::
+    forall r a loc.
+    Pretty loc =>
+    Eff
+        ( InferEffectsCons
+            loc
+            ( Error (UnifyError loc)
+                ': Error KindInferError
+                ': Error TypeConvertError
+                ': Rock.Rock Elara.Query.Query
+                ': ConsQueryEffects r
+            )
+        )
+        a ->
+    Eff (ConsQueryEffects (Rock.Rock Elara.Query.Query ': r)) (a, Constraint loc)
+runInferEffects e = do
+    e
+        & runErrorOrReport @(InferError _)
+        . runErrorOrReport @(UnifyError _)
+        . runErrorOrReport @KindInferError
+        . runErrorOrReport @TypeConvertError
+        . evalState emptyLocalTypeEnvironment
+        . evalState emptyTypeEnvironment
+        . runWriter @(Constraint _)
+        . inject
 
 inferModule ::
     forall r.
-    (Members InferPipelineEffects r, Infer SourceRegion r) =>
+    (InferPipelineEffects r, Infer SourceRegion r) =>
     Module 'Shunted ->
-    Sem r (Module 'Typed)
+    Eff r (Module 'Typed)
 inferModule m = do
     traverseModuleRevTopologically inferDeclaration m
 
 inferDeclaration ::
     forall r.
-    (HasCallStack, Members InferPipelineEffects r, Infer SourceRegion r) =>
+    (HasCallStack, InferPipelineEffects r, Infer SourceRegion r) =>
     ShuntedDeclaration ->
-    Sem r TypedDeclaration
+    Eff r TypedDeclaration
 inferDeclaration (Declaration ld) = do
     Declaration
         <$> traverseOf
@@ -101,7 +149,7 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' ::
         HasCallStack =>
         ShuntedDeclarationBody' ->
-        Sem r TypedDeclarationBody'
+        Eff r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
             expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
@@ -151,14 +199,14 @@ createTypeVar (Located _ u) = fmap (Just . nameText) u
 inferValue ::
     forall r.
     ( HasCallStack
-    , Member UniqueGen r
+    , UniqueGen :> r
     , Infer SourceRegion r
-    , Member (Error (UnifyError SourceRegion)) r
+    , Error (UnifyError SourceRegion) :> r
     ) =>
     Qualified VarName ->
     ShuntedExpr ->
     Maybe (Type SourceRegion) ->
-    Sem r (TypedExpr, Polytype SourceRegion)
+    Eff r (TypedExpr, Polytype SourceRegion)
 inferValue valueName valueExpr expectedType = do
     -- generate
     expected <- case expectedType of
@@ -169,7 +217,7 @@ inferValue valueName valueExpr expectedType = do
     expectedAsMono <- skolemise expected
     debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
     addType' (TermVarKey valueName) expected
-    (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
+    ((typedExpr, t), constraint) <- listen $ generateConstraints valueExpr
 
     let constraint' = constraint <> Equality expectedAsMono t
     let tch = fuv t <> fuv constraint'
@@ -180,7 +228,7 @@ inferValue valueName valueExpr expectedType = do
     (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
     when (finalConstraint /= EmptyConstraint) do
-        throw (UnresolvedConstraint valueName finalConstraint)
+        throwError (UnresolvedConstraint valueName finalConstraint)
 
     let newType = substituteAll subst t
 
@@ -193,7 +241,7 @@ inferValue valueName valueExpr expectedType = do
 -- Replace all quantified variables in a type scheme with rigid skolem variables.
 -- This prevents ill-typed programs from unifying annotated polymorphic variables
 -- with concrete types during checking.
-skolemise :: forall r. Type SourceRegion -> Sem r (Monotype SourceRegion)
+skolemise :: forall r. Type SourceRegion -> Eff r (Monotype SourceRegion)
 skolemise = \case
     Lifted t -> pure t
     Polytype (Forall tyVars _ t) -> do

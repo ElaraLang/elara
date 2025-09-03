@@ -11,6 +11,7 @@ import Effectful.Error.Static
 import Effectful.FileSystem (FileSystem)
 import Effectful.State.Static.Local
 import Elara.Query (Query (GetFileContents))
+import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
 import Rock qualified
 
@@ -57,7 +58,7 @@ readTokensWith :: Error LexerError :> es => FileContents -> Eff es [Lexeme]
 readTokensWith (FileContents fp s) = do
     evalState (initialState fp s) (inject readTokens)
 
-getLexedFile :: FilePath -> Eff '[FileSystem, Rock.Rock Query, Error LexerError] [Lexeme]
+getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
 getLexedFile fp = do
     fileContents <- Rock.fetch (GetFileContents fp)
     readTokensWith fileContents

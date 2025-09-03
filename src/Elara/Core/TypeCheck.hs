@@ -9,6 +9,10 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 module Elara.Core.TypeCheck where
 
 import Data.Set qualified as Set
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Extra (locally, scoped)
+import Effectful.State.Static.Local (State, evalState, get, modify)
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
 import Elara.Core qualified as Core
@@ -23,10 +27,6 @@ import Elara.Error.Codes qualified as Codes
 import Elara.Logging (StructuredDebug, debug, debugWith)
 import Elara.Prim.Core
 import Elara.TypeInfer.Type (Polytype (Forall), functionMonotypeResult)
-import Polysemy
-import Polysemy.Error
-import Polysemy.State (State, evalState, get, modify)
-import Polysemy.State.Extra (locally, scoped)
 import Print (prettyToString, showPretty)
 import TODO (todo)
 
@@ -73,7 +73,7 @@ isInScope (Id name@(Local _) _ _) s = Set.member name (scope s)
 isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
 isInScope _ _ = False
 
-typeCheckCoreModule :: (Member (Error TypeCheckError) r, Member StructuredDebug r) => CoreModule (Bind Var ANF.Expr) -> Sem r ()
+typeCheckCoreModule :: ((Error TypeCheckError) :> r, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
 typeCheckCoreModule (CoreModule n m) = do
     let initialState = TcState{scope = mempty}
 
@@ -95,7 +95,7 @@ varType :: Var -> Core.Type
 varType (TyVar _) = error "TyVar"
 varType (Id _ t _) = t
 
-typeCheck :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r, HasCallStack) => ANF.Expr Var -> Sem r Core.Type
+typeCheck :: ((Error TypeCheckError) :> r, (State TcState) :> r, StructuredDebug :> r, HasCallStack) => ANF.Expr Var -> Eff r Core.Type
 typeCheck (ANF.Let bind in') = case bind of
     NonRecursive (v, e) -> debugWith ("typeCheck NonRecursive Let: " <> pretty v) $ do
         eType <- typeCheckC e
@@ -108,7 +108,7 @@ typeCheck (ANF.Let bind in') = case bind of
         typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
-typeCheckC :: (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r, HasCallStack) => ANF.CExpr Var -> Sem r Core.Type
+typeCheckC :: (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.CExpr Var -> Eff r Core.Type
 typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> pretty (fromANFAtom x)) $ do
     fType <- typeCheckA f
     debug $ "fType: " <> pretty fType
@@ -118,8 +118,8 @@ typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> prett
         Core.FuncTy argType retType -> do
             if generalize argType `equalUnderSubst` generalize xType
                 then pure retType
-                else throw $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x) callStack
-        other -> throw $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
+                else throwError $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x) callStack
+        other -> throwError $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC match@(ANF.Match e of' alts) = scoped $ do
     eType <- typeCheckA e
@@ -134,12 +134,12 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 if litType == eType
                     then pure eType'
-                    else throw $ CoreTypeMismatch litType eType (fromANF e, fromANF e) callStack
+                    else throwError $ CoreTypeMismatch litType eType (fromANF e, fromANF e) callStack
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
                 debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
                 when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $
-                    throw $
+                    throwError $
                         PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
@@ -151,7 +151,7 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 if generalizedEType `equalUnderSubst` generalizedConType
                     then pure eType'
                     else
-                        throw $
+                        throwError $
                             CoreTypeMismatch
                                 (generalize conType)
                                 (generalize eType)
@@ -171,8 +171,8 @@ typeCheckLit lit = case lit of
     Core.Unit -> Core.ConTy unitCon
 
 typeCheckA ::
-    (Member (Error TypeCheckError) r, Member (State TcState) r, Member StructuredDebug r) =>
-    ANF.AExpr Var -> Sem r Core.Type
+    ((Error TypeCheckError) :> r, (State TcState) :> r, StructuredDebug :> r) =>
+    ANF.AExpr Var -> Eff r Core.Type
 typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
 typeCheckA (ANF.Var v) = debugWith ("typeCheckA: " <> pretty v) $ do
@@ -181,7 +181,7 @@ typeCheckA (ANF.Var v) = debugWith ("typeCheckA: " <> pretty v) $ do
             then
                 pure (varType v)
             else
-                throw $ UnknownVariable v env.scope
+                throwError $ UnknownVariable v env.scope
         )
 typeCheckA (ANF.Lam v body) = do
     let t = varType v
@@ -193,7 +193,7 @@ typeCheckA (ANF.TyApp e t) = do
     case eType of
         Core.ForAllTy tv t' -> pure $ Core.substTypeVar tv t t'
         t' ->
-            throw $
+            throwError $
                 CoreTypeMismatchIncompleteExpected
                     { incompleteExpected = "A polymorphic type"
                     , actual = t'

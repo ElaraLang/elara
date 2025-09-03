@@ -14,7 +14,7 @@ import Data.Generics.Product hiding (list)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, (:>))
+import Effectful (Eff, IOE, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
@@ -30,14 +30,14 @@ import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.TopologicalGraph
-import Elara.Data.Unique (Unique, UniqueGen)
-import Elara.Data.Unique.Effect qualified as Eff
+import Elara.Data.Unique
+import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
-import Elara.Query (ConsQueryEffects, QueryEffects)
 import Elara.Query qualified
+import Elara.Query.Effects
 import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
 import Optics (anyOf, filteredBy, traverseOf_)
@@ -57,9 +57,10 @@ type RenamePipelineEffects =
 type Rename r =
     ( Eff.State RenameState :> r
     , Eff.Error RenameError :> r
-    , Eff.UniqueGen :> r
+    , UniqueGen :> r
     , QueryEffects r
-    -- , Eff.StructuredDebug :> r
+    , StructuredDebug :> r
+    , Rock.Rock Elara.Query.Query :> r
     )
 
 type InnerRename r =
@@ -70,7 +71,7 @@ type InnerRename r =
 getRenamedModule ::
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState])
+        (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState, Rock.Rock Elara.Query.Query])
         (Module 'Renamed)
 getRenamedModule mn = do
     m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
@@ -154,7 +155,7 @@ lookupTypeVar n = do
     pure $ Map.lookup n typeVars'
 
 uniquify :: Rename r => Located name -> Eff r (Located (Unique name))
-uniquify (Located sr n) = Located sr <$> Eff.makeUnique n
+uniquify (Located sr n) = Located sr <$> makeUnique n
 
 -- | Performs a topological sort of field' declarations, so as many
 sortDeclarations :: [RenamedDeclaration] -> Eff r [RenamedDeclaration]
@@ -354,7 +355,7 @@ renameType allowNewTypeVars (TypeVar (Located sr n)) = do
         Nothing
             | allowNewTypeVars -> do
                 -- if it doesn't exist, and we're allowed to make new type variables
-                uniqueN <- Eff.makeUnique n -- make a new unique name
+                uniqueN <- makeUnique n -- make a new unique name
                 Eff.modify $ over (the @"typeVars") $ Map.insert n uniqueN -- add it to the context
                 pure (TypeVar $ Located sr uniqueN)
             | otherwise -> throwError $ UnknownTypeVariable n

@@ -22,11 +22,12 @@ import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Desugar.Error
 import Elara.Error (runErrorOrReport)
 import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
-import Elara.Query (ConsQueryEffects)
 import Elara.Query qualified
+import Elara.Query.Effects (ConsQueryEffects)
 import Elara.Utils (curry3)
 import Optics (traverseOf_)
 import Rock qualified
+import Rock.Memo (MemoQuery (MemoQuery))
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
@@ -58,7 +59,7 @@ resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
 getDesugaredModule ::
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Eff.Error DesugarError])
+        (ConsQueryEffects '[Eff.Error DesugarError, Rock.Rock Elara.Query.Query])
         (Module 'Desugared)
 getDesugaredModule mn = do
     parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn

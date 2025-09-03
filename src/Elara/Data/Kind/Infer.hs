@@ -24,6 +24,9 @@ import Control.Monad (foldM)
 import Data.Data (Data)
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Static.Local
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Kinded
@@ -33,15 +36,13 @@ import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.Data.Kind
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen, UniqueId, makeUniqueId)
+import Elara.Data.Unique (Unique, UniqueId)
+import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Prim (primKindCheckContext)
 import Elara.Utils (uncurry3)
 import Error.Diagnose
 import Optics (set, traverseOf_, universeOf)
-import Polysemy (Member, Sem)
-import Polysemy.Error
-import Polysemy.State
 import TODO (todo)
 
 type KindVar = UniqueId
@@ -56,7 +57,7 @@ data InferState = InferState
     }
     deriving (Eq, Show, Generic, Data)
 
-type KindInfer r = (Member (State InferState) r, Member (Error KindInferError) r, Member UniqueGen r, HasCallStack)
+type KindInfer r = (State InferState :> r, Error KindInferError :> r, UniqueGen :> r, HasCallStack)
 
 initialInferState :: InferState
 initialInferState =
@@ -73,7 +74,7 @@ data KindInferError
     | CannotUnify ElaraKind ElaraKind
     | NotFunctionKind ElaraKind
     | OccursCheckFailed KindVar ElaraKind
-    deriving (Generic)
+    deriving (Generic, Show)
 
 instance Pretty KindInferError
 
@@ -124,10 +125,10 @@ instance ReportableError KindInferError where
                 []
                 []
 
-declareTypeVar :: Member (State InferState) r => TypeVar -> KindVar -> Sem r ()
+declareTypeVar :: (State InferState) :> r => TypeVar -> KindVar -> Eff r ()
 declareTypeVar var kindVar = modify (over #env (Map.insert (Right var) kindVar))
 
-declareNamedType :: Member (State InferState) r => Qualified TypeName -> KindVar -> Sem r ()
+declareNamedType :: (State InferState) :> r => Qualified TypeName -> KindVar -> Eff r ()
 declareNamedType name kindVar = modify (over #env (Map.insert (Left name) kindVar))
 
 elaborate ::
@@ -135,7 +136,7 @@ elaborate ::
     Qualified TypeName ->
     [Located (Unique LowerAlphaName)] ->
     ShuntedTypeDeclaration ->
-    Sem r (KindVar, MidKindedTypeDeclaration)
+    Eff r (KindVar, MidKindedTypeDeclaration)
 elaborate tName tvs t = do
     varKinds <- for tvs $ \tv -> do
         kindVar <- makeUniqueId
@@ -166,7 +167,7 @@ elaborate tName tvs t = do
 
     pure (datatypeKindVar, t')
 
-infer :: KindInfer r => Map (Qualified TypeName) ElaraKind -> [(Qualified TypeName, [Located TypeVar], ShuntedTypeDeclaration)] -> Sem r [(ElaraKind, KindedTypeDeclaration)]
+infer :: KindInfer r => Map (Qualified TypeName) ElaraKind -> [(Qualified TypeName, [Located TypeVar], ShuntedTypeDeclaration)] -> Eff r [(ElaraKind, KindedTypeDeclaration)]
 infer kindEnv decls = do
     modify (set #kindEnv kindEnv)
     for_ decls $ \(name, _, _) -> do
@@ -191,8 +192,8 @@ infer kindEnv decls = do
         pure (kind, body')
 
 inferKind ::
-    (Member (State InferState) r, Member (Error KindInferError) r, Member UniqueGen r) =>
-    Qualified TypeName -> [Located TypeVar] -> ShuntedTypeDeclaration -> Sem r (ElaraKind, KindedTypeDeclaration)
+    ((State InferState) :> r, Error KindInferError :> r, UniqueGen :> r) =>
+    Qualified TypeName -> [Located TypeVar] -> ShuntedTypeDeclaration -> Eff r (ElaraKind, KindedTypeDeclaration)
 inferKind name tvs t = do
     kindVar <- makeUniqueId
     declareNamedType name kindVar
@@ -214,7 +215,7 @@ inferKind name tvs t = do
 
     pure (kind, body)
 
-inferTypeKind :: KindInfer r => ShuntedType -> Sem r KindedType
+inferTypeKind :: KindInfer r => ShuntedType -> Eff r KindedType
 inferTypeKind t = do
     for_ (freeTypeVars t) $ \var -> do
         kindVar <- makeUniqueId
@@ -223,14 +224,14 @@ inferTypeKind t = do
     solveConstraints
     solveType t'
 
-lookupKindVarInSubstitution :: KindInfer r => KindVar -> Sem r ElaraKind
+lookupKindVarInSubstitution :: KindInfer r => KindVar -> Eff r ElaraKind
 lookupKindVarInSubstitution var = do
     InferState{..} <- get
     case Map.lookup var substitution of
         Just kind -> pure kind
         Nothing -> pure (VarKind var)
 
-lookupNameKindVar :: (Member (State InferState) r, Member UniqueGen r, Member (Error KindInferError) r) => Qualified TypeName -> Sem r KindVar
+lookupNameKindVar :: ((State InferState) :> r, UniqueGen :> r, (Error KindInferError) :> r) => Qualified TypeName -> Eff r KindVar
 lookupNameKindVar name = do
     InferState{..} <- get
     case Map.lookup name kindEnv of
@@ -239,20 +240,20 @@ lookupNameKindVar name = do
             newEqualityConstraint (VarKind newKindVar) kindVar
             pure newKindVar
         Nothing ->
-            maybe (throw $ UnknownKind name kindEnv) pure (Map.lookup (Left name) env)
+            maybe (throwError $ UnknownKind name kindEnv) pure (Map.lookup (Left name) env)
 
 -- | Find the kind variable of a type variable in the environment.
-lookupVarKindVar :: KindInfer r => TypeVar -> Sem r KindVar
+lookupVarKindVar :: KindInfer r => TypeVar -> Eff r KindVar
 lookupVarKindVar var = do
     InferState{..} <- get
     case Map.lookup (Right var) env of
         Just kindVar -> pure kindVar
-        Nothing -> throw $ UnboundVar var env
+        Nothing -> throwError $ UnboundVar var env
 
-newEqualityConstraint :: Member (State InferState) r => ElaraKind -> ElaraKind -> Sem r ()
+newEqualityConstraint :: (State InferState) :> r => ElaraKind -> ElaraKind -> Eff r ()
 newEqualityConstraint a b = modify (over #constraints ((a, b) :))
 
-elaborateType :: KindInfer r => ShuntedType -> Sem r MidKindedType
+elaborateType :: KindInfer r => ShuntedType -> Eff r MidKindedType
 elaborateType (Type (t :: Located (Type' 'Shunted), NoFieldValue)) = do
     case t ^. unlocated of
         TypeVar var -> do
@@ -303,7 +304,7 @@ elaborateType (Type (t :: Located (Type' 'Shunted), NoFieldValue)) = do
             traverseOf_ (each % _2 % _Unwrapped % _2) (newEqualityConstraint (VarKind recordKindVar) . VarKind) fields'
             pure $ Type (RecordType fields' <$ t, recordKindVar)
 
-solveType :: KindInfer r => MidKindedType -> Sem r KindedType
+solveType :: KindInfer r => MidKindedType -> Eff r KindedType
 solveType (Type (t, kindVar)) = do
     kind' <- lookupKindVarInSubstitution kindVar
     case t ^. unlocated of
@@ -336,8 +337,8 @@ getAnn' :: MidKindedType -> ElaraKind
 getAnn' (Type (_, b)) = VarKind b
 
 solveConstraints ::
-    (Member (State InferState) r, Member (Error KindInferError) r, HasCallStack, Member UniqueGen r) =>
-    Sem r ()
+    ((State InferState) :> r, (Error KindInferError) :> r, HasCallStack, UniqueGen :> r) =>
+    Eff r ()
 solveConstraints = do
     constraint <- do
         InferState{..} <- get
@@ -377,13 +378,13 @@ solveConstraints = do
         Just (k, VarKind v) -> do
             replaceInState v k
             solveConstraints
-        Just (k1@TypeKind, k2@FunctionKind{}) -> throw (CannotUnify k1 k2)
-        Just (k1@FunctionKind{}, k2@TypeKind) -> throw (CannotUnify k1 k2)
+        Just (k1@TypeKind, k2@FunctionKind{}) -> throwError (CannotUnify k1 k2)
+        Just (k1@FunctionKind{}, k2@TypeKind) -> throwError (CannotUnify k1 k2)
 
-instantiate :: Member UniqueGen r => ElaraKind -> [KindVar] -> Sem r ElaraKind
+instantiate :: UniqueGen :> r => ElaraKind -> [KindVar] -> Eff r ElaraKind
 instantiate = foldM replaceKindVarWithFreshKindVar
 
-replaceKindVarWithFreshKindVar :: Member UniqueGen r => ElaraKind -> KindVar -> Sem r ElaraKind
+replaceKindVarWithFreshKindVar :: UniqueGen :> r => ElaraKind -> KindVar -> Eff r ElaraKind
 replaceKindVarWithFreshKindVar kind var = do
     kindvar <- makeUniqueId
 
@@ -396,7 +397,7 @@ replaceKindVarWithFreshKindVar kind var = do
             )
             kind
 
-replaceInState :: KindInfer r => KindVar -> ElaraKind -> Sem r ()
+replaceInState :: KindInfer r => KindVar -> ElaraKind -> Eff r ()
 replaceInState var kind = do
     occursCheck var kind
 
@@ -412,7 +413,7 @@ replaceInState var kind = do
 
     put (s' & #substitution %~ Map.insert var kind)
 
-occursCheck :: KindInfer r => KindVar -> ElaraKind -> Sem r ()
+occursCheck :: KindInfer r => KindVar -> ElaraKind -> Eff r ()
 occursCheck var kind =
     if VarKind var == kind || null [() | VarKind v <- universeOf gplate kind, var == v]
         then pass
@@ -424,4 +425,4 @@ occursCheck var kind =
             -- but for now lets leave it at this "best effort" attempt.
             -- reverseEnv :: [(KindVar, Either (Qualified TypeName) TypeVar)] <- map swap . toList . (view #env) <$> get
             -- let typ = lookup var reverseEnv
-            throw (OccursCheckFailed var kind)
+            throwError (OccursCheckFailed var kind)

@@ -96,6 +96,7 @@ library
       Elara.Prim.Core
       Elara.Prim.Rename
       Elara.Query
+      Elara.Query.Effects
       Elara.ReadFile
       Elara.Rename
       Elara.Rename.Error
@@ -126,6 +127,7 @@ library
       Print
       Rock
       Rock.Memo
+      Rock.MemoE
       TODO
   hs-source-dirs:
       src
@@ -150,6 +152,8 @@ library
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
     , dependent-hashmap
     , dependent-sum-template
@@ -213,6 +217,8 @@ executable elara
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
     , dependent-hashmap
     , dependent-sum-template
@@ -301,6 +307,8 @@ test-suite elara-test
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
     , dependent-hashmap
     , dependent-sum-template

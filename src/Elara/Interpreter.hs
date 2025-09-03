@@ -1,310 +1,310 @@
 -- | Simple interpreter for the Core language
 module Elara.Interpreter where
 
-import Data.Map qualified as Map
-import Data.Text qualified as Text
-import Elara.AST.Name (ModuleName (..), Qualified (..))
-import Elara.AST.VarRef
-import Elara.Core hiding (Literal (..))
-import Elara.Core qualified as Core
-import Elara.Core.Generic (Bind (..))
-import Elara.Core.Module
-import Elara.Data.Pretty
-import Elara.Error (ReportableError, runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith)
-import Elara.Pipeline
-import Elara.Prim.Core (falseCtor, fetchPrimitiveName, trueCtor, unitCtor)
-import Polysemy hiding (run)
-import Polysemy.Error
-import Polysemy.State
-import Polysemy.State.Extra
+-- import Data.Map qualified as Map
+-- import Data.Text qualified as Text
+-- import Elara.AST.Name (ModuleName (..), Qualified (..))
+-- import Elara.AST.VarRef
+-- import Elara.Core hiding (Literal (..))
+-- import Elara.Core qualified as Core
+-- import Elara.Core.Generic (Bind (..))
+-- import Elara.Core.Module
+-- import Elara.Data.Pretty
+-- import Elara.Error (ReportableError, runErrorOrReport)
+-- import Elara.Logging (StructuredDebug, debug, debugWith)
+-- import Elara.Pipeline
+-- import Elara.Prim.Core (falseCtor, fetchPrimitiveName, trueCtor, unitCtor)
+-- import Polysemy hiding (run)
+-- import Polysemy.Error
+-- import Polysemy.State
+-- import Polysemy.State.Extra
 
-type Interpreter r = Members InterpreterEffects r
+-- type Interpreter r = Members InterpreterEffects r
 
-type InterpreterEffects = [State ElaraState, Error InterpreterError, StructuredDebug, Embed IO]
+-- type InterpreterEffects = [State ElaraState, Error InterpreterError, StructuredDebug, Embed IO]
 
-newtype ElaraState = ElaraState
-    { bindings :: Map (UnlocatedVarRef Text) Value
-    }
-    deriving (Generic)
+-- newtype ElaraState = ElaraState
+--     { bindings :: Map (UnlocatedVarRef Text) Value
+--     }
+--     deriving (Generic)
 
-instance Pretty ElaraState
+-- instance Pretty ElaraState
 
-data InterpreterError
-    = UnboundVariable (UnlocatedVarRef Text) ElaraState
-    | NotAFunction Value
-    | UnknownPrimitive Text
-    | UnhandledExpr CoreExpr
-    | NoMainFound ElaraState
-    | TypeMismatch
-        { expected :: Text
-        , actual :: Value
-        }
-    deriving (Generic)
+-- data InterpreterError
+--     = UnboundVariable (UnlocatedVarRef Text) ElaraState
+--     | NotAFunction Value
+--     | UnknownPrimitive Text
+--     | UnhandledExpr CoreExpr
+--     | NoMainFound ElaraState
+--     | TypeMismatch
+--         { expected :: Text
+--         , actual :: Value
+--         }
+--     deriving (Generic)
 
-instance Pretty InterpreterError
+-- instance Pretty InterpreterError
 
-instance ReportableError InterpreterError
+-- instance ReportableError InterpreterError
 
-data Value
-    = Int Integer
-    | String Text
-    | Char Char
-    | Double Double
-    | -- | Data constructor invocation
-      Ctor DataCon [Value]
-    | Closure
-        { env :: Map (UnlocatedVarRef Text) Value -- Captured environment
-        , param :: UnlocatedVarRef Text -- Parameter name
-        , body :: CoreExpr -- Function body
-        }
-    | RecClosure
-        { recEnv :: Map (UnlocatedVarRef Text) Value
-        , name :: UnlocatedVarRef Text -- This function's name
-        , param :: UnlocatedVarRef Text -- Parameter
-        , body :: CoreExpr
-        }
-    | PrimOp Text
-    | PartialApplication Value Value
-    | IOAction (Sem InterpreterEffects Value)
-    deriving (Generic)
+-- data Value
+--     = Int Integer
+--     | String Text
+--     | Char Char
+--     | Double Double
+--     | -- | Data constructor invocation
+--       Ctor DataCon [Value]
+--     | Closure
+--         { env :: Map (UnlocatedVarRef Text) Value -- Captured environment
+--         , param :: UnlocatedVarRef Text -- Parameter name
+--         , body :: CoreExpr -- Function body
+--         }
+--     | RecClosure
+--         { recEnv :: Map (UnlocatedVarRef Text) Value
+--         , name :: UnlocatedVarRef Text -- This function's name
+--         , param :: UnlocatedVarRef Text -- Parameter
+--         , body :: CoreExpr
+--         }
+--     | PrimOp Text
+--     | PartialApplication Value Value
+--     | IOAction (Sem InterpreterEffects Value)
+--     deriving (Generic)
 
-instance Eq Value where
-    Int a == Int b = a == b
-    String a == String b = a == b
-    Char a == Char b = a == b
-    Double a == Double b = a == b
-    Ctor a b == Ctor c d = a == c && b == d
-    Closure{} == Closure{} = False
-    PrimOp a == PrimOp b = a == b
-    PartialApplication a b == PartialApplication c d = a == c && b == d
-    IOAction{} == IOAction{} = False
-    _ == _ = False
+-- instance Eq Value where
+--     Int a == Int b = a == b
+--     String a == String b = a == b
+--     Char a == Char b = a == b
+--     Double a == Double b = a == b
+--     Ctor a b == Ctor c d = a == c && b == d
+--     Closure{} == Closure{} = False
+--     PrimOp a == PrimOp b = a == b
+--     PartialApplication a b == PartialApplication c d = a == c && b == d
+--     IOAction{} == IOAction{} = False
+--     _ == _ = False
 
--- bit of a hack
-instance Pretty (Sem InterpreterEffects a) where
-    pretty _ = "<IO>"
+-- -- bit of a hack
+-- instance Pretty (Sem InterpreterEffects a) where
+--     pretty _ = "<IO>"
 
-instance Pretty Value where
-    pretty (Closure _ p _) = "Closure accepting" <+> pretty p
-    pretty (RecClosure _ n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p
-    pretty (Int i) = pretty i
-    pretty (String s) = pretty '"' <> pretty s <> pretty '"'
-    pretty (Char c) = pretty c
-    pretty (Double d) = pretty d
-    pretty (Ctor c []) = pretty (c.name)
-    pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
-    pretty p = gpretty p
+-- instance Pretty Value where
+--     pretty (Closure _ p _) = "Closure accepting" <+> pretty p
+--     pretty (RecClosure _ n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p
+--     pretty (Int i) = pretty i
+--     pretty (String s) = pretty '"' <> pretty s <> pretty '"'
+--     pretty (Char c) = pretty c
+--     pretty (Double d) = pretty d
+--     pretty (Ctor c []) = pretty (c.name)
+--     pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
+--     pretty p = gpretty p
 
-primOps =
-    Map.fromList
-        [ ("==", 2)
-        , ("+", 2)
-        , (">>=", 2)
-        , ("stringCons", 2)
-        ]
+-- primOps =
+--     Map.fromList
+--         [ ("==", 2)
+--         , ("+", 2)
+--         , (">>=", 2)
+--         , ("stringCons", 2)
+--         ]
 
-boolValue :: Bool -> Value
-boolValue True = Ctor trueCtor []
-boolValue False = Ctor falseCtor []
+-- boolValue :: Bool -> Value
+-- boolValue True = Ctor trueCtor []
+-- boolValue False = Ctor falseCtor []
 
-interpretExpr :: forall r. Interpreter r => CoreExpr -> Sem r Value
-interpretExpr (Lit (Core.Int i)) = pure $ Int i
-interpretExpr (Lit (Core.String s)) = pure $ String s
-interpretExpr (Lit (Core.Char c)) = pure $ Char c
-interpretExpr (Lit (Core.Double d)) = pure $ Double d
-interpretExpr (Lit Core.Unit) = pure $ Ctor unitCtor []
-interpretExpr (App (Var (Id (UnlocatedGlobal primName) _ _)) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
-    pure $ PrimOp primArg
--- elaraPrimitive should be called with a tyapp - i.e. `elaraPrimitive @T "f"`
-interpretExpr (App (TyApp (Var (Id (UnlocatedGlobal primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
-    pure $ PrimOp primArg
-interpretExpr (Var (Id v _ _)) = do
-    s <- get
-    case Map.lookup v (bindings s) of
-        Just val -> pure val
-        Nothing -> throw $ UnboundVariable v s
-interpretExpr (Let bind in') = scoped $ do
-    interpretBinding bind
-    interpretExpr in'
-interpretExpr (Lam (Id v _ _) e) = do
-    s <- get
-    pure $ Closure (bindings s) v e
-interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty f) $ do
-    f' <- interpretExpr f
-    debug $ pretty f <> " = " <> pretty f'
-    a' <- interpretExpr a
-    debug $ pretty a <> " = " <> pretty a'
-    case f' of
-        rec@(RecClosure env n p e) -> scoped $ do
-            -- add itself to the env
-            let env' = Map.insert n rec env
+-- interpretExpr :: forall r. Interpreter r => CoreExpr -> Sem r Value
+-- interpretExpr (Lit (Core.Int i)) = pure $ Int i
+-- interpretExpr (Lit (Core.String s)) = pure $ String s
+-- interpretExpr (Lit (Core.Char c)) = pure $ Char c
+-- interpretExpr (Lit (Core.Double d)) = pure $ Double d
+-- interpretExpr (Lit Core.Unit) = pure $ Ctor unitCtor []
+-- interpretExpr (App (Var (Id (UnlocatedGlobal primName) _ _)) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
+--     pure $ PrimOp primArg
+-- -- elaraPrimitive should be called with a tyapp - i.e. `elaraPrimitive @T "f"`
+-- interpretExpr (App (TyApp (Var (Id (UnlocatedGlobal primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
+--     pure $ PrimOp primArg
+-- interpretExpr (Var (Id v _ _)) = do
+--     s <- get
+--     case Map.lookup v (bindings s) of
+--         Just val -> pure val
+--         Nothing -> throw $ UnboundVariable v s
+-- interpretExpr (Let bind in') = scoped $ do
+--     interpretBinding bind
+--     interpretExpr in'
+-- interpretExpr (Lam (Id v _ _) e) = do
+--     s <- get
+--     pure $ Closure (bindings s) v e
+-- interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty f) $ do
+--     f' <- interpretExpr f
+--     debug $ pretty f <> " = " <> pretty f'
+--     a' <- interpretExpr a
+--     debug $ pretty a <> " = " <> pretty a'
+--     case f' of
+--         rec@(RecClosure env n p e) -> scoped $ do
+--             -- add itself to the env
+--             let env' = Map.insert n rec env
 
-            -- add the argument to the env
-            let env'' = Map.insert p a' env'
+--             -- add the argument to the env
+--             let env'' = Map.insert p a' env'
 
-            scoped $ do
-                modify (\s -> s{bindings = env''})
-                interpretExpr e
-        Closure env p e -> do
-            let env' = Map.insert p a' env
-            scoped $ do
-                modify (\s -> s{bindings = env'})
-                interpretExpr e
-        PrimOp "toString" -> do
-            let asText = case a' of
-                    Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
-                        prettyToText (arg1, arg2)
-                    other -> prettyToText other
-            pure $ String asText
-        PrimOp "println" -> do
-            pure $ IOAction $ do
-                let asString = case a' of
-                        String s -> s
-                        other -> prettyToText other
-                putTextLn asString
-                pure (Ctor unitCtor [])
-        PrimOp "negate" -> do
-            case a' of
-                Int i -> pure $ Int (-i)
-                Double d -> pure $ Double (-d)
-                _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
-        PrimOp "stringIsEmpty" -> do
-            case a' of
-                String s -> pure $ boolValue (Text.null s)
-                _ -> throw TypeMismatch{expected = "String", actual = a'}
-        PrimOp "stringHead" -> do
-            case a' of
-                String s -> pure $ Char (Text.head s)
-                _ -> throw TypeMismatch{expected = "String", actual = a'}
-        PrimOp "stringTail" -> do
-            case a' of
-                String s -> pure $ String (Text.tail s)
-                _ -> throw TypeMismatch{expected = "String", actual = a'}
+--             scoped $ do
+--                 modify (\s -> s{bindings = env''})
+--                 interpretExpr e
+--         Closure env p e -> do
+--             let env' = Map.insert p a' env
+--             scoped $ do
+--                 modify (\s -> s{bindings = env'})
+--                 interpretExpr e
+--         PrimOp "toString" -> do
+--             let asText = case a' of
+--                     Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
+--                         prettyToText (arg1, arg2)
+--                     other -> prettyToText other
+--             pure $ String asText
+--         PrimOp "println" -> do
+--             pure $ IOAction $ do
+--                 let asString = case a' of
+--                         String s -> s
+--                         other -> prettyToText other
+--                 putTextLn asString
+--                 pure (Ctor unitCtor [])
+--         PrimOp "negate" -> do
+--             case a' of
+--                 Int i -> pure $ Int (-i)
+--                 Double d -> pure $ Double (-d)
+--                 _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
+--         PrimOp "stringIsEmpty" -> do
+--             case a' of
+--                 String s -> pure $ boolValue (Text.null s)
+--                 _ -> throw TypeMismatch{expected = "String", actual = a'}
+--         PrimOp "stringHead" -> do
+--             case a' of
+--                 String s -> pure $ Char (Text.head s)
+--                 _ -> throw TypeMismatch{expected = "String", actual = a'}
+--         PrimOp "stringTail" -> do
+--             case a' of
+--                 String s -> pure $ String (Text.tail s)
+--                 _ -> throw TypeMismatch{expected = "String", actual = a'}
 
-        -- stringCons fst a'
-        PartialApplication (PrimOp "stringCons") fst -> do
-            case (fst, a') of
-                (Char c, String s) -> pure $ String (Text.cons c s)
-                _ -> throw TypeMismatch{expected = "Char and String", actual = a'}
-        -- (==) fst a'
-        PartialApplication (PrimOp "==") fst -> do
-            pure (boolValue (a' == fst))
-        PartialApplication (PrimOp "+") fst -> do
-            case (a', fst) of
-                (Int a, Int b) -> pure $ Int (a + b)
-                (Double a, Double b) -> pure $ Double (a + b)
-                _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
-        PartialApplication (PrimOp ">>=") fst -> do
-            case fst of
-                IOAction io -> do
-                    pure $ IOAction $ do
-                        val <- io
-                        case a' of -- this sucks
-                            Closure env p e -> do
-                                let env' = Map.insert p val env
-                                scoped $ do
-                                    modify (\s -> s{bindings = env'})
-                                    interpretExpr e
-                            RecClosure env n p e -> do
-                                let env' = Map.insert p val env
-                                let env'' = Map.insert n (RecClosure env' n p e) env'
-                                scoped $ do
-                                    modify (\s -> s{bindings = env''})
-                                    interpretExpr e
-                            _ -> throw $ NotAFunction a'
-                _ -> throw TypeMismatch{expected = "IO", actual = a'}
-        PrimOp primName -> do
-            case Map.lookup primName primOps of
-                Just 1 -> error "1-arg primop Should be handled here"
-                Just _ -> pure $ PartialApplication f' a'
-                Nothing -> throw $ UnknownPrimitive primName
-        Ctor c args | typeArity (c.dataConType) < length args -> do
-            throw $ NotAFunction f'
-        Ctor c args -> do
-            pure $ Ctor c (args <> [a'])
-        other -> throw $ NotAFunction other
-interpretExpr (Match e of' alts) = debugWith ("Matching " <> pretty e) $ do
-    e' <- interpretExpr e
-    whenJust of' $ \(Id v _ _) -> do
-        modify (\s -> s{bindings = Map.insert v e' (bindings s)})
+--         -- stringCons fst a'
+--         PartialApplication (PrimOp "stringCons") fst -> do
+--             case (fst, a') of
+--                 (Char c, String s) -> pure $ String (Text.cons c s)
+--                 _ -> throw TypeMismatch{expected = "Char and String", actual = a'}
+--         -- (==) fst a'
+--         PartialApplication (PrimOp "==") fst -> do
+--             pure (boolValue (a' == fst))
+--         PartialApplication (PrimOp "+") fst -> do
+--             case (a', fst) of
+--                 (Int a, Int b) -> pure $ Int (a + b)
+--                 (Double a, Double b) -> pure $ Double (a + b)
+--                 _ -> throw TypeMismatch{expected = "Int or Double", actual = a'}
+--         PartialApplication (PrimOp ">>=") fst -> do
+--             case fst of
+--                 IOAction io -> do
+--                     pure $ IOAction $ do
+--                         val <- io
+--                         case a' of -- this sucks
+--                             Closure env p e -> do
+--                                 let env' = Map.insert p val env
+--                                 scoped $ do
+--                                     modify (\s -> s{bindings = env'})
+--                                     interpretExpr e
+--                             RecClosure env n p e -> do
+--                                 let env' = Map.insert p val env
+--                                 let env'' = Map.insert n (RecClosure env' n p e) env'
+--                                 scoped $ do
+--                                     modify (\s -> s{bindings = env''})
+--                                     interpretExpr e
+--                             _ -> throw $ NotAFunction a'
+--                 _ -> throw TypeMismatch{expected = "IO", actual = a'}
+--         PrimOp primName -> do
+--             case Map.lookup primName primOps of
+--                 Just 1 -> error "1-arg primop Should be handled here"
+--                 Just _ -> pure $ PartialApplication f' a'
+--                 Nothing -> throw $ UnknownPrimitive primName
+--         Ctor c args | typeArity (c.dataConType) < length args -> do
+--             throw $ NotAFunction f'
+--         Ctor c args -> do
+--             pure $ Ctor c (args <> [a'])
+--         other -> throw $ NotAFunction other
+-- interpretExpr (Match e of' alts) = debugWith ("Matching " <> pretty e) $ do
+--     e' <- interpretExpr e
+--     whenJust of' $ \(Id v _ _) -> do
+--         modify (\s -> s{bindings = Map.insert v e' (bindings s)})
 
-    let go :: [Core.Alt Var] -> Sem r Value
-        go [] = throw $ UnhandledExpr e
-        go ((DataAlt c, vs, branchBody) : rest) = do
-            case e' of
-                Ctor c' args | c == c' -> do
-                    let vs' = (\(Id i _ _) -> i) <$> vs
-                    modify (\s -> s{bindings = foldr (uncurry Map.insert) (bindings s) (zip vs' args)})
-                    debug $ "Matched " <> pretty c <> ", so we eval " <> pretty branchBody
-                    interpretExpr branchBody
-                _ -> go rest
-        go ((LitAlt l, _, branchBody) : rest) = do
-            case e' of
-                Int i | l == Core.Int i -> interpretExpr branchBody
-                String s | l == Core.String s -> interpretExpr branchBody
-                Char c | l == Core.Char c -> interpretExpr branchBody
-                Double d | l == Core.Double d -> interpretExpr branchBody
-                _ -> go rest
-        go ((DEFAULT, _, branchBody) : _) = interpretExpr branchBody
-    go alts
-interpretExpr (TyApp e _) = interpretExpr e -- lol
-interpretExpr other = throw $ UnhandledExpr other
+--     let go :: [Core.Alt Var] -> Sem r Value
+--         go [] = throw $ UnhandledExpr e
+--         go ((DataAlt c, vs, branchBody) : rest) = do
+--             case e' of
+--                 Ctor c' args | c == c' -> do
+--                     let vs' = (\(Id i _ _) -> i) <$> vs
+--                     modify (\s -> s{bindings = foldr (uncurry Map.insert) (bindings s) (zip vs' args)})
+--                     debug $ "Matched " <> pretty c <> ", so we eval " <> pretty branchBody
+--                     interpretExpr branchBody
+--                 _ -> go rest
+--         go ((LitAlt l, _, branchBody) : rest) = do
+--             case e' of
+--                 Int i | l == Core.Int i -> interpretExpr branchBody
+--                 String s | l == Core.String s -> interpretExpr branchBody
+--                 Char c | l == Core.Char c -> interpretExpr branchBody
+--                 Double d | l == Core.Double d -> interpretExpr branchBody
+--                 _ -> go rest
+--         go ((DEFAULT, _, branchBody) : _) = interpretExpr branchBody
+--     go alts
+-- interpretExpr (TyApp e _) = interpretExpr e -- lol
+-- interpretExpr other = throw $ UnhandledExpr other
 
-interpretBinding :: Interpreter r => CoreBind -> Sem r ()
-interpretBinding (NonRecursive (Id v _ _, e)) = debugWith ("Interpreting let" <+> pretty v <+> "=" <+> pretty e) $ do
-    val <- interpretExpr e
-    modify (\s -> s{bindings = Map.insert v val (bindings s)})
-interpretBinding (Recursive bs) = debugWith ("Interpreting letrec" <+> pretty bs) $ do
-    currentEnv <- gets bindings
-    -- Create RecClosures that share the same environment
-    let recEnv = Map.fromList [(v, RecClosure Map.empty v p e) | (Id v _ _, Lam (Id p _ _) e) <- bs]
-    -- Update the RecClosures with the complete recursive environment
-    let finalEnv = Map.union recEnv currentEnv
-    let finalClosures = Map.map (\(RecClosure _ n p b) -> RecClosure finalEnv n p b) recEnv
+-- interpretBinding :: Interpreter r => CoreBind -> Sem r ()
+-- interpretBinding (NonRecursive (Id v _ _, e)) = debugWith ("Interpreting let" <+> pretty v <+> "=" <+> pretty e) $ do
+--     val <- interpretExpr e
+--     modify (\s -> s{bindings = Map.insert v val (bindings s)})
+-- interpretBinding (Recursive bs) = debugWith ("Interpreting letrec" <+> pretty bs) $ do
+--     currentEnv <- gets bindings
+--     -- Create RecClosures that share the same environment
+--     let recEnv = Map.fromList [(v, RecClosure Map.empty v p e) | (Id v _ _, Lam (Id p _ _) e) <- bs]
+--     -- Update the RecClosures with the complete recursive environment
+--     let finalEnv = Map.union recEnv currentEnv
+--     let finalClosures = Map.map (\(RecClosure _ n p b) -> RecClosure finalEnv n p b) recEnv
 
-    modify (\s -> s{bindings = Map.union finalClosures (bindings s)})
+--     modify (\s -> s{bindings = Map.union finalClosures (bindings s)})
 
--- | Load a module into the interpreter
-loadModule :: Interpreter r => CoreModule CoreBind -> Sem r ()
-loadModule (CoreModule name decls) = do
-    oldBindings <- gets bindings
-    for_
-        decls
-        ( \case
-            (CoreValue v) -> do
-                interpretBinding v
-            (CoreType decl) -> loadTypeDecl decl
-        )
-    newEnv <- gets bindings
-    debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
-    pass
+-- -- | Load a module into the interpreter
+-- loadModule :: Interpreter r => CoreModule CoreBind -> Sem r ()
+-- loadModule (CoreModule name decls) = do
+--     oldBindings <- gets bindings
+--     for_
+--         decls
+--         ( \case
+--             (CoreValue v) -> do
+--                 interpretBinding v
+--             (CoreType decl) -> loadTypeDecl decl
+--         )
+--     newEnv <- gets bindings
+--     debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
+--     pass
 
-loadTypeDecl :: Interpreter r => CoreTypeDecl -> Sem r ()
-loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl cons)) = do
-    for_ cons $ \con@(DataCon name _ _) -> do
-        modify (\s -> s{bindings = Map.insert (UnlocatedGlobal name) (Ctor con []) (bindings s)})
-loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass
+-- loadTypeDecl :: Interpreter r => CoreTypeDecl -> Sem r ()
+-- loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl cons)) = do
+--     for_ cons $ \con@(DataCon name _ _) -> do
+--         modify (\s -> s{bindings = Map.insert (UnlocatedGlobal name) (Ctor con []) (bindings s)})
+-- loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass
 
-evalIO :: Interpreter r => Value -> Sem r Value
-evalIO (IOAction io) = do
-    val <- subsume_ io
-    evalIO val
-evalIO other = pure other
+-- evalIO :: Interpreter r => Value -> Sem r Value
+-- evalIO (IOAction io) = do
+--     val <- subsume_ io
+--     evalIO val
+-- evalIO other = pure other
 
-{- | Looks for a value Main.main in the bindings and runs it
-The module must have been already loaded
--}
-run :: Interpreter r => Sem r ()
-run = do
-    s <- get
-    case Map.lookup (UnlocatedGlobal (Qualified "main" (ModuleName ("Main" :| [])))) (s.bindings) of
-        Just val -> do
-            evalIO val
-            pass
-        _ -> throw $ NoMainFound s
+-- {- | Looks for a value Main.main in the bindings and runs it
+-- The module must have been already loaded
+-- -}
+-- run :: Interpreter r => Sem r ()
+-- run = do
+--     s <- get
+--     case Map.lookup (UnlocatedGlobal (Qualified "main" (ModuleName ("Main" :| [])))) (s.bindings) of
+--         Just val -> do
+--             evalIO val
+--             pass
+--         _ -> throw $ NoMainFound s
 
--- runInterpreter :: IsPipeline r => Sem (EffectsAsPrefixOf InterpreterEffects r) a -> Sem r a
--- runInterpreter m = do
---     let s = ElaraState{bindings = Map.empty}
---     subsume $ subsume (runErrorOrReport $ evalState s m)
+-- -- runInterpreter :: IsPipeline r => Sem (EffectsAsPrefixOf InterpreterEffects r) a -> Sem r a
+-- -- runInterpreter m = do
+-- --     let s = ElaraState{bindings = Map.empty}
+-- --     subsume $ subsume (runErrorOrReport $ evalState s m)

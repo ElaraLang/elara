@@ -8,16 +8,19 @@ This acts as the entrypoint to the stage, bringing each stage into a common abst
 -}
 module Elara.Pipeline where
 
+import Colog.Core (LogAction (..))
 import Data.Text.IO qualified as Text
+import Effectful (Eff, IOE, (:>))
+import Effectful.Colog (Log, runLogAction)
 import Elara.Data.Pretty
-import Elara.Error (DiagnosticWriter, runDiagnosticWriter)
+import Elara.Error (DiagnosticWriter)
 import Elara.Logging
 import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, InterpreterFor, Member, Members, Sem, embed, runM, subsume_)
-import Polysemy.Log (DataLog, interpretDataLog, interpretDataLogStdoutWith)
-import Polysemy.Maybe (MaybeE, runMaybe)
-import Print (elaraDebug, printPretty)
-import System.IO (openFile)
+import Polysemy (Effect, Embed, InterpreterFor, Members)
+import Polysemy.Log (DataLog, interpretDataLog)
+import Polysemy.Maybe (MaybeE)
+import Print (printPretty)
+import System.IO qualified
 
 -- | All stages of a pipeline must be interpreted into this effect stack.
 type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), StructuredDebug, Embed IO]
@@ -30,28 +33,24 @@ type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] 
     EffectsAsPrefixOf '[] ys = ys
     EffectsAsPrefixOf (x ': xs) ys = x ': EffectsAsPrefixOf xs ys
 
--- -- | Finalise a pipeline, returning the final diagnostic and the result of the pipeline.
--- finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
--- finalisePipeline =
---     runM @IO
---         . runDiagnosticWriter
---         . runMaybe
---         . (if elaraDebug then logToStdoutAndFile else destroyDataLog)
---         . structuredDebugToLog
---         . subsume_
-
-logToStdoutAndFile :: Member (Embed IO) r => InterpreterFor (DataLog (Doc AnsiStyle)) r
-logToStdoutAndFile sem = do
-    -- reset log
-    embed $ writeFileText "elara.log" ""
-    handle <- embed (openFile "elara.log" WriteMode)
-    embed $ hSetBuffering handle LineBuffering
-    interpretDataLog
-        ( \x -> do
-            embed $ printPretty x
-            embed $ Text.hPutStrLn handle (prettyToUnannotatedText x)
-        )
-        sem
+-- Create a co-log LogAction that prints to stdout and appends to a log file.
+-- Returns an IO action that constructs the LogAction so callers (e.g. `Main`) can
+-- pass it into `runLogAction` from `Effectful.Colog`.
+-- An Effectful interpreter for the `Log (Doc AnsiStyle)` effect which
+-- writes prettified, annotated output to stdout and appends an unannotated
+-- textual form to `elara.log`.
+runLogToStdoutAndFile :: IOE :> es => Eff (Log (Doc AnsiStyle) : es) a -> Eff es a
+runLogToStdoutAndFile eff = do
+    -- reset log file
+    liftIO $ writeFileText "elara.log" ""
+    handle <- liftIO $ System.IO.openFile "elara.log" WriteMode
+    liftIO $ hSetBuffering handle System.IO.LineBuffering
+    let la =
+            LogAction
+                ( \doc ->
+                    liftIO $ printPretty doc *> Text.hPutStrLn handle (prettyToUnannotatedText doc)
+                )
+    runLogAction la eff
 
 destroyDataLog :: InterpreterFor (DataLog (Doc AnsiStyle)) r
 destroyDataLog = interpretDataLog (const pass)
