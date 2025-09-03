@@ -69,12 +69,12 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName))))
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 
-runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning)]) OpTable
+runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[]) OpTable
 runGetOpTableInQuery moduleName = do
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule moduleName
     createOpTable mod
 
--- createOpTable :: Member (State OpTable) r => Module 'Renamed -> Sem r ()
+createOpTable :: Module Renamed -> Eff es OpTable
 createOpTable = execState mempty . traverseModule_ addDeclsToOpTable'
 
 addDeclsToOpTable' :: _ => Declaration Renamed -> Eff r ()
@@ -155,33 +155,6 @@ type ShuntPipelineEffects es =
     , Eff.Writer (Set ShuntWarning) :> es
     )
 
--- runShuntPipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ShuntPipelineEffects r) a -> Sem r a
--- runShuntPipeline s =
---     do
---         (warnings, a) <-
---             runWriter
---                 . runErrorOrReport
---                 . subsume_
---                 $ s
---         traverse_ report warnings
---         pure a
-
--- createOpTable :: IsPipeline r => Maybe OpTable -> TopologicalGraph (Module 'Renamed) -> Eff r OpTable
--- createOpTable prevOpTable graph = execState (maybeToMonoid prevOpTable) $ traverseGraph_ addDeclsToOpTable graph
---   where
---     addDeclsToOpTable :: Member (State OpTable) r => Module 'Renamed -> Eff r ()
---     addDeclsToOpTable = traverseModule_ addDeclsToOpTable'
-
---     addDeclsToOpTable' :: Member (State OpTable) r => Declaration Renamed -> Eff r ()
---     addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
---         Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
---             let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
---              in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
---         TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
---             let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
---              in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
---         _ -> pass
-
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
 infixDeclToOpInfo (InfixDeclaration name prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
   where
@@ -252,7 +225,6 @@ shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unl
     shuntExpr' (FunctionCall f x) = FunctionCall <$> fixExpr f <*> fixExpr x
     shuntExpr' (TypeApplication e t) = TypeApplication <$> fixExpr e <*> pure (coerceType t)
     shuntExpr' (BinaryOperator (operator, l, r)) = do
-        -- error (showPretty (operator,l,r))
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
         -- ((a `op` b) `op` c) -> (op (op a b)) c

@@ -10,7 +10,6 @@ import Effectful.FileSystem (FileSystem)
 
 import Data.Kind (Constraint)
 import Effectful.Error.Static (Error)
-import Effectful.State.Static.Local
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name)
 import Elara.AST.Select
