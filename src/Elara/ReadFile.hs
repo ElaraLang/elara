@@ -4,17 +4,15 @@ import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
 import Data.HashSet qualified as HashSet
-import Effectful (Eff, IOE, (:>))
-import Effectful.FileSystem (FileSystem, getCurrentDirectory, listDirectory, makeAbsolute, makeRelativeToCurrentDirectory)
+import Effectful (Eff, (:>))
+import Effectful.FileSystem (FileSystem, listDirectory)
 import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error
-import Print (debugPretty)
 import System.IO
 
 -- https://stackoverflow.com/a/6860159
@@ -45,19 +43,6 @@ instance ReportableError ReadFileError where
                 ("Couldn't read file " <> pretty path)
                 []
                 []
-
-readFileString :: Members ReadFilePipelineEffects r => FilePath -> Sem r String
-readFileString path = do
-    contentsBS <- embed $ readFileUniversalNewlineConversion path
-    case decodeUtf8Strict contentsBS of
-        Left ue -> throw (DecodeError path ue)
-        Right contents -> do
-            addFile path contents -- add the file to the diagnostic writer for nicer error messages
-            pure contents
-
-runReadFilePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
-runReadFilePipeline =
-    runErrorOrReport @ReadFileError . subsume_
 
 getInputFiles :: Eff '[FileSystem] (HashSet FilePath)
 getInputFiles = do

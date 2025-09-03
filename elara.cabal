@@ -103,6 +103,8 @@ library
       Elara.Rules
       Elara.Settings
       Elara.Shunt
+      Elara.Shunt.Error
+      Elara.Shunt.Operator
       Elara.ToCore
       Elara.ToCore.Match
       Elara.TypeInfer

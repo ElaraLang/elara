@@ -56,18 +56,18 @@ type InferPipelineEffects =
      ]
         ++ InferEffects SourceRegion
 
-runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
-runInferPipeline e = do
-    let e' =
-            e
-                & subsume_
-                & evalState initialInferState
-                & uniqueGenToIO
-                & runErrorOrReport @(UnifyError SourceRegion)
-                & runErrorOrReport @TypeConvertError
-                & runErrorOrReport @KindInferError
+-- runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
+-- runInferPipeline e = do
+--     let e' =
+--             e
+--                 & subsume_
+--                 & evalState initialInferState
+--                 & uniqueGenToIO
+--                 & runErrorOrReport @(UnifyError SourceRegion)
+--                 & runErrorOrReport @TypeConvertError
+--                 & runErrorOrReport @KindInferError
 
-    snd <$> runInferEffects e'
+--     snd <$> runInferEffects e'
 
 inferModule ::
     forall r.

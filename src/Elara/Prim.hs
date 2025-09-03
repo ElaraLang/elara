@@ -10,6 +10,7 @@ import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourc
 import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Shunt
+import Elara.Shunt.Operator
 
 consName :: TypeName
 consName = "::"

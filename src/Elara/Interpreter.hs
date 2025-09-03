@@ -304,7 +304,7 @@ run = do
             pass
         _ -> throw $ NoMainFound s
 
-runInterpreter :: IsPipeline r => Sem (EffectsAsPrefixOf InterpreterEffects r) a -> Sem r a
-runInterpreter m = do
-    let s = ElaraState{bindings = Map.empty}
-    subsume $ subsume (runErrorOrReport $ evalState s m)
+-- runInterpreter :: IsPipeline r => Sem (EffectsAsPrefixOf InterpreterEffects r) a -> Sem r a
+-- runInterpreter m = do
+--     let s = ElaraState{bindings = Map.empty}
+--     subsume $ subsume (runErrorOrReport $ evalState s m)

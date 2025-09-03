@@ -6,14 +6,13 @@ import Effectful.Error.Static qualified as Eff
 import Elara.AST.Module (Module)
 import Elara.AST.Name
 import Elara.AST.Select
-import Elara.Error (runErrorOrReport, runErrorOrReportEff)
+import Elara.Error (runErrorOrReport)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error
 import Elara.Parse.Module (module')
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Query (ConsQueryEffects, Query (GetFileContents, LexedFile, ModulePath))
 import Elara.ReadFile (FileContents (FileContents))
 import Polysemy
@@ -40,7 +39,7 @@ getParsedFileQuery ::
         (Module 'Frontend)
 getParsedFileQuery fp = do
     (FileContents filePath contents) <- fetch (GetFileContents fp)
-    lexemes <- runErrorOrReportEff @LexerError $ fetch (LexedFile fp)
+    lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
     let tokenStream = createTokenStream contents lexemes
     let parseResult = runParser moduleParser filePath tokenStream
     let firstError = first WParseErrorBundle parseResult
@@ -61,21 +60,3 @@ type ParsePipelineEffects = '[Error (WParseErrorBundle TokenStream ElaraParseErr
 
 createTokenStream :: Text -> [Lexeme] -> TokenStream
 createTokenStream i tokens = TokenStream i tokens False
-
-parsePipeline ::
-    Members ParsePipelineEffects r =>
-    Parser a ->
-    FilePath ->
-    (Text, [Lexeme]) ->
-    Sem r a
-parsePipeline parser fp (fileContents, lexemes) =
-    parse parser fp $ createTokenStream fileContents lexemes
-
--- | Interpret a result of 'parsePipeline' in terms of the common effects
-runParsePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ParsePipelineEffects r) a -> Sem r a
-runParsePipeline = runErrorOrReport @(WParseErrorBundle TokenStream ElaraParseError)
-
-runParsePipelinePure ::
-    Sem (EffectsAsPrefixOf ParsePipelineEffects r) a ->
-    Sem r (Either (WParseErrorBundle TokenStream ElaraParseError) a)
-runParsePipelinePure = runError @(WParseErrorBundle TokenStream ElaraParseError)

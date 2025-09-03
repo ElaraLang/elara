@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Elara.AST.Region where
@@ -154,6 +155,8 @@ type family Unlocate g where
 -- | Newtype wrapper for 'Located' that ignores the location information for its instances
 newtype IgnoreLocation a = IgnoreLocation (Located a)
     deriving (Functor, Foldable, Traversable, Generic)
+
+instance (Eq (IgnoreLocation a), Hashable a) => Hashable (IgnoreLocation a)
 
 makePrisms ''IgnoreLocation
 

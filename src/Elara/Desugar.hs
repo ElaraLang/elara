@@ -20,7 +20,7 @@ import Elara.AST.Region
 import Elara.AST.Select
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Desugar.Error
-import Elara.Error (runErrorOrReportEff)
+import Elara.Error (runErrorOrReport)
 import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
 import Elara.Query (ConsQueryEffects)
 import Elara.Query qualified
@@ -61,7 +61,7 @@ getDesugaredModule ::
         (ConsQueryEffects '[Eff.Error DesugarError])
         (Module 'Desugared)
 getDesugaredModule mn = do
-    parsed <- runErrorOrReportEff @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
+    parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
 
     inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 

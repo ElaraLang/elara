@@ -12,8 +12,9 @@ import Data.Kind (Constraint)
 import Effectful.Error.Static (Error)
 import Effectful.State.Static.Local
 import Elara.AST.Module
-import Elara.AST.Name (ModuleName)
+import Elara.AST.Name (ModuleName, Name)
 import Elara.AST.Select
+import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Data.Pretty (AnsiStyle, Doc)
 import Elara.Data.Unique.Effect qualified as Eff
 import Elara.Desugar.Error (DesugarError)
@@ -26,6 +27,8 @@ import Elara.Parse.Stream (TokenStream)
 import Elara.ReadFile (FileContents)
 import Elara.Rename.Error (RenameError, RenameState)
 import Elara.Settings (CompilerSettings)
+import Elara.Shunt.Error (ShuntError)
+import Elara.Shunt.Operator (OpInfo, OpTable)
 import Rock (Rock)
 
 type StandardQueryEffects = ConsQueryEffects '[]
@@ -63,7 +66,10 @@ data Query (es :: [Effect]) a where
     -- | Query to get a parsed module by module name
     ParsedModule :: ModuleName -> Query (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]) (Module 'Frontend)
     DesugaredModule :: ModuleName -> Query (ConsQueryEffects '[Error DesugarError]) (Module 'Desugared)
-    RenamedModule :: ModuleName -> Query (ConsQueryEffects '[Error RenameError, State RenameState]) (Module 'Renamed)
+    RenamedModule :: ModuleName -> Query (ConsQueryEffects '[Error RenameError]) (Module 'Renamed)
+    ShuntedModule :: ModuleName -> Query (ConsQueryEffects '[Error ShuntError]) (Module 'Shunted)
+    GetOpInfo :: IgnoreLocVarRef Name -> Query (ConsQueryEffects '[]) (Maybe OpInfo)
+    GetOpTableIn :: ModuleName -> Query (ConsQueryEffects '[]) (Maybe OpTable)
 
 deriving instance Eq (Query es a)
 
@@ -83,6 +89,10 @@ instance Hashable (Query es a) where
         ModulePath mn -> h 5 mn
         ParsedModule mn -> h 6 mn
         DesugaredModule mn -> h 7 mn
+        RenamedModule mn -> h 8 mn
+        ShuntedModule mn -> h 9 mn
+        GetOpInfo name -> h 10 name
+        GetOpTableIn mn -> h 11 mn
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =

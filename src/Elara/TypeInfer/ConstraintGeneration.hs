@@ -38,15 +38,15 @@ import Polysemy.State
 import Polysemy.State.Extra (scoped)
 import Polysemy.Writer
 
-runInferEffects :: forall r a loc. Pretty loc => IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
-runInferEffects e = do
-    e
-        & uniqueGenToIO
-        . runErrorOrReport
-        . evalState emptyLocalTypeEnvironment
-        . evalState emptyTypeEnvironment
-        . runWriter
-        . subsume_
+-- runInferEffects :: forall r a loc. Pretty loc => IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
+-- runInferEffects e = do
+--     e
+--         & uniqueGenToIO
+--         . runErrorOrReport
+--         . evalState emptyLocalTypeEnvironment
+--         . evalState emptyTypeEnvironment
+--         . runWriter
+--         . subsume_
 
 generateConstraints :: Infer SourceRegion r => ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
 generateConstraints (Expr (Located loc expr', expectedType)) = do

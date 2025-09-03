@@ -30,15 +30,15 @@ type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] 
     EffectsAsPrefixOf '[] ys = ys
     EffectsAsPrefixOf (x ': xs) ys = x ': EffectsAsPrefixOf xs ys
 
--- | Finalise a pipeline, returning the final diagnostic and the result of the pipeline.
-finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
-finalisePipeline =
-    runM @IO
-        . runDiagnosticWriter
-        . runMaybe
-        . (if elaraDebug then logToStdoutAndFile else destroyDataLog)
-        . structuredDebugToLog
-        . subsume_
+-- -- | Finalise a pipeline, returning the final diagnostic and the result of the pipeline.
+-- finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
+-- finalisePipeline =
+--     runM @IO
+--         . runDiagnosticWriter
+--         . runMaybe
+--         . (if elaraDebug then logToStdoutAndFile else destroyDataLog)
+--         . structuredDebugToLog
+--         . subsume_
 
 logToStdoutAndFile :: Member (Embed IO) r => InterpreterFor (DataLog (Doc AnsiStyle)) r
 logToStdoutAndFile sem = do

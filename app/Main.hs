@@ -24,26 +24,19 @@ import Elara.Data.Unique (
     freshUniqueSupply,
     resetGlobalUniqueSupply,
  )
-import Elara.Error (
-    ReportableError (report),
-    SomeReportableError (..),
-    getReport,
-    runErrorOrReportEff,
-    writeReport,
- )
-import Elara.Prim.Rename (primitiveRenameState)
 
 import Effectful.Concurrent.MVar.Strict (newMVar', runConcurrent)
 import Effectful.Error.Static (Error, runError)
 import Effectful.State.Static.Local qualified as Local
 import Effectful.State.Static.Shared qualified as Shared
 import Elara.Data.Unique.Effect
+import Elara.Error
 import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
 import Elara.Query qualified
-import Elara.Rename.Error (RenameError)
 import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..))
-import Error.Diagnose (Diagnostic, Report (..), TabSize (..), WithUnicode (..), addReport, defaultStyle, printDiagnostic')
+import Elara.Shunt.Error
+import Error.Diagnose (Diagnostic, Report (..), TabSize (..), WithUnicode (..), addReport, defaultStyle, printDiagnostic, printDiagnostic')
 import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
 import Print
@@ -86,16 +79,15 @@ main = run `finally` cleanup
 
         let compilerSettings =
                 CompilerSettings{dumpSettings = DumpSettings{..}}
-        result <- runEff $ runError @SomeReportableError $ runElaraWrapped compilerSettings
-        case result of
-            Left (callStack, error) -> do
-                putTextLn "\n"
-                let diag = getReport error
-                case diag of
-                    Just d -> printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle (addReport mempty d)
-                    Nothing -> putTextLn "No diagnostic information available."
-            Right warnings ->
-                printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle warnings
+        (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
+            result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
+            case result of
+                Left (callStack, error) -> do
+                    report error
+                    pure mempty
+                Right ok -> pass
+
+        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
 
 dumpGraph :: (HasCallStack, Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
 dumpGraph graph nameFunc suffix = do
@@ -110,80 +102,46 @@ dumpGraph graph nameFunc suffix = do
 
     traverseGraph_ dump graph
 
-runElaraWrapped :: (Error SomeReportableError :> es, IOE :> es) => CompilerSettings -> Eff es (Diagnostic (Doc AnsiStyle))
+runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => CompilerSettings -> Eff es ()
 runElaraWrapped settings = runConcurrent $ do
     uniqueVars <- newMVar' freshUniqueSupply
     Shared.evalStateMVar uniqueVars $
         runElara settings
 
-runElara :: (Error SomeReportableError :> es, Shared.State UniqueSupply :> es, IOE :> es) => CompilerSettings -> Eff es (Diagnostic (Doc AnsiStyle))
-runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = fmap fst
-    <$> runFileSystem
-    $ Eff.runDiagnosticWriter
-    $ uniqueGenToState
-    $ Rock.runRockWith Elara.Rules.rules settings
-    $ do
-        start <- liftIO getCPUTime
-        liftIO (createDirectoryIfMissing True outDirName)
+runElara ::
+    ( Error SomeReportableError :> es
+    , Shared.State UniqueSupply :> es
+    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , IOE :> es
+    ) =>
+    CompilerSettings -> Eff es ()
+runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = runFileSystem $
+    uniqueGenToState $
+        Rock.runRockWith Elara.Rules.rules settings $
+            do
+                start <- liftIO getCPUTime
+                liftIO (createDirectoryIfMissing True outDirName)
 
-        files <-
-            toList <$> Rock.fetch Elara.Query.InputFiles
+                files <-
+                    toList <$> Rock.fetch Elara.Query.InputFiles
 
-        loadedModules <- for ["source.elr"] $ \file -> Local.evalState primitiveRenameState $ do
-            (Module (Located _ m)) <- runErrorOrReportEff @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-            runErrorOrReportEff @RenameError $ Rock.fetch $ Elara.Query.RenamedModule (m.name ^. unlocated)
+                loadedModules <- for ["source.elr"] $ \file -> do
+                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
+                    runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule (m.name ^. unlocated)
 
-        printPretty loadedModules
-        -- let graph = createGraph $ toList loadedModules
-        -- coreGraph <- processModules graph (dumpShunted, dumpTyped)
-        -- when dumpCore $ do
-        --     liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
-        -- coreGraph <- uniqueGenToIO $ traverseGraph toANF' coreGraph
-        -- anfCoreGraph <- uniqueGenToIO $ traverseGraph runLiftClosures coreGraph
-
-        -- coreGraph <- traverseGraph (pure . unANF) anfCoreGraph
-
-        -- -- override the core graph with the processed one
-        -- when dumpCore $ do
-        --     liftIO $ dumpGraph coreGraph (view (field' @"name" % to nameText)) ".core.elr"
-
-        -- -- type check the core graph _after_ dumping for debugging purposes
-        -- runErrorOrReport $ traverseGraph_ typeCheckCoreModule anfCoreGraph
-
-        -- runInterpreter $ do
-        --     flip traverseGraphRevTopologically_ coreGraph $ \mod -> do
-        --         Interpreter.loadModule mod
-        --     when True $ do
-        --         Interpreter.run
-        -- putTextLn (showPretty class')
-        -- converted <- runErrorOrReport $ fromEither $ convert class'
-        -- let bs = runPut (writeBinary converted)
-        -- let fp = "build/" <> suitableFilePath class'.name
-        -- liftIO $ createAndWriteFile fp bs
-        -- putTextLn ("Compiled " <> showPretty (class'.name) <> " to " <> toText fp <> "!")
-        -- classes <- runReader java8 (emitGraph coreGraph)
-        -- for_ classes $ \(mn, classes') -> do
-        --     putTextLn ("Compiling " <> showPretty mn <> "...")
-        --     for_ classes' $ \class' -> do
-        --         converted <- runErrorOrReport $ fromEither $ convert class'
-        --         let bs = runPut (writeBinary converted)
-        --         let fp = "build/" <> suitableFilePath class'.name
-        --         liftIO $ createAndWriteFile fp bs
-        --         putTextLn ("Compiled " <> showPretty mn <> " to " <> toText fp <> "!")
-        --     putTextLn ("Successfully compiled " <> showPretty mn <> "!")
-
-        end <- liftIO getCPUTime
-        let t :: Double
-            t = fromIntegral (end - start) * 1e-9
-        printPretty
-            ( Style.varName "Successfully" <+> "compiled "
-                <> Style.punctuation (pretty (length files))
-                <> " classes in "
-                <> Style.punctuation
-                    ( fromString (printf "%.2f" t)
-                        <> "ms!"
+                printPretty loadedModules
+                end <- liftIO getCPUTime
+                let t :: Double
+                    t = fromIntegral (end - start) * 1e-9
+                printPretty
+                    ( Style.varName "Successfully" <+> "compiled "
+                        <> Style.punctuation (pretty (length files))
+                        <> " classes in "
+                        <> Style.punctuation
+                            ( fromString (printf "%.2f" t)
+                                <> "ms!"
+                            )
                     )
-            )
 
 -- when run $ liftIO $ do
 --     printPretty (Style.varName "Running code...")

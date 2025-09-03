@@ -141,12 +141,12 @@ type ToCoreC r = (Members ToCoreEffects r)
 
 type InnerToCoreC r = (Members InnerToCoreEffects r)
 
-runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
-runToCorePipeline =
-    subsume
-        . uniqueGenToIO
-        . runErrorOrReport
-        . evalState primCtorSymbolTable
+-- runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
+-- runToCorePipeline =
+--     subsume
+--         . uniqueGenToIO
+--         . runErrorOrReport
+--         . evalState primCtorSymbolTable
 
 moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
 moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty (m ^. field' @"name")) $ do

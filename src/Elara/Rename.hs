@@ -33,7 +33,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique (Unique, UniqueGen)
 import Elara.Data.Unique.Effect qualified as Eff
 import Elara.Desugar.Error (DesugarError)
-import Elara.Error (runErrorOrReportEff)
+import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Elara.Query (ConsQueryEffects, QueryEffects)
@@ -73,7 +73,7 @@ getRenamedModule ::
         (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState])
         (Module 'Renamed)
 getRenamedModule mn = do
-    m <- runErrorOrReportEff @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+    m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
     rename m
 
 -- runRenamePipeline ::
@@ -204,7 +204,7 @@ addImportToContext imp =
         (imp ^. _Unwrapped % unlocated % field' @"exposing")
 
 getModuleFromName mn = do
-    runErrorOrReportEff @DesugarError $
+    runErrorOrReport @DesugarError $
         Rock.fetch (Elara.Query.DesugaredModule mn)
 
 addModuleToContext :: Rename r => ModuleName -> Exposing 'Desugared -> Eff r ()

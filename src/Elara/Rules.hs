@@ -3,14 +3,19 @@ module Elara.Rules where
 import Data.Text qualified as Text
 import Effectful
 import Effectful.FileSystem.IO
+import Effectful.State.Static.Local qualified as Local
+import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (ModuleName (..))
 import Elara.Desugar (getDesugaredModule)
+import Elara.Error
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
+import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
 import Elara.Settings (CompilerSettings)
+import Elara.Shunt (runGetOpInfoQuery, runGetShuntedModuleQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -42,4 +47,9 @@ rules compilerSettings key = do
                 _ -> error $ "Ambiguous module name: " <> showPretty mn
         ParsedModule mn -> getParsedModuleQuery mn
         DesugaredModule mn -> inject $ getDesugaredModule mn
-        RenamedModule mn -> inject $ getRenamedModule mn
+        RenamedModule mn -> Local.evalState primitiveRenameState $ inject $ getRenamedModule mn
+        ShuntedModule mn -> do
+            (mod, warnings) <- runWriter $ inject $ runGetShuntedModuleQuery mn
+            traverse_ report warnings
+            pure mod
+        GetOpInfo opName -> inject $ runGetOpInfoQuery opName
