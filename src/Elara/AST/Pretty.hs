@@ -162,7 +162,7 @@ prettyValueDeclAnnotations (ValueDeclAnnotations Nothing) = ""
 prettyValueDeclAnnotations (ValueDeclAnnotations (Just x)) = pretty x
 
 prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
-prettyValueTypeDef name t = "def" <+> pretty name <+> punctuation ":" <+> pretty t
+prettyValueTypeDef name t = keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t
 
 prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> TypeDeclAnnotations ast -> Doc AnsiStyle
 prettyTypeDeclaration name vars t _ =
