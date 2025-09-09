@@ -1,5 +1,3 @@
-
-
 module Elara.TypeInfer.Environment where
 
 import Data.GADT.Compare (GEq (..))
@@ -38,7 +36,7 @@ data TypeEnvKey
       TermVarKey (Qualified VarName)
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable  TypeEnvKey
+instance Hashable TypeEnvKey
 
 instance Pretty TypeEnvKey where
     pretty (DataConKey con) = pretty con
@@ -49,6 +47,11 @@ addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
 addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Type loc -> Eff r ()
 addType' key ty = modify (addType key ty)
+
+lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Eff r (Maybe (Type loc))
+lookupTypeMaybe key = do
+    TypeEnvironment env <- get
+    pure (Map.lookup key env)
 
 lookupType ::
     ( Error (InferError loc) :> r

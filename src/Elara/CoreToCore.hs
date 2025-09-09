@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 {- | Entrypoint for the Core to Core stage of compilation
 This stage performs optimisations and transformations on the Core AST
 -}

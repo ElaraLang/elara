@@ -1,4 +1,3 @@
-
 {-# LANGUAGE QuantifiedConstraints #-}
 
 module Rock.Memo where

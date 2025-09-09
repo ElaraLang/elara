@@ -53,8 +53,25 @@ runGetShuntedModuleQuery mn = do
     renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
     shunt renamed
 
+runShuntedDeclarationByNameQuery :: Qualified Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Declaration 'Shunted)
+runShuntedDeclarationByNameQuery (Qualified name modName) = do
+    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule modName
+
+    let matchingBodies =
+            mod
+                ^.. _Unwrapped
+                % unlocated
+                % field' @"declarations"
+                % each
+                % filtered (\b -> b ^. declarationName % unlocated == name)
+
+    case matchingBodies of
+        [body] -> pure body
+        _ -> error "ambigious"
+
 runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
+    -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
     let matchingBodies =
             mod

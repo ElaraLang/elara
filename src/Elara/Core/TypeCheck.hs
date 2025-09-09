@@ -73,7 +73,7 @@ isInScope (Id name@(Local _) _ _) s = Set.member name (scope s)
 isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
 isInScope _ _ = False
 
-typeCheckCoreModule :: ((Error TypeCheckError) :> r, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
+typeCheckCoreModule :: (Error TypeCheckError :> r, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
 typeCheckCoreModule (CoreModule n m) = do
     let initialState = TcState{scope = mempty}
 
@@ -95,7 +95,7 @@ varType :: Var -> Core.Type
 varType (TyVar _) = error "TyVar"
 varType (Id _ t _) = t
 
-typeCheck :: ((Error TypeCheckError) :> r, (State TcState) :> r, StructuredDebug :> r, HasCallStack) => ANF.Expr Var -> Eff r Core.Type
+typeCheck :: (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.Expr Var -> Eff r Core.Type
 typeCheck (ANF.Let bind in') = case bind of
     NonRecursive (v, e) -> debugWith ("typeCheck NonRecursive Let: " <> pretty v) $ do
         eType <- typeCheckC e
@@ -171,7 +171,7 @@ typeCheckLit lit = case lit of
     Core.Unit -> Core.ConTy unitCon
 
 typeCheckA ::
-    ((Error TypeCheckError) :> r, (State TcState) :> r, StructuredDebug :> r) =>
+    (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r) =>
     ANF.AExpr Var -> Eff r Core.Type
 typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope

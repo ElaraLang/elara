@@ -6,7 +6,4 @@ import Tuple
 import String
 
 
-
-let main = a
-
-let a = main
+let main = (println (listToString (zip [1, 2, 3] [4,5,6])))

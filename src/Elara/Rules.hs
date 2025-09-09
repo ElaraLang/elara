@@ -14,9 +14,10 @@ import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
+import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery, sccContainingRoot)
 import Elara.Settings (CompilerSettings)
-import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery)
-import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runGetTypeOfQuery)
+import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery, runShuntedDeclarationByNameQuery)
+import Elara.TypeInfer (inferSCC, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -52,7 +53,17 @@ rules compilerSettings key = do
             (mod, warnings) <- runWriter $ inject $ runGetShuntedModuleQuery mn
             traverse_ report warnings
             pure mod
+        ShuntedDeclarationByName name -> inject $ runShuntedDeclarationByNameQuery name
         GetOpInfo opName -> inject $ runGetOpInfoQuery opName
         GetOpTableIn mn -> inject $ runGetOpTableInQuery mn
+        FreeVarsOf name -> inject $ runFreeVarsQuery name
+        ReachableSubgraphOf name -> inject $ runReachableSubgraphQuery name
+        GetSCCsOf name -> do
+            subgraph <- inject $ runReachableSubgraphQuery name
+            pure $ buildSCCs subgraph
+        SCCKeyOf name -> do
+            error "SCCKeyOf not implemented"
         TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
-        TypeOf key -> inject $ runGetTypeOfQuery key
+        InferSCC sccKey -> inject $ runInferSCCQuery sccKey
+        TypeOf key -> inject $ runTypeOfQuery key
+        KindOf qtn -> inject $ runKindOfQuery qtn

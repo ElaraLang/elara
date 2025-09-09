@@ -29,7 +29,7 @@ import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Prim (boolName, mkPrimQual)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
-import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, lookupLocalVar, withLocalType)
+import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
@@ -44,8 +44,19 @@ generateConstraints (Expr (Located loc expr', expectedType)) = do
     (typedExpr', monotype) <- generateConstraints' expr'
     pure (Expr (Located loc typedExpr', monotype), monotype)
 
-lookupType :: QueryEffects r => Rock.Rock Elara.Query.Query :> r => TypeEnvKey -> Eff r (Type SourceRegion)
-lookupType key = Rock.fetch (Elara.Query.TypeOf key)
+lookupType ::
+    QueryEffects r =>
+    Rock.Rock Elara.Query.Query :> r =>
+    State (TypeEnvironment SourceRegion) :> r =>
+    TypeEnvKey -> Eff r (Type SourceRegion)
+lookupType key = do
+    -- try the local environment first to avoid unnecessary queries / infinite loops
+    inEnv <- lookupTypeMaybe key
+    case inEnv of
+        Just ty -> pure ty
+        Nothing -> do
+            debug ("Type not found in environment, querying: " <> pretty key)
+            Rock.fetch (Elara.Query.TypeOf key)
 
 generateConstraints' :: Infer SourceRegion r => ShuntedExpr' -> Eff r (TypedExpr', Monotype SourceRegion)
 generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty expr') $ case expr' of
@@ -175,7 +186,6 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
         pure (If typedCond typedThen typedElse, thenType)
     TypeApplication e ty -> error "i dont know what to do with type applications yet sorry"
-
     -- MATCH
     -- (match (e: τ) with { p1 -> e1; ...; pn -> en }) : τr
     Match e cases -> do

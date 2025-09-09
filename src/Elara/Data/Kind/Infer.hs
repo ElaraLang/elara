@@ -39,25 +39,34 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique, UniqueId)
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.Logging (debug, debugWith)
 import Elara.Prim (primKindCheckContext)
+import Elara.Query qualified
+import Elara.Query.Effects (QueryEffects)
 import Elara.Utils (uncurry3)
 import Error.Diagnose
 import Optics (set, traverseOf_, universeOf)
+import Rock qualified
 import TODO (todo)
-
-type KindVar = UniqueId
-
-type TypeVar = Unique LowerAlphaName
 
 data InferState = InferState
     { env :: Map (Either (Qualified TypeName) TypeVar) KindVar
+    -- ^ a mapping from type variables and named types to their kind variables
     , kindEnv :: Map (Qualified TypeName) ElaraKind
+    -- ^ predefined kinds for named types
     , constraints :: [(ElaraKind, ElaraKind)]
     , substitution :: Map KindVar ElaraKind
     }
     deriving (Eq, Show, Generic, Data)
 
-type KindInfer r = (State InferState :> r, Error KindInferError :> r, UniqueGen :> r, HasCallStack)
+type KindInfer r =
+    ( State InferState :> r
+    , Error KindInferError :> r
+    , UniqueGen :> r
+    , HasCallStack
+    , QueryEffects r
+    , Rock.Rock Elara.Query.Query :> r
+    )
 
 initialInferState :: InferState
 initialInferState =
@@ -82,10 +91,10 @@ instance ReportableError KindInferError where
     report (UnknownKind name kinds) =
         writeReport $
             Err
-                (Just "Unknown Kind")
+                (Just "Unknown Kind of Type")
                 ( vsep
-                    [ "Unknown kind" <+> pretty name
-                    , "Known kinds:" <+> pretty (Map.keysSet kinds)
+                    [ "Unknown kind of type" <+> pretty name
+                    , "We know kinds for:" <+> pretty (Map.keysSet kinds)
                     , pretty $ prettyCallStack callStack
                     ]
                 )
@@ -125,10 +134,10 @@ instance ReportableError KindInferError where
                 []
                 []
 
-declareTypeVar :: (State InferState) :> r => TypeVar -> KindVar -> Eff r ()
+declareTypeVar :: State InferState :> r => TypeVar -> KindVar -> Eff r ()
 declareTypeVar var kindVar = modify (over #env (Map.insert (Right var) kindVar))
 
-declareNamedType :: (State InferState) :> r => Qualified TypeName -> KindVar -> Eff r ()
+declareNamedType :: State InferState :> r => Qualified TypeName -> KindVar -> Eff r ()
 declareNamedType name kindVar = modify (over #env (Map.insert (Left name) kindVar))
 
 elaborate ::
@@ -137,7 +146,7 @@ elaborate ::
     [Located (Unique LowerAlphaName)] ->
     ShuntedTypeDeclaration ->
     Eff r (KindVar, MidKindedTypeDeclaration)
-elaborate tName tvs t = do
+elaborate tName tvs t = debugWith ("elaborate: " <> pretty tName) $ do
     varKinds <- for tvs $ \tv -> do
         kindVar <- makeUniqueId
         declareTypeVar (tv ^. unlocated) kindVar
@@ -192,9 +201,12 @@ infer kindEnv decls = do
         pure (kind, body')
 
 inferKind ::
-    ((State InferState) :> r, Error KindInferError :> r, UniqueGen :> r) =>
-    Qualified TypeName -> [Located TypeVar] -> ShuntedTypeDeclaration -> Eff r (ElaraKind, KindedTypeDeclaration)
-inferKind name tvs t = do
+    _ =>
+    Qualified TypeName ->
+    [Located TypeVar] ->
+    ShuntedTypeDeclaration ->
+    Eff r (ElaraKind, KindedTypeDeclaration)
+inferKind name tvs t = debugWith ("inferKind: " <> pretty name) $ do
     kindVar <- makeUniqueId
     declareNamedType name kindVar
 
@@ -202,6 +214,7 @@ inferKind name tvs t = do
     solveConstraints
 
     kind <- lookupKindVarInSubstitution kv
+    debug $ "Inferred kind for" <+> pretty name <+> "=" <+> pretty kind
     body <- case decl' of
         Alias a -> do
             todo
@@ -231,16 +244,26 @@ lookupKindVarInSubstitution var = do
         Just kind -> pure kind
         Nothing -> pure (VarKind var)
 
-lookupNameKindVar :: ((State InferState) :> r, UniqueGen :> r, (Error KindInferError) :> r) => Qualified TypeName -> Eff r KindVar
-lookupNameKindVar name = do
+lookupNameKindVar ::
+    ( State InferState :> r
+    , UniqueGen :> r
+    , Error KindInferError :> r
+    , QueryEffects r
+    , Rock.Rock Elara.Query.Query :> r
+    ) =>
+    Qualified TypeName -> Eff r KindVar
+lookupNameKindVar name = debugWith ("lookupNameKindVar: " <> pretty name) $ do
     InferState{..} <- get
-    case Map.lookup name kindEnv of
-        Just kindVar -> do
-            newKindVar <- makeUniqueId
-            newEqualityConstraint (VarKind newKindVar) kindVar
-            pure newKindVar
+    case Map.lookup (Left name) env of
+        Just kv -> pure kv
         Nothing ->
-            maybe (throwError $ UnknownKind name kindEnv) pure (Map.lookup (Left name) env)
+            case Map.lookup name kindEnv of
+                Just kindVar -> do
+                    newKindVar <- makeUniqueId
+                    newEqualityConstraint (VarKind newKindVar) kindVar
+                    pure newKindVar
+                Nothing -> debugWith ("lookupNameKindVar: " <> pretty name <> " not found") $ do
+                    Rock.fetch (Elara.Query.KindOf name) ?:! throwError (UnknownKind name kindEnv)
 
 -- | Find the kind variable of a type variable in the environment.
 lookupVarKindVar :: KindInfer r => TypeVar -> Eff r KindVar
@@ -250,7 +273,12 @@ lookupVarKindVar var = do
         Just kindVar -> pure kindVar
         Nothing -> throwError $ UnboundVar var env
 
-newEqualityConstraint :: (State InferState) :> r => ElaraKind -> ElaraKind -> Eff r ()
+lookupKindVarMaybe :: KindInfer r => Either (Qualified TypeName) TypeVar -> Eff r (Maybe KindVar)
+lookupKindVarMaybe key = do
+    InferState{..} <- get
+    pure $ Map.lookup key env
+
+newEqualityConstraint :: State InferState :> r => ElaraKind -> ElaraKind -> Eff r ()
 newEqualityConstraint a b = modify (over #constraints ((a, b) :))
 
 elaborateType :: KindInfer r => ShuntedType -> Eff r MidKindedType
@@ -337,7 +365,13 @@ getAnn' :: MidKindedType -> ElaraKind
 getAnn' (Type (_, b)) = VarKind b
 
 solveConstraints ::
-    ((State InferState) :> r, (Error KindInferError) :> r, HasCallStack, UniqueGen :> r) =>
+    ( State InferState :> r
+    , Error KindInferError :> r
+    , HasCallStack
+    , UniqueGen :> r
+    , QueryEffects r
+    , Rock.Rock Elara.Query.Query :> r
+    ) =>
     Eff r ()
 solveConstraints = do
     constraint <- do

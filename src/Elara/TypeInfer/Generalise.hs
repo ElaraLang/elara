@@ -11,9 +11,9 @@ import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type
 
 import Effectful
-import Effectful.State.Static.Local (get)
+import Effectful.State.Static.Local (State, get)
 
-generalise :: forall r. Infer SourceRegion r => Monotype SourceRegion -> Eff r (Polytype SourceRegion)
+generalise :: forall r. (StructuredDebug :> r, State (TypeEnvironment SourceRegion) :> r) => Monotype SourceRegion -> Eff r (Polytype SourceRegion)
 generalise ty = do
     env <- get @(TypeEnvironment SourceRegion)
     let freeVars = ftv ty
