@@ -67,7 +67,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, consName]
+primitiveTypes = [stringName, charName, intName, boolName, consName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
