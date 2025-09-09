@@ -67,7 +67,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, boolName, consName]
+primitiveTypes = [stringName, charName, intName, consName]
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
@@ -75,8 +75,7 @@ primKindCheckContext =
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
         <> fromList
             [ (Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)
-            , (fullListName, FunctionKind TypeKind TypeKind)
-            ] -- Except for IO and List which is kind Type -> Type
+            ] -- Except for IO which is kind Type -> Type
 
 primOpTable :: OpTable
 primOpTable =
