@@ -73,7 +73,10 @@ primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
     -- assume all primitive types are kind Type
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
-        <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
+        <> fromList
+            [ (Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)
+            , (fullListName, FunctionKind TypeKind TypeKind)
+            ] -- Except for IO and List which is kind Type -> Type
 
 primOpTable :: OpTable
 primOpTable =
