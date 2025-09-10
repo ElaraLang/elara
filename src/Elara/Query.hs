@@ -98,6 +98,7 @@ data Query (es :: [Effect]) a where
     GetOptimisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
+    GetFinalisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
 
 deriving instance Eq (Query es a)
 
@@ -136,6 +137,7 @@ instance Hashable (Query es a) where
         GetOptimisedCoreModule mn -> h 24 mn
         GetANFCoreModule mn -> h 25 mn
         GetClosureLiftedModule mn -> h 26 mn
+        GetFinalisedCoreModule mn -> h 27 mn
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =
@@ -171,3 +173,4 @@ instance HasMemoiseE Query where
         GetOptimisedCoreModule{} -> \x -> x
         GetANFCoreModule{} -> \x -> x
         GetClosureLiftedModule{} -> \x -> x
+        GetFinalisedCoreModule{} -> \x -> x

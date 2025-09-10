@@ -6,7 +6,7 @@ import Effectful.State.Static.Local qualified as Local
 import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (ModuleName (..))
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
-import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetOptimisedCoreModuleQuery)
+import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
 import Elara.Error
 import Elara.Lexer.Reader (getLexedFile)
@@ -75,3 +75,4 @@ rules compilerSettings key = do
         GetOptimisedCoreModule mn -> inject $ runGetOptimisedCoreModuleQuery mn
         GetANFCoreModule mn -> inject $ runGetANFCoreModuleQuery mn
         GetClosureLiftedModule mn -> inject $ runGetClosureLiftedModuleQuery mn
+        GetFinalisedCoreModule mn -> inject $ runGetFinalisedCoreModuleQuery mn

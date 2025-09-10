@@ -14,6 +14,8 @@ import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
+import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
+import Elara.Error (runErrorOrReport)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Polysemy hiding (transform)
@@ -25,7 +27,7 @@ pattern Infix :: NonEmpty Text -> Text -> CoreExpr -> CoreExpr -> CoreExpr
 pattern Infix mn op a b <-
     App
         ( App
-                (Var (Id (Global' (Qualified op (ModuleName mn))) _ _))
+                (Var (Id (Global (Qualified op (ModuleName mn))) _ _))
                 a
             )
         b
@@ -89,6 +91,12 @@ runGetANFCoreModuleQuery ::
 runGetANFCoreModuleQuery mn = do
     coreModule <- Rock.fetch (Elara.Query.GetOptimisedCoreModule mn)
     moduleToANF coreModule
+
+runGetFinalisedCoreModuleQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+runGetFinalisedCoreModuleQuery mn = do
+    coreModule <- Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
+    runErrorOrReport @TypeCheckError $ typeCheckCoreModule coreModule
+    pure (unANF coreModule)
 
 moduleToANF ::
     ToANF r =>

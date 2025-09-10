@@ -75,4 +75,4 @@ undefinedId :: UniqueGen :> r => Eff r Var
 undefinedId = do
     a <- makeUnique (Just "a")
     let tvA = TypeVariable a TypeKind
-    pure $ Id (Global $ Identity $ mkPrimQual "undefined") (ForAllTy tvA (TyVarTy tvA)) Nothing
+    pure $ Id (Global $ mkPrimQual "undefined") (ForAllTy tvA (TyVarTy tvA)) Nothing

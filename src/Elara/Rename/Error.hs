@@ -89,7 +89,7 @@ instance ReportableError RenameError where
                             [ Hint $
                                 vsep
                                     [ "This name is defined in the following modules, but none of them are imported:"
-                                    , hsep (punctuate comma (ns ^.. each % _As @"Global" % unlocated % field' @"qualifier" % to pretty))
+                                    , hsep (punctuate comma (ns ^.. each % _Ctor' @"Global" % unlocated % field' @"qualifier" % to pretty))
                                     , "Try importing one of the modules."
                                     ]
                             ]

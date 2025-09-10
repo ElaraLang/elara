@@ -153,7 +153,7 @@ generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty 
 
         let isRecursive =
                 anyOf
-                    (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
+                    (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _Ctor' @"Local" % unlocated)
                     (== varName)
                     varExpr
 

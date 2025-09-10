@@ -28,12 +28,13 @@ import Effectful.Error.Static (Error, runError)
 import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.Interpreter qualified as Interpreter
 import Elara.Logging (structuredDebugToLog)
 import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.Rules qualified
-import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..))
+import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..), RunWithOption (..))
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
@@ -79,7 +80,7 @@ main = run `finally` cleanup
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
 
         let compilerSettings =
-                CompilerSettings{dumpSettings = DumpSettings{..}}
+                CompilerSettings{dumpSettings = DumpSettings{runWith = if run then RunWithInterpreter else RunWithNone, ..}}
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
             result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
             case result of
@@ -87,7 +88,7 @@ main = run `finally` cleanup
                     report error
                     printPretty callStack
                     pure mempty
-                Right ok -> pass
+                Right () -> printPretty "Done"
 
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
 
@@ -129,13 +130,19 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
                                 files <-
                                     toList <$> Rock.fetch Elara.Query.InputFiles
 
-                                loadedModules <- for ["source.elr"] $ \file -> do
-                                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                    module' <- Rock.fetch $ Elara.Query.GetClosureLiftedModule (m.name ^. unlocated)
-                                    runErrorOrReport @TypeCheckError $ typeCheckCoreModule module'
-                                    pure module'
+                                -- loadedModules <- for ["source.elr"] $ \file -> do
+                                --     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
+                                --     module' <- Rock.fetch $ Elara.Query.GetClosureLiftedModule (m.name ^. unlocated)
+                                --     runErrorOrReport @TypeCheckError $ typeCheckCoreModule module'
+                                --     pure module'
 
-                                printPretty loadedModules
+                                if runWith == RunWithInterpreter
+                                    then
+                                        Interpreter.runInterpreter Interpreter.run
+                                    else
+                                        printPretty (Style.warning "Warning: " <> "nothing to do.")
+
+                                -- printPretty loadedModules
                                 end <- liftIO getCPUTime
                                 let t :: Double
                                     t = fromIntegral (end - start) * 1e-9

@@ -114,7 +114,7 @@ liftClosuresA' env (ANF.Lam v e) = do
                     guessedType <- traceFn guesstimateExprType (fromANF e)
                     pure $ t `Core.FuncTy` guessedType
                 Core.TyVar _ -> error "liftClosuresA': TyVar"
-            let id = Core.Id (Local' v') lambdaType Nothing
+            let id = Core.Id (Local v') lambdaType Nothing
             tell [(id, ANF.AExpr $ Lam v e)]
             pure $ Var id
 liftClosuresA' env (ANF.TyApp e t) = do

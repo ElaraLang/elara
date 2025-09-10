@@ -67,7 +67,7 @@ toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
 
     lift $ toANFRec other $ \e -> do
         exprType <- lift $ traceFn guesstimateExprType (fromANFCExpr e)
-        let id = Core.Id (Local' v) exprType Nothing
+        let id = Core.Id (Local v) exprType Nothing
 
         l' <- lift $ k $ ANF.Var id
         lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'

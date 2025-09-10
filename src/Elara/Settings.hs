@@ -11,4 +11,10 @@ data DumpSettings = DumpSettings
     , dumpShunted :: Bool
     , dumpTyped :: Bool
     , dumpCore :: Bool
+    , runWith :: RunWithOption
     }
+
+data RunWithOption
+    = RunWithNone
+    | RunWithInterpreter
+    deriving (Eq, Show)
