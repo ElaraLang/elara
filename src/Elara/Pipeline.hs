@@ -17,21 +17,8 @@ import Elara.Error (DiagnosticWriter)
 import Elara.Logging
 import Error.Diagnose (Diagnostic)
 import Polysemy (Effect, Embed, InterpreterFor, Members)
-import Polysemy.Log (DataLog, interpretDataLog)
-import Polysemy.Maybe (MaybeE)
 import Print (printPretty)
 import System.IO qualified
-
--- | All stages of a pipeline must be interpreted into this effect stack.
-type PipelineResultEff = '[MaybeE, DiagnosticWriter (Doc AnsiStyle), StructuredDebug, Embed IO]
-
-type IsPipeline r = Members PipelineResultEff r
-
-type PipelineRes a = IO (Diagnostic (Doc AnsiStyle), Maybe a)
-
-type family EffectsAsPrefixOf (effects :: [Effect]) (r :: [Effect]) :: [Effect] where
-    EffectsAsPrefixOf '[] ys = ys
-    EffectsAsPrefixOf (x ': xs) ys = x ': EffectsAsPrefixOf xs ys
 
 -- Create a co-log LogAction that prints to stdout and appends to a log file.
 -- Returns an IO action that constructs the LogAction so callers (e.g. `Main`) can
@@ -51,6 +38,3 @@ runLogToStdoutAndFile eff = do
                     liftIO $ printPretty doc *> Text.hPutStrLn handle (prettyToUnannotatedText doc)
                 )
     runLogAction la eff
-
-destroyDataLog :: InterpreterFor (DataLog (Doc AnsiStyle)) r
-destroyDataLog = interpretDataLog (const pass)
