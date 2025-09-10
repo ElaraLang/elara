@@ -219,7 +219,7 @@ desugarBinaryOperator (MkBinaryOperator lop) = MkBinaryOperator <$> traverseOf u
     desugarBinaryOperator' (Infixed o) = pure (Infixed o)
 
 desugarPattern :: FrontendPattern -> Desugar DesugaredPattern
-desugarPattern (Pattern lp) =
+desugarPattern p@(Pattern lp) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated desugarPattern')
@@ -237,6 +237,12 @@ desugarPattern (Pattern lp) =
     desugarPattern' UnitPattern = pure UnitPattern
     desugarPattern' (ListPattern pats) = ListPattern <$> traverse desugarPattern pats
     desugarPattern' (ConsPattern as) = ConsPattern <$> traverseOf each desugarPattern as
+    desugarPattern' (TuplePattern (_ :| [])) = throwError (TuplePatternTooShort p)
+    desugarPattern' (TuplePattern (p :| (p1 : ps))) = do
+        p' <- desugarPattern p
+        p1' <- desugarPattern p1
+        ps' <- traverse desugarPattern ps
+        pure (TuplePattern (p', p1' :| ps'))
 
 {-
 

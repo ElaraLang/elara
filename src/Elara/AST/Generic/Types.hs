@@ -151,6 +151,7 @@ data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))
     | ConstructorPattern (ASTLocate ast (Select "ConPat" ast)) [Pattern ast]
     | ListPattern !(Select "ListPattern" ast)
+    | TuplePattern !(Select "TuplePattern" ast)
     | ConsPattern !(Select "ConsPattern" ast)
     | WildcardPattern
     | IntegerPattern Integer

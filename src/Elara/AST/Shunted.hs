@@ -57,6 +57,8 @@ type instance Select "ConsPattern" 'Shunted = DataConCantHappen
 
 type instance Select "ListPattern" 'Shunted = DataConCantHappen
 
+type instance Select "TuplePattern" 'Shunted = DataConCantHappen
+
 type instance Select "TypeApplication" 'Shunted = ShuntedType
 
 -- Selections for 'DeclarationBody'

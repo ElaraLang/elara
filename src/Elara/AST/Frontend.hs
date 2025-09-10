@@ -50,6 +50,7 @@ type instance Select "VarPat" 'Frontend = LowerAlphaName
 type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
 
 type instance Select "ListPattern" 'Frontend = [FrontendPattern]
+type instance Select "TuplePattern" 'Frontend = NonEmpty FrontendPattern
 
 type instance Select "ConsPattern" 'Frontend = (FrontendPattern, FrontendPattern)
 

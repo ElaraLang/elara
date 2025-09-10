@@ -70,6 +70,9 @@ infixDeclarationWithoutValue = "E10010"
 duplicateFixityAnnotations :: ErrorCode
 duplicateFixityAnnotations = "E10011"
 
+tuplePatternTooShort :: ErrorCode
+tuplePatternTooShort = "E10012"
+
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
 

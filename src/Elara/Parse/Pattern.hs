@@ -1,15 +1,17 @@
 module Elara.Parse.Pattern (patParser) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import Data.List.NonEmpty ((<|))
 import Elara.AST.Frontend
 import Elara.AST.Generic (Pattern (..), Pattern' (..))
-import Elara.AST.Region (Located)
+import Elara.AST.Region (Located, unlocated)
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (liftedBinary)
+import Elara.Parse.Combinators (liftedBinary, sepBy1', sepEndBy1')
 import Elara.Parse.Literal
 import Elara.Parse.Names (conName, varId)
 import Elara.Parse.Primitives (Parser, inParens, located, token_)
-import Text.Megaparsec (choice, sepEndBy, try, (<?>))
+import Print (debugPretty)
+import Text.Megaparsec (choice, sepEndBy, sepEndBy1, try, (<?>))
 
 atomicPatParser :: Parser FrontendPattern
 atomicPatParser =
@@ -17,6 +19,7 @@ atomicPatParser =
         [ try literalPattern
         , varPattern
         , wildcardPattern
+        , try tuplePattern
         , inParens rpat
         , unaryConstructorPattern
         , listPattern
@@ -61,6 +64,15 @@ listPattern = locatedPattern $ do
     elements <- sepEndBy patParser (token_ TokenComma)
     token_ TokenRightBracket
     pure $ ListPattern elements
+
+tuplePattern :: Parser FrontendPattern
+tuplePattern = locatedPattern $ do
+    elements <- inParens $ do
+        first <- patParser
+        token_ TokenComma
+        rest <- sepBy1' patParser (token_ TokenComma)
+        pure (first <| rest)
+    pure $ TuplePattern elements
 
 -- consPattern :: Parser FrontendPattern
 -- consPattern i = locatedPattern $ do

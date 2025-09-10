@@ -63,6 +63,7 @@ type instance Select "ConPat" 'Typed = Qualified TypeName
 type instance Select "ListPattern" 'Typed = DataConCantHappen
 
 type instance Select "ConsPattern" 'Typed = DataConCantHappen
+type instance Select "TuplePattern" 'Typed = DataConCantHappen
 
 type instance Select "TypeApplication" Typed = Monotype SourceRegion
 

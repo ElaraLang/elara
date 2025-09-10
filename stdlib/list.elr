@@ -6,9 +6,9 @@ import String
 def zip : List a -> List b -> List (Tuple2 a b)
 let zip l1 l2 =
     match (l1, l2) with
-        Tuple2 Nil _ -> Nil
-        Tuple2 _ Nil -> Nil
-        Tuple2 (Cons x xs) (Cons y ys) -> Cons (Tuple2 x y) (zip xs ys)
+        (Nil, _) -> Nil
+        (_, Nil) -> Nil
+        (Cons x xs, Cons y ys) -> Cons (x, y) (zip xs ys)
 
 def listToString : List a -> String
 let listToString l =

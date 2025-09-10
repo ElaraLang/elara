@@ -1,6 +1,7 @@
 module Elara.Desugar.Error where
 
 import Elara.AST.Desugared
+import Elara.AST.Frontend (FrontendPattern)
 import Elara.AST.Generic
 import Elara.AST.Name
 import Elara.AST.Region
@@ -16,15 +17,18 @@ data DesugarError
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | DuplicateAnnotations (ValueDeclAnnotations Desugared) (ValueDeclAnnotations Desugared)
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
-    deriving (Typeable, Show)
+    | TuplePatternTooShort FrontendPattern
+    deriving (Typeable, Show, Generic)
 
 instance Exception DesugarError
 
+instance Pretty DesugarError
+
 instance ReportableError DesugarError where
-    report (DefWithoutLet _) =
-        writeReport $ Err (Just Codes.defWithoutLet) "Def without let" [] []
-    report (DuplicateDeclaration a b) =
-        writeReport $
+    getReport (DefWithoutLet _) =
+        Just $ Err (Just Codes.defWithoutLet) "Def without let" [] []
+    getReport (DuplicateDeclaration a b) =
+        Just $
             Err
                 (Just Codes.duplicateDefinition)
                 ("Duplicate declaration names:" <+> pretty a)
@@ -34,12 +38,22 @@ instance ReportableError DesugarError where
                 [ Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
                 , Hint "Rename one of the declarations"
                 ]
-    report (PartialNamesNotEqual a b) =
-        writeReport $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
-    report (InfixWithoutDeclaration n _ l) =
-        writeReport $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
-    report (DuplicateAnnotations a b) =
-        writeReport $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
+    getReport (PartialNamesNotEqual a b) =
+        Just $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
+    getReport (InfixWithoutDeclaration n _ l) =
+        Just $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
+    getReport (DuplicateAnnotations a b) =
+        Just $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
+    getReport (TuplePatternTooShort p) =
+        Just $
+            Err
+                (Just Codes.tuplePatternTooShort)
+                "Tuple patterns must have at least 2 elements"
+                [(sourceRegionToDiagnosePosition $ view sourceRegion p, This "This tuple pattern is too short")]
+                [ Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
+                , Note "This is likely an internal error, as these cases should be caught by the parser"
+                , Hint "If you want an empty tuple, use ()"
+                ]
 
 {- | A partial declaration stores a desugared part of a declaration
 This allows merging of declarations with the same name

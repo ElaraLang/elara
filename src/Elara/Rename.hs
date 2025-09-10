@@ -509,6 +509,13 @@ renamePattern (Pattern fp@(Located loc _, _)) =
         p1' <- renamePattern p1
         p2' <- renamePattern p2
         pure $ ConstructorPattern (Located loc consCtorName) [p1', p2']
+    renamePattern' (TuplePattern (p1, p2 :| [])) = do
+        -- turn (x, y) into Elara.Prim.Tuple2 x y
+        let tupleCtorName = TypeName <$> tuple2CtorName
+        p1' <- renamePattern p1
+        p2' <- renamePattern p2
+        pure $ ConstructorPattern (Located loc tupleCtorName) [p1', p2']
+    renamePattern' (TuplePattern _) = error "renamePattern': TuplePattern more than length 2"
     renamePattern' (VarPattern vn) = do
         vn' <- uniquify vn
         Eff.modify (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local (NormalVarName <<$>> vn')))

@@ -64,6 +64,7 @@ deriving instance
     , Eq (Select "PatternType" ast)
     , Eq (Select "ConsPattern" ast)
     , Eq (Select "ListPattern" ast)
+    , Eq (Select "TuplePattern" ast)
     , Eq (ASTLocate ast (Pattern' ast))
     ) =>
     Eq (Pattern' ast)
@@ -74,6 +75,7 @@ deriving instance
     , Ord (Select "PatternType" ast)
     , Ord (Select "ConsPattern" ast)
     , Ord (Select "ListPattern" ast)
+    , Ord (Select "TuplePattern" ast)
     , Ord (ASTLocate ast (Pattern' ast))
     ) =>
     Ord (Pattern' ast)
@@ -241,6 +243,7 @@ deriving instance
     , Show (Select "PatternType" ast)
     , Show (Select "ConsPattern" ast)
     , Show (Select "ListPattern" ast)
+    , Show (Select "TuplePattern" ast)
     , Show (ASTLocate ast (Pattern' ast))
     ) =>
     Show (Pattern' ast)
@@ -329,6 +332,7 @@ deriving instance
     , (Data (ASTLocate ast (Select "ConPat" ast)))
     , (Data (Select "ConsPattern" ast))
     , (Data (Select "ListPattern" ast))
+    , (Data (Select "TuplePattern" ast))
     ) =>
     Data (Pattern' ast)
 
