@@ -8,7 +8,7 @@ import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
-import Elara.Data.Unique
+
 import Elara.Data.Unique.Effect
 import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
 

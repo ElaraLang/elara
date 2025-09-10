@@ -22,6 +22,8 @@ import Elara.AST.Region (SourceRegion)
 import Elara.AST.Select
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
 import Elara.Desugar.Error (DesugarError)
@@ -92,6 +94,10 @@ data Query (es :: [Effect]) a where
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
     GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
+    -- Core To Core
+    GetOptimisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
+    GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
+    GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
 
 deriving instance Eq (Query es a)
 
@@ -127,6 +133,9 @@ instance Hashable (Query es a) where
         GetCoreModule mn -> h 21 mn
         GetTyCon qn -> h 22 qn
         GetDataCon qn -> h 23 qn
+        GetOptimisedCoreModule mn -> h 24 mn
+        GetANFCoreModule mn -> h 25 mn
+        GetClosureLiftedModule mn -> h 26 mn
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =
@@ -159,3 +168,6 @@ instance HasMemoiseE Query where
         GetCoreModule{} -> \x -> x
         GetTyCon{} -> \x -> x
         GetDataCon{} -> \x -> x
+        GetOptimisedCoreModule{} -> \x -> x
+        GetANFCoreModule{} -> \x -> x
+        GetClosureLiftedModule{} -> \x -> x

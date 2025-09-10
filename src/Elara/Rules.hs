@@ -2,10 +2,11 @@ module Elara.Rules where
 
 import Data.Text qualified as Text
 import Effectful
-import Effectful.FileSystem.IO
 import Effectful.State.Static.Local qualified as Local
 import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (ModuleName (..))
+import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
+import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
 import Elara.Error
 import Elara.Lexer.Reader (getLexedFile)
@@ -14,11 +15,11 @@ import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
-import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery, sccContainingRoot)
+import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery, runShuntedDeclarationByNameQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
-import Elara.TypeInfer (inferSCC, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeOfQuery)
+import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -62,7 +63,7 @@ rules compilerSettings key = do
         GetSCCsOf name -> do
             subgraph <- inject $ runReachableSubgraphQuery name
             pure $ buildSCCs subgraph
-        SCCKeyOf name -> do
+        SCCKeyOf _ -> do
             error "SCCKeyOf not implemented"
         TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
         InferSCC sccKey -> inject $ runInferSCCQuery sccKey
@@ -71,3 +72,6 @@ rules compilerSettings key = do
         GetCoreModule mn -> inject $ runGetCoreModuleQuery mn
         GetTyCon qn -> inject $ runGetTyConQuery qn
         GetDataCon qn -> inject $ runGetDataConQuery qn
+        GetOptimisedCoreModule mn -> inject $ runGetOptimisedCoreModuleQuery mn
+        GetANFCoreModule mn -> inject $ runGetANFCoreModuleQuery mn
+        GetClosureLiftedModule mn -> inject $ runGetClosureLiftedModuleQuery mn

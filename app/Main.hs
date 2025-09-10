@@ -25,6 +25,7 @@ import Elara.Data.Unique (
 import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
 import Effectful.Error.Static (Error, runError)
+import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
 import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Logging (structuredDebugToLog)
@@ -130,7 +131,9 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
 
                                 loadedModules <- for ["source.elr"] $ \file -> do
                                     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                    Rock.fetch $ Elara.Query.GetCoreModule (m.name ^. unlocated)
+                                    module' <- Rock.fetch $ Elara.Query.GetClosureLiftedModule (m.name ^. unlocated)
+                                    runErrorOrReport @TypeCheckError $ typeCheckCoreModule module'
+                                    pure module'
 
                                 printPretty loadedModules
                                 end <- liftIO getCPUTime
