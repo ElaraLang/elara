@@ -21,6 +21,8 @@ import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Select
 import Elara.AST.VarRef (IgnoreLocVarRef)
+import Elara.Core (CoreBind, DataCon, TyCon)
+import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
 import Elara.Desugar.Error (DesugarError)
 import Elara.Lexer.Token
@@ -43,39 +45,53 @@ type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
 
 data Query (es :: [Effect]) a where
+    -- Input Queries
+
+    -- | Query to get the compiler settings
     GetCompilerSettings :: Query (WithRock MinimumQueryEffects) CompilerSettings
     -- | Query to get all the required input files to be passed to the compiler
     InputFiles :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) (HashSet FilePath)
     -- | Query to get the contents of a specific file
     GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) FileContents
+    -- | Query to get the file path of a module
+    ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
+    -- Lexing and Parsing Queries
+
     -- | Query to get the lexed tokens of a specific file
     LexedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error LexerError])) [Lexeme]
     -- | Query to get the parsed module from a file's contents and lexed tokens
     ParsedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)])) (Module 'Frontend)
-    -- | Query to get the file path of a module
-    ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
     -- | Query to get a parsed module by module name
     ParsedModule ::
         ModuleName ->
         Query
             (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]))
             (Module 'Frontend)
+    -- Desugaring and Renaming Queries
     DesugaredModule ::
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module 'Desugared)
     RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module 'Renamed)
+    -- Shunting Queries
     ShuntedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Module 'Shunted)
     ShuntedDeclarationByName :: Qualified Name -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Declaration 'Shunted)
     GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
+    -- Pre-Inference Queries
+    -- These are related to preparing SCCs etc for type inference
     FreeVarsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) (HashSet (Qualified VarName))
     ReachableSubgraphOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) ReachableSubgraph
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
+    -- Type and Kind Inference Queries
     TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module 'Typed)
     TypeOf :: TypeEnvKey -> Query (WithRock (ConsQueryEffects '[])) (Type SourceRegion)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
+    -- To Core Queries
+    GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
+    GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
+    GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
 
 deriving instance Eq (Query es a)
 
@@ -83,6 +99,7 @@ deriving instance Show (Query es a)
 
 deriveGEq ''Query
 deriveGShow ''Query
+deriveGCompare ''Query
 
 instance Hashable (Query es a) where
     hashWithSalt salt = \case
@@ -107,6 +124,9 @@ instance Hashable (Query es a) where
         TypeOf loc -> h 13 loc
         InferSCC key -> h 18 key
         KindOf qtn -> h 20 qtn
+        GetCoreModule mn -> h 21 mn
+        GetTyCon qn -> h 22 qn
+        GetDataCon qn -> h 23 qn
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =
@@ -136,3 +156,6 @@ instance HasMemoiseE Query where
         TypeOf{} -> \x -> x
         InferSCC{} -> \x -> x
         KindOf{} -> \x -> x
+        GetCoreModule{} -> \x -> x
+        GetTyCon{} -> \x -> x
+        GetDataCon{} -> \x -> x

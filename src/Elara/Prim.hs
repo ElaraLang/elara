@@ -9,7 +9,6 @@ import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualifie
 import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Shunt
 import Elara.Shunt.Operator
 
 consName :: TypeName

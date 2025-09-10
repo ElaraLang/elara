@@ -17,6 +17,7 @@ import Elara.Rename (getRenamedModule)
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery, sccContainingRoot)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery, runShuntedDeclarationByNameQuery)
+import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
 import Elara.TypeInfer (inferSCC, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
@@ -67,3 +68,6 @@ rules compilerSettings key = do
         InferSCC sccKey -> inject $ runInferSCCQuery sccKey
         TypeOf key -> inject $ runTypeOfQuery key
         KindOf qtn -> inject $ runKindOfQuery qtn
+        GetCoreModule mn -> inject $ runGetCoreModuleQuery mn
+        GetTyCon qn -> inject $ runGetTyConQuery qn
+        GetDataCon qn -> inject $ runGetDataConQuery qn

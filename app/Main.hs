@@ -84,6 +84,7 @@ main = run `finally` cleanup
             case result of
                 Left (callStack, error) -> do
                     report error
+                    printPretty callStack
                     pure mempty
                 Right ok -> pass
 
@@ -129,7 +130,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
 
                                 loadedModules <- for ["source.elr"] $ \file -> do
                                     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                    Rock.fetch $ Elara.Query.TypeCheckedModule (m.name ^. unlocated)
+                                    Rock.fetch $ Elara.Query.GetCoreModule (m.name ^. unlocated)
 
                                 printPretty loadedModules
                                 end <- liftIO getCPUTime

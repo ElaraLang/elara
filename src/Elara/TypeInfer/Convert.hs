@@ -7,6 +7,7 @@ import Elara.AST.Generic.Types qualified as Generic
 import Elara.AST.Kinded
 import Elara.AST.Name
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Shunted ()
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (..))
