@@ -66,7 +66,7 @@ emitCoreModule (CoreModule name decls) = do
 emitCoreDecl :: (Member ClassBuilder r, Member StructuredDebug r) => CoreDeclaration CoreBind -> Sem r ()
 emitCoreDecl decl = case decl of
     CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
-        let declName = runIdentity (varRefVal name)
+        let declName = varRefVal name
         case e of
             Core.Lit (Core.Int i) -> do
                 addField $ ClassFileField [] declName (ObjectFieldType "java.lang.Integer") [ConstantValue (ConstantInteger (fromIntegral i))]
@@ -79,15 +79,15 @@ emitCoreDecl decl = case decl of
 emitCoreExpr e = case e of
     Core.Lit s -> do
         emitValue s
-    (App ((Var ((Id (Global' (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "println"))) -> do
+    (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "println"))) -> do
         emit'
             [ InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
             ]
-    (App ((Var ((Id (Global' (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
+    (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
         emit'
             [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
             ]
-    v@(Var ((Id (Global' qn@(Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
+    v@(Var ((Id (Global (Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
     Core.App f x -> do
         emitCoreExpr x
         emitCoreExpr f

@@ -64,6 +64,12 @@ data Name
     | NTypeName TypeName
     deriving (Show, Eq, Ord, Data, Generic)
 
+instance Hashable Name
+instance Hashable TypeName
+instance Hashable VarName
+instance Hashable OpName
+instance Hashable LowerAlphaName
+
 type UniqueName = Unique Name
 
 class NameLike name where

@@ -32,3 +32,6 @@ varName = annotate (color Green)
 
 constructor :: Doc AnsiStyle -> Doc AnsiStyle
 constructor = annotate (underlined <> colorDull Yellow)
+
+warning :: Doc AnsiStyle -> Doc AnsiStyle
+warning = annotate (bold <> color Yellow)

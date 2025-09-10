@@ -53,7 +53,7 @@ data CoreTypeDecl = CoreTypeDecl
 
 data CoreTypeDeclBody
     = CoreTypeAlias Type
-    | CoreDataDecl [DataCon]
+    | CoreDataDecl Core.TyCon [DataCon]
     deriving (Generic)
 
 instance Pretty bind => Pretty (CoreModule bind) where
@@ -67,11 +67,15 @@ instance Pretty bind => Pretty (CoreDeclaration bind) where
     pretty (CoreValue v) = pretty v
     pretty (CoreType t) = prettyTdef t
 
+instance Pretty CoreTypeDecl where
+    pretty = prettyTdef
+
+instance Pretty CoreTypeDeclBody where
+    pretty (CoreTypeAlias t) = prettyTy t
+    pretty (CoreDataDecl tyCon dcs) = let ?contextFree = True in prettyBlockExpr (pretty <$> dcs)
+
 prettyTdef :: CoreTypeDecl -> Doc AnsiStyle
 prettyTdef (CoreTypeDecl name kind tvs body) =
-    keyword "type" <+> pretty name <+> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> prettyBody body
-  where
-    prettyBody (CoreTypeAlias t) = prettyTy t
-    prettyBody (CoreDataDecl dcs) = let ?contextFree = True in prettyBlockExpr (pretty <$> dcs)
+    keyword "type" <+> pretty name <+> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
 
 makeFields ''CoreModule

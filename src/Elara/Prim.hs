@@ -9,7 +9,7 @@ import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualifie
 import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Shunt
+import Elara.Shunt.Operator
 
 consName :: TypeName
 consName = "::"
@@ -72,7 +72,9 @@ primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
     -- assume all primitive types are kind Type
     fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
-        <> fromList [(Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)] -- Except for IO which is kind Type -> Type
+        <> fromList
+            [ (Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)
+            ] -- Except for IO which is kind Type -> Type
 
 primOpTable :: OpTable
 primOpTable =

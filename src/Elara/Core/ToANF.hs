@@ -1,15 +1,16 @@
 module Elara.Core.ToANF where
 
 import Control.Monad.Cont
+import Effectful
 import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
-import Elara.Data.Unique
+
+import Elara.Data.Unique.Effect
 import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
-import Polysemy
 
 {- | Convert a Core expression to ANF
 For example:
@@ -27,7 +28,8 @@ becomes:
 -- toANF expr = (toANF' expr pure)
 
 type ToANF r =
-    ( Members [UniqueGen, StructuredDebug] r
+    ( Elara.Data.Unique.Effect.UniqueGen :> r
+    , StructuredDebug :> r
     , Pretty (Core.Expr Core.Var)
     , Pretty Core.Var
     , Pretty (ANF.AExpr Core.Var)
@@ -36,12 +38,12 @@ type ToANF r =
     , Pretty Core.Type
     )
 
-toANF :: ToANF r => Core.CoreExpr -> Sem r (ANF.Expr Core.Var)
+toANF :: ToANF r => Core.CoreExpr -> Eff r (ANF.Expr Core.Var)
 toANF expr =
     debugWith ("toANF " <> pretty expr) $
         toANFRec expr (pure . ANF.CExpr)
 
-toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.AExpr Core.Var)
+toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Eff r) (ANF.AExpr Core.Var)
 toANFCont e = ContT $ \k -> toANF' e k
 
 {- | Convert a Core expression to an atomic expression in ANF,
@@ -50,8 +52,8 @@ accepting a continuation to handle the rest of the expression
 toANF' ::
     ToANF r =>
     Core.CoreExpr ->
-    (ANF.AExpr Core.Var -> Sem r (ANF.Expr Core.Var)) ->
-    Sem r (ANF.Expr Core.Var)
+    (ANF.AExpr Core.Var -> Eff r (ANF.Expr Core.Var)) ->
+    Eff r (ANF.Expr Core.Var)
 toANF' (Core.Lit l) k = k $ ANF.Lit l
 toANF' (Core.Var v) k = k $ ANF.Var v
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
@@ -61,11 +63,11 @@ toANF' (Core.Lam b e) cont = evalContT $ do
     e' <- lift $ toANFRec e (pure . ANF.CExpr)
     lift $ cont $ ANF.Lam b e'
 toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
-    v <- lift $ makeUnique "var"
+    v <- lift $ Elara.Data.Unique.Effect.makeUnique "var"
 
     lift $ toANFRec other $ \e -> do
         exprType <- lift $ traceFn guesstimateExprType (fromANFCExpr e)
-        let id = Core.Id (Local' v) exprType Nothing
+        let id = Core.Id (Local v) exprType Nothing
 
         l' <- lift $ k $ ANF.Var id
         lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
@@ -74,8 +76,8 @@ toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
 toANFRec ::
     ToANF r =>
     Core.Expr Core.Var ->
-    (ANF.CExpr Core.Var -> ContT (ANF.Expr Core.Var) (Sem r) (ANF.Expr Core.Var)) ->
-    Sem r (ANF.Expr Core.Var)
+    (ANF.CExpr Core.Var -> ContT (ANF.Expr Core.Var) (Eff r) (ANF.Expr Core.Var)) ->
+    Eff r (ANF.Expr Core.Var)
 toANFRec (Core.App f x) k = evalContT $ do
     f' <- toANFCont f
     x' <- toANFCont x

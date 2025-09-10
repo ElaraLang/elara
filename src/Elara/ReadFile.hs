@@ -3,10 +3,14 @@ module Elara.ReadFile where
 import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
+import Data.HashSet qualified as HashSet
+import Effectful (Eff, (:>))
+import Effectful.FileSystem (FileSystem, listDirectory)
+import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
+import Elara.Query.Effects (ConsQueryEffects)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error
@@ -41,15 +45,22 @@ instance ReportableError ReadFileError where
                 []
                 []
 
-readFileString :: Members ReadFilePipelineEffects r => FilePath -> Sem r String
-readFileString path = do
-    contentsBS <- embed $ readFileUniversalNewlineConversion path
-    case decodeUtf8Strict contentsBS of
-        Left ue -> throw (DecodeError path ue)
-        Right contents -> do
-            addFile path contents -- add the file to the diagnostic writer for nicer error messages
-            pure contents
+getInputFiles :: Eff '[FileSystem] (HashSet FilePath)
+getInputFiles = do
+    stdlib <- fmap ("stdlib/" <>) <$> listDirectory "stdlib"
+    let source = "source.elr"
 
-runReadFilePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ReadFilePipelineEffects r) a -> Sem r a
-runReadFilePipeline =
-    runErrorOrReport @ReadFileError . subsume_
+    pure $ HashSet.fromList (stdlib <> [source])
+
+runGetFileContentsQuery :: FileSystem :> es => FilePath -> Eff es FileContents
+runGetFileContentsQuery fp = do
+    contents <- Eff.readFile fp
+    let contentsText = decodeUtf8 contents
+    pure $ FileContents fp contentsText
+
+data FileContents = FileContents
+    { filePath :: FilePath
+    , fileContents :: Text
+    }
+    deriving (Eq, Show, Ord, Generic)
+instance Hashable FileContents

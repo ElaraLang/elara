@@ -16,6 +16,12 @@
       flake = false;
     };
 
+    # hackage latest version is broken but this github fork works
+    dependent-hashmap = {
+      url = "github:ElaraLang/dependent-hashmap";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -105,6 +111,11 @@
                 optics = notest; # test fails on ghc 9.12
                 generic-optics = notest; # test fails on ghc 9.12
 
+                dependent-hashmap = source.root inputs.dependent-hashmap;
+
+                effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
+                effectful-core = jailbreak;
+                effectful-plugin = jailbreak;
               };
             packages = {
               elara = {
@@ -147,14 +158,24 @@
                     "array"
                     "binary"
                     "bytestring"
+                    "co-log-core"
+                    "co-log-effectful"
                     "containers"
+                    "dependent-sum-template"
                     "diagnose"
                     "directory"
+                    "dependent-hashmap"
+                    "effectful >= 2.6.1.0"
+                    "effectful-core"
+                    "effectful-plugin"
+                    "effectful-th"
                     "filepath"
                     "generic-optics"
                     "h2jvm"
                     "hashable"
+                    "kind-generics-th"
                     "lens"
+                    "lifted-base"
                     "matrix"
                     "megaparsec"
                     "mtl"
@@ -170,6 +191,7 @@
                     "process"
                     "relude"
                     "safe-exceptions"
+                    "some"
                     "stringsearch"
                     "terminal-size"
                     "text-metrics"
@@ -184,6 +206,7 @@
                     "-fdefer-typed-holes"
                     "-fno-show-valid-hole-fits"
                     "-fplugin=Polysemy.Plugin"
+                    "-fplugin=Effectful.Plugin"
                     "-fwrite-ide-info"
                     "-hiedir=.hie"
                     "-O0"

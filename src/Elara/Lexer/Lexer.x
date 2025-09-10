@@ -5,11 +5,9 @@ module Elara.Lexer.Lexer where
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
 import Relude.Unsafe (read)
-import Elara.AST.Region
 import Data.Text qualified as T
 import Elara.Lexer.Char
-import Print
-import Polysemy.State
+import Elara.Lexer.Action
 }
 
 
@@ -136,7 +134,7 @@ tokens :-
       \=                     { simpleTok TokenEquals }
      
 
-      \"                     { beginString }
+      \"                     { beginString stringSC }
 
       -- Identifiers
       @variableIdentifier     { parametrizedTok TokenVariableIdentifier identity}
@@ -147,55 +145,4 @@ tokens :-
 
 {
 
-type NumberOfCharsMatched = Int
-type MatchedSequence = Text
-type LexAction = NumberOfCharsMatched -> MatchedSequence -> LexMonad (Maybe Lexeme)
-
-simpleTok :: Token -> LexAction
-simpleTok t len _ = do
-  start <- getPosition len
-  region <- createRegionStartingAt start 
-  return $ Just (Located (RealSourceRegion region) t)
-
-parametrizedTok :: (a -> Token) -> (Text -> a) -> LexAction
-parametrizedTok tc read' tokenLen matched = do
-  start <- getPosition tokenLen 
-  region <- createRegionStartingAt start 
-  let token = tc (read' matched)
-  return $ Just (Located (RealSourceRegion region) token)
-
-
-
-
-
-
-beginString :: LexAction
-beginString len _ = do
-  s <- get
-  pos <- getPosition len
-  put s{ _lexSC = stringSC, _pendingPosition = pos }
-  pure Nothing
-
-appendToString :: LexAction
-appendToString = appendToStringWith T.head
-
-appendToStringWith :: (Text -> Char) -> LexAction
-appendToStringWith f len inp = do
-  modify $ over stringBuf (f (T.take len inp) : )
-  pure Nothing
-
-endString :: LexAction
-endString len _ = do
-  s <- get
-  endPos <- getPosition len
-  let buf = s ^. stringBuf
-  let startPos = s ^. pendingPosition
-  region <- createRegion startPos endPos
-  put
-    s
-      { _lexSC = 0,
-        _stringBuf = ""
-      }
-  let token = TokenString (toText $ reverse buf)
-  pure $ Just (Located (RealSourceRegion region) token)
 }

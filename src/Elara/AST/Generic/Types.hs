@@ -247,11 +247,13 @@ declarationName = _Unwrapped % rUnlocated @_ @ast % declaration'Name @ast
 newtype ValueDeclAnnotations ast = ValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration ast)
     }
+    deriving (Generic)
 
 data TypeDeclAnnotations ast = TypeDeclAnnotations
     { infixTypeDecl :: Maybe (InfixDeclaration ast)
     , kindAnn :: !(Select "KindAnnotation" ast)
     }
+    deriving (Generic)
 
 data TypeDeclaration ast
     = ADT

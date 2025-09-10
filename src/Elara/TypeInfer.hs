@@ -1,8 +1,15 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Elara.TypeInfer where
 
 import Data.Generics.Product
+import Data.Generics.Wrapped (_Unwrapped)
+import Data.Graph (SCC, flattenSCC)
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Static.Local
+import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Generic (
     Declaration (Declaration),
     Declaration' (Declaration'),
@@ -15,7 +22,7 @@ import Elara.AST.Generic.Types (
  )
 import Elara.AST.Kinded
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, NameLike (nameText), Qualified (..), VarName)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
@@ -25,63 +32,221 @@ import Elara.AST.Select (
  )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Kind.Infer (InferState, KindInferError, inferKind, inferTypeKind, initialInferState)
+import Elara.Data.Kind (ElaraKind, KindVar)
+import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe, lookupNameKindVar)
+import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique (Unique)
+import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug)
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
+import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Query (Query (..))
+import Elara.Query.Effects
+import Elara.SCC.Type (SCCKey, sccKeyToSCC)
+import Elara.Shunt.Error (ShuntError)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
-import Elara.TypeInfer.Environment (TypeEnvKey (..), addType')
+import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
-import Polysemy hiding (transform)
-import Polysemy.Error (Error, throw)
-import Polysemy.State
-import Polysemy.Writer (listen)
-import Relude.Extra.Type (type (++))
+import Optics (forOf_)
+import Rock qualified
 import TODO
 
-type InferPipelineEffects =
-    '[ StructuredDebug
-     , State InferState
-     , UniqueGen
-     , Error (UnifyError SourceRegion)
-     , Error TypeConvertError
-     , Error KindInferError
-     ]
-        ++ InferEffects SourceRegion
+type InferPipelineEffects r =
+    ( StructuredDebug :> r
+    , State Kind.InferState :> r
+    , UniqueGen :> r
+    , Error (UnifyError SourceRegion) :> r
+    , Error TypeConvertError :> r
+    , Error KindInferError :> r
+    , Infer SourceRegion r
+    )
 
-runInferPipeline :: forall r a. IsPipeline r => Sem (EffectsAsPrefixOf InferPipelineEffects r) a -> Sem r a
-runInferPipeline e = do
-    let e' =
-            e
-                & subsume_
-                & evalState initialInferState
-                & uniqueGenToIO
-                & runErrorOrReport @(UnifyError SourceRegion)
-                & runErrorOrReport @TypeConvertError
-                & runErrorOrReport @KindInferError
+runGetTypeCheckedModuleQuery ::
+    ModuleName ->
+    Eff
+        ( ConsQueryEffects
+            '[ Rock.Rock Elara.Query.Query
+             ]
+        )
+        (Module 'Typed)
+runGetTypeCheckedModuleQuery mn = do
+    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule mn
+    r <- runInferEffects $ evalState initialInferState (inferModule shunted)
+    pure (fst r)
 
-    snd <$> runInferEffects e'
+runTypeOfQuery ::
+    TypeEnvKey ->
+    Eff
+        ( ConsQueryEffects
+            '[Rock.Rock Elara.Query.Query]
+        )
+        (Type SourceRegion)
+runTypeOfQuery key = runErrorOrReport @(InferError SourceRegion) $
+    runErrorOrReport @(UnifyError SourceRegion) $
+        runErrorOrReport @KindInferError $
+            runErrorOrReport @TypeConvertError $
+                evalState emptyLocalTypeEnvironment $
+                    evalState initialInferState $
+                        evalState emptyTypeEnvironment $
+                            case key of
+                                TermVarKey varName -> debugWith ("TypeOf: " <> pretty varName) $ do
+                                    sccs <- Rock.fetch $ GetSCCsOf varName
+                                    debug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
+                                    -- Infer dependencies first to populate the environment
+                                    for_ (reverse sccs) seedSCC
+                                    for_ (reverse sccs) inferSCC
+                                    -- Read from the environment (now populated) without re-querying
+                                    lookupType (TermVarKey varName)
+                                DataConKey con -> do
+                                    seedConstructorsFor (qualifier con)
+                                    -- Read from the environment (now populated) without re-querying
+                                    lookupType (DataConKey con)
+
+runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
+runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
+    seedConstructorsFor (qualifier qtn)
+
+    -- in theory it should be here now...
+    lookupKindVarMaybe (Left qtn)
+
+seedConstructorsFor :: _ => ModuleName -> Eff r ()
+seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
+    -- Fetch all declarations in the module
+    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule moduleName
+    let declarations =
+            mod
+                ^.. _Unwrapped
+                % unlocated
+                % field' @"declarations"
+                % each
+                % _Unwrapped
+                % unlocated
+                % field' @"body"
+                % _Unwrapped
+                % unlocated
+                % _Ctor' @"TypeDeclaration"
+
+    -- For each type declaration, add its constructors to the environment
+    for_ declarations $ \(name, typeVars, declBody, _) -> debugWith ("Seeding declaration: " <> pretty name) $ do
+        (_, decl') <- inferKind (name ^. unlocated) typeVars (declBody ^. unlocated)
+        case decl' of
+            Generic.Alias t -> do
+                _ <- astTypeToInferType t
+                pass -- we don't need to do anything with an alias i think
+            Generic.ADT ctors -> do
+                let tyVars' = fmap createTypeVar typeVars
+                let typeConstructorType = TypeConstructor (name ^. unlocated) (fmap (TypeVar . UnificationVar) tyVars')
+
+                let inferCtor (ctorName, t :: [KindedType]) = do
+                        t' <- traverse astTypeToInferTypeWithKind t
+                        let ctorType =
+                                foldr (Function . fst) typeConstructorType t'
+                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
+
+                        pure (ctorName, t')
+
+                for_ ctors inferCtor
+
+runInferEffects ::
+    forall r a loc.
+    Pretty loc =>
+    QueryEffects r =>
+    Rock.Rock Query :> r =>
+    Eff
+        ( InferEffectsCons
+            loc
+            ( Error (UnifyError loc)
+                ': Error KindInferError
+                ': Error TypeConvertError
+                ': r
+            )
+        )
+        a ->
+    Eff r (a, Constraint loc)
+runInferEffects =
+    runErrorOrReport @(InferError _)
+        . runErrorOrReport @(UnifyError _)
+        . runErrorOrReport @KindInferError
+        . runErrorOrReport @TypeConvertError
+        . evalState emptyTypeEnvironment
+        . evalState emptyLocalTypeEnvironment
+        . runWriter @(Constraint _)
+        . inject
+
+runInferSCCQuery ::
+    SCCKey ->
+    Eff
+        (ConsQueryEffects (Rock.Rock Query : r))
+        (Map (Qualified VarName) (Polytype SourceRegion))
+runInferSCCQuery key = do
+    fst <$> runInferEffects (evalState initialInferState $ inferSCC (sccKeyToSCC key))
+
+seedSCC :: _ => SCC (Qualified VarName) -> Eff r ()
+seedSCC scc = do
+    for_ scc $ \component -> do
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        seedDeclaration decl
+
+inferSCC :: _ => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
+inferSCC scc = do
+    prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
+    debug $ "Seeding SCC complete. Environment:\n" <> prettyState
+    inferred <- for scc $ \component -> do
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        inferred <- inferDeclarationScheme decl
+        pure (component, inferred)
+
+    pure $ fromList @(Map _ _) (toList inferred)
 
 inferModule ::
     forall r.
-    (Members InferPipelineEffects r, Infer SourceRegion r) =>
+    (InferPipelineEffects r, Infer SourceRegion r) =>
     Module 'Shunted ->
-    Sem r (Module 'Typed)
+    Eff r (Module 'Typed)
 inferModule m = do
-    traverseModuleRevTopologically inferDeclaration m
+    traverseModule inferDeclaration m
+
+-- | Add's a declaration's name and expected type to the type environment
+seedDeclaration ::
+    _ =>
+    ShuntedDeclaration -> Eff r ()
+seedDeclaration (Declaration ld) =
+    forOf_
+        unlocated
+        ld
+        $ \d' -> case d' ^. field' @"body" % _Unwrapped % unlocated of
+            Value valueName _ NoFieldValue valueType _ -> debugWith ("seedDeclaration: Value " <> pretty valueName) $ do
+                expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
+                debug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
+                expected <- case expectedType of
+                    Just t -> pure t
+                    Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
+                -- When we have an expected type (e.g., from a user annotation), skolemise
+                -- its quantified variables so they cannot unify with concrete types.
+                expectedAsMono <- skolemise expected
+                debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
+                addType' (TermVarKey (valueName ^. unlocated)) expected
+            _ -> pass -- TODO
+
+inferDeclarationScheme :: _ => ShuntedDeclaration -> Eff r (Polytype SourceRegion)
+inferDeclarationScheme (view (_Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated) -> d) = case d of
+    Value valueName valueExpr NoFieldValue _ _ -> debugWith ("inferDeclarationScheme: " <> pretty valueName) $ do
+        expectedType <- lookupType (TermVarKey (valueName ^. unlocated))
+        (_, polytype) <- inferValue (valueName ^. unlocated) valueExpr (Just expectedType)
+        addType' (TermVarKey (valueName ^. unlocated)) (Polytype polytype)
+        pure polytype
+    _ -> error "only value declarations are supported currently"
 
 inferDeclaration ::
     forall r.
-    (HasCallStack, Members InferPipelineEffects r, Infer SourceRegion r) =>
+    (HasCallStack, InferPipelineEffects r, Infer SourceRegion r) =>
     ShuntedDeclaration ->
-    Sem r TypedDeclaration
+    Eff r TypedDeclaration
 inferDeclaration (Declaration ld) = do
     Declaration
         <$> traverseOf
@@ -101,7 +266,7 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' ::
         HasCallStack =>
         ShuntedDeclarationBody' ->
-        Sem r TypedDeclarationBody'
+        Eff r TypedDeclarationBody'
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
             expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
@@ -150,15 +315,13 @@ createTypeVar (Located _ u) = fmap (Just . nameText) u
 
 inferValue ::
     forall r.
-    ( HasCallStack
-    , Member UniqueGen r
-    , Infer SourceRegion r
-    , Member (Error (UnifyError SourceRegion)) r
+    ( Error (UnifyError SourceRegion) :> r
+    , _
     ) =>
     Qualified VarName ->
     ShuntedExpr ->
     Maybe (Type SourceRegion) ->
-    Sem r (TypedExpr, Polytype SourceRegion)
+    Eff r (TypedExpr, Polytype SourceRegion)
 inferValue valueName valueExpr expectedType = do
     -- generate
     expected <- case expectedType of
@@ -167,9 +330,8 @@ inferValue valueName valueExpr expectedType = do
     -- When we have an expected type (e.g., from a user annotation), skolemise
     -- its quantified variables so they cannot unify with concrete types.
     expectedAsMono <- skolemise expected
-    debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
     addType' (TermVarKey valueName) expected
-    (constraint, (typedExpr, t)) <- listen $ generateConstraints valueExpr
+    ((typedExpr, t), constraint) <- runWriter $ generateConstraints valueExpr
 
     let constraint' = constraint <> Equality expectedAsMono t
     let tch = fuv t <> fuv constraint'
@@ -180,7 +342,7 @@ inferValue valueName valueExpr expectedType = do
     (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
     when (finalConstraint /= EmptyConstraint) do
-        throw (UnresolvedConstraint valueName finalConstraint)
+        throwError (UnresolvedConstraint valueName finalConstraint)
 
     let newType = substituteAll subst t
 
@@ -193,7 +355,7 @@ inferValue valueName valueExpr expectedType = do
 -- Replace all quantified variables in a type scheme with rigid skolem variables.
 -- This prevents ill-typed programs from unifying annotated polymorphic variables
 -- with concrete types during checking.
-skolemise :: forall r. Type SourceRegion -> Sem r (Monotype SourceRegion)
+skolemise :: forall r. Type SourceRegion -> Eff r (Monotype SourceRegion)
 skolemise = \case
     Lifted t -> pure t
     Polytype (Forall tyVars _ t) -> do

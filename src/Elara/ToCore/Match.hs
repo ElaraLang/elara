@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 {- |
 Maranget-style pattern match compilation using a compact pattern matrix.
 
@@ -23,10 +21,10 @@ import Data.Map.Strict qualified as M
 import Data.Matrix qualified as Mat
 import Data.Text qualified as T
 import Elara.AST.Generic.Types qualified as AST
-import Elara.AST.Name (NameLike (..), Qualified, VarName)
+import Elara.AST.Name (NameLike (..), Qualified, TypeName, VarName)
 import Elara.AST.Region
 import Elara.AST.Typed as Typed
-import Elara.AST.VarRef (UnlocatedVarRef, pattern UnlocatedLocal)
+import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
 import Elara.Core qualified as Core
 import Elara.Core.Generic qualified as G
 import Elara.Data.Unique (Unique)
@@ -79,7 +77,7 @@ data NPat
     = PWild
     | PVar (Unique VarName) -- variable bind; treated like wildcard for the decision tree
     | PLit Core.Literal -- literal match
-    | PCon (Qualified Text) [NPat] -- constructor with subpatterns
+    | PCon (Qualified TypeName) [NPat] -- constructor with subpatterns
     deriving (Show, Eq)
 
 {- | Pattern matrix backed by 'Data.Matrix'. Invariant:
@@ -115,7 +113,7 @@ toNPat (AST.Pattern (Located _ pat, _t)) = go pat
         AST.WildcardPattern -> PWild
         AST.VarPattern (Located _ uvn) -> PVar uvn
         AST.ConstructorPattern (Located _ qn) ps ->
-            PCon (fmap nameText qn) (map toNPat ps)
+            PCon qn (map toNPat ps)
 
 -- No explicit partition/drop helpers are needed with the matrix-based layout.
 
@@ -129,7 +127,7 @@ toNPat (AST.Pattern (Located _ pat, _t)) = go pat
     Let at leaves.
 -}
 
-type ConResolver m = Qualified Text -> m Core.DataCon
+type ConResolver m = Qualified TypeName -> m Core.DataCon
 
 type FreshLocal m = T.Text -> Core.Type -> m Core.Var
 
@@ -164,6 +162,16 @@ stepOnColumn0 resolveCon fresh scruts pm = do
                             let p0 = Mat.getElem i 1 pm.pmPats
                                 ps = [Mat.getElem i j pm.pmPats | j <- [2 .. cols]]
                              in Just (p0, ps)
+                foldPart ::
+                    Int ->
+                    ( Map (Qualified TypeName) [(Int, [NPat], [NPat])]
+                    , Map Core.Literal [(Int, [NPat])]
+                    , [(Int, NPat, [NPat])]
+                    ) ->
+                    ( Map (Qualified TypeName) [(Int, [NPat], [NPat])]
+                    , Map Core.Literal [(Int, [NPat])]
+                    , [(Int, NPat, [NPat])]
+                    )
                 foldPart i (consM, litM, defs) =
                     case rowInfo i of
                         Nothing -> (consM, litM, defs)
@@ -306,7 +314,7 @@ emitBinds bs body =
             Core.Id _ ty _ ->
                 let uqText = fmap nameText u
                     b :: UnlocatedVarRef Text
-                    b = UnlocatedLocal uqText
+                    b = Local uqText
                  in Just (Core.Id b ty Nothing)
             Core.TyVar _ -> Nothing
         mkLet (b, v) = Core.Let (G.NonRecursive (b, Core.Var v))

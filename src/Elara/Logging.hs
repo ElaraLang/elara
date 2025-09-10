@@ -2,62 +2,91 @@
 
 module Elara.Logging where
 
+import Data.Text qualified as T
+import Effectful (Dispatch (..), DispatchOf, Eff, Effect, (:>))
+import Effectful.Colog qualified as Log
+import Effectful.Dispatch.Dynamic (interpret, localSeqUnlift, reinterpret, send)
+import Effectful.State.Static.Local qualified as S
 import Elara.Data.Pretty
 import GHC.Exts
 import GHC.TypeLits (KnownSymbol (..), symbolVal)
-import Polysemy
-import Polysemy.Log qualified as Log
-import Polysemy.State (State, evalState, get, put)
-import Print (elaraDebug)
 
-type DebugLog = Log.DataLog (Doc AnsiStyle)
+-- type DebugLog = Log.DataLog (Doc AnsiStyle)
 
-data StructuredDebug m a where
+data StructuredDebug :: Effect where
     Debug :: HasCallStack => Doc AnsiStyle -> StructuredDebug m ()
     DebugWith :: HasCallStack => Doc AnsiStyle -> m a -> StructuredDebug m a
+    DebugNS :: HasCallStack => [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
+    DebugWithNS :: HasCallStack => [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
 
-debug :: HasCallStack => Member StructuredDebug r => Doc AnsiStyle -> Sem r ()
+type instance DispatchOf StructuredDebug = 'Dynamic
+
+debug :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
 debug msg = send $ Debug msg
 
-debugWith :: HasCallStack => Member StructuredDebug r => Doc AnsiStyle -> Sem r a -> Sem r a
+debugWith :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r a -> Eff r a
 debugWith msg act = send $ DebugWith msg act
 
-debugWithResult :: (Member StructuredDebug r, Pretty a) => Doc AnsiStyle -> Sem r a -> Sem r a
+debugWithResult :: (StructuredDebug :> r, Pretty a) => Doc AnsiStyle -> Eff r a -> Eff r a
 debugWithResult msg act = debugWith msg $ do
     res <- act
     debug ("Result: " <> pretty res)
     pure res
 
-structuredDebugToLog :: forall r a. Member (Log.DataLog (Doc AnsiStyle)) r => Sem (StructuredDebug : r) a -> Sem r a
-structuredDebugToLog =
-    if not elaraDebug
-        then raise_ . interpretH (\case Debug _ -> pureT (); DebugWith _ act -> runTSimple act)
-        else
-            subsume_
-                . evalState 0
-                . reinterpret2H @StructuredDebug @(State Int) @(Log.DataLog (Doc AnsiStyle)) @r
-                    ( \case
-                        Debug msg -> do
-                            depth <- get
-                            let prefix = stimes depth "│ "
-                            let indentedMsg = prefix <> hang (2 * depth) msg
-                            Log.dataLog indentedMsg
-                            pureT ()
-                        DebugWith msg act -> do
-                            depth <- get
-                            let prefix = stimes depth "│ "
-                            let indentedMsg = prefix <> hang (2 * depth) msg
-                            Log.dataLog indentedMsg
-                            put $ depth + 1
-                            a <- runTSimple act
-                            put depth
-                            pure a
-                    )
+-- namespaced helpers
+debugNS :: (StructuredDebug :> r, HasCallStack) => [T.Text] -> Doc AnsiStyle -> Eff r ()
+debugNS ns msg = send $ DebugNS ns msg
 
-ignoreStructuredDebug :: Sem (StructuredDebug : r) a -> Sem r a
-ignoreStructuredDebug = interpretH $ \case
-    Debug _ -> pureT ()
-    DebugWith _ act -> runTSimple act
+debugWithNS :: (StructuredDebug :> r, HasCallStack) => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
+debugWithNS ns msg act = send $ DebugWithNS ns msg act
+
+structuredDebugToLog :: forall r a. Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
+structuredDebugToLog = reinterpret (S.evalState ([] :: [T.Text]) . S.evalState (0 :: Int)) $ \env -> \case
+    Debug msg -> do
+        depth <- S.get
+        let prefix = stimes depth "│ "
+            indentedMsg = prefix <> hang (2 * depth) msg
+        Log.logMsg indentedMsg
+    DebugNS names msg -> do
+        depth <- S.get @Int
+        ns <- S.get @[T.Text]
+        let fullNs = ns <> names
+            nsDoc = if null fullNs then mempty else pretty ("[" <> T.intercalate "." fullNs <> "] ")
+            prefix = stimes depth "│ "
+            indentedMsg = prefix <> nsDoc <> hang (2 * depth) msg
+        Log.logMsg indentedMsg
+    DebugWith msg act -> do
+        depth <- S.get
+        let prefix = stimes depth "│ "
+            indentedMsg = prefix <> hang (2 * depth) msg
+        Log.logMsg indentedMsg
+        S.put (depth + 1)
+        res <- localSeqUnlift env $ \unlift -> unlift act
+        S.put depth
+        pure res
+    DebugWithNS names msg act -> do
+        depth <- S.get @Int
+        ns <- S.get @[T.Text]
+        let fullNs = ns <> names
+            nsDoc = if null fullNs then mempty else pretty ("[" <> T.intercalate "." fullNs <> "] ")
+            prefix = stimes depth "│ "
+            indentedMsg = prefix <> nsDoc <> hang (2 * depth) msg
+        Log.logMsg indentedMsg
+        S.put (depth + 1)
+        -- push namespace
+        S.put fullNs
+        res <- localSeqUnlift env $ \unlift -> unlift act
+        -- restore depth and namespace
+        S.put depth
+        S.put ns
+        pure res
+
+ignoreStructuredDebug :: Eff (StructuredDebug : r) a -> Eff r a
+ignoreStructuredDebug = interpret $ \env -> \case
+    Debug _ -> pass
+    DebugWith _ act -> localSeqUnlift env $ \unlift -> unlift act
+    DebugNS _ _ -> pass
+    DebugWithNS _ _ act -> localSeqUnlift env $ \unlift -> unlift act
 
 {- | Inspired by https://x.com/Quelklef/status/1860188828876583146 !
 A recursive, pure function, which can be traced with a monadic effect.
@@ -73,8 +102,8 @@ runTraceable (TraceableFn f) a = runIdentity $ do
 -- | Run a traceable function with structured debug tracing
 traceFn ::
     forall (name :: Symbol) a b r.
-    (Pretty a, Pretty b, Member StructuredDebug r, KnownSymbol name) =>
-    TraceableFn name a b -> (a -> Sem r b)
+    (Pretty a, Pretty b, StructuredDebug :> r, KnownSymbol name) =>
+    TraceableFn name a b -> (a -> Eff r b)
 traceFn (TraceableFn f) a = do
     let p = symbolVal (Proxy @name)
     res <- debugWith (pretty p <> ":" <+> pretty a) $ do

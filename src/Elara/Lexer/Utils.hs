@@ -15,17 +15,19 @@ import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..))
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
-import Polysemy
-import Polysemy.Error
-import Polysemy.State
-import Polysemy.State.Extra
+
+import Effectful (Eff)
+import Effectful.Error.Static
+import Effectful.State.Extra (use')
+import Effectful.State.Static.Local
+import Optics (use)
 import Prelude hiding (span)
 
 data AlexInput = AlexInput
     { _filePath :: FilePath
     , _prev :: Char
     , _bytes :: [Word8]
-    , _rest :: String
+    , _rest :: Text
     , _position :: RealPosition
     }
     deriving (Show)
@@ -39,7 +41,7 @@ data IndentInfo = IndentInfo
 data ParseState = ParseState
     { _input :: AlexInput
     , _lexSC :: Int -- lexer start code
-    , _stringBuf :: String -- temporary storage for strings
+    , _stringBuf :: Text -- temporary storage for strings
     , _pendingTokens :: [Lexeme] -- right now used when Parser consumes the lookahead and decided to put it back
     , _indentStack :: NonEmpty IndentInfo -- stack of indentation levels
     , _pendingPosition :: TokPosition -- needed when parsing strings, chars, multi-line strings
@@ -51,7 +53,7 @@ makeLenses ''IndentInfo
 makeLenses ''ParseState
 
 type LexMonad :: Type -> Type
-type LexMonad a = Sem '[State ParseState, Error LexerError] a
+type LexMonad a = Eff '[State ParseState, Error LexerError] a
 
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
@@ -110,7 +112,7 @@ instance ReportableError LexerError where
                 , Hint hint
                 ]
 
-initialState :: FilePath -> String -> ParseState
+initialState :: FilePath -> Text -> ParseState
 initialState fp s =
     ParseState
         { _input =
@@ -157,7 +159,7 @@ startWhite _ str = do
                                     { _indentStack = top :| xs
                                     , _pendingTokens = pre >>= const fakeClosings
                                     }
-                        else throw (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
+                        else throwError (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
                 (_, []) -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
         EQ -> Just <$> fake TokenLineSeparator
@@ -179,9 +181,9 @@ alexGetByte ai@AlexInput{..} =
         (b : bs) ->
             Just (b, ai{_bytes = bs})
         [] ->
-            case _rest of
-                [] -> Nothing
-                (char : chars) ->
+            case T.uncons _rest of
+                Nothing -> Nothing
+                Just (char, chars) ->
                     let (Position n c) = _position
                         n' = if char == '\n' then n + 1 else n
                         c' = if char == '\n' then 1 else c + 1

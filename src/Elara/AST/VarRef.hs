@@ -1,4 +1,6 @@
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE TypeData #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.VarRef where
@@ -12,40 +14,44 @@ import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
 import Elara.Data.Unwrap (Unwrap (unwrap))
 
-data VarRef' c n
-    = Global (c (Qualified n))
-    | Local (c (Unique n))
-    deriving (Functor, Typeable, Generic)
+type data VarRefKind = LocatedVarRefKind | UnlocatedVarRefKind | IgnoreLocVarRefKind
 
-type VarRef n = VarRef' Located n
+type family VarRefImpl (c :: VarRefKind) a where
+    VarRefImpl LocatedVarRefKind a = Located a
+    VarRefImpl IgnoreLocVarRefKind a = IgnoreLocation a
+    VarRefImpl UnlocatedVarRefKind a = a
 
-type IgnoreLocVarRef n = VarRef' IgnoreLocation n
+class MapVarRefImpl (c :: VarRefKind) where
+    mapVarRefImpl :: (a -> b) -> VarRefImpl c a -> VarRefImpl c b
 
-type UnlocatedVarRef n = VarRef' Identity n
+instance MapVarRefImpl LocatedVarRefKind where
+    mapVarRefImpl = fmap
 
-pattern Global' :: Qualified n -> VarRef' Identity n
-pattern Global' n = Global (Identity n)
+instance MapVarRefImpl IgnoreLocVarRefKind where
+    mapVarRefImpl = fmap
 
-pattern Local' :: Unique n -> VarRef' Identity n
-pattern Local' n = Local (Identity n)
+instance MapVarRefImpl UnlocatedVarRefKind where
+    mapVarRefImpl f = f
 
-{-# COMPLETE Global', Local' #-}
+data VarRef' (c :: VarRefKind) n
+    = Global (VarRefImpl c (Qualified n))
+    | Local (VarRefImpl c (Unique n))
+    deriving (Typeable, Generic)
 
-pattern UnlocatedGlobal :: Qualified n -> UnlocatedVarRef n
-pattern UnlocatedGlobal n = Global (Identity n)
+instance MapVarRefImpl c => Functor (VarRef' c) where
+    fmap :: forall a b. (a -> b) -> VarRef' c a -> VarRef' c b
+    fmap f (Global n) = Global $ mapVarRefImpl @c @(Qualified a) @(Qualified b) (fmap f) n
+    fmap f (Local n) = Local (mapVarRefImpl @c @(Unique a) @(Unique b) (fmap f) n)
 
-pattern UnlocatedLocal :: Unique n -> UnlocatedVarRef n
-pattern UnlocatedLocal n = Local (Identity n)
+type VarRef n = VarRef' LocatedVarRefKind n
 
-{-# COMPLETE UnlocatedGlobal, UnlocatedLocal #-}
+type IgnoreLocVarRef n = VarRef' IgnoreLocVarRefKind n
 
-varRefVal :: Functor c => VarRef' c n -> c n
-varRefVal (Global n) = fmap (view name) n
-varRefVal (Local n) = fmap (view uniqueVal) n
+type UnlocatedVarRef n = VarRef' UnlocatedVarRefKind n
 
-unlocatedVarRefVal :: UnlocatedVarRef n -> n
-unlocatedVarRefVal (Global n) = runIdentity $ fmap (view name) n
-unlocatedVarRefVal (Local n) = runIdentity $ fmap (view uniqueVal) n
+varRefVal :: forall c n. _ => VarRef' c n -> VarRefImpl c n
+varRefVal (Global n) = mapVarRefImpl @c @(Qualified n) @n (view name) n
+varRefVal (Local n) = mapVarRefImpl @c @(Unique n) @n (view uniqueVal) n
 
 varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
 varRefVal' = traversalVL $ \f ->
@@ -65,9 +71,9 @@ withName' :: ToName n => VarRef n -> IgnoreLocVarRef Name
 withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
 withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 
-instance (Unwrap c, Pretty n) => Pretty (VarRef' c n) where
-    pretty (Global n) = pretty (unwrap n)
-    pretty (Local n) = pretty (unwrap n)
+instance (Pretty n, Pretty (VarRefImpl c (Qualified n)), Pretty (VarRefImpl c (Unique n))) => Pretty (VarRef' c n) where
+    pretty (Global n) = pretty n
+    pretty (Local n) = pretty n
 
 instance StripLocation (Located (VarRef a)) (VarRef a) where
     stripLocation = unwrap
@@ -77,19 +83,19 @@ instance StripLocation (Located (VarRef a)) (UnlocatedVarRef a) where
 
 instance StripLocation (VarRef a) (UnlocatedVarRef a) where
     stripLocation v = case v of
-        Global q -> Global (Identity $ stripLocation q)
-        Local u -> Local (Identity $ stripLocation u)
+        Global q -> Global (stripLocation q)
+        Local u -> Local (stripLocation u)
 
-deriving instance (Show (c (Qualified n)), Show (c (Unique n))) => Show (VarRef' c n)
+deriving instance (Show (VarRefImpl c (Qualified n)), Show (VarRefImpl c (Unique n))) => Show (VarRef' c n)
 
-deriving instance (Eq (c (Qualified n)), Eq (c (Unique n))) => Eq (VarRef' c n)
+deriving instance (Eq (VarRefImpl c (Qualified n)), Eq (VarRefImpl c (Unique n))) => Eq (VarRef' c n)
 
-deriving instance (Ord (c (Qualified n)), Ord (c (Unique n))) => Ord (VarRef' c n)
+deriving instance (Ord (VarRefImpl c (Qualified n)), Ord (VarRefImpl c (Unique n))) => Ord (VarRef' c n)
 
-deriving instance (Typeable c, Typeable n, Data (c (Qualified n)), Data (c (Unique n))) => Data (VarRef' c n)
+deriving instance (Typeable c, Typeable n, Data (VarRefImpl c (Qualified n)), Data (VarRefImpl c (Unique n))) => Data (VarRef' c n)
 
-instance (Generic (VarRef' c n), ToJSON (c (Unique n)), ToJSON (c (Qualified n))) => ToJSON (VarRef' c n) where
+instance (Generic (VarRef' c n), ToJSON (VarRefImpl c (Unique n)), ToJSON (VarRefImpl c (Qualified n))) => ToJSON (VarRef' c n) where
     toJSON (Global n) = toJSON n
     toJSON (Local n) = toJSON n
 
-instance (Hashable (c (Qualified n)), Hashable (c (Unique n))) => Hashable (VarRef' c n)
+instance (Hashable (VarRefImpl c (Qualified n)), Hashable (VarRefImpl c (Unique n))) => Hashable (VarRef' c n)

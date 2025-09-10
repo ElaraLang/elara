@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 -- | Converts typed AST to Core
 module Elara.ToCore where
 
@@ -7,46 +5,49 @@ import Data.Generics.Product
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped
 import Data.Map qualified as M
+import Effectful
+import Effectful.Error.Static
+import Effectful.State.Static.Local
 import Elara.AST.Generic as AST
 import Elara.AST.Generic.Common (NoFieldValue (..))
 import Elara.AST.Module (Module (Module))
-import Elara.AST.Name (Name (..), NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
-import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal, pattern UnlocatedGlobal, pattern UnlocatedLocal)
+import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (CoreTypeDecl), CoreTypeDeclBody (CoreDataDecl))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (CoreDataDecl))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.TopologicalGraph
-import Elara.Data.Unique (UniqueGen, makeUnique, uniqueGenToIO)
+import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Pipeline (EffectsAsPrefixOf, IsPipeline)
 import Elara.Prim (mkPrimQual)
 import Elara.Prim.Core
+import Elara.Query qualified
+import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.ToCore.Match qualified as Match
 import Elara.TypeInfer.Type qualified as Type
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Optics
-import Polysemy (Members, Sem, subsume)
-import Polysemy.Error
-import Polysemy.State
+import Rock qualified
 import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
     | UnknownConstructor !(Located (Qualified TypeName)) CtorSymbolTable
-    | UnknownPrimConstructor !(Qualified Text)
+    | UnknownPrimConstructor !(Qualified TypeName)
     | UnknownTypeConstructor !(Qualified Text) CtorSymbolTable
     | UnknownLambdaType !(Type.Type SourceRegion)
-    | HasCallStack => UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
+    | UnsolvedTypeSnuckIn !(Type.Type SourceRegion)
     | UnknownVariable !(Located (Qualified Name))
+    deriving (Show)
 
 instance ReportableError ToCoreError where
     report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
@@ -70,7 +71,7 @@ instance ReportableError ToCoreError where
                 ( vcat
                     [ pretty qn
                     , "Known constructors:"
-                    , vcat $ pretty <$> M.keys (syms.tyCons)
+                    , vcat $ pretty <$> M.keys syms.tyCons
                     ]
                 )
                 []
@@ -90,6 +91,7 @@ data CtorSymbolTable = CtorSymbolTable
     { dataCons :: Map (Qualified Text) DataCon
     , tyCons :: Map (Qualified Text) TyCon
     }
+    deriving (Show)
 
 primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
@@ -103,33 +105,53 @@ primCtorSymbolTable =
             [(mkPrimQual "IO", ioCon)]
         )
 
-lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Sem r DataCon
+lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Eff r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
     let plainName = nameText <$> qn ^. unlocated
     case M.lookup plainName table.dataCons of
         Just ctor -> pure ctor
-        Nothing -> throw (UnknownConstructor qn table)
+        Nothing -> Rock.fetch (Elara.Query.GetDataCon (qn ^. unlocated)) ?:! throwError (UnknownConstructor qn table)
 
-registerCtor :: ToCoreC r => DataCon -> Sem r ()
+registerCtor :: ToCoreC r => DataCon -> Eff r ()
 registerCtor ctor = modify (\s -> s{dataCons = M.insert (ctor ^. field @"name") ctor s.dataCons})
 
-registerTyCon :: ToCoreC r => TyCon -> Sem r ()
+registerTyCon :: ToCoreC r => TyCon -> Eff r ()
 registerTyCon ctor@(TyCon name _) = modify (\s -> s{tyCons = M.insert name ctor s.tyCons})
 
-lookupPrimCtor :: ToCoreC r => Qualified Text -> Sem r DataCon
+lookupPrimCtor :: ToCoreC r => Qualified TypeName -> Eff r DataCon
 lookupPrimCtor qn = do
     table <- get @CtorSymbolTable
-    case M.lookup qn (table.dataCons) of
+    case M.lookup (nameText <$> qn) table.dataCons of
         Just ctor -> pure ctor
-        Nothing -> throw (UnknownPrimConstructor qn)
+        Nothing -> Rock.fetch (Elara.Query.GetDataCon qn) ?:! throwError (UnknownPrimConstructor qn)
 
-lookupTyCon :: ToCoreC r => Qualified Text -> Sem r TyCon
-lookupTyCon qn = do
+lookupTyCon :: HasCallStack => ToCoreC r => Qualified Text -> Eff r TyCon
+lookupTyCon qn = debugWithResult ("lookupTyCon: " <> pretty qn) $ do
     table <- get @CtorSymbolTable
     case M.lookup qn table.tyCons of
         Just ctor -> pure ctor
-        Nothing -> throw (UnknownTypeConstructor qn table)
+        Nothing -> do
+            Rock.fetch (Elara.Query.GetTyCon qn) ?:! throwError (UnknownTypeConstructor qn table)
+
+runGetDataConQuery ::
+    Qualified TypeName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe DataCon)
+runGetDataConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
+    coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
+    let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody" % _As @"CoreDataDecl" % _2 % each
+    let matchingDataCon = find (\(DataCon name _ _) -> name == fmap nameText qn) decls
+    pure matchingDataCon
+
+runGetTyConQuery ::
+    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
+runGetTyConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
+    coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
+    let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType"
+    let matchingDataCon = find (\decl -> decl.ctdName == qn) decls
+    debug $ "Found TyCon: " <> pretty matchingDataCon <> " from decls: " <> pretty decls
+    debug $ "Module: " <> pretty (coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody")
+    let r = matchingDataCon ^? _Just % field @"typeBody" % _As @"CoreDataDecl" % _1
+    pure r
 
 type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
 
@@ -137,18 +159,40 @@ type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, Struc
 
 type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
 
-type ToCoreC r = (Members ToCoreEffects r)
+type ToCoreC r =
+    ( State CtorSymbolTable :> r
+    , Error ToCoreError :> r
+    , UniqueGen :> r
+    , StructuredDebug :> r
+    , QueryEffects r
+    , Rock.Rock Elara.Query.Query :> r
+    )
 
-type InnerToCoreC r = (Members InnerToCoreEffects r)
+type InnerToCoreC r =
+    ( State CtorSymbolTable :> r
+    , Error ToCoreError :> r
+    , UniqueGen :> r
+    , StructuredDebug :> r
+    , QueryEffects r
+    , Rock.Rock Elara.Query.Query :> r
+    )
 
-runToCorePipeline :: IsPipeline r => Sem (EffectsAsPrefixOf ToCoreEffects r) a -> Sem r a
-runToCorePipeline =
-    subsume
-        . uniqueGenToIO
-        . runErrorOrReport
-        . evalState primCtorSymbolTable
+-- runToCorePipeline :: IsPipeline r => Eff (EffectsAsPrefixOf ToCoreEffects r) a -> Eff r a
+-- runToCorePipeline =
+--     inject
+--         . uniqueGenToGlobalIO
+--         . runErrorOrReport
+--         . evalState primCtorSymbolTable
 
-moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Sem r (CoreModule CoreBind)
+runGetCoreModuleQuery ::
+    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+runGetCoreModuleQuery mn = do
+    typedModule <- Rock.fetch (Elara.Query.TypeCheckedModule mn)
+    runErrorOrReport @ToCoreError $
+        evalState primCtorSymbolTable $
+            moduleToCore typedModule
+
+moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Eff r (CoreModule CoreBind)
 moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
@@ -157,8 +201,8 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
             Value n v _ _ _ -> debugWith ("Value decl: " <+> pretty n) $ do
                 ty <- typeToCore (v ^. _Unwrapped % _2)
                 v' <- toCore v
-                let var = Core.Id (UnlocatedGlobal (nameText <$> n ^. unlocated)) ty Nothing
-                let rec = isRecursive (n ^. unlocated) v (_1 % _As @"Global" % unlocated)
+                let var = Core.Id (Global (nameText <$> n ^. unlocated)) ty Nothing
+                let rec = isRecursive (n ^. unlocated) v (_1 % _Ctor' @"Global" % unlocated)
                 pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
@@ -192,7 +236,7 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
                                 cleanedTypeDeclName
                                 kind
                                 (tvs ^.. each % unlocated % to mkTypeVar)
-                                (CoreDataDecl (toList ctors''))
+                                (CoreDataDecl tyCon (toList ctors''))
             TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 todo
     -- t' <- typeToCore t
@@ -203,17 +247,17 @@ moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty
 mkTypeVar :: Select "TypeVar" 'Typed -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
-polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Sem r Core.Type
+polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
 polytypeToCore (Type.Forall tvs constraints t) = do
     t' <- typeToCore t
     let tvs' = fmap mkTypeVar tvs
     pure $ foldr Core.ForAllTy t' tvs'
 
-eitherTypeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Sem r Core.Type
+eitherTypeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Eff r Core.Type
 eitherTypeToCore (Type.Polytype p) = polytypeToCore p
 eitherTypeToCore (Type.Lifted t) = typeToCore t
 
-typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Sem r Core.Type
+typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
 typeToCore (Type.TypeVar (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
 typeToCore (Type.TypeVar (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
 typeToCore (Type.Scalar Type.ScalarInt) = pure $ Core.ConTy intCon
@@ -228,9 +272,9 @@ typeToCore (Type.TypeConstructor qn ts) = debugWith ("Type constructor: " <+> pr
     pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
 
 conToVar :: DataCon -> Core.Var
-conToVar dc@(Core.DataCon n t _) = Core.Id (Global $ Identity n) t (Just dc)
+conToVar dc@(Core.DataCon n t _) = Core.Id (Global n) t (Just dc)
 
-toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Sem r CoreExpr
+toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Eff r CoreExpr
 toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
@@ -238,7 +282,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
     moveTypeApplications x = x
 
-    toCore' :: InnerToCoreC r => TypedExpr' -> Sem r CoreExpr
+    toCore' :: InnerToCoreC r => TypedExpr' -> Eff r CoreExpr
     toCore' = \case
         AST.Int i -> pure $ Lit (Core.Int i)
         AST.Float f -> pure $ Lit (Core.Double f)
@@ -258,7 +302,7 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
         AST.Lambda (Located _ (TypedLambdaParam (vn, t))) body -> do
             t'' <- typeToCore t
 
-            Core.Lam (Core.Id (UnlocatedLocal (nameText <$> vn)) t'' Nothing) <$> toCore body
+            Core.Lam (Core.Id (Local (nameText <$> vn)) t'' Nothing) <$> toCore body
         AST.FunctionCall e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
@@ -279,15 +323,15 @@ toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
                     , (Core.DataAlt falseCtor, [], ifFalse')
                     ]
         AST.Match e pats -> desugarMatch e pats
-        AST.Let{} -> throw (LetInTopLevel le)
+        AST.Let{} -> throwError (LetInTopLevel le)
         AST.LetIn (Located _ vn) NoFieldValue e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
             -- TODO: we need to detect mutually recursive bindings
-            let ref = UnlocatedLocal (nameText <$> vn)
+            let ref = Local (nameText <$> vn)
             t' <- typeToCore (typeOf e1)
             debug $ "Let-binding" <+> pretty vn <+> ":" <+> pretty (typeOf e1) <+> "=" <+> pretty e1'
-            let bindingIsRecursive = isRecursive vn e1 (_1 % _As @"Local" % unlocated)
+            let bindingIsRecursive = isRecursive vn e1 (_1 % _Ctor' @"Local" % unlocated)
             debug $ "Recursive?" <+> pretty bindingIsRecursive
             pure $
                 Core.Let
@@ -307,7 +351,7 @@ isRecursive vn e1 l =
         (== vn)
         e1
 
-desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Sem r CoreExpr
+desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Eff r CoreExpr
 desugarMatch e pats = do
     -- Scrutinee to Core and bind it to a fresh local, as Core.Match expects.
     e' <- toCore e
@@ -320,33 +364,26 @@ desugarMatch e pats = do
 
     let matrix = Match.buildMatrix1 branches
 
-    -- Resolve constructors by qualified text from the current constructor table.
-    let resolveByText qn = do
-            table <- get @CtorSymbolTable
-            case M.lookup qn (table.dataCons) of
-                Just ctor -> pure ctor
-                Nothing -> throw (UnknownPrimConstructor qn)
-
     -- Fresh locals used for constructor field binders within the matrix compiler.
     let freshLocal base ty = do
             u <- makeUnique base
-            pure (Core.Id (UnlocatedLocal u) ty Nothing)
+            pure (Core.Id (Local u) ty Nothing)
 
-    compiled <- Match.compileMatrix resolveByText freshLocal [s0] matrix
+    compiled <- Match.compileMatrix lookupPrimCtor freshLocal [s0] matrix
 
     -- Bind the scrutinee to s0 before the compiled match to avoid a redundant DEFAULT match.
     pure $ Core.Let (NonRecursive (s0, e')) compiled
 
-mkBindName :: InnerToCoreC r => TypedExpr -> Sem r Var
+mkBindName :: InnerToCoreC r => TypedExpr -> Eff r Var
 mkBindName (AST.Expr (Located _ (AST.Var (Located _ (vn, varType))), t)) = do
     t' <- eitherTypeToCore varType
     unique <- makeUnique (nameText $ varRefVal vn)
-    pure (Core.Id (UnlocatedLocal unique) t' Nothing)
+    pure (Core.Id (Local unique) t' Nothing)
 mkBindName (AST.Expr (_, t)) = do
     t' <- typeToCore t
     unique <- makeUnique "bind"
-    pure (Core.Id (UnlocatedLocal unique) t' Nothing)
+    pure (Core.Id (Local unique) t' Nothing)
 
-desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Sem r CoreExpr
+desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Eff r CoreExpr
 desugarBlock (a :| []) = toCore a
 desugarBlock _ = error "todo"

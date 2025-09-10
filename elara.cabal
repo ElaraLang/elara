@@ -18,6 +18,7 @@ build-type:     Simple
 
 library
   exposed-modules:
+      Effectful.State.Extra
       Elara.AST.Desugared
       Elara.AST.Frontend
       Elara.AST.Generic
@@ -58,17 +59,20 @@ library
       Elara.Data.Pretty.Styles
       Elara.Data.TopologicalGraph
       Elara.Data.Unique
+      Elara.Data.Unique.Effect
       Elara.Data.Unwrap
       Elara.Desugar
+      Elara.Desugar.Error
       Elara.Emit
       Elara.Emit.Utils
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Error.EffectNew
       Elara.Interpreter
+      Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer
-      Elara.Lexer.Pipeline
       Elara.Lexer.Reader
       Elara.Lexer.Token
       Elara.Lexer.Utils
@@ -91,9 +95,19 @@ library
       Elara.Prim
       Elara.Prim.Core
       Elara.Prim.Rename
+      Elara.Query
+      Elara.Query.Effects
       Elara.ReadFile
       Elara.Rename
+      Elara.Rename.Error
+      Elara.Rename.Imports
+      Elara.Rules
+      Elara.SCC
+      Elara.SCC.Type
+      Elara.Settings
       Elara.Shunt
+      Elara.Shunt.Error
+      Elara.Shunt.Operator
       Elara.ToCore
       Elara.ToCore.Match
       Elara.TypeInfer
@@ -111,9 +125,11 @@ library
       Polysemy.Lens
       Polysemy.Maybe
       Polysemy.State.Extra
-      Polysemy.Utils
       Prelude
       Print
+      Rock
+      Rock.Memo
+      Rock.MemoE
       TODO
   hs-source-dirs:
       src
@@ -128,7 +144,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       alex:alex
   build-depends:
@@ -138,14 +154,24 @@ library
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
+    , dependent-hashmap
+    , dependent-sum-template
     , diagnose
     , directory
+    , effectful >=2.6.1.0
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
     , filepath
     , generic-optics
     , h2jvm
     , hashable
+    , kind-generics-th
     , lens
+    , lifted-base
     , matrix
     , megaparsec
     , mtl
@@ -161,6 +187,7 @@ library
     , process
     , relude
     , safe-exceptions
+    , some
     , stringsearch
     , terminal-size
     , text-metrics
@@ -184,7 +211,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , algebraic-graphs
@@ -192,15 +219,25 @@ executable elara
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
+    , dependent-hashmap
+    , dependent-sum-template
     , diagnose
     , directory
+    , effectful >=2.6.1.0
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
     , elara
     , filepath
     , generic-optics
     , h2jvm
     , hashable
+    , kind-generics-th
     , lens
+    , lifted-base
     , matrix
     , megaparsec
     , mtl
@@ -216,6 +253,7 @@ executable elara
     , process
     , relude
     , safe-exceptions
+    , some
     , stringsearch
     , terminal-size
     , text-metrics
@@ -261,7 +299,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
@@ -271,9 +309,17 @@ test-suite elara-test
     , base ==4.*
     , binary
     , bytestring
+    , co-log-core
+    , co-log-effectful
     , containers
+    , dependent-hashmap
+    , dependent-sum-template
     , diagnose
     , directory
+    , effectful >=2.6.1.0
+    , effectful-core
+    , effectful-plugin
+    , effectful-th
     , elara
     , filepath
     , generic-optics
@@ -281,7 +327,9 @@ test-suite elara-test
     , hashable
     , hedgehog
     , hspec-megaparsec
+    , kind-generics-th
     , lens
+    , lifted-base
     , matrix
     , megaparsec
     , mtl
@@ -298,6 +346,7 @@ test-suite elara-test
     , process
     , relude
     , safe-exceptions
+    , some
     , stringsearch
     , sydtest
     , sydtest-hedgehog

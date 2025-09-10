@@ -87,13 +87,21 @@ data Type
       ForAllTy !TypeVariable !Type
     deriving (Show, Eq, Data, Ord, Generic)
 
+-- | Information about a type constructor
 data TyCon
-    = TyCon (Qualified Text) TyConDetails
+    = TyCon
+        -- | The name of the type constructor
+        (Qualified Text)
+        -- | The details of the type constructor
+        TyConDetails
     deriving (Show, Eq, Data, Ord, Generic)
 
+-- | The details of a type constructor, mainly about its definition
 data TyConDetails
-    = -- | The ids of the datacons
-      TyADT [Qualified Text]
+    = -- | An ADT
+      TyADT
+        -- | The ids of its 'DataCon's (constructors)
+        [Qualified Text]
     | TyAlias Type
     | Prim
     deriving (Show, Eq, Data, Ord, Generic)

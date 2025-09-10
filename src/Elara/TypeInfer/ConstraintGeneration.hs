@@ -7,6 +7,12 @@ import Data.Generics.Product (HasType (typed))
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Set (member)
+import Effectful
+import Effectful.Error.Static
+import Effectful.Reader.Static
+import Effectful.State.Extra (scoped)
+import Effectful.State.Static.Local
+import Effectful.Writer.Static.Local
 import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
@@ -18,12 +24,12 @@ import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique (uniqueGenToIO)
-import Elara.Error (ReportableError (..), defaultReport, runErrorOrReport, writeReport)
+import Elara.Error (ReportableError (..), defaultReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
-import Elara.Pipeline
 import Elara.Prim (boolName, mkPrimQual)
-import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), addLocalType, emptyLocalTypeEnvironment, emptyTypeEnvironment, lookupLocalVar, lookupType, withLocalType)
+import Elara.Query qualified
+import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
+import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
@@ -31,206 +37,199 @@ import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Scal
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Error.Diagnose
 import Optics (anyOf)
-import Polysemy
-import Polysemy.Error
-import Polysemy.Reader (Reader, ask, runReader)
-import Polysemy.State
-import Polysemy.State.Extra (scoped)
-import Polysemy.Writer
+import Rock qualified
 
-runInferEffects :: forall r a loc. Pretty loc => IsPipeline r => Sem (EffectsAsPrefixOf (InferEffects loc) r) a -> Sem r (Constraint loc, a)
-runInferEffects e = do
-    e
-        & uniqueGenToIO
-        . runErrorOrReport
-        . evalState emptyLocalTypeEnvironment
-        . evalState emptyTypeEnvironment
-        . runWriter
-        . subsume_
-
-generateConstraints :: Infer SourceRegion r => ShuntedExpr -> Sem r (TypedExpr, Monotype SourceRegion)
+generateConstraints :: Infer SourceRegion r => ShuntedExpr -> Eff r (TypedExpr, Monotype SourceRegion)
 generateConstraints (Expr (Located loc expr', expectedType)) = do
     (typedExpr', monotype) <- generateConstraints' expr'
     pure (Expr (Located loc typedExpr', monotype), monotype)
 
-generateConstraints' :: Infer SourceRegion r => ShuntedExpr' -> Sem r (TypedExpr', Monotype SourceRegion)
-generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty expr') $ do
-    case expr' of
-        Int i -> pure (Int i, Scalar ScalarInt)
-        Float f -> pure (Float f, Scalar ScalarFloat)
-        String s -> pure (String s, Scalar ScalarString)
-        Char c -> pure (Char c, Scalar ScalarChar)
-        Unit -> pure (Unit, Scalar ScalarUnit)
-        Constructor (Located loc name) -> do
-            -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            varType <- lookupType (DataConKey $ stripLocation name)
+lookupType ::
+    QueryEffects r =>
+    Rock.Rock Elara.Query.Query :> r =>
+    State (TypeEnvironment SourceRegion) :> r =>
+    TypeEnvKey -> Eff r (Type SourceRegion)
+lookupType key = do
+    -- try the local environment first to avoid unnecessary queries / infinite loops
+    inEnv <- lookupTypeMaybe key
+    case inEnv of
+        Just ty -> pure ty
+        Nothing -> do
+            debug ("Type not found in environment, querying: " <> pretty key)
+            Rock.fetch (Elara.Query.TypeOf key)
 
-            (instantiated, typeApps) <- instantiate varType
+generateConstraints' :: Infer SourceRegion r => ShuntedExpr' -> Eff r (TypedExpr', Monotype SourceRegion)
+generateConstraints' expr' = debugWithResult ("generateConstraints: " <> pretty expr') $ case expr' of
+    Int i -> pure (Int i, Scalar ScalarInt)
+    Float f -> pure (Float f, Scalar ScalarFloat)
+    String s -> pure (String s, Scalar ScalarString)
+    Char c -> pure (Char c, Scalar ScalarChar)
+    Unit -> pure (Unit, Scalar ScalarUnit)
+    Constructor (Located loc name) -> do
+        -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
+        varType <- lookupType (DataConKey $ stripLocation name)
 
-            let ctor = (Constructor (Located loc name), instantiated)
+        (instantiated, typeApps) <- instantiate varType
 
-            let withApps =
-                    foldl'
-                        ( \(expr :: TypedExpr', exprType) tv ->
-                            let expr' :: TypedExpr = Expr (Located loc expr, exprType)
-                             in (TypeApplication expr' (TypeVar tv), exprType)
-                        )
-                        ctor
-                        typeApps
+        let ctor = (Constructor (Located loc name), instantiated)
 
-            pure withApps
+        let withApps =
+                foldl'
+                    ( \(expr :: TypedExpr', exprType) tv ->
+                        let expr' :: TypedExpr = Expr (Located loc expr, exprType)
+                         in (TypeApplication expr' (TypeVar tv), exprType)
+                    )
+                    ctor
+                    typeApps
 
-        -- VAR
-        Var v'@(Located loc varName) -> do
-            varType <- case varName of
-                Local (Located _ n) -> lookupLocalVar n
-                Global (Located _ n) -> lookupType (TermVarKey n)
-            -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
-            (instantiated, tyApps) <- instantiate varType
+        pure withApps
 
-            let instantiated' = (Var (Located loc (varName, varType)), instantiated)
+    -- VAR
+    Var v'@(Located loc varName) -> do
+        varType <- case varName of
+            Local (Located _ n) -> lookupLocalVar n
+            Global (Located _ n) -> lookupType (TermVarKey n)
+        -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
+        (instantiated, tyApps) <- instantiate varType
 
-            let withApps =
-                    foldl'
-                        ( \(expr :: TypedExpr', exprType) tv ->
-                            let expr' :: TypedExpr = Expr (Located loc expr, exprType)
-                             in (TypeApplication expr' (TypeVar tv), exprType)
-                        )
-                        instantiated'
-                        tyApps
+        let instantiated' = (Var (Located loc (varName, varType)), instantiated)
 
-            pure withApps
-        -- ABS
-        (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
-            paramTyVar <- UnificationVar <$> makeUniqueTyVar
+        let withApps =
+                foldl'
+                    ( \(expr :: TypedExpr', exprType) tv ->
+                        let expr' :: TypedExpr = Expr (Located loc expr, exprType)
+                         in (TypeApplication expr' (TypeVar tv), exprType)
+                    )
+                    instantiated'
+                    tyApps
 
-            (typedBody, bodyType) <- withLocalType paramName (Lifted $ TypeVar paramTyVar) $ do
-                generateConstraints body
+        pure withApps
+    -- ABS
+    (Lambda (Located paramLoc (TypedLambdaParam (paramName, expectedParamType))) body) -> do
+        paramTyVar <- UnificationVar <$> makeUniqueTyVar
 
-            let functionType = TypeVar paramTyVar `Function` bodyType
+        (typedBody, bodyType) <- withLocalType paramName (Lifted $ TypeVar paramTyVar) $ generateConstraints body
 
-            pure
-                ( Lambda (Located paramLoc (TypedLambdaParam (paramName, TypeVar paramTyVar))) typedBody
-                , functionType
-                )
+        let functionType = TypeVar paramTyVar `Function` bodyType
 
-        -- APP
-        FunctionCall e1 e2 -> do
-            (e1', t1) <- generateConstraints e1
-            (e2', t2) <- generateConstraints e2
+        pure
+            ( Lambda (Located paramLoc (TypedLambdaParam (paramName, TypeVar paramTyVar))) typedBody
+            , functionType
+            )
 
-            resultTyVar <- UnificationVar <$> makeUniqueTyVar
+    -- APP
+    FunctionCall e1 e2 -> do
+        (e1', t1) <- generateConstraints e1
+        (e2', t2) <- generateConstraints e2
 
-            let equalityConstraint = Equality t1 (Function t2 (TypeVar resultTyVar))
-            debug (pretty equalityConstraint)
-            tell equalityConstraint
+        resultTyVar <- UnificationVar <$> makeUniqueTyVar
 
-            pure (FunctionCall e1' e2', TypeVar resultTyVar)
+        let equalityConstraint = Equality t1 (Function t2 (TypeVar resultTyVar))
+        debug (pretty equalityConstraint)
+        tell equalityConstraint
 
-        -- LET
-        {-
+        pure (FunctionCall e1' e2', TypeVar resultTyVar)
+
+    -- LET
+    {-
         Q ; Γ ⊢ e1 : τ1 Q ; Γ, (x :τ1) ⊢ e2 : τ2
         ----------------------------------------------
                 Q ; Γ ⊢ let x = e1 in e2 : τ2
 
         (except not quite because lets are recursive)
         -}
-        LetIn (Located loc varName) NoFieldValue varExpr body -> do
-            recursiveVar <- UnificationVar <$> makeUniqueTyVar
+    LetIn (Located loc varName) NoFieldValue varExpr body -> do
+        recursiveVar <- UnificationVar <$> makeUniqueTyVar
 
-            -- Q ; Γ ⊢ e1 : τ1
-            (typedVarExpr, varType) <-
-                withLocalType varName (Lifted $ TypeVar recursiveVar) $
-                    generateConstraints varExpr
-
-            let recursiveConstraint = Equality (TypeVar recursiveVar) varType
-            tell recursiveConstraint
-
-            -- TODO: we need to check if e1 is closed here before generalising _everything_
-
-            let isRecursive =
-                    anyOf
-                        (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _As @"Local" % unlocated)
-                        (== varName)
-                        varExpr
-
-            debug ("isRecursive?: " <> pretty isRecursive)
-            maybeGeneralised <-
-                if not isRecursive
-                    then do
-                        generalised <- generalise varType
-                        debug (pretty varType <> " -> generalised: " <> pretty generalised)
-                        pure (Polytype generalised)
-                    else pure (Lifted varType)
-
-            (typedBody, bodyType) <-
-                withLocalType varName maybeGeneralised $
-                    generateConstraints body
-
-            pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
-
-        -- IF
-        If cond then' else' -> do
-            (typedCond, condType) <- generateConstraints cond
-            (typedThen, thenType) <- generateConstraints then'
-            (typedElse, elseType) <- generateConstraints else'
-
-            let equalityConstraint = Equality condType (TypeConstructor (mkPrimQual boolName) [])
-            tell equalityConstraint
-
-            let equalityConstraint1 = Equality thenType elseType
-            tell equalityConstraint1
-
-            pure (If typedCond typedThen typedElse, thenType)
-        TypeApplication e ty -> do
-            error "i dont know what to do with type applications yet sorry"
-
-        -- MATCH
-        -- (match (e: τ) with { p1 -> e1; ...; pn -> en }) : τr
-        Match e cases -> do
-            -- Q ; Γ ⊢ e : τ
-            (typedE, eType) <- generateConstraints e
-
-            -- τr
-            resultTyVar <- UnificationVar <$> makeUniqueTyVar
-
-            cases' <- for cases $ \(pattern, body) -> scoped @(LocalTypeEnvironment _) $ do
-                -- Q ; Γ ⊢ p1 : τ1
-                (typedPattern, patternType) <- generatePatternConstraints pattern eType
-
-                -- τ1 ~ τ
-                let equalityConstraint = Equality eType patternType
-                tell equalityConstraint
-
-                -- Q ; Γ ⊢ e1 : τ2
-                (typedBody, bodyType) <- generateConstraints body
-
-                -- τ2 ~ τr
-                tell (Equality bodyType (TypeVar resultTyVar))
-
-                pure (typedPattern, typedBody)
-
-            pure (Match typedE cases', TypeVar resultTyVar)
-        Block exprs -> do
-            vals <- for exprs $ \expr -> do
-                generateConstraints expr
-
-            let exprs = fmap fst vals
-
-            let exprTypes = fmap snd vals
-
-            pure (Syntax.Block exprs, last exprTypes)
-        Let (Located loc varName) NoFieldValue varExpr -> do
-            recursiveVar <- UnificationVar <$> makeUniqueTyVar
-            (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar recursiveVar) $ do
+        -- Q ; Γ ⊢ e1 : τ1
+        (typedVarExpr, varType) <-
+            withLocalType varName (Lifted $ TypeVar recursiveVar) $
                 generateConstraints varExpr
 
-            let recursiveConstraint = Equality (TypeVar recursiveVar) varType
-            tell recursiveConstraint
+        let recursiveConstraint = Equality (TypeVar recursiveVar) varType
+        tell recursiveConstraint
 
-            modify (addLocalType varName (Lifted varType))
+        -- TODO: we need to check if e1 is closed here before generalising _everything_
 
-            pure (Let (Located loc varName) NoFieldValue typedVarExpr, varType)
+        let isRecursive =
+                anyOf
+                    (cosmosOf gplate % _Unwrapped % _1 % unlocated % _Ctor' @"Var" % unlocated % _Ctor' @"Local" % unlocated)
+                    (== varName)
+                    varExpr
+
+        debug ("isRecursive?: " <> pretty isRecursive)
+        maybeGeneralised <-
+            if not isRecursive
+                then do
+                    generalised <- generalise varType
+                    debug (pretty varType <> " -> generalised: " <> pretty generalised)
+                    pure (Polytype generalised)
+                else pure (Lifted varType)
+
+        (typedBody, bodyType) <-
+            withLocalType varName maybeGeneralised $
+                generateConstraints body
+
+        pure (LetIn (Located loc varName) NoFieldValue typedVarExpr typedBody, bodyType)
+
+    -- IF
+    If cond then' else' -> do
+        (typedCond, condType) <- generateConstraints cond
+        (typedThen, thenType) <- generateConstraints then'
+        (typedElse, elseType) <- generateConstraints else'
+
+        let equalityConstraint = Equality condType (TypeConstructor (mkPrimQual boolName) [])
+        tell equalityConstraint
+
+        let equalityConstraint1 = Equality thenType elseType
+        tell equalityConstraint1
+
+        pure (If typedCond typedThen typedElse, thenType)
+    TypeApplication e ty -> error "i dont know what to do with type applications yet sorry"
+    -- MATCH
+    -- (match (e: τ) with { p1 -> e1; ...; pn -> en }) : τr
+    Match e cases -> do
+        -- Q ; Γ ⊢ e : τ
+        (typedE, eType) <- generateConstraints e
+
+        -- τr
+        resultTyVar <- UnificationVar <$> makeUniqueTyVar
+
+        cases' <- for cases $ \(pattern, body) -> scoped @(LocalTypeEnvironment _) $ do
+            -- Q ; Γ ⊢ p1 : τ1
+            (typedPattern, patternType) <- generatePatternConstraints pattern eType
+
+            -- τ1 ~ τ
+            let equalityConstraint = Equality eType patternType
+            tell equalityConstraint
+
+            -- Q ; Γ ⊢ e1 : τ2
+            (typedBody, bodyType) <- generateConstraints body
+
+            -- τ2 ~ τr
+            tell (Equality bodyType (TypeVar resultTyVar))
+
+            pure (typedPattern, typedBody)
+
+        pure (Match typedE cases', TypeVar resultTyVar)
+    Block exprs -> do
+        vals <- for exprs $ \expr -> generateConstraints expr
+
+        let exprs = fmap fst vals
+
+        let exprTypes = fmap snd vals
+
+        pure (Syntax.Block exprs, last exprTypes)
+    Let (Located loc varName) NoFieldValue varExpr -> do
+        recursiveVar <- UnificationVar <$> makeUniqueTyVar
+        (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar recursiveVar) $ generateConstraints varExpr
+
+        let recursiveConstraint = Equality (TypeVar recursiveVar) varType
+        tell recursiveConstraint
+
+        modify (addLocalType varName (Lifted varType))
+
+        pure (Let (Located loc varName) NoFieldValue typedVarExpr, varType)
 
 {- | Generate constraints for a pattern, returning the typed pattern and the type of the pattern, and generating constraints for the pattern
 We define the type of a pattern as the type of values it can match against, rather than its "signature"
@@ -238,7 +237,7 @@ We define the type of a pattern as the type of values it can match against, rath
 For example, in the case of a simple option type @type Option a = Some a | None@,
 we say that the pattern `Some x` has type `Option a` rather than @a -> Option a@
 -}
-generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Monotype SourceRegion -> Sem r (TypedPattern, Monotype SourceRegion)
+generatePatternConstraints :: Infer SourceRegion r => ShuntedPattern -> Monotype SourceRegion -> Eff r (TypedPattern, Monotype SourceRegion)
 generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over = do
     (typedPattern', monotype) <- generatePatternConstraints' pattern' over
     tell (Equality monotype over)
@@ -252,48 +251,47 @@ generatePatternConstraints' ::
     This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
     -}
     Monotype SourceRegion ->
-    Sem r (TypedPattern', Monotype SourceRegion)
-generatePatternConstraints' pattern' over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
-    case pattern' of
-        WildcardPattern -> pure (WildcardPattern, over)
-        UnitPattern -> pure (UnitPattern, Scalar ScalarUnit)
-        IntegerPattern i -> pure (IntegerPattern i, Scalar ScalarInt)
-        FloatPattern f -> pure (FloatPattern f, Scalar ScalarFloat)
-        StringPattern s -> pure (StringPattern s, Scalar ScalarString)
-        CharPattern c -> pure (CharPattern c, Scalar ScalarChar)
-        VarPattern (Located loc varName) -> do
-            varType <- UnificationVar <$> makeUniqueTyVar
-            modify (addLocalType (NormalVarName <$> varName) (Lifted $ TypeVar varType))
-            tell (Equality over (TypeVar varType))
+    Eff r (TypedPattern', Monotype SourceRegion)
+generatePatternConstraints' pattern' over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ case pattern' of
+    WildcardPattern -> pure (WildcardPattern, over)
+    UnitPattern -> pure (UnitPattern, Scalar ScalarUnit)
+    IntegerPattern i -> pure (IntegerPattern i, Scalar ScalarInt)
+    FloatPattern f -> pure (FloatPattern f, Scalar ScalarFloat)
+    StringPattern s -> pure (StringPattern s, Scalar ScalarString)
+    CharPattern c -> pure (CharPattern c, Scalar ScalarChar)
+    VarPattern (Located loc varName) -> do
+        varType <- UnificationVar <$> makeUniqueTyVar
+        modify (addLocalType (NormalVarName <$> varName) (Lifted $ TypeVar varType))
+        tell (Equality over (TypeVar varType))
 
-            pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
-        ConstructorPattern ctor'@(Located _ ctor) args -> do
-            -- lookup the signature of the constructor
-            t <- lookupType (DataConKey ctor)
-            debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
+        pure (VarPattern (Located loc (NormalVarName <$> varName)), TypeVar varType)
+    ConstructorPattern ctor'@(Located _ ctor) args -> do
+        -- lookup the signature of the constructor
+        t <- lookupType (DataConKey ctor)
+        debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
 
-            -- if we have a constructor @Ctor : x -> y -> Z@
-            -- and pattern @Ctor a b@
-            -- we need to generate @a : x@ and @b : y@
-            -- we do this by making one big constraint out of fresh type variables @a_1 -> @b_1 -> ... -> Z@
-            -- and emitting a single equality constraint @x -> y -> Z = a_1 -> b_1 -> ... -> Z@
+        -- if we have a constructor @Ctor : x -> y -> Z@
+        -- and pattern @Ctor a b@
+        -- we need to generate @a : x@ and @b : y@
+        -- we do this by making one big constraint out of fresh type variables @a_1 -> @b_1 -> ... -> Z@
+        -- and emitting a single equality constraint @x -> y -> Z = a_1 -> b_1 -> ... -> Z@
 
-            args' <- for args $ \arg -> do
-                argVar <- UnificationVar <$> makeUniqueTyVar
-                generatePatternConstraints arg (TypeVar argVar)
+        args' <- for args $ \arg -> do
+            argVar <- UnificationVar <$> makeUniqueTyVar
+            generatePatternConstraints arg (TypeVar argVar)
 
-            (instantiatedT, typeApps) <- instantiate t
-            let res = functionMonotypeResult instantiatedT
+        (instantiatedT, typeApps) <- instantiate t
+        let res = functionMonotypeResult instantiatedT
 
-            let argsFunction = foldr (Function . snd) res args'
-            debug $ "generatePatternConstraints (ConstructorPattern): argsFunction = " <> pretty argsFunction
-            let equality = Equality instantiatedT argsFunction
-            tell equality
-            debug ("generatePatternConstraints (ConstructorPattern): equality = " <> pretty equality)
+        let argsFunction = foldr (Function . snd) res args'
+        debug $ "generatePatternConstraints (ConstructorPattern): argsFunction = " <> pretty argsFunction
+        let equality = Equality instantiatedT argsFunction
+        tell equality
+        debug ("generatePatternConstraints (ConstructorPattern): equality = " <> pretty equality)
 
-            pure (ConstructorPattern ctor' (fmap fst args'), res)
+        pure (ConstructorPattern ctor' (fmap fst args'), res)
 
-instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Sem r (Monotype loc, [TypeVariable])
+instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Eff r (Monotype loc, [TypeVariable])
 instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
@@ -306,7 +304,7 @@ instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate
     tell instantiatedConstraint
     pure (instantiatedMonotype, fresh)
 
-solveConstraint :: (Member (Error (UnifyError a)) r, Member StructuredDebug r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Sem r (Constraint a, Substitution a)
+solveConstraint :: (Error (UnifyError a) :> r, StructuredDebug :> r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Eff r (Constraint a, Substitution a)
 solveConstraint given tch wanted = debugWith
     ( "solveConstraint: "
         <> vsep
@@ -322,17 +320,17 @@ solveConstraint given tch wanted = debugWith
         pure (residual', unifier)
 
 simplifyConstraint ::
-    ( Member (Error (UnifyError loc)) r
-    , Member StructuredDebug r
+    ( Error (UnifyError loc) :> r
+    , StructuredDebug :> r
     , Pretty loc
     ) =>
-    Constraint loc -> Set UniqueTyVar -> Constraint loc -> Sem r (Constraint loc, Substitution loc)
+    Constraint loc -> Set UniqueTyVar -> Constraint loc -> Eff r (Constraint loc, Substitution loc)
 simplifyConstraint given tch wanted = do
     givenSubst <- reduceGiven given
     debug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
     runReader tch (solve (substituteAll givenSubst wanted))
 
-reduceGiven :: (Pretty loc, Member (Error (UnifyError loc)) r, Member StructuredDebug r) => Constraint loc -> Sem r (Substitution loc)
+reduceGiven :: (Pretty loc, Error (UnifyError loc) :> r, StructuredDebug :> r) => Constraint loc -> Eff r (Substitution loc)
 reduceGiven (Equality a b) = unifyGiven a b
 reduceGiven (Conjunction a b) = do
     s1 <- reduceGiven a
@@ -341,10 +339,10 @@ reduceGiven (Conjunction a b) = do
 reduceGiven EmptyConstraint = pure mempty
 
 solve ::
-    (Member (Error (UnifyError loc)) r, Member StructuredDebug r, Member (Reader (Set UniqueTyVar)) r) =>
+    (Error (UnifyError loc) :> r, StructuredDebug :> r, Reader (Set UniqueTyVar) :> r) =>
     Pretty loc =>
     Constraint loc ->
-    Sem r (Constraint loc, Substitution loc)
+    Eff r (Constraint loc, Substitution loc)
 solve (Equality a b) = unify a b
 solve (Conjunction a b) = debugWith ("solve: " <> pretty a <> " ^ " <> pretty b) $ do
     -- a lot of this is duplicated from unifyMany which is a bit annoying
@@ -356,20 +354,20 @@ solve (Conjunction a b) = debugWith ("solve: " <> pretty a <> " ^ " <> pretty b)
 solve EmptyConstraint = pure mempty
 
 unifyGiven ::
-    (Pretty loc, Member (Error (UnifyError loc)) r, Member StructuredDebug r) =>
-    Monotype loc -> Monotype loc -> Sem r (Substitution loc)
+    (Pretty loc, Error (UnifyError loc) :> r, StructuredDebug :> r) =>
+    Monotype loc -> Monotype loc -> Eff r (Substitution loc)
 unifyGiven (TypeVar a) b = bindGiven a b
 unifyGiven a (TypeVar b) = bindGiven b a
 unifyGiven (TypeConstructor a as) (TypeConstructor b bs)
-    | a /= b = throw TypeConstructorMismatch
-    | length as /= length bs = throw ArityMismatch
+    | a /= b = throwError TypeConstructorMismatch
+    | length as /= length bs = throwError ArityMismatch
     | otherwise = unifyGivenMany as bs
 unifyGiven (Function a b) (Function c d) = unifyGivenMany [a, b] [c, d]
 unifyGiven (Scalar a) (Scalar b) =
     if a == b
         then pure mempty
-        else throw ScalarMismatch
-unifyGiven a b = throw $ UnificationFailed (a, b)
+        else throwError ScalarMismatch
+unifyGiven a b = throwError $ UnificationFailed (a, b)
 
 unifyGivenMany xs ys = foldrM go mempty (zip xs ys)
   where
@@ -379,12 +377,12 @@ unifyGivenMany xs ys = foldrM go mempty (zip xs ys)
 
 unify ::
     HasCallStack =>
-    Member StructuredDebug r =>
+    StructuredDebug :> r =>
     Pretty (Constraint loc) =>
-    Member (Error (UnifyError loc)) r =>
-    Member (Reader (Set UniqueTyVar)) r =>
+    Error (UnifyError loc) :> r =>
+    Reader (Set UniqueTyVar) :> r =>
     Pretty loc =>
-    Monotype loc -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
+    Monotype loc -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
 unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     r <- unify' a b
     debug ("unify result: " <> pretty r)
@@ -392,12 +390,12 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
   where
     unify' ::
         HasCallStack =>
-        Member StructuredDebug r =>
-        Member (Error (UnifyError loc)) r =>
+        StructuredDebug :> r =>
+        Error (UnifyError loc) :> r =>
         Pretty (Constraint loc) =>
-        Member (Reader (Set UniqueTyVar)) r =>
+        Reader (Set UniqueTyVar) :> r =>
         Pretty loc =>
-        Monotype loc -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
+        Monotype loc -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
 
     unify' (TypeVar a) (TypeVar b) | a == b = pure (mempty, mempty)
     unify' (TypeVar (UnificationVar a)) b = unifyVar a b
@@ -405,20 +403,20 @@ unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
     unify' (Scalar a) (Scalar b) =
         if a == b
             then pure mempty
-            else throw ScalarMismatch
+            else throwError ScalarMismatch
     unify' (TypeConstructor a as) (TypeConstructor b bs)
-        | a /= b = throw TypeConstructorMismatch
-        | length as /= length bs = throw ArityMismatch
+        | a /= b = throwError TypeConstructorMismatch
+        | length as /= length bs = throwError ArityMismatch
         | otherwise = unifyMany as bs
     unify' (Function a b) (Function c d) = unifyMany [a, b] [c, d]
-    unify' a b = throw $ UnificationFailed (a, b)
+    unify' a b = throwError $ UnificationFailed (a, b)
 
 bindGiven ::
-    (Member StructuredDebug r, Member (Error (UnifyError loc)) r) =>
-    TypeVariable -> Monotype loc -> Sem r (Substitution loc)
+    (StructuredDebug :> r, Error (UnifyError loc) :> r) =>
+    TypeVariable -> Monotype loc -> Eff r (Substitution loc)
 bindGiven a t =
     if member a (ftv t)
-        then throw (OccursCheckFailed a t)
+        then throwError (OccursCheckFailed a t)
         else pure (substitution (tvValue a, t))
   where
     tvValue (UnificationVar a) = a
@@ -426,14 +424,14 @@ bindGiven a t =
 
 unifyVar ::
     forall loc r.
-    (Member StructuredDebug r, Member (Error (UnifyError loc)) r, Member (Reader (Set UniqueTyVar)) r) =>
-    UniqueTyVar -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
+    (StructuredDebug :> r, Error (UnifyError loc) :> r, Reader (Set UniqueTyVar) :> r) =>
+    UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
 unifyVar a t = do
     debug $ "bind " <> pretty a <> " to " <> pretty t
     bindVar a t
   where
-    bindVar :: UniqueTyVar -> Monotype loc -> Sem r (Constraint loc, Substitution loc)
-    bindVar tv t | member tv (fuv t) = throw (OccursCheckFailed (UnificationVar tv) t)
+    bindVar :: UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
+    bindVar tv t | member tv (fuv t) = throwError (OccursCheckFailed (UnificationVar tv) t)
     bindVar tv t = do
         tch <- ask
         debug ("bindVar " <> pretty tv <> " to " <> pretty t)
@@ -442,14 +440,14 @@ unifyVar a t = do
             else pure (Equality (TypeVar $ UnificationVar tv) t, mempty)
 
 unifyMany ::
-    (HasCallStack, Member StructuredDebug r, Pretty loc, Member (Reader (Set UniqueTyVar)) r) =>
-    Member (Error (UnifyError loc)) r =>
+    (HasCallStack, StructuredDebug :> r, Pretty loc, Reader (Set UniqueTyVar) :> r) =>
+    Error (UnifyError loc) :> r =>
     [Monotype loc] ->
     [Monotype loc] ->
-    Sem r (Constraint loc, Substitution loc)
+    Eff r (Constraint loc, Substitution loc)
 unifyMany [] [] = pure (mempty, mempty)
-unifyMany [] _ = throw UnifyMismatch
-unifyMany _ [] = throw UnifyMismatch
+unifyMany [] _ = throwError UnifyMismatch
+unifyMany _ [] = throwError UnifyMismatch
 unifyMany (a : as) (b : bs) = debugWith ("unifyMany: " <> pretty a <> " with " <> pretty b) $ do
     (c1, s1) <- unify a b
     debug ("unifyMany produced: " <> pretty (c1, s1))
