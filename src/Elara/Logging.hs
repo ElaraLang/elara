@@ -40,7 +40,7 @@ debugNS ns msg = send $ DebugNS ns msg
 debugWithNS :: (StructuredDebug :> r, HasCallStack) => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
 debugWithNS ns msg act = send $ DebugWithNS ns msg act
 
-structuredDebugToLog :: forall r a. Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
+structuredDebugToLog :: forall r a. HasCallStack => Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLog = reinterpret (S.evalState ([] :: [T.Text]) . S.evalState (0 :: Int)) $ \env -> \case
     Debug msg -> do
         depth <- S.get

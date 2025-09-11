@@ -108,7 +108,7 @@ typeCheck (ANF.Let bind in') = case bind of
         typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
-typeCheckC :: (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.CExpr Var -> Eff r Core.Type
+typeCheckC :: (HasCallStack, Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.CExpr Var -> Eff r Core.Type
 typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> pretty (fromANFAtom x)) $ do
     fType <- typeCheckA f
     debug $ "fType: " <> pretty fType
@@ -134,11 +134,13 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 if litType == eType
                     then pure eType'
-                    else throwError $ CoreTypeMismatch litType eType (fromANF e, fromANF e) callStack
+                    else throwError $ CoreTypeMismatch litType eType (fromANFCExpr match, fromANF e) callStack
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
                 debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
-                when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $
+                when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $ do
+                    debug $ "bs: " <> pretty bs
+                    debug $ "functionTypeArgs: " <> pretty (Core.functionTypeArgs con'.dataConType)
                     throwError $
                         PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
                 eType' <- typeCheck e

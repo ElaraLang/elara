@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 {- |
 Maranget-style pattern match compilation using a compact pattern matrix.
 
@@ -20,15 +22,21 @@ module Elara.ToCore.Match where
 import Data.Map.Strict qualified as M
 import Data.Matrix qualified as Mat
 import Data.Text qualified as T
+import Effectful (Eff, (:>))
 import Elara.AST.Generic.Types qualified as AST
-import Elara.AST.Name (NameLike (..), Qualified, TypeName, VarName)
+import Elara.AST.Name (ModuleName (..), NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
 import Elara.Core qualified as Core
+import Elara.Core.Analysis qualified as Core
 import Elara.Core.Generic qualified as G
+import Elara.Core.Pretty ()
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
+import Elara.Logging
 import Polysemy.State ()
+import Print (showColored)
 
 {- Our initial step in compiling pattern matching is to construct a pattern matrix
 of the patterns used in a match
@@ -78,7 +86,9 @@ data NPat
     | PVar (Unique VarName) -- variable bind; treated like wildcard for the decision tree
     | PLit Core.Literal -- literal match
     | PCon (Qualified TypeName) [NPat] -- constructor with subpatterns
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+instance Pretty NPat
 
 {- | Pattern matrix backed by 'Data.Matrix'. Invariant:
  nrows pmPats == length pmRhs == length pmBinds
@@ -134,7 +144,7 @@ type FreshLocal m = T.Text -> Core.Type -> m Core.Var
 {- | Compile a pattern matrix to a Core expression. Assumes the first column
 corresponds to the head scrutinee in the provided list of variables.
 -}
-compileMatrix :: Monad m => ConResolver m -> FreshLocal m -> [Core.Var] -> PMatrix Core.CoreExpr -> m Core.CoreExpr
+compileMatrix :: StructuredDebug :> r => ConResolver (Eff r) -> FreshLocal (Eff r) -> [Core.Var] -> PMatrix Core.CoreExpr -> Eff r Core.CoreExpr
 compileMatrix resolveCon fresh scruts pm =
     if Mat.ncols pm.pmPats == 0
         then case (pm.pmRhs, pm.pmBinds) of
@@ -142,7 +152,7 @@ compileMatrix resolveCon fresh scruts pm =
             _ -> pure (Core.Lit Core.Unit)
         else stepOnColumn0 resolveCon fresh scruts pm
 
-stepOnColumn0 :: Monad m => ConResolver m -> FreshLocal m -> [Core.Var] -> PMatrix Core.CoreExpr -> m Core.CoreExpr
+stepOnColumn0 :: StructuredDebug :> r => ConResolver (Eff r) -> FreshLocal (Eff r) -> [Core.Var] -> PMatrix Core.CoreExpr -> Eff r Core.CoreExpr
 stepOnColumn0 resolveCon fresh scruts pm = do
     case scruts of
         [] ->
@@ -189,9 +199,21 @@ stepOnColumn0 resolveCon fresh scruts pm = do
             if not (M.null consM)
                 then do
                     conAlts <- forM (M.toList consM) $ \(qn, matched) -> do
+                        debug $ "Compiling constructor alt for: " <> pretty (qn, matched)
                         dc <- resolveCon qn
-                        let argTys = Core.functionTypeArgs (Core.dataConType dc)
-                        xs <- forM (zip [0 ..] argTys) $ \(i, ty) -> fresh ("p" <> show i) ty
+                        debug $ "dc: " <> pretty dc
+                        debug $ "varType: " <> pretty (show (Core.varType s0))
+                        let argTys = Core.conTyArgs (Core.varType s0)
+                        let dcArgTys = Core.functionTypeArgs (Core.dataConType dc)
+
+                        let realArgTys =
+                                -- we construct the "real" binders as
+                                take
+                                    (length dcArgTys) -- no more than the amount the constructor has
+                                    (argTys ++ drop (length argTys) dcArgTys) -- then the provided ones from the varType, plus any extras from the constructor to make up the exact length of the constructor
+                        debug $ "argTys: " <> pretty argTys
+                        debug $ "realArgTys: " <> pretty realArgTys
+                        xs <- forM (zip [0 ..] realArgTys) $ \(i, ty) -> fresh ("p" <> show i) ty
                         let n = length xs
                             transformMatched (i, args, tailPs) =
                                 let (args', addBinds) = bindImmediate xs args
@@ -275,14 +297,14 @@ stepOnColumn0 resolveCon fresh scruts pm = do
  'defs' contains triples of (rowIndex, headPat, tailPatterns)
 -}
 compileDefault ::
-    Monad m =>
-    ConResolver m ->
-    FreshLocal m ->
+    StructuredDebug :> r =>
+    ConResolver (Eff r) ->
+    FreshLocal (Eff r) ->
     Core.Var ->
     [Core.Var] ->
     PMatrix Core.CoreExpr ->
     [(Int, NPat, [NPat])] ->
-    m (Maybe Core.CoreAlt)
+    (Eff r) (Maybe Core.CoreAlt)
 compileDefault resolveCon fresh s0 restScruts pm defs =
     case defs of
         [] -> pure Nothing
@@ -326,3 +348,7 @@ at1 :: Int -> [a] -> a
 at1 i xs = case drop (i - 1) xs of
     (y : _) -> y
     [] -> error "PMatrix row index out of bounds"
+
+coreConstructorTypeArgs = \case
+    Core.ConTy (Core.TyCon name (Core.TyADT adts)) -> []
+    _ -> []

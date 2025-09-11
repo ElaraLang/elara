@@ -193,7 +193,7 @@ runGetCoreModuleQuery mn = do
             moduleToCore typedModule
 
 moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Eff r (CoreModule CoreBind)
-moduleToCore (Module (Located _ m)) = debugWith ("Converting module: " <> pretty (m ^. field' @"name")) $ do
+moduleToCore (Module (Located _ m)) = debugWithResult ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
@@ -275,7 +275,7 @@ conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global n) t (Just dc)
 
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Eff r CoreExpr
-toCore le@(Expr (Located _ e, t)) = moveTypeApplications <$> toCore' e
+toCore le@(Expr (Located _ e, _)) = debugWithResult ("toCore: " <> pretty le) $ moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
     moveTypeApplications :: CoreExpr -> CoreExpr
@@ -352,9 +352,10 @@ isRecursive vn e1 l =
         e1
 
 desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Eff r CoreExpr
-desugarMatch e pats = do
+desugarMatch e pats = debugWithResult ("desugarMatch:" <> pretty (e, pats)) $ do
     -- Scrutinee to Core and bind it to a fresh local, as Core.Match expects.
     e' <- toCore e
+    debug $ "e': " <> pretty e'
     s0 <- mkBindName e
 
     -- Compile RHSs first; build a 1-column matrix from (pattern, rhsCore).
@@ -362,10 +363,12 @@ desugarMatch e pats = do
         rhs' <- toCore rhs
         pure (p, rhs')
 
+    debug $ "Branches: " <> pretty branches
+
     let matrix = Match.buildMatrix1 branches
 
     -- Fresh locals used for constructor field binders within the matrix compiler.
-    let freshLocal base ty = do
+    let freshLocal base ty = debugWith ("freshLocal: " <> pretty (base, ty)) $ do
             u <- makeUnique base
             pure (Core.Id (Local u) ty Nothing)
 

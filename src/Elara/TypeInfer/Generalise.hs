@@ -17,11 +17,7 @@ generalise :: forall r. (StructuredDebug :> r, State (TypeEnvironment SourceRegi
 generalise ty = do
     env <- get @(TypeEnvironment SourceRegion)
     let freeVars = ftv ty
-    debug $ "Free vars: " <> pretty freeVars <> " in " <> pretty ty
-    debug $ "env: " <> pretty env
-    debug $ "ftv env: " <> pretty (ftv env)
     let envVars = freeVars `difference` ftv env
-    debug $ "envVars: " <> pretty envVars
     let uniVars = envVars ^.. folded % (_As @"UnificationVar")
 
     let generalized = Forall (toList uniVars) EmptyConstraint ty

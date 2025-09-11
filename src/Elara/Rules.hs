@@ -23,7 +23,6 @@ import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindO
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
-import Prelude hiding (withFile)
 
 rules :: CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = do

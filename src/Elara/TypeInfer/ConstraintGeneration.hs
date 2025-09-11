@@ -305,19 +305,12 @@ instantiate pt@(Polytype (Forall tyVars constraint t)) = debugWith ("instantiate
     pure (instantiatedMonotype, fresh)
 
 solveConstraint :: (Error (UnifyError a) :> r, StructuredDebug :> r, Pretty a) => Constraint a -> Set UniqueTyVar -> Constraint a -> Eff r (Constraint a, Substitution a)
-solveConstraint given tch wanted = debugWith
-    ( "solveConstraint: "
-        <> vsep
-            ["given: " <> pretty given, " wanted: " <> pretty wanted]
-    )
-    $ do
-        (residual, unifier) <- simplifyConstraint given tch wanted
-        debug ("solveConstraint: " <> pretty residual)
-        let residual' = reduce residual
-        debug ("solveConstraint reduced: " <> pretty residual')
+solveConstraint given tch wanted = do
+    (residual, unifier) <- simplifyConstraint given tch wanted
 
-        debug ("solveConstraint: unifier: " <> pretty unifier)
-        pure (residual', unifier)
+    let residual' = reduce residual
+
+    pure (residual', unifier)
 
 simplifyConstraint ::
     ( Error (UnifyError loc) :> r
@@ -383,10 +376,8 @@ unify ::
     Reader (Set UniqueTyVar) :> r =>
     Pretty loc =>
     Monotype loc -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
-unify a b = debugWith ("unify " <> pretty a <> " with " <> pretty b) $ do
-    r <- unify' a b
-    debug ("unify result: " <> pretty r)
-    pure r
+unify a b = do
+    unify' a b
   where
     unify' ::
         HasCallStack =>
@@ -448,10 +439,8 @@ unifyMany ::
 unifyMany [] [] = pure (mempty, mempty)
 unifyMany [] _ = throwError UnifyMismatch
 unifyMany _ [] = throwError UnifyMismatch
-unifyMany (a : as) (b : bs) = debugWith ("unifyMany: " <> pretty a <> " with " <> pretty b) $ do
+unifyMany (a : as) (b : bs) = do
     (c1, s1) <- unify a b
-    debug ("unifyMany produced: " <> pretty (c1, s1))
-    debug ("unifyMany: as: " <> pretty as <> " bs: " <> pretty bs)
     (c2, s2) <- unifyMany (fmap (substituteAll s1) as) (fmap (substituteAll s1) bs)
     pure (c1 <> c2, s1 <> s2)
 

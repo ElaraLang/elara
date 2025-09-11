@@ -127,6 +127,12 @@ functionTypeArgs = \case
     FuncTy a b -> a : functionTypeArgs b
     _ -> []
 
+conTyArgs :: Type -> [Type]
+conTyArgs = \case
+    AppTy ConTy{} b -> [b]
+    AppTy tc a -> conTyArgs tc ++ [a]
+    _ -> []
+
 functionTypeResult :: Type -> Type
 functionTypeResult = \case
     ForAllTy _ t -> functionTypeResult t

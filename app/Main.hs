@@ -8,12 +8,10 @@ module Main (
 where
 
 import Control.Exception as E
-import Elara.AST.Module
-import Elara.AST.Region (Located (..), unlocated)
 
 -- import Elara.CoreToIR
 
-import Effectful (Eff, IOE, runEff, (:>))
+import Effectful (Eff, IOE, inject, runEff, (:>))
 import Effectful.FileSystem (runFileSystem)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
@@ -22,15 +20,20 @@ import Elara.Data.Unique (
     resetGlobalUniqueSupply,
  )
 
+import Data.Generics.Product (field')
+import Data.Generics.Wrapped (_Unwrapped)
 import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
 import Effectful.Error.Static (Error, runError)
-import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
+import Elara.AST.Module
+import Elara.AST.Name (nameText)
+import Elara.AST.Region
+import Elara.Core.TypeCheck
 import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
-import Elara.Logging (structuredDebugToLog)
-import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
+import Elara.Logging (debug, structuredDebugToLog)
+import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.Rules qualified
@@ -40,9 +43,8 @@ import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
 import Print
 import Rock qualified
-import Rock.Memo (MemoQuery)
 import Rock.Memo qualified
-import Rock.MemoE (memoiseAsIO, memoiseRunIO)
+import Rock.MemoE (memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
@@ -92,7 +94,7 @@ main = run `finally` cleanup
 
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
 
-dumpGraph :: (HasCallStack, Pretty m) => TopologicalGraph m -> (m -> Text) -> Text -> IO ()
+dumpGraph :: (HasCallStack, Pretty m, Foldable f) => f m -> (m -> Text) -> Text -> Eff '[IOE] ()
 dumpGraph graph nameFunc suffix = do
     let dump m = do
             let contents = pretty m
@@ -103,7 +105,7 @@ dumpGraph graph nameFunc suffix = do
                 renderIO fileHandle rendered
                 hFlush fileHandle
 
-    traverseGraph_ dump graph
+    traverse_ (liftIO . dump) graph
 
 runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => CompilerSettings -> Eff es ()
 runElaraWrapped settings = uniqueGenToGlobalIO $ do
@@ -130,11 +132,31 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
                                 files <-
                                     toList <$> Rock.fetch Elara.Query.InputFiles
 
-                                -- loadedModules <- for ["source.elr"] $ \file -> do
-                                --     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                --     module' <- Rock.fetch $ Elara.Query.GetClosureLiftedModule (m.name ^. unlocated)
-                                --     runErrorOrReport @TypeCheckError $ typeCheckCoreModule module'
-                                --     pure module'
+                                moduleNames <- for files $ \file -> do
+                                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
+                                    pure (m.name ^. unlocated)
+
+                                when dumpTyped $ do
+                                    typed <- for moduleNames $ \m -> do
+                                        Rock.fetch $ Elara.Query.TypeCheckedModule m
+                                    inject $ dumpGraph typed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".typed.elr"
+                                    debug "Dumped typed modules"
+
+                                when dumpCore $ do
+                                    core <- for moduleNames $ \m -> do
+                                        Rock.fetch $ Elara.Query.GetCoreModule m
+
+                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
+
+                                -- when dumpCore $ do
+                                --     core <- for moduleNames $ \m -> do
+                                --         Rock.fetch $ Elara.Query.GetANFCoreModule m
+                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText ) ".core.anf.elr"
+
+                                -- when dumpCore $ do
+                                --     core <- for moduleNames $ \m -> do
+                                --         Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
+                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText ) ".core.final.elr"
 
                                 if runWith == RunWithInterpreter
                                     then
@@ -156,44 +178,5 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
                                             )
                                     )
 
--- when run $ liftIO $ do
---     printPretty (Style.varName "Running code...")
---     -- run 'java -cp ../jvm-stdlib:. Main' in pwd = './build'
---     let process =
---             if os == "mingw32"
---                 then shell "java -noverify -cp ../jvm-stdlib;. Main"
---                 else shell "java -noverify -cp ../jvm-stdlib:. Main"
---     x <- readCreateProcess process{cwd = Just "./build"} ""
---     putStrLn x
-
--- createAndWriteFile :: FilePath -> LByteString -> IO ()
--- createAndWriteFile path content = do
---     createDirectoryIfMissing True $ takeDirectory path
---     writeFileLBS path content
-
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
-
--- processModules ::
---     IsPipeline r =>
---     TopologicalGraph (Module 'Desugared) ->
---     (Bool, Bool) ->
---     Sem r (TopologicalGraph (CoreModule CoreBind))
--- processModules graph (dumpShunted, dumpTyped) =
---     runToCorePipeline $
---         runInferPipeline $
---             runShuntPipeline $
---                 runRenamePipeline
---                     graph
---                     primitiveRenameState
---                     ( traverseGraph rename
---                         >=> shuntGraph (Just primOpTable)
---                         >=> dumpIf identity dumpShunted (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".shunted.elr"
---                         >=> traverseGraphRevTopologically inferModule
---                         >=> dumpIf identity dumpTyped (view (_Unwrapped % unlocated % field' @"name" % to nameText)) ".typed.elr"
---                         >=> traverseGraphRevTopologically moduleToCore
---                         >=> (pure . mapGraph coreToCore)
---                         $ graph
---                     )
---   where
---     dumpIf acc cond f p = if cond then (\x -> liftIO (dumpGraph (mapGraph acc x) f p) $> x) else pure

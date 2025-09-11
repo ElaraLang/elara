@@ -542,6 +542,7 @@ patternToVarName (Pattern (Located _ p, _)) =
             ConstructorPattern _ _ -> mn "constructor"
             ConsPattern _ -> mn "cons"
             UnitPattern -> "unit"
+            TuplePattern _ -> mn "tuple"
 
 patternToMatch :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (Located (Unique VarName), RenamedExpr)
 -- Special case, no match needed
