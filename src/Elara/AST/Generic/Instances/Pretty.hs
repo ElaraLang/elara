@@ -256,6 +256,7 @@ instance
     , (Pretty (CleanupLocated (ASTLocate' ast (Pattern' ast))))
     , DataConAs (Select "ConsPattern" ast) (Pattern ast, Pattern ast)
     , DataConAs (Select "ListPattern" ast) [Pattern ast]
+    , DataConAs (Select "TuplePattern" ast) (NonEmpty (Pattern ast))
     ) =>
     Pretty (Pattern' ast)
     where
@@ -269,6 +270,7 @@ prettyPattern ::
 prettyPattern (VarPattern v) = pretty v
 prettyPattern (ConstructorPattern c ps) = prettyConstructorPattern c ps
 prettyPattern (ListPattern l) = prettyList (dataConAs @(Select "ListPattern" ast) @[Pattern ast] l)
+prettyPattern (TuplePattern t) = prettyTupleExpr (pretty <$> dataConAs @(Select "TuplePattern" ast) @(NonEmpty (Pattern ast)) t)
 prettyPattern (ConsPattern c) = do
     let (p1, p2) = dataConAs @(Select "ConsPattern" ast) @(Pattern ast, Pattern ast) c
     prettyConsPattern p1 p2

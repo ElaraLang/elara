@@ -52,6 +52,7 @@ type instance Select "ConPat" Renamed = Qualified TypeName
 type instance Select "ConsPattern" Renamed = DataConCantHappen
 
 type instance Select "ListPattern" Renamed = DataConCantHappen
+type instance Select "TuplePattern" Renamed = DataConCantHappen
 
 type instance Select "TypeApplication" Renamed = RenamedType
 

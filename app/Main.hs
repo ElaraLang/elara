@@ -30,14 +30,18 @@ import Elara.AST.Name (nameText)
 import Elara.AST.Region
 import Elara.Core.TypeCheck
 import Elara.Data.Unique.Effect
+import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
+import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (debug, structuredDebugToLog)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
+import Elara.Rename.Error (RenameError)
 import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..), RunWithOption (..))
+import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
@@ -48,6 +52,7 @@ import Rock.MemoE (memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
+import System.FilePath (takeBaseName)
 import System.IO (hSetEncoding, utf8)
 import Text.Printf
 
@@ -76,6 +81,7 @@ main = run `finally` cleanup
         let dumpLexed = "--dump-lexed" `elem` args || "ELARA_DUMP_LEXED" `elem` fmap fst env
         let dumpParsed = "--dump-parsed" `elem` args || "ELARA_DUMP_PARSED" `elem` fmap fst env
         let dumpDesugared = "--dump-desugared" `elem` args || "ELARA_DUMP_DESUGARED" `elem` fmap fst env
+        let dumpRenamed = "--dump-renamed" `elem` args || "ELARA_DUMP_RENAMED" `elem` fmap fst env
         let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
@@ -132,9 +138,40 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
                                 files <-
                                     toList <$> Rock.fetch Elara.Query.InputFiles
 
+                                when dumpLexed $ do
+                                    lexed <- for files $ \file -> do
+                                        fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
+
+                                    inject $ dumpGraph lexed (toText . takeBaseName . fst) ".lexed.elr"
+                                    debug "Dumped lexed files"
+
                                 moduleNames <- for files $ \file -> do
                                     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
                                     pure (m.name ^. unlocated)
+
+                                when dumpParsed $ do
+                                    parsed <- for moduleNames $ \m -> do
+                                        runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule m
+                                    inject $ dumpGraph parsed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".parsed.elr"
+                                    debug "Dumped parsed modules"
+
+                                when dumpDesugared $ do
+                                    desugared <- for moduleNames $ \m -> do
+                                        runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule m
+                                    inject $ dumpGraph desugared (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".desugared.elr"
+                                    debug "Dumped desugared modules"
+
+                                when dumpRenamed $ do
+                                    renamed <- for moduleNames $ \m -> do
+                                        runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule m
+                                    inject $ dumpGraph renamed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".renamed.elr"
+                                    debug "Dumped renamed modules"
+
+                                when dumpShunted $ do
+                                    shunted <- for moduleNames $ \m -> do
+                                        runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule m
+                                    inject $ dumpGraph shunted (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".shunted.elr"
+                                    debug "Dumped shunted modules"
 
                                 when dumpTyped $ do
                                     typed <- for moduleNames $ \m -> do

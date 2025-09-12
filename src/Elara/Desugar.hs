@@ -238,15 +238,12 @@ desugarPattern p@(Pattern lp) =
     desugarPattern' (ListPattern pats) = ListPattern <$> traverse desugarPattern pats
     desugarPattern' (ConsPattern as) = ConsPattern <$> traverseOf each desugarPattern as
     desugarPattern' (TuplePattern (_ :| [])) = throwError (TuplePatternTooShort p)
-    desugarPattern' (TuplePattern (p :| (p1 : ps))) = do
+    desugarPattern' (TuplePattern (p :| ps)) = do
         p' <- desugarPattern p
-        p1' <- desugarPattern p1
         ps' <- traverse desugarPattern ps
-        pure (TuplePattern (p', p1' :| ps'))
+        pure (TuplePattern (p' :| ps'))
 
-{-
-
-\| Lambdas need quite a lot of desugaring - they need to be unfolded into a series of nested lambdas, and then each pattern needs to be converted into a match expression.
+{- | Lambdas need quite a lot of desugaring - they need to be unfolded into a series of nested lambdas, and then each pattern needs to be converted into a match expression.
 
 For example, @\a (b, c) 1 -> e@ becomes
 @\a -> \b_1 -> \c_1 -> match b_1 with
@@ -255,9 +252,7 @@ For example, @\a (b, c) 1 -> e@ becomes
 
 However, converting the matches would require renaming, and we're not able to do that yet.
 Instead, we unfold the lambda, but keep the patterns, and the renamer handles the match conversion.
-
 -}
-
 foldLambda :: [DesugaredPattern] -> DesugaredExpr -> DesugaredExpr
 foldLambda [] e = e
 foldLambda (p : ps) e =

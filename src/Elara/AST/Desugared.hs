@@ -60,8 +60,7 @@ type instance Select "ConsPattern" 'Desugared = (DesugaredPattern, DesugaredPatt
 
 type instance Select "ListPattern" 'Desugared = [DesugaredPattern]
 
--- | Tuple patterns now have to have at least 2 elements
-type instance Select "TuplePattern" 'Desugared = (DesugaredPattern, NonEmpty DesugaredPattern)
+type instance Select "TuplePattern" 'Desugared = NonEmpty DesugaredPattern
 
 type instance Select "TypeApplication" 'Desugared = DesugaredType
 

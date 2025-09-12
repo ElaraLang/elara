@@ -8,6 +8,7 @@ data DumpSettings = DumpSettings
     { dumpLexed :: Bool
     , dumpParsed :: Bool
     , dumpDesugared :: Bool
+    , dumpRenamed :: Bool
     , dumpShunted :: Bool
     , dumpTyped :: Bool
     , dumpCore :: Bool

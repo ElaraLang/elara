@@ -509,7 +509,7 @@ renamePattern (Pattern fp@(Located loc _, _)) =
         p1' <- renamePattern p1
         p2' <- renamePattern p2
         pure $ ConstructorPattern (Located loc consCtorName) [p1', p2']
-    renamePattern' (TuplePattern (p1, p2 :| [])) = do
+    renamePattern' (TuplePattern (p1 :| [p2])) = do
         -- turn (x, y) into Elara.Prim.Tuple2 x y
         let tupleCtorName = TypeName <$> tuple2CtorName
         p1' <- renamePattern p1
