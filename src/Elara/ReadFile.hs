@@ -10,7 +10,6 @@ import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Query.Effects (ConsQueryEffects)
 import Error.Diagnose hiding (addFile)
 import Polysemy
 import Polysemy.Error
@@ -52,10 +51,11 @@ getInputFiles = do
 
     pure $ HashSet.fromList (stdlib <> [source])
 
-runGetFileContentsQuery :: FileSystem :> es => FilePath -> Eff es FileContents
+runGetFileContentsQuery :: (DiagnosticWriter (Doc AnsiStyle) :> es, FileSystem :> es) => FilePath -> Eff es FileContents
 runGetFileContentsQuery fp = do
     contents <- Eff.readFile fp
     let contentsText = decodeUtf8 contents
+    addFile fp (toString contentsText)
     pure $ FileContents fp contentsText
 
 data FileContents = FileContents

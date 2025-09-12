@@ -26,7 +26,9 @@ import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
+import Elara.Data.Pretty
 import Elara.Desugar.Error (DesugarError)
+import Elara.Error (DiagnosticWriter)
 import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
@@ -54,7 +56,7 @@ data Query (es :: [Effect]) a where
     -- | Query to get all the required input files to be passed to the compiler
     InputFiles :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) (HashSet FilePath)
     -- | Query to get the contents of a specific file
-    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) FileContents
+    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, DiagnosticWriter (Doc AnsiStyle)])) FileContents
     -- | Query to get the file path of a module
     ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
     -- Lexing and Parsing Queries
