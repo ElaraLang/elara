@@ -18,8 +18,6 @@ simpleTok t len _ = do
     region <- createRegionStartingAt start
     emitAt t (RealSourceRegion region)
 
--- pure $ Just (Located (RealSourceRegion region) t)
-
 parametrizedTok :: (a -> Token) -> (Text -> a) -> LexAction
 parametrizedTok tc read' tokenLen matched = do
     start <- getPosition tokenLen
@@ -56,5 +54,3 @@ endString len _ = do
             }
     let token = TokenString (Text.reverse buf)
     emitAt token (RealSourceRegion region)
-
--- pure $ Just (Located (RealSourceRegion region) token)

@@ -148,17 +148,14 @@ initialState fp s =
 
 -- Emits a token, updating the prevEndsExpr state if necessary
 emitAt :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
-emitAt t region = debugWith ("emitAt: " <> pretty (t, region)) $ do
+emitAt t region = do
     prevEnds <- getPrevEndsExpr
-    debug ("prevEnds: " <> pretty prevEnds)
     -- Suppress LINESEP if previous token cannot end an expression
     case t of
         TokenLineSeparator | not prevEnds -> do
-            debug "Suppressing LINESEP"
             pure Nothing
         _ -> do
             setPrevEndsExpr (tokenEndsExpr t)
-            debug ("Setting prevEndsExpr to " <> pretty (tokenEndsExpr t))
             pure (Just (Located region t))
 
 fake :: Token -> LexMonad (Maybe Lexeme)
