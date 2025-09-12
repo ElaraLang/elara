@@ -3,8 +3,10 @@ module Elara.Lexer.Action where
 import Data.Text qualified as Text
 import Effectful.State.Static.Local
 import Elara.AST.Region (Located (..), SourceRegion (RealSourceRegion))
+import Elara.Data.Pretty
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
+import Elara.Logging
 
 type NumberOfCharsMatched = Int
 type MatchedSequence = Text
@@ -14,14 +16,16 @@ simpleTok :: Token -> LexAction
 simpleTok t len _ = do
     start <- getPosition len
     region <- createRegionStartingAt start
-    pure $ Just (Located (RealSourceRegion region) t)
+    emitAt t (RealSourceRegion region)
+
+-- pure $ Just (Located (RealSourceRegion region) t)
 
 parametrizedTok :: (a -> Token) -> (Text -> a) -> LexAction
 parametrizedTok tc read' tokenLen matched = do
     start <- getPosition tokenLen
     region <- createRegionStartingAt start
     let token = tc (read' matched)
-    pure $ Just (Located (RealSourceRegion region) token)
+    emitAt token (RealSourceRegion region)
 
 beginString :: _ -> LexAction
 beginString stringSC len _ = do
@@ -51,4 +55,6 @@ endString len _ = do
             , _stringBuf = ""
             }
     let token = TokenString (Text.reverse buf)
-    pure $ Just (Located (RealSourceRegion region) token)
+    emitAt token (RealSourceRegion region)
+
+-- pure $ Just (Located (RealSourceRegion region) token)

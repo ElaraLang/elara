@@ -2,8 +2,10 @@
 
 module Elara.Lexer.Token where
 
+import Data.Set qualified as Set
 import Elara.AST.Name (ModuleName, nameText)
 import Elara.AST.Region (Located, RealPosition)
+import Elara.Data.Pretty
 
 type Lexeme = Located Token
 
@@ -180,3 +182,32 @@ isIndent TokenIndent = True
 isIndent TokenDedent = True
 isIndent TokenLineSeparator = True
 isIndent _ = False
+
+instance Pretty Token where
+    pretty = pretty . tokenRepr
+
+{- | Returns 'True' if the token ends an expression.
+This is used to determine whether line breaks should be treated as semicolons
+If the token doesn't end an expression, then a line break is skipped.
+If the token does end an expression, then a line break is treated as a semicolon.
+-}
+tokenEndsExpr :: Token -> Bool
+tokenEndsExpr = \case
+    -- tokens that DO NOT end an expression (expect a continuation)
+    TokenOperatorIdentifier _ -> False
+    TokenQOperatorIdentifier _ -> False
+    TokenBackslash -> False
+    TokenLeftParen -> False
+    TokenLeftBracket -> False
+    TokenLeftBrace -> False
+    TokenComma -> False
+    TokenEquals -> False
+    TokenColon -> False
+    TokenDoubleColon -> False
+    TokenDot -> False
+    TokenIndent -> False
+    -- important: decent does end an expression because it closes a block
+    TokenDedent -> True
+    -- everything else ends an expression:
+    -- identifiers (var/ctor/qualified), literals, keywords, closers, LINESEP, EOF, etc.
+    _ -> True

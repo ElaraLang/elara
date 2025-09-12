@@ -13,13 +13,15 @@ import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (..))
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
 import Error.Diagnose (Marker (..), Note (..), Report (Err))
 
 import Effectful (Eff)
 import Effectful.Error.Static
 import Effectful.State.Extra (use')
 import Effectful.State.Static.Local
+import Elara.Data.Pretty (pretty)
+import Elara.Logging (StructuredDebug, debug, debugWith)
 import Optics (use)
 import Prelude hiding (span)
 
@@ -40,11 +42,18 @@ data IndentInfo = IndentInfo
 
 data ParseState = ParseState
     { _input :: AlexInput
-    , _lexSC :: Int -- lexer start code
-    , _stringBuf :: Text -- temporary storage for strings
-    , _pendingTokens :: [Lexeme] -- right now used when Parser consumes the lookahead and decided to put it back
-    , _indentStack :: NonEmpty IndentInfo -- stack of indentation levels
-    , _pendingPosition :: TokPosition -- needed when parsing strings, chars, multi-line strings
+    , _lexSC :: Int
+    -- ^ lexer start code
+    , _stringBuf :: Text
+    -- ^ temporary storage for strings
+    , _pendingTokens :: [Lexeme]
+    -- ^ right now used when Parser consumes the lookahead and decided to put it back
+    , _indentStack :: NonEmpty IndentInfo
+    -- ^ stack of indentation levels
+    , _pendingPosition :: TokPosition
+    -- ^ needed when parsing strings, chars, multi-line strings
+    , _prevEndsExpr :: Bool
+    -- ^ did the previous token end an expression? (used for offside rule
     }
     deriving (Show)
 
@@ -53,7 +62,13 @@ makeLenses ''IndentInfo
 makeLenses ''ParseState
 
 type LexMonad :: Type -> Type
-type LexMonad a = Eff '[State ParseState, Error LexerError] a
+type LexMonad a = Eff '[State ParseState, Error LexerError, StructuredDebug] a
+
+setPrevEndsExpr :: Bool -> LexMonad ()
+setPrevEndsExpr b = modify (\st -> st{_prevEndsExpr = b})
+
+getPrevEndsExpr :: LexMonad Bool
+getPrevEndsExpr = gets _prevEndsExpr
 
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
@@ -128,12 +143,28 @@ initialState fp s =
         , _pendingTokens = []
         , _indentStack = IndentInfo 0 (Position 1 1) :| []
         , _pendingPosition = Position 1 1
+        , _prevEndsExpr = True
         }
 
-fake :: Token -> LexMonad Lexeme
+-- Emits a token, updating the prevEndsExpr state if necessary
+emitAt :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
+emitAt t region = debugWith ("emitAt: " <> pretty (t, region)) $ do
+    prevEnds <- getPrevEndsExpr
+    debug ("prevEnds: " <> pretty prevEnds)
+    -- Suppress LINESEP if previous token cannot end an expression
+    case t of
+        TokenLineSeparator | not prevEnds -> do
+            debug "Suppressing LINESEP"
+            pure Nothing
+        _ -> do
+            setPrevEndsExpr (tokenEndsExpr t)
+            debug ("Setting prevEndsExpr to " <> pretty (tokenEndsExpr t))
+            pure (Just (Located region t))
+
+fake :: Token -> LexMonad (Maybe Lexeme)
 fake t = do
     fp <- use' (input % filePath)
-    pure (Located (GeneratedRegion fp) t)
+    emitAt t (GeneratedRegion fp)
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
@@ -144,7 +175,8 @@ startWhite _ str = do
         GT -> do
             fakeLb <- fake TokenIndent
             indentInfo <- mkIndentInfo indentation
-            put s{_indentStack = indentInfo <| indents, _pendingTokens = fakeLb : _pendingTokens s}
+            let push = maybe identity (:) fakeLb
+            put s{_indentStack = indentInfo <| indents, _pendingTokens = push (_pendingTokens s)}
             pure Nothing
         LT -> do
             -- If the indentation is less than the current indentation, we need to close the current block
@@ -152,25 +184,27 @@ startWhite _ str = do
                 (pre, top : xs) -> do
                     -- pre is all the levels that need to be closed, top is the level that we need to match
                     fakeClosings <- sequenceA [fake TokenDedent, fake TokenLineSeparator]
+                    let closings = catMaybes fakeClosings
                     if top ^. indent == indentation
                         then
                             put
                                 s
                                     { _indentStack = top :| xs
-                                    , _pendingTokens = pre >>= const fakeClosings
+                                    , _pendingTokens = pre >>= const closings
                                     }
                         else throwError (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
                 (_, []) -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
-        EQ -> Just <$> fake TokenLineSeparator
+        EQ -> fake TokenLineSeparator
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
     indentStack' <- use' indentStack
     fakeClosings <- sequenceA [fake TokenDedent]
+    let closings = catMaybes fakeClosings
     modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
-    pure $ init indentStack' >>= const fakeClosings
+    pure $ init indentStack' >>= const closings
 
 -- The functions that must be provided to Alex's basic interface
 

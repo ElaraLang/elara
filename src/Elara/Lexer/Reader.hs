@@ -10,6 +10,7 @@ import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
 import Effectful.FileSystem (FileSystem)
 import Effectful.State.Static.Local
+import Elara.Logging (StructuredDebug)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
@@ -33,7 +34,7 @@ readToken = do
                     when (s ^. lexSC == stringSC) (throwError (UnterminatedStringLiteral s))
                     eof <- fake TokenEOF
                     closeIndents <- cleanIndentation
-                    modify (over pendingTokens (<> (closeIndents <> [eof])))
+                    modify (over pendingTokens (<> (closeIndents <> maybeToList eof)))
                     readToken
                 AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
                 AlexSkip inp _ -> do
@@ -54,7 +55,9 @@ readTokens = do
             next <- readTokens
             pure (tok : next)
 
-readTokensWith :: Error LexerError :> es => FileContents -> Eff es [Lexeme]
+readTokensWith ::
+    (Error LexerError :> es, StructuredDebug :> es) =>
+    FileContents -> Eff es [Lexeme]
 readTokensWith (FileContents fp s) = do
     evalState (initialState fp s) (inject readTokens)
 
