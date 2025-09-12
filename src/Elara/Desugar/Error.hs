@@ -1,5 +1,6 @@
 module Elara.Desugar.Error where
 
+import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Desugared
 import Elara.AST.Frontend (FrontendPattern)
 import Elara.AST.Generic
@@ -25,8 +26,16 @@ instance Exception DesugarError
 instance Pretty DesugarError
 
 instance ReportableError DesugarError where
-    getReport (DefWithoutLet _) =
-        Just $ Err (Just Codes.defWithoutLet) "Def without let" [] []
+    getReport (DefWithoutLet ty) =
+        Just $
+            Err
+                (Just Codes.defWithoutLet)
+                ("Def without let at" <+> pretty ty)
+                [ (sourceRegionToDiagnosePosition $ view (_Unwrapped % _1 % sourceRegion) ty, This "Def without let here")
+                ]
+                [ Note "A 'def' must always be followed by a let binding"
+                , Hint "Try adding a 'let' binding after the 'def'"
+                ]
     getReport (DuplicateDeclaration a b) =
         Just $
             Err
