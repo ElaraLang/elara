@@ -57,6 +57,7 @@
               programs.fourmolu.package = pkgs.haskell.packages.ghc912.fourmolu;
               programs.fourmolu.ghcOpts = [ ];
               programs.hlint.enable = true;
+              programs.hlint.package = pkgs.haskell.packages.ghc912.hlint;
               programs.yamlfmt.enable = true;
               programs.toml-sort.enable = true;
             };
