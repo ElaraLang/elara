@@ -1,6 +1,6 @@
 module Elara.Lexer.Reader where
 
-import Elara.AST.Region (line, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion (..), line, unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
@@ -9,6 +9,7 @@ import Data.Text qualified as Text
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
 import Effectful.FileSystem (FileSystem)
+import Effectful.State.Extra (use')
 import Effectful.State.Static.Local
 import Elara.Logging (StructuredDebug)
 import Elara.Query (Query (GetFileContents))
@@ -32,9 +33,11 @@ readToken = do
             case alexScan (s ^. input) (s ^. lexSC) of
                 AlexEOF -> do
                     when (s ^. lexSC == stringSC) (throwError (UnterminatedStringLiteral s))
-                    eof <- fake TokenEOF
                     closeIndents <- cleanIndentation
-                    modify (over pendingTokens (<> (closeIndents <> maybeToList eof)))
+                    pos <- use' (input % position)
+                    region <- createRegion pos pos
+                    let eofToken = Located (RealSourceRegion region) TokenEOF
+                    modify (over pendingTokens (<> (closeIndents <> [eofToken])))
                     readToken
                 AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
                 AlexSkip inp _ -> do

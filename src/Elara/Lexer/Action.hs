@@ -2,11 +2,9 @@ module Elara.Lexer.Action where
 
 import Data.Text qualified as Text
 import Effectful.State.Static.Local
-import Elara.AST.Region (Located (..), SourceRegion (RealSourceRegion))
-import Elara.Data.Pretty
+import Elara.AST.Region (SourceRegion (RealSourceRegion))
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-import Elara.Logging
 
 type NumberOfCharsMatched = Int
 type MatchedSequence = Text

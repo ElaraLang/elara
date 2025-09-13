@@ -10,7 +10,7 @@ import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (GeneratedRegion), column, line, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), column, line, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
@@ -20,9 +20,7 @@ import Effectful (Eff)
 import Effectful.Error.Static
 import Effectful.State.Extra (use')
 import Effectful.State.Static.Local
-import Elara.Data.Pretty (pretty)
-import Elara.Logging (StructuredDebug, debug, debugWith)
-import Optics (use)
+import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
 
 data AlexInput = AlexInput
@@ -154,54 +152,87 @@ emitAt t region = do
     case t of
         TokenLineSeparator | not prevEnds -> do
             pure Nothing
-        _ -> do
-            setPrevEndsExpr (tokenEndsExpr t)
-            pure (Just (Located region t))
+        _ -> emit
+  where
+    emit = do
+        setPrevEndsExpr (tokenEndsExpr t)
+        pure (Just (Located region t))
+
+emitLayoutAt :: Token -> RealSourceRegion -> LexMonad (Maybe Lexeme)
+emitLayoutAt t r = pure (Just (Located (RealSourceRegion r) t))
+
+emitIndentAt :: RealPosition -> LexMonad (Maybe Lexeme)
+emitIndentAt pos = do
+    r <- createRegion pos pos
+    emitLayoutAt TokenIndent r
+
+emitDedentAt :: TokPosition -> TokPosition -> LexMonad (Maybe Lexeme)
+emitDedentAt start end = do
+    r <- createRegion start end
+    emitLayoutAt TokenDedent r
+
+emitLineSepAt :: RealPosition -> LexMonad (Maybe Lexeme)
+emitLineSepAt pos = do
+    r <- createRegion pos pos
+    emitLayoutAt TokenLineSeparator r
 
 fake :: Token -> LexMonad (Maybe Lexeme)
 fake t = do
-    fp <- use' (input % filePath)
-    emitAt t (GeneratedRegion fp)
+    region <- getPosition 0 >>= createRegionStartingAt
+    emitAt t (RealSourceRegion region)
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
     let indentation = T.length $ T.dropWhile (== '\n') str
     s <- get
     let indents@(cur :| _) = s ^. indentStack
+
+    curPos <- use' (input % position)
     case indentation `compare` (cur ^. indent) of
         GT -> do
-            fakeLb <- fake TokenIndent
+            fakeLb <- emitIndentAt curPos
             indentInfo <- mkIndentInfo indentation
             let push = maybe identity (:) fakeLb
             put s{_indentStack = indentInfo <| indents, _pendingTokens = push (_pendingTokens s)}
             pure Nothing
         LT -> do
             -- If the indentation is less than the current indentation, we need to close the current block
-            case span (view (indent % to (> indentation))) indents of
-                (pre, top : xs) -> do
-                    -- pre is all the levels that need to be closed, top is the level that we need to match
-                    fakeClosings <- sequenceA [fake TokenDedent, fake TokenLineSeparator]
-                    let closings = catMaybes fakeClosings
+            let (closingLevels, topAndRest) = span (view (indent % to (> indentation))) indents
+            case topAndRest of
+                (top : xs) -> do
+                    eofPos <- use' (input % position)
+
+                    dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) closingLevels
+                    -- emit at most one layout line separator for this line
+                    sep <- emitLineSepAt eofPos
+                    let closings = dedents <> maybeToList sep
                     if top ^. indent == indentation
                         then
                             put
                                 s
                                     { _indentStack = top :| xs
-                                    , _pendingTokens = pre >>= const closings
+                                    , _pendingTokens = closings <> _pendingTokens s
                                     }
                         else throwError (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
-                (_, []) -> error (" Indent stack contains nothing greater than " <> show indentation)
+                [] -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
-        EQ -> fake TokenLineSeparator
+        EQ -> do
+            pos <- use' (input % position)
+            emitLineSepAt pos
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
 cleanIndentation = do
     indentStack' <- use' indentStack
-    fakeClosings <- sequenceA [fake TokenDedent]
-    let closings = catMaybes fakeClosings
-    modify $ \s -> s{_indentStack = IndentInfo 0 (Position 1 1) :| []}
-    pure $ init indentStack' >>= const closings
+    case indentStack' of
+        _base :| [] -> pure []
+        _ -> do
+            let toClose = init indentStack'
+                base = last indentStack'
+            eofPos <- use' (input % position)
+            dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) toClose
+            modify $ \s -> s{_indentStack = base :| []}
+            pure dedents
 
 -- The functions that must be provided to Alex's basic interface
 
