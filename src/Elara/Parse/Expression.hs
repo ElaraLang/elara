@@ -149,9 +149,11 @@ match = locatedExpr $ do
     expr <- exprBlock element
     token_ TokenWith
 
+    let emptyMatchBody =
+            (token_ TokenLeftBrace *> token_ TokenRightBrace $> []) <?> "empty match body"
     cases <-
-        try (toList <$> block identity one matchCase)
-            <|> (token_ TokenLeftBrace *> token_ TokenRightBrace $> []) -- allow empty match blocks
+        emptyMatchBody -- allow empty match blocks
+            <|> (toList <$> block identity one matchCase)
     pure $ Match expr cases
   where
     matchCase :: Parser (FrontendPattern, FrontendExpr)
@@ -159,7 +161,7 @@ match = locatedExpr $ do
         case' <- patParser
         token_ TokenRightArrow
 
-        expr <- exprBlock element
+        expr <- exprBlock (element <?> "match case expression")
         pure (case', expr)
 
 lambda :: Parser FrontendExpr
