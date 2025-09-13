@@ -1,3 +1,4 @@
+{-# LANGUAGE OrPatterns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -35,6 +36,8 @@ data AlexInput = AlexInput
 data IndentInfo = IndentInfo
     { _indent :: Int
     , _indentPos :: RealPosition
+    , _openedAtDepth :: Int
+    -- ^ the delimDepth when this indent was opened
     }
     deriving (Show)
 
@@ -52,6 +55,8 @@ data ParseState = ParseState
     -- ^ needed when parsing strings, chars, multi-line strings
     , _prevEndsExpr :: Bool
     -- ^ did the previous token end an expression? (used for offside rule
+    , _delimDepth :: Int
+    -- ^ current depth of open delimiters ((), [], {
     }
     deriving (Show)
 
@@ -71,7 +76,8 @@ getPrevEndsExpr = gets _prevEndsExpr
 mkIndentInfo :: Int -> LexMonad IndentInfo
 mkIndentInfo i = do
     pos <- use' (input % position)
-    pure (IndentInfo i pos)
+    d <- use' delimDepth
+    pure (IndentInfo i pos d)
 
 data LexerError
     = -- | When an element is indented more than expected
@@ -139,10 +145,22 @@ initialState fp s =
         , _lexSC = 0
         , _stringBuf = ""
         , _pendingTokens = []
-        , _indentStack = IndentInfo 0 (Position 1 1) :| []
+        , _indentStack =
+            IndentInfo
+                0
+                (Position 1 1)
+                0
+                :| []
         , _pendingPosition = Position 1 1
         , _prevEndsExpr = True
+        , _delimDepth = 0
         }
+
+pushFront :: Lexeme -> LexMonad ()
+pushFront lex = modify (over pendingTokens (lex :))
+
+pushBack :: Lexeme -> LexMonad ()
+pushBack lex = modify (over pendingTokens (\toks -> toks <> [lex]))
 
 -- Emits a token, updating the prevEndsExpr state if necessary
 emitAt :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
@@ -150,6 +168,8 @@ emitAt t region = do
     prevEnds <- getPrevEndsExpr
     -- Suppress LINESEP if previous token cannot end an expression
     case t of
+        TokenLeftParen; TokenLeftBracket; TokenLeftBrace -> modify (delimDepth %~ (+ 1)) *> emit
+        TokenRightParen; TokenRightBracket; TokenRightBrace -> emitCloser t region
         TokenLineSeparator | not prevEnds -> do
             pure Nothing
         _ -> emit
@@ -157,6 +177,43 @@ emitAt t region = do
     emit = do
         setPrevEndsExpr (tokenEndsExpr t)
         pure (Just (Located region t))
+
+popPending :: LexMonad (Maybe Lexeme)
+popPending = do
+    s <- get
+    case _pendingTokens s of
+        (x : xs) -> put s{_pendingTokens = xs} >> pure (Just x)
+        [] -> pure Nothing
+
+-- Emit DEDENTs for layout opened inside current delimiter depth, then the closer.
+-- Return the first pending token (typically a DEDENT) so stream becomes “… <DEDENT> ) …”
+emitCloser :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
+emitCloser closerTok closerReg = do
+    flushLayoutBeforeCloser
+    modify (delimDepth %~ (\x -> max 0 (x - 1)))
+    let closerLex = Located closerReg closerTok
+    pushBack closerLex
+    m <- popPending
+    -- keep prevEndsExpr consistent
+    case m of
+        Just (Located _ tok) -> setPrevEndsExpr (tokenEndsExpr tok)
+        Nothing -> setPrevEndsExpr (tokenEndsExpr closerTok)
+    pure m
+
+-- Close only layout started at or inside current delimiter depth
+flushLayoutBeforeCloser :: LexMonad ()
+flushLayoutBeforeCloser = do
+    d <- use' delimDepth
+    st <- get
+    let stk = st ^. indentStack
+        (toClose, keep) = span (\ii -> ii ^. openedAtDepth >= d) stk
+    case keep of
+        [] -> pass -- base should remain
+        (b : bs) -> do
+            put (st & indentStack .~ (b :| bs))
+            curPos <- use' (input % position)
+            ds <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) curPos) toClose
+            mapM_ pushFront (reverse ds)
 
 emitLayoutAt :: Token -> RealSourceRegion -> LexMonad (Maybe Lexeme)
 emitLayoutAt t r = pure (Just (Located (RealSourceRegion r) t))
@@ -217,8 +274,9 @@ startWhite _ str = do
                 [] -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
         EQ -> do
+            ends <- getPrevEndsExpr
             pos <- use' (input % position)
-            emitLineSepAt pos
+            if ends then emitLineSepAt pos else pure Nothing
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
