@@ -9,10 +9,10 @@ class Ftv a where
     ftv :: a -> Set TypeVariable
 
 instance Ftv (Monotype loc) where
-    ftv (TypeVar tv) = one tv
-    ftv (Scalar _) = mempty
-    ftv (TypeConstructor _ ts) = foldMap ftv ts
-    ftv (Function t1 t2) = ftv t1 <> ftv t2
+    ftv (TypeVar _ tv) = one tv
+    ftv (Scalar _ _) = mempty
+    ftv (TypeConstructor _ _ ts) = foldMap ftv ts
+    ftv (Function _ t1 t2) = ftv t1 <> ftv t2
 
 instance Ftv (Type loc) where
     ftv (Polytype t) = ftv t
@@ -34,13 +34,13 @@ class Fuv a where
     fuv :: a -> Set UniqueTyVar
 
 instance Fuv (Monotype loc) where
-    fuv (TypeVar (SkolemVar _)) = mempty
-    fuv (TypeVar (UnificationVar tv)) = one tv
-    fuv (Scalar _) = mempty
-    fuv (TypeConstructor _ ts) = foldMap fuv ts
-    fuv (Function t1 t2) = fuv t1 <> fuv t2
+    fuv (TypeVar _ (SkolemVar _)) = mempty
+    fuv (TypeVar _ (UnificationVar tv)) = one tv
+    fuv (Scalar _ _) = mempty
+    fuv (TypeConstructor _ _ ts) = foldMap fuv ts
+    fuv (Function _ t1 t2) = fuv t1 <> fuv t2
 
 instance Fuv (Constraint loc) where
-    fuv (Equality t1 t2) = fuv t1 <> fuv t2
-    fuv EmptyConstraint = mempty
-    fuv (Conjunction a b) = fuv a <> fuv b
+    fuv (Equality _ t1 t2) = fuv t1 <> fuv t2
+    fuv EmptyConstraint{} = mempty
+    fuv (Conjunction _ a b) = fuv a <> fuv b

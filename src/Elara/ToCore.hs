@@ -248,7 +248,7 @@ mkTypeVar :: Select "TypeVar" 'Typed -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
-polytypeToCore (Type.Forall tvs constraints t) = do
+polytypeToCore (Type.Forall _ tvs constraints t) = do
     t' <- typeToCore t
     let tvs' = fmap mkTypeVar tvs
     pure $ foldr Core.ForAllTy t' tvs'
@@ -258,15 +258,15 @@ eitherTypeToCore (Type.Polytype p) = polytypeToCore p
 eitherTypeToCore (Type.Lifted t) = typeToCore t
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
-typeToCore (Type.TypeVar (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore (Type.TypeVar (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore (Type.Scalar Type.ScalarInt) = pure $ Core.ConTy intCon
-typeToCore (Type.Scalar Type.ScalarFloat) = pure $ Core.ConTy floatCon
-typeToCore (Type.Scalar Type.ScalarString) = pure $ Core.ConTy stringCon
-typeToCore (Type.Scalar Type.ScalarChar) = pure $ Core.ConTy charCon
-typeToCore (Type.Scalar Type.ScalarUnit) = pure $ Core.ConTy unitCon
-typeToCore (Type.Function t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
-typeToCore (Type.TypeConstructor qn ts) = debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+typeToCore (Type.TypeVar _ (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore (Type.TypeVar _ (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore (Type.Scalar _ Type.ScalarInt) = pure $ Core.ConTy intCon
+typeToCore (Type.Scalar _ Type.ScalarFloat) = pure $ Core.ConTy floatCon
+typeToCore (Type.Scalar _ Type.ScalarString) = pure $ Core.ConTy stringCon
+typeToCore (Type.Scalar _ Type.ScalarChar) = pure $ Core.ConTy charCon
+typeToCore (Type.Scalar _ Type.ScalarUnit) = pure $ Core.ConTy unitCon
+typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
+typeToCore (Type.TypeConstructor _ qn ts) = debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
     tyCon <- lookupTyCon (fmap (view _Unwrapped) qn)
     ts' <- traverse typeToCore ts
     pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
@@ -275,7 +275,7 @@ conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global n) t (Just dc)
 
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Eff r CoreExpr
-toCore le@(Expr (Located _ e, _)) = debugWithResult ("toCore: " <> pretty le) $ moveTypeApplications <$> toCore' e
+toCore le@(Expr (Located _ e, _)) = moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
     moveTypeApplications :: CoreExpr -> CoreExpr
@@ -352,7 +352,7 @@ isRecursive vn e1 l =
         e1
 
 desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, TypedExpr)] -> Eff r CoreExpr
-desugarMatch e pats = debugWithResult ("desugarMatch:" <> pretty (e, pats)) $ do
+desugarMatch e pats = do
     -- Scrutinee to Core and bind it to a fresh local, as Core.Match expects.
     e' <- toCore e
     debug $ "e': " <> pretty e'

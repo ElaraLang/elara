@@ -3,11 +3,9 @@ module Elara.TypeInfer.Generalise where
 import Data.Generics.Sum (AsAny (_As))
 import Data.Set (difference, member)
 import Elara.AST.Region
-import Elara.Data.Pretty
 import Elara.Logging
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Ftv
-import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type
 
 import Effectful
@@ -20,7 +18,7 @@ generalise ty = do
     let envVars = freeVars `difference` ftv env
     let uniVars = envVars ^.. folded % (_As @"UnificationVar")
 
-    let generalized = Forall (toList uniVars) EmptyConstraint ty
+    let generalized = Forall (monotypeLoc ty) (toList uniVars) (EmptyConstraint $ monotypeLoc ty) ty
     pure generalized
 
 removeSkolems :: Monotype loc -> Monotype loc
@@ -30,7 +28,7 @@ removeSkolems ty = do
     transformOf
         gplate
         ( \case
-            TypeVar tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar (UnificationVar tv')
+            TypeVar loc tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar loc (UnificationVar tv')
             other -> other
         )
         ty

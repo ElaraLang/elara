@@ -23,7 +23,7 @@ import Elara.AST.Generic.Types (
 import Elara.AST.Kinded
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), TypeName, VarName)
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -50,9 +50,10 @@ import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), TypeEnvironment
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..), monotypeLoc, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Optics (forOf_)
+import Relude.Extra (fmapToSnd)
 import Rock qualified
 import TODO
 
@@ -140,13 +141,13 @@ seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty mo
                 pass -- we don't need to do anything with an alias i think
             Generic.ADT ctors -> do
                 let tyVars' = fmap createTypeVar typeVars
-                let typeConstructorType = TypeConstructor (name ^. unlocated) (fmap (TypeVar . UnificationVar) tyVars')
+                let typeConstructorType = TypeConstructor (name ^. sourceRegion) (name ^. unlocated) (fmap (TypeVar (name ^. sourceRegion) . UnificationVar) tyVars')
 
                 let inferCtor (ctorName, t :: [KindedType]) = do
                         t' <- traverse astTypeToInferTypeWithKind t
                         let ctorType =
-                                foldr (Function . fst) typeConstructorType t'
-                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
+                                foldr (Function (name ^. sourceRegion) . fst) typeConstructorType t'
+                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall (name ^. sourceRegion) tyVars' (EmptyConstraint (monotypeLoc ctorType)) ctorType))
 
                         pure (ctorName, t')
 
@@ -157,6 +158,8 @@ runInferEffects ::
     Pretty loc =>
     QueryEffects r =>
     Rock.Rock Query :> r =>
+    Eq loc =>
+    loc ~ SourceRegion =>
     Eff
         ( InferEffectsCons
             loc
@@ -225,7 +228,7 @@ seedDeclaration (Declaration ld) =
                 debug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
                 expected <- case expectedType of
                     Just t -> pure t
-                    Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
+                    Nothing -> Lifted . TypeVar (valueName ^. sourceRegion) . UnificationVar <$> makeUniqueTyVar
                 -- When we have an expected type (e.g., from a user annotation), skolemise
                 -- its quantified variables so they cannot unify with concrete types.
                 expectedAsMono <- skolemise expected
@@ -239,6 +242,7 @@ inferDeclarationScheme (view (_Unwrapped % unlocated % field' @"body" % _Unwrapp
         expectedType <- lookupType (TermVarKey (valueName ^. unlocated))
         (_, polytype) <- inferValue (valueName ^. unlocated) valueExpr (Just expectedType)
         addType' (TermVarKey (valueName ^. unlocated)) (Polytype polytype)
+        debug $ "Inferred type for " <> pretty valueName <> ": " <> pretty polytype
         pure polytype
     _ -> error "only value declarations are supported currently"
 
@@ -283,14 +287,14 @@ inferDeclaration (Declaration ld) = do
                     -- addType' (TypeVarKey (name ^. unlocated)) t'
                     todo
                 Generic.ADT ctors -> do
-                    let tyVars' = fmap createTypeVar tyVars
-                    let typeConstructorType = TypeConstructor (name ^. unlocated) (fmap (TypeVar . UnificationVar) tyVars')
+                    let tyVars' = fmapToSnd createTypeVar tyVars
+                    let typeConstructorType = TypeConstructor (name ^. sourceRegion) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (tyVarLocation ^. sourceRegion) $ UnificationVar tyVar) tyVars')
 
                     let inferCtor (ctorName, t :: [KindedType]) = do
                             t' <- traverse astTypeToInferTypeWithKind t
                             let ctorType =
-                                    foldr (Function . fst) typeConstructorType t'
-                            addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall tyVars' EmptyConstraint ctorType))
+                                    foldr (Function (ctorName ^. sourceRegion) . fst) typeConstructorType t'
+                            addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall (ctorName ^. sourceRegion) (snd <$> tyVars') (EmptyConstraint (monotypeLoc ctorType)) ctorType))
 
                             pure (ctorName, t')
 
@@ -305,7 +309,7 @@ inferDeclaration (Declaration ld) = do
                     pure
                         ( TypeDeclaration
                             name
-                            (zipWith (<$) tyVars' tyVars)
+                            (zipWith (<$) (snd <$> tyVars') tyVars)
                             (Generic.ADT ctors' <$ body)
                             ann'
                         )
@@ -324,31 +328,35 @@ inferValue ::
     Eff r (TypedExpr, Polytype SourceRegion)
 inferValue valueName valueExpr expectedType = do
     -- generate
+    let exprLoc = valueExpr ^. Generic.exprLocation
     expected <- case expectedType of
         Just t -> pure t
-        Nothing -> Lifted . TypeVar . UnificationVar <$> makeUniqueTyVar
+        Nothing -> Lifted . TypeVar exprLoc . UnificationVar <$> makeUniqueTyVar
     -- When we have an expected type (e.g., from a user annotation), skolemise
     -- its quantified variables so they cannot unify with concrete types.
     expectedAsMono <- skolemise expected
     addType' (TermVarKey valueName) expected
     ((typedExpr, t), constraint) <- runWriter $ generateConstraints valueExpr
 
-    let constraint' = constraint <> Equality expectedAsMono t
+    let constraint' = constraint <> Equality (typeLoc expected) expectedAsMono t
     let tch = fuv t <> fuv constraint'
     debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
     debug $ "Type: " <> pretty t
-    debug $ "tch: " <> pretty tch
+    -- debug $ "tch: " <> pretty tch
 
     (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
-    when (finalConstraint /= EmptyConstraint) do
-        throwError (UnresolvedConstraint valueName finalConstraint)
+    case finalConstraint of
+        EmptyConstraint _ -> pass
+        _ -> throwError $ UnresolvedConstraint valueName finalConstraint
 
     let newType = substituteAll subst t
 
     debug $ "Substituted type: " <> pretty newType <> " from " <> pretty t <> " with " <> pretty subst
 
     generalized <- generalise (removeSkolems newType)
+
+    debug $ "Generalized type: " <> pretty generalized <> " from " <> pretty newType
 
     pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
 
@@ -358,9 +366,9 @@ inferValue valueName valueExpr expectedType = do
 skolemise :: forall r. Type SourceRegion -> Eff r (Monotype SourceRegion)
 skolemise = \case
     Lifted t -> pure t
-    Polytype (Forall tyVars _ t) -> do
+    Polytype (Forall loc tyVars _ t) -> do
         -- Build a substitution mapping each quantified variable α to a rigid skolem #α
-        let pairs = zip (fmap (view typed) tyVars) (TypeVar . SkolemVar <$> tyVars)
+        let pairs = zip (fmap (view typed) tyVars) (TypeVar loc . SkolemVar <$> tyVars)
         pure $ foldl' (\acc (tv, rep) -> substitute tv rep acc) t pairs
 
 newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)

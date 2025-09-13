@@ -206,7 +206,7 @@ inferKind ::
     [Located TypeVar] ->
     ShuntedTypeDeclaration ->
     Eff r (ElaraKind, KindedTypeDeclaration)
-inferKind name tvs t = debugWith ("inferKind: " <> pretty name) $ do
+inferKind name tvs t = do
     kindVar <- makeUniqueId
     declareNamedType name kindVar
 
@@ -214,7 +214,6 @@ inferKind name tvs t = debugWith ("inferKind: " <> pretty name) $ do
     solveConstraints
 
     kind <- lookupKindVarInSubstitution kv
-    debug $ "Inferred kind for" <+> pretty name <+> "=" <+> pretty kind
     body <- case decl' of
         Alias a -> do
             todo
@@ -252,7 +251,7 @@ lookupNameKindVar ::
     , Rock.Rock Elara.Query.Query :> r
     ) =>
     Qualified TypeName -> Eff r KindVar
-lookupNameKindVar name = debugWith ("lookupNameKindVar: " <> pretty name) $ do
+lookupNameKindVar name = do
     InferState{..} <- get
     case Map.lookup (Left name) env of
         Just kv -> pure kv
@@ -262,7 +261,7 @@ lookupNameKindVar name = debugWith ("lookupNameKindVar: " <> pretty name) $ do
                     newKindVar <- makeUniqueId
                     newEqualityConstraint (VarKind newKindVar) kindVar
                     pure newKindVar
-                Nothing -> debugWith ("lookupNameKindVar: " <> pretty name <> " not found") $ do
+                Nothing -> do
                     Rock.fetch (Elara.Query.KindOf name) ?:! throwError (UnknownKind name kindEnv)
 
 -- | Find the kind variable of a type variable in the environment.

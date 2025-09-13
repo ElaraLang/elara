@@ -22,7 +22,7 @@ astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
 
     case skolems of
         [] -> pure $ Lifted asInferType
-        _ -> pure $ Polytype (Forall skolems EmptyConstraint asInferType)
+        _ -> pure $ Polytype (Forall loc skolems (EmptyConstraint loc) asInferType)
 
 astTypeToInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion)
 astTypeToInferType t@(Generic.Type (Located loc t', kind)) = do
@@ -36,14 +36,14 @@ astTypeToInferTypeWithKind t@(Generic.Type (Located loc t', kind)) = do
 convertTyVar name = fmap (Just . nameText) (name ^. unlocated)
 
 astTypeToInferType' :: Error TypeConvertError :> r => SourceRegion -> KindedType' -> Eff r (Monotype SourceRegion)
-astTypeToInferType' _ (Generic.TypeVar name) = do
-    pure $ TypeVar $ UnificationVar $ convertTyVar name -- idk if this should ever be a skolem variable? i dont think so
-astTypeToInferType' _ (Generic.FunctionType i o) = do
+astTypeToInferType' loc (Generic.TypeVar name) = do
+    pure $ TypeVar loc $ UnificationVar $ convertTyVar name -- idk if this should ever be a skolem variable? i dont think so
+astTypeToInferType' loc (Generic.FunctionType i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
-    pure $ Function i' o'
-astTypeToInferType' _ Generic.UnitType = do
-    pure $ Scalar ScalarUnit
+    pure $ Function loc i' o'
+astTypeToInferType' loc Generic.UnitType = do
+    pure $ Scalar loc ScalarUnit
 astTypeToInferType' _ (Generic.TupleType ts) = do
     ts' <- traverse astTypeToInferType ts
     throwError $ NotSupported "Tuple types are not supported yet"
@@ -52,25 +52,25 @@ astTypeToInferType' _ (Generic.ListType t) = do
     throwError $ NotSupported "List types are not supported yet"
 astTypeToInferType' _ (Generic.RecordType fields) = do
     throwError $ NotSupported "Record types are not supported yet"
-astTypeToInferType' _ (Generic.TypeConstructorApplication ctor arg) = do
+astTypeToInferType' loc (Generic.TypeConstructorApplication ctor arg) = do
     ctor' <- astTypeToInferType ctor
     arg' <- astTypeToInferType arg
     case ctor' of
-        TypeConstructor name args -> do
-            pure $ TypeConstructor name (args ++ [arg'])
+        TypeConstructor _ name args -> do
+            pure $ TypeConstructor loc name (args ++ [arg'])
         other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
 -- primitive types
 -- this will be removed soon as we remove primitives from the typechecker
-astTypeToInferType' _ (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual stringName = do
-    pure $ Scalar ScalarString
-astTypeToInferType' _ (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual intName = do
-    pure $ Scalar ScalarInt
-astTypeToInferType' _ (Generic.UserDefinedType (Located _ name)) | name == mkPrimQual charName = do
-    pure $ Scalar ScalarChar
+astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual stringName = do
+    pure $ Scalar loc ScalarString
+astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual intName = do
+    pure $ Scalar loc ScalarInt
+astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual charName = do
+    pure $ Scalar loc ScalarChar
 
 -- custom types
-astTypeToInferType' _ (Generic.UserDefinedType name) = do
-    pure $ TypeConstructor (name ^. unlocated) []
+astTypeToInferType' loc (Generic.UserDefinedType name) = do
+    pure $ TypeConstructor loc (name ^. unlocated) []
 
 assertMonotype :: Error TypeConvertError :> r => Type SourceRegion -> Eff r (Monotype SourceRegion)
 assertMonotype (Lifted t) = pure t

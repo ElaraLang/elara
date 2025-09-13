@@ -50,6 +50,7 @@ module Elara.AST.Generic.Types (
     coerceInfixDeclaration,
     pattern Expr',
     exprLocation,
+    patternLocation,
     coerceTypeDeclAnnotations,
     coerceValueDeclAnnotations,
     declarationBody'Name,
@@ -146,6 +147,9 @@ patternTypeOf (Pattern (_, t)) = t
 
 exprLocation :: ASTLocate' ast ~ Located => Lens' (Expr ast) SourceRegion
 exprLocation = _Unwrapped % _1 % sourceRegion
+
+patternLocation :: ASTLocate' ast ~ Located => Lens' (Pattern ast) SourceRegion
+patternLocation = _Unwrapped % _1 % sourceRegion
 
 data Pattern' ast
     = VarPattern (ASTLocate ast (Select "VarPat" ast))

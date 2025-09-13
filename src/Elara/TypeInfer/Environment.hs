@@ -56,6 +56,7 @@ lookupTypeMaybe key = do
 lookupType ::
     ( Error (InferError loc) :> r
     , State (TypeEnvironment loc) :> r
+    , Show loc
     ) =>
     TypeEnvKey -> Eff r (Type loc)
 lookupType key = do
@@ -79,7 +80,7 @@ addLocalType var ty (LocalTypeEnvironment env) = LocalTypeEnvironment (Map.inser
 withLocalType :: State (LocalTypeEnvironment loc) :> r => Unique VarName -> Type loc -> Eff r a -> Eff r a
 withLocalType var ty = locally (addLocalType var ty)
 
-lookupLocalVarType :: Error (InferError loc) :> r => Unique VarName -> LocalTypeEnvironment loc -> Eff r (Type loc)
+lookupLocalVarType :: (Error (InferError loc) :> r, Show loc) => Unique VarName -> LocalTypeEnvironment loc -> Eff r (Type loc)
 lookupLocalVarType var (LocalTypeEnvironment env) =
     case Map.lookup var env of
         Just ty -> pure ty
@@ -88,6 +89,7 @@ lookupLocalVarType var (LocalTypeEnvironment env) =
 lookupLocalVar ::
     ( State (LocalTypeEnvironment loc) :> r
     , Error (InferError loc) :> r
+    , Show loc
     ) =>
     Unique VarName ->
     Eff r (Type loc)
