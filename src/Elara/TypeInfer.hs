@@ -39,7 +39,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Query (Query (..))
 import Elara.Query.Effects
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
@@ -99,8 +99,8 @@ runTypeOfQuery key = runErrorOrReport @(InferError SourceRegion) $
                                     sccs <- Rock.fetch $ GetSCCsOf varName
                                     debug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
                                     -- Infer dependencies first to populate the environment
-                                    for_ (reverse sccs) seedSCC
-                                    for_ (reverse sccs) inferSCC
+                                    for_ sccs seedSCC
+                                    for_ sccs inferSCC
                                     -- Read from the environment (now populated) without re-querying
                                     lookupType (TermVarKey varName)
                                 DataConKey con -> do
@@ -205,6 +205,19 @@ inferSCC scc = do
         pure (component, inferred)
 
     pure $ fromList @(Map _ _) (toList inferred)
+
+runTypeCheckedExprQuery :: Qualified VarName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedExpr
+runTypeCheckedExprQuery name = debugWithResult ("runTypeCheckedExprQuery: " <> pretty name) $ do
+    mod <- Rock.fetch $ TypeCheckedModule (qualifier name)
+    let decls = mod ^. _Unwrapped % unlocated % field' @"declarations"
+    debug $ "Declarations in module:" <+> pretty decls
+    case find
+        (\(Declaration ld) -> (ld ^. unlocated % field' @"body" % _Unwrapped % unlocated) ^? _Ctor' @"Value" % _1 % unlocated == Just name)
+        decls of
+        Just (Declaration ld) -> case ld ^. unlocated % field' @"body" % _Unwrapped % unlocated of
+            Value _ e _ _ _ -> pure e
+            _ -> error "expected value declaration"
+        Nothing -> error $ "could not find declaration for " <> show name
 
 inferModule ::
     forall r.
@@ -342,7 +355,6 @@ inferValue valueName valueExpr expectedType = do
     let tch = fuv t <> fuv constraint'
     debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
     debug $ "Type: " <> pretty t
-    -- debug $ "tch: " <> pretty tch
 
     (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 

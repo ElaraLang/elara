@@ -7,9 +7,11 @@ import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (ModuleName (..))
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
+import Elara.Data.Pretty
 import Elara.Desugar (getDesugaredModule)
 import Elara.Error
 import Elara.Lexer.Reader (getLexedFile)
+import Elara.Logging (debug)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
@@ -19,7 +21,7 @@ import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery, runShuntedDeclarationByNameQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
-import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeOfQuery)
+import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedExprQuery, runTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -61,10 +63,12 @@ rules compilerSettings key = do
         ReachableSubgraphOf name -> inject $ runReachableSubgraphQuery name
         GetSCCsOf name -> do
             subgraph <- inject $ runReachableSubgraphQuery name
+            debug $ "Subgraph for " <> pretty name <> ": " <> pretty subgraph
             pure $ buildSCCs subgraph
         SCCKeyOf _ -> do
             error "SCCKeyOf not implemented"
         TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
+        TypeCheckedExpr exprId -> inject $ runTypeCheckedExprQuery exprId
         InferSCC sccKey -> inject $ runInferSCCQuery sccKey
         TypeOf key -> inject $ runTypeOfQuery key
         KindOf qtn -> inject $ runKindOfQuery qtn

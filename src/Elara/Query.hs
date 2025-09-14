@@ -20,6 +20,7 @@ import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Select
+import Elara.AST.Typed (TypedExpr)
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core qualified as Core
@@ -89,6 +90,7 @@ data Query (es :: [Effect]) a where
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
     -- Type and Kind Inference Queries
     TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module 'Typed)
+    TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
     TypeOf :: TypeEnvKey -> Query (WithRock (ConsQueryEffects '[])) (Type SourceRegion)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
@@ -140,6 +142,7 @@ instance Hashable (Query es a) where
         GetANFCoreModule mn -> h 25 mn
         GetClosureLiftedModule mn -> h 26 mn
         GetFinalisedCoreModule mn -> h 27 mn
+        TypeCheckedExpr qn -> h 28 qn
       where
         h :: Hashable b => Int -> b -> Int
         h tag payload =
@@ -166,6 +169,7 @@ instance HasMemoiseE Query where
         GetSCCsOf{} -> \x -> x
         SCCKeyOf{} -> \x -> x
         TypeCheckedModule{} -> \x -> x
+        TypeCheckedExpr{} -> \x -> x
         TypeOf{} -> \x -> x
         InferSCC{} -> \x -> x
         KindOf{} -> \x -> x
