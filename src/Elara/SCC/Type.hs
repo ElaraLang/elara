@@ -4,6 +4,7 @@ import Data.Graph
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Elara.AST.Name
+import Elara.Data.Pretty
 
 -- Rely on Prelude/Relude re-exports for NonEmpty, sort
 
@@ -14,6 +15,9 @@ data ReachableSubgraph = ReachableSubgraph
     , nodes :: BinderSet
     , edges :: HM.HashMap (Qualified VarName) BinderSet
     }
+    deriving (Generic)
+
+instance Pretty ReachableSubgraph
 
 -- Content-based, stable identifier for an SCC: canonical sorted unique member list
 newtype SCCKey = SCCKey {members :: Set (Qualified VarName)}
