@@ -18,7 +18,7 @@ import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Generic.Types (Pattern (..), Pattern' (..), TypedLambdaParam (..))
 import Elara.AST.Generic.Types qualified as Syntax
-import Elara.AST.Name (Qualified, VarName (..))
+import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.Region (Located (Located), SourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
 import Elara.AST.StripLocation (StripLocation (stripLocation))
@@ -393,8 +393,8 @@ unifyGiven ::
     Maybe (Constraint loc) -> Monotype loc -> Monotype loc -> Eff r (Substitution loc)
 unifyGiven _ (TypeVar _ a) b = bindGiven a b
 unifyGiven _ a (TypeVar _ b) = bindGiven b a
-unifyGiven c (TypeConstructor _ a as) (TypeConstructor _ b bs)
-    | a /= b = throwError TypeConstructorMismatch
+unifyGiven c (TypeConstructor l1 a as) (TypeConstructor l2 b bs)
+    | a /= b = throwError $ TypeConstructorMismatch (l1, a) (l2, b)
     | length as /= length bs = throwError ArityMismatch
     | otherwise = unifyGivenMany c as bs
 unifyGiven constraint (Function _ a b) (Function _ c d) = unifyGivenMany constraint [a, b] [c, d]
@@ -439,8 +439,8 @@ unify a b = do
         if a == b
             then pure mempty
             else throwError ScalarMismatch
-    unify' (TypeConstructor _ a as) (TypeConstructor _ b bs)
-        | a /= b = throwError TypeConstructorMismatch
+    unify' (TypeConstructor l1 a as) (TypeConstructor l2 b bs)
+        | a /= b = throwError $ TypeConstructorMismatch (l1, a) (l2, b)
         | length as /= length bs = throwError ArityMismatch
         | otherwise = unifyMany as bs
     unify' (Function _ a b) (Function _ c d) = unifyMany [a, b] [c, d]
@@ -500,7 +500,7 @@ unifyMany (a : as) (b : bs) = do
 data UnifyError loc
     = OccursCheckFailed TypeVariable (Monotype loc)
     | ScalarMismatch
-    | TypeConstructorMismatch
+    | TypeConstructorMismatch (loc, Qualified TypeName) (loc, Qualified TypeName)
     | ArityMismatch
     | UnificationFailed (Maybe (Constraint loc)) (Monotype loc, Monotype loc)
     | UnifyMismatch
