@@ -45,16 +45,21 @@ runReachableSubgraphQuery name = do
     let moduleOf = qualifier
     let rootMod = moduleOf name
 
-    let go :: HS.HashSet (Qualified VarName) -> HM.HashMap (Qualified VarName) BinderSet -> [Qualified VarName] -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (BinderSet, HM.HashMap (Qualified VarName) BinderSet)
-        go visited edges [] = pure (visited, edges)
-        go visited edges (b : bs) = do
+    let go ::
+            HS.HashSet (Qualified VarName) -> -- discovered (seen) nodes
+            HM.HashMap (Qualified VarName) (HS.HashSet (Qualified VarName)) ->
+            [Qualified VarName] -> -- worklist
+            Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (HS.HashSet (Qualified VarName), HM.HashMap (Qualified VarName) (HS.HashSet (Qualified VarName)))
+        go seen edges [] = pure (seen, edges)
+        go seen edges (b : bs) = do
             depsAll <- Rock.fetch (Elara.Query.FreeVarsOf b)
-            -- keep same-module deps only for SCC building
             let depsSame = HS.filter ((== rootMod) . moduleOf) depsAll
-            let visited' = HS.insert b (HS.union visited depsSame)
+            -- only enqueue deps we haven’t seen yet
+            let newDeps = HS.difference depsSame seen
+            let seen' = HS.insert b (HS.union seen newDeps)
             let edges' = HM.insertWith HS.union b depsSame edges
-            let toVisit = filter (\q -> not (HS.member q visited')) (HS.toList depsSame)
-            go visited' edges' (toVisit ++ bs)
+            let bs' = HS.toList newDeps ++ bs
+            go seen' edges' bs'
 
     (nodes, edges) <- go HS.empty HM.empty [name]
     pure ReachableSubgraph{root = name, nodes, edges}
