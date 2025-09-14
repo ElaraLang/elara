@@ -19,7 +19,7 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Elara.Error (ReportableError, runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, ignoreStructuredDebug)
-import Elara.Prim.Core (falseCtor, fetchPrimitiveName, trueCtor, unitCtor)
+import Elara.Prim.Core (consCtorName, emptyListCtorName, falseCtor, fetchPrimitiveName, trueCtor, tuple2CtorName, unitCtor)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Rock qualified
@@ -123,8 +123,15 @@ instance Pretty Value where
     pretty (String s) = pretty '"' <> pretty s <> pretty '"'
     pretty (Char c) = pretty c
     pretty (Double d) = pretty d
+    pretty (Ctor (DataCon listName _ _) []) | listName == emptyListCtorName = "[]"
+    pretty (Ctor (DataCon listName _ _) [head', tail']) | listName == consCtorName = "[" <> go head' tail' <> "]"
+      where
+        go h (Ctor (DataCon listName' _ _) []) | listName' == emptyListCtorName = pretty h
+        go h (Ctor (DataCon listName' _ _) [h', t']) | listName' == consCtorName = pretty h <> ", " <> go h' t'
+        go h t = pretty h <> ", " <> pretty t
     pretty (Ctor c []) = pretty c.name
-    pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
+    pretty (Ctor (DataCon tuple2 _ _) [arg1, arg2]) | tuple2 == tuple2CtorName = parens (pretty arg1 <> comma <+> pretty arg2)
+    pretty (Ctor c args) = parens (pretty c.name <+> hsep (pretty <$> args))
     pretty (Thunk _ _) = "<Thunk>"
     pretty p = gpretty p
 
@@ -133,7 +140,7 @@ prettyValueWithType = \case
     s@String{} -> pretty s <+> ":: String"
     c@Char{} -> pretty c <+> ":: Char"
     d@Double{} -> pretty d <+> ":: Double"
-    Ctor c args -> parens (pretty (c.name) <+> hsep (pretty <$> args)) <+> "::" <+> pretty c.dataConType
+    ctor@(Ctor c _) -> pretty ctor <+> "::" <+> pretty c.dataConType
     Closure{} -> "Closure"
     RecClosure{} -> "RecClosure"
     PrimOp name -> "Primitive operation" <+> pretty name
