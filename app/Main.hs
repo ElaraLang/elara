@@ -15,7 +15,6 @@ import Effectful (Eff, IOE, inject, runEff, (:>))
 import Effectful.FileSystem (runFileSystem)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Data.TopologicalGraph (TopologicalGraph, traverseGraph_)
 import Elara.Data.Unique (
     resetGlobalUniqueSupply,
  )
@@ -28,7 +27,6 @@ import Effectful.Error.Static (Error, runError)
 import Elara.AST.Module
 import Elara.AST.Name (nameText)
 import Elara.AST.Region
-import Elara.Core.TypeCheck
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
