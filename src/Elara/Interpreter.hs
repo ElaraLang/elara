@@ -2,6 +2,7 @@
 module Elara.Interpreter where
 
 import Data.Map qualified as Map
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static
@@ -14,12 +15,15 @@ import Elara.Core qualified as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module
 import Elara.Data.Pretty
+import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Data.Unique
 import Elara.Error (ReportableError, runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Logging (StructuredDebug, debug, debugWith, ignoreStructuredDebug)
 import Elara.Prim.Core (falseCtor, fetchPrimitiveName, trueCtor, unitCtor)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Rock qualified
+import Prelude hiding (force)
 
 type Interpreter r =
     ( State ElaraState :> r
@@ -28,30 +32,45 @@ type Interpreter r =
     , Rock.Rock Elara.Query.Query :> r
     , StructuredDebug :> r
     , IOE :> r
+    , HasCallStack
     )
 type InterpreterEffects = ConsQueryEffects '[State ElaraState, Error InterpreterError, StructuredDebug, Rock.Rock Elara.Query.Query, IOE]
 
-newtype ElaraState = ElaraState
-    { bindings :: Map (UnlocatedVarRef Text) Value
+data ElaraState = ElaraState
+    { globalBindings :: Map (Qualified Text) Value
+    , localBindings :: Map (Unique Text) Value
+    , loadedModules :: Set ModuleName
+    , stateSource :: StateSource
     }
-    deriving (Generic, Semigroup, Monoid)
+    deriving (Generic)
 
 instance Pretty ElaraState
+
+data StateSource = FromGlobal | FromClosure deriving (Generic)
+instance Pretty StateSource
 
 data InterpreterError
     = UnboundVariable (UnlocatedVarRef Text) ElaraState
     | NotAFunction Value
     | UnknownPrimitive Text
     | UnhandledExpr CoreExpr
+    | NonExhaustiveMatch Value [Core.Alt Var]
     | NoMainFound ElaraState
     | TypeMismatch
         { expected :: Text
         , actual :: Value
         }
+    | CodeThrewError Value
+    | RecursiveValueDetected (Unique Text)
     deriving (Generic)
 
-instance Pretty InterpreterError
+data ThunkState = Unevaluated | Evaluating | Evaluated Value
+    deriving (Generic)
 
+instance Pretty InterpreterError where
+    pretty (TypeMismatch expected actual) =
+        "Type mismatch: expected" <+> Style.bold (pretty expected) <+> "but got" <+> Style.bold (prettyValueWithType actual)
+    pretty x = gpretty x
 instance ReportableError InterpreterError
 
 data Value
@@ -62,19 +81,20 @@ data Value
     | -- | Data constructor invocation
       Ctor DataCon [Value]
     | Closure
-        { env :: Map (UnlocatedVarRef Text) Value -- Captured environment
-        , param :: UnlocatedVarRef Text -- Parameter name
+        { env :: Map (Unique Text) Value -- Captured environment, locals only
+        , param :: Unique Text -- Parameter name
         , body :: CoreExpr -- Function body
         }
     | RecClosure
-        { recEnv :: Map (UnlocatedVarRef Text) Value
+        { recEnv :: Map (Unique Text) Value -- Captured environment, locals only
         , name :: UnlocatedVarRef Text -- This function's name
-        , param :: UnlocatedVarRef Text -- Parameter
+        , param :: Unique Text -- Parameter
         , body :: CoreExpr
         }
     | PrimOp Text
     | PartialApplication Value Value
     | IOAction (Eff InterpreterEffects Value)
+    | Thunk (IORef ThunkState) (Eff InterpreterEffects Value)
     deriving (Generic)
 
 instance Eq Value where
@@ -93,43 +113,98 @@ instance Eq Value where
 instance Pretty (Eff InterpreterEffects a) where
     pretty _ = "<IO>"
 
+instance Pretty (IORef ThunkState) where
+    pretty _ = "<Thunk>"
+
 instance Pretty Value where
     pretty (Closure _ p _) = "Closure accepting" <+> pretty p
-    pretty (RecClosure _ n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p
+    pretty (RecClosure env n p _) = "RecClosure" <+> pretty n <+> "accepting" <+> pretty p <+> "with env" <+> pretty env
     pretty (Int i) = pretty i
     pretty (String s) = pretty '"' <> pretty s <> pretty '"'
     pretty (Char c) = pretty c
     pretty (Double d) = pretty d
     pretty (Ctor c []) = pretty c.name
     pretty (Ctor c args) = parens (pretty (c.name) <+> hsep (pretty <$> args))
+    pretty (Thunk _ _) = "<Thunk>"
     pretty p = gpretty p
+
+prettyValueWithType = \case
+    Int x -> pretty x <+> ":: Int"
+    s@String{} -> pretty s <+> ":: String"
+    c@Char{} -> pretty c <+> ":: Char"
+    d@Double{} -> pretty d <+> ":: Double"
+    Ctor c args -> parens (pretty (c.name) <+> hsep (pretty <$> args)) <+> "::" <+> pretty c.dataConType
+    Closure{} -> "Closure"
+    RecClosure{} -> "RecClosure"
+    PrimOp name -> "Primitive operation" <+> pretty name
+    PartialApplication f a ->
+        "Partial application of"
+            <+> prettyValueWithType f
+            <+> "to"
+            <+> prettyValueWithType a
+    IOAction{} -> "<IO>"
+    Thunk _ _ -> "<Thunk>"
 
 primOps =
     Map.fromList
         [ ("==", 2)
         , ("+", 2)
+        , ("*", 2)
         , (">>=", 2)
         , ("stringCons", 2)
+        , ("compare", 2)
+        , ("debugWithMsg", 2)
         ]
 
 boolValue :: Bool -> Value
 boolValue True = Ctor trueCtor []
 boolValue False = Ctor falseCtor []
 
+-- Force a value once (for thunks); detects recursive value loops
+force :: Interpreter r => Value -> Eff r Value
+force (Thunk ref act) = do
+    st <- liftIO (readIORef ref)
+    case st of
+        Evaluated v -> pure v
+        Evaluating -> throwError_ $ CodeThrewError (String "Recursive value detected")
+        Unevaluated -> do
+            liftIO (writeIORef ref Evaluating)
+            v <- inject act
+            liftIO (writeIORef ref (Evaluated v))
+            pure v
+force v = pure v
+
+mkThunk :: Interpreter r => Eff InterpreterEffects Value -> Eff r Value
+mkThunk act = do
+    r <- liftIO (newIORef Unevaluated)
+    pure (Thunk r act)
+
+scopedOverLocals :: Interpreter r => Eff r a -> Eff r a
+scopedOverLocals eff = do
+    oldLocals <- gets localBindings
+    r <- eff
+    modify (\s -> s{localBindings = oldLocals})
+    pure r
+
 lookupVar :: Interpreter r => UnlocatedVarRef Text -> Eff r Value
-lookupVar v = do
+lookupVar (Local v) = do
     s <- get
-    case Map.lookup v (bindings s) of
+    case Map.lookup v (localBindings s) of
+        Just val -> pure val
+        Nothing -> throwError_ (UnboundVariable (Local v) s)
+lookupVar (Global v) = debugWith ("lookupVar: " <> pretty v) $ do
+    s <- get
+    case Map.lookup v (globalBindings s) of
         Just val -> pure val
         Nothing -> case v of
-            Global qn -> do
-                mod <- Rock.fetch (Elara.Query.GetFinalisedCoreModule (qualifier qn))
+            qn -> do
+                mod <- ignoreStructuredDebug $ Rock.fetch (Elara.Query.GetFinalisedCoreModule (qualifier qn))
                 loadModule mod
                 newS <- get
-                case Map.lookup v (bindings newS) of
+                debug $ "After loading " <+> pretty (qualifier qn) <+> ", bindings: " <+> pretty (globalBindings newS)
+                case Map.lookup v (globalBindings newS) of
                     Just val -> pure val
-                    Nothing -> throwError_ (UnboundVariable v newS)
-            Local _ -> throwError_ (UnboundVariable v s)
+                    Nothing -> throwError_ (UnboundVariable (Global v) newS)
 
 interpretExpr :: forall r. Interpreter r => CoreExpr -> Eff r Value
 interpretExpr (Lit (Core.Int i)) = pure $ Int i
@@ -143,32 +218,42 @@ interpretExpr (App (Var (Id (Global primName) _ _)) (Lit (Core.String primArg)))
 interpretExpr (App (TyApp (Var (Id (Global primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
     pure $ PrimOp primArg
 interpretExpr (Var (Id v _ _)) = lookupVar v
-interpretExpr (Let bind in') = scoped $ do
+interpretExpr (Let bind in') = debugWith ("interpretExpr: " <+> pretty bind) $ scopedOverLocals $ do
     interpretBinding bind
     interpretExpr in'
-interpretExpr (Lam (Id v _ _) e) = do
+interpretExpr (Lam (Id (Local v) _ _) e) = do
     s <- get
-    pure $ Closure (bindings s) v e
-interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty f) $ do
+    pure $ Closure (localBindings s) v e
+interpretExpr (App f a) = do
     f' <- interpretExpr f
-    debug $ pretty f <> " = " <> pretty f'
     a' <- interpretExpr a
-    debug $ pretty a <> " = " <> pretty a'
     case f' of
-        rec@(RecClosure env n p e) -> scoped $ do
-            -- add itself to the env
-            let env' = Map.insert n rec env
-
+        rec@(RecClosure env n p e) -> do
             -- add the argument to the env
-            let env'' = Map.insert p a' env'
+            let env'' = Map.insert p a' env
 
-            scoped $ do
-                modify (\s -> s{bindings = env''})
+            scopedOverLocals $ do
+                modify
+                    ( \s ->
+                        case n of
+                            Local n' ->
+                                s
+                                    { localBindings = Map.insert n' rec (env'' <> localBindings s) -- add itself to the env
+                                    , stateSource = FromClosure
+                                    }
+                            Global n' ->
+                                s
+                                    { globalBindings = Map.insert n' rec (globalBindings s) -- add itself to the env
+                                    , localBindings = env''
+                                    , stateSource = FromClosure
+                                    }
+                    )
+
                 interpretExpr e
         Closure env p e -> do
             let env' = Map.insert p a' env
-            scoped $ do
-                modify (\s -> s{bindings = env'})
+            scopedOverLocals $ do
+                modify (\s -> s{localBindings = env', stateSource = FromClosure})
                 interpretExpr e
         PrimOp "toString" -> do
             let asText = case a' of
@@ -176,6 +261,8 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                         prettyToText (arg1, arg2)
                     other -> prettyToText other
             pure $ String asText
+        PrimOp "error" -> do
+            throwError_ $ CodeThrewError a'
         PrimOp "println" -> do
             pure $ IOAction $ do
                 let asString = case a' of
@@ -213,7 +300,25 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
             case (a', fst) of
                 (Int a, Int b) -> pure $ Int (a + b)
                 (Double a, Double b) -> pure $ Double (a + b)
-                _ -> throwError_ TypeMismatch{expected = "Int or Double", actual = a'}
+                _ -> throwError_ TypeMismatch{expected = "(+): Int or Double", actual = a'}
+        PartialApplication (PrimOp "*") fst -> do
+            case (a', fst) of
+                (Int a, Int b) -> pure $ Int (a * b)
+                (Double a, Double b) -> pure $ Double (a * b)
+                _ -> throwError_ TypeMismatch{expected = "(*): Int or Double", actual = a'}
+        PartialApplication (PrimOp "compare") fst -> do
+            let orderingToInt = \case
+                    LT -> -1
+                    EQ -> 0
+                    GT -> 1
+            case (fst, a') of
+                (Int a, Int b) -> pure $ Int (orderingToInt (compare a b))
+                (Double a, Double b) -> pure $ Int (orderingToInt (compare a b))
+                (Char a, Char b) -> pure $ Int (orderingToInt (compare a b))
+                _ -> throwError_ TypeMismatch{expected = "(compare): Int or Double or Char", actual = a'}
+        PartialApplication (PrimOp "debugWithMsg") fst -> do
+            debug $ "Source Code Debug  (" <> pretty fst <> "):  " <> pretty a'
+            pure a'
         PartialApplication (PrimOp ">>=") fst -> do
             case fst of
                 IOAction io -> do
@@ -222,14 +327,25 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
                         case a' of -- this sucks
                             Closure env p e -> do
                                 let env' = Map.insert p val env
-                                scoped $ do
-                                    modify (\s -> s{bindings = env'})
+                                scopedOverLocals $ do
+                                    modify (\s -> s{localBindings = env'})
                                     interpretExpr e
                             RecClosure env n p e -> do
                                 let env' = Map.insert p val env
-                                let env'' = Map.insert n (RecClosure env' n p e) env'
-                                scoped $ do
-                                    modify (\s -> s{bindings = env''})
+
+                                scopedOverLocals $ do
+                                    modify
+                                        ( \s -> case n of
+                                            Global n' ->
+                                                s
+                                                    { globalBindings = Map.insert n' (RecClosure env' n p e) (globalBindings s)
+                                                    , localBindings = env'
+                                                    }
+                                            Local n' ->
+                                                s
+                                                    { localBindings = Map.insert n' (RecClosure env' n p e) (localBindings s)
+                                                    }
+                                        )
                                     interpretExpr e
                             _ -> throwError_ $ NotAFunction a'
                 _ -> throwError_ TypeMismatch{expected = "IO", actual = a'}
@@ -243,19 +359,19 @@ interpretExpr (App f a) = debugWith ("Applying " <> pretty a <+> "to" <+> pretty
         Ctor c args -> do
             pure $ Ctor c (args <> [a'])
         other -> throwError_ $ NotAFunction other
-interpretExpr (Match e of' alts) = debugWith ("Matching " <> pretty e) $ do
-    e' <- interpretExpr e
-    whenJust of' $ \(Id v _ _) -> do
-        modify (\s -> s{bindings = Map.insert v e' (bindings s)})
+interpretExpr (Match e of' alts) = do
+    e' <- interpretExpr e >>= force
+    debug $ "forced match scrutinee to" <+> pretty e'
+    whenJust of' $ \(Id (Local v) _ _) -> do
+        modify (\s -> s{localBindings = Map.insert v e' (localBindings s)})
 
     let go :: [Core.Alt Var] -> Eff r Value
-        go [] = throwError_ $ UnhandledExpr e
+        go [] = throwError_ $ NonExhaustiveMatch e' alts
         go ((DataAlt c, vs, branchBody) : rest) = do
             case e' of
                 Ctor c' args | c == c' -> do
-                    let vs' = (\(Id i _ _) -> i) <$> vs
-                    modify (\s -> s{bindings = foldr (uncurry Map.insert) (bindings s) (zip vs' args)})
-                    debug $ "Matched " <> pretty c <> ", so we eval " <> pretty branchBody
+                    let vs' = (\(Id (Local i) _ _) -> i) <$> vs
+                    modify (\s -> s{localBindings = foldr (uncurry Map.insert) (localBindings s) (zip vs' args)})
                     interpretExpr branchBody
                 _ -> go rest
         go ((LitAlt l, _, branchBody) : rest) = do
@@ -271,38 +387,86 @@ interpretExpr (TyApp e _) = interpretExpr e -- lol
 interpretExpr other = throwError_ $ UnhandledExpr other
 
 interpretBinding :: Interpreter r => CoreBind -> Eff r ()
-interpretBinding (NonRecursive (Id v _ _, e)) = debugWith ("Interpreting let" <+> pretty v <+> "=" <+> pretty e) $ do
+interpretBinding (NonRecursive (Id v _ _, e)) = debugWith ("interpretBinding: " <> pretty v) $ do
     val <- interpretExpr e
-    modify (\s -> s{bindings = Map.insert v val (bindings s)})
-interpretBinding (Recursive bs) = debugWith ("Interpreting letrec" <+> pretty bs) $ do
-    currentEnv <- gets bindings
-    -- Create RecClosures that share the same environment
-    let recEnv = Map.fromList [(v, RecClosure Map.empty v p e) | (Id v _ _, Lam (Id p _ _) e) <- bs]
-    -- Update the RecClosures with the complete recursive environment
-    let finalEnv = Map.union recEnv currentEnv
-    let finalClosures = Map.map (\(RecClosure _ n p b) -> RecClosure finalEnv n p b) recEnv
+    case v of
+        Global qn -> modify (\s -> s{globalBindings = Map.insert qn val (globalBindings s)})
+        Local v -> modify (\s -> s{localBindings = Map.insert v val (localBindings s)})
+-- Tie-the-knot letrec with thunks for non-functions, RecClosure for functions
+interpretBinding (Recursive bs) = debugWith ("interpretBinding Rec: " <> pretty (fst <$> bs)) $ do
+    curLocals <- gets localBindings
+    -- Split bindings by Local/Global to avoid partial pattern matches
+    let (localBs, globalBs) =
+            partitionEithers
+                [ case v of
+                    Local u -> Left (u, rhs)
+                    Global q -> Right (q, rhs)
+                | (Id v _ _, rhs) <- bs
+                ]
 
-    modify (\s -> s{bindings = Map.union finalClosures (bindings s)})
+    -- Placeholders for all bindings
+    placeholdersLocal <-
+        Map.fromList
+            <$> forM
+                localBs
+                ( \(v, rhs) -> case v of
+                    u ->
+                        case rhs of
+                            Lam (Id (Local p) _ _) body -> pure (u, RecClosure Map.empty (Local u) p body)
+                            _ -> do th <- mkThunk (interpretExpr rhs); pure (u, th)
+                )
+    placeholdersGlobal <-
+        Map.fromList
+            <$> forM
+                globalBs
+                ( \(v, rhs) -> case v of
+                    q ->
+                        case rhs of
+                            Lam (Id (Local p) _ _) body -> pure (q, RecClosure Map.empty (Global q) p body)
+                            _ -> do th <- mkThunk (interpretExpr rhs); pure (q, th)
+                )
+
+    -- Final env captured by recursive functions (locals only)
+    let finalLocalEnv = Map.union placeholdersLocal curLocals
+
+    -- Update RecClosures to capture finalLocalEnv
+    let upd = \case
+            RecClosure _ n p b -> RecClosure finalLocalEnv n p b
+            v -> v
+    let updatedLocals = Map.map upd placeholdersLocal
+        updatedGlobals = Map.map upd placeholdersGlobal
+
+    -- Install all placeholders (functions and thunks) so RHS can refer mutually
+    modify
+        ( \s ->
+            s
+                { localBindings = Map.union updatedLocals (localBindings s)
+                , globalBindings = Map.union updatedGlobals (globalBindings s)
+                }
+        )
 
 -- | Load a module into the interpreter
 loadModule :: Interpreter r => CoreModule CoreBind -> Eff r ()
-loadModule (CoreModule name decls) = do
-    oldBindings <- gets bindings
-    for_
-        decls
-        ( \case
-            (CoreValue v) -> do
-                interpretBinding v
-            (CoreType decl) -> loadTypeDecl decl
-        )
-    newEnv <- gets bindings
-    debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
-    pass
+loadModule (CoreModule name decls) = debugWith ("loadModule:" <+> pretty name) $ do
+    loaded <- gets loadedModules
+    if Set.member name loaded
+        then debug $ "Module" <+> pretty name <+> "already loaded, skipping"
+        else do
+            modify (\s -> s{loadedModules = Set.insert name (loadedModules s)})
+            oldBindings <- gets globalBindings
+            for_
+                decls
+                ( \case
+                    (CoreValue v) -> void $ interpretBinding v
+                    (CoreType decl) -> loadTypeDecl decl
+                )
+            newEnv <- gets globalBindings
+            debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
 
 loadTypeDecl :: Interpreter r => CoreTypeDecl -> Eff r ()
 loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl _ cons)) = do
     for_ cons $ \con@(DataCon name _ _) -> do
-        modify (\s -> s{bindings = Map.insert (Global name) (Ctor con []) (bindings s)})
+        modify (\s -> s{globalBindings = Map.insert name (Ctor con []) (globalBindings s)})
 loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass
 
 evalIO :: Interpreter r => Value -> Eff r Value
@@ -317,12 +481,12 @@ run = do
     mainModule <- Rock.fetch (Elara.Query.GetFinalisedCoreModule (ModuleName ("Main" :| [])))
     loadModule mainModule
     s <- get
-    case Map.lookup (Global (Qualified "main" (ModuleName ("Main" :| [])))) s.bindings of
+    case Map.lookup (Qualified "main" (ModuleName ("Main" :| []))) s.globalBindings of
         Just val -> do
             evalIO val
             pass
         _ -> throwError_ $ NoMainFound s
 
 runInterpreter eff = do
-    let s = ElaraState{bindings = Map.empty}
+    let s = ElaraState{localBindings = Map.empty, globalBindings = Map.empty, loadedModules = Set.empty, stateSource = FromGlobal}
     inject (runErrorOrReport @InterpreterError $ evalState s eff)
