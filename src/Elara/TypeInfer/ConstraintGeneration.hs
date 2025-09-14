@@ -398,10 +398,10 @@ unifyGiven c (TypeConstructor l1 a as) (TypeConstructor l2 b bs)
     | length as /= length bs = throwError ArityMismatch
     | otherwise = unifyGivenMany c as bs
 unifyGiven constraint (Function _ a b) (Function _ c d) = unifyGivenMany constraint [a, b] [c, d]
-unifyGiven _ (Scalar _ a) (Scalar _ b) =
+unifyGiven _ (Scalar locA a) (Scalar locB b) =
     if a == b
         then pure mempty
-        else throwError ScalarMismatch
+        else throwError $ ScalarMismatch (locA, a) (locB, b)
 unifyGiven constraint a b = throwError $ UnificationFailed constraint (a, b)
 
 unifyGivenMany constraint xs ys = foldrM go mempty (zip xs ys)
@@ -435,10 +435,10 @@ unify a b = do
     unify' (TypeVar _ a) (TypeVar _ b) | a == b = pure (mempty, mempty)
     unify' (TypeVar _ (UnificationVar a)) b = unifyVar a b
     unify' a (TypeVar _ (UnificationVar b)) = unifyVar b a
-    unify' (Scalar _ a) (Scalar _ b) =
+    unify' (Scalar locA a) (Scalar locB b) =
         if a == b
             then pure mempty
-            else throwError ScalarMismatch
+            else throwError $ ScalarMismatch (locA, a) (locB, b)
     unify' (TypeConstructor l1 a as) (TypeConstructor l2 b bs)
         | a /= b = throwError $ TypeConstructorMismatch (l1, a) (l2, b)
         | length as /= length bs = throwError ArityMismatch
@@ -499,7 +499,7 @@ unifyMany (a : as) (b : bs) = do
 
 data UnifyError loc
     = OccursCheckFailed TypeVariable (Monotype loc)
-    | ScalarMismatch
+    | ScalarMismatch (loc, Scalar) (loc, Scalar)
     | TypeConstructorMismatch (loc, Qualified TypeName) (loc, Qualified TypeName)
     | ArityMismatch
     | UnificationFailed (Maybe (Constraint loc)) (Monotype loc, Monotype loc)
