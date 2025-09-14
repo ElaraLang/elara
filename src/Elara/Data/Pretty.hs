@@ -32,6 +32,8 @@ import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
 import Prettyprinter.Render.Text qualified as Pretty.Text
 import Prelude hiding (group)
 
+import Data.HashMap.Strict qualified as HM
+
 indentDepth :: Int
 indentDepth = 4
 
@@ -192,6 +194,12 @@ instance (Pretty k, Pretty v) => Pretty (Map k v) where
     pretty m = pretty (Map.toList m)
 
 instance Pretty s => Pretty (Set s) where
+    pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
+
+instance (Pretty k, Pretty v) => Pretty (HashMap k v) where
+    pretty m = pretty (HM.toList m)
+
+instance Pretty k => Pretty (HashSet k) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
 
 -- Generic instances

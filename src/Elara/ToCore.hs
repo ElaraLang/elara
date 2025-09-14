@@ -4,6 +4,7 @@ module Elara.ToCore where
 import Data.Generics.Product
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped
+import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
 import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
@@ -192,18 +193,53 @@ runGetCoreModuleQuery mn = do
         evalState primCtorSymbolTable $
             moduleToCore typedModule
 
+sccToCore :: ToCoreC r => SCC (Qualified VarName, TypedExpr) -> Eff r (CoreDeclaration CoreBind)
+sccToCore scc = case scc of
+    AcyclicSCC (name, expr) -> do
+        debugWith ("sccToCore: AcyclicSCC " <> pretty name) $ do
+            expr' <- toCore expr
+            ty <- typeToCore (expr ^. _Unwrapped % _2)
+            let var = Core.Id (Global (nameText <$> name)) ty Nothing
+            pure $ CoreValue $ NonRecursive (var, expr')
+    CyclicSCC binds -> do
+        debugWith ("sccToCore: CyclicSCC " <> pretty (fmap fst binds)) $ do
+            binds' <- for binds $ \(name, expr) -> do
+                expr' <- toCore expr
+                ty <- typeToCore (expr ^. _Unwrapped % _2)
+                let var = Core.Id (Global (nameText <$> name)) ty Nothing
+                pure (var, expr')
+            pure $ CoreValue $ Recursive binds'
+
+-- Build module-level SCCs once (no duplicates)
+buildModuleSCCs :: ToCoreC r => Module 'Typed -> Eff r [SCC (Qualified VarName)]
+buildModuleSCCs (Module (Located _ m)) = do
+    let modName = m ^. field' @"name" % unlocated
+    let tops =
+            m
+                ^.. field' @"declarations"
+                % each
+                % _Unwrapped
+                % unlocated
+                % field' @"body"
+                % _Unwrapped
+                % unlocated
+                % _Ctor' @"Value"
+                % _1
+                % unlocated
+    nodes <- for tops $ \v -> do
+        depsAll <- Rock.fetch (Elara.Query.FreeVarsOf v)
+        let deps = filter ((== modName) . qualifier) (toList depsAll)
+        pure (v, v, deps)
+    pure (stronglyConnComp nodes)
+
 moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Eff r (CoreModule CoreBind)
-moduleToCore (Module (Located _ m)) = debugWithResult ("Converting module: " <> pretty (m ^. field' @"name")) $ do
+moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
+
     let declGraph = createGraph (m ^. field' @"declarations")
-    decls <- for (allEntriesRevTopologically declGraph) $ \decl -> do
+    decls <- fmap concat $ for (allEntriesRevTopologically declGraph) $ \decl -> do
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-            Value n v _ _ _ -> debugWith ("Value decl: " <+> pretty n) $ do
-                ty <- typeToCore (v ^. _Unwrapped % _2)
-                v' <- toCore v
-                let var = Core.Id (Global (nameText <$> n ^. unlocated)) ty Nothing
-                let rec = isRecursive (n ^. unlocated) v (_1 % _Ctor' @"Global" % unlocated)
-                pure $ Just $ CoreValue $ if rec then Recursive [(var, v')] else NonRecursive (var, v')
+            Value{} -> pure []
             TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
                 let tyCon =
@@ -229,20 +265,22 @@ moduleToCore (Module (Located _ m)) = debugWithResult ("Converting module: " <> 
                     pure (nameText <$> n, ctorType, tyCon)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
-                pure $
-                    Just $
-                        CoreType $
-                            CoreTypeDecl
-                                cleanedTypeDeclName
-                                kind
-                                (tvs ^.. each % unlocated % to mkTypeVar)
-                                (CoreDataDecl tyCon (toList ctors''))
+                pure
+                    [ CoreType $
+                        CoreTypeDecl
+                            cleanedTypeDeclName
+                            kind
+                            (tvs ^.. each % unlocated % to mkTypeVar)
+                            (CoreDataDecl tyCon (toList ctors''))
+                    ]
             TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
                 todo
-    -- t' <- typeToCore t
-    -- let ty = foldr (Core.ForAllTy . typedTvToCoreTv) t' tvs
-    -- pure $ Just $ CoreType $ CoreTypeDecl declName kind (fmap typedTvToCoreTv tvs) (CoreTypeAlias ty)
-    pure $ CoreModule name (catMaybes decls)
+
+    sccs <- buildModuleSCCs m'
+    valueDecls <- for sccs $ \scc -> do
+        members <- for scc $ \n -> (n,) <$> Rock.fetch (Elara.Query.TypeCheckedExpr n)
+        sccToCore members
+    pure $ CoreModule name (decls <> valueDecls)
 
 mkTypeVar :: Select "TypeVar" 'Typed -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
