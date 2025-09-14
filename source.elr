@@ -121,8 +121,7 @@ let jsonArray =
 def jsonObject : Parser Json
 let jsonObject = 
     let jsonPair = 
-            jsonString `bind` ( \key -> 
-                lexeme (char ':') *> json |> map ( \value -> Tuple2 key value ) )
+            jsonString `bind` ( \key -> lexeme (char ':') *> json |> map (Tuple2 key) )
     let jsonPairs =  sepBy jsonPair (lexeme (char ','))
     in lexeme (char '{') *> (jsonPairs |> map JsonObject) <* lexeme (char '}')
 
