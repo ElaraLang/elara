@@ -2,13 +2,24 @@ module Elara.Prim
 
 type Bool = True | False
 
+def not : Bool -> Bool
+let not b = if b then False else True
+
+def (&&) : Bool -> Bool -> Bool
+let (&&) a b = if a then b else False
+
 type List a = Nil | Cons a (List a)
 
 type Tuple2 a b = Tuple2 a b
 
+type Ordering = LT | EQ | GT
+
 
 def (+) : Int -> Int -> Int
 let (+) = elaraPrimitive "+"
+
+def (*) : Int -> Int -> Int
+let (*) = elaraPrimitive "*"
 
 def negate : Int -> Int
 let negate = elaraPrimitive "negate"
@@ -19,8 +30,35 @@ let (-) x y = x + (negate y)
 def (==) : a -> a -> Bool
 let (==) = elaraPrimitive "=="
 
+def (!=) : a -> a -> Bool
+let (!=) x y = not (x == y)
+
+def comparePrim : a -> a -> Int
+let comparePrim = elaraPrimitive "compare"
+
+def compare : a -> a -> Ordering
+let compare x y =
+    let res = comparePrim x y
+    match res with
+        -1 -> LT
+        0 -> EQ
+        1 -> GT
+
+let (<) x y = compare x y == LT
+let (>) x y = compare x y == GT
+let (<=) x y = compare x y != GT
+let (>=) x y = compare x y != LT
+
+
 def elaraPrimitive : String -> a
-let elaraPrimitive = elaraPrimitive
+let elaraPrimitive key = elaraPrimitive key
+
+
+def error : a -> b
+let error = elaraPrimitive "error"
+
+def debugWithMsg : String -> a -> a
+let debugWithMsg = elaraPrimitive "debugWithMsg"
 
 def println : a -> IO ()
 let println = elaraPrimitive "println"

@@ -1,0 +1,19 @@
+module Char
+import Elara.Prim
+
+def isDigit : Char -> Bool
+let isDigit c = (c >= '0') && (c <= '9')
+
+def toInt : Char -> Int
+let toInt c = match c with
+    '0' -> 0
+    '1' -> 1
+    '2' -> 2
+    '3' -> 3
+    '4' -> 4
+    '5' -> 5
+    '6' -> 6
+    '7' -> 7
+    '8' -> 8
+    '9' -> 9
+    _   -> error "Character is not a digit"

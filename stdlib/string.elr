@@ -6,3 +6,16 @@ let (++) s1 s2 =
         ("", _) -> s2
         (_, "") -> s1
         _ -> stringCons (stringHead s1) (stringTail s1 ++ s2)
+
+def stringToList : String -> List Char
+let stringToList s =
+    if stringIsEmpty s then
+        Nil
+    else
+        Cons (stringHead s) (stringToList (stringTail s))
+
+def stringFromList : List Char -> String
+let stringFromList l =
+    match l with
+        Nil -> ""
+        Cons x xs -> stringCons x (stringFromList xs)

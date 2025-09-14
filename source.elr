@@ -4,9 +4,136 @@ import Elara.Prim
 import List
 import Tuple
 import String
+import Char
+
+type Parser a = Parser (String -> Option (Tuple2 a String))
+
+
+let runParser (Parser a) input = a input
+
+def pure : a -> Parser a
+let pure a = Parser ( \s -> Some (a, s) )
+
+def map : (a -> b) -> Parser a -> Parser b
+let map f p = Parser ( \s -> match runParser p s with
+                                None -> None
+                                Some (a, xs) -> Some (f a, xs) )
+
+def (*>) : Parser a -> Parser b -> Parser b
+let (*>) p q =
+  bind p (\_ -> q)
+
+def (<*) : Parser a -> Parser b -> Parser a
+let (<*) (Parser p1) (Parser p2) = Parser ( \s ->
+                                match p1 s with
+                                    None -> None
+                                    Some (a, s) -> match p2 s with
+                                                    None -> None
+                                                    Some (_, s) -> Some (a, s) )
+
+
+
+def filter : (a -> Bool) -> Parser a -> Parser a
+let filter pred (Parser p) = Parser ( \s -> match p s with
+                                        None -> None
+                                        Some (a, xs) -> if pred a then Some (a, xs) else None )
+
+
+def bind : Parser a -> (a -> Parser b) -> Parser b
+let bind p f =
+  Parser (\s ->
+    match runParser p s with
+      None -> None
+      Some (a, s1) -> runParser (f a) s1)
+
+def many : Parser a -> Parser (List a)
+let many p = Parser ( \manyS -> let go acc manyS_ = match (runParser p manyS_) with
+                                        None -> Some (reverse acc, manyS_)
+                                        Some (a, rest) -> go (a::acc) rest
+in go [] manyS )
+
+def sepBy : Parser a -> Parser sep -> Parser (List a)
+let sepBy p sep = sepBy1 p sep <|> pure []
+
+def sepBy1 : Parser a -> Parser sep -> Parser (List a)
+let sepBy1 p sep = 
+    p `bind` ( \first ->
+        many (sep *> p) |> map ( \rest -> first::rest ) )
+
+def (<|>) : Parser a -> Parser a -> Parser a
+let (<|>) (Parser p1) (Parser p2) = Parser ( \s -> match p1 s with
+                                            None -> p2 s
+                                            Some a -> Some a )
+
+def char : Char -> Parser Char 
+let char c = Parser ( \charS -> match stringToList charS with
+                            [] -> None
+                            (x::xs) -> if x == c then Some (c, stringFromList xs) else None)
+
+def lexeme : Parser a -> Parser a
+let lexeme p = p <* many (char ' ')
+
+def string : String -> Parser String
+let string str = 
+    match stringToList str with
+        []  -> pure ""
+        (c::cs) -> char c *> (string (stringFromList cs)) |> map ( \s -> stringCons c s )
+
+def any : Parser Char
+let any = Parser ( \anyChar -> match stringToList anyChar with
+                            [] -> None
+                            (x::xs) -> Some (x, stringFromList xs))
+
+def digit : Parser Int
+let digit = map Char.toInt (filter Char.isDigit any)
+
+def int : Parser Int
+let int = many digit |> filter (\x -> x != []) |> map digitsToInt
+
+def digitsToInt : List Int -> Int
+let digitsToInt ds =
+    let digitsToIntHelper ds acc =
+            match ds with
+                Nil -> acc
+                Cons digitValue ds_ ->
+                              digitsToIntHelper ds_ (acc * 10 + digitValue)
+    digitsToIntHelper ds 0
+
+
+type Json = JsonNull | JsonInt Int | JsonString String | JsonArray (List Json) | JsonObject (List (Tuple2 String Json))
+
+def jsonNull : Parser Json
+let jsonNull = string "null" |> map ( \_ -> JsonNull )
+
+def jsonInt : Parser Json
+let jsonInt = int |> map JsonInt
+
+def jsonString : Parser Json
+let jsonString = 
+    let stringBody = many (filter ( \c -> c != '"') any ) |> map stringFromList
+    in char '"' *> stringBody <* char '"' |> map JsonString
+
+def jsonArray : Parser Json
+let jsonArray = 
+    let jsonElements = sepBy json (lexeme (char ','))
+    in lexeme (char '[') *> (jsonElements |> map JsonArray) <* lexeme (char ']')
+
+def jsonObject : Parser Json
+let jsonObject = 
+    let jsonPair = 
+            jsonString `bind` ( \key -> 
+                lexeme (char ':') *> json |> map ( \value -> Tuple2 key value ) )
+    let jsonPairs =  sepBy jsonPair (lexeme (char ','))
+    in lexeme (char '{') *> (jsonPairs |> map JsonObject) <* lexeme (char '}')
+
+
+def json : Parser Json
+let json = jsonNull <|> jsonInt <|> jsonString <|> jsonArray <|> jsonObject
 
 
 let main = 
-    zip [1, 2, 3] [4, 5, 6] |>
-    listToString |>
-    println
+    match runParser json "[{\"a\": 1}, 12345, null, []]" with
+        None -> println "Failed to parse"
+        Some (result, _) -> println (toString result)
+
+    

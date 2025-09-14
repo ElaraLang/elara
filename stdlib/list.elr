@@ -12,11 +12,20 @@ let zip l1 l2 =
 
 def listToString : List a -> String
 let listToString l =
-    let go l_ =
+    let listToStringGo l_ =
         match l_ with
             Nil -> ""
             Cons x Nil -> toString x
-            Cons x xs -> toString x ++ ", " ++ go xs
+            Cons x xs -> toString x ++ ", " ++ listToStringGo xs
     match l with
             Nil -> "[]"
-            Cons x xs -> "[" ++ go (Cons x xs) ++ "]"
+            Cons x xs -> "[" ++ listToStringGo (Cons x xs) ++ "]"
+
+
+def reverse : List a -> List a
+let reverse l =
+    let reverseGo acc l_ =
+        match l_ with
+            Nil -> acc
+            Cons x xs -> reverseGo (Cons x acc) xs
+    reverseGo Nil l
