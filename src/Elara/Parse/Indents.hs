@@ -43,7 +43,7 @@ block mergeFunction single exprParser =
         pure $ mergeFunction exprs
 
 exprBlock :: Parser FrontendExpr -> Parser FrontendExpr
-exprBlock = dbgPretty "exprBlock " . block merge identity
+exprBlock = block merge identity
   where
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
