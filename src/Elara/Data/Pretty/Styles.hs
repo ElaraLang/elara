@@ -7,7 +7,7 @@ keyword :: Doc AnsiStyle -> Doc AnsiStyle
 keyword = annotate (color Magenta)
 
 punctuation :: Doc AnsiStyle -> Doc AnsiStyle
-punctuation = annotate (bold <> colorDull Green)
+punctuation = annotate (Prettyprinter.Render.Terminal.bold <> colorDull Green)
 
 label :: Doc AnsiStyle -> Doc AnsiStyle
 label = annotate mempty
@@ -34,4 +34,7 @@ constructor :: Doc AnsiStyle -> Doc AnsiStyle
 constructor = annotate (underlined <> colorDull Yellow)
 
 warning :: Doc AnsiStyle -> Doc AnsiStyle
-warning = annotate (bold <> color Yellow)
+warning = annotate (Prettyprinter.Render.Terminal.bold <> color Yellow)
+
+bold :: Doc AnsiStyle -> Doc AnsiStyle
+bold = annotate Prettyprinter.Render.Terminal.bold
