@@ -32,7 +32,7 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (debug, structuredDebugToLog)
+import Elara.Logging (debug, ignoreStructuredDebug, structuredDebugToLog)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
@@ -125,7 +125,7 @@ runElara ::
 runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
     runFileSystem $
         uniqueGenToGlobalIO $
-            structuredDebugToLog $
+            (if elaraDebug then structuredDebugToLog else ignoreStructuredDebug) $
                 runConcurrent $
                     memoiseRunIO @Elara.Query.Query $
                         Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules settings)) $

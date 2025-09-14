@@ -15,7 +15,7 @@ import Text.Pretty.Simple (
  )
 
 elaraDebug :: Bool
-elaraDebug = True
+elaraDebug = False
 {-# INLINE elaraDebug #-}
 
 printColored :: (Show a, MonadIO m) => a -> m ()
