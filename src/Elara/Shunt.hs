@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -34,6 +35,18 @@ import Optics (Field4 (_4), Field5 (_5), filtered)
 import Rock (Rock, fetch)
 import Prelude hiding (modify')
 
+-- effects the shunter itself needs
+type ShuntEffects es =
+    ( Eff.Error ShuntError :> es
+    , Eff.Writer (Set ShuntWarning) :> es
+    )
+
+-- | A function that can lookup operator info
+type OpLookup es = IgnoreLocVarRef Name -> Eff es (Maybe OpInfo)
+
+lookupFromOpTable :: OpTable -> OpLookup es
+lookupFromOpTable table name = pure (Map.lookup name table)
+
 pattern InExpr :: RenamedExpr' -> RenamedExpr
 pattern InExpr y <- Expr (Located _ y, _)
 
@@ -52,7 +65,9 @@ runGetShuntedModuleQuery ::
         (Module 'Shunted)
 runGetShuntedModuleQuery mn = do
     renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
-    shunt renamed
+    shuntWith opLookupQueries renamed
+  where
+    opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
 runShuntedDeclarationByNameQuery :: Qualified Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Declaration 'Shunted)
 runShuntedDeclarationByNameQuery (Qualified name modName) = do
@@ -115,13 +130,23 @@ addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" 
          in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
     _ -> pass
 
+-- Convert operator to its qualified name for lookup
+opNameOf :: RenamedBinaryOperator -> IgnoreLocVarRef Name
+opNameOf operator =
+    case operator ^. _Unwrapped % unlocated of
+        SymOp opName -> ignoreLocation (NVarName . OperatorVarName <$> opName ^. unlocated)
+        Infixed vn -> ignoreLocation (toName <$> vn)
+          where
+            toName (VarName n) = NVarName (NormalVarName n)
+            toName (ConName n) = NTypeName n
+
 {-
  | Fix the operators in an expression to the correct precedence
  | For example given ((+) = 1l) and ((*) = 2r)
  | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
-fixOperators :: forall r. ShuntPipelineEffects r => RenamedExpr -> Eff r RenamedExpr
+fixOperators :: forall r. (ShuntPipelineEffects r, ?lookup :: OpLookup r) => RenamedExpr -> Eff r RenamedExpr
 fixOperators = reassoc
   where
     withLocationOf' :: RenamedExpr -> RenamedExpr' -> RenamedExpr
@@ -158,7 +183,7 @@ fixOperators = reassoc
 
         getInfoOrWarn :: RenamedBinaryOperator -> Eff r OpInfo
         getInfoOrWarn operator = do
-            info <- inject $ opInfo operator
+            info <- ?lookup (opNameOf operator)
             case info of
                 Just info -> pure info
                 Nothing -> do
@@ -169,12 +194,7 @@ fixOperators = reassoc
 
 opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
 opInfo operator = do
-    let name = case operator ^. _Unwrapped % unlocated of
-            SymOp opName -> ignoreLocation (NVarName . OperatorVarName <$> opName ^. unlocated)
-            Infixed vn -> ignoreLocation (toName <$> vn)
-          where
-            toName (VarName n) = NVarName (NormalVarName n)
-            toName (ConName n) = NTypeName n
+    let name = opNameOf operator
     Rock.fetch (Elara.Query.GetOpInfo name)
 
 type ShuntPipelineEffects es =
@@ -185,56 +205,60 @@ type ShuntPipelineEffects es =
     )
 
 infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
-infixDeclToOpInfo (InfixDeclaration name prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
   where
     convAssoc LeftAssoc = LeftAssociative
     convAssoc RightAssoc = RightAssociative
     convAssoc NonAssoc = NonAssociative
 
-shunt ::
-    forall r.
-    ShuntPipelineEffects r =>
+shuntWith ::
+    forall es.
+    ShuntPipelineEffects es =>
+    OpLookup es ->
     Module 'Renamed ->
-    Eff r (Module 'Shunted)
-shunt = traverseModule shuntDeclaration
+    Eff es (Module 'Shunted)
+shuntWith opL = traverseModule (shuntWithDeclaration opL)
 
-shuntDeclaration ::
-    forall r.
-    ShuntPipelineEffects r =>
+shuntWithDeclaration ::
+    forall es.
+    ShuntPipelineEffects es =>
+    OpLookup es ->
     RenamedDeclaration ->
-    Eff r ShuntedDeclaration
-shuntDeclaration (Declaration decl) =
+    Eff es ShuntedDeclaration
+shuntWithDeclaration opL (Declaration decl) =
     Declaration
         <$> traverseOf
             unlocated
             ( \(decl' :: RenamedDeclaration') -> do
-                body' <- shuntDeclarationBody (decl' ^. field' @"body")
+                body' <- shuntDeclarationBody opL (decl' ^. field' @"body")
                 pure (Declaration' (decl' ^. field' @"moduleName") body')
             )
             decl
 
 shuntDeclarationBody ::
-    forall r.
-    ShuntPipelineEffects r =>
+    forall es.
+    ShuntPipelineEffects es =>
+    OpLookup es ->
     RenamedDeclarationBody ->
-    Eff r ShuntedDeclarationBody
-shuntDeclarationBody (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated shuntDeclarationBody' rdb
+    Eff es ShuntedDeclarationBody
+shuntDeclarationBody opL (DeclarationBody rdb) = DeclarationBody <$> traverseOf unlocated go rdb
   where
-    shuntDeclarationBody' :: RenamedDeclarationBody' -> Eff r ShuntedDeclarationBody'
-    shuntDeclarationBody' (Value name e _ ty ann) = do
-        shunted <- fixExpr e
+    go :: RenamedDeclarationBody' -> Eff es ShuntedDeclarationBody'
+    go (Value name e _ ty ann) = do
+        shunted <- let ?lookup = opL in fixExpr e
         let ty' = fmap coerceType ty
         pure (Value name shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
-    shuntDeclarationBody' (TypeDeclaration name vars ty ann) = pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+    go (TypeDeclaration name vars ty ann) =
+        pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
 
-fixExpr :: ShuntPipelineEffects r => RenamedExpr -> Eff r ShuntedExpr
+fixExpr :: ShuntPipelineEffects r => (?lookup :: OpLookup r) => RenamedExpr -> Eff r ShuntedExpr
 fixExpr e = do
     fixed <- fixOperators e
     shuntExpr fixed
 
 shuntExpr ::
     forall r.
-    ShuntPipelineEffects r =>
+    (ShuntPipelineEffects r, (?lookup :: OpLookup r)) =>
     RenamedExpr ->
     Eff r ShuntedExpr
 shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le
