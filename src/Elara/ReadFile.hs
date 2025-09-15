@@ -5,7 +5,7 @@ import Data.ByteString.Lazy qualified as L
 import Data.ByteString.Lazy.Search qualified as S
 import Data.HashSet qualified as HashSet
 import Effectful (Eff, (:>))
-import Effectful.FileSystem (FileSystem, listDirectory)
+import Effectful.FileSystem (FileSystem, createDirectoryIfMissing, listDirectory)
 import Effectful.FileSystem.IO.ByteString qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error
@@ -46,6 +46,7 @@ instance ReportableError ReadFileError where
 
 getInputFiles :: Eff '[FileSystem] (HashSet FilePath)
 getInputFiles = do
+    createDirectoryIfMissing True "stdlib"
     stdlib <- fmap ("stdlib/" <>) <$> listDirectory "stdlib"
     let source = "source.elr"
 
