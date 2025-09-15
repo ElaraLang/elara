@@ -150,10 +150,11 @@ match = locatedExpr $ do
     token_ TokenWith
 
     let emptyMatchBody =
-            (token_ TokenLeftBrace *> token_ TokenRightBrace $> []) <?> "empty match body"
+            token_ TokenLeftBrace *> token_ TokenRightBrace $> []
+    let normalMatchBody = toList <$> block identity one (matchCase <?> "match case")
     cases <-
-        emptyMatchBody -- allow empty match blocks
-            <|> (toList <$> block identity one matchCase)
+        (try emptyMatchBody <?> "empty match body") -- allow empty match blocks
+            <|> (normalMatchBody <?> "match body")
     pure $ Match expr cases
   where
     matchCase :: Parser (FrontendPattern, FrontendExpr)
