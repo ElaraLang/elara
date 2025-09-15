@@ -40,7 +40,7 @@ might make a query return a different result.
 -}
 memoise ::
     forall f.
-    (forall es. GEq (f es), forall es a. Hashable (f es a), HasMemoiseE f) =>
+    (forall es. GEq (f es), forall es a. Hashable (f es a), HasMemoiseE f, HasCallStack) =>
     Rules f ->
     Rules f
 memoise rules (key :: f es a) = withMemoiseE key $ do

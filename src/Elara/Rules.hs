@@ -26,7 +26,7 @@ import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
 
-rules :: CompilerSettings -> Rock.Rules Query
+rules :: HasCallStack => CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = do
     case key of
         GetCompilerSettings -> pure compilerSettings
