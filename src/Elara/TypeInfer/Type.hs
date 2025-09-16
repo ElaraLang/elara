@@ -50,8 +50,11 @@ instance Plated (Constraint loc)
 emptyLocation :: SourceRegion
 emptyLocation = generatedSourceRegion Nothing
 
-instance Monoid (Constraint SourceRegion) where
+instance {-# OVERLAPPING #-} Monoid (Constraint SourceRegion) where
     mempty = EmptyConstraint emptyLocation
+
+instance (Monoid loc, Eq loc) => Monoid (Constraint loc) where
+    mempty = EmptyConstraint mempty
 
 instance (Eq loc, Semigroup loc) => Semigroup (Constraint loc) where
     (<>) :: (Eq loc, Semigroup loc, HasCallStack) => Constraint loc -> Constraint loc -> Constraint loc

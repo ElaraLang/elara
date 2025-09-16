@@ -1,28 +1,44 @@
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Boilerplate where
 
 import Common (diagShouldSucceed)
 import Control.Exception (throwIO)
+import Effectful
+import Effectful.Concurrent
+import Effectful.Error.Static (Error, runError)
+import Effectful.FileSystem (FileSystem, runFileSystem)
+import Effectful.Reader.Static (runReader)
+import Effectful.State.Static.Local (evalState)
+import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Generic hiding (TypeVar)
 import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
+import Elara.AST.Region
 import Elara.AST.Select
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
-import Elara.Data.TopologicalGraph
+
+import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Desugar
+import Elara.Desugar.Error (DesugarError)
 import Elara.Error
-import Elara.Lexer.Pipeline
 import Elara.Lexer.Reader
+import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.Parse
+import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Parse.Expression
-import Elara.Pipeline hiding (finalisePipeline)
 import Elara.Prim (boolName, mkPrimQual, primModuleName)
 import Elara.Prim.Rename
+import Elara.Query qualified
+import Elara.ReadFile
 import Elara.Rename
+import Elara.Rename.Error
 import Elara.Shunt
+import Elara.Shunt.Error (ShuntError)
+import Elara.Shunt.Operator
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
 import Error.Diagnose.Diagnostic
@@ -30,61 +46,88 @@ import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
-import Polysemy (Embed, Member, Sem, runM, subsume_)
-import Polysemy.Maybe
-import Polysemy.Reader
-import Region (qualifiedTest, testLocated)
-import Test.Syd (expectationFailure)
+import Print (printPretty)
+import Region (qualifiedTest, testLocated, testRegion)
+import Rock qualified
+import Rock.MemoE (Memoise, memoiseRunIO)
+import Rules (testRules)
 import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Show
 
-loadRenamedExpr :: Text -> PipelineRes (Expr 'Renamed)
-loadRenamedExpr = finalisePipeline . loadRenamedExpr'
-
 loadRenamedExpr' ::
     forall w.
-    ( Member (DiagnosticWriter (Doc AnsiStyle)) w
-    , Member MaybeE w
-    , Member (Embed IO) w
-    , Member StructuredDebug w
+    ( DiagnosticWriter (Doc AnsiStyle) :> w
+    , IOE :> w
+    , Error SomeReportableError :> w
     ) =>
-    Text -> Sem w (Expr 'Renamed)
-loadRenamedExpr' source = runRenamePipeline (createGraph []) operatorRenameState . runParsePipeline . runLexPipeline $ do
+    Text -> Eff w (Expr 'Renamed)
+loadRenamedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
-    tokens <- readTokensWith fp (toString source)
-    parsed <- parsePipeline exprParser fp (toString source, tokens)
-    desugared <- runDesugarPipeline $ runDesugar $ desugarExpr parsed
+    tokens <- runErrorOrReport @LexerError $ readTokensWith (FileContents fp source)
+    parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ parseWith exprParser fp (source, tokens)
+    desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
-    runReader Nothing $ runReader (Nothing @(Module 'Desugared)) $ renameExpr desugared
+    runReader Nothing $
+        runReader (Nothing @(Module 'Desugared)) $
+            evalState operatorRenameState $
+                runErrorOrReport @RenameError $
+                    renameExpr desugared
 
--- like the normal finalisePipeline but always with no logging
-finalisePipeline :: Sem PipelineResultEff a -> PipelineRes a
-finalisePipeline =
-    runM @IO
-        . runDiagnosticWriter
-        . runMaybe
-        . ignoreStructuredDebug
-        . subsume_
+runQueryEffects :: IOE :> r => Eff (Rock.Rock Elara.Query.Query : Memoise : Concurrent : FileSystem : UniqueGen : StructuredDebug : r) a -> Eff r a
+runQueryEffects =
+    ignoreStructuredDebug
+        . uniqueGenToGlobalIO
+        . runFileSystem
+        . runConcurrent
+        . memoiseRunIO @Elara.Query.Query
+        . Rock.runRock testRules
 
-loadShuntedExpr :: Text -> PipelineRes (Expr 'Shunted)
-loadShuntedExpr source = finalisePipeline . runShuntPipeline $ do
+finaliseEffects ::
+    Eff
+        [Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), IOE]
+        a ->
+    IO (Diagnostic (Doc AnsiStyle), Maybe a)
+finaliseEffects eff = do
+    (diagnostics, r) <- runEff $ runDiagnosticWriter $ do
+        result <- runError @SomeReportableError $ eff
+        case result of
+            Left (callStack, error) -> do
+                Elara.Error.report error
+                printPretty callStack
+                pure Nothing
+            Right r -> pure (Just r)
+    pure (diagnostics, r)
+
+reportableErrorToMaybe :: Either SomeReportableError a -> (Diagnostic (Doc AnsiStyle), Maybe a)
+reportableErrorToMaybe (Right x) = do
+    (mempty, Just x)
+reportableErrorToMaybe (Left error) = runPureEff $ runDiagnosticWriter $ do
+    Elara.Error.report error
+    pure Nothing
+
+loadShuntedExpr :: _ => Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr 'Shunted))
+loadShuntedExpr source = finaliseEffects $ runQueryEffects $ do
     renamed <- loadRenamedExpr' source
-    runReader fakeOperatorTable $ fixExpr renamed
+    runErrorOrReport @ShuntError $
+        ( fst
+            <$> runWriter
+                (let ?lookup = lookupFromOpTable fakeOperatorTable in fixExpr renamed)
+        )
 
-pipelineResShouldSucceed :: (Show a, _) => PipelineRes a -> IO a
-pipelineResShouldSucceed m = do
-    (d, x) <- m
-    when (hasReports d) $
-        expectationFailure $
-            toString $
-                prettyToText $
-                    prettyDiagnostic' WithUnicode (TabSize 4) d
-    case x of
-        Just ok -> pure ok
-        Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+-- pipelineResShouldSucceed :: (Show a, _) => _ a -> IO a
+-- pipelineResShouldSucceed m = do
+--     (d, x) <- m
+--     when (hasReports d) $
+--         expectationFailure $
+--             toString $
+--                 prettyToText $
+--                     prettyDiagnostic' WithUnicode (TabSize 4) d
+--     case x of
+--         Just ok -> pure ok
+--         Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
 
-evalPipelineRes :: (MonadTest m, MonadIO m) => PipelineRes a -> m a
+evalPipelineRes :: (MonadIO m, MonadTest m) => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> m b
 evalPipelineRes m = do
     (d, x) <- liftIO m
     diagShouldSucceed (d, x)
@@ -123,16 +166,16 @@ fakeOperatorTable =
             , mkFakeVarP "==" (OpInfo (mkPrecedence 4) NonAssociative)
             ]
 
-fakeTypeEnvironment :: TypeEnvironment loc
+fakeTypeEnvironment :: TypeEnvironment SourceRegion
 fakeTypeEnvironment =
-    let scalarBool = TypeConstructor (mkPrimQual boolName) []
+    let scalarBool = TypeConstructor testRegion (mkPrimQual boolName) []
      in emptyTypeEnvironment
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "+")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "-")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "*")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) (Scalar ScalarInt))))
-            & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function (Scalar ScalarInt) (Function (Scalar ScalarInt) scalarBool)))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "+")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) (Scalar testRegion ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "-")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) (Scalar testRegion ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "*")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) (Scalar testRegion ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "/")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) (Scalar testRegion ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "|>")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) (Scalar testRegion ScalarInt))))
+            & addType (TermVarKey (qualifiedTest $ OperatorVarName "==")) (Lifted (Function testRegion (Scalar testRegion ScalarInt) (Function testRegion (Scalar testRegion ScalarInt) scalarBool)))
             & addType (DataConKey (Qualified "True" primModuleName)) (Lifted scalarBool)
             & addType (DataConKey (Qualified "False" primModuleName)) (Lifted scalarBool)
 

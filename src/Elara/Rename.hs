@@ -64,7 +64,11 @@ type Rename r =
     )
 
 type InnerRename r =
-    ( Rename r
+    ( Eff.State RenameState :> r
+    , Eff.Error RenameError :> r
+    , UniqueGen :> r
+    , QueryEffects r
+    , StructuredDebug :> r
     , Eff.Reader (Maybe (Module 'Desugared)) :> r -- the module we're renaming
     )
 
@@ -96,7 +100,7 @@ qualifyIn mn (MaybeQualified n (Just m)) = do
     pure $ Qualified n m
 qualifyIn mn (MaybeQualified n Nothing) = pure $ Qualified n mn
 
-qualifyTypeName :: InnerRename r => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
+qualifyTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
 qualifyTypeName (Located sr (MaybeQualified n (Just m))) = do
     ensureExistsAndExposed m (Located sr (NTypeName n))
     pure $ Located sr (Qualified n m)
@@ -117,7 +121,7 @@ askCurrentModule = do
         Just m -> pure m
 
 lookupGenericName ::
-    InnerRename r =>
+    (UniqueGen :> r, Rock.Rock Elara.Query.Query :> r, _) =>
     (Ord name, ToName name, Show name) =>
     Lens' RenameState (Map name (NonEmpty (VarRef name))) ->
     (Located Name -> NonEmpty (VarRef name) -> RenameError) ->
@@ -140,21 +144,21 @@ lookupGenericName lens ambiguousError (Located sr (MaybeQualified n Nothing)) = 
             [] -> throwError $ UnknownName (Located sr $ toName n) (Just m) names'
             (x : xs) -> throwError $ ambiguousError (Located sr $ toName n) (x :| xs)
 
-lookupVarName :: InnerRename r => Located (MaybeQualified VarName) -> Eff r (Located (VarRef VarName))
+lookupVarName :: _ => Located (MaybeQualified VarName) -> Eff r (Located (VarRef VarName))
 lookupVarName = lookupGenericName (field' @"varNames") AmbiguousVarName
 
-lookupTypeName :: InnerRename r => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
+lookupTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
 lookupTypeName n =
     lookupGenericName (field' @"typeNames") AmbiguousTypeName n <<&>> \case
         Local _ -> error "can't have local type names"
         Global v -> v ^. unlocated
 
-lookupTypeVar :: Rename r => LowerAlphaName -> Eff r (Maybe (Unique LowerAlphaName))
+lookupTypeVar :: _ => LowerAlphaName -> Eff r (Maybe (Unique LowerAlphaName))
 lookupTypeVar n = do
     typeVars' <- use' (field' @"typeVars")
     pure $ Map.lookup n typeVars'
 
-uniquify :: Rename r => Located name -> Eff r (Located (Unique name))
+uniquify :: UniqueGen :> r => Located name -> Eff r (Located (Unique name))
 uniquify (Located sr n) = Located sr <$> makeUnique n
 
 -- | Performs a topological sort of field' declarations, so as many
@@ -243,7 +247,7 @@ addDeclarationToContext _ decl = do
         _ -> pass
 
 -- | Ensure that a name exists in the context and is exposed
-ensureExistsAndExposed :: InnerRename r => ModuleName -> Located Name -> Eff r ()
+ensureExistsAndExposed :: (Rock.Rock Elara.Query.Query :> r, _) => ModuleName -> Located Name -> Eff r ()
 ensureExistsAndExposed mn n = do
     thisMod <- Eff.ask
     m <- getModuleFromName mn
@@ -277,10 +281,10 @@ isExposingAndExists m n =
     isExposition mn (NTypeName tn) (ExposedTypeAndAllConstructors tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
     isExposition _ _ _ = False
 
-renameDeclaration :: InnerRename r => DesugaredDeclaration -> Eff r RenamedDeclaration
+renameDeclaration :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredDeclaration -> Eff r RenamedDeclaration
 renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated renameDeclaration' ld
   where
-    renameDeclaration' :: InnerRename r => DesugaredDeclaration' -> Eff r RenamedDeclaration'
+    renameDeclaration' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredDeclaration' -> Eff r RenamedDeclaration'
     renameDeclaration' fd = do
         -- qualify the name with the module name
         -- let name' =
@@ -293,10 +297,10 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
 
         pure $ Declaration' (fd ^. field' @"moduleName") body'
 
-    renameDeclarationBody :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredDeclarationBody -> Eff r RenamedDeclarationBody
+    renameDeclarationBody :: (InnerRename r, Rock.Rock Elara.Query.Query :> r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredDeclarationBody -> Eff r RenamedDeclarationBody
     renameDeclarationBody (DeclarationBody ldb) = DeclarationBody <$> traverseOf unlocated renameDeclarationBody' ldb
 
-    renameDeclarationBody' :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredDeclarationBody' -> Eff r RenamedDeclarationBody'
+    renameDeclarationBody' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredDeclarationBody' -> Eff r RenamedDeclarationBody'
     renameDeclarationBody' (Value name val _ ty ann) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType True)) ty
         val' <- renameExpr val
@@ -324,7 +328,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
                         Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
             pure $ TypeDeclaration qualifiedName vars' ty' ann'
 
-renameTypeDeclaration :: InnerRename r => ModuleName -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
+renameTypeDeclaration :: _ => ModuleName -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do
     t' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) t
     pure $ Alias t'
@@ -335,12 +339,12 @@ renameTypeDeclaration thisMod (ADT constructors) = do
             constructors
     pure $ ADT constructors'
 
-renameSimpleType :: InnerRename r => DesugaredType -> Eff r RenamedType
+renameSimpleType :: _ => DesugaredType -> Eff r RenamedType
 renameSimpleType = traverseOf (_Unwrapped % _1 % unlocated) (renameType False)
 
 -- | Renames a type, qualifying type constructors and type variables where necessary
 renameType ::
-    InnerRename r =>
+    (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
     {- | If new type variables are allowed - if False, this will throw an error if a type variable is not in scope
     This is useful for type declarations, where something like @type Invalid a = b@ would clearly be invalid
     But for local type annotations, we want to allow this, as it may be valid
@@ -367,7 +371,7 @@ renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unw
 renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType antv)) ts
 renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t
 
-renameExpr :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredExpr -> Eff r RenamedExpr
+renameExpr :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr
 renameExpr (Expr' (Block es)) = desugarBlock es
 renameExpr e@(Expr' (Let{})) = desugarBlock (e :| [])
 renameExpr (Expr le@(Located loc _, _)) =
@@ -451,7 +455,7 @@ renameExpr (Expr le@(Located loc _, _)) =
     renameExpr' (Let{}) = error "renameExpr': Let should be handled by renameExpr"
     renameExpr' (Block{}) = error "renameExpr': Block should be handled by renameExpr"
 
-renameBinaryOperator :: InnerRename r => DesugaredBinaryOperator -> Eff r RenamedBinaryOperator
+renameBinaryOperator :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredBinaryOperator -> Eff r RenamedBinaryOperator
 renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unlocated renameBinaryOperator' op
   where
     renameBinaryOperator' :: InnerRename r => DesugaredBinaryOperator' -> Eff r RenamedBinaryOperator'
@@ -473,7 +477,7 @@ renameBinaryOperator (MkBinaryOperator op) = MkBinaryOperator <$> traverseOf unl
                 pure $ Global (ConName <<$>> tn)
         pure $ Infixed op'
 
-renamePattern :: InnerRename r => DesugaredPattern -> Eff r RenamedPattern
+renamePattern :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> Eff r RenamedPattern
 renamePattern (Pattern fp@(Located loc _, _)) =
     Pattern
         <$> bitraverse
@@ -544,7 +548,7 @@ patternToVarName (Pattern (Located _ p, _)) =
             UnitPattern -> "unit"
             TuplePattern _ -> mn "tuple"
 
-patternToMatch :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (Located (Unique VarName), RenamedExpr)
+patternToMatch :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (Located (Unique VarName), RenamedExpr)
 -- Special case, no match needed
 -- We can just turn \x -> x into \x -> x
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
@@ -572,14 +576,14 @@ This is a little bit special because patterns have to be converted to match expr
 For example,
 @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
-renameLambda :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => DesugaredPattern -> DesugaredExpr -> Eff r RenamedExpr'
+renameLambda :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r RenamedExpr'
 renameLambda p@((Pattern (_, argType))) e = do
     (arg, match) <- patternToMatch p e
     argType' <- traverse renameSimpleType argType
     let arg' = fmap (,argType') arg
     pure (Lambda (TypedLambdaParam <$> arg') match)
 
-desugarBlock :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r) => NonEmpty DesugaredExpr -> Eff r RenamedExpr
+desugarBlock :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => NonEmpty DesugaredExpr -> Eff r RenamedExpr
 desugarBlock (e@(Expr' (Let{})) :| []) = do
     decl <- Eff.ask @(Maybe DesugaredDeclaration)
     throwError (BlockEndsWithLet e (fmap (view (_Unwrapped % unlocated % the @"body")) decl))

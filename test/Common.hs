@@ -1,17 +1,16 @@
 module Common where
 
-import Control.Exception (throwIO)
+import Control.Exception.Safe
+import Effectful
 import Elara.AST.Generic
 import Elara.Data.Pretty
-import Elara.Data.Unique (UniqueGen, uniqueGenToIO)
+import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
+import Elara.Error (ReportableError, report, runDiagnosticWriter)
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
 import Hedgehog.Internal.Property
 import Orphans ()
-import Polysemy (Sem, runM)
-import Polysemy.Embed
 import Test.HUnit (assertFailure)
 import Test.Syd
-import Test.Syd.Run
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe
@@ -35,9 +34,14 @@ diagShouldFail (d, x) = liftIO $ do
         Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
         Nothing -> pass
 
-runUnique :: MonadIO m => Sem [UniqueGen, Embed IO] a -> m a
-runUnique = liftIO . runM @IO . uniqueGenToIO
+runUnique :: MonadIO m => Eff [UniqueGen, IOE] a -> m a
+runUnique = liftIO . runEff . uniqueGenToGlobalIO
 
-shouldBeRight :: (HasCallStack, Show a, Show b, Eq a) => Either a b -> IO b
-shouldBeRight (Right x) = pure x
-shouldBeRight actual@(Left x) = throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow actual) "Right _"
+evalReportableM :: ReportableError e => (MonadTest m, Show x, MonadCatch m, HasCallStack) => m (Either e x) -> m x
+evalReportableM m = do
+    r <- m
+    case r of
+        Left err -> do
+            let (x, _) = runPureEff $ runDiagnosticWriter $ report err
+            failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) x
+        Right ok -> pure ok

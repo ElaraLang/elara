@@ -1,19 +1,23 @@
 module Parse.Common where
 
+import Effectful (runPureEff)
+import Effectful.Error.Static (runError)
 import Elara.AST.Generic (Expr, Pattern)
 import Elara.AST.Select (UnlocatedAST (..))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
 import Elara.Data.Pretty (pretty, (<+>))
-import Elara.Lexer.Pipeline (runLexPipelinePure)
 import Elara.Lexer.Reader (readTokensWith)
-import Elara.Parse (parsePipeline, runParsePipelinePure)
+import Elara.Lexer.Utils (LexerError)
+import Elara.Logging (ignoreStructuredDebug)
+import Elara.Parse
 import Elara.Parse.Error
 import Elara.Parse.Expression (element, exprParser)
 import Elara.Parse.Indents
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
 import Elara.Parse.Stream
+import Elara.ReadFile (FileContents (..))
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
 import Polysemy
@@ -24,11 +28,17 @@ import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof
 evalEitherParseError :: (ShowErrorComponent e, VisualStream s, TraversableStream s, MonadTest m) => Either (WParseErrorBundle s e) a -> m a
 evalEitherParseError = withFrozenCallStack $ either (failWith Nothing . errorBundlePretty . unWParseErrorBundle) pure
 
-lexAndParse :: (MonadTest m, ToString a1) => Parser a2 -> a1 -> m (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
+lexAndParse ::
+    (MonadTest m, ToText a1) =>
+    Parser a2 ->
+    a1 ->
+    m
+        (Either (WParseErrorBundle TokenStream ElaraParseError) a2)
 lexAndParse parser source = do
     let fp = "<tests>"
-    tokens <- evalEither $ run $ runLexPipelinePure $ readTokensWith fp (toString source)
-    pure $ run $ runParsePipelinePure $ parsePipeline parser fp (toString source, tokens)
+    tokens <- evalEither $ runPureEff $ runError $ ignoreStructuredDebug $ readTokensWith (FileContents fp (toText source))
+    let x = runError $ parseWith parser fp (toText source, tokens)
+    pure $ first snd $ runPureEff x
 
 shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
 shouldParsePattern source expected = withFrozenCallStack $ do

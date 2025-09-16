@@ -1,8 +1,6 @@
 module Elara.TypeInfer.Environment where
 
-import Data.GADT.Compare (GEq (..))
-import Data.GADT.Compare.TH (deriveGEq)
-import Data.Kind qualified as Kind
+import Data.GADT.Compare (GCompare (gcompare), GEq (..), GOrdering (..))
 import Data.Map qualified as Map
 import Data.Type.Equality
 import Effectful
@@ -15,11 +13,12 @@ import Elara.Data.Unique
 import Elara.Error
 import Elara.TypeInfer.Type
 import Error.Diagnose
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
     = TypeEnvironment
-        (Map TypeEnvKey (Type loc))
+        (Map (TypeEnvKey loc) (Type loc))
     deriving (Show)
 
 instance Pretty loc => Pretty (TypeEnvironment loc) where
@@ -29,26 +28,54 @@ emptyTypeEnvironment :: TypeEnvironment loc
 emptyTypeEnvironment = TypeEnvironment Map.empty
 
 -- | A key in the type environment
-data TypeEnvKey
+data TypeEnvKey loc
     = -- | A data constructor K
       DataConKey DataCon
     | -- | A term variable x
       TermVarKey (Qualified VarName)
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable TypeEnvKey
+-- | This is safe I think because phantom type
+instance GEq TypeEnvKey where
+    geq :: forall k (a :: k) (b :: k). TypeEnvKey a -> TypeEnvKey b -> Maybe (a :~: b)
+    geq (DataConKey a) (DataConKey b) =
+        if a == b
+            then Just (unsafeCoerce Refl)
+            else Nothing
+    geq (TermVarKey a) (TermVarKey b) =
+        if a == b
+            then Just (unsafeCoerce Refl)
+            else Nothing
+    geq _ _ = Nothing
 
-instance Pretty TypeEnvKey where
+instance GCompare TypeEnvKey where
+    gcompare :: forall k (a :: k) (b :: k). TypeEnvKey a -> TypeEnvKey b -> GOrdering a b
+    gcompare (DataConKey a) (DataConKey b) =
+        case compare a b of
+            LT -> GLT
+            EQ -> unsafeCoerce GEQ
+            GT -> GGT
+    gcompare (DataConKey _) (TermVarKey _) = GLT
+    gcompare (TermVarKey _) (DataConKey _) = GGT
+    gcompare (TermVarKey a) (TermVarKey b) =
+        case compare a b of
+            LT -> GLT
+            EQ -> unsafeCoerce GEQ
+            GT -> GGT
+
+instance Hashable (TypeEnvKey loc)
+
+instance Pretty (TypeEnvKey loc) where
     pretty (DataConKey con) = pretty con
     pretty (TermVarKey name) = pretty name
 
-addType :: TypeEnvKey -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
+addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
-addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Type loc -> Eff r ()
+addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey loc -> Type loc -> Eff r ()
 addType' key ty = modify (addType key ty)
 
-lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Eff r (Maybe (Type loc))
+lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey loc -> Eff r (Maybe (Type loc))
 lookupTypeMaybe key = do
     TypeEnvironment env <- get
     pure (Map.lookup key env)
@@ -58,7 +85,7 @@ lookupType ::
     , State (TypeEnvironment loc) :> r
     , Show loc
     ) =>
-    TypeEnvKey -> Eff r (Type loc)
+    TypeEnvKey loc -> Eff r (Type loc)
 lookupType key = do
     env'@(TypeEnvironment env) <- get
     case Map.lookup key env of
@@ -97,7 +124,7 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 
 -- | An error that can occur during type inference
 data InferError loc
-    = UnboundTermVar TypeEnvKey (TypeEnvironment loc)
+    = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
     deriving (Show, Generic)
 

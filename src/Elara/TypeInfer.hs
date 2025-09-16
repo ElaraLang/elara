@@ -81,14 +81,16 @@ runGetTypeCheckedModuleQuery mn = do
     pure (fst r)
 
 runTypeOfQuery ::
-    TypeEnvKey ->
+    forall loc.
+    loc ~ SourceRegion =>
+    TypeEnvKey loc ->
     Eff
         ( ConsQueryEffects
             '[Rock.Rock Elara.Query.Query]
         )
-        (Type SourceRegion)
-runTypeOfQuery key = runErrorOrReport @(InferError SourceRegion) $
-    runErrorOrReport @(UnifyError SourceRegion) $
+        (Type loc)
+runTypeOfQuery key = runErrorOrReport @(InferError loc) $
+    runErrorOrReport @(UnifyError loc) $
         runErrorOrReport @KindInferError $
             runErrorOrReport @TypeConvertError $
                 evalState emptyLocalTypeEnvironment $

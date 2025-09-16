@@ -38,7 +38,7 @@ type DesugarPipelineEffects = '[Eff.State DesugarState, Eff.Error DesugarError]
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration
     }
-    deriving (Show, Pretty)
+    deriving (Show, Pretty, Semigroup, Monoid)
 
 makeLenses ''DesugarState
 

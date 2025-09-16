@@ -22,6 +22,9 @@ makeEffect ''DiagnosticWriter
 execDiagnosticWriter :: Eff (DiagnosticWriter t ': r) a -> Eff r (Diagnostic t)
 execDiagnosticWriter = fmap fst . runDiagnosticWriter
 
+evalDiagnosticWriter :: Eff (DiagnosticWriter t ': r) a -> Eff r a
+evalDiagnosticWriter = fmap snd . runDiagnosticWriter
+
 runDiagnosticWriter :: Eff (DiagnosticWriter t ': r) a -> Eff r (Diagnostic t, a)
 runDiagnosticWriter = reinterpret (fmap swap . runState mempty) $ \_ -> \case
     WriteDiagnostic d -> modify (<> d)

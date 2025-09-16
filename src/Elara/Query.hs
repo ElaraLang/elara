@@ -1,8 +1,8 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use id" #-}
 -- for the HasMemoiseE instance
 
 module Elara.Query where
@@ -91,7 +91,7 @@ data Query (es :: [Effect]) a where
     -- Type and Kind Inference Queries
     TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module 'Typed)
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
-    TypeOf :: TypeEnvKey -> Query (WithRock (ConsQueryEffects '[])) (Type SourceRegion)
+    TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
     -- To Core Queries
@@ -149,6 +149,7 @@ instance Hashable (Query es a) where
             hash tag `hashWithSalt` payload `hashWithSalt` salt
 
 -- alas, this sucks
+{-# HLINT ignore "Use id" #-}
 instance HasMemoiseE Query where
     withMemoiseE = \case
         GetCompilerSettings -> \x -> x

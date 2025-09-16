@@ -29,7 +29,7 @@ import Elara.Error (ReportableError (..), defaultReport, writeReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Prim (boolName, mkPrimQual)
 import Elara.Query qualified
-import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
+import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
@@ -41,16 +41,16 @@ import Optics (anyOf)
 import Optics.Fold (universeOf)
 import Rock qualified
 
-generateConstraints :: (Infer SourceRegion r, Error (UnifyError SourceRegion) :> r) => ShuntedExpr -> Eff r (TypedExpr, Monotype SourceRegion)
+generateConstraints :: (Infer loc r, Error (UnifyError loc) :> r, loc ~ SourceRegion) => ShuntedExpr -> Eff r (TypedExpr, Monotype loc)
 generateConstraints expr'@(Expr (Located loc _, _)) = do
     (typedExpr', monotype) <- generateConstraints' expr'
     pure (Expr (Located loc typedExpr', monotype), monotype)
 
 lookupType ::
-    QueryEffects r =>
+    (QueryEffects r, loc ~ SourceRegion) =>
     Rock.Rock Elara.Query.Query :> r =>
-    State (TypeEnvironment SourceRegion) :> r =>
-    TypeEnvKey -> Eff r (Type SourceRegion)
+    State (TypeEnvironment loc) :> r =>
+    TypeEnvKey loc -> Eff r (Type loc)
 lookupType key = do
     -- try the local environment first to avoid unnecessary queries / infinite loops
     inEnv <- lookupTypeMaybe key
@@ -60,7 +60,7 @@ lookupType key = do
             debug ("Type not found in environment, querying: " <> pretty key)
             Rock.fetch (Elara.Query.TypeOf key)
 
-generateConstraints' :: (Infer SourceRegion r, Error (UnifyError SourceRegion) :> r) => ShuntedExpr -> Eff r (TypedExpr', Monotype SourceRegion)
+generateConstraints' :: (Infer loc r, Error (UnifyError loc) :> r, loc ~ SourceRegion) => ShuntedExpr -> Eff r (TypedExpr', Monotype loc)
 generateConstraints' expr' =
     debugWithResult ("generateConstraints: " <> pretty expr') $
         let exprLoc = expr' ^. Syntax.exprLocation
@@ -70,13 +70,13 @@ generateConstraints' expr' =
                 String s -> pure (String s, Scalar exprLoc ScalarString)
                 Char c -> pure (Char c, Scalar exprLoc ScalarChar)
                 Unit -> pure (Unit, Scalar exprLoc ScalarUnit)
-                Constructor (Located loc name) -> do
+                Constructor ctorValue@(Located loc name) -> do
                     -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
                     varType <- lookupType (DataConKey $ stripLocation name)
 
                     (instantiated, typeApps) <- instantiate varType
 
-                    let ctor = (Constructor (Located loc name), instantiated)
+                    let ctor = (Constructor ctorValue, instantiated)
 
                     let withApps =
                             foldl'
@@ -250,21 +250,21 @@ We define the type of a pattern as the type of values it can match against, rath
 For example, in the case of a simple option type @type Option a = Some a | None@,
 we say that the pattern `Some x` has type `Option a` rather than @a -> Option a@
 -}
-generatePatternConstraints :: (Infer SourceRegion r, Error (UnifyError SourceRegion) :> r) => ShuntedPattern -> Monotype SourceRegion -> Eff r (TypedPattern, Monotype SourceRegion)
+generatePatternConstraints :: (Infer loc r, Error (UnifyError loc) :> r, loc ~ SourceRegion) => ShuntedPattern -> Monotype loc -> Eff r (TypedPattern, Monotype loc)
 generatePatternConstraints (Pattern (Located loc pattern', expectedType)) over = debugWithResult ("generatePatternConstraints: " <> pretty pattern') $ do
     (typedPattern', monotype) <- generatePatternConstraints' pattern' over
     tell (Equality loc monotype over)
     pure (Pattern (Located loc typedPattern', monotype), monotype)
 
 generatePatternConstraints' ::
-    (Infer SourceRegion r, Error (UnifyError SourceRegion) :> r) =>
+    (Infer loc r, Error (UnifyError loc) :> r, loc ~ SourceRegion) =>
     ShuntedPattern' ->
     {- | the type of the pattern we are matching against
     For example if we have `match (x : Option Int) with { Some y -> y }` then `over` would be `Option Int`
     This is necessary for `WildcardPattern` and `VarPattern` to know what type they should be
     -}
-    Monotype SourceRegion ->
-    Eff r (TypedPattern', Monotype SourceRegion)
+    Monotype loc ->
+    Eff r (TypedPattern', Monotype loc)
 generatePatternConstraints' pattern' over =
     debugWithResult ("generatePatternConstraints: " <> pretty pattern') $
         let patternLoc = monotypeLoc over
@@ -313,7 +313,7 @@ generatePatternConstraints' pattern' over =
 
                     pure (ConstructorPattern ctor' (fmap fst argPats), res)
 
-instantiate :: forall r loc. (loc ~ SourceRegion, Infer loc r) => Type loc -> Eff r (Monotype loc, [TypeVariable])
+instantiate :: forall r loc. (Pretty loc, Eq loc, Monoid (Constraint loc), Infer loc r) => Type loc -> Eff r (Monotype loc, [TypeVariable])
 instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall loc tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
@@ -333,7 +333,8 @@ solveConstraint ::
     , Eq a
     , Show a
     , HasCallStack
-    , a ~ SourceRegion
+    , Monoid (Constraint a)
+    , Semigroup a
     ) =>
     Constraint a -> Set UniqueTyVar -> Constraint a -> Eff r (Constraint a, Substitution a)
 solveConstraint given tch wanted = do
@@ -350,7 +351,8 @@ simplifyConstraint ::
     , Eq loc
     , Show loc
     , HasCallStack
-    , loc ~ SourceRegion
+    , Monoid (Constraint loc)
+    , Semigroup loc
     ) =>
     Constraint loc -> Set UniqueTyVar -> Constraint loc -> Eff r (Constraint loc, Substitution loc)
 simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <> pretty (given, wanted)) $ do
@@ -373,7 +375,8 @@ solve ::
     , Eq loc
     , Show loc
     , HasCallStack
-    , loc ~ SourceRegion
+    , Monoid (Constraint loc)
+    , Semigroup loc
     ) =>
     Pretty loc =>
     Constraint loc ->
@@ -420,8 +423,9 @@ unify ::
     , Pretty (Constraint loc)
     , Eq loc
     , Show loc
-    , loc ~ SourceRegion
     , ?constraint :: Maybe (Constraint loc)
+    , Monoid (Constraint loc)
+    , Semigroup loc
     ) =>
     Monotype loc ->
     Monotype loc ->
@@ -459,8 +463,15 @@ bindGiven a t =
 
 unifyVar ::
     forall loc r.
-    (StructuredDebug :> r, Error (UnifyError loc) :> r, Reader (Set UniqueTyVar) :> r, Show loc, Eq loc) =>
-    UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
+    ( StructuredDebug :> r
+    , Error (UnifyError loc) :> r
+    , Reader (Set UniqueTyVar) :> r
+    , Show loc
+    , Eq loc
+    ) =>
+    UniqueTyVar ->
+    Monotype loc ->
+    Eff r (Constraint loc, Substitution loc)
 unifyVar a t = do
     debug $ "bind " <> pretty a <> " to " <> pretty t
     bindVar a t
@@ -482,7 +493,7 @@ unifyMany ::
     , Eq loc
     , Show loc
     , Semigroup loc
-    , loc ~ SourceRegion
+    , Monoid (Constraint loc)
     , ?constraint :: Maybe (Constraint loc)
     ) =>
     Error (UnifyError loc) :> r =>
@@ -504,13 +515,16 @@ data UnifyError loc
     | ArityMismatch
     | UnificationFailed (Maybe (Constraint loc)) (Monotype loc, Monotype loc)
     | UnifyMismatch
-    | UnresolvedConstraint (Qualified VarName) (Constraint SourceRegion)
+    | UnresolvedConstraint (Qualified VarName) (Constraint loc)
     | PatternConstructorArityMismatch DataCon Int Int loc
     deriving (Generic, Show)
 
 instance Pretty loc => Pretty (UnifyError loc)
 
-instance ReportableError (UnifyError SourceRegion) where
+instance Pretty loc => ReportableError (UnifyError loc) where
+    report = defaultReport
+
+instance {-# OVERLAPPING #-} ReportableError (UnifyError SourceRegion) where
     report (OccursCheckFailed a t) =
         writeReport $
             Err

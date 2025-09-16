@@ -21,10 +21,6 @@ import Elara.Data.Pretty
 import Elara.Error.Codes
 import Elara.Error.EffectNew
 import Error.Diagnose
-import GHC.Show (Show (show))
-import Polysemy
-import Polysemy.Error (Error, runError)
-import Polysemy.Maybe (MaybeE, justE, nothingE)
 import Prelude hiding (asks, readFile)
 
 class ReportableError e where
