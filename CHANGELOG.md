@@ -48,6 +48,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :sparkles: Add pretty instance for 6-tuple - ([1189208](https://github.com/ElaraLang/elara/commit/118920892de6df9abac0afc92ff733203f01765f)) 
 - :sparkles: Allow certain AST elements to be assigned polytypes - ([43022fe](https://github.com/ElaraLang/elara/commit/43022fe145869564df71a763160b870992a1b762)) 
 - Add more error codes - ([0792ed4](https://github.com/ElaraLang/elara/commit/0792ed499722d5e5628a0cb689a74576ff6d7f1a)) 
+- :loud_sound: Improve CallStack collection in query system - ([c6db430](https://github.com/ElaraLang/elara/commit/c6db430ddd912faa9c6c51762b76125c447bbe17)) 
 
 ### 🐛 Bug Fixes
 
@@ -71,6 +72,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :bug: Fix operators as variables (eg `(+)`) not being correctly parsed - ([55de02d](https://github.com/ElaraLang/elara/commit/55de02dcaeb34707588f2824b12a1f25bc6e382c)) 
 - *(parser)* :bug: Fix Nested Constructor Patterns not being correctly parsed - ([bfae8ac](https://github.com/ElaraLang/elara/commit/bfae8acea7d3225329b40f1e588361d2f01a1451)) 
 - *(parser)* :bug: Fix parser incorrectly handling some block inputs - ([fcf89e7](https://github.com/ElaraLang/elara/commit/fcf89e730fef162751034ec3647334a58c9d2bb2)) 
+- *(parser)* Fix matches with explicit braces not being parsed correctly - ([8f89a97](https://github.com/ElaraLang/elara/commit/8f89a97388d764c6092d93d341273b3f9b93e053)) 
 - *(prim)* Add primitive kind for List - ([3773ad0](https://github.com/ElaraLang/elara/commit/3773ad0ff3bad9e0506a1cee98d27b3e4916de89)) 
 - *(prim)* Add missing primitive type `Bool` to primitiveTypes - ([dd369a3](https://github.com/ElaraLang/elara/commit/dd369a35f30a07ef4f54f5f080a460d7177d7091)) 
 - *(rename)* Fix renaming of recursive lets in a block - ([264db37](https://github.com/ElaraLang/elara/commit/264db37d935fef117d5183b28280b48613631faa)) 
@@ -118,6 +120,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Correct information about bool type constructor - ([b9ea2ed](https://github.com/ElaraLang/elara/commit/b9ea2ed7da1de90fc5c4a72d1a6ee27f1af1abb8)) 
 - Fix unique implementation having a questionable Eq/Ord Instance - ([162734a](https://github.com/ElaraLang/elara/commit/162734a197fb2efa837007ef7fcc70f6c91c2ca7)) 
 - Make getInputFiles actually work lol - ([4c08eb2](https://github.com/ElaraLang/elara/commit/4c08eb290b46803b8c4b949df0b64aa973f8c181)) 
+- Create stdlib directory if it's missing - ([2bcb263](https://github.com/ElaraLang/elara/commit/2bcb263167c13d58220ee79d939015110b8b689b)) 
 
 ### 🚜 Refactor
 
@@ -146,8 +149,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(renamer)* Move renamer to query based system. This means the entire compiler can be lazy! - ([65c1d7a](https://github.com/ElaraLang/elara/commit/65c1d7ac8276f445be264acc82d66213a0e73cd8)) 
 - *(shunt)* Tidy up code - ([11d08a9](https://github.com/ElaraLang/elara/commit/11d08a94fc4d48b9b065c58b406331c81c7b25fc)) 
 - *(shunter)* Refactor shunter and significantly clean up other code - ([4c1d3a8](https://github.com/ElaraLang/elara/commit/4c1d3a8a986038645e71aad098ef7b2b9b381a3c)) 
+- *(shunter)* Refactor shunter to make testing easier to circumvent query system - ([d9c7487](https://github.com/ElaraLang/elara/commit/d9c74873bb68c42aaa28e1bc26020ac48ecae4a6)) 
 - *(stdlib)* Use nicer syntax in string.elr - ([7e0374a](https://github.com/ElaraLang/elara/commit/7e0374ad1e3248154ca871c571545496be5a4f4d)) 
 - *(stdlib)* Tidy source.elr - ([6339b5d](https://github.com/ElaraLang/elara/commit/6339b5db4ae2052c6eedb1cf27c47ee123500706)) 
+- *(tests)* Re-enable all tests, refactoring code where necessary - ([25b3c10](https://github.com/ElaraLang/elara/commit/25b3c100207da26209be10da05bece2e27db597f)) 
 - *(to-core)* :loud_sound: Improve error messages in Core.Analysis.exprType - ([86e4f40](https://github.com/ElaraLang/elara/commit/86e4f40791f385010615dccc84367e775184f7db)) 
 - *(to-core)* Move to-core to query system - ([cc65b7b](https://github.com/ElaraLang/elara/commit/cc65b7b9193cab3d7769dfaab94ef85fd7d3f1f2)) 
 - *(to-core)* Make sure that ToCore correctly handles mutually recursive bindings - ([7472d9e](https://github.com/ElaraLang/elara/commit/7472d9ed496c90b864c842c550c17d5c86da1c02)) 
