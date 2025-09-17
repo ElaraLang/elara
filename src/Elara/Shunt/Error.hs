@@ -1,6 +1,5 @@
 module Elara.Shunt.Error where
 
-import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Generic.Types
 import Elara.AST.Region (HasSourceRegion (sourceRegion), sourceRegionToDiagnosePosition)
 import Elara.AST.Renamed (RenamedBinaryOperator, RenamedDeclarationBody)
@@ -24,7 +23,10 @@ instance ReportableError ShuntError where
                 (Just Codes.samePrecedence)
                 ("Cannot mix operators with same precedence " <> prettyOp op1 <> " and " <> prettyOp op2 <> " when both operators have different associativity.")
                 [(op1Src, This (pretty a1)), (op2Src, This (pretty a2))]
-                [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
+                [ Hint "Add parentheses to resolve the ambiguity"
+                , Hint "Change the precedence of one of the operators"
+                , Hint "Change the associativity of one of the operators"
+                ]
 
 data ShuntWarning
     = UnknownPrecedence OpTable RenamedDeclarationBody
@@ -32,7 +34,8 @@ data ShuntWarning
 
 instance ReportableError ShuntWarning where
     report (UnknownPrecedence opTable lOperator) = do
-        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. _Unwrapped % sourceRegion
+        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. declarationBodyName % sourceRegion
+
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
@@ -42,5 +45,5 @@ instance ReportableError ShuntWarning where
                     , "Known Operators:" <+> prettyOpTable opTable
                     ]
                 )
-                [(opSrc, This "operator")]
+                [(opSrc, This "operator declared here")]
                 [Hint "Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol"]
