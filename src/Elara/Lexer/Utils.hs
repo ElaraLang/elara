@@ -11,7 +11,7 @@ import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), column, line, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), column, line, mkSourceRegionIn, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
@@ -332,7 +332,7 @@ getPosition tokenLength = do
 createRegion :: TokPosition -> TokPosition -> LexMonad RealSourceRegion
 createRegion start end = do
     fp <- use' (input % filePath)
-    pure $ SourceRegion (Just fp) start end
+    pure $ mkSourceRegionIn (Just fp) start end
 
 createRegionStartingAt :: TokPosition -> LexMonad RealSourceRegion
 createRegionStartingAt start = do

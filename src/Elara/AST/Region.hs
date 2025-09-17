@@ -31,7 +31,7 @@ data Position
     | GeneratedPosition
     deriving (Show, Eq, Ord, Data, Generic)
 
-data RealSourceRegion = SourceRegion
+data RealSourceRegion = UnsafeMkSourceRegion
     { _sourceFile :: !(Maybe FilePath)
     , _startPos :: !RealPosition
     , _endPos :: !RealPosition
@@ -57,24 +57,29 @@ class HasPath a where
 instance HasPath SourceRegion where
     path = lens getter setter
       where
-        getter (RealSourceRegion (SourceRegion fp _ _)) = fp
+        getter (RealSourceRegion (UnsafeMkSourceRegion fp _ _)) = fp
         getter (GeneratedRegion fp) = Just fp
-        setter (RealSourceRegion (SourceRegion _ start end)) fp = RealSourceRegion (SourceRegion fp start end)
+        setter (RealSourceRegion (UnsafeMkSourceRegion _ start end)) fp = RealSourceRegion (mkSourceRegionIn fp start end)
         setter (GeneratedRegion _) fp = GeneratedRegion (fromMaybe generatedFileName fp)
 
 instance HasPath RealSourceRegion where
     path = lens getter setter
       where
-        getter (SourceRegion fp _ _) = fp
-        setter (SourceRegion _ start end) fp = SourceRegion fp start end
+        getter (UnsafeMkSourceRegion fp _ _) = fp
+        setter (UnsafeMkSourceRegion _ start end) fp = mkSourceRegionIn fp start end
 
 mkSourceRegion :: SourcePos -> SourcePos -> RealSourceRegion
-mkSourceRegion start end =
-    SourceRegion
-        { _sourceFile = Just $ the (sourceName <$> [start, end])
-        , _startPos = spToPosition start
-        , _endPos = spToPosition end
-        }
+mkSourceRegion first snd =
+    mkSourceRegionIn
+        (Just $ the (sourceName <$> [first, snd]))
+        (spToPosition first)
+        (spToPosition snd)
+
+mkSourceRegionIn :: HasCallStack => Maybe FilePath -> RealPosition -> RealPosition -> RealSourceRegion
+mkSourceRegionIn fp start end =
+    if start > end
+        then error "mkSourceRegionIn: start position is after end position"
+        else UnsafeMkSourceRegion fp start end
 
 spToPosition :: SourcePos -> RealPosition
 spToPosition sp =
@@ -112,7 +117,7 @@ sourceRegionToDiagnosePosition (GeneratedRegion fp) =
         , Diag.end = (0, 0)
         , Diag.file = fp
         }
-sourceRegionToDiagnosePosition (RealSourceRegion (SourceRegion fp (Position startLine startCol) (Position endLine endCol))) =
+sourceRegionToDiagnosePosition (RealSourceRegion (UnsafeMkSourceRegion fp (Position startLine startCol) (Position endLine endCol))) =
     Diag.Position
         { Diag.begin = (startLine, startCol)
         , Diag.end = (endLine, endCol)
@@ -180,7 +185,7 @@ This function will throw an error if the regions are in different files.
 -}
 enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
-enclosingRegion (SourceRegion fp start _) (SourceRegion _ _ end) = SourceRegion fp start end
+enclosingRegion (UnsafeMkSourceRegion fp start _) (UnsafeMkSourceRegion _ _ end) = mkSourceRegionIn fp (min start end) (max start end)
 
 {- | Get the region that contains both of the given regions.
 This function will throw an error if the regions are in different files.
@@ -197,7 +202,7 @@ spanningRegion regions = do
     let file = the $ catMaybes $ regions ^.. traversed % path
     let start = fromJust $ minimumOf (traversed % startPos) regions
     let end = fromJust $ maximumOf (traversed % endPos) regions
-    SourceRegion (Just file) start end
+    mkSourceRegionIn (Just file) start end
 
 {- | Get the region that contains all of the given regions.
 This function will throw an error if the regions are in different files.
@@ -212,6 +217,7 @@ spanningRegion' regions = do
         Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'
 
 instance Semigroup SourceRegion where
+    (<>) :: SourceRegion -> SourceRegion -> SourceRegion
     (<>) = enclosingRegion'
 
 instance Semigroup RealSourceRegion where
@@ -241,7 +247,7 @@ instance Show a => Show (IgnoreLocation a) where
 
 instance Pretty SourceRegion where
     pretty (GeneratedRegion fp) = "<generated:" <> pretty fp <> ">"
-    pretty (RealSourceRegion (SourceRegion fp start end)) =
+    pretty (RealSourceRegion (UnsafeMkSourceRegion fp start end)) =
         "<" <> pretty fp <> ":" <> pretty start <> "-" <> pretty end <> ">"
 
 instance Pretty RealPosition where
