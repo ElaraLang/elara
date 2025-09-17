@@ -24,6 +24,7 @@ import Elara.AST.Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.AST.VarRef
+import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (runErrorOrReport)
 import Elara.Query (Query (..))
@@ -31,7 +32,9 @@ import Elara.Query.Effects
 import Elara.Rename.Error (RenameError)
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
+import GHC.Exts (the)
 import Optics (Field4 (_4), Field5 (_5), filtered)
+import Print (debugPretty)
 import Rock (Rock, fetch)
 import Prelude hiding (modify')
 
@@ -85,7 +88,7 @@ runShuntedDeclarationByNameQuery (Qualified name modName) = do
         [body] -> pure body
         _ -> error "ambigious"
 
-runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
+runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
@@ -106,7 +109,9 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName))))
         infixDecls = (valueInfixDecls <> typeInfixDecls) ^.. each % _Just
 
     case infixDecls of
-        [] -> pure Nothing
+        [] -> do
+            Eff.tell $ one (UnknownPrecedence mempty (the matchingBodies))
+            pure Nothing
         [i] -> pure $ Just $ infixDeclToOpInfo i
         _tooMany -> error "ambiguous"
 runGetOpInfoQuery (Local{}) = do
@@ -125,6 +130,8 @@ addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" 
     Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
         let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
          in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations Nothing)} -> do
+        debugPretty $ "No fixity for value declaration: " <> pretty _valueName
     TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
         let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
          in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
@@ -187,12 +194,11 @@ fixOperators = reassoc
             case info of
                 Just info -> pure info
                 Nothing -> do
-                    -- TODO figure out displaying useful operators
-                    Eff.tell (fromList [UnknownPrecedence mempty operator])
+                    -- use default precedence 9 left associative
                     pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Maybe OpInfo)
+opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
 opInfo operator = do
     let name = opNameOf operator
     Rock.fetch (Elara.Query.GetOpInfo name)

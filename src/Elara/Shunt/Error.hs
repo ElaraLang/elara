@@ -1,8 +1,9 @@
 module Elara.Shunt.Error where
 
+import Data.Generics.Wrapped (_Unwrapped)
 import Elara.AST.Generic.Types
 import Elara.AST.Region (HasSourceRegion (sourceRegion), sourceRegionToDiagnosePosition)
-import Elara.AST.Renamed (RenamedBinaryOperator)
+import Elara.AST.Renamed (RenamedBinaryOperator, RenamedDeclarationBody)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -26,17 +27,17 @@ instance ReportableError ShuntError where
                 [Hint "Add parentheses to resolve the ambiguity", Hint "Change the precedence of one of the operators", Hint "Change the associativity of one of the operators"]
 
 data ShuntWarning
-    = UnknownPrecedence OpTable RenamedBinaryOperator
+    = UnknownPrecedence OpTable RenamedDeclarationBody
     deriving (Eq, Ord, Show)
 
 instance ReportableError ShuntWarning where
-    report (UnknownPrecedence opTable lop@(MkBinaryOperator lOperator)) = do
-        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. sourceRegion
+    report (UnknownPrecedence opTable lOperator) = do
+        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. _Unwrapped % sourceRegion
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
                 ( vsep
-                    [ "Unknown precedence/associativity for operator" <+> prettyOp lop
+                    [ "Unknown precedence/associativity for operator" <+> pretty (lOperator ^. declarationBodyName)
                         <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. "
                     , "Known Operators:" <+> prettyOpTable opTable
                     ]

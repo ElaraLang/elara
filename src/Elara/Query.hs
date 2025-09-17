@@ -15,6 +15,7 @@ import Effectful.FileSystem (FileSystem)
 
 import Data.Graph (SCC)
 import Effectful.Error.Static (Error)
+import Effectful.Writer.Static.Local
 import Elara.AST.Generic (Declaration)
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
@@ -39,7 +40,7 @@ import Elara.ReadFile (FileContents)
 import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
 import Elara.Settings (CompilerSettings)
-import Elara.Shunt.Error (ShuntError)
+import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator (OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
 import Elara.TypeInfer.Type (Polytype, Type)
@@ -80,7 +81,7 @@ data Query (es :: [Effect]) a where
     -- Shunting Queries
     ShuntedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Module 'Shunted)
     ShuntedDeclarationByName :: Qualified Name -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Declaration 'Shunted)
-    GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[])) (Maybe OpInfo)
+    GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning)])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
     -- Pre-Inference Queries
     -- These are related to preparing SCCs etc for type inference
