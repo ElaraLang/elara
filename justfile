@@ -6,13 +6,8 @@ default:
 
 # Run the project tests with ghcid auto-recompile
 test:
-    stack build :elara-test --file-watch --fast
+    cabal test --ghc-options="-O0" --enable-profiling elara-test
 
 # Run the project with ghcid auto-recompile
 run:
-   stack build :elara --file-watch --fast --exec "elara --dump-shunted --dump-core --dump-typed --run"
-
-# Start Hoogle server for project dependencies
-docs:
-    echo http://127.0.0.1:8888
-    stack hoogle -- serve -p 8888 --local
+   cabal run --ghc-options="-O0" --enable-profiling elara -- --run
