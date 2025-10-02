@@ -80,6 +80,8 @@
                   convco
                   git-cliff
                   nixfmt
+
+                  mdbook
                 ];
               };
             };

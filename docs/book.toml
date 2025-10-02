@@ -1,0 +1,5 @@
+[book]
+authors = ["Alexander Wood"]
+language = "en"
+src = "src"
+title = "Elara Documentation"
