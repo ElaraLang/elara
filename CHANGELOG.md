@@ -234,6 +234,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - :fire: Remove old unused Grammar directory - ([f7d2f31](https://github.com/ElaraLang/elara/commit/f7d2f3182d7a9723102baf503b5950d64346c8c8)) 
 - Only build with Ubuntu - ([7aae66b](https://github.com/ElaraLang/elara/commit/7aae66b112f23ae6513613c0f68ddff9dce8f530)) 
+- Run cabal update - ([7776593](https://github.com/ElaraLang/elara/commit/77765933779047287df59ced94cdfb973cf764d5)) 
 
 ### ◀️ Revert
 
