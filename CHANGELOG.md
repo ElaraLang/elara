@@ -123,6 +123,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Make getInputFiles actually work lol - ([4c08eb2](https://github.com/ElaraLang/elara/commit/4c08eb290b46803b8c4b949df0b64aa973f8c181)) 
 - Create stdlib directory if it's missing - ([2bcb263](https://github.com/ElaraLang/elara/commit/2bcb263167c13d58220ee79d939015110b8b689b)) 
 - Make region construction more robust and safer in case arguments are passed in the wrong order - ([59254ab](https://github.com/ElaraLang/elara/commit/59254abe6ded6b46af4601e3952b17fedc892143)) 
+- Fix mdbook maybe - ([305c095](https://github.com/ElaraLang/elara/commit/305c095754f76bff60e2cee1df885aff54983440)) 
 
 ### 🚜 Refactor
 
