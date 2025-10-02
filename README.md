@@ -2,16 +2,9 @@
 
 ![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)
 
-Elara is a multi-paradigm, primarily-functional programming language targeting the JVM. It features a Haskell & F# inspired syntax, a complete Hindley-Milner type system and pure functions in the type system (i.e. an IO monad).
+Elara is a purely functional programming language targeting the JVM. It features a Haskell & F# inspired syntax, a complete Hindley-Milner type system and pure functions in the type system (i.e. an IO monad).
 
 **Please note that Elara is currently a work in progress and is not yet ready for production use.**
-
-## Features
-
-- **Syntax:** Elara's syntax draws inspiration from Haskell and F#, offering an expressive and concise coding style.
-- **Type System:** Elara uses a Hindley-Milner type system for robust type checking and inference.
-- **Functional Purity:** The language enforces functional purity, promoting clean and side-effect-free code.
-- **Interoperability:** Elara seamlessly works with Java code, enabling integration with existing Java libraries.
 
 ## Examples
 
@@ -81,7 +74,7 @@ If you're interested in Elara or contributing to its development, join our [Disc
 
 Elara is extremely buggy and temperamental at the moment, but it _should_ function!
 The recommended workflow to build is with Nix, as this will ensure you have the correct versions of all dependencies.
-If you don't have / want Nix, you _should_ be able to get away with GHC 9.6.5 and Stack
+If you don't have / want Nix, you _should_ be able to get away with a manually installed GHC 9.12.2 and Cabal
 
 ### Running Prerequisites
 
@@ -102,21 +95,41 @@ cd ../
 ### Hacking with Nix
 
 1. Run `nix develop` to enter a shell with all dependencies
-2. You can type `, run` to setup GHCIde and continuously build & run the project whenever a file changes
-3. To run unit tests, simply run `stack test`
+2. Use `just run` to run in development mode (with an interpreter)
+3. To run unit tests, run `just test`
 
 ### Building without Nix
 
-1. Run `stack build` to build
+1. Run `cabal build` to build
 
 ### Running without Nix
 
-1. Run `stack run` to run
-2. Run `stack test` to run unit tests
+1. Run `cabal run` to run
+2. Run `cabal test` to run unit tests
+
+#### Flags
+
+Elara supports a few flags for debugging and development:
+- `--dump-lexed` - Dumps a list of tokens after lexing
+- `--dump-parsed` - Dumps the Frontend AST after parsing
+- `--dump-desugared` - Dumps the Desugared AST after desugaring
+- `--dump-renamed` - Dumps the Renamed AST after renaming
+- `--dump-shunted` - Dumps the Shunted AST after shunting
+- `--dump-typed` - Dumps the Typed AST after type checking
+- `--dump-core` - Dumps the Core AST after converting to Core
+
+These will all dump to the generated `build/` directory, matching the module name where possible.
+
+
+**Important Caveat:** Currently the `--run` flag must be used to run the program in interpreted mode. You will receive a warning if you do not use this flag and no code will be run. The `just` commands above already include this flag.
+
+## Code Structure
+
+Currently the structure of an Elara program is very rigid: the `source.elr` file in the root directory _must_ contain a `Main` module with a `main` function of type `IO ()`, and all other code must be part of the standard library, in the `stdlib` directory.
 
 ## Library Acknowledgments
 
-Elara owes its existence to numerous open-source projects. We want to express our gratitude, especially to [Grace](https://github.com/Gabriella439/grace) for its invaluable contribution to type checking.
+Elara owes its existence to numerous open-source projects, particularly to [Grace](https://github.com/Gabriella439/grace) for its use as a reference implementation for type checking.
 
 ## License
 
