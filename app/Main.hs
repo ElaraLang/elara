@@ -86,7 +86,11 @@ main = run `finally` cleanup
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
 
         let compilerSettings =
-                CompilerSettings{dumpSettings = DumpSettings{..}, runWith = if run then RunWithInterpreter else RunWithNone}
+                CompilerSettings
+                    { dumpSettings = DumpSettings{..}
+                    , runWith = if run then RunWithInterpreter else RunWithNone
+                    , mainFile = Nothing
+                    }
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
             result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
             case result of
