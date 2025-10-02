@@ -188,6 +188,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(core)* :memo: Slightly improve Core.Type documentation - ([ef5e95f](https://github.com/ElaraLang/elara/commit/ef5e95f4d49420fe93cf6f56ff41e6be3d155c6d)) 
 - Tidy readme - ([aa8d4eb](https://github.com/ElaraLang/elara/commit/aa8d4ebb6092850daeed806c79174e9c8dde0400)) 
+- Setup basic readthedocs and mdbook - ([a240c7c](https://github.com/ElaraLang/elara/commit/a240c7c61e7c4b4a38c0bbb81cc40f0a38f6039c)) 
 
 ### 🎨 Styling
 
