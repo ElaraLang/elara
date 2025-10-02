@@ -9,4 +9,4 @@ build:
     build:
       html:
         - cargo install mdbook mdbook-d2
-        - mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
+        - ~/.cargo/bin/mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
