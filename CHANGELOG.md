@@ -194,6 +194,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Start moving readme documentation into dedicated docs - ([81604f2](https://github.com/ElaraLang/elara/commit/81604f2c92c99098b8af162130e6874987e7dfda)) 
 - Flesh out docs a lot but still much to do! - ([40cd369](https://github.com/ElaraLang/elara/commit/40cd3699126822d51a4473108db9d5cce32275a4)) 
 - Improve Query documentation - ([43628a3](https://github.com/ElaraLang/elara/commit/43628a3d163ca28148bea38a729b00f34b124300)) 
+- Improve Query docs more - ([61271ae](https://github.com/ElaraLang/elara/commit/61271aef7bec18a39fbb8a2194cd8c90bd9fb677)) 
 
 ### 🎨 Styling
 
