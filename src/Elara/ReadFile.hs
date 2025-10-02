@@ -11,8 +11,6 @@ import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose hiding (addFile)
-import Polysemy
-import Polysemy.Error
 import System.IO
 
 -- https://stackoverflow.com/a/6860159
@@ -30,8 +28,6 @@ readFileNativeNewlineConversion =
     if nativeCallsForConversion
         then readFileUniversalNewlineConversion
         else readFileLBS
-
-type ReadFilePipelineEffects = '[Embed IO, Error ReadFileError, DiagnosticWriter (Doc AnsiStyle)]
 
 data ReadFileError = DecodeError !FilePath !UnicodeException
 

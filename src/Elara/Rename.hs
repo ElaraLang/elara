@@ -41,15 +41,12 @@ import Elara.Query.Effects
 import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
 import Optics (anyOf, filteredBy, traverseOf_)
-import Polysemy.Error (Error)
-import Polysemy.Reader hiding (Local)
-import Polysemy.State
 import Rock qualified
 
 type RenamePipelineEffects =
-    '[ State RenameState
-     , Error RenameError
-     , Reader (TopologicalGraph (Module 'Desugared))
+    '[ Eff.State RenameState
+     , Eff.Error RenameError
+     , Eff.Reader (TopologicalGraph (Module 'Desugared))
      , UniqueGen
      , StructuredDebug
      ]

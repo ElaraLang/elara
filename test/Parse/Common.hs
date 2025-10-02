@@ -20,7 +20,6 @@ import Elara.Parse.Stream
 import Elara.ReadFile (FileContents (..))
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
-import Polysemy
 import Print (printPretty, showPretty)
 import Test.QuickCheck
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty)

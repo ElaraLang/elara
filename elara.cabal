@@ -69,7 +69,6 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
-      Elara.Error.EffectNew
       Elara.Interpreter
       Elara.Lexer.Action
       Elara.Lexer.Char
@@ -123,9 +122,6 @@ library
       Elara.TypeInfer.Unique
       Elara.Utils
       Elara.Width
-      Polysemy.Lens
-      Polysemy.Maybe
-      Polysemy.State.Extra
       Prelude
       Print
       Rock
@@ -145,7 +141,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       alex:alex
   build-depends:
@@ -178,10 +174,6 @@ library
     , mtl
     , optics
     , parser-combinators
-    , polysemy
-    , polysemy-log
-    , polysemy-plugin
-    , polysemy-time
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
@@ -212,7 +204,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , algebraic-graphs
@@ -244,10 +236,6 @@ executable elara
     , mtl
     , optics
     , parser-combinators
-    , polysemy
-    , polysemy-log
-    , polysemy-plugin
-    , polysemy-time
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal
@@ -300,7 +288,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Polysemy.Plugin -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck
@@ -337,10 +325,6 @@ test-suite elara-test
     , neat-interpolation
     , optics
     , parser-combinators
-    , polysemy
-    , polysemy-log
-    , polysemy-plugin
-    , polysemy-time
     , pretty-simple
     , prettyprinter
     , prettyprinter-ansi-terminal

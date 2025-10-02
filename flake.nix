@@ -104,11 +104,11 @@
                 directory = enable "os-string";
                 diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
                 incipit-base = jailbreak;
-                polysemy-conc = jailbreak;
-                polysemy-test = unbreak (jailbreak);
-                polysemy-time = jailbreak;
-                polysemy-resume = jailbreak;
-                polysemy-log = jailbreak;
+                # polysemy-conc = jailbreak;
+                # polysemy-test = unbreak (jailbreak);
+                # polysemy-time = jailbreak;
+                # polysemy-resume = jailbreak;
+                # polysemy-log = jailbreak;
                 incipit-core = jailbreak;
                 ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
 
@@ -186,10 +186,7 @@
                     "mtl"
                     "optics"
                     "parser-combinators"
-                    "polysemy"
-                    "polysemy-log"
-                    "polysemy-plugin"
-                    "polysemy-time"
+
                     "pretty-simple"
                     "prettyprinter"
                     "prettyprinter-ansi-terminal"
@@ -210,7 +207,6 @@
                     "-optP-Wno-nonportable-include-path"
                     "-fdefer-typed-holes"
                     "-fno-show-valid-hole-fits"
-                    "-fplugin=Polysemy.Plugin"
                     "-fplugin=Effectful.Plugin"
                     "-fwrite-ide-info"
                     "-hiedir=.hie"

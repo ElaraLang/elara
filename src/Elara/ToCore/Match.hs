@@ -35,8 +35,6 @@ import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging
-import Polysemy.State ()
-import Print (showColored)
 
 {- Our initial step in compiling pattern matching is to construct a pattern matrix
 of the patterns used in a match

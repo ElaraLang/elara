@@ -17,7 +17,7 @@ import Elara.AST.Region (SourceRegion)
 import Elara.AST.Shunted
 import Elara.Data.Pretty
 import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
-import Elara.Error.EffectNew (evalDiagnosticWriter)
+import Elara.Error.Effect (evalDiagnosticWriter)
 import Elara.TypeInfer (inferValue)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Environment

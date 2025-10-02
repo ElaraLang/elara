@@ -13,10 +13,6 @@ import Data.Text.IO qualified as Text
 import Effectful (Eff, IOE, (:>))
 import Effectful.Colog (Log, runLogAction)
 import Elara.Data.Pretty
-import Elara.Error (DiagnosticWriter)
-import Elara.Logging
-import Error.Diagnose (Diagnostic)
-import Polysemy (Effect, Embed, InterpreterFor, Members)
 import Print (printPretty)
 import System.IO qualified
 

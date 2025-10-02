@@ -6,7 +6,7 @@ import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
-import Elara.Error.EffectNew (DiagnosticWriter)
+import Elara.Error.Effect (DiagnosticWriter)
 import Elara.Logging
 import Elara.Query qualified
 import Elara.Query.Effects

@@ -12,14 +12,14 @@ module Elara.Error (
     defaultReport,
     addPosition,
     concatDiagnostics,
-    module Elara.Error.EffectNew,
+    module Elara.Error.Effect,
 ) where
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static qualified as Eff
 import Elara.Data.Pretty
 import Elara.Error.Codes
-import Elara.Error.EffectNew
+import Elara.Error.Effect
 import Error.Diagnose
 import Prelude hiding (asks, readFile)
 

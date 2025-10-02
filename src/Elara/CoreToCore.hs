@@ -18,7 +18,6 @@ import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
 import Elara.Error (runErrorOrReport)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
-import Polysemy hiding (transform)
 import Rock qualified
 
 type CoreExprPass = CoreExpr -> CoreExpr
