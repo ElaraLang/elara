@@ -121,6 +121,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix unique implementation having a questionable Eq/Ord Instance - ([162734a](https://github.com/ElaraLang/elara/commit/162734a197fb2efa837007ef7fcc70f6c91c2ca7)) 
 - Make getInputFiles actually work lol - ([4c08eb2](https://github.com/ElaraLang/elara/commit/4c08eb290b46803b8c4b949df0b64aa973f8c181)) 
 - Create stdlib directory if it's missing - ([2bcb263](https://github.com/ElaraLang/elara/commit/2bcb263167c13d58220ee79d939015110b8b689b)) 
+- Make region construction more robust and safer in case arguments are passed in the wrong order - ([59254ab](https://github.com/ElaraLang/elara/commit/59254abe6ded6b46af4601e3952b17fedc892143)) 
 
 ### 🚜 Refactor
 
@@ -150,6 +151,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(shunt)* Tidy up code - ([11d08a9](https://github.com/ElaraLang/elara/commit/11d08a94fc4d48b9b065c58b406331c81c7b25fc)) 
 - *(shunter)* Refactor shunter and significantly clean up other code - ([4c1d3a8](https://github.com/ElaraLang/elara/commit/4c1d3a8a986038645e71aad098ef7b2b9b381a3c)) 
 - *(shunter)* Refactor shunter to make testing easier to circumvent query system - ([d9c7487](https://github.com/ElaraLang/elara/commit/d9c74873bb68c42aaa28e1bc26020ac48ecae4a6)) 
+- *(shunter)* Change unknown precedence warning to be displayed at the declaration rather than use-site of an operator - ([5df30f5](https://github.com/ElaraLang/elara/commit/5df30f5247ef66c59ecc167b099ac36995605fb0)) 
+- *(shunter)* Improve display of unknown precedence warning - ([eb4a2ff](https://github.com/ElaraLang/elara/commit/eb4a2ff921da460ddba0217cc635f06f5a9db662)) 
 - *(stdlib)* Use nicer syntax in string.elr - ([7e0374a](https://github.com/ElaraLang/elara/commit/7e0374ad1e3248154ca871c571545496be5a4f4d)) 
 - *(stdlib)* Tidy source.elr - ([6339b5d](https://github.com/ElaraLang/elara/commit/6339b5db4ae2052c6eedb1cf27c47ee123500706)) 
 - *(tests)* Re-enable all tests, refactoring code where necessary - ([25b3c10](https://github.com/ElaraLang/elara/commit/25b3c100207da26209be10da05bece2e27db597f)) 
@@ -215,6 +218,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :white_check_mark: Improve tests of parser and lexer - ([5aad58c](https://github.com/ElaraLang/elara/commit/5aad58cb93b148eadc1fae34a1a5cee92a6ce966)) 
 - *(type-infer)* :white_check_mark: Improve behaviour of applicableTyApp and test cases - ([06ad585](https://github.com/ElaraLang/elara/commit/06ad585f6d548bef257ea10eccd592394bd21e14)) 
 - :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
+- Add a basic golden test - ([b97144c](https://github.com/ElaraLang/elara/commit/b97144c4f103b75493f020d7af2caa1f386b1017)) 
 
 ### ⚙️ Miscellaneous Tasks
 
