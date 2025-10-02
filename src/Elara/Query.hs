@@ -1,10 +1,16 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
+-- for the HasMemoiseE instance
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
--- for the HasMemoiseE instance
+{-- | This module defines the queries used in the Elara compiler.
 
+Queries are the way the compiler requests information between stages.
+Queries are lazy and memoised.
+
+This module defines the queries, and the main implementation is in 'Elara.Rules'
+--}
 module Elara.Query where
 
 import Data.GADT.Compare.TH
@@ -47,6 +53,9 @@ import Elara.TypeInfer.Type (Polytype, Type)
 import Rock (Rock)
 import Rock.Memo (HasMemoiseE (..))
 
+{- | Appends 'Rock' to a list of effects
+This type mainly exists to avoid a cyclic import between this module and 'Elara.Query.Effects'
+-}
 type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
 

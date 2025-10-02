@@ -12,7 +12,6 @@ import Effectful.FileSystem
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Error.EffectNew
 import Elara.Logging
 import Rock.MemoE
 
