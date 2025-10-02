@@ -1,3 +1,4 @@
 # Summary
 
-- [Chapter 1](./chapter_1.md)
+# Compiler Documentation
+- [Setup](./compiler/setup.md)

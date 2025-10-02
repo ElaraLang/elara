@@ -73,8 +73,7 @@ If you're interested in Elara or contributing to its development, join our [Disc
 ## Building & Running
 
 Elara is extremely buggy and temperamental at the moment, but it _should_ function!
-The recommended workflow to build is with Nix, as this will ensure you have the correct versions of all dependencies.
-If you don't have / want Nix, you _should_ be able to get away with a manually installed GHC 9.12.2 and Cabal
+
 
 ### Running Prerequisites
 
@@ -87,41 +86,6 @@ javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.
 cd ../
 ```
 
-### Building with Nix
-
-1. Run `nix build` to build
-2. You should be able to access Elara the executable from `./result/bin/elara`
-
-### Hacking with Nix
-
-1. Run `nix develop` to enter a shell with all dependencies
-2. Use `just run` to run in development mode (with an interpreter)
-3. To run unit tests, run `just test`
-
-### Building without Nix
-
-1. Run `cabal build` to build
-
-### Running without Nix
-
-1. Run `cabal run` to run
-2. Run `cabal test` to run unit tests
-
-#### Flags
-
-Elara supports a few flags for debugging and development:
-- `--dump-lexed` - Dumps a list of tokens after lexing
-- `--dump-parsed` - Dumps the Frontend AST after parsing
-- `--dump-desugared` - Dumps the Desugared AST after desugaring
-- `--dump-renamed` - Dumps the Renamed AST after renaming
-- `--dump-shunted` - Dumps the Shunted AST after shunting
-- `--dump-typed` - Dumps the Typed AST after type checking
-- `--dump-core` - Dumps the Core AST after converting to Core
-
-These will all dump to the generated `build/` directory, matching the module name where possible.
-
-
-**Important Caveat:** Currently the `--run` flag must be used to run the program in interpreted mode. You will receive a warning if you do not use this flag and no code will be run. The `just` commands above already include this flag.
 
 ## Code Structure
 
