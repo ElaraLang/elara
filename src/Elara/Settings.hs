@@ -1,7 +1,9 @@
 module Elara.Settings where
 
-newtype CompilerSettings = CompilerSettings
+data CompilerSettings = CompilerSettings
     { dumpSettings :: DumpSettings
+    , runWith :: RunWithOption
+    , mainFile :: Maybe FilePath
     }
 
 data DumpSettings = DumpSettings
@@ -12,8 +14,19 @@ data DumpSettings = DumpSettings
     , dumpShunted :: Bool
     , dumpTyped :: Bool
     , dumpCore :: Bool
-    , runWith :: RunWithOption
     }
+
+defaultDumpSettings :: DumpSettings
+defaultDumpSettings =
+    DumpSettings
+        { dumpLexed = False
+        , dumpParsed = False
+        , dumpDesugared = False
+        , dumpRenamed = False
+        , dumpShunted = False
+        , dumpTyped = False
+        , dumpCore = False
+        }
 
 data RunWithOption
     = RunWithNone

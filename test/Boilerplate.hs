@@ -41,6 +41,7 @@ import Elara.Shunt.Error (ShuntError)
 import Elara.Shunt.Operator
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
+import Error.Diagnose (Report (..))
 import Error.Diagnose.Diagnostic
 import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
@@ -51,6 +52,7 @@ import Region (qualifiedTest, testLocated, testRegion)
 import Rock qualified
 import Rock.MemoE (Memoise, memoiseRunIO)
 import Rules (testRules)
+import Test.Syd (expectationFailure)
 import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Show
 
@@ -115,17 +117,19 @@ loadShuntedExpr source = finaliseEffects $ runQueryEffects $ do
                 (let ?lookup = lookupFromOpTable fakeOperatorTable in fixExpr renamed)
         )
 
--- pipelineResShouldSucceed :: (Show a, _) => _ a -> IO a
--- pipelineResShouldSucceed m = do
---     (d, x) <- m
---     when (hasReports d) $
---         expectationFailure $
---             toString $
---                 prettyToText $
---                     prettyDiagnostic' WithUnicode (TabSize 4) d
---     case x of
---         Just ok -> pure ok
---         Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+pipelineResShouldSucceed :: _ => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> IO b
+pipelineResShouldSucceed m = do
+    (d, x) <- m
+    let hasErrors d =
+            any (\case Err{} -> True; Warn{} -> False) $ reportsOf d
+    when (hasErrors d) $
+        expectationFailure $
+            toString $
+                prettyToText $
+                    prettyDiagnostic' WithUnicode (TabSize 4) d
+    case x of
+        Just ok -> pure ok
+        Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
 
 evalPipelineRes :: (MonadIO m, MonadTest m) => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> m b
 evalPipelineRes m = do

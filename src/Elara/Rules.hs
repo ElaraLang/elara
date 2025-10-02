@@ -18,7 +18,7 @@ import Elara.Query
 import Elara.ReadFile (getInputFiles, runGetFileContentsQuery)
 import Elara.Rename (getRenamedModule)
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
-import Elara.Settings (CompilerSettings)
+import Elara.Settings (CompilerSettings, mainFile)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery, runShuntedDeclarationByNameQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
 import Elara.TypeInfer (runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedExprQuery, runTypeOfQuery)
@@ -35,7 +35,7 @@ rules compilerSettings key = do
         LexedFile fp -> inject $ getLexedFile fp
         ParsedFile fp -> inject $ getParsedFileQuery fp
         ModulePath (ModuleName ("Main" :| [])) -> do
-            pure "source.elr" -- THIS IS BAD
+            pure (compilerSettings.mainFile ?: "source.elr") -- THIS IS BAD
         ModulePath mn@(ModuleName nameParts) -> do
             inputs <- Rock.fetch Elara.Query.InputFiles
 

@@ -38,7 +38,7 @@ import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.Rename.Error (RenameError)
 import Elara.Rules qualified
-import Elara.Settings (CompilerSettings (CompilerSettings, dumpSettings), DumpSettings (..), RunWithOption (..))
+import Elara.Settings (CompilerSettings (..), DumpSettings (..), RunWithOption (..))
 import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Convert.Monad
@@ -86,7 +86,7 @@ main = run `finally` cleanup
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
 
         let compilerSettings =
-                CompilerSettings{dumpSettings = DumpSettings{runWith = if run then RunWithInterpreter else RunWithNone, ..}}
+                CompilerSettings{dumpSettings = DumpSettings{..}, runWith = if run then RunWithInterpreter else RunWithNone}
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
             result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
             case result of
@@ -122,7 +122,7 @@ runElara ::
     , Log (Doc AnsiStyle) :> es
     ) =>
     CompilerSettings -> Eff es ()
-runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}}) = do
+runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) = do
     runFileSystem $
         uniqueGenToGlobalIO $
             (if elaraDebug then structuredDebugToLog else ignoreStructuredDebug) $
