@@ -62,7 +62,7 @@ type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
 
 data Query (es :: [Effect]) a where
-    -- Input Queries
+    -- \* Input Queries
 
     -- | Query to get the compiler settings
     GetCompilerSettings :: Query (WithRock MinimumQueryEffects) CompilerSettings
@@ -72,7 +72,7 @@ data Query (es :: [Effect]) a where
     GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, DiagnosticWriter (Doc AnsiStyle)])) FileContents
     -- | Query to get the file path of a module
     ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
-    -- Lexing and Parsing Queries
+    -- \* Lexing and Parsing Queries
 
     -- | Query to get the lexed tokens of a specific file
     LexedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error LexerError])) [Lexeme]
@@ -84,33 +84,33 @@ data Query (es :: [Effect]) a where
         Query
             (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]))
             (Module 'Frontend)
-    -- Desugaring and Renaming Queries
+    -- \* Desugaring and Renaming Queries
     DesugaredModule ::
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module 'Desugared)
     RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module 'Renamed)
-    -- Shunting Queries
+    -- \* Shunting Queries
     ShuntedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Module 'Shunted)
     ShuntedDeclarationByName :: Qualified Name -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Declaration 'Shunted)
     GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning)])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
-    -- Pre-Inference Queries
+    -- \* Pre-Inference Queries
     -- These are related to preparing SCCs etc for type inference
     FreeVarsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) (HashSet (Qualified VarName))
     ReachableSubgraphOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) ReachableSubgraph
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
-    -- Type and Kind Inference Queries
+    -- \* Type and Kind Inference Queries
     TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module 'Typed)
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
     TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
-    -- To Core Queries
+    -- \* To Core Queries
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
     GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
-    -- Core To Core
+    -- \* Core To Core
     GetOptimisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
