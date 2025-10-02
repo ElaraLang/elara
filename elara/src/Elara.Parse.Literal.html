@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html"><span class="hs-identifier">Elara.Parse.Literal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Literal.html#charLiteral"><span class="hs-identifier">charLiteral</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html#stringLiteral"><span class="hs-identifier">stringLiteral</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html#integerLiteral"><span class="hs-identifier">integerLiteral</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html#floatLiteral"><span class="hs-identifier">floatLiteral</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html#unitLiteral"><span class="hs-identifier">unitLiteral</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html"><span class="hs-identifier">Elara.Lexer.Token</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier">Token</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html"><span class="hs-identifier">Elara.Parse.Primitives</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier">satisfyMap</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier">token_</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="annot"><a href="Elara.Parse.Literal.html#charLiteral"><span class="hs-identifier hs-type">charLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
+</span><span id="line-7"></span><span id="charLiteral"><span class="annot"><span class="annottext">charLiteral :: Parser Char
+</span><a href="Elara.Parse.Literal.html#charLiteral"><span class="hs-identifier hs-var hs-var">charLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe Char) -&gt; Parser Char
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe Char) -&gt; Parser Char)
+-&gt; (Token -&gt; Maybe Char) -&gt; Parser Char
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenChar"><span class="hs-identifier hs-type">TokenChar</span></a></span><span> </span><span id="local-6989586621680017075"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680017075"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Maybe Char
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680017075"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Char
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="annot"><a href="Elara.Parse.Literal.html#stringLiteral"><span class="hs-identifier hs-type">stringLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-12"></span><span id="stringLiteral"><span class="annot"><span class="annottext">stringLiteral :: Parser Text
+</span><a href="Elara.Parse.Literal.html#stringLiteral"><span class="hs-identifier hs-var hs-var">stringLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe Text) -&gt; Parser Text
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe Text) -&gt; Parser Text)
+-&gt; (Token -&gt; Maybe Text) -&gt; Parser Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenString"><span class="hs-identifier hs-type">TokenString</span></a></span><span> </span><span id="local-6989586621680017077"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017077"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017077"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Text
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="annot"><a href="Elara.Parse.Literal.html#integerLiteral"><span class="hs-identifier hs-type">integerLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
+</span><span id="line-17"></span><span id="integerLiteral"><span class="annot"><span class="annottext">integerLiteral :: Parser Integer
+</span><a href="Elara.Parse.Literal.html#integerLiteral"><span class="hs-identifier hs-var hs-var">integerLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe Integer) -&gt; Parser Integer
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe Integer) -&gt; Parser Integer)
+-&gt; (Token -&gt; Maybe Integer) -&gt; Parser Integer
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenInt"><span class="hs-identifier hs-type">TokenInt</span></a></span><span> </span><span id="local-6989586621680017079"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680017079"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Maybe Integer
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680017079"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Integer
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Elara.Parse.Literal.html#floatLiteral"><span class="hs-identifier hs-type">floatLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span>
+</span><span id="line-22"></span><span id="floatLiteral"><span class="annot"><span class="annottext">floatLiteral :: Parser Double
+</span><a href="Elara.Parse.Literal.html#floatLiteral"><span class="hs-identifier hs-var hs-var">floatLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe Double) -&gt; Parser Double
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe Double) -&gt; Parser Double)
+-&gt; (Token -&gt; Maybe Double) -&gt; Parser Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenFloat"><span class="hs-identifier hs-type">TokenFloat</span></a></span><span> </span><span id="local-6989586621680017081"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680017081"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Maybe Double
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680017081"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Elara.Parse.Literal.html#unitLiteral"><span class="hs-identifier hs-type">unitLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span id="unitLiteral"><span class="annot"><span class="annottext">unitLiteral :: Parser ()
+</span><a href="Elara.Parse.Literal.html#unitLiteral"><span class="hs-identifier hs-var hs-var">unitLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Token -&gt; Parser ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenLeftParen"><span class="hs-identifier hs-var">TokenLeftParen</span></a></span><span> </span><span class="annot"><span class="annottext">Parser () -&gt; Parser () -&gt; Parser ()
+forall a b.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity b
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f a
+</span><span class="hs-operator hs-var">&lt;*</span></span><span> </span><span class="annot"><span class="annottext">Token -&gt; Parser ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenRightParen"><span class="hs-identifier hs-var">TokenRightParen</span></a></span><span>
+</span><span id="line-28"></span></pre></body></html>

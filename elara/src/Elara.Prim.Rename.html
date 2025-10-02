@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedLists #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Prim.Rename.html"><span class="hs-identifier">Elara.Prim.Rename</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef%27"><span class="hs-identifier">VarRef'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier">Global</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Prim.html"><span class="hs-identifier">Elara.Prim</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Prim.html#ioName"><span class="hs-identifier">ioName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier">mkPrimVarRef</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Prim.html#primitiveTypes"><span class="hs-identifier">primitiveTypes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Rename.Error.html"><span class="hs-identifier">Elara.Rename.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Rename.Error.html#RenameState"><span class="hs-identifier">RenameState</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Rename.Error.html#RenameState"><span class="hs-identifier">RenameState</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="Elara.Prim.Rename.html#primitiveRenameState"><span class="hs-identifier hs-type">primitiveRenameState</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Rename.Error.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span>
+</span><span id="line-10"></span><span id="primitiveRenameState"><span class="annot"><span class="annottext">primitiveRenameState :: RenameState
+</span><a href="Elara.Prim.Rename.html#primitiveRenameState"><span class="hs-identifier hs-var hs-var">primitiveRenameState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680046449"><span class="annot"><span class="annottext">vars :: Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680046449"><span class="hs-identifier hs-var hs-var">vars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-12"></span><span>            </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-13"></span><span>        </span><span id="local-6989586621680046463"><span class="annot"><span class="annottext">types :: Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680046463"><span class="hs-identifier hs-var hs-var">types</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-14"></span><span>            </span><span class="annot"><span class="annottext">[Item (Map TypeName (NonEmpty (VarRef TypeName)))]
+-&gt; Map TypeName (NonEmpty (VarRef TypeName))
+forall l. IsList l =&gt; [Item l] -&gt; l
+</span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680046464"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680046464"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680046464"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">OneItem (NonEmpty (VarRef TypeName)) -&gt; NonEmpty (VarRef TypeName)
+forall x. One x =&gt; OneItem x -&gt; x
+</span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">(OneItem (NonEmpty (VarRef TypeName))
+ -&gt; NonEmpty (VarRef TypeName))
+-&gt; OneItem (NonEmpty (VarRef TypeName))
+-&gt; NonEmpty (VarRef TypeName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified TypeName)
+-&gt; VarRef TypeName
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Located (Qualified TypeName)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680046464"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; (TypeName, NonEmpty (VarRef TypeName)))
+-&gt; [TypeName] -&gt; [(TypeName, NonEmpty (VarRef TypeName))]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[TypeName]
+</span><a href="Elara.Prim.html#primitiveTypes"><span class="hs-identifier hs-var">primitiveTypes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>                </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+-&gt; Map TypeName (NonEmpty (VarRef TypeName))
+-&gt; Map TypeName (NonEmpty (VarRef TypeName))
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Item (Map TypeName (NonEmpty (VarRef TypeName)))]
+-&gt; Map TypeName (NonEmpty (VarRef TypeName))
+forall l. IsList l =&gt; [Item l] -&gt; l
+</span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName
+</span><a href="Elara.Prim.html#ioName"><span class="hs-identifier hs-var">ioName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">OneItem (NonEmpty (VarRef TypeName)) -&gt; NonEmpty (VarRef TypeName)
+forall x. One x =&gt; OneItem x -&gt; x
+</span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">(OneItem (NonEmpty (VarRef TypeName))
+ -&gt; NonEmpty (VarRef TypeName))
+-&gt; OneItem (NonEmpty (VarRef TypeName))
+-&gt; NonEmpty (VarRef TypeName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified TypeName)
+-&gt; VarRef TypeName
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Located (Qualified TypeName)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="Elara.Prim.html#ioName"><span class="hs-identifier hs-var">ioName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-16"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+-&gt; Map TypeName (NonEmpty (VarRef TypeName))
+-&gt; Map LowerAlphaName (Unique LowerAlphaName)
+-&gt; RenameState
+</span><a href="Elara.Rename.Error.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680046449"><span class="hs-identifier hs-var">vars</span></a></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680046463"><span class="hs-identifier hs-var">types</span></a></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-17"></span></pre></body></html>

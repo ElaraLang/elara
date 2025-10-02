@@ -1,0 +1,20 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Effectful.Error.Extra.html"><span class="hs-identifier">Effectful.Error.Extra</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Eff</span></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span id="local-6989586621680004765"><span id="local-6989586621680004767"><span id="local-6989586621680004769"><span class="annot"><a href="Effectful.Error.Extra.html#fromEither"><span class="hs-identifier hs-type">fromEither</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="annot"><a href="#local-6989586621680004765"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680004767"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680004765"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621680004765"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004769"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680004767"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004769"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-7"></span><span id="fromEither"><span class="annot"><span class="annottext">fromEither :: forall e (r :: [Effect]) a.
+(Error e :&gt; r, Show e) =&gt;
+Either e a -&gt; Eff r a
+</span><a href="Effectful.Error.Extra.html#fromEither"><span class="hs-identifier hs-var hs-var">fromEither</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(e -&gt; Eff r a) -&gt; (a -&gt; Eff r a) -&gt; Either e a -&gt; Eff r a
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><span class="hs-identifier hs-var">either</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; Eff r a
+forall e (es :: [Effect]) a.
+(HasCallStack, Error e :&gt; es, Show e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">Eff.throwError</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff r a
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span>
+</span><span id="line-8"></span></pre></body></html>

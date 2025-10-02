@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">{- | Emits JVM bytecode from the Core AST
+
+The emitting process:
+Every module is translated to a class file.
+For each declaration, we turn it into a field if it is a value (i.e. a zero argument function, including IO actions),
+or a method if it is a function.
+
+*Translation of functions to methods:*
+
+The emitter will eta expand declarations:
+@ let id = \x -&gt; x@
+will be translated to:
+@ public static Object id(Object x) { return x; }@
+
+however it does not do any complex analysis on the code:
+@ let add x =
+   if x == 0 then \y -&gt; y else \y -&gt; x + y
+@
+The higher order function here _can_ be avoided if we rearrange the code into:
+@ let add = \x -&gt; \y -&gt;
+   if x == 0 then y else x + y
+@
+but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
+
+@ public static Func add(int x) {
+   if (x == 0) {
+       return (y) -&gt; y;
+   } else {
+       return (y) -&gt; x + y;
+   }
+}
+@
+
+What this means is that the emitted method's arity will always match the declared arity of the function
+(i.e. how many directly nested lambdas there are)
+-}</span></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Emit.html"><span class="hs-identifier">Elara.Emit</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Core</span></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html"><span class="hs-identifier">Elara.Core.Generic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier">Bind</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Module.html"><span class="hs-identifier">Elara.Core.Module</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Emit.Utils.html"><span class="hs-identifier">Elara.Emit.Utils</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Emit.Utils.html#createModuleName"><span class="hs-identifier">createModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Emit.Utils.html#generateFieldType"><span class="hs-identifier">generateFieldType</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Logging.html"><span class="hs-identifier">Elara.Logging</span></a></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Builder</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ClassBuilder</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">addField</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">addMethod</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">runClassBuilder</span></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Builder.Code</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">CodeBuilder</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">emit'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">runCodeBuilder</span></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.ClassFile</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.ClassFile.Field</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ClassFileField</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ClassFileField</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">ConstantValue</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ConstantInteger</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">FieldAttribute</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ConstantValue</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.ClassFile.Method</span></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Descriptor</span></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Instruction</span></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Type</span></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Type</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">JVM</span></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.JVMVersion</span></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- emitCoreModule :: StructuredDebug :&gt; r =&gt; CoreModule CoreBind -&gt; Eff r ClassFile</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- emitCoreModule (CoreModule name decls) = do</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--     (clf, _) &lt;- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -&gt; do</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--         emitCoreDecl decl</span><span>
+</span><span id="line-62"></span><span class="hs-comment">--         pass</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">--     pure clf</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- emitCoreDecl :: (ClassBuilder :&gt; r, StructuredDebug r) =&gt; CoreDeclaration CoreBind -&gt; Sem r ()</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- emitCoreDecl decl = case decl of</span><span>
+</span><span id="line-68"></span><span class="hs-comment">--     CoreValue (NonRecursive (n@(Id name type' _), e)) -&gt; do</span><span>
+</span><span id="line-69"></span><span class="hs-comment">--         let declName = varRefVal name</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--         case e of</span><span>
+</span><span id="line-71"></span><span class="hs-comment">--             Core.Lit (Core.Int i) -&gt; do</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--                 addField $ ClassFileField [] declName (ObjectFieldType &quot;java.lang.Integer&quot;) [ConstantValue (ConstantInteger (fromIntegral i))]</span><span>
+</span><span id="line-73"></span><span class="hs-comment">--             e -&gt; do</span><span>
+</span><span id="line-74"></span><span class="hs-comment">--                 (_, attrs, code) &lt;- runCodeBuilder (emitCoreExpr e)</span><span>
+</span><span id="line-75"></span><span class="hs-comment">--                 addMethod $ ClassFileMethod [] declName (MethodDescriptor [] (TypeReturn (ObjectFieldType &quot;java.lang.Object&quot;))) (fromList [Code $ CodeAttributeData 100 100 code [] attrs])</span><span>
+</span><span id="line-76"></span><span class="hs-comment">--         pass</span><span>
+</span><span id="line-77"></span><span class="hs-comment">--     _ -&gt; pass</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- emitCoreExpr e = case e of</span><span>
+</span><span id="line-80"></span><span class="hs-comment">--     Core.Lit s -&gt; do</span><span>
+</span><span id="line-81"></span><span class="hs-comment">--         emitValue s</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--     (App ((Var ((Id (Global (Qualified &quot;elaraPrimitive&quot; _)) _ _)))) (Lit (String &quot;println&quot;))) -&gt; do</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--         emit'</span><span>
+</span><span id="line-84"></span><span class="hs-comment">--             [ InvokeStatic (ClassInfoType &quot;Elara.IO&quot;) &quot;println&quot; (MethodDescriptor [ObjectFieldType &quot;java.lang.String&quot;] (TypeReturn (ObjectFieldType &quot;Elara.IO&quot;)))</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--             ]</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--     (App ((Var ((Id (Global (Qualified &quot;elaraPrimitive&quot; _)) _ _)))) (Lit (String &quot;toString&quot;))) -&gt; do</span><span>
+</span><span id="line-87"></span><span class="hs-comment">--         emit'</span><span>
+</span><span id="line-88"></span><span class="hs-comment">--             [ InvokeVirtual (ClassInfoType &quot;java.lang.Object&quot;) &quot;toString&quot; (MethodDescriptor [] (TypeReturn (ObjectFieldType &quot;java.lang.String&quot;)))</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--             ]</span><span>
+</span><span id="line-90"></span><span class="hs-comment">--     v@(Var ((Id (Global (Qualified n mn)) t _))) -&gt; emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--     Core.App f x -&gt; do</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--         emitCoreExpr x</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--         emitCoreExpr f</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--     other -&gt; pass</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- emitValue :: Member CodeBuilder r =&gt; Literal -&gt; Sem r ()</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- emitValue s = case s of</span><span>
+</span><span id="line-98"></span><span class="hs-comment">--     Core.Int i -&gt;</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--         emit'</span><span>
+</span><span id="line-100"></span><span class="hs-comment">--             [ LDC (LDCInt (fromIntegral i))</span><span>
+</span><span id="line-101"></span><span class="hs-comment">--             , InvokeStatic (ClassInfoType &quot;java.lang.Integer&quot;) &quot;valueOf&quot; (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType &quot;java.lang.Integer&quot;)))</span><span>
+</span><span id="line-102"></span><span class="hs-comment">--             ]</span><span>
+</span><span id="line-103"></span><span class="hs-comment">--     Core.String s -&gt;</span><span>
+</span><span id="line-104"></span><span class="hs-comment">--         emit'</span><span>
+</span><span id="line-105"></span><span class="hs-comment">--             [ LDC (LDCString s)</span><span>
+</span><span id="line-106"></span><span class="hs-comment">--             ]</span><span>
+</span><span id="line-107"></span><span class="hs-comment">--     _ -&gt; error &quot;Not implemented&quot;</span><span>
+</span><span id="line-108"></span></pre></body></html>

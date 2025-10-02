@@ -1,0 +1,395 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Parse.Pattern.html"><span class="hs-identifier">Elara.Parse.Pattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier">patParser</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Combinators.Expr</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Operator</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">makeExprParser</span></span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(&lt;|)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html"><span class="hs-identifier">Elara.AST.Frontend</span></a></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Generic.html"><span class="hs-identifier">Elara.AST.Generic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Pattern"><span class="hs-identifier">Pattern</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Pattern%27"><span class="hs-identifier">Pattern'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier">Located</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier">unlocated</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html"><span class="hs-identifier">Elara.Lexer.Token</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier">Token</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Combinators.html"><span class="hs-identifier">Elara.Parse.Combinators</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Combinators.html#liftedBinary"><span class="hs-identifier">liftedBinary</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Combinators.html#sepBy1%27"><span class="hs-identifier">sepBy1'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Combinators.html#sepEndBy1%27"><span class="hs-identifier">sepEndBy1'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Literal.html"><span class="hs-identifier">Elara.Parse.Literal</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Names.html"><span class="hs-identifier">Elara.Parse.Names</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier">conName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier">varId</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html"><span class="hs-identifier">Elara.Parse.Primitives</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier">inParens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier">located</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier">token_</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Print.html"><span class="hs-identifier">Print</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Print.html#debugPretty"><span class="hs-identifier">debugPretty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Megaparsec</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">choice</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">sepEndBy</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">sepEndBy1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">try</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;?&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="annot"><a href="Elara.Parse.Pattern.html#atomicPatParser"><span class="hs-identifier hs-type">atomicPatParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-17"></span><span id="atomicPatParser"><span class="annot"><span class="annottext">atomicPatParser :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#atomicPatParser"><span class="hs-identifier hs-var hs-var">atomicPatParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="annottext">[Parser FrontendPattern] -&gt; Parser FrontendPattern
+forall (f :: * -&gt; *) (m :: * -&gt; *) a.
+(Foldable f, Alternative m) =&gt;
+f (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">choice</span></span><span>
+</span><span id="line-19"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#literalPattern"><span class="hs-identifier hs-var">literalPattern</span></a></span><span>
+</span><span id="line-20"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#varPattern"><span class="hs-identifier hs-var">varPattern</span></a></span><span>
+</span><span id="line-21"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#wildcardPattern"><span class="hs-identifier hs-var">wildcardPattern</span></a></span><span>
+</span><span id="line-22"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#tuplePattern"><span class="hs-identifier hs-var">tuplePattern</span></a></span><span>
+</span><span id="line-23"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+</span><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier hs-var">inParens</span></a></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#rpat"><span class="hs-identifier hs-var">rpat</span></a></span><span>
+</span><span id="line-24"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#unaryConstructorPattern"><span class="hs-identifier hs-var">unaryConstructorPattern</span></a></span><span>
+</span><span id="line-25"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#listPattern"><span class="hs-identifier hs-var">listPattern</span></a></span><span>
+</span><span id="line-26"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-type">patParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-29"></span><span id="patParser"><span class="annot"><span class="annottext">patParser :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-var hs-var">patParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">[Parser FrontendPattern] -&gt; Parser FrontendPattern
+forall (f :: * -&gt; *) (m :: * -&gt; *) a.
+(Foldable f, Alternative m) =&gt;
+f (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">choice</span></span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#constructorPattern"><span class="hs-identifier hs-var">constructorPattern</span></a></span><span>
+</span><span id="line-32"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#atomicPatParser"><span class="hs-identifier hs-var">atomicPatParser</span></a></span><span>
+</span><span id="line-33"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; Parser FrontendPattern
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+</span><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier hs-var">inParens</span></a></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#rpat"><span class="hs-identifier hs-var">rpat</span></a></span><span>
+</span><span id="line-34"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.Parse.Pattern.html#rpat"><span class="hs-identifier hs-type">rpat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-37"></span><span id="rpat"><span class="annot"><span class="annottext">rpat :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#rpat"><span class="hs-identifier hs-var hs-var">rpat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="annottext">Parser FrontendPattern
+-&gt; [[Operator
+       (ParsecT ElaraParseError TokenStream Identity) FrontendPattern]]
+-&gt; Parser FrontendPattern
+forall (m :: * -&gt; *) a.
+MonadPlus m =&gt;
+m a -&gt; [[Operator m a]] -&gt; m a
+</span><span class="hs-identifier hs-var">makeExprParser</span></span><span>
+</span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-var">patParser</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern)
+-&gt; Operator
+     (ParsecT ElaraParseError TokenStream Identity) FrontendPattern
+forall (m :: * -&gt; *) a. m (a -&gt; a -&gt; a) -&gt; Operator m a
+</span><span class="hs-identifier hs-var">InfixR</span></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern)
+</span><a href="Elara.Parse.Pattern.html#cons"><span class="hs-identifier hs-var">cons</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-41"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-42"></span><span>        </span><span class="annot"><span class="annottext">Parser FrontendPattern -&gt; String -&gt; Parser FrontendPattern
+forall e s (m :: * -&gt; *) a.
+MonadParsec e s m =&gt;
+m a -&gt; String -&gt; m a
+</span><span class="hs-operator hs-var">&lt;?&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;pattern&quot;</span></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Elara.Parse.Pattern.html#unannotatedPattern"><span class="hs-identifier hs-type">unannotatedPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso'</span></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern%27"><span class="hs-identifier hs-type">FrontendPattern'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span id="unannotatedPattern"><span class="annot"><span class="annottext">unannotatedPattern :: Iso' FrontendPattern (Located FrontendPattern')
+</span><a href="Elara.Parse.Pattern.html#unannotatedPattern"><span class="hs-identifier hs-var hs-var">unannotatedPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FrontendPattern -&gt; Located FrontendPattern')
+-&gt; (Located FrontendPattern' -&gt; FrontendPattern)
+-&gt; Iso' FrontendPattern (Located FrontendPattern')
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680042582"><span class="annot"><span class="annottext">ASTLocate 'Frontend FrontendPattern'
+</span><a href="#local-6989586621680042582"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Select &quot;PatternType&quot; 'Frontend
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Located FrontendPattern'
+ASTLocate 'Frontend FrontendPattern'
+</span><a href="#local-6989586621680042582"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680042583"><span class="annot"><span class="annottext">Located FrontendPattern'
+</span><a href="#local-6989586621680042583"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(ASTLocate 'Frontend FrontendPattern',
+ Select &quot;PatternType&quot; 'Frontend)
+-&gt; FrontendPattern
+forall {a} (ast :: a).
+(ASTLocate ast (Pattern' ast), Select &quot;PatternType&quot; ast)
+-&gt; Pattern ast
+</span><a href="Elara.AST.Generic.Types.html#Pattern"><span class="hs-identifier hs-var">Pattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Located FrontendPattern'
+ASTLocate 'Frontend FrontendPattern'
+</span><a href="#local-6989586621680042583"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe FrontendType
+Select &quot;PatternType&quot; 'Frontend
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y</span><span>
+</span><span id="line-48"></span><span class="annot"><a href="Elara.Parse.Pattern.html#cons"><span class="hs-identifier hs-type">cons</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span id="cons"><span class="annot"><span class="annottext">cons :: ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern)
+</span><a href="Elara.Parse.Pattern.html#cons"><span class="hs-identifier hs-var hs-var">cons</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity ()
+-&gt; (() -&gt; FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern')
+-&gt; Iso' FrontendPattern (Located FrontendPattern')
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern)
+forall {k1} {k2} {m :: * -&gt; *} {t} {a1} {a2}.
+(JoinKinds k1 A_Lens k2, Monad m, Is k2 A_Getter,
+ Is (ReversedOptic k1) A_Getter, ReversibleOptic k1) =&gt;
+m t
+-&gt; (t -&gt; a1 -&gt; a1 -&gt; a2)
+-&gt; Optic k1 NoIx a1 a1 (Located a2) (Located a2)
+-&gt; m (a1 -&gt; a1 -&gt; a1)
+</span><a href="Elara.Parse.Combinators.html#liftedBinary"><span class="hs-identifier hs-var">liftedBinary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Token -&gt; ParsecT ElaraParseError TokenStream Identity ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenDoubleColon"><span class="hs-identifier hs-var">TokenDoubleColon</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern')
+-&gt; () -&gt; FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern'
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((FrontendPattern, FrontendPattern) -&gt; FrontendPattern')
+-&gt; FrontendPattern -&gt; FrontendPattern -&gt; FrontendPattern'
+forall a b c. ((a, b) -&gt; c) -&gt; a -&gt; b -&gt; c
+</span><span class="hs-identifier hs-var">curry</span></span><span> </span><span class="annot"><span class="annottext">(FrontendPattern, FrontendPattern) -&gt; FrontendPattern'
+Select &quot;ConsPattern&quot; 'Frontend -&gt; FrontendPattern'
+forall {a} (ast :: a). Select &quot;ConsPattern&quot; ast -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#ConsPattern"><span class="hs-identifier hs-var">ConsPattern</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Iso' FrontendPattern (Located FrontendPattern')
+</span><a href="Elara.Parse.Pattern.html#unannotatedPattern"><span class="hs-identifier hs-var">unannotatedPattern</span></a></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-type">locatedPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern%27"><span class="hs-identifier hs-type">FrontendPattern'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-52"></span><span id="locatedPattern"><span class="annot"><span class="annottext">locatedPattern :: Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var hs-var">locatedPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680042604"><span class="annot"><span class="annottext">Located FrontendPattern'
+</span><a href="#local-6989586621680042604"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(ASTLocate 'Frontend FrontendPattern',
+ Select &quot;PatternType&quot; 'Frontend)
+-&gt; FrontendPattern
+forall {a} (ast :: a).
+(ASTLocate ast (Pattern' ast), Select &quot;PatternType&quot; ast)
+-&gt; Pattern ast
+</span><a href="Elara.AST.Generic.Types.html#Pattern"><span class="hs-identifier hs-var">Pattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Located FrontendPattern'
+ASTLocate 'Frontend FrontendPattern'
+</span><a href="#local-6989586621680042604"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe FrontendType
+Select &quot;PatternType&quot; 'Frontend
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Located FrontendPattern' -&gt; FrontendPattern)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (Located FrontendPattern')
+-&gt; Parser FrontendPattern
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ParsecT
+   ElaraParseError TokenStream Identity (Located FrontendPattern')
+ -&gt; Parser FrontendPattern)
+-&gt; (Parser FrontendPattern'
+    -&gt; ParsecT
+         ElaraParseError TokenStream Identity (Located FrontendPattern'))
+-&gt; Parser FrontendPattern'
+-&gt; Parser FrontendPattern
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern'
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (Located FrontendPattern')
+forall a. Parser a -&gt; Parser (Located a)
+</span><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier hs-var">located</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Elara.Parse.Pattern.html#varPattern"><span class="hs-identifier hs-type">varPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-55"></span><span id="varPattern"><span class="annot"><span class="annottext">varPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#varPattern"><span class="hs-identifier hs-var hs-var">varPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Located LowerAlphaName -&gt; FrontendPattern'
+ASTLocate 'Frontend (Select &quot;VarPat&quot; 'Frontend) -&gt; FrontendPattern'
+forall {a} (ast :: a).
+ASTLocate ast (Select &quot;VarPat&quot; ast) -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#VarPattern"><span class="hs-identifier hs-var">VarPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Located LowerAlphaName -&gt; FrontendPattern')
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (Located LowerAlphaName)
+-&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LowerAlphaName
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (Located LowerAlphaName)
+forall a. Parser a -&gt; Parser (Located a)
+</span><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier hs-var">located</span></a></span><span> </span><span class="annot"><span class="annottext">Parser LowerAlphaName
+</span><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier hs-var">varId</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Elara.Parse.Pattern.html#wildcardPattern"><span class="hs-identifier hs-type">wildcardPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-58"></span><span id="wildcardPattern"><span class="annot"><span class="annottext">wildcardPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#wildcardPattern"><span class="hs-identifier hs-var hs-var">wildcardPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendPattern'
+forall {a} (ast :: a). Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#WildcardPattern"><span class="hs-identifier hs-var">WildcardPattern</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendPattern'
+-&gt; ParsecT ElaraParseError TokenStream Identity ()
+-&gt; Parser FrontendPattern'
+forall a b.
+a
+-&gt; ParsecT ElaraParseError TokenStream Identity b
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a b. Functor f =&gt; a -&gt; f b -&gt; f a
+</span><span class="hs-operator hs-var">&lt;$</span></span><span> </span><span class="annot"><span class="annottext">Token -&gt; ParsecT ElaraParseError TokenStream Identity ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenUnderscore"><span class="hs-identifier hs-var">TokenUnderscore</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="annot"><a href="Elara.Parse.Pattern.html#listPattern"><span class="hs-identifier hs-type">listPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-61"></span><span id="listPattern"><span class="annot"><span class="annottext">listPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#listPattern"><span class="hs-identifier hs-var hs-var">listPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser FrontendPattern' -&gt; Parser FrontendPattern)
+-&gt; Parser FrontendPattern' -&gt; Parser FrontendPattern
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Token -&gt; ParsecT ElaraParseError TokenStream Identity ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenLeftBracket"><span class="hs-identifier hs-var">TokenLeftBracket</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span>    </span><span id="local-6989586621680042622"><span class="annot"><a href="#local-6989586621680042622"><span class="hs-identifier hs-var">elements</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+-&gt; ParsecT ElaraParseError TokenStream Identity ()
+-&gt; ParsecT ElaraParseError TokenStream Identity [FrontendPattern]
+forall (m :: * -&gt; *) a sep. MonadPlus m =&gt; m a -&gt; m sep -&gt; m [a]
+</span><span class="hs-identifier hs-var">sepEndBy</span></span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-var">patParser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Token -&gt; ParsecT ElaraParseError TokenStream Identity ()
+</span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
+</span><a href="Elara.Lexer.Token.html#TokenComma"><span class="hs-identifier hs-var">TokenComma</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-type">token_</span></a></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenRightBracket"><span class="hs-identifier hs-type">TokenRightBracket</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#ListPattern"><span class="hs-identifier hs-type">ListPattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680042622"><span class="hs-identifier hs-type">elements</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Elara.Parse.Pattern.html#tuplePattern"><span class="hs-identifier hs-type">tuplePattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-69"></span><span id="tuplePattern"><span class="annot"><span class="annottext">tuplePattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#tuplePattern"><span class="hs-identifier hs-var hs-var">tuplePattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser FrontendPattern' -&gt; Parser FrontendPattern)
+-&gt; Parser FrontendPattern' -&gt; Parser FrontendPattern
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-70"></span><span>    </span><span id="local-6989586621680042633"><span class="annot"><a href="#local-6989586621680042633"><span class="hs-identifier hs-var">elements</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (NonEmpty FrontendPattern)
+-&gt; Parser (NonEmpty FrontendPattern)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+</span><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier hs-var">inParens</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser (NonEmpty FrontendPattern)
+ -&gt; Parser (NonEmpty FrontendPattern))
+-&gt; Parser (NonEmpty FrontendPattern)
+-&gt; Parser (NonEmpty FrontendPattern)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>        </span><span id="local-6989586621680042634"><span class="annot"><a href="#local-6989586621680042634"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-var">patParser</span></a></span><span>
+</span><span id="line-72"></span><span>        </span><span class="annot"><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-type">token_</span></a></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenComma"><span class="hs-identifier hs-type">TokenComma</span></a></span><span>
+</span><span id="line-73"></span><span>        </span><span id="local-6989586621680042635"><span class="annot"><a href="#local-6989586621680042635"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.Parse.Combinators.html#sepBy1%27"><span class="hs-identifier hs-type">sepBy1'</span></a></span><span> </span><span class="annot"><a href="Elara.Parse.Pattern.html#patParser"><span class="hs-identifier hs-type">patParser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-type">token_</span></a></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenComma"><span class="hs-identifier hs-type">TokenComma</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680042634"><span class="hs-identifier hs-type">first</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;|</span></span><span> </span><span class="annot"><a href="#local-6989586621680042635"><span class="hs-identifier hs-type">rest</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#TuplePattern"><span class="hs-identifier hs-type">TuplePattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680042633"><span class="hs-identifier hs-type">elements</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- consPattern :: Parser FrontendPattern</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- consPattern i = locatedPattern $ do</span><span>
+</span><span id="line-79"></span><span class="hs-comment">--     (head', tail') &lt;- do</span><span>
+</span><span id="line-80"></span><span class="hs-comment">--         head' &lt;- pat' (i + 1)</span><span>
+</span><span id="line-81"></span><span class="hs-comment">--         token_ TokenDoubleColon</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--         endHead</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--         tail' &lt;- pat' (i + 1)</span><span>
+</span><span id="line-84"></span><span class="hs-comment">--         pure (head', tail')</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">--     pure $ ConsPattern head' tail'</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="annot"><a href="Elara.Parse.Pattern.html#unaryConstructorPattern"><span class="hs-identifier hs-type">unaryConstructorPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-89"></span><span id="unaryConstructorPattern"><span class="annot"><span class="annottext">unaryConstructorPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#unaryConstructorPattern"><span class="hs-identifier hs-var hs-var">unaryConstructorPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser FrontendPattern' -&gt; Parser FrontendPattern)
+-&gt; Parser FrontendPattern' -&gt; Parser FrontendPattern
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621680042640"><span class="annot"><a href="#local-6989586621680042640"><span class="hs-identifier hs-var">con</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
+-&gt; Parser (Located (MaybeQualified TypeName))
+forall a. Parser a -&gt; Parser (Located a)
+</span><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier hs-var">located</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-var">conName</span></a></span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#ConstructorPattern"><span class="hs-identifier hs-type">ConstructorPattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680042640"><span class="hs-identifier hs-type">con</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Elara.Parse.Pattern.html#constructorPattern"><span class="hs-identifier hs-type">constructorPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-94"></span><span id="constructorPattern"><span class="annot"><span class="annottext">constructorPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#constructorPattern"><span class="hs-identifier hs-var hs-var">constructorPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser FrontendPattern' -&gt; Parser FrontendPattern)
+-&gt; Parser FrontendPattern' -&gt; Parser FrontendPattern
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-95"></span><span>    </span><span id="local-6989586621680042648"><span class="annot"><a href="#local-6989586621680042648"><span class="hs-identifier hs-var">con</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
+-&gt; Parser (Located (MaybeQualified TypeName))
+forall a. Parser a -&gt; Parser (Located a)
+</span><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier hs-var">located</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-var">conName</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621680042649"><span class="annot"><a href="#local-6989586621680042649"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">many</span></span><span> </span><span class="annot"><a href="Elara.Parse.Pattern.html#atomicPatParser"><span class="hs-identifier hs-type">atomicPatParser</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#ConstructorPattern"><span class="hs-identifier hs-type">ConstructorPattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680042648"><span class="hs-identifier hs-type">con</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680042649"><span class="hs-identifier hs-type">args</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="annot"><a href="Elara.Parse.Pattern.html#literalPattern"><span class="hs-identifier hs-type">literalPattern</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
+</span><span id="line-101"></span><span id="literalPattern"><span class="annot"><span class="annottext">literalPattern :: Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#literalPattern"><span class="hs-identifier hs-var hs-var">literalPattern</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">Parser FrontendPattern' -&gt; Parser FrontendPattern
+</span><a href="Elara.Parse.Pattern.html#locatedPattern"><span class="hs-identifier hs-var">locatedPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser FrontendPattern' -&gt; Parser FrontendPattern)
+-&gt; Parser FrontendPattern' -&gt; Parser FrontendPattern
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-103"></span><span>        </span><span class="annot"><span class="annottext">[Parser FrontendPattern'] -&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) (m :: * -&gt; *) a.
+(Foldable f, Alternative m) =&gt;
+f (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">choice</span></span><span>
+</span><span id="line-104"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; FrontendPattern'
+forall {a} (ast :: a). Integer -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#IntegerPattern"><span class="hs-identifier hs-var">IntegerPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; FrontendPattern')
+-&gt; ParsecT ElaraParseError TokenStream Identity Integer
+-&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity Integer
+</span><a href="Elara.Parse.Literal.html#integerLiteral"><span class="hs-identifier hs-var">integerLiteral</span></a></span><span>
+</span><span id="line-105"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Double -&gt; FrontendPattern'
+forall {a} (ast :: a). Double -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#FloatPattern"><span class="hs-identifier hs-var">FloatPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Double -&gt; FrontendPattern')
+-&gt; ParsecT ElaraParseError TokenStream Identity Double
+-&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity Double
+</span><a href="Elara.Parse.Literal.html#floatLiteral"><span class="hs-identifier hs-var">floatLiteral</span></a></span><span>
+</span><span id="line-106"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; FrontendPattern'
+forall {a} (ast :: a). Text -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#StringPattern"><span class="hs-identifier hs-var">StringPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; FrontendPattern')
+-&gt; ParsecT ElaraParseError TokenStream Identity Text
+-&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity Text
+</span><a href="Elara.Parse.Literal.html#stringLiteral"><span class="hs-identifier hs-var">stringLiteral</span></a></span><span>
+</span><span id="line-107"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char -&gt; FrontendPattern'
+forall {a} (ast :: a). Char -&gt; Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#CharPattern"><span class="hs-identifier hs-var">CharPattern</span></a></span><span> </span><span class="annot"><span class="annottext">(Char -&gt; FrontendPattern')
+-&gt; ParsecT ElaraParseError TokenStream Identity Char
+-&gt; Parser FrontendPattern'
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity Char
+</span><a href="Elara.Parse.Literal.html#charLiteral"><span class="hs-identifier hs-var">charLiteral</span></a></span><span>
+</span><span id="line-108"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FrontendPattern'
+forall {a} (ast :: a). Pattern' ast
+</span><a href="Elara.AST.Generic.Types.html#UnitPattern"><span class="hs-identifier hs-var">UnitPattern</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendPattern'
+-&gt; ParsecT ElaraParseError TokenStream Identity ()
+-&gt; Parser FrontendPattern'
+forall a b.
+a
+-&gt; ParsecT ElaraParseError TokenStream Identity b
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a b. Functor f =&gt; a -&gt; f b -&gt; f a
+</span><span class="hs-operator hs-var">&lt;$</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity ()
+</span><a href="Elara.Parse.Literal.html#unitLiteral"><span class="hs-identifier hs-var">unitLiteral</span></a></span><span>
+</span><span id="line-109"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-110"></span></pre></body></html>

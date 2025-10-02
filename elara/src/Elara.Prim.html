@@ -1,0 +1,319 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedLists #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">{- | Stores information about the primitive functions of Elara. These are still written in the source code, with a special name and value.
+The compiler will then replace these with the actual primitive functions.
+-}</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Prim.html"><span class="hs-identifier">Elara.Prim</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier">ModuleName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier">Name</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier">TypeName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarOrConName"><span class="hs-identifier">VarOrConName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier">Located</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier">SourceRegion</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#generatedLocated"><span class="hs-identifier">generatedLocated</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#generatedSourceRegion"><span class="hs-identifier">generatedSourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier">VarRef</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef%27"><span class="hs-identifier">VarRef'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier">Global</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier">ignoreLocation</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html"><span class="hs-identifier">Elara.Data.Kind</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier">ElaraKind</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html"><span class="hs-identifier">Elara.Shunt.Operator</span></a></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><a href="Elara.Prim.html#consName"><span class="hs-identifier hs-type">consName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-15"></span><span id="consName"><span class="annot"><span class="annottext">consName :: TypeName
+</span><a href="Elara.Prim.html#consName"><span class="hs-identifier hs-var hs-var">consName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><span class="hs-string">&quot;::&quot;</span></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><a href="Elara.Prim.html#cons"><span class="hs-identifier hs-type">cons</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarOrConName"><span class="hs-identifier hs-type">VarOrConName</span></a></span><span>
+</span><span id="line-18"></span><span id="cons"><span class="annot"><span class="annottext">cons :: MaybeQualified VarOrConName
+</span><a href="Elara.Prim.html#cons"><span class="hs-identifier hs-var hs-var">cons</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarOrConName -&gt; Maybe ModuleName -&gt; MaybeQualified VarOrConName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; VarOrConName
+</span><a href="Elara.AST.Name.html#ConName"><span class="hs-identifier hs-var">ConName</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><span class="hs-string">&quot;Cons&quot;</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var">primModuleName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Elara.Prim.html#fetchPrimitiveName"><span class="hs-identifier hs-type">fetchPrimitiveName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span>
+</span><span id="line-21"></span><span id="fetchPrimitiveName"><span class="annot"><span class="annottext">fetchPrimitiveName :: VarName
+</span><a href="Elara.Prim.html#fetchPrimitiveName"><span class="hs-identifier hs-var hs-var">fetchPrimitiveName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; VarName
+</span><a href="Elara.AST.Name.html#NormalVarName"><span class="hs-identifier hs-var">NormalVarName</span></a></span><span> </span><span class="annot"><span class="annottext">LowerAlphaName
+</span><span class="hs-string">&quot;elaraPrimitive&quot;</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Elara.Prim.html#fetchPrimitive"><span class="hs-identifier hs-type">fetchPrimitive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier hs-type">VarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span id="fetchPrimitive"><span class="annot"><span class="annottext">fetchPrimitive :: VarRef VarName
+</span><a href="Elara.Prim.html#fetchPrimitive"><span class="hs-identifier hs-var hs-var">fetchPrimitive</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified VarName) -&gt; VarRef VarName
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Located (Qualified VarName)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="Elara.Prim.html#fetchPrimitiveName"><span class="hs-identifier hs-var">fetchPrimitiveName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Elara.Prim.html#stringName"><span class="hs-identifier hs-type">stringName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-27"></span><span id="stringName"><span class="annot"><span class="annottext">stringName :: TypeName
+</span><a href="Elara.Prim.html#stringName"><span class="hs-identifier hs-var hs-var">stringName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;String&quot;</span></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Elara.Prim.html#intName"><span class="hs-identifier hs-type">intName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-30"></span><span id="intName"><span class="annot"><span class="annottext">intName :: TypeName
+</span><a href="Elara.Prim.html#intName"><span class="hs-identifier hs-var hs-var">intName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Int&quot;</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Elara.Prim.html#boolName"><span class="hs-identifier hs-type">boolName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-33"></span><span id="boolName"><span class="annot"><span class="annottext">boolName :: TypeName
+</span><a href="Elara.Prim.html#boolName"><span class="hs-identifier hs-var hs-var">boolName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Bool&quot;</span></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="annot"><a href="Elara.Prim.html#trueName"><span class="hs-identifier hs-type">trueName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-36"></span><span id="trueName"><span class="annot"><span class="annottext">trueName :: TypeName
+</span><a href="Elara.Prim.html#trueName"><span class="hs-identifier hs-var hs-var">trueName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;True&quot;</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><a href="Elara.Prim.html#falseName"><span class="hs-identifier hs-type">falseName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-39"></span><span id="falseName"><span class="annot"><span class="annottext">falseName :: TypeName
+</span><a href="Elara.Prim.html#falseName"><span class="hs-identifier hs-var hs-var">falseName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;False&quot;</span></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Elara.Prim.html#charName"><span class="hs-identifier hs-type">charName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-42"></span><span id="charName"><span class="annot"><span class="annottext">charName :: TypeName
+</span><a href="Elara.Prim.html#charName"><span class="hs-identifier hs-var hs-var">charName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Char&quot;</span></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Elara.Prim.html#ioName"><span class="hs-identifier hs-type">ioName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-45"></span><span id="ioName"><span class="annot"><span class="annottext">ioName :: TypeName
+</span><a href="Elara.Prim.html#ioName"><span class="hs-identifier hs-var hs-var">ioName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;IO&quot;</span></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span id="local-6989586621680034395"><span class="annot"><a href="Elara.Prim.html#fullListName"><span class="hs-identifier hs-type">fullListName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621680034395"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680034395"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-48"></span><span id="fullListName"><span class="annot"><span class="annottext">fullListName :: forall a. IsString a =&gt; Qualified a
+</span><a href="Elara.Prim.html#fullListName"><span class="hs-identifier hs-var hs-var">fullListName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Qualified a
+forall c. c -&gt; Qualified c
+</span><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier hs-var">mkPrimQual</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-string">&quot;List&quot;</span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-type">primModuleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span>
+</span><span id="line-51"></span><span id="primModuleName"><span class="annot"><span class="annottext">primModuleName :: ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var hs-var">primModuleName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; ModuleName
+</span><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-var">ModuleName</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Text
+Item (NonEmpty Text)
+</span><span class="hs-string">&quot;Elara&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+Item (NonEmpty Text)
+</span><span class="hs-string">&quot;Prim&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Elara.Prim.html#primRegion"><span class="hs-identifier hs-type">primRegion</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-54"></span><span id="primRegion"><span class="annot"><span class="annottext">primRegion :: SourceRegion
+</span><a href="Elara.Prim.html#primRegion"><span class="hs-identifier hs-var hs-var">primRegion</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; SourceRegion
+</span><a href="Elara.AST.Region.html#generatedSourceRegion"><span class="hs-identifier hs-var">generatedSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Maybe String
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&lt;primitive&gt;&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span id="local-6989586621680034405"><span class="annot"><a href="Elara.Prim.html#primLocated"><span class="hs-identifier hs-type">primLocated</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680034405"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680034405"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-57"></span><span id="primLocated"><span class="annot"><span class="annottext">primLocated :: forall a. a -&gt; Located a
+</span><a href="Elara.Prim.html#primLocated"><span class="hs-identifier hs-var hs-var">primLocated</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; a -&gt; Located a
+forall a. Maybe String -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#generatedLocated"><span class="hs-identifier hs-var">generatedLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Maybe String
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&lt;primitive&gt;&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span id="local-6989586621680034397"><span class="annot"><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier hs-type">mkPrimQual</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680034397"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680034397"><span class="hs-identifier hs-type">c</span></a></span></span><span>
+</span><span id="line-60"></span><span id="mkPrimQual"><span class="annot"><span class="annottext">mkPrimQual :: forall c. c -&gt; Qualified c
+</span><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier hs-var hs-var">mkPrimQual</span></a></span></span><span> </span><span id="local-6989586621680034492"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680034492"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">c -&gt; ModuleName -&gt; Qualified c
+forall name. name -&gt; ModuleName -&gt; Qualified name
+</span><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-var">Qualified</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680034492"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var">primModuleName</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span id="local-6989586621680034393"><span class="annot"><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-type">mkPrimVarRef</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680034393"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680034393"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-63"></span><span id="mkPrimVarRef"><span class="annot"><span class="annottext">mkPrimVarRef :: forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var hs-var">mkPrimVarRef</span></a></span></span><span> </span><span id="local-6989586621680034496"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680034496"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Qualified c -&gt; Located (Qualified c)
+forall a. Maybe String -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#generatedLocated"><span class="hs-identifier hs-var">generatedLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Maybe String
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&lt;primitive&gt;&quot;</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Qualified c
+forall c. c -&gt; Qualified c
+</span><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier hs-var">mkPrimQual</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680034496"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Elara.Prim.html#primitiveVars"><span class="hs-identifier hs-type">primitiveVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-66"></span><span id="primitiveVars"><span class="annot"><span class="annottext">primitiveVars :: [VarName]
+</span><a href="Elara.Prim.html#primitiveVars"><span class="hs-identifier hs-var hs-var">primitiveVars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Item [VarName]
+VarName
+</span><a href="Elara.Prim.html#fetchPrimitiveName"><span class="hs-identifier hs-var">fetchPrimitiveName</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Elara.Prim.html#primitiveTypes"><span class="hs-identifier hs-type">primitiveTypes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-69"></span><span id="primitiveTypes"><span class="annot"><span class="annottext">primitiveTypes :: [TypeName]
+</span><a href="Elara.Prim.html#primitiveTypes"><span class="hs-identifier hs-var hs-var">primitiveTypes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Item [TypeName]
+TypeName
+</span><a href="Elara.Prim.html#stringName"><span class="hs-identifier hs-var">stringName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Item [TypeName]
+TypeName
+</span><a href="Elara.Prim.html#charName"><span class="hs-identifier hs-var">charName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Item [TypeName]
+TypeName
+</span><a href="Elara.Prim.html#intName"><span class="hs-identifier hs-var">intName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Item [TypeName]
+TypeName
+</span><a href="Elara.Prim.html#consName"><span class="hs-identifier hs-var">consName</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="annot"><a href="Elara.Prim.html#primKindCheckContext"><span class="hs-identifier hs-type">primKindCheckContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
+</span><span id="line-72"></span><span id="primKindCheckContext"><span class="annot"><span class="annottext">primKindCheckContext :: Map (Qualified TypeName) ElaraKind
+</span><a href="Elara.Prim.html#primKindCheckContext"><span class="hs-identifier hs-var hs-var">primKindCheckContext</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-comment">-- assume all primitive types are kind Type</span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><span class="annottext">[Item (Map (Qualified TypeName) ElaraKind)]
+-&gt; Map (Qualified TypeName) ElaraKind
+forall l. IsList l =&gt; [Item l] -&gt; l
+</span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680034515"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680034515"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; ModuleName -&gt; Qualified TypeName
+forall name. name -&gt; ModuleName -&gt; Qualified name
+</span><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-var">Qualified</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680034515"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var">primModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ElaraKind
+</span><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; (Qualified TypeName, ElaraKind))
+-&gt; [TypeName] -&gt; [(Qualified TypeName, ElaraKind)]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[TypeName]
+</span><a href="Elara.Prim.html#primitiveTypes"><span class="hs-identifier hs-var">primitiveTypes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>        </span><span class="annot"><span class="annottext">Map (Qualified TypeName) ElaraKind
+-&gt; Map (Qualified TypeName) ElaraKind
+-&gt; Map (Qualified TypeName) ElaraKind
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Item (Map (Qualified TypeName) ElaraKind)]
+-&gt; Map (Qualified TypeName) ElaraKind
+forall l. IsList l =&gt; [Item l] -&gt; l
+</span><span class="hs-identifier hs-var">fromList</span></span><span>
+</span><span id="line-76"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; ModuleName -&gt; Qualified TypeName
+forall name. name -&gt; ModuleName -&gt; Qualified name
+</span><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-var">Qualified</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="Elara.Prim.html#ioName"><span class="hs-identifier hs-var">ioName</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var">primModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ElaraKind -&gt; ElaraKind -&gt; ElaraKind
+</span><a href="Elara.Data.Kind.html#FunctionKind"><span class="hs-identifier hs-var">FunctionKind</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraKind
+</span><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraKind
+</span><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>            </span><span class="hs-special">]</span><span> </span><span class="hs-comment">-- Except for IO which is kind Type -&gt; Type</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="annot"><a href="Elara.Prim.html#primOpTable"><span class="hs-identifier hs-type">primOpTable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpTable"><span class="hs-identifier hs-type">OpTable</span></a></span><span>
+</span><span id="line-80"></span><span id="primOpTable"><span class="annot"><span class="annottext">primOpTable :: OpTable
+</span><a href="Elara.Prim.html#primOpTable"><span class="hs-identifier hs-var hs-var">primOpTable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><span class="annottext">[Item OpTable] -&gt; OpTable
+forall l. IsList l =&gt; [Item l] -&gt; l
+</span><span class="hs-identifier hs-var">fromList</span></span><span>
+</span><span id="line-82"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall n. VarRef n -&gt; IgnoreLocVarRef n
+</span><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier hs-var">ignoreLocation</span></a></span><span> </span><span class="annot"><span class="annottext">(VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name)
+-&gt; VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified Name) -&gt; VarRef Name
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Located (Qualified Name)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Located (Qualified Name))
+-&gt; Name -&gt; Located (Qualified Name)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name) -&gt; VarName -&gt; Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><span class="hs-string">&quot;|&gt;&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Associativity -&gt; OpInfo
+</span><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Precedence
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var">mkPrecedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall n. VarRef n -&gt; IgnoreLocVarRef n
+</span><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier hs-var">ignoreLocation</span></a></span><span> </span><span class="annot"><span class="annottext">(VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name)
+-&gt; VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified Name) -&gt; VarRef Name
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Located (Qualified Name)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Located (Qualified Name))
+-&gt; Name -&gt; Located (Qualified Name)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name) -&gt; VarName -&gt; Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><span class="hs-string">&quot;+&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Associativity -&gt; OpInfo
+</span><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Precedence
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var">mkPrecedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">6</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall n. VarRef n -&gt; IgnoreLocVarRef n
+</span><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier hs-var">ignoreLocation</span></a></span><span> </span><span class="annot"><span class="annottext">(VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name)
+-&gt; VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified Name) -&gt; VarRef Name
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Located (Qualified Name)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Located (Qualified Name))
+-&gt; Name -&gt; Located (Qualified Name)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name) -&gt; VarName -&gt; Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><span class="hs-string">&quot;-&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Associativity -&gt; OpInfo
+</span><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Precedence
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var">mkPrecedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">6</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall n. VarRef n -&gt; IgnoreLocVarRef n
+</span><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier hs-var">ignoreLocation</span></a></span><span> </span><span class="annot"><span class="annottext">(VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name)
+-&gt; VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified Name) -&gt; VarRef Name
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Located (Qualified Name)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Located (Qualified Name))
+-&gt; Name -&gt; Located (Qualified Name)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name) -&gt; VarName -&gt; Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><span class="hs-string">&quot;*&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Associativity -&gt; OpInfo
+</span><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Precedence
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var">mkPrecedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">7</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall n. VarRef n -&gt; IgnoreLocVarRef n
+</span><a href="Elara.AST.VarRef.html#ignoreLocation"><span class="hs-identifier hs-var">ignoreLocation</span></a></span><span> </span><span class="annot"><span class="annottext">(VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name)
+-&gt; VarRef Name -&gt; VarRef' IgnoreLocVarRefKind Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Qualified Name) -&gt; VarRef Name
+forall (c :: VarRefKind) n.
+VarRefImpl c (Qualified n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Located (Qualified Name)
+forall c. c -&gt; Located (Qualified c)
+</span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Located (Qualified Name))
+-&gt; Name -&gt; Located (Qualified Name)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name) -&gt; VarName -&gt; Name
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><span class="hs-string">&quot;/&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Associativity -&gt; OpInfo
+</span><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Precedence
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var">mkPrecedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">7</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-88"></span></pre></body></html>

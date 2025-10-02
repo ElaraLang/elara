@@ -1,0 +1,479 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html"><span class="hs-identifier">Elara.Core.LiftClosures</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Writer.Static.Local</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier">ModuleName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Core</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html"><span class="hs-identifier">Elara.Core.ANF</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ANF</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Analysis.html"><span class="hs-identifier">Elara.Core.Analysis</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html"><span class="hs-identifier">Elara.Core.Generic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier">Bind</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#traverseBind"><span class="hs-identifier">traverseBind</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html"><span class="hs-identifier">Elara.Core.Generic</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Module.html"><span class="hs-identifier">Elara.Core.Module</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Module.html#CoreDeclaration"><span class="hs-identifier">CoreDeclaration</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier">CoreModule</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.ToANF.html"><span class="hs-identifier">Elara.Core.ToANF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ToANF.html#fromANF"><span class="hs-identifier">fromANF</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html"><span class="hs-identifier">Elara.Data.Unique.Effect</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier">UniqueGen</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html#makeUnique"><span class="hs-identifier">makeUnique</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Logging.html"><span class="hs-identifier">Elara.Logging</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Logging.html#StructuredDebug"><span class="hs-identifier">StructuredDebug</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Logging.html#debug"><span class="hs-identifier">debug</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Logging.html#traceFn"><span class="hs-identifier">traceFn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Query.html"><span class="hs-identifier">Elara.Query</span></a></span><span> </span><span class="hs-keyword">qualified</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Query.Effects.html"><span class="hs-identifier">Elara.Query.Effects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.Effects.html#ConsQueryEffects"><span class="hs-identifier">ConsQueryEffects</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Rock.html"><span class="hs-identifier">Rock</span></a></span><span> </span><span class="hs-keyword">qualified</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Prelude.html"><span class="hs-identifier">Prelude</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Alt</span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">type</span><span> </span><span id="LiftClosures"><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-var">LiftClosures</span></a></span></span><span> </span><span id="local-6989586621680068131"><span class="annot"><a href="#local-6989586621680068131"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier hs-type">UniqueGen</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068131"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Writer</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068131"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Logging.html#StructuredDebug"><span class="hs-identifier hs-type">StructuredDebug</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068131"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span id="local-6989586621680067975"><span class="annot"><a href="Elara.Core.LiftClosures.html#runLiftClosures"><span class="hs-identifier hs-type">runLiftClosures</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier hs-type">UniqueGen</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680067975"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Logging.html#StructuredDebug"><span class="hs-identifier hs-type">StructuredDebug</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680067975"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier hs-type">CoreModule</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">ANF.Expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680067975"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier hs-type">CoreModule</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">ANF.Expr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-26"></span><span id="runLiftClosures"><span class="annot"><span class="annottext">runLiftClosures :: forall (r :: [Effect]).
+(UniqueGen :&gt; r, StructuredDebug :&gt; r) =&gt;
+CoreModule (Bind Var Expr) -&gt; Eff r (CoreModule (Bind Var Expr))
+</span><a href="Elara.Core.LiftClosures.html#runLiftClosures"><span class="hs-identifier hs-var hs-var">runLiftClosures</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier hs-type">CoreModule</span></a></span><span> </span><span id="local-6989586621680068160"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068160"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680068161"><span class="annot"><span class="annottext">[CoreDeclaration (Bind Var Expr)]
+</span><a href="#local-6989586621680068161"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680068162"><span class="annot"><a href="#local-6989586621680068162"><span class="hs-identifier hs-var">decls'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068163"><span class="annot"><a href="#local-6989586621680068163"><span class="hs-identifier hs-var">closures</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff
+  (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)]
+-&gt; Eff r ([CoreDeclaration (Bind Var Expr)], [(Var, CExpr Var)])
+forall w (es :: [Effect]) a.
+(HasCallStack, Monoid w) =&gt;
+Eff (Writer w : es) a -&gt; Eff es (a, w)
+</span><span class="hs-identifier hs-var">runWriter</span></span><span> </span><span class="annot"><span class="annottext">(Eff
+   (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)]
+ -&gt; Eff r ([CoreDeclaration (Bind Var Expr)], [(Var, CExpr Var)]))
+-&gt; Eff
+     (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)]
+-&gt; Eff r ([CoreDeclaration (Bind Var Expr)], [(Var, CExpr Var)])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[CoreDeclaration (Bind Var Expr)]
+-&gt; (CoreDeclaration (Bind Var Expr)
+    -&gt; Eff
+         (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr)))
+-&gt; Eff
+     (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+t a -&gt; (a -&gt; f b) -&gt; f (t b)
+</span><span class="hs-identifier hs-var">for</span></span><span> </span><span class="annot"><span class="annottext">[CoreDeclaration (Bind Var Expr)]
+</span><a href="#local-6989586621680068161"><span class="hs-identifier hs-var">decls</span></a></span><span> </span><span class="annot"><span class="annottext">((CoreDeclaration (Bind Var Expr)
+  -&gt; Eff
+       (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr)))
+ -&gt; Eff
+      (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)])
+-&gt; (CoreDeclaration (Bind Var Expr)
+    -&gt; Eff
+         (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr)))
+-&gt; Eff
+     (Writer [(Var, CExpr Var)] : r) [CoreDeclaration (Bind Var Expr)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680068166"><span class="annot"><span class="annottext">CoreDeclaration (Bind Var Expr)
+</span><a href="#local-6989586621680068166"><span class="hs-identifier hs-var">decl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-28"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CoreDeclaration (Bind Var Expr)
+</span><a href="#local-6989586621680068166"><span class="hs-identifier hs-var">decl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-29"></span><span>            </span><span class="annot"><a href="Elara.Core.Module.html#CoreValue"><span class="hs-identifier hs-type">CoreValue</span></a></span><span> </span><span id="local-6989586621680068168"><span class="annot"><span class="annottext">Bind Var Expr
+</span><a href="#local-6989586621680068168"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-30"></span><span>                </span><span id="local-6989586621680068169"><span class="annot"><a href="#local-6989586621680068169"><span class="hs-identifier hs-var">v'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Var -&gt; Eff (Writer [(Var, CExpr Var)] : r) Var)
+-&gt; (Expr Var -&gt; Eff (Writer [(Var, CExpr Var)] : r) (Expr Var))
+-&gt; Bind Var Expr
+-&gt; Eff (Writer [(Var, CExpr Var)] : r) (Bind Var Expr)
+forall (f :: * -&gt; *) b b' (expr :: * -&gt; *) (expr' :: * -&gt; *).
+Applicative f =&gt;
+(b -&gt; f b')
+-&gt; (expr b -&gt; f (expr' b')) -&gt; Bind b expr -&gt; f (Bind b' expr')
+</span><a href="Elara.Core.Generic.html#traverseBind"><span class="hs-identifier hs-var">traverseBind</span></a></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Eff (Writer [(Var, CExpr Var)] : r) Var
+forall a. a -&gt; Eff (Writer [(Var, CExpr Var)] : r) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr Var -&gt; Eff (Writer [(Var, CExpr Var)] : r) (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures"><span class="hs-identifier hs-var">liftClosures</span></a></span><span> </span><span class="annot"><span class="annottext">Bind Var Expr
+</span><a href="#local-6989586621680068168"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-31"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.Module.html#CoreValue"><span class="hs-identifier hs-type">CoreValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068169"><span class="hs-identifier hs-type">v'</span></a></span><span>
+</span><span id="line-32"></span><span>            </span><span class="annot"><a href="Elara.Core.Module.html#CoreType"><span class="hs-identifier hs-type">CoreType</span></a></span><span> </span><span id="local-6989586621680068172"><span class="annot"><span class="annottext">CoreTypeDecl
+</span><a href="#local-6989586621680068172"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CoreDeclaration (Bind Var Expr)
+-&gt; Eff
+     (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr))
+forall a. a -&gt; Eff (Writer [(Var, CExpr Var)] : r) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(CoreDeclaration (Bind Var Expr)
+ -&gt; Eff
+      (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr)))
+-&gt; CoreDeclaration (Bind Var Expr)
+-&gt; Eff
+     (Writer [(Var, CExpr Var)] : r) (CoreDeclaration (Bind Var Expr))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">CoreTypeDecl -&gt; CoreDeclaration (Bind Var Expr)
+forall bind. CoreTypeDecl -&gt; CoreDeclaration bind
+</span><a href="Elara.Core.Module.html#CoreType"><span class="hs-identifier hs-var">CoreType</span></a></span><span> </span><span class="annot"><span class="annottext">CoreTypeDecl
+</span><a href="#local-6989586621680068172"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068173"><span class="annot"><a href="#local-6989586621680068173"><span class="hs-identifier hs-var hs-var">closures'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Var, CExpr Var) -&gt; CoreDeclaration (Bind Var Expr))
+-&gt; [(Var, CExpr Var)] -&gt; [CoreDeclaration (Bind Var Expr)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680068174"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068174"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068175"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068175"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bind Var Expr -&gt; CoreDeclaration (Bind Var Expr)
+forall bind. bind -&gt; CoreDeclaration bind
+</span><a href="Elara.Core.Module.html#CoreValue"><span class="hs-identifier hs-var">CoreValue</span></a></span><span> </span><span class="annot"><span class="annottext">(Bind Var Expr -&gt; CoreDeclaration (Bind Var Expr))
+-&gt; Bind Var Expr -&gt; CoreDeclaration (Bind Var Expr)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Var, Expr Var) -&gt; Bind Var Expr
+forall b (expr :: * -&gt; *). (b, expr b) -&gt; Bind b expr
+</span><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-var">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068174"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CExpr Var -&gt; Expr Var
+forall b. CExpr b -&gt; Expr b
+</span><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">ANF.CExpr</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068175"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Var, CExpr Var)]
+</span><a href="#local-6989586621680068163"><span class="hs-identifier hs-var">closures</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier hs-type">CoreModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068160"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680068162"><span class="hs-identifier hs-type">decls'</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068173"><span class="hs-identifier hs-type">closures'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#runGetClosureLiftedModuleQuery"><span class="hs-identifier hs-type">runGetClosureLiftedModuleQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span>
+</span><span id="line-39"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.Effects.html#ConsQueryEffects"><span class="hs-identifier hs-type">ConsQueryEffects</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Rock.html#Rock"><span class="hs-identifier hs-type">Rock.Rock</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#Query"><span class="hs-identifier hs-type">Elara.Query.Query</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier hs-type">UniqueGen</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Logging.html#StructuredDebug"><span class="hs-identifier hs-type">StructuredDebug</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Module.html#CoreModule"><span class="hs-identifier hs-type">CoreModule</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">ANF.Expr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span id="runGetClosureLiftedModuleQuery"><span class="annot"><span class="annottext">runGetClosureLiftedModuleQuery :: ModuleName
+-&gt; Eff
+     (ConsQueryEffects '[Rock Query, UniqueGen, StructuredDebug])
+     (CoreModule (Bind Var Expr))
+</span><a href="Elara.Core.LiftClosures.html#runGetClosureLiftedModuleQuery"><span class="hs-identifier hs-var hs-var">runGetClosureLiftedModuleQuery</span></a></span></span><span> </span><span id="local-6989586621680068245"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068245"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621680068246"><span class="annot"><a href="#local-6989586621680068246"><span class="hs-identifier hs-var">coreModule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (Rock Query : ConsQueryEffects '[]) (CoreModule (Bind Var Expr))
+-&gt; Eff
+     (ConsQueryEffects '[Rock Query, UniqueGen, StructuredDebug])
+     (CoreModule (Bind Var Expr))
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName
+-&gt; Query
+     (Rock Query : ConsQueryEffects '[]) (CoreModule (Bind Var Expr))
+</span><a href="Elara.Query.html#GetANFCoreModule"><span class="hs-identifier hs-var">Elara.Query.GetANFCoreModule</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068245"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Elara.Core.LiftClosures.html#runLiftClosures"><span class="hs-identifier hs-type">runLiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068246"><span class="hs-identifier hs-type">coreModule</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="annot"><span class="hs-comment">{- | Lift closures in a Core expression. This turns all closures into top-level functions.
+For example:
+@
+let add5 x =
+   let f y = x + y
+   in f 5
+@
+becomes:
+@
+let add5_f x y = x + y
+let add5 x = add5_f x 5
+@
+-}</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621680068020"><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosures"><span class="hs-identifier hs-type">liftClosures</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-type">LiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068020"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068020"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-59"></span><span id="liftClosures"><span class="annot"><span class="annottext">liftClosures :: forall (r :: [Effect]).
+LiftClosures r =&gt;
+Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures"><span class="hs-identifier hs-var hs-var">liftClosures</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+forall a. Set a
+</span><span class="hs-identifier hs-var">Set.empty</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span id="closedVariables"><span class="annot"><span class="annottext">closedVariables :: ast Var -&gt; Set Var
+</span><a href="Elara.Core.LiftClosures.html#closedVariables"><span class="hs-identifier hs-var hs-var">closedVariables</span></a></span></span><span> </span><span id="local-6989586621680068258"><span class="annot"><span class="annottext">ast Var
+</span><a href="#local-6989586621680068258"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Set Var
+</span><a href="#local-6989586621680068259"><span class="hs-identifier hs-var">filerLocal</span></a></span><span> </span><span class="annot"><span class="annottext">(Set Var -&gt; Set Var) -&gt; Set Var -&gt; Set Var
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ast Var -&gt; Set Var
+forall b. Ord b =&gt; ast b -&gt; Set b
+forall (ast :: * -&gt; *) b.
+(FreeCoreVars ast, Ord b) =&gt;
+ast b -&gt; Set b
+</span><a href="Elara.Core.Analysis.html#freeCoreVars"><span class="hs-identifier hs-var">freeCoreVars</span></a></span><span> </span><span class="annot"><span class="annottext">ast Var
+</span><a href="#local-6989586621680068258"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621680068259"><span class="annot"><span class="annottext">filerLocal :: Set Var -&gt; Set Var
+</span><a href="#local-6989586621680068259"><span class="hs-identifier hs-var hs-var">filerLocal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">(Var -&gt; Bool) -&gt; Set Var -&gt; Set Var
+forall a. (a -&gt; Bool) -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.filter</span></span><span>
+</span><span id="line-65"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-66"></span><span>                </span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Local"><span class="hs-identifier hs-type">Local</span></a></span><span> </span><span class="annot"><span class="annottext">VarRefImpl UnlocatedVarRefKind (Unique Text)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-67"></span><span>                </span><span class="annot"><span class="annottext">Var
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-68"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span id="local-6989586621680068057"><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-type">liftClosures'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-type">LiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068057"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set.Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">ANF.Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068057"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">ANF.Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-71"></span><span id="liftClosures%27"><span class="annot"><span class="annottext">liftClosures' :: forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var hs-var">liftClosures'</span></a></span></span><span> </span><span id="local-6989586621680068305"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068305"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Let"><span class="hs-identifier hs-type">ANF.Let</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068307"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068307"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068308"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068308"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680068309"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068309"><span class="hs-identifier hs-var">e'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Eff r ()
+forall (r :: [Effect]).
+(HasCallStack, StructuredDebug :&gt; r) =&gt;
+Doc AnsiStyle -&gt; Eff r ()
+</span><a href="Elara.Logging.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; Eff r ()) -&gt; Doc AnsiStyle -&gt; Eff r ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Lifting closure: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068307"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Eff r ()
+forall (r :: [Effect]).
+(HasCallStack, StructuredDebug :&gt; r) =&gt;
+Doc AnsiStyle -&gt; Eff r ()
+</span><a href="Elara.Logging.html#debug"><span class="hs-identifier hs-var">debug</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; Eff r ()) -&gt; Doc AnsiStyle -&gt; Eff r ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;closed: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CExpr Var -&gt; Set Var
+forall {ast :: * -&gt; *}. FreeCoreVars ast =&gt; ast Var -&gt; Set Var
+</span><a href="Elara.Core.LiftClosures.html#closedVariables"><span class="hs-identifier hs-var">closedVariables</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068308"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621680068311"><span class="annot"><a href="#local-6989586621680068311"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Var -&gt; Set Var -&gt; Set Var
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.insert</span></span><span> </span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068307"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068305"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068309"><span class="hs-identifier hs-var">e'</span></a></span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680068307"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680068308"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680068311"><span class="hs-identifier hs-type">e'</span></a></span><span>
+</span><span id="line-76"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span id="local-6989586621680068313"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068313"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Let"><span class="hs-identifier hs-type">ANF.Let</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">Recursive</span></a></span><span> </span><span id="local-6989586621680068315"><span class="annot"><span class="annottext">[(Var, CExpr Var)]
+</span><a href="#local-6989586621680068315"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680068316"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068316"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068317"><span class="annot"><span class="annottext">env' :: Set Var
+</span><a href="#local-6989586621680068317"><span class="hs-identifier hs-var hs-var hs-var">env'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068313"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Set Var -&gt; Set Var
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Var] -&gt; Set Var
+forall a. Ord a =&gt; [a] -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.fromList</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Var, CExpr Var) -&gt; Var) -&gt; [(Var, CExpr Var)] -&gt; [Var]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(Var, CExpr Var) -&gt; Var
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">[(Var, CExpr Var)]
+</span><a href="#local-6989586621680068315"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>    </span><span id="local-6989586621680068320"><span class="annot"><a href="#local-6989586621680068320"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068317"><span class="hs-identifier hs-var">env'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068316"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span id="local-6989586621680068321"><span class="annot"><a href="#local-6989586621680068321"><span class="hs-identifier hs-var">bs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680068315"><span class="hs-identifier hs-type">bs</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680068322"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068322"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068323"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068323"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-80"></span><span>        </span><span id="local-6989586621680068324"><span class="annot"><a href="#local-6989586621680068324"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var">liftClosuresC'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068317"><span class="hs-identifier hs-var">env'</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068323"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-81"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680068322"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680068324"><span class="hs-identifier hs-type">e'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">Recursive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068321"><span class="hs-identifier hs-type">bs'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680068320"><span class="hs-identifier hs-type">e'</span></a></span><span>
+</span><span id="line-83"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span id="local-6989586621680068326"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068326"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">ANF.CExpr</span></a></span><span> </span><span id="local-6989586621680068327"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068327"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CExpr Var -&gt; Expr Var
+forall b. CExpr b -&gt; Expr b
+</span><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">ANF.CExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(CExpr Var -&gt; Expr Var) -&gt; Eff r (CExpr Var) -&gt; Eff r (Expr Var)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var">liftClosuresC'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068326"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680068327"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span id="local-6989586621680068090"><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresC"><span class="hs-identifier hs-type">liftClosuresC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-type">LiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068090"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068090"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-86"></span><span id="liftClosuresC"><span class="annot"><span class="annottext">liftClosuresC :: forall (r :: [Effect]).
+LiftClosures r =&gt;
+CExpr Var -&gt; Eff r (CExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresC"><span class="hs-identifier hs-var hs-var">liftClosuresC</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var">liftClosuresC'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+forall a. Set a
+</span><span class="hs-identifier hs-var">Set.empty</span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680068086"><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-type">liftClosuresC'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-type">LiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068086"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set.Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">ANF.CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068086"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-89"></span><span id="liftClosuresC%27"><span class="annot"><span class="annottext">liftClosuresC' :: forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; CExpr Var -&gt; Eff r (CExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var hs-var">liftClosuresC'</span></a></span></span><span> </span><span id="local-6989586621680068352"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068352"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#App"><span class="hs-identifier hs-type">ANF.App</span></a></span><span> </span><span id="local-6989586621680068354"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068354"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680068355"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068355"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621680068356"><span class="annot"><a href="#local-6989586621680068356"><span class="hs-identifier hs-var">f'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068352"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068354"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-91"></span><span>    </span><span id="local-6989586621680068358"><span class="annot"><a href="#local-6989586621680068358"><span class="hs-identifier hs-var">x'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-type">liftClosuresA'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068352"><span class="hs-identifier hs-type">env</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068355"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068356"><span class="hs-identifier hs-type">f'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068358"><span class="hs-identifier hs-type">x'</span></a></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var">liftClosuresC'</span></a></span><span> </span><span id="local-6989586621680068359"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068359"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">ANF.AExpr</span></a></span><span> </span><span id="local-6989586621680068361"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AExpr Var -&gt; CExpr Var
+forall b. AExpr b -&gt; CExpr b
+</span><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-var">AExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(AExpr Var -&gt; CExpr Var) -&gt; Eff r (AExpr Var) -&gt; Eff r (CExpr Var)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068359"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-94"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresC%27"><span class="hs-identifier hs-var">liftClosuresC'</span></a></span><span> </span><span id="local-6989586621680068362"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068362"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Match"><span class="hs-identifier hs-type">ANF.Match</span></a></span><span> </span><span id="local-6989586621680068364"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068364"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680068365"><span class="annot"><span class="annottext">Maybe Var
+</span><a href="#local-6989586621680068365"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680068366"><span class="annot"><span class="annottext">[Alt Var]
+</span><a href="#local-6989586621680068366"><span class="hs-identifier hs-var">alts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-95"></span><span>    </span><span id="local-6989586621680068367"><span class="annot"><a href="#local-6989586621680068367"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068362"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068364"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span id="local-6989586621680068368"><span class="annot"><a href="#local-6989586621680068368"><span class="hs-identifier hs-var">alts'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680068366"><span class="hs-identifier hs-type">alts</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680068369"><span class="annot"><span class="annottext">AltCon
+</span><a href="#local-6989586621680068369"><span class="hs-identifier hs-var">con</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068370"><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680068370"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068371"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068371"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-97"></span><span>        </span><span id="local-6989586621680068372"><span class="annot"><a href="#local-6989586621680068372"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068362"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Set Var -&gt; Set Var
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Var] -&gt; Set Var
+forall a. Ord a =&gt; [a] -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.fromList</span></span><span> </span><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680068370"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068371"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-98"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680068369"><span class="hs-identifier hs-type">con</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680068370"><span class="hs-identifier hs-type">bs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680068372"><span class="hs-identifier hs-type">e'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Match"><span class="hs-identifier hs-type">Match</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068367"><span class="hs-identifier hs-type">e'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068365"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068368"><span class="hs-identifier hs-type">alts'</span></a></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span id="local-6989586621680068094"><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-type">liftClosuresA'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.html#LiftClosures"><span class="hs-identifier hs-type">LiftClosures</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068094"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set.Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">ANF.AExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068094"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-102"></span><span id="liftClosuresA%27"><span class="annot"><span class="annottext">liftClosuresA' :: forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var hs-var">liftClosuresA'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680068420"><span class="annot"><span class="annottext">other :: AExpr Var
+</span><a href="#local-6989586621680068420"><span class="hs-identifier hs-var">other</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Var"><span class="hs-identifier hs-type">ANF.Var</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AExpr Var -&gt; Eff r (AExpr Var)
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068420"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Lit"><span class="hs-identifier hs-type">ANF.Lit</span></a></span><span> </span><span id="local-6989586621680068423"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621680068423"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AExpr Var -&gt; Eff r (AExpr Var)
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(AExpr Var -&gt; Eff r (AExpr Var)) -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; AExpr Var
+forall b. Literal -&gt; AExpr b
+</span><a href="Elara.Core.ANF.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621680068423"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span id="local-6989586621680068424"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068424"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-type">ANF.Lam</span></a></span><span> </span><span id="local-6989586621680068426"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680068426"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680068427"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068427"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-105"></span><span>    </span><span class="hs-comment">-- let freeVars = freeCoreVars e `Set.difference` env</span><span>
+</span><span id="line-106"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-107"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-108"></span><span>            </span><span id="local-6989586621680068428"><span class="annot"><a href="#local-6989586621680068428"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; Expr Var -&gt; Eff r (Expr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosures%27"><span class="hs-identifier hs-var">liftClosures'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068424"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068427"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-109"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068426"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068428"><span class="hs-identifier hs-type">e'</span></a></span><span>
+</span><span id="line-110"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-111"></span><span>            </span><span id="local-6989586621680068429"><span class="annot"><a href="#local-6989586621680068429"><span class="hs-identifier hs-var">v'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Eff r (Unique Text)
+forall (r :: [Effect]) a. (UniqueGen :&gt; r) =&gt; a -&gt; Eff r (Unique a)
+</span><a href="Elara.Data.Unique.Effect.html#makeUnique"><span class="hs-identifier hs-var">makeUnique</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;closure&quot;</span></span><span>
+</span><span id="line-112"></span><span>            </span><span id="local-6989586621680068430"><span class="annot"><a href="#local-6989586621680068430"><span class="hs-identifier hs-var">lambdaType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680068426"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-113"></span><span>                </span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="annot"><span class="annottext">VarRef' UnlocatedVarRefKind Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680068431"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680068431"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-114"></span><span>                    </span><span id="local-6989586621680068432"><span class="annot"><a href="#local-6989586621680068432"><span class="hs-identifier hs-var">guessedType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TraceableFn &quot;guesstimateExprType&quot; CoreExpr Type
+-&gt; CoreExpr -&gt; Eff r Type
+forall (name :: Symbol) a b (r :: [Effect]).
+(Pretty a, Pretty b, StructuredDebug :&gt; r, KnownSymbol name) =&gt;
+TraceableFn name a b -&gt; a -&gt; Eff r b
+</span><a href="Elara.Logging.html#traceFn"><span class="hs-identifier hs-var">traceFn</span></a></span><span> </span><span class="annot"><span class="annottext">TraceableFn &quot;guesstimateExprType&quot; CoreExpr Type
+(HasCallStack, Pretty Type, Pretty CoreExpr) =&gt;
+TraceableFn &quot;guesstimateExprType&quot; CoreExpr Type
+</span><a href="Elara.Core.Analysis.html#guesstimateExprType"><span class="hs-identifier hs-var">guesstimateExprType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr Var -&gt; CoreExpr
+</span><a href="Elara.Core.ToANF.html#fromANF"><span class="hs-identifier hs-var">fromANF</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680068427"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="#local-6989586621680068431"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-operator hs-type">`Core.FuncTy`</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068432"><span class="hs-identifier hs-type">guessedType</span></a></span><span>
+</span><span id="line-116"></span><span>                </span><span class="annot"><a href="Elara.Core.html#TyVar"><span class="hs-identifier hs-type">Core.TyVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Eff r Type
+forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;liftClosuresA': TyVar&quot;</span></span><span>
+</span><span id="line-117"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068437"><span class="annot"><a href="#local-6989586621680068437"><span class="hs-identifier hs-var hs-var">id</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarRef' UnlocatedVarRefKind Text -&gt; Type -&gt; Maybe DataCon -&gt; Var
+</span><a href="Elara.Core.html#Id"><span class="hs-identifier hs-var">Core.Id</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarRefImpl UnlocatedVarRefKind (Unique Text)
+-&gt; VarRef' UnlocatedVarRefKind Text
+forall (c :: VarRefKind) n. VarRefImpl c (Unique n) -&gt; VarRef' c n
+</span><a href="Elara.AST.VarRef.html#Local"><span class="hs-identifier hs-var">Local</span></a></span><span> </span><span class="annot"><span class="annottext">Unique Text
+VarRefImpl UnlocatedVarRefKind (Unique Text)
+</span><a href="#local-6989586621680068429"><span class="hs-identifier hs-var">v'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680068430"><span class="hs-identifier hs-var">lambdaType</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-118"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">tell</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680068437"><span class="hs-identifier hs-type">id</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">ANF.AExpr</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068426"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068427"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-119"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068437"><span class="hs-identifier hs-type">id</span></a></span><span>
+</span><span id="line-120"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span id="local-6989586621680068439"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068439"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#TyApp"><span class="hs-identifier hs-type">ANF.TyApp</span></a></span><span> </span><span id="local-6989586621680068441"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068441"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680068442"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680068442"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-121"></span><span>    </span><span id="local-6989586621680068443"><span class="annot"><a href="#local-6989586621680068443"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068439"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068441"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#TyApp"><span class="hs-identifier hs-type">TyApp</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068443"><span class="hs-identifier hs-type">e'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068442"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-123"></span><span class="annot"><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span id="local-6989586621680068444"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068444"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#TyLam"><span class="hs-identifier hs-type">ANF.TyLam</span></a></span><span> </span><span id="local-6989586621680068446"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680068446"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680068447"><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068447"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621680068448"><span class="annot"><a href="#local-6989586621680068448"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+forall (r :: [Effect]).
+LiftClosures r =&gt;
+Set Var -&gt; AExpr Var -&gt; Eff r (AExpr Var)
+</span><a href="Elara.Core.LiftClosures.html#liftClosuresA%27"><span class="hs-identifier hs-var">liftClosuresA'</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680068444"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr Var
+</span><a href="#local-6989586621680068447"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#TyLam"><span class="hs-identifier hs-type">TyLam</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068446"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068448"><span class="hs-identifier hs-type">e'</span></a></span><span>
+</span><span id="line-126"></span></pre></body></html>

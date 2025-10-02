@@ -1,0 +1,401 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680004066"><span id="local-6989586621680004067"><span id="local-6989586621680004068"></span></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html"><span class="hs-identifier">Elara.Core.Generic</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Relude.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">bimapF</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">data</span><span> </span><span id="Bind"><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-var">Bind</span></a></span></span><span> </span><span id="local-6989586621680004036"><span class="annot"><a href="#local-6989586621680004036"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span id="local-6989586621680004037"><span class="annot"><a href="#local-6989586621680004037"><span class="hs-identifier hs-type">expr</span></a></span></span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Recursive"><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-var">Recursive</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004036"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680004037"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004036"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-8"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="NonRecursive"><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-var">NonRecursive</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004036"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680004037"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004036"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680004075"><span id="local-6989586621680004084"><span id="local-6989586621680004088"><span class="annot"><span class="annottext">Int -&gt; Bind b expr -&gt; ShowS
+[Bind b expr] -&gt; ShowS
+Bind b expr -&gt; String
+(Int -&gt; Bind b expr -&gt; ShowS)
+-&gt; (Bind b expr -&gt; String)
+-&gt; ([Bind b expr] -&gt; ShowS)
+-&gt; Show (Bind b expr)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+Int -&gt; Bind b expr -&gt; ShowS
+forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+[Bind b expr] -&gt; ShowS
+forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+Bind b expr -&gt; String
+$cshowsPrec :: forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+Int -&gt; Bind b expr -&gt; ShowS
+showsPrec :: Int -&gt; Bind b expr -&gt; ShowS
+$cshow :: forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+Bind b expr -&gt; String
+show :: Bind b expr -&gt; String
+$cshowList :: forall b (expr :: * -&gt; *).
+(Show b, Show (expr b)) =&gt;
+[Bind b expr] -&gt; ShowS
+showList :: [Bind b expr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004096"><span id="local-6989586621680004105"><span class="annot"><span class="annottext">Bind b expr -&gt; Bind b expr -&gt; Bool
+(Bind b expr -&gt; Bind b expr -&gt; Bool)
+-&gt; (Bind b expr -&gt; Bind b expr -&gt; Bool) -&gt; Eq (Bind b expr)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall b (expr :: * -&gt; *).
+(Eq b, Eq (expr b)) =&gt;
+Bind b expr -&gt; Bind b expr -&gt; Bool
+$c== :: forall b (expr :: * -&gt; *).
+(Eq b, Eq (expr b)) =&gt;
+Bind b expr -&gt; Bind b expr -&gt; Bool
+== :: Bind b expr -&gt; Bind b expr -&gt; Bool
+$c/= :: forall b (expr :: * -&gt; *).
+(Eq b, Eq (expr b)) =&gt;
+Bind b expr -&gt; Bind b expr -&gt; Bool
+/= :: Bind b expr -&gt; Bind b expr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004117"><span id="local-6989586621680004123"><span id="local-6989586621680004128"><span id="local-6989586621680004130"><span id="local-6989586621680004132"><span id="local-6989586621680004138"><span id="local-6989586621680004143"><span id="local-6989586621680004146"><span id="local-6989586621680004149"><span id="local-6989586621680004152"><span id="local-6989586621680004155"><span id="local-6989586621680004158"><span id="local-6989586621680004163"><span id="local-6989586621680004168"><span class="annot"><span class="annottext">Typeable (Bind b expr)
+Typeable (Bind b expr) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; Bind b expr -&gt; c (Bind b expr))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Bind b expr))
+-&gt; (Bind b expr -&gt; Constr)
+-&gt; (Bind b expr -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Bind b expr)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e))
+    -&gt; Maybe (c (Bind b expr)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; Bind b expr -&gt; Bind b expr)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; [u])
+-&gt; (forall u.
+    Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr))
+-&gt; Data (Bind b expr)
+Bind b expr -&gt; Constr
+Bind b expr -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; Bind b expr -&gt; Bind b expr
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Typeable (Bind b expr)
+forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Bind b expr -&gt; Constr
+forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Bind b expr -&gt; DataType
+forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Bind b expr -&gt; Bind b expr
+forall b (expr :: * -&gt; *) u.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; u
+forall b (expr :: * -&gt; *) u.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; [u]
+forall b (expr :: * -&gt; *) r r'.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+forall b (expr :: * -&gt; *) r r'.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+forall b (expr :: * -&gt; *) (m :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+forall b (expr :: * -&gt; *) (m :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+forall b (expr :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Bind b expr)
+forall b (expr :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Bind b expr -&gt; c (Bind b expr)
+forall b (expr :: * -&gt; *) (t :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Bind b expr))
+forall b (expr :: * -&gt; *) (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e))
+-&gt; Maybe (c (Bind b expr))
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Bind b expr)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Bind b expr -&gt; c (Bind b expr)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Bind b expr))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e))
+-&gt; Maybe (c (Bind b expr))
+$cgfoldl :: forall b (expr :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Bind b expr -&gt; c (Bind b expr)
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Bind b expr -&gt; c (Bind b expr)
+$cgunfold :: forall b (expr :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Bind b expr)
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Bind b expr)
+$ctoConstr :: forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Bind b expr -&gt; Constr
+toConstr :: Bind b expr -&gt; Constr
+$cdataTypeOf :: forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Bind b expr -&gt; DataType
+dataTypeOf :: Bind b expr -&gt; DataType
+$cdataCast1 :: forall b (expr :: * -&gt; *) (t :: * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Bind b expr))
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Bind b expr))
+$cdataCast2 :: forall b (expr :: * -&gt; *) (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e))
+-&gt; Maybe (c (Bind b expr))
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e))
+-&gt; Maybe (c (Bind b expr))
+$cgmapT :: forall b (expr :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Bind b expr -&gt; Bind b expr
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Bind b expr -&gt; Bind b expr
+$cgmapQl :: forall b (expr :: * -&gt; *) r r'.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+$cgmapQr :: forall b (expr :: * -&gt; *) r r'.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Bind b expr -&gt; r
+$cgmapQ :: forall b (expr :: * -&gt; *) u.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; [u]
+$cgmapQi :: forall b (expr :: * -&gt; *) u.
+(Typeable expr, Data b, Data (expr b)) =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Bind b expr -&gt; u
+$cgmapM :: forall b (expr :: * -&gt; *) (m :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+$cgmapMp :: forall b (expr :: * -&gt; *) (m :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+$cgmapMo :: forall b (expr :: * -&gt; *) (m :: * -&gt; *).
+(Typeable expr, Data b, Data (expr b), MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Bind b expr -&gt; m (Bind b expr)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004182"><span id="local-6989586621680004184"><span class="annot"><span class="annottext">(forall x. Bind b expr -&gt; Rep (Bind b expr) x)
+-&gt; (forall x. Rep (Bind b expr) x -&gt; Bind b expr)
+-&gt; Generic (Bind b expr)
+forall x. Rep (Bind b expr) x -&gt; Bind b expr
+forall x. Bind b expr -&gt; Rep (Bind b expr) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall b (expr :: * -&gt; *) x. Rep (Bind b expr) x -&gt; Bind b expr
+forall b (expr :: * -&gt; *) x. Bind b expr -&gt; Rep (Bind b expr) x
+$cfrom :: forall b (expr :: * -&gt; *) x. Bind b expr -&gt; Rep (Bind b expr) x
+from :: forall x. Bind b expr -&gt; Rep (Bind b expr) x
+$cto :: forall b (expr :: * -&gt; *) x. Rep (Bind b expr) x -&gt; Bind b expr
+to :: forall x. Rep (Bind b expr) x -&gt; Bind b expr
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span id="local-6989586621680004012"><span id="local-6989586621680004013"><span class="annot"><a href="Elara.Core.Generic.html#binds"><span class="hs-identifier hs-type">binds</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004012"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004013"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004012"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680004013"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004012"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-12"></span><span id="binds"><span class="annot"><span class="annottext">binds :: forall b (expr :: * -&gt; *). Bind b expr -&gt; [(b, expr b)]
+</span><a href="Elara.Core.Generic.html#binds"><span class="hs-identifier hs-var hs-var">binds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">Recursive</span></a></span><span> </span><span id="local-6989586621680004190"><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004190"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004190"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">NonRecursive</span></a></span><span> </span><span id="local-6989586621680004191"><span class="annot"><span class="annottext">(b, expr b)
+</span><a href="#local-6989586621680004191"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(b, expr b)
+</span><a href="#local-6989586621680004191"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span id="local-6989586621680004016"><span id="local-6989586621680004017"><span class="annot"><a href="Elara.Core.Generic.html#binders"><span class="hs-identifier hs-type">binders</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004016"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004017"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680004016"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-17"></span><span id="binders"><span class="annot"><span class="annottext">binders :: forall b (expr :: * -&gt; *). Bind b expr -&gt; [b]
+</span><a href="Elara.Core.Generic.html#binders"><span class="hs-identifier hs-var hs-var">binders</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((b, expr b) -&gt; b) -&gt; [(b, expr b)] -&gt; [b]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(b, expr b) -&gt; b
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">([(b, expr b)] -&gt; [b])
+-&gt; (Bind b expr -&gt; [(b, expr b)]) -&gt; Bind b expr -&gt; [b]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bind b expr -&gt; [(b, expr b)]
+forall b (expr :: * -&gt; *). Bind b expr -&gt; [(b, expr b)]
+</span><a href="Elara.Core.Generic.html#binds"><span class="hs-identifier hs-var">binds</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span id="local-6989586621680004027"><span id="local-6989586621680004028"><span id="local-6989586621680004029"><span id="local-6989586621680004030"><span class="annot"><a href="Elara.Core.Generic.html#mapBind"><span class="hs-identifier hs-type">mapBind</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004028"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004029"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004030"><span class="hs-identifier hs-type">expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004028"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004029"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004028"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004030"><span class="hs-identifier hs-type">expr'</span></a></span></span></span></span></span><span>
+</span><span id="line-20"></span><span id="mapBind"><span class="annot"><span class="annottext">mapBind :: forall b b' (expr :: * -&gt; *) (expr' :: * -&gt; *).
+(b -&gt; b') -&gt; (expr b -&gt; expr' b') -&gt; Bind b expr -&gt; Bind b' expr'
+</span><a href="Elara.Core.Generic.html#mapBind"><span class="hs-identifier hs-var hs-var">mapBind</span></a></span></span><span> </span><span id="local-6989586621680004200"><span class="annot"><span class="annottext">b -&gt; b'
+</span><a href="#local-6989586621680004200"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680004201"><span class="annot"><span class="annottext">expr b -&gt; expr' b'
+</span><a href="#local-6989586621680004201"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">Recursive</span></a></span><span> </span><span id="local-6989586621680004202"><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004202"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(b', expr' b')] -&gt; Bind b' expr'
+forall b (expr :: * -&gt; *). [(b, expr b)] -&gt; Bind b expr
+</span><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-var">Recursive</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b')
+-&gt; (expr b -&gt; expr' b') -&gt; [(b, expr b)] -&gt; [(b', expr' b')]
+forall (f :: * -&gt; *) (p :: * -&gt; * -&gt; *) a c b d.
+(Functor f, Bifunctor p) =&gt;
+(a -&gt; c) -&gt; (b -&gt; d) -&gt; f (p a b) -&gt; f (p c d)
+</span><span class="hs-identifier hs-var">bimapF</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; b'
+</span><a href="#local-6989586621680004200"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">expr b -&gt; expr' b'
+</span><a href="#local-6989586621680004201"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004202"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680004203"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004203"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004204"><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004204"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(b', expr' b') -&gt; Bind b' expr'
+forall b (expr :: * -&gt; *). (b, expr b) -&gt; Bind b expr
+</span><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-var">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; b'
+</span><a href="#local-6989586621680004200"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004203"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">expr b -&gt; expr' b'
+</span><a href="#local-6989586621680004201"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004204"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span id="local-6989586621680004044"><span id="local-6989586621680004045"><span id="local-6989586621680004046"><span id="local-6989586621680004047"><span id="local-6989586621680004048"><span class="annot"><a href="Elara.Core.Generic.html#traverseBind"><span class="hs-identifier hs-type">traverseBind</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680004044"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004045"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004044"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004047"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004045"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004044"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680004048"><span class="hs-identifier hs-type">expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004045"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004047"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004044"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004048"><span class="hs-identifier hs-type">expr'</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-25"></span><span id="traverseBind"><span class="annot"><span class="annottext">traverseBind :: forall (f :: * -&gt; *) b b' (expr :: * -&gt; *) (expr' :: * -&gt; *).
+Applicative f =&gt;
+(b -&gt; f b')
+-&gt; (expr b -&gt; f (expr' b')) -&gt; Bind b expr -&gt; f (Bind b' expr')
+</span><a href="Elara.Core.Generic.html#traverseBind"><span class="hs-identifier hs-var hs-var">traverseBind</span></a></span></span><span> </span><span id="local-6989586621680004218"><span class="annot"><span class="annottext">b -&gt; f b'
+</span><a href="#local-6989586621680004218"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680004219"><span class="annot"><span class="annottext">expr b -&gt; f (expr' b')
+</span><a href="#local-6989586621680004219"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">Recursive</span></a></span><span> </span><span id="local-6989586621680004220"><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004220"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(b', expr' b')] -&gt; Bind b' expr'
+forall b (expr :: * -&gt; *). [(b, expr b)] -&gt; Bind b expr
+</span><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-var">Recursive</span></a></span><span> </span><span class="annot"><span class="annottext">([(b', expr' b')] -&gt; Bind b' expr')
+-&gt; f [(b', expr' b')] -&gt; f (Bind b' expr')
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">((b, expr b) -&gt; f (b', expr' b'))
+-&gt; [(b, expr b)] -&gt; f [(b', expr' b')]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; [a] -&gt; f [b]
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680004223"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004223"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004224"><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004224"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(b' -&gt; expr' b' -&gt; (b', expr' b'))
+-&gt; f b' -&gt; f (expr' b' -&gt; (b', expr' b'))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; f b'
+</span><a href="#local-6989586621680004218"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004223"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f (expr' b' -&gt; (b', expr' b')) -&gt; f (expr' b') -&gt; f (b', expr' b')
+forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">expr b -&gt; f (expr' b')
+</span><a href="#local-6989586621680004219"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004224"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(b, expr b)]
+</span><a href="#local-6989586621680004220"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680004225"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004225"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680004226"><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004226"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(b', expr' b') -&gt; Bind b' expr'
+forall b (expr :: * -&gt; *). (b, expr b) -&gt; Bind b expr
+</span><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-var">NonRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">((b', expr' b') -&gt; Bind b' expr')
+-&gt; f (b', expr' b') -&gt; f (Bind b' expr')
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(b' -&gt; expr' b' -&gt; (b', expr' b'))
+-&gt; f b' -&gt; f (expr' b' -&gt; (b', expr' b'))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; f b'
+</span><a href="#local-6989586621680004218"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680004225"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f (expr' b' -&gt; (b', expr' b')) -&gt; f (expr' b') -&gt; f (b', expr' b')
+forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">expr b -&gt; f (expr' b')
+</span><a href="#local-6989586621680004219"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">expr b
+</span><a href="#local-6989586621680004226"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span></pre></body></html>

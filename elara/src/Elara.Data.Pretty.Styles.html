@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.Styles.html"><span class="hs-identifier">Elara.Data.Pretty.Styles</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prettyprinter</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prettyprinter.Render.Terminal</span></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#keyword"><span class="hs-identifier hs-type">keyword</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-7"></span><span id="keyword"><span class="annot"><span class="annottext">keyword :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#keyword"><span class="hs-identifier hs-var hs-var">keyword</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">color</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Magenta</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#punctuation"><span class="hs-identifier hs-type">punctuation</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-10"></span><span id="punctuation"><span class="annot"><span class="annottext">punctuation :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#punctuation"><span class="hs-identifier hs-var hs-var">punctuation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnsiStyle
+</span><span class="hs-identifier hs-var">Prettyprinter.Render.Terminal.bold</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; AnsiStyle -&gt; AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">colorDull</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Green</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#label"><span class="hs-keyword hs-type">label</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-13"></span><span id="label"><span class="annot"><span class="annottext">label :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#label"><span class="hs-keyword hs-var hs-var">label</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#scalar"><span class="hs-identifier hs-type">scalar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-16"></span><span id="scalar"><span class="annot"><span class="annottext">scalar :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#scalar"><span class="hs-identifier hs-var hs-var">scalar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">colorDull</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Cyan</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#builtin"><span class="hs-identifier hs-type">builtin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-19"></span><span id="builtin"><span class="annot"><span class="annottext">builtin :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#builtin"><span class="hs-identifier hs-var hs-var">builtin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle
+</span><span class="hs-identifier hs-var">underlined</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#operator"><span class="hs-identifier hs-type">operator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-22"></span><span id="operator"><span class="annot"><span class="annottext">operator :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#operator"><span class="hs-identifier hs-var hs-var">operator</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#punctuation"><span class="hs-identifier hs-var">punctuation</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#moduleName"><span class="hs-identifier hs-type">moduleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-25"></span><span id="moduleName"><span class="annot"><span class="annottext">moduleName :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#moduleName"><span class="hs-identifier hs-var hs-var">moduleName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">color</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Blue</span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-type">typeName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-28"></span><span id="typeName"><span class="annot"><span class="annottext">typeName :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var hs-var">typeName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">color</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Yellow</span></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#varName"><span class="hs-identifier hs-type">varName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-31"></span><span id="varName"><span class="annot"><span class="annottext">varName :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#varName"><span class="hs-identifier hs-var hs-var">varName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">color</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Green</span></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#constructor"><span class="hs-identifier hs-type">constructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-34"></span><span id="constructor"><span class="annot"><span class="annottext">constructor :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#constructor"><span class="hs-identifier hs-var hs-var">constructor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnsiStyle
+</span><span class="hs-identifier hs-var">underlined</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; AnsiStyle -&gt; AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">colorDull</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Yellow</span></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#warning"><span class="hs-identifier hs-type">warning</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-37"></span><span id="warning"><span class="annot"><span class="annottext">warning :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#warning"><span class="hs-identifier hs-var hs-var">warning</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnsiStyle
+</span><span class="hs-identifier hs-var">Prettyprinter.Render.Terminal.bold</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; AnsiStyle -&gt; AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Color -&gt; AnsiStyle
+</span><span class="hs-identifier hs-var">color</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">Yellow</span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Elara.Data.Pretty.Styles.html#bold"><span class="hs-identifier hs-type">bold</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-40"></span><span id="bold"><span class="annot"><span class="annottext">bold :: Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#bold"><span class="hs-identifier hs-var hs-var">bold</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">annotate</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle
+</span><span class="hs-identifier hs-var">Prettyprinter.Render.Terminal.bold</span></span><span>
+</span><span id="line-41"></span></pre></body></html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Settings.html"><span class="hs-identifier">Elara.Settings</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">data</span><span> </span><span id="CompilerSettings"><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-var">CompilerSettings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CompilerSettings"><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-var">CompilerSettings</span></a></span></span><span>
+</span><span id="line-4"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="dumpSettings"><span class="annot"><span class="annottext">CompilerSettings -&gt; DumpSettings
+</span><a href="Elara.Settings.html#dumpSettings"><span class="hs-identifier hs-var hs-var">dumpSettings</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Settings.html#DumpSettings"><span class="hs-identifier hs-type">DumpSettings</span></a></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="runWith"><span class="annot"><span class="annottext">CompilerSettings -&gt; RunWithOption
+</span><a href="Elara.Settings.html#runWith"><span class="hs-identifier hs-var hs-var">runWith</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Settings.html#RunWithOption"><span class="hs-identifier hs-type">RunWithOption</span></a></span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="mainFile"><span class="annot"><span class="annottext">CompilerSettings -&gt; Maybe FilePath
+</span><a href="Elara.Settings.html#mainFile"><span class="hs-identifier hs-var hs-var">mainFile</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">data</span><span> </span><span id="DumpSettings"><span class="annot"><a href="Elara.Settings.html#DumpSettings"><span class="hs-identifier hs-var">DumpSettings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DumpSettings"><span class="annot"><a href="Elara.Settings.html#DumpSettings"><span class="hs-identifier hs-var">DumpSettings</span></a></span></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="dumpLexed"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpLexed"><span class="hs-identifier hs-var hs-var">dumpLexed</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpParsed"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpParsed"><span class="hs-identifier hs-var hs-var">dumpParsed</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpDesugared"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpDesugared"><span class="hs-identifier hs-var hs-var">dumpDesugared</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpRenamed"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpRenamed"><span class="hs-identifier hs-var hs-var">dumpRenamed</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpShunted"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpShunted"><span class="hs-identifier hs-var hs-var">dumpShunted</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpTyped"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpTyped"><span class="hs-identifier hs-var hs-var">dumpTyped</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="dumpCore"><span class="annot"><span class="annottext">DumpSettings -&gt; Bool
+</span><a href="Elara.Settings.html#dumpCore"><span class="hs-identifier hs-var hs-var">dumpCore</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Elara.Settings.html#defaultDumpSettings"><span class="hs-identifier hs-type">defaultDumpSettings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Settings.html#DumpSettings"><span class="hs-identifier hs-type">DumpSettings</span></a></span><span>
+</span><span id="line-20"></span><span id="defaultDumpSettings"><span class="annot"><span class="annottext">defaultDumpSettings :: DumpSettings
+</span><a href="Elara.Settings.html#defaultDumpSettings"><span class="hs-identifier hs-var hs-var">defaultDumpSettings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Elara.Settings.html#DumpSettings"><span class="hs-identifier hs-type">DumpSettings</span></a></span><span>
+</span><span id="line-22"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">dumpLexed :: Bool
+</span><a href="Elara.Settings.html#dumpLexed"><span class="hs-identifier hs-var">dumpLexed</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-23"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpParsed :: Bool
+</span><a href="Elara.Settings.html#dumpParsed"><span class="hs-identifier hs-var">dumpParsed</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-24"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpDesugared :: Bool
+</span><a href="Elara.Settings.html#dumpDesugared"><span class="hs-identifier hs-var">dumpDesugared</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-25"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpRenamed :: Bool
+</span><a href="Elara.Settings.html#dumpRenamed"><span class="hs-identifier hs-var">dumpRenamed</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-26"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpShunted :: Bool
+</span><a href="Elara.Settings.html#dumpShunted"><span class="hs-identifier hs-var">dumpShunted</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-27"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpTyped :: Bool
+</span><a href="Elara.Settings.html#dumpTyped"><span class="hs-identifier hs-var">dumpTyped</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-28"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">dumpCore :: Bool
+</span><a href="Elara.Settings.html#dumpCore"><span class="hs-identifier hs-var">dumpCore</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-29"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">data</span><span> </span><span id="RunWithOption"><span class="annot"><a href="Elara.Settings.html#RunWithOption"><span class="hs-identifier hs-var">RunWithOption</span></a></span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="RunWithNone"><span class="annot"><a href="Elara.Settings.html#RunWithNone"><span class="hs-identifier hs-var">RunWithNone</span></a></span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RunWithInterpreter"><span class="annot"><a href="Elara.Settings.html#RunWithInterpreter"><span class="hs-identifier hs-var">RunWithInterpreter</span></a></span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679999509"><span id="local-6989586621679999514"><span class="annot"><span class="annottext">RunWithOption -&gt; RunWithOption -&gt; Bool
+(RunWithOption -&gt; RunWithOption -&gt; Bool)
+-&gt; (RunWithOption -&gt; RunWithOption -&gt; Bool) -&gt; Eq RunWithOption
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: RunWithOption -&gt; RunWithOption -&gt; Bool
+== :: RunWithOption -&gt; RunWithOption -&gt; Bool
+$c/= :: RunWithOption -&gt; RunWithOption -&gt; Bool
+/= :: RunWithOption -&gt; RunWithOption -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679999519"><span id="local-6989586621679999521"><span id="local-6989586621679999525"><span class="annot"><span class="annottext">Int -&gt; RunWithOption -&gt; ShowS
+[RunWithOption] -&gt; ShowS
+RunWithOption -&gt; FilePath
+(Int -&gt; RunWithOption -&gt; ShowS)
+-&gt; (RunWithOption -&gt; FilePath)
+-&gt; ([RunWithOption] -&gt; ShowS)
+-&gt; Show RunWithOption
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; FilePath) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; RunWithOption -&gt; ShowS
+showsPrec :: Int -&gt; RunWithOption -&gt; ShowS
+$cshow :: RunWithOption -&gt; FilePath
+show :: RunWithOption -&gt; FilePath
+$cshowList :: [RunWithOption] -&gt; ShowS
+showList :: [RunWithOption] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span></pre></body></html>

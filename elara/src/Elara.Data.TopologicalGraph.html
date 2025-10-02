@@ -1,0 +1,1039 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="annot"><span class="hs-comment">-- | A generic, graph data structure that supports topological sorting.</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html"><span class="hs-identifier">Elara.Data.TopologicalGraph</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Array</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Containers.ListUtils</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">nubOrd</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Graph</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Utils.html"><span class="hs-identifier">Elara.Utils</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Utils.html#uncurry3"><span class="hs-identifier">uncurry3</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Relude.Extra</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">firstF</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Show</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Show</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="HasDependencies"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-var">HasDependencies</span></a></span></span><span> </span><span id="local-6989586621680003146"><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Key"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-var">Key</span></a></span></span><span> </span><span id="local-6989586621680003146"><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-17"></span><span>    </span><span id="keys"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-type">keys</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>    </span><span id="local-6989586621680003414"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-var hs-var">keys</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Key a -&gt; NonEmpty (Key a)
+forall a. a -&gt; NonEmpty a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Key a -&gt; NonEmpty (Key a))
+-&gt; (a -&gt; Key a) -&gt; a -&gt; NonEmpty (Key a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Key a
+forall a. HasDependencies a =&gt; a -&gt; Key a
+</span><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var">key</span></a></span></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span>    </span><span id="key"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-type">key</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621680003420"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var hs-var">key</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty (Key a) -&gt; Key a
+forall (f :: * -&gt; *) a. IsNonEmpty f a a &quot;head&quot; =&gt; f a -&gt; a
+</span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">(NonEmpty (Key a) -&gt; Key a)
+-&gt; (a -&gt; NonEmpty (Key a)) -&gt; a -&gt; Key a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; NonEmpty (Key a)
+forall a. HasDependencies a =&gt; a -&gt; NonEmpty (Key a)
+</span><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-var">keys</span></a></span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span>    </span><span id="dependencies"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#dependencies"><span class="hs-identifier hs-type">dependencies</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003146"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-pragma">{-# MINIMAL</span><span> </span><span class="hs-pragma">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-pragma hs-type">keys</span></a></span><span> </span><span class="hs-pragma">|</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-pragma hs-type">key</span></a></span><span class="hs-pragma">)</span><span class="hs-pragma">,</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#dependencies"><span class="hs-pragma hs-type">dependencies</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680003162"><span id="local-6989586621680003163"><span id="local-6989586621680003434"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003162"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003162"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680003163"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Key"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-var">Key</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003162"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680003163"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003162"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621680003440"><span class="annot"><span class="annottext">keys :: (a, b) -&gt; NonEmpty (Key (a, b))
+</span><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-var hs-var hs-var">keys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; NonEmpty (Key a)
+forall a. HasDependencies a =&gt; a -&gt; NonEmpty (Key a)
+</span><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-var">keys</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; NonEmpty (Key a))
+-&gt; ((a, b) -&gt; a) -&gt; (a, b) -&gt; NonEmpty (Key a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621680003443"><span class="annot"><span class="annottext">dependencies :: (a, b) -&gt; [Key (a, b)]
+</span><a href="Elara.Data.TopologicalGraph.html#dependencies"><span class="hs-identifier hs-var hs-var hs-var">dependencies</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; [Key a]
+forall a. HasDependencies a =&gt; a -&gt; [Key a]
+</span><a href="Elara.Data.TopologicalGraph.html#dependencies"><span class="hs-identifier hs-var">dependencies</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; [Key a]) -&gt; ((a, b) -&gt; a) -&gt; (a, b) -&gt; [Key a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">data</span><span> </span><span id="TopologicalGraph"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-var">TopologicalGraph</span></a></span></span><span> </span><span id="local-6989586621680003166"><span class="annot"><a href="#local-6989586621680003166"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TopologicalGraph"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-var">TopologicalGraph</span></a></span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="_moduleGraph"><span class="annot"><span class="annottext">forall a. TopologicalGraph a -&gt; Graph
+</span><a href="Elara.Data.TopologicalGraph.html#_moduleGraph"><span class="hs-identifier hs-var hs-var">_moduleGraph</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Graph</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="_nodeFromVertex"><span class="annot"><span class="annottext">forall a. TopologicalGraph a -&gt; Vertex -&gt; (a, Key a, [Key a])
+</span><a href="Elara.Data.TopologicalGraph.html#_nodeFromVertex"><span class="hs-identifier hs-var hs-var">_nodeFromVertex</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Vertex</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="_vertexFromKey"><span class="annot"><span class="annottext">forall a. TopologicalGraph a -&gt; Key a -&gt; Maybe Vertex
+</span><a href="Elara.Data.TopologicalGraph.html#_vertexFromKey"><span class="hs-identifier hs-var hs-var">_vertexFromKey</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003166"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Vertex</span></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span id="local-6989586621680003166"><span id="moduleGraph"><span id="nodeFromVertex"><span id="vertexFromKey"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">TopologicalGraph</span></span></span></span></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span id="local-6989586621680003192"><span id="local-6989586621680003193"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#mapGraph"><span class="hs-identifier hs-type">mapGraph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003192"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003193"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003192"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003193"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003192"><span class="hs-identifier hs-type">m</span></a></span></span></span><span>
+</span><span id="line-41"></span><span id="mapGraph"><span class="annot"><span class="annottext">mapGraph :: forall m a.
+HasDependencies m =&gt;
+(a -&gt; m) -&gt; TopologicalGraph a -&gt; TopologicalGraph m
+</span><a href="Elara.Data.TopologicalGraph.html#mapGraph"><span class="hs-identifier hs-var hs-var">mapGraph</span></a></span></span><span> </span><span id="local-6989586621680003482"><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680003482"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (TopologicalGraph m) -&gt; TopologicalGraph m
+forall a. Identity a -&gt; a
+</span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (TopologicalGraph m) -&gt; TopologicalGraph m)
+-&gt; (TopologicalGraph a -&gt; Identity (TopologicalGraph m))
+-&gt; TopologicalGraph a
+-&gt; TopologicalGraph m
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Identity m)
+-&gt; TopologicalGraph a -&gt; Identity (TopologicalGraph m)
+forall m (f :: * -&gt; *) a.
+(HasDependencies m, Applicative f) =&gt;
+(a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraph"><span class="hs-identifier hs-var">traverseGraph</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m -&gt; Identity m
+forall a. a -&gt; Identity a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(m -&gt; Identity m) -&gt; (a -&gt; m) -&gt; a -&gt; Identity m
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680003482"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="annot"><span class="hs-comment">-- | Traverse a graph. Due to the 'HasDependencies m' constraint we can't derive 'Traversable'</span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621680003198"><span id="local-6989586621680003199"><span id="local-6989586621680003200"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraph"><span class="hs-identifier hs-type">traverseGraph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003198"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003199"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003200"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003199"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003198"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003200"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003199"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003198"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-45"></span><span id="traverseGraph"><span class="annot"><span class="annottext">traverseGraph :: forall m (f :: * -&gt; *) a.
+(HasDependencies m, Applicative f) =&gt;
+(a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraph"><span class="hs-identifier hs-var hs-var">traverseGraph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; (a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+forall a (f :: * -&gt; *) m.
+(HasDependencies a, Applicative f) =&gt;
+(Graph -&gt; [Vertex])
+-&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f (TopologicalGraph a)
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse"><span class="hs-identifier hs-var">genericGraphTraverse</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">vertices</span></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span id="local-6989586621680003207"><span id="local-6989586621680003208"><span id="local-6989586621680003209"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraph_"><span class="hs-identifier hs-type">traverseGraph_</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003207"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003208"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003207"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003209"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003208"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003207"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-48"></span><span id="traverseGraph_"><span class="annot"><span class="annottext">traverseGraph_ :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TopologicalGraph a -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraph_"><span class="hs-identifier hs-var hs-var">traverseGraph_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex]) -&gt; (a -&gt; f b) -&gt; TopologicalGraph a -&gt; f ()
+forall (f :: * -&gt; *) m a.
+Applicative f =&gt;
+(Graph -&gt; [Vertex]) -&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse_"><span class="hs-identifier hs-var">genericGraphTraverse_</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">vertices</span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><span class="hs-comment">-- | Traverse a graph in topological order</span></span><span>
+</span><span id="line-51"></span><span id="local-6989586621680003495"><span id="local-6989586621680003496"><span id="local-6989586621680003497"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraphTopologically"><span class="hs-identifier hs-type">traverseGraphTopologically</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003495"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003496"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003497"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003496"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003495"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003497"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003496"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003495"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-52"></span><span id="traverseGraphTopologically"><span class="annot"><span class="annottext">traverseGraphTopologically :: forall m (f :: * -&gt; *) a.
+(HasDependencies m, Applicative f) =&gt;
+(a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraphTopologically"><span class="hs-identifier hs-var hs-var">traverseGraphTopologically</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; (a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+forall a (f :: * -&gt; *) m.
+(HasDependencies a, Applicative f) =&gt;
+(Graph -&gt; [Vertex])
+-&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f (TopologicalGraph a)
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse"><span class="hs-identifier hs-var">genericGraphTraverse</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">topSort</span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><span class="hs-comment">-- | Traverse a graph in topological order, ignoring the results</span></span><span>
+</span><span id="line-55"></span><span id="local-6989586621680003504"><span id="local-6989586621680003505"><span id="local-6989586621680003506"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraphTopologically_"><span class="hs-identifier hs-type">traverseGraphTopologically_</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003504"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003505"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003504"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003506"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003505"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003504"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-56"></span><span id="traverseGraphTopologically_"><span class="annot"><span class="annottext">traverseGraphTopologically_ :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TopologicalGraph a -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraphTopologically_"><span class="hs-identifier hs-var hs-var">traverseGraphTopologically_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex]) -&gt; (a -&gt; f m) -&gt; TopologicalGraph a -&gt; f ()
+forall (f :: * -&gt; *) m a.
+Applicative f =&gt;
+(Graph -&gt; [Vertex]) -&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse_"><span class="hs-identifier hs-var">genericGraphTraverse_</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">topSort</span></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><span class="hs-comment">-- | Traverse a graph in rev topological order</span></span><span>
+</span><span id="line-59"></span><span id="local-6989586621680003510"><span id="local-6989586621680003511"><span id="local-6989586621680003512"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraphRevTopologically"><span class="hs-identifier hs-type">traverseGraphRevTopologically</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003510"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003511"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003512"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003511"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003510"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003512"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003511"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003510"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-60"></span><span id="traverseGraphRevTopologically"><span class="annot"><span class="annottext">traverseGraphRevTopologically :: forall m (f :: * -&gt; *) a.
+(HasDependencies m, Applicative f) =&gt;
+(a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraphRevTopologically"><span class="hs-identifier hs-var hs-var">traverseGraphRevTopologically</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; (a -&gt; f m) -&gt; TopologicalGraph a -&gt; f (TopologicalGraph m)
+forall a (f :: * -&gt; *) m.
+(HasDependencies a, Applicative f) =&gt;
+(Graph -&gt; [Vertex])
+-&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f (TopologicalGraph a)
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse"><span class="hs-identifier hs-var">genericGraphTraverse</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">reverseTopSort</span></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="annot"><span class="hs-comment">-- | Traverse a graph in reverse topological order, ignoring the results</span></span><span>
+</span><span id="line-63"></span><span id="local-6989586621680003519"><span id="local-6989586621680003520"><span id="local-6989586621680003521"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#traverseGraphRevTopologically_"><span class="hs-identifier hs-type">traverseGraphRevTopologically_</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003519"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003520"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003519"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003521"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003520"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003519"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-64"></span><span id="traverseGraphRevTopologically_"><span class="annot"><span class="annottext">traverseGraphRevTopologically_ :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TopologicalGraph a -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#traverseGraphRevTopologically_"><span class="hs-identifier hs-var hs-var">traverseGraphRevTopologically_</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex]) -&gt; (a -&gt; f m) -&gt; TopologicalGraph a -&gt; f ()
+forall (f :: * -&gt; *) m a.
+Applicative f =&gt;
+(Graph -&gt; [Vertex]) -&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse_"><span class="hs-identifier hs-var">genericGraphTraverse_</span></a></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">reverseTopSort</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span id="local-6989586621680003204"><span id="local-6989586621680003205"><span id="local-6989586621680003206"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse"><span class="hs-identifier hs-type">genericGraphTraverse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003204"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003205"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Graph</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Vertex</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003206"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003205"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003204"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003206"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003205"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003204"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-67"></span><span id="genericGraphTraverse"><span class="annot"><span class="annottext">genericGraphTraverse :: forall a (f :: * -&gt; *) m.
+(HasDependencies a, Applicative f) =&gt;
+(Graph -&gt; [Vertex])
+-&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f (TopologicalGraph a)
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse"><span class="hs-identifier hs-var hs-var">genericGraphTraverse</span></a></span></span><span> </span><span id="local-6989586621680003542"><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><a href="#local-6989586621680003542"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680003543"><span class="annot"><span class="annottext">m -&gt; f a
+</span><a href="#local-6989586621680003543"><span class="hs-identifier hs-var">f'</span></a></span></span><span> </span><span id="local-6989586621680003544"><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003544"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003545"><span class="annot"><span class="annottext">sorted :: [Vertex]
+</span><a href="#local-6989586621680003545"><span class="hs-identifier hs-var hs-var hs-var">sorted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><a href="#local-6989586621680003542"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003544"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic' A_Lens NoIx (TopologicalGraph m) Graph -&gt; Graph
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (TopologicalGraph m) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003547"><span class="annot"><span class="annottext">sortedNodes :: [m]
+</span><a href="#local-6989586621680003547"><span class="hs-identifier hs-var hs-var">sortedNodes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; m) -&gt; [Vertex] -&gt; [m]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">(m, Key m, [Key m])
+-&gt; Optic' A_Lens NoIx (m, Key m, [Key m]) m -&gt; m
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (m, Key m, [Key m]) m
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((m, Key m, [Key m]) -&gt; m)
+-&gt; (Vertex -&gt; (m, Key m, [Key m])) -&gt; Vertex -&gt; m
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003544"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Vertex
+-&gt; (m, Key m, [Key m])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Vertex]
+</span><a href="#local-6989586621680003545"><span class="hs-identifier hs-var">sorted</span></a></span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><span class="annottext">[a] -&gt; TopologicalGraph a
+forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var">createGraph</span></a></span><span> </span><span class="annot"><span class="annottext">([a] -&gt; TopologicalGraph a) -&gt; f [a] -&gt; f (TopologicalGraph a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(m -&gt; f a) -&gt; [m] -&gt; f [a]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; [a] -&gt; f [b]
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">m -&gt; f a
+</span><a href="#local-6989586621680003543"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">[m]
+</span><a href="#local-6989586621680003547"><span class="hs-identifier hs-var">sortedNodes</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680003213"><span id="local-6989586621680003214"><span id="local-6989586621680003215"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse_"><span class="hs-identifier hs-type">genericGraphTraverse_</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621680003213"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Graph</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Vertex</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003214"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003213"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003214"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003213"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-73"></span><span id="genericGraphTraverse_"><span class="annot"><span class="annottext">genericGraphTraverse_ :: forall (f :: * -&gt; *) m a.
+Applicative f =&gt;
+(Graph -&gt; [Vertex]) -&gt; (m -&gt; f a) -&gt; TopologicalGraph m -&gt; f ()
+</span><a href="Elara.Data.TopologicalGraph.html#genericGraphTraverse_"><span class="hs-identifier hs-var hs-var">genericGraphTraverse_</span></a></span></span><span> </span><span id="local-6989586621680003561"><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><a href="#local-6989586621680003561"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680003562"><span class="annot"><span class="annottext">m -&gt; f a
+</span><a href="#local-6989586621680003562"><span class="hs-identifier hs-var">f'</span></a></span></span><span> </span><span id="local-6989586621680003563"><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003563"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003564"><span class="annot"><span class="annottext">sorted :: [Vertex]
+</span><a href="#local-6989586621680003564"><span class="hs-identifier hs-var hs-var hs-var">sorted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><a href="#local-6989586621680003561"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003563"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic' A_Lens NoIx (TopologicalGraph m) Graph -&gt; Graph
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (TopologicalGraph m) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003565"><span class="annot"><span class="annottext">sortedNodes :: [m]
+</span><a href="#local-6989586621680003565"><span class="hs-identifier hs-var hs-var">sortedNodes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; m) -&gt; [Vertex] -&gt; [m]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">(m, Key m, [Key m])
+-&gt; Optic' A_Lens NoIx (m, Key m, [Key m]) m -&gt; m
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (m, Key m, [Key m]) m
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((m, Key m, [Key m]) -&gt; m)
+-&gt; (Vertex -&gt; (m, Key m, [Key m])) -&gt; Vertex -&gt; m
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003563"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Vertex
+-&gt; (m, Key m, [Key m])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Vertex]
+</span><a href="#local-6989586621680003564"><span class="hs-identifier hs-var">sorted</span></a></span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">(m -&gt; f a) -&gt; [m] -&gt; f ()
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Foldable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f ()
+</span><span class="hs-identifier hs-var">traverse_</span></span><span> </span><span class="annot"><span class="annottext">m -&gt; f a
+</span><a href="#local-6989586621680003562"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">[m]
+</span><a href="#local-6989586621680003565"><span class="hs-identifier hs-var">sortedNodes</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span id="local-6989586621680003248"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-type">createGraph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003248"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680003248"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003248"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-79"></span><span id="createGraph"><span class="annot"><span class="annottext">createGraph :: forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var hs-var">createGraph</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Graph
+ -&gt; (Vertex -&gt; (a, Key a, [Key a]))
+ -&gt; (Key a -&gt; Maybe Vertex)
+ -&gt; TopologicalGraph a)
+-&gt; (Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex)
+-&gt; TopologicalGraph a
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="Elara.Utils.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">Graph
+-&gt; (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; (Key a -&gt; Maybe Vertex)
+-&gt; TopologicalGraph a
+forall a.
+Graph
+-&gt; (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; (Key a -&gt; Maybe Vertex)
+-&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-var">TopologicalGraph</span></a></span><span> </span><span class="annot"><span class="annottext">((Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex)
+ -&gt; TopologicalGraph a)
+-&gt; ([a]
+    -&gt; (Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex))
+-&gt; [a]
+-&gt; TopologicalGraph a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[(a, Key a, [Key a])]
+-&gt; (Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex)
+forall key node.
+Ord key =&gt;
+[(node, key, [key])]
+-&gt; (Graph, Vertex -&gt; (node, key, [key]), key -&gt; Maybe Vertex)
+</span><span class="hs-identifier hs-var">graphFromEdges</span></span><span> </span><span class="annot"><span class="annottext">([(a, Key a, [Key a])]
+ -&gt; (Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex))
+-&gt; ([a] -&gt; [(a, Key a, [Key a])])
+-&gt; [a]
+-&gt; (Graph, Vertex -&gt; (a, Key a, [Key a]), Key a -&gt; Maybe Vertex)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[[(a, Key a, [Key a])]] -&gt; [(a, Key a, [Key a])]
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="annot"><span class="annottext">([[(a, Key a, [Key a])]] -&gt; [(a, Key a, [Key a])])
+-&gt; ([a] -&gt; [[(a, Key a, [Key a])]]) -&gt; [a] -&gt; [(a, Key a, [Key a])]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; [(a, Key a, [Key a])]) -&gt; [a] -&gt; [[(a, Key a, [Key a])]]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty (a, Key a, [Key a]) -&gt; [(a, Key a, [Key a])]
+forall a. NonEmpty a -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
+</span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">(NonEmpty (a, Key a, [Key a]) -&gt; [(a, Key a, [Key a])])
+-&gt; (a -&gt; NonEmpty (a, Key a, [Key a]))
+-&gt; a
+-&gt; [(a, Key a, [Key a])]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; NonEmpty (a, Key a, [Key a])
+forall a. HasDependencies a =&gt; a -&gt; NonEmpty (a, Key a, [Key a])
+</span><a href="Elara.Data.TopologicalGraph.html#createEdge"><span class="hs-identifier hs-var">createEdge</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#createEdge"><span class="hs-identifier hs-type">createEdge</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680003274"><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-84"></span><span>    </span><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003274"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span id="createEdge"><span class="annot"><span class="annottext">createEdge :: forall a. HasDependencies a =&gt; a -&gt; NonEmpty (a, Key a, [Key a])
+</span><a href="Elara.Data.TopologicalGraph.html#createEdge"><span class="hs-identifier hs-var hs-var">createEdge</span></a></span></span><span> </span><span id="local-6989586621680003584"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003584"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-87"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003585"><span class="annot"><span class="annottext">mns :: NonEmpty (Key a)
+</span><a href="#local-6989586621680003585"><span class="hs-identifier hs-var hs-var hs-var">mns</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; NonEmpty (Key a)
+forall a. HasDependencies a =&gt; a -&gt; NonEmpty (Key a)
+</span><a href="Elara.Data.TopologicalGraph.html#keys"><span class="hs-identifier hs-var">keys</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003584"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003586"><span class="annot"><span class="annottext">mImports :: [Key a]
+</span><a href="#local-6989586621680003586"><span class="hs-identifier hs-var hs-var">mImports</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; [Key a]
+forall a. HasDependencies a =&gt; a -&gt; [Key a]
+</span><a href="Elara.Data.TopologicalGraph.html#dependencies"><span class="hs-identifier hs-var">dependencies</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003584"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003584"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">,</span><span class="hs-special">,</span><span class="annot"><span class="annottext">[Key a]
+</span><a href="#local-6989586621680003586"><span class="hs-identifier hs-var">mImports</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Key a -&gt; (a, Key a, [Key a]))
+-&gt; NonEmpty (Key a) -&gt; NonEmpty (a, Key a, [Key a])
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty (Key a)
+</span><a href="#local-6989586621680003585"><span class="hs-identifier hs-var">mns</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span id="local-6989586621680003276"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#removeNode"><span class="hs-identifier hs-type">removeNode</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003276"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003276"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003276"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003276"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-92"></span><span id="removeNode"><span class="annot"><span class="annottext">removeNode :: forall a.
+HasDependencies a =&gt;
+Key a -&gt; TopologicalGraph a -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#removeNode"><span class="hs-identifier hs-var hs-var">removeNode</span></a></span></span><span> </span><span id="local-6989586621680003595"><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003595"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003596"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003596"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; TopologicalGraph a
+forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var">createGraph</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; [a] -&gt; [a]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680003597"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003597"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Key a
+forall a. HasDependencies a =&gt; a -&gt; Key a
+</span><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003597"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Key a -&gt; Key a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003595"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph a -&gt; [a]
+forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var">allEntries</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003596"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680003282"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#addNode"><span class="hs-identifier hs-type">addNode</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003282"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-95"></span><span id="addNode"><span class="annot"><span class="annottext">addNode :: forall a.
+HasDependencies a =&gt;
+a -&gt; TopologicalGraph a -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#addNode"><span class="hs-identifier hs-var hs-var">addNode</span></a></span></span><span> </span><span id="local-6989586621680003603"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003603"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003604"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003604"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; TopologicalGraph a
+forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var">createGraph</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003603"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a -&gt; [a]
+forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var">allEntries</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003604"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680003605"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#replaceNode"><span class="hs-identifier hs-type">replaceNode</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003605"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003605"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003605"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003605"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-98"></span><span id="replaceNode"><span class="annot"><span class="annottext">replaceNode :: forall a.
+HasDependencies a =&gt;
+a -&gt; TopologicalGraph a -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#replaceNode"><span class="hs-identifier hs-var hs-var">replaceNode</span></a></span></span><span> </span><span id="local-6989586621680003614"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003614"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003615"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003615"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; TopologicalGraph a
+forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var">createGraph</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003614"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; [a] -&gt; [a]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680003616"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003616"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Key a
+forall a. HasDependencies a =&gt; a -&gt; Key a
+</span><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003616"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Key a -&gt; Key a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Key a
+forall a. HasDependencies a =&gt; a -&gt; Key a
+</span><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003614"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph a -&gt; [a]
+forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var">allEntries</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003615"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span id="local-6989586621680003285"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#replaceNodeAt"><span class="hs-identifier hs-type">replaceNodeAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#HasDependencies"><span class="hs-identifier hs-type">HasDependencies</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003285"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003285"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003285"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003285"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003285"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-101"></span><span id="replaceNodeAt"><span class="annot"><span class="annottext">replaceNodeAt :: forall a.
+HasDependencies a =&gt;
+Key a -&gt; a -&gt; TopologicalGraph a -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#replaceNodeAt"><span class="hs-identifier hs-var hs-var">replaceNodeAt</span></a></span></span><span> </span><span id="local-6989586621680003624"><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003624"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003625"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003625"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span id="local-6989586621680003626"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003626"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; TopologicalGraph a
+forall a. HasDependencies a =&gt; [a] -&gt; TopologicalGraph a
+</span><a href="Elara.Data.TopologicalGraph.html#createGraph"><span class="hs-identifier hs-var">createGraph</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003625"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; [a] -&gt; [a]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680003627"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003627"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Key a
+forall a. HasDependencies a =&gt; a -&gt; Key a
+</span><a href="Elara.Data.TopologicalGraph.html#key"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680003627"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Key a -&gt; Key a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003624"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph a -&gt; [a]
+forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var">allEntries</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003626"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621680003281"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-type">allEntries</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003281"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680003281"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-104"></span><span id="allEntries"><span class="annot"><span class="annottext">allEntries :: forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var hs-var">allEntries</span></a></span></span><span> </span><span id="local-6989586621680003656"><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003656"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003656"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m -&gt; [m]
+forall k s (is :: IxList) a.
+Is k A_Fold =&gt;
+s -&gt; Optic' k is s a -&gt; [a]
+</span><span class="hs-operator hs-var">^..</span></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+-&gt; Optic
+     A_Getter
+     NoIx
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     [Vertex]
+     [Vertex]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">vertices</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  NoIx
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  [Vertex]
+  [Vertex]
+-&gt; Optic
+     A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     Vertex
+     Vertex
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  Vertex
+  Vertex
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     (m, Key m, [Key m])
+     (m, Key m, [Key m])
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003656"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Vertex
+-&gt; (m, Key m, [Key m])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  (m, Key m, [Key m])
+  (m, Key m, [Key m])
+-&gt; Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680003329"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#allEntriesTopologically"><span class="hs-identifier hs-type">allEntriesTopologically</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680003329"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003329"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680003329"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-107"></span><span id="allEntriesTopologically"><span class="annot"><span class="annottext">allEntriesTopologically :: forall m. Ord m =&gt; TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntriesTopologically"><span class="hs-identifier hs-var hs-var">allEntriesTopologically</span></a></span></span><span> </span><span id="local-6989586621680003684"><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003684"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[m] -&gt; [m]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">nubOrd</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003684"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m -&gt; [m]
+forall k s (is :: IxList) a.
+Is k A_Fold =&gt;
+s -&gt; Optic' k is s a -&gt; [a]
+</span><span class="hs-operator hs-var">^..</span></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+-&gt; Optic
+     A_Getter
+     NoIx
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     [Vertex]
+     [Vertex]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">topSort</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  NoIx
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  [Vertex]
+  [Vertex]
+-&gt; Optic
+     A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     Vertex
+     Vertex
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  Vertex
+  Vertex
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     (m, Key m, [Key m])
+     (m, Key m, [Key m])
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003684"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Vertex
+-&gt; (m, Key m, [Key m])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  (m, Key m, [Key m])
+  (m, Key m, [Key m])
+-&gt; Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="annot"><span class="hs-comment">-- | Get all entries in reverse topological order, but without duplicates</span></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680003685"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#allEntriesRevTopologically"><span class="hs-identifier hs-type">allEntriesRevTopologically</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680003685"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003685"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680003685"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-111"></span><span id="allEntriesRevTopologically"><span class="annot"><span class="annottext">allEntriesRevTopologically :: forall m. Ord m =&gt; TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntriesRevTopologically"><span class="hs-identifier hs-var hs-var">allEntriesRevTopologically</span></a></span></span><span> </span><span id="local-6989586621680003709"><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003709"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[m] -&gt; [m]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">nubOrd</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003709"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m -&gt; [m]
+forall k s (is :: IxList) a.
+Is k A_Fold =&gt;
+s -&gt; Optic' k is s a -&gt; [a]
+</span><span class="hs-operator hs-var">^..</span></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph m) Graph
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+-&gt; Optic
+     A_Getter
+     NoIx
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     [Vertex]
+     [Vertex]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">reverseTopSort</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  NoIx
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  [Vertex]
+  [Vertex]
+-&gt; Optic
+     A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     Vertex
+     Vertex
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Traversal (Vertex : NoIx) [Vertex] [Vertex] Vertex Vertex
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  Vertex
+  Vertex
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+-&gt; Optic
+     A_Fold
+     (Vertex : NoIx)
+     (TopologicalGraph m)
+     (TopologicalGraph m)
+     (m, Key m, [Key m])
+     (m, Key m, [Key m])
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Optic
+     A_Getter NoIx Vertex Vertex (m, Key m, [Key m]) (m, Key m, [Key m])
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph m
+</span><a href="#local-6989586621680003709"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph m
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+-&gt; Vertex
+-&gt; (m, Key m, [Key m])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph m) (Vertex -&gt; (m, Key m, [Key m]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  (Vertex : NoIx)
+  (TopologicalGraph m)
+  (TopologicalGraph m)
+  (m, Key m, [Key m])
+  (m, Key m, [Key m])
+-&gt; Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+-&gt; Optic' A_Fold (Vertex : NoIx) (TopologicalGraph m) m
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Lens NoIx (m, Key m, [Key m]) (m, Key m, [Key m]) m m
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span id="local-6989586621680003333"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#dependenciesOf"><span class="hs-identifier hs-type">dependenciesOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003333"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003333"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003333"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-114"></span><span id="dependenciesOf"><span class="annot"><span class="annottext">dependenciesOf :: forall a. Key a -&gt; TopologicalGraph a -&gt; [Key a]
+</span><a href="Elara.Data.TopologicalGraph.html#dependenciesOf"><span class="hs-identifier hs-var hs-var">dependenciesOf</span></a></span></span><span> </span><span id="local-6989586621680003717"><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003717"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003718"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003718"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Key a] -&gt; Maybe [Key a] -&gt; [Key a]
+forall a. a -&gt; Maybe a -&gt; a
+</span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Maybe [Key a] -&gt; [Key a]) -&gt; Maybe [Key a] -&gt; [Key a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-115"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003720"><span class="annot"><span class="annottext">v :: Key a -&gt; Maybe Vertex
+</span><a href="#local-6989586621680003720"><span class="hs-identifier hs-var hs-var hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003718"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic' A_Lens NoIx (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+-&gt; Key a
+-&gt; Maybe Vertex
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+forall a. Lens' (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+</span><a href="Elara.Data.TopologicalGraph.html#vertexFromKey"><span class="hs-identifier hs-var">vertexFromKey</span></a></span><span>
+</span><span id="line-116"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003721"><span class="annot"><span class="annottext">n :: Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003721"><span class="hs-identifier hs-var hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003718"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Vertex
+-&gt; (a, Key a, [Key a])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span id="local-6989586621680003722"><span class="annot"><a href="#local-6989586621680003722"><span class="hs-identifier hs-var">vertex</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Key a -&gt; Maybe Vertex
+</span><a href="#local-6989586621680003720"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003717"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680003723"><span class="annot"><a href="#local-6989586621680003723"><span class="hs-identifier hs-var">deps</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621680003721"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003722"><span class="hs-identifier hs-type">vertex</span></a></span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680003723"><span class="hs-identifier hs-type">deps</span></a></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span id="local-6989586621680003340"><span class="annot"><a href="Elara.Data.TopologicalGraph.html#moduleFromName"><span class="hs-identifier hs-type">moduleFromName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003340"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003340"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621680003340"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-122"></span><span id="moduleFromName"><span class="annot"><span class="annottext">moduleFromName :: forall a. Key a -&gt; TopologicalGraph a -&gt; Maybe a
+</span><a href="Elara.Data.TopologicalGraph.html#moduleFromName"><span class="hs-identifier hs-var hs-var">moduleFromName</span></a></span></span><span> </span><span id="local-6989586621680003729"><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003729"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680003730"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003730"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003731"><span class="annot"><span class="annottext">v :: Key a -&gt; Maybe Vertex
+</span><a href="#local-6989586621680003731"><span class="hs-identifier hs-var hs-var hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003730"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic' A_Lens NoIx (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+-&gt; Key a
+-&gt; Maybe Vertex
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+forall a. Lens' (TopologicalGraph a) (Key a -&gt; Maybe Vertex)
+</span><a href="Elara.Data.TopologicalGraph.html#vertexFromKey"><span class="hs-identifier hs-var">vertexFromKey</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003732"><span class="annot"><span class="annottext">n :: Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003732"><span class="hs-identifier hs-var hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003730"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Vertex
+-&gt; (a, Key a, [Key a])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span id="local-6989586621680003733"><span class="annot"><a href="#local-6989586621680003733"><span class="hs-identifier hs-var">vertex</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Key a -&gt; Maybe Vertex
+</span><a href="#local-6989586621680003731"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003729"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-126"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680003734"><span class="annot"><a href="#local-6989586621680003734"><span class="hs-identifier hs-var">m'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621680003732"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003733"><span class="hs-identifier hs-type">vertex</span></a></span><span>
+</span><span id="line-127"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680003734"><span class="hs-identifier hs-type">m'</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680003345"><span id="local-6989586621680003738"><span id="local-6989586621680003743"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680003345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-130"></span><span>    </span><span id="local-6989586621680003769"><span class="annot"><span class="annottext">show :: TopologicalGraph a -&gt; String
+</span><a href="#local-6989586621680003769"><span class="hs-identifier hs-var hs-var hs-var">show</span></a></span></span><span> </span><span id="local-6989586621680003771"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003771"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-131"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003772"><span class="annot"><span class="annottext">gArr :: Graph
+</span><a href="#local-6989586621680003772"><span class="hs-identifier hs-var hs-var">gArr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003771"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic' A_Lens NoIx (TopologicalGraph a) Graph -&gt; Graph
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (TopologicalGraph a) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span>
+</span><span id="line-132"></span><span>            </span><span id="local-6989586621680003773"><span class="annot"><span class="annottext">nodeFromVertex' :: Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003773"><span class="hs-identifier hs-var hs-var">nodeFromVertex'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003771"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Vertex
+-&gt; (a, Key a, [Key a])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span>
+</span><span id="line-133"></span><span>            </span><span id="local-6989586621680003774"><span class="annot"><span class="annottext">mnFromVertex :: Vertex -&gt; Key a
+</span><a href="#local-6989586621680003774"><span class="hs-identifier hs-var hs-var">mnFromVertex</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Optic' A_Getter NoIx Vertex (Key a) -&gt; Vertex -&gt; Key a
+forall k (is :: IxList) s a.
+Is k A_Getter =&gt;
+Optic' k is s a -&gt; s -&gt; a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Getter Vertex (a, Key a, [Key a])
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003773"><span class="hs-identifier hs-var">nodeFromVertex'</span></a></span><span> </span><span class="annot"><span class="annottext">Getter Vertex (a, Key a, [Key a])
+-&gt; Optic
+     A_Lens NoIx (a, Key a, [Key a]) (a, Key a, [Key a]) (Key a) (Key a)
+-&gt; Optic' A_Getter NoIx Vertex (Key a)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Lens NoIx (a, Key a, [Key a]) (a, Key a, [Key a]) (Key a) (Key a)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>            </span><span id="local-6989586621680003777"><span class="annot"><span class="annottext">nodes :: Array Vertex [Key a]
+</span><a href="#local-6989586621680003777"><span class="hs-identifier hs-var hs-var">nodes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vertex -&gt; Key a
+</span><a href="#local-6989586621680003774"><span class="hs-identifier hs-var">mnFromVertex</span></a></span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; Key a) -&gt; Graph -&gt; Array Vertex [Key a]
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Graph
+</span><a href="#local-6989586621680003772"><span class="hs-identifier hs-var">gArr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>            </span><span id="local-6989586621680003779"><span class="annot"><span class="annottext">assocs' :: [(Vertex, [Key a])]
+</span><a href="#local-6989586621680003779"><span class="hs-identifier hs-var hs-var">assocs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array Vertex [Key a] -&gt; [(Vertex, [Key a])]
+forall i e. Ix i =&gt; Array i e -&gt; [(i, e)]
+</span><span class="hs-identifier hs-var">assocs</span></span><span> </span><span class="annot"><span class="annottext">Array Vertex [Key a]
+</span><a href="#local-6989586621680003777"><span class="hs-identifier hs-var">nodes</span></a></span><span>
+</span><span id="line-136"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[(Key a, [Key a])] -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">Show.show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Vertex -&gt; Key a) -&gt; [(Vertex, [Key a])] -&gt; [(Key a, [Key a])]
+forall (f :: * -&gt; *) (p :: * -&gt; * -&gt; *) a c b.
+(Functor f, Bifunctor p) =&gt;
+(a -&gt; c) -&gt; f (p a b) -&gt; f (p c b)
+</span><span class="hs-identifier hs-var">firstF</span></span><span> </span><span class="annot"><span class="annottext">Vertex -&gt; Key a
+</span><a href="#local-6989586621680003774"><span class="hs-identifier hs-var">mnFromVertex</span></a></span><span> </span><span class="annot"><span class="annottext">[(Vertex, [Key a])]
+</span><a href="#local-6989586621680003779"><span class="hs-identifier hs-var">assocs'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680003382"><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003382"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003382"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003382"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>    </span><span id="local-6989586621680003806"><span class="annot"><span class="annottext">pretty :: TopologicalGraph a -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680003806"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span id="local-6989586621680003808"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003808"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-140"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003809"><span class="annot"><span class="annottext">gArr :: [Vertex]
+</span><a href="#local-6989586621680003809"><span class="hs-identifier hs-var hs-var">gArr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003808"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic' A_Getter NoIx (TopologicalGraph a) [Vertex] -&gt; [Vertex]
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph a) Graph
+forall a. Lens' (TopologicalGraph a) Graph
+</span><a href="Elara.Data.TopologicalGraph.html#moduleGraph"><span class="hs-identifier hs-var">moduleGraph</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (TopologicalGraph a) Graph
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+-&gt; Optic' A_Getter NoIx (TopologicalGraph a) [Vertex]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Graph -&gt; [Vertex])
+-&gt; Optic A_Getter NoIx Graph Graph [Vertex] [Vertex]
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Graph -&gt; [Vertex]
+</span><span class="hs-identifier hs-var">vertices</span></span><span>
+</span><span id="line-141"></span><span>            </span><span id="local-6989586621680003810"><span class="annot"><span class="annottext">nodeFromVertex' :: Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003810"><span class="hs-identifier hs-var hs-var">nodeFromVertex'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003808"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+-&gt; Optic'
+     A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Vertex
+-&gt; (a, Key a, [Key a])
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens NoIx (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+forall a.
+Lens' (TopologicalGraph a) (Vertex -&gt; (a, Key a, [Key a]))
+</span><a href="Elara.Data.TopologicalGraph.html#nodeFromVertex"><span class="hs-identifier hs-var">nodeFromVertex</span></a></span><span>
+</span><span id="line-142"></span><span>            </span><span id="local-6989586621680003811"><span class="annot"><span class="annottext">keyFromVertex :: Vertex -&gt; Key a
+</span><a href="#local-6989586621680003811"><span class="hs-identifier hs-var hs-var">keyFromVertex</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Optic' A_Getter NoIx Vertex (Key a) -&gt; Vertex -&gt; Key a
+forall k (is :: IxList) s a.
+Is k A_Getter =&gt;
+Optic' k is s a -&gt; s -&gt; a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Vertex -&gt; (a, Key a, [Key a]))
+-&gt; Getter Vertex (a, Key a, [Key a])
+forall s a. (s -&gt; a) -&gt; Getter s a
+</span><span class="hs-identifier hs-var">to</span></span><span> </span><span class="annot"><span class="annottext">Vertex -&gt; (a, Key a, [Key a])
+</span><a href="#local-6989586621680003810"><span class="hs-identifier hs-var">nodeFromVertex'</span></a></span><span> </span><span class="annot"><span class="annottext">Getter Vertex (a, Key a, [Key a])
+-&gt; Optic
+     A_Lens NoIx (a, Key a, [Key a]) (a, Key a, [Key a]) (Key a) (Key a)
+-&gt; Optic' A_Getter NoIx Vertex (Key a)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Lens NoIx (a, Key a, [Key a]) (a, Key a, [Key a]) (Key a) (Key a)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>            </span><span id="local-6989586621680003812"><span class="annot"><span class="annottext">nodes :: [Key a]
+</span><a href="#local-6989586621680003812"><span class="hs-identifier hs-var hs-var">nodes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Key a] -&gt; [Key a]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">nubOrd</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vertex -&gt; Key a
+</span><a href="#local-6989586621680003811"><span class="hs-identifier hs-var">keyFromVertex</span></a></span><span> </span><span class="annot"><span class="annottext">(Vertex -&gt; Key a) -&gt; [Vertex] -&gt; [Key a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Vertex]
+</span><a href="#local-6989586621680003809"><span class="hs-identifier hs-var">gArr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-144"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[(Key a, [Key a])] -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Key a -&gt; (Key a, [Key a])) -&gt; [Key a] -&gt; [(Key a, [Key a])]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680003813"><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003813"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003813"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Key a] -&gt; [Key a]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">nubOrd</span></span><span> </span><span class="annot"><span class="annottext">([Key a] -&gt; [Key a]) -&gt; [Key a] -&gt; [Key a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Key a -&gt; TopologicalGraph a -&gt; [Key a]
+forall a. Key a -&gt; TopologicalGraph a -&gt; [Key a]
+</span><a href="Elara.Data.TopologicalGraph.html#dependenciesOf"><span class="hs-identifier hs-var">dependenciesOf</span></a></span><span> </span><span class="annot"><span class="annottext">Key a
+</span><a href="#local-6989586621680003813"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003808"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Key a]
+</span><a href="#local-6989586621680003812"><span class="hs-identifier hs-var">nodes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680003815"><span id="local-6989586621680003822"><span id="local-6989586621680003827"><span id="local-6989586621680003830"><span id="local-6989586621680003833"><span id="local-6989586621680003836"><span id="local-6989586621680003839"><span id="local-6989586621680003842"><span id="local-6989586621680003845"><span id="local-6989586621680003848"><span id="local-6989586621680003851"><span id="local-6989586621680003854"><span id="local-6989586621680003859"><span id="local-6989586621680003864"><span id="local-6989586621680003869"><span id="local-6989586621680003874"><span class="annot"><span class="hs-identifier hs-type">Foldable</span></span><span> </span><span class="annot"><a href="Elara.Data.TopologicalGraph.html#TopologicalGraph"><span class="hs-identifier hs-type">TopologicalGraph</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>    </span><span id="local-6989586621680003882"><span class="annot"><span class="annottext">foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TopologicalGraph a -&gt; m
+</span><a href="#local-6989586621680003882"><span class="hs-identifier hs-var hs-var hs-var">foldMap</span></a></span></span><span> </span><span id="local-6989586621680003884"><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680003884"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680003885"><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003885"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; m) -&gt; [a] -&gt; m
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680003884"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TopologicalGraph a -&gt; [a]
+forall m. TopologicalGraph m -&gt; [m]
+</span><a href="Elara.Data.TopologicalGraph.html#allEntries"><span class="hs-identifier hs-var">allEntries</span></a></span><span> </span><span class="annot"><span class="annottext">TopologicalGraph a
+</span><a href="#local-6989586621680003885"><span class="hs-identifier hs-var">g</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-148"></span></pre></body></html>

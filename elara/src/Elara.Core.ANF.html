@@ -1,0 +1,768 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Core, but in ANF</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html"><span class="hs-identifier">Elara.Core.ANF</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier">AltCon</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier">Literal</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier">Type</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html"><span class="hs-identifier">Elara.Core.Generic</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">G</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Prelude.html"><span class="hs-identifier">Prelude</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Alt</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">group</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | An atomic expression</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">data</span><span> </span><span id="AExpr"><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-var">AExpr</span></a></span></span><span> </span><span id="local-6989586621680022840"><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Var"><span class="annot"><a href="Elara.Core.ANF.html#Var"><span class="hs-identifier hs-var">Var</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Lit"><span class="annot"><a href="Elara.Core.ANF.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Lam"><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyApp"><span class="annot"><a href="Elara.Core.ANF.html#TyApp"><span class="hs-identifier hs-var">TyApp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyLam"><span class="annot"><a href="Elara.Core.ANF.html#TyLam"><span class="hs-identifier hs-var">TyLam</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022840"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680022848"><span id="local-6989586621680022868"><span id="local-6989586621680022871"><span class="annot"><span class="annottext">Int -&gt; AExpr b -&gt; ShowS
+[AExpr b] -&gt; ShowS
+AExpr b -&gt; String
+(Int -&gt; AExpr b -&gt; ShowS)
+-&gt; (AExpr b -&gt; String) -&gt; ([AExpr b] -&gt; ShowS) -&gt; Show (AExpr b)
+forall b. Show b =&gt; Int -&gt; AExpr b -&gt; ShowS
+forall b. Show b =&gt; [AExpr b] -&gt; ShowS
+forall b. Show b =&gt; AExpr b -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall b. Show b =&gt; Int -&gt; AExpr b -&gt; ShowS
+showsPrec :: Int -&gt; AExpr b -&gt; ShowS
+$cshow :: forall b. Show b =&gt; AExpr b -&gt; String
+show :: AExpr b -&gt; String
+$cshowList :: forall b. Show b =&gt; [AExpr b] -&gt; ShowS
+showList :: [AExpr b] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680022877"><span id="local-6989586621680022894"><span class="annot"><span class="annottext">AExpr b -&gt; AExpr b -&gt; Bool
+(AExpr b -&gt; AExpr b -&gt; Bool)
+-&gt; (AExpr b -&gt; AExpr b -&gt; Bool) -&gt; Eq (AExpr b)
+forall b. Eq b =&gt; AExpr b -&gt; AExpr b -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall b. Eq b =&gt; AExpr b -&gt; AExpr b -&gt; Bool
+== :: AExpr b -&gt; AExpr b -&gt; Bool
+$c/= :: forall b. Eq b =&gt; AExpr b -&gt; AExpr b -&gt; Bool
+/= :: AExpr b -&gt; AExpr b -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680022903"><span id="local-6989586621680022917"><span id="local-6989586621680022927"><span id="local-6989586621680022929"><span id="local-6989586621680022931"><span id="local-6989586621680022937"><span id="local-6989586621680022942"><span id="local-6989586621680022945"><span id="local-6989586621680022948"><span id="local-6989586621680022951"><span id="local-6989586621680022954"><span id="local-6989586621680022957"><span id="local-6989586621680022962"><span id="local-6989586621680022967"><span class="annot"><span class="annottext">Typeable (AExpr b)
+Typeable (AExpr b) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; AExpr b -&gt; c (AExpr b))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (AExpr b))
+-&gt; (AExpr b -&gt; Constr)
+-&gt; (AExpr b -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (AExpr b)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (AExpr b)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; AExpr b -&gt; AExpr b)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b))
+-&gt; Data (AExpr b)
+AExpr b -&gt; Constr
+AExpr b -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; AExpr b -&gt; AExpr b
+forall b. Data b =&gt; Typeable (AExpr b)
+forall b. Data b =&gt; AExpr b -&gt; Constr
+forall b. Data b =&gt; AExpr b -&gt; DataType
+forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; AExpr b -&gt; AExpr b
+forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; u
+forall b u.
+Data b =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; [u]
+forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (AExpr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; AExpr b -&gt; c (AExpr b)
+forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (AExpr b))
+forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (AExpr b))
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (AExpr b)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; AExpr b -&gt; c (AExpr b)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (AExpr b))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (AExpr b))
+$cgfoldl :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; AExpr b -&gt; c (AExpr b)
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; AExpr b -&gt; c (AExpr b)
+$cgunfold :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (AExpr b)
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (AExpr b)
+$ctoConstr :: forall b. Data b =&gt; AExpr b -&gt; Constr
+toConstr :: AExpr b -&gt; Constr
+$cdataTypeOf :: forall b. Data b =&gt; AExpr b -&gt; DataType
+dataTypeOf :: AExpr b -&gt; DataType
+$cdataCast1 :: forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (AExpr b))
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (AExpr b))
+$cdataCast2 :: forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (AExpr b))
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (AExpr b))
+$cgmapT :: forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; AExpr b -&gt; AExpr b
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; AExpr b -&gt; AExpr b
+$cgmapQl :: forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+$cgmapQr :: forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; AExpr b -&gt; r
+$cgmapQ :: forall b u.
+Data b =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; [u]
+$cgmapQi :: forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; AExpr b -&gt; u
+$cgmapM :: forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+$cgmapMp :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+$cgmapMo :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; AExpr b -&gt; m (AExpr b)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680022979"><span id="local-6989586621680022981"><span class="annot"><span class="annottext">(forall x. AExpr b -&gt; Rep (AExpr b) x)
+-&gt; (forall x. Rep (AExpr b) x -&gt; AExpr b) -&gt; Generic (AExpr b)
+forall x. Rep (AExpr b) x -&gt; AExpr b
+forall x. AExpr b -&gt; Rep (AExpr b) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall b x. Rep (AExpr b) x -&gt; AExpr b
+forall b x. AExpr b -&gt; Rep (AExpr b) x
+$cfrom :: forall b x. AExpr b -&gt; Rep (AExpr b) x
+from :: forall x. AExpr b -&gt; Rep (AExpr b) x
+$cto :: forall b x. Rep (AExpr b) x -&gt; AExpr b
+to :: forall x. Rep (AExpr b) x -&gt; AExpr b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><span class="hs-comment">-- | A combinator expression</span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">data</span><span> </span><span id="CExpr"><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">CExpr</span></a></span></span><span> </span><span id="local-6989586621680022986"><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="App"><span class="annot"><a href="Elara.Core.ANF.html#App"><span class="hs-identifier hs-var">App</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="AExpr"><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-var">AExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Match"><span class="annot"><a href="Elara.Core.ANF.html#Match"><span class="hs-identifier hs-var">Match</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.ANF.html#Alt"><span class="hs-identifier hs-type">Alt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680022986"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680022992"><span id="local-6989586621680023006"><span id="local-6989586621680023010"><span class="annot"><span class="annottext">Int -&gt; CExpr b -&gt; ShowS
+[CExpr b] -&gt; ShowS
+CExpr b -&gt; String
+(Int -&gt; CExpr b -&gt; ShowS)
+-&gt; (CExpr b -&gt; String) -&gt; ([CExpr b] -&gt; ShowS) -&gt; Show (CExpr b)
+forall b. Show b =&gt; Int -&gt; CExpr b -&gt; ShowS
+forall b. Show b =&gt; [CExpr b] -&gt; ShowS
+forall b. Show b =&gt; CExpr b -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall b. Show b =&gt; Int -&gt; CExpr b -&gt; ShowS
+showsPrec :: Int -&gt; CExpr b -&gt; ShowS
+$cshow :: forall b. Show b =&gt; CExpr b -&gt; String
+show :: CExpr b -&gt; String
+$cshowList :: forall b. Show b =&gt; [CExpr b] -&gt; ShowS
+showList :: [CExpr b] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023019"><span id="local-6989586621680023032"><span class="annot"><span class="annottext">CExpr b -&gt; CExpr b -&gt; Bool
+(CExpr b -&gt; CExpr b -&gt; Bool)
+-&gt; (CExpr b -&gt; CExpr b -&gt; Bool) -&gt; Eq (CExpr b)
+forall b. Eq b =&gt; CExpr b -&gt; CExpr b -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall b. Eq b =&gt; CExpr b -&gt; CExpr b -&gt; Bool
+== :: CExpr b -&gt; CExpr b -&gt; Bool
+$c/= :: forall b. Eq b =&gt; CExpr b -&gt; CExpr b -&gt; Bool
+/= :: CExpr b -&gt; CExpr b -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023046"><span id="local-6989586621680023057"><span id="local-6989586621680023066"><span id="local-6989586621680023068"><span id="local-6989586621680023070"><span id="local-6989586621680023076"><span id="local-6989586621680023082"><span id="local-6989586621680023085"><span id="local-6989586621680023088"><span id="local-6989586621680023091"><span id="local-6989586621680023094"><span id="local-6989586621680023097"><span id="local-6989586621680023102"><span id="local-6989586621680023107"><span class="annot"><span class="annottext">Typeable (CExpr b)
+Typeable (CExpr b) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; CExpr b -&gt; c (CExpr b))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (CExpr b))
+-&gt; (CExpr b -&gt; Constr)
+-&gt; (CExpr b -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (CExpr b)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (CExpr b)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; CExpr b -&gt; CExpr b)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b))
+-&gt; Data (CExpr b)
+CExpr b -&gt; Constr
+CExpr b -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; CExpr b -&gt; CExpr b
+forall b. Data b =&gt; Typeable (CExpr b)
+forall b. Data b =&gt; CExpr b -&gt; Constr
+forall b. Data b =&gt; CExpr b -&gt; DataType
+forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; CExpr b -&gt; CExpr b
+forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; u
+forall b u.
+Data b =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; [u]
+forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (CExpr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; CExpr b -&gt; c (CExpr b)
+forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (CExpr b))
+forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (CExpr b))
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (CExpr b)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; CExpr b -&gt; c (CExpr b)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (CExpr b))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (CExpr b))
+$cgfoldl :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; CExpr b -&gt; c (CExpr b)
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; CExpr b -&gt; c (CExpr b)
+$cgunfold :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (CExpr b)
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (CExpr b)
+$ctoConstr :: forall b. Data b =&gt; CExpr b -&gt; Constr
+toConstr :: CExpr b -&gt; Constr
+$cdataTypeOf :: forall b. Data b =&gt; CExpr b -&gt; DataType
+dataTypeOf :: CExpr b -&gt; DataType
+$cdataCast1 :: forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (CExpr b))
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (CExpr b))
+$cdataCast2 :: forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (CExpr b))
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (CExpr b))
+$cgmapT :: forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; CExpr b -&gt; CExpr b
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; CExpr b -&gt; CExpr b
+$cgmapQl :: forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+$cgmapQr :: forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; CExpr b -&gt; r
+$cgmapQ :: forall b u.
+Data b =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; [u]
+$cgmapQi :: forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; CExpr b -&gt; u
+$cgmapM :: forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+$cgmapMp :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+$cgmapMo :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; CExpr b -&gt; m (CExpr b)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023120"><span id="local-6989586621680023122"><span class="annot"><span class="annottext">(forall x. CExpr b -&gt; Rep (CExpr b) x)
+-&gt; (forall x. Rep (CExpr b) x -&gt; CExpr b) -&gt; Generic (CExpr b)
+forall x. Rep (CExpr b) x -&gt; CExpr b
+forall x. CExpr b -&gt; Rep (CExpr b) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall b x. Rep (CExpr b) x -&gt; CExpr b
+forall b x. CExpr b -&gt; Rep (CExpr b) x
+$cfrom :: forall b x. CExpr b -&gt; Rep (CExpr b) x
+from :: forall x. CExpr b -&gt; Rep (CExpr b) x
+$cto :: forall b x. Rep (CExpr b) x -&gt; CExpr b
+to :: forall x. Rep (CExpr b) x -&gt; CExpr b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">-- | A &quot;top level&quot; expression, which is either a let binding or a CExpr</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="Expr"><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-var">Expr</span></a></span></span><span> </span><span id="local-6989586621680023124"><span class="annot"><a href="#local-6989586621680023124"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Let"><span class="annot"><a href="Elara.Core.ANF.html#Let"><span class="hs-identifier hs-var">Let</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023124"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023124"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="CExpr"><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">CExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023124"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680023129"><span id="local-6989586621680023138"><span id="local-6989586621680023141"><span class="annot"><span class="annottext">Int -&gt; Expr b -&gt; ShowS
+[Expr b] -&gt; ShowS
+Expr b -&gt; String
+(Int -&gt; Expr b -&gt; ShowS)
+-&gt; (Expr b -&gt; String) -&gt; ([Expr b] -&gt; ShowS) -&gt; Show (Expr b)
+forall b. Show b =&gt; Int -&gt; Expr b -&gt; ShowS
+forall b. Show b =&gt; [Expr b] -&gt; ShowS
+forall b. Show b =&gt; Expr b -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall b. Show b =&gt; Int -&gt; Expr b -&gt; ShowS
+showsPrec :: Int -&gt; Expr b -&gt; ShowS
+$cshow :: forall b. Show b =&gt; Expr b -&gt; String
+show :: Expr b -&gt; String
+$cshowList :: forall b. Show b =&gt; [Expr b] -&gt; ShowS
+showList :: [Expr b] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023145"><span id="local-6989586621680023154"><span class="annot"><span class="annottext">Expr b -&gt; Expr b -&gt; Bool
+(Expr b -&gt; Expr b -&gt; Bool)
+-&gt; (Expr b -&gt; Expr b -&gt; Bool) -&gt; Eq (Expr b)
+forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
+== :: Expr b -&gt; Expr b -&gt; Bool
+$c/= :: forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
+/= :: Expr b -&gt; Expr b -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023162"><span id="local-6989586621680023170"><span id="local-6989586621680023177"><span id="local-6989586621680023179"><span id="local-6989586621680023181"><span id="local-6989586621680023187"><span id="local-6989586621680023192"><span id="local-6989586621680023195"><span id="local-6989586621680023198"><span id="local-6989586621680023201"><span id="local-6989586621680023204"><span id="local-6989586621680023207"><span id="local-6989586621680023212"><span id="local-6989586621680023217"><span class="annot"><span class="annottext">Typeable (Expr b)
+Typeable (Expr b) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; Expr b -&gt; c (Expr b))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Expr b))
+-&gt; (Expr b -&gt; Constr)
+-&gt; (Expr b -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Expr b)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Expr b)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; Expr b -&gt; Expr b)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b))
+-&gt; Data (Expr b)
+Expr b -&gt; Constr
+Expr b -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; Expr b -&gt; Expr b
+forall b. Data b =&gt; Typeable (Expr b)
+forall b. Data b =&gt; Expr b -&gt; Constr
+forall b. Data b =&gt; Expr b -&gt; DataType
+forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Expr b -&gt; Expr b
+forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; u
+forall b u. Data b =&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; [u]
+forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Expr b)
+forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Expr b -&gt; c (Expr b)
+forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Expr b))
+forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Expr b))
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Expr b)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Expr b -&gt; c (Expr b)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Expr b))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Expr b))
+$cgfoldl :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Expr b -&gt; c (Expr b)
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Expr b -&gt; c (Expr b)
+$cgunfold :: forall b (c :: * -&gt; *).
+Data b =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Expr b)
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Expr b)
+$ctoConstr :: forall b. Data b =&gt; Expr b -&gt; Constr
+toConstr :: Expr b -&gt; Constr
+$cdataTypeOf :: forall b. Data b =&gt; Expr b -&gt; DataType
+dataTypeOf :: Expr b -&gt; DataType
+$cdataCast1 :: forall b (t :: * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Expr b))
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Expr b))
+$cdataCast2 :: forall b (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data b, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Expr b))
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Expr b))
+$cgmapT :: forall b.
+Data b =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Expr b -&gt; Expr b
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Expr b -&gt; Expr b
+$cgmapQl :: forall b r r'.
+Data b =&gt;
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+$cgmapQr :: forall b r r'.
+Data b =&gt;
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Expr b -&gt; r
+$cgmapQ :: forall b u. Data b =&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; [u]
+$cgmapQi :: forall b u.
+Data b =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Expr b -&gt; u
+$cgmapM :: forall b (m :: * -&gt; *).
+(Data b, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+$cgmapMp :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+$cgmapMo :: forall b (m :: * -&gt; *).
+(Data b, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680023222"><span id="local-6989586621680023224"><span class="annot"><span class="annottext">(forall x. Expr b -&gt; Rep (Expr b) x)
+-&gt; (forall x. Rep (Expr b) x -&gt; Expr b) -&gt; Generic (Expr b)
+forall x. Rep (Expr b) x -&gt; Expr b
+forall x. Expr b -&gt; Rep (Expr b) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall b x. Rep (Expr b) x -&gt; Expr b
+forall b x. Expr b -&gt; Rep (Expr b) x
+$cfrom :: forall b x. Expr b -&gt; Rep (Expr b) x
+from :: forall x. Expr b -&gt; Rep (Expr b) x
+$cto :: forall b x. Rep (Expr b) x -&gt; Expr b
+to :: forall x. Rep (Expr b) x -&gt; Expr b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">type</span><span> </span><span id="Bind"><span class="annot"><a href="Elara.Core.ANF.html#Bind"><span class="hs-identifier hs-var">Bind</span></a></span></span><span> </span><span id="local-6989586621680023226"><span class="annot"><a href="#local-6989586621680023226"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023226"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">type</span><span> </span><span id="TopLevelBind"><span class="annot"><a href="Elara.Core.ANF.html#TopLevelBind"><span class="hs-identifier hs-var">TopLevelBind</span></a></span></span><span> </span><span id="local-6989586621680023228"><span class="annot"><a href="#local-6989586621680023228"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023228"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">type</span><span> </span><span id="Alt"><span class="annot"><a href="Elara.Core.ANF.html#Alt"><span class="hs-identifier hs-var">Alt</span></a></span></span><span> </span><span id="local-6989586621680023229"><span class="annot"><a href="#local-6989586621680023229"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-type">AltCon</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680023229"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680023229"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span></pre></body></html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html"><span class="hs-identifier">Elara.TypeInfer.Environment</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.GADT.Compare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">GCompare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">gcompare</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">GEq</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">GOrdering</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Type.Equality</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effectful.State.Extra.html"><span class="hs-identifier">Effectful.State.Extra</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effectful.State.Extra.html#locally"><span class="hs-identifier">locally</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.State.Static.Local</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html"><span class="hs-identifier">Elara.TypeInfer.Type</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Error.Diagnose</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Unsafe.Coerce</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unsafeCoerce</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><span class="hs-comment">-- | A type environment &#915;, which maps type variables and data constructors to types</span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">newtype</span><span> </span><span id="TypeEnvironment"><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-var">TypeEnvironment</span></a></span></span><span> </span><span id="local-6989586621680013207"><span class="annot"><a href="#local-6989586621680013207"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="TypeEnvironment"><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-var">TypeEnvironment</span></a></span></span><span>
+</span><span id="line-21"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013207"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013207"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013442"><span id="local-6989586621680013450"><span id="local-6989586621680013454"><span class="annot"><span class="annottext">Int -&gt; TypeEnvironment loc -&gt; ShowS
+[TypeEnvironment loc] -&gt; ShowS
+TypeEnvironment loc -&gt; String
+(Int -&gt; TypeEnvironment loc -&gt; ShowS)
+-&gt; (TypeEnvironment loc -&gt; String)
+-&gt; ([TypeEnvironment loc] -&gt; ShowS)
+-&gt; Show (TypeEnvironment loc)
+forall loc. Show loc =&gt; Int -&gt; TypeEnvironment loc -&gt; ShowS
+forall loc. Show loc =&gt; [TypeEnvironment loc] -&gt; ShowS
+forall loc. Show loc =&gt; TypeEnvironment loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; TypeEnvironment loc -&gt; ShowS
+showsPrec :: Int -&gt; TypeEnvironment loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; TypeEnvironment loc -&gt; String
+show :: TypeEnvironment loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [TypeEnvironment loc] -&gt; ShowS
+showList :: [TypeEnvironment loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013193"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013193"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013193"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621680013474"><span class="annot"><span class="annottext">pretty :: TypeEnvironment loc -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680013474"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013476"><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013476"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; [a] -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#listToText"><span class="hs-identifier hs-var">listToText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(TypeEnvKey loc, Type loc) -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">((TypeEnvKey loc, Type loc) -&gt; Doc AnsiStyle)
+-&gt; [(TypeEnvKey loc, Type loc)] -&gt; [Doc AnsiStyle]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc) -&gt; [(TypeEnvKey loc, Type loc)]
+forall k a. Map k a -&gt; [(k, a)]
+</span><span class="hs-identifier hs-var">Map.toList</span></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013476"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span id="local-6989586621680013205"><span class="annot"><a href="Elara.TypeInfer.Environment.html#emptyTypeEnvironment"><span class="hs-identifier hs-type">emptyTypeEnvironment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013205"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-28"></span><span id="emptyTypeEnvironment"><span class="annot"><span class="annottext">emptyTypeEnvironment :: forall loc. TypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#emptyTypeEnvironment"><span class="hs-identifier hs-var hs-var">emptyTypeEnvironment</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc) -&gt; TypeEnvironment loc
+forall loc. Map (TypeEnvKey loc) (Type loc) -&gt; TypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-var">TypeEnvironment</span></a></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><span class="hs-comment">-- | A key in the type environment</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">data</span><span> </span><span id="TypeEnvKey"><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-var">TypeEnvKey</span></a></span></span><span> </span><span id="local-6989586621680013482"><span class="annot"><a href="#local-6989586621680013482"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | A data constructor K</span></span><span>
+</span><span id="line-33"></span><span>      </span><span id="DataConKey"><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-var">DataConKey</span></a></span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#DataCon"><span class="hs-identifier hs-type">DataCon</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A term variable x</span></span><span>
+</span><span id="line-35"></span><span>      </span><span id="TermVarKey"><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-var">TermVarKey</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013486"><span id="local-6989586621680013495"><span id="local-6989586621680013498"><span class="annot"><span class="annottext">Int -&gt; TypeEnvKey loc -&gt; ShowS
+[TypeEnvKey loc] -&gt; ShowS
+TypeEnvKey loc -&gt; String
+(Int -&gt; TypeEnvKey loc -&gt; ShowS)
+-&gt; (TypeEnvKey loc -&gt; String)
+-&gt; ([TypeEnvKey loc] -&gt; ShowS)
+-&gt; Show (TypeEnvKey loc)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall k (loc :: k). Int -&gt; TypeEnvKey loc -&gt; ShowS
+forall k (loc :: k). [TypeEnvKey loc] -&gt; ShowS
+forall k (loc :: k). TypeEnvKey loc -&gt; String
+$cshowsPrec :: forall k (loc :: k). Int -&gt; TypeEnvKey loc -&gt; ShowS
+showsPrec :: Int -&gt; TypeEnvKey loc -&gt; ShowS
+$cshow :: forall k (loc :: k). TypeEnvKey loc -&gt; String
+show :: TypeEnvKey loc -&gt; String
+$cshowList :: forall k (loc :: k). [TypeEnvKey loc] -&gt; ShowS
+showList :: [TypeEnvKey loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680013503"><span id="local-6989586621680013513"><span class="annot"><span class="annottext">TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+(TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; Eq (TypeEnvKey loc)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$c== :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+== :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$c/= :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+/= :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680013522"><span id="local-6989586621680013529"><span id="local-6989586621680013535"><span id="local-6989586621680013539"><span id="local-6989586621680013542"><span id="local-6989586621680013545"><span id="local-6989586621680013548"><span class="annot"><span class="annottext">Eq (TypeEnvKey loc)
+Eq (TypeEnvKey loc) =&gt;
+(TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Ordering)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc)
+-&gt; (TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc)
+-&gt; Ord (TypeEnvKey loc)
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Ordering
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall k (loc :: k). Eq (TypeEnvKey loc)
+forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Ordering
+forall k (loc :: k).
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+$ccompare :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Ordering
+compare :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Ordering
+$c&lt; :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+&lt; :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$c&lt;= :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+&lt;= :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$c&gt; :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+&gt; :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$c&gt;= :: forall k (loc :: k). TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+&gt;= :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; Bool
+$cmax :: forall k (loc :: k).
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+max :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+$cmin :: forall k (loc :: k).
+TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+min :: TypeEnvKey loc -&gt; TypeEnvKey loc -&gt; TypeEnvKey loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680013558"><span id="local-6989586621680013560"><span class="annot"><span class="annottext">(forall x. TypeEnvKey loc -&gt; Rep (TypeEnvKey loc) x)
+-&gt; (forall x. Rep (TypeEnvKey loc) x -&gt; TypeEnvKey loc)
+-&gt; Generic (TypeEnvKey loc)
+forall x. Rep (TypeEnvKey loc) x -&gt; TypeEnvKey loc
+forall x. TypeEnvKey loc -&gt; Rep (TypeEnvKey loc) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall k (loc :: k) x. Rep (TypeEnvKey loc) x -&gt; TypeEnvKey loc
+forall k (loc :: k) x. TypeEnvKey loc -&gt; Rep (TypeEnvKey loc) x
+$cfrom :: forall k (loc :: k) x. TypeEnvKey loc -&gt; Rep (TypeEnvKey loc) x
+from :: forall x. TypeEnvKey loc -&gt; Rep (TypeEnvKey loc) x
+$cto :: forall k (loc :: k) x. Rep (TypeEnvKey loc) x -&gt; TypeEnvKey loc
+to :: forall x. Rep (TypeEnvKey loc) x -&gt; TypeEnvKey loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | This is safe I think because phantom type</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GEq</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">geq</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680013569"><span class="annot"><a href="#local-6989586621680013569"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013570"><span class="annot"><a href="#local-6989586621680013570"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680013569"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013571"><span class="annot"><a href="#local-6989586621680013571"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680013569"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013570"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013571"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680013570"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621680013571"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>    </span><span id="local-6989586621680013576"><span class="annot"><span class="annottext">geq :: forall k (a :: k) (b :: k).
+TypeEnvKey a -&gt; TypeEnvKey b -&gt; Maybe (a :~: b)
+</span><span class="hs-identifier hs-var hs-var hs-var">geq</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span id="local-6989586621680013577"><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013577"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span id="local-6989586621680013578"><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013578"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-42"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013577"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">DataCon -&gt; DataCon -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013578"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-43"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">(a :~: b) -&gt; Maybe (a :~: b)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ZonkAny 5 :~: ZonkAny 5) -&gt; a :~: b
+forall a b. a -&gt; b
+</span><span class="hs-identifier hs-var">unsafeCoerce</span></span><span> </span><span class="annot"><span class="annottext">ZonkAny 5 :~: ZonkAny 5
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (a :~: b)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">geq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013580"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013580"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013581"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013581"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013580"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; Qualified VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013581"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-47"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">(a :~: b) -&gt; Maybe (a :~: b)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ZonkAny 7 :~: ZonkAny 7) -&gt; a :~: b
+forall a b. a -&gt; b
+</span><span class="hs-identifier hs-var">unsafeCoerce</span></span><span> </span><span class="annot"><span class="annottext">ZonkAny 7 :~: ZonkAny 7
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (a :~: b)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">geq</span></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (a :~: b)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GCompare</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">gcompare</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680013587"><span class="annot"><a href="#local-6989586621680013587"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013588"><span class="annot"><a href="#local-6989586621680013588"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680013587"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013589"><span class="annot"><a href="#local-6989586621680013589"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680013587"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013588"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013589"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GOrdering</span></span><span> </span><span class="annot"><a href="#local-6989586621680013588"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013589"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span id="local-6989586621680013594"><span class="annot"><span class="annottext">gcompare :: forall k (a :: k) (b :: k).
+TypeEnvKey a -&gt; TypeEnvKey b -&gt; GOrdering a b
+</span><span class="hs-identifier hs-var hs-var hs-var">gcompare</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span id="local-6989586621680013595"><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013595"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span id="local-6989586621680013596"><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013596"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-54"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">DataCon -&gt; DataCon -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013595"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013596"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-55"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GLT</span></span><span>
+</span><span id="line-56"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering (ZonkAny 1) (ZonkAny 1) -&gt; GOrdering a b
+forall a b. a -&gt; b
+</span><span class="hs-identifier hs-var">unsafeCoerce</span></span><span> </span><span class="annot"><span class="annottext">GOrdering (ZonkAny 1) (ZonkAny 1)
+forall {k} (a :: k). GOrdering a a
+</span><span class="hs-identifier hs-var">GEQ</span></span><span>
+</span><span id="line-57"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GGT</span></span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">gcompare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GLT</span></span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">gcompare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GGT</span></span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">gcompare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013600"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013600"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013601"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013601"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-61"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; Qualified VarName -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013600"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013601"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-62"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GLT</span></span><span>
+</span><span id="line-63"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering (ZonkAny 3) (ZonkAny 3) -&gt; GOrdering a b
+forall a b. a -&gt; b
+</span><span class="hs-identifier hs-var">unsafeCoerce</span></span><span> </span><span class="annot"><span class="annottext">GOrdering (ZonkAny 3) (ZonkAny 3)
+forall {k} (a :: k). GOrdering a a
+</span><span class="hs-identifier hs-var">GEQ</span></span><span>
+</span><span id="line-64"></span><span>            </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GOrdering a b
+forall {k} (a :: k) (b :: k). GOrdering a b
+</span><span class="hs-identifier hs-var">GGT</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013291"><span id="local-6989586621680013605"><span id="local-6989586621680013612"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013291"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013198"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013198"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-69"></span><span>    </span><span id="local-6989586621680013641"><span class="annot"><span class="annottext">pretty :: TypeEnvKey loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#DataConKey"><span class="hs-identifier hs-type">DataConKey</span></a></span><span> </span><span id="local-6989586621680013642"><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013642"><span class="hs-identifier hs-var">con</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DataCon -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">DataCon
+</span><a href="#local-6989586621680013642"><span class="hs-identifier hs-var">con</span></a></span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013643"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013643"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013643"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680013295"><span class="annot"><a href="Elara.TypeInfer.Environment.html#addType"><span class="hs-identifier hs-type">addType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013295"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013295"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013295"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013295"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-73"></span><span id="addType"><span class="annot"><span class="annottext">addType :: forall loc.
+TypeEnvKey loc
+-&gt; Type loc -&gt; TypeEnvironment loc -&gt; TypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#addType"><span class="hs-identifier hs-var hs-var">addType</span></a></span></span><span> </span><span id="local-6989586621680013646"><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013646"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621680013647"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013647"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013648"><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013648"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc) -&gt; TypeEnvironment loc
+forall loc. Map (TypeEnvKey loc) (Type loc) -&gt; TypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-var">TypeEnvironment</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeEnvKey loc
+-&gt; Type loc
+-&gt; Map (TypeEnvKey loc) (Type loc)
+-&gt; Map (TypeEnvKey loc) (Type loc)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013646"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013647"><span class="hs-identifier hs-var">ty</span></a></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013648"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span id="local-6989586621680013300"><span id="local-6989586621680013302"><span class="annot"><a href="Elara.TypeInfer.Environment.html#addType%27"><span class="hs-identifier hs-type">addType'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013300"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013302"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013300"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013300"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013302"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-76"></span><span id="addType%27"><span class="annot"><span class="annottext">addType' :: forall loc (r :: [Effect]).
+(State (TypeEnvironment loc) :&gt; r) =&gt;
+TypeEnvKey loc -&gt; Type loc -&gt; Eff r ()
+</span><a href="Elara.TypeInfer.Environment.html#addType%27"><span class="hs-identifier hs-var hs-var">addType'</span></a></span></span><span> </span><span id="local-6989586621680013655"><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013655"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621680013656"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013656"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TypeEnvironment loc -&gt; TypeEnvironment loc) -&gt; Eff r ()
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+(s -&gt; s) -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeEnvKey loc
+-&gt; Type loc -&gt; TypeEnvironment loc -&gt; TypeEnvironment loc
+forall loc.
+TypeEnvKey loc
+-&gt; Type loc -&gt; TypeEnvironment loc -&gt; TypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#addType"><span class="hs-identifier hs-var">addType</span></a></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013655"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013656"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span id="local-6989586621680013310"><span id="local-6989586621680013311"><span class="annot"><a href="Elara.TypeInfer.Environment.html#lookupTypeMaybe"><span class="hs-identifier hs-type">lookupTypeMaybe</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013310"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013311"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013310"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013311"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013310"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-79"></span><span id="lookupTypeMaybe"><span class="annot"><span class="annottext">lookupTypeMaybe :: forall loc (r :: [Effect]).
+(State (TypeEnvironment loc) :&gt; r) =&gt;
+TypeEnvKey loc -&gt; Eff r (Maybe (Type loc))
+</span><a href="Elara.TypeInfer.Environment.html#lookupTypeMaybe"><span class="hs-identifier hs-var hs-var">lookupTypeMaybe</span></a></span></span><span> </span><span id="local-6989586621680013668"><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013668"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013669"><span class="annot"><a href="#local-6989586621680013669"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff r (TypeEnvironment loc)
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+Eff es s
+</span><span class="hs-identifier hs-var">get</span></span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="annot"><a href="#local-6989586621680013668"><span class="hs-identifier hs-type">key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013669"><span class="hs-identifier hs-type">env</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span id="local-6989586621680013322"><span id="local-6989586621680013325"><span class="annot"><a href="Elara.TypeInfer.Environment.html#lookupType"><span class="hs-identifier hs-type">lookupType</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-type">InferError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013322"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013325"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-85"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013322"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013325"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-86"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680013322"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-87"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013322"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013325"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013322"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-89"></span><span id="lookupType"><span class="annot"><span class="annottext">lookupType :: forall loc (r :: [Effect]).
+(Error (InferError loc) :&gt; r, State (TypeEnvironment loc) :&gt; r,
+ Show loc) =&gt;
+TypeEnvKey loc -&gt; Eff r (Type loc)
+</span><a href="Elara.TypeInfer.Environment.html#lookupType"><span class="hs-identifier hs-var hs-var">lookupType</span></a></span></span><span> </span><span id="local-6989586621680013687"><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013687"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621680013688"><span class="annot"><a href="#local-6989586621680013688"><span class="hs-identifier hs-var">env'</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013689"><span class="annot"><a href="#local-6989586621680013689"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff r (TypeEnvironment loc)
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+Eff es s
+</span><span class="hs-identifier hs-var">get</span></span><span>
+</span><span id="line-91"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="annot"><a href="#local-6989586621680013687"><span class="hs-identifier hs-type">key</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013689"><span class="hs-identifier hs-type">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-92"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680013690"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013690"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type loc -&gt; Eff r (Type loc)
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013690"><span class="hs-identifier hs-var">ty</span></a></span><span>
+</span><span id="line-93"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Type loc)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InferError loc -&gt; Eff r (Type loc)
+forall e (es :: [Effect]) a.
+(HasCallStack, Error e :&gt; es, Show e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeEnvKey loc -&gt; TypeEnvironment loc -&gt; InferError loc
+forall loc. TypeEnvKey loc -&gt; TypeEnvironment loc -&gt; InferError loc
+</span><a href="Elara.TypeInfer.Environment.html#UnboundTermVar"><span class="hs-identifier hs-var">UnboundTermVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680013687"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">TypeEnvironment loc
+</span><a href="#local-6989586621680013688"><span class="hs-identifier hs-var">env'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span class="hs-keyword">newtype</span><span> </span><span id="LocalTypeEnvironment"><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-var">LocalTypeEnvironment</span></a></span></span><span> </span><span id="local-6989586621680013347"><span class="annot"><a href="#local-6989586621680013347"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="LocalTypeEnvironment"><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-var">LocalTypeEnvironment</span></a></span></span><span>
+</span><span id="line-97"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013347"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013696"><span id="local-6989586621680013702"><span id="local-6989586621680013706"><span class="annot"><span class="annottext">Int -&gt; LocalTypeEnvironment loc -&gt; ShowS
+[LocalTypeEnvironment loc] -&gt; ShowS
+LocalTypeEnvironment loc -&gt; String
+(Int -&gt; LocalTypeEnvironment loc -&gt; ShowS)
+-&gt; (LocalTypeEnvironment loc -&gt; String)
+-&gt; ([LocalTypeEnvironment loc] -&gt; ShowS)
+-&gt; Show (LocalTypeEnvironment loc)
+forall loc. Show loc =&gt; Int -&gt; LocalTypeEnvironment loc -&gt; ShowS
+forall loc. Show loc =&gt; [LocalTypeEnvironment loc] -&gt; ShowS
+forall loc. Show loc =&gt; LocalTypeEnvironment loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; LocalTypeEnvironment loc -&gt; ShowS
+showsPrec :: Int -&gt; LocalTypeEnvironment loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; LocalTypeEnvironment loc -&gt; String
+show :: LocalTypeEnvironment loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [LocalTypeEnvironment loc] -&gt; ShowS
+showList :: [LocalTypeEnvironment loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013712"><span class="annot"><span class="annottext">LocalTypeEnvironment loc -&gt; Doc AnsiStyle
+(LocalTypeEnvironment loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (LocalTypeEnvironment loc)
+forall loc. Pretty loc =&gt; LocalTypeEnvironment loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; LocalTypeEnvironment loc -&gt; Doc AnsiStyle
+pretty :: LocalTypeEnvironment loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span id="local-6989586621680013345"><span class="annot"><a href="Elara.TypeInfer.Environment.html#emptyLocalTypeEnvironment"><span class="hs-identifier hs-type">emptyLocalTypeEnvironment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013345"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-102"></span><span id="emptyLocalTypeEnvironment"><span class="annot"><span class="annottext">emptyLocalTypeEnvironment :: forall loc. LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#emptyLocalTypeEnvironment"><span class="hs-identifier hs-var hs-var">emptyLocalTypeEnvironment</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+forall loc.
+Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-var">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span id="local-6989586621680013348"><span class="annot"><a href="Elara.TypeInfer.Environment.html#addLocalType"><span class="hs-identifier hs-type">addLocalType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013348"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013348"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013348"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-105"></span><span id="addLocalType"><span class="annot"><span class="annottext">addLocalType :: forall loc.
+Unique VarName
+-&gt; Type loc -&gt; LocalTypeEnvironment loc -&gt; LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#addLocalType"><span class="hs-identifier hs-var hs-var">addLocalType</span></a></span></span><span> </span><span id="local-6989586621680013726"><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013726"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621680013727"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013727"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013728"><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+</span><a href="#local-6989586621680013728"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+forall loc.
+Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-var">LocalTypeEnvironment</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Unique VarName
+-&gt; Type loc
+-&gt; Map (Unique VarName) (Type loc)
+-&gt; Map (Unique VarName) (Type loc)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013726"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013727"><span class="hs-identifier hs-var">ty</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+</span><a href="#local-6989586621680013728"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span id="local-6989586621680013351"><span id="local-6989586621680013352"><span id="local-6989586621680013353"><span class="annot"><a href="Elara.TypeInfer.Environment.html#withLocalType"><span class="hs-identifier hs-type">withLocalType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013351"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013352"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013351"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013352"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013353"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013352"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013353"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-108"></span><span id="withLocalType"><span class="annot"><span class="annottext">withLocalType :: forall loc (r :: [Effect]) a.
+(State (LocalTypeEnvironment loc) :&gt; r) =&gt;
+Unique VarName -&gt; Type loc -&gt; Eff r a -&gt; Eff r a
+</span><a href="Elara.TypeInfer.Environment.html#withLocalType"><span class="hs-identifier hs-var hs-var">withLocalType</span></a></span></span><span> </span><span id="local-6989586621680013732"><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013732"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span id="local-6989586621680013733"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013733"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(LocalTypeEnvironment loc -&gt; LocalTypeEnvironment loc)
+-&gt; Eff r a -&gt; Eff r a
+forall s (r :: [Effect]) a.
+(State s :&gt; r) =&gt;
+(s -&gt; s) -&gt; Eff r a -&gt; Eff r a
+</span><a href="Effectful.State.Extra.html#locally"><span class="hs-identifier hs-var">locally</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Unique VarName
+-&gt; Type loc -&gt; LocalTypeEnvironment loc -&gt; LocalTypeEnvironment loc
+forall loc.
+Unique VarName
+-&gt; Type loc -&gt; LocalTypeEnvironment loc -&gt; LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#addLocalType"><span class="hs-identifier hs-var">addLocalType</span></a></span><span> </span><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013732"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013733"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680013360"><span id="local-6989586621680013361"><span class="annot"><a href="Elara.TypeInfer.Environment.html#lookupLocalVarType"><span class="hs-identifier hs-type">lookupLocalVarType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-type">InferError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013360"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013361"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680013360"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013360"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013361"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013360"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-111"></span><span id="lookupLocalVarType"><span class="annot"><span class="annottext">lookupLocalVarType :: forall loc (r :: [Effect]).
+(Error (InferError loc) :&gt; r, Show loc) =&gt;
+Unique VarName -&gt; LocalTypeEnvironment loc -&gt; Eff r (Type loc)
+</span><a href="Elara.TypeInfer.Environment.html#lookupLocalVarType"><span class="hs-identifier hs-var hs-var">lookupLocalVarType</span></a></span></span><span> </span><span id="local-6989586621680013744"><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013744"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013745"><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+</span><a href="#local-6989586621680013745"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Unique VarName
+-&gt; Map (Unique VarName) (Type loc) -&gt; Maybe (Type loc)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013744"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+</span><a href="#local-6989586621680013745"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680013746"><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013746"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type loc -&gt; Eff r (Type loc)
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Type loc
+</span><a href="#local-6989586621680013746"><span class="hs-identifier hs-var">ty</span></a></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Type loc)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InferError loc -&gt; Eff r (Type loc)
+forall e (es :: [Effect]) a.
+(HasCallStack, Error e :&gt; es, Show e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Unique VarName -&gt; LocalTypeEnvironment loc -&gt; InferError loc
+forall loc.
+Unique VarName -&gt; LocalTypeEnvironment loc -&gt; InferError loc
+</span><a href="Elara.TypeInfer.Environment.html#UnboundLocalVar"><span class="hs-identifier hs-var">UnboundLocalVar</span></a></span><span> </span><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013744"><span class="hs-identifier hs-var">var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+forall loc.
+Map (Unique VarName) (Type loc) -&gt; LocalTypeEnvironment loc
+</span><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-var">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Unique VarName) (Type loc)
+</span><a href="#local-6989586621680013745"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680013364"><span id="local-6989586621680013365"><span class="annot"><a href="Elara.TypeInfer.Environment.html#lookupLocalVar"><span class="hs-identifier hs-type">lookupLocalVar</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-117"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013364"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013365"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-type">InferError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013364"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680013365"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680013364"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680013365"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013364"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-123"></span><span id="lookupLocalVar"><span class="annot"><span class="annottext">lookupLocalVar :: forall loc (r :: [Effect]).
+(State (LocalTypeEnvironment loc) :&gt; r,
+ Error (InferError loc) :&gt; r, Show loc) =&gt;
+Unique VarName -&gt; Eff r (Type loc)
+</span><a href="Elara.TypeInfer.Environment.html#lookupLocalVar"><span class="hs-identifier hs-var hs-var">lookupLocalVar</span></a></span></span><span> </span><span id="local-6989586621680013758"><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013758"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Eff r (LocalTypeEnvironment loc)
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+Eff es s
+</span><span class="hs-identifier hs-var">get</span></span><span> </span><span class="annot"><span class="annottext">Eff r (LocalTypeEnvironment loc)
+-&gt; (LocalTypeEnvironment loc -&gt; Eff r (Type loc))
+-&gt; Eff r (Type loc)
+forall a b. Eff r a -&gt; (a -&gt; Eff r b) -&gt; Eff r b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Unique VarName -&gt; LocalTypeEnvironment loc -&gt; Eff r (Type loc)
+forall loc (r :: [Effect]).
+(Error (InferError loc) :&gt; r, Show loc) =&gt;
+Unique VarName -&gt; LocalTypeEnvironment loc -&gt; Eff r (Type loc)
+</span><a href="Elara.TypeInfer.Environment.html#lookupLocalVarType"><span class="hs-identifier hs-var">lookupLocalVarType</span></a></span><span> </span><span class="annot"><span class="annottext">Unique VarName
+</span><a href="#local-6989586621680013758"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="annot"><span class="hs-comment">-- | An error that can occur during type inference</span></span><span>
+</span><span id="line-126"></span><span class="hs-keyword">data</span><span> </span><span id="InferError"><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-var">InferError</span></a></span></span><span> </span><span id="local-6989586621680013332"><span class="annot"><a href="#local-6989586621680013332"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="UnboundTermVar"><span class="annot"><a href="Elara.TypeInfer.Environment.html#UnboundTermVar"><span class="hs-identifier hs-var">UnboundTermVar</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvKey"><span class="hs-identifier hs-type">TypeEnvKey</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013332"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013332"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="UnboundLocalVar"><span class="annot"><a href="Elara.TypeInfer.Environment.html#UnboundLocalVar"><span class="hs-identifier hs-var">UnboundLocalVar</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#LocalTypeEnvironment"><span class="hs-identifier hs-type">LocalTypeEnvironment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013332"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013761"><span id="local-6989586621680013770"><span id="local-6989586621680013773"><span class="annot"><span class="annottext">Int -&gt; InferError loc -&gt; ShowS
+[InferError loc] -&gt; ShowS
+InferError loc -&gt; String
+(Int -&gt; InferError loc -&gt; ShowS)
+-&gt; (InferError loc -&gt; String)
+-&gt; ([InferError loc] -&gt; ShowS)
+-&gt; Show (InferError loc)
+forall loc. Show loc =&gt; Int -&gt; InferError loc -&gt; ShowS
+forall loc. Show loc =&gt; [InferError loc] -&gt; ShowS
+forall loc. Show loc =&gt; InferError loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; InferError loc -&gt; ShowS
+showsPrec :: Int -&gt; InferError loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; InferError loc -&gt; String
+show :: InferError loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [InferError loc] -&gt; ShowS
+showList :: [InferError loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680013776"><span id="local-6989586621680013778"><span class="annot"><span class="annottext">(forall x. InferError loc -&gt; Rep (InferError loc) x)
+-&gt; (forall x. Rep (InferError loc) x -&gt; InferError loc)
+-&gt; Generic (InferError loc)
+forall x. Rep (InferError loc) x -&gt; InferError loc
+forall x. InferError loc -&gt; Rep (InferError loc) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc x. Rep (InferError loc) x -&gt; InferError loc
+forall loc x. InferError loc -&gt; Rep (InferError loc) x
+$cfrom :: forall loc x. InferError loc -&gt; Rep (InferError loc) x
+from :: forall x. InferError loc -&gt; Rep (InferError loc) x
+$cto :: forall loc x. Rep (InferError loc) x -&gt; InferError loc
+to :: forall x. Rep (InferError loc) x -&gt; InferError loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013407"><span id="local-6989586621680013782"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013407"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-type">InferError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013407"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013415"><span id="local-6989586621680013833"><span id="local-6989586621680013837"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013415"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#InferError"><span class="hs-identifier hs-type">InferError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680013415"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-134"></span><span>    </span><span id="local-6989586621680013859"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
+(DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
+InferError loc -&gt; Eff r ()
+</span><a href="#local-6989586621680013859"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#UnboundTermVar"><span class="hs-identifier hs-type">UnboundTermVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TermVarKey"><span class="hs-identifier hs-type">TermVarKey</span></a></span><span> </span><span id="local-6989586621680013861"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013861"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Environment.html#TypeEnvironment"><span class="hs-identifier hs-type">TypeEnvironment</span></a></span><span> </span><span id="local-6989586621680013862"><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013862"><span class="hs-identifier hs-var">env</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-135"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
+forall t (es :: [Effect]).
+(HasCallStack, DiagnosticWriter t :&gt; es) =&gt;
+Report t -&gt; Eff es ()
+</span><a href="Elara.Error.Effect.html#writeReport"><span class="hs-identifier hs-var">writeReport</span></a></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Eff r ())
+-&gt; Report (Doc AnsiStyle) -&gt; Eff r ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-136"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+-&gt; Doc AnsiStyle
+-&gt; [(Position, Marker (Doc AnsiStyle))]
+-&gt; [Note (Doc AnsiStyle)]
+-&gt; Report (Doc AnsiStyle)
+forall msg.
+Maybe msg
+-&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
+</span><span class="hs-identifier hs-var">Err</span></span><span>
+</span><span id="line-137"></span><span>                </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-138"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Unbound term variable &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680013861"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-140"></span><span>                </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+forall msg. msg -&gt; Note msg
+</span><span class="hs-identifier hs-var">Note</span></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; Note (Doc AnsiStyle))
+-&gt; Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Possible names:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; [a] -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#listToText"><span class="hs-identifier hs-var">listToText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeEnvKey loc -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeEnvKey loc -&gt; Doc AnsiStyle)
+-&gt; [TypeEnvKey loc] -&gt; [Doc AnsiStyle]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc) -&gt; [TypeEnvKey loc]
+forall k a. Map k a -&gt; [k]
+</span><span class="hs-identifier hs-var">Map.keys</span></span><span> </span><span class="annot"><span class="annottext">Map (TypeEnvKey loc) (Type loc)
+</span><a href="#local-6989586621680013862"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-141"></span><span>    </span><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-var">report</span></a></span><span> </span><span id="local-6989586621680013867"><span class="annot"><span class="annottext">InferError loc
+</span><a href="#local-6989586621680013867"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">InferError loc -&gt; Eff r ()
+forall e (r :: [Effect]).
+(ReportableError e, Pretty e,
+ DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
+e -&gt; Eff r ()
+</span><a href="Elara.Error.html#defaultReport"><span class="hs-identifier hs-var">defaultReport</span></a></span><span> </span><span class="annot"><span class="annottext">InferError loc
+</span><a href="#local-6989586621680013867"><span class="hs-identifier hs-var">o</span></a></span><span>
+</span><span id="line-142"></span></pre></body></html>

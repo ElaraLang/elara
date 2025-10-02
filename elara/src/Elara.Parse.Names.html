@@ -1,0 +1,464 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Parse.Names.html"><span class="hs-identifier">Elara.Parse.Names</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier">LowerAlphaName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier">ModuleName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier">OpName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier">TypeName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NormalVarName"><span class="hs-identifier">NormalVarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier">OperatorVarName</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarOrConName"><span class="hs-identifier">VarOrConName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html"><span class="hs-identifier">Elara.Lexer.Token</span></a></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html"><span class="hs-identifier">Elara.Parse.Primitives</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier">inParens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier">satisfyMap</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="annot"><a href="Elara.Parse.Names.html#moduleName"><span class="hs-identifier hs-type">moduleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span>
+</span><span id="line-8"></span><span id="moduleName"><span class="annot"><span class="annottext">moduleName :: Parser ModuleName
+</span><a href="Elara.Parse.Names.html#moduleName"><span class="hs-identifier hs-var hs-var">moduleName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe ModuleName) -&gt; Parser ModuleName
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe ModuleName) -&gt; Parser ModuleName)
+-&gt; (Token -&gt; Maybe ModuleName) -&gt; Parser ModuleName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQConstructorIdentifier"><span class="hs-identifier hs-type">TokenQConstructorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680016951"><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680016951"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016952"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680016952"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(ModuleName -&gt; Maybe ModuleName) -&gt; ModuleName -&gt; Maybe ModuleName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; ModuleName
+</span><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-var">ModuleName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680016951"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; NonEmpty Text -&gt; NonEmpty Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">OneItem (NonEmpty Text) -&gt; NonEmpty Text
+forall x. One x =&gt; OneItem x -&gt; x
+</span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">Text
+OneItem (NonEmpty Text)
+</span><a href="#local-6989586621680016952"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680016955"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680016955"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(ModuleName -&gt; Maybe ModuleName) -&gt; ModuleName -&gt; Maybe ModuleName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; ModuleName
+</span><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-var">ModuleName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OneItem (NonEmpty Text) -&gt; NonEmpty Text
+forall x. One x =&gt; OneItem x -&gt; x
+</span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">Text
+OneItem (NonEmpty Text)
+</span><a href="#local-6989586621680016955"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="annot"><a href="Elara.Parse.Names.html#varOrConName"><span class="hs-identifier hs-type">varOrConName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarOrConName"><span class="hs-identifier hs-type">VarOrConName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span id="varOrConName"><span class="annot"><span class="annottext">varOrConName :: Parser (MaybeQualified VarOrConName)
+</span><a href="Elara.Parse.Names.html#varOrConName"><span class="hs-identifier hs-var hs-var">varOrConName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; VarOrConName
+</span><a href="Elara.AST.Name.html#ConName"><span class="hs-identifier hs-var">ConName</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; VarOrConName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+-&gt; Parser (MaybeQualified VarOrConName)
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-var">conName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified VarOrConName)
+-&gt; Parser (MaybeQualified VarOrConName)
+-&gt; Parser (MaybeQualified VarOrConName)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LowerAlphaName -&gt; VarOrConName
+</span><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span><span> </span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; VarOrConName)
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+-&gt; Parser (MaybeQualified VarOrConName)
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+</span><a href="Elara.Parse.Names.html#normalVarName"><span class="hs-identifier hs-var">normalVarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="annot"><a href="Elara.Parse.Names.html#varName"><span class="hs-identifier hs-type">varName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span id="varName"><span class="annot"><span class="annottext">varName :: Parser (MaybeQualified VarName)
+</span><a href="Elara.Parse.Names.html#varName"><span class="hs-identifier hs-var hs-var">varName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified VarName)
+</span><a href="#local-6989586621680016979"><span class="hs-identifier hs-var">operatorVarName'</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified VarName)
+-&gt; Parser (MaybeQualified VarName)
+-&gt; Parser (MaybeQualified VarName)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified VarName)
+</span><a href="#local-6989586621680016980"><span class="hs-identifier hs-var">normalVarName'</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>    </span><span id="local-6989586621680016979"><span class="annot"><span class="annottext">operatorVarName' :: Parser (MaybeQualified VarName)
+</span><a href="#local-6989586621680016979"><span class="hs-identifier hs-var hs-var">operatorVarName'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(OpName -&gt; VarName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+-&gt; Parser (MaybeQualified VarName)
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+forall a. Parser a -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier hs-var">inParens</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+</span><a href="Elara.Parse.Names.html#opName"><span class="hs-identifier hs-var">opName</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span id="local-6989586621680016980"><span class="annot"><span class="annottext">normalVarName' :: Parser (MaybeQualified VarName)
+</span><a href="#local-6989586621680016980"><span class="hs-identifier hs-var hs-var">normalVarName'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; VarName
+</span><a href="Elara.AST.Name.html#NormalVarName"><span class="hs-identifier hs-var">NormalVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; VarName)
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+-&gt; Parser (MaybeQualified VarName)
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+</span><a href="Elara.Parse.Names.html#normalVarName"><span class="hs-identifier hs-var">normalVarName</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Elara.Parse.Names.html#unqualifiedVarName"><span class="hs-identifier hs-type">unqualifiedVarName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span>
+</span><span id="line-23"></span><span id="unqualifiedVarName"><span class="annot"><span class="annottext">unqualifiedVarName :: Parser VarName
+</span><a href="Elara.Parse.Names.html#unqualifiedVarName"><span class="hs-identifier hs-var hs-var">unqualifiedVarName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser VarName
+</span><a href="#local-6989586621680016990"><span class="hs-identifier hs-var">operatorVarName'</span></a></span><span> </span><span class="annot"><span class="annottext">Parser VarName -&gt; Parser VarName -&gt; Parser VarName
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser VarName
+</span><a href="#local-6989586621680016991"><span class="hs-identifier hs-var">normalVarName'</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621680016990"><span class="annot"><span class="annottext">operatorVarName' :: Parser VarName
+</span><a href="#local-6989586621680016990"><span class="hs-identifier hs-var hs-var">operatorVarName'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(OpName -&gt; VarName)
+-&gt; ParsecT ElaraParseError TokenStream Identity OpName
+-&gt; Parser VarName
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity OpName
+-&gt; ParsecT ElaraParseError TokenStream Identity OpName
+forall a. Parser a -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#inParens"><span class="hs-identifier hs-var">inParens</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity OpName
+</span><a href="Elara.Parse.Names.html#opId"><span class="hs-identifier hs-var">opId</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span id="local-6989586621680016991"><span class="annot"><span class="annottext">normalVarName' :: Parser VarName
+</span><a href="#local-6989586621680016991"><span class="hs-identifier hs-var hs-var">normalVarName'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; VarName
+</span><a href="Elara.AST.Name.html#NormalVarName"><span class="hs-identifier hs-var">NormalVarName</span></a></span><span> </span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; VarName)
+-&gt; ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+-&gt; Parser VarName
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+</span><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier hs-var">varId</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><a href="Elara.Parse.Names.html#normalVarName"><span class="hs-identifier hs-type">normalVarName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span id="normalVarName"><span class="annot"><span class="annottext">normalVarName :: ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+</span><a href="Elara.Parse.Names.html#normalVarName"><span class="hs-identifier hs-var hs-var">normalVarName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+</span><a href="Elara.Parse.Names.html#qVarId"><span class="hs-identifier hs-var">qVarId</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LowerAlphaName -&gt; Maybe ModuleName -&gt; MaybeQualified LowerAlphaName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-operator hs-var">`MaybeQualified`</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; MaybeQualified LowerAlphaName)
+-&gt; ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+</span><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier hs-var">varId</span></a></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-type">conName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span id="conName"><span class="annot"><span class="annottext">conName :: ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-var hs-var">conName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#qConId"><span class="hs-identifier hs-var">qConId</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Maybe ModuleName -&gt; MaybeQualified TypeName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-operator hs-var">`MaybeQualified`</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; MaybeQualified TypeName)
+-&gt; ParsecT ElaraParseError TokenStream Identity TypeName
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity TypeName
+</span><a href="Elara.Parse.Names.html#conId"><span class="hs-identifier hs-var">conId</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Elara.Parse.Names.html#opName"><span class="hs-identifier hs-type">opName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier hs-type">OpName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span id="opName"><span class="annot"><span class="annottext">opName :: ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+</span><a href="Elara.Parse.Names.html#opName"><span class="hs-identifier hs-var hs-var">opName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+</span><a href="Elara.Parse.Names.html#qOpId"><span class="hs-identifier hs-var">qOpId</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+forall a.
+ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+-&gt; ParsecT ElaraParseError TokenStream Identity a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpName -&gt; Maybe ModuleName -&gt; MaybeQualified OpName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-operator hs-var">`MaybeQualified`</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(OpName -&gt; MaybeQualified OpName)
+-&gt; ParsecT ElaraParseError TokenStream Identity OpName
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity OpName
+</span><a href="Elara.Parse.Names.html#opId"><span class="hs-identifier hs-var">opId</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- Qualified identifiers</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Elara.Parse.Names.html#qVarId"><span class="hs-identifier hs-type">qVarId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span id="qVarId"><span class="annot"><span class="annottext">qVarId :: ParsecT
+  ElaraParseError
+  TokenStream
+  Identity
+  (MaybeQualified LowerAlphaName)
+</span><a href="Elara.Parse.Names.html#qVarId"><span class="hs-identifier hs-var hs-var">qVarId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe (MaybeQualified LowerAlphaName))
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe (MaybeQualified LowerAlphaName))
+ -&gt; ParsecT
+      ElaraParseError
+      TokenStream
+      Identity
+      (MaybeQualified LowerAlphaName))
+-&gt; (Token -&gt; Maybe (MaybeQualified LowerAlphaName))
+-&gt; ParsecT
+     ElaraParseError
+     TokenStream
+     Identity
+     (MaybeQualified LowerAlphaName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQVariableIdentifier"><span class="hs-identifier hs-type">TokenQVariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680017015"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017015"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680017016"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017016"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">MaybeQualified LowerAlphaName
+-&gt; Maybe (MaybeQualified LowerAlphaName)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(MaybeQualified LowerAlphaName
+ -&gt; Maybe (MaybeQualified LowerAlphaName))
+-&gt; MaybeQualified LowerAlphaName
+-&gt; Maybe (MaybeQualified LowerAlphaName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; Maybe ModuleName -&gt; MaybeQualified LowerAlphaName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; LowerAlphaName
+</span><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-var">LowerAlphaName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017016"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017015"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (MaybeQualified LowerAlphaName)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Elara.Parse.Names.html#qConId"><span class="hs-identifier hs-type">qConId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span id="qConId"><span class="annot"><span class="annottext">qConId :: ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+</span><a href="Elara.Parse.Names.html#qConId"><span class="hs-identifier hs-var hs-var">qConId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe (MaybeQualified TypeName))
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe (MaybeQualified TypeName))
+ -&gt; ParsecT
+      ElaraParseError TokenStream Identity (MaybeQualified TypeName))
+-&gt; (Token -&gt; Maybe (MaybeQualified TypeName))
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified TypeName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQConstructorIdentifier"><span class="hs-identifier hs-type">TokenQConstructorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680017018"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017018"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680017019"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017019"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">MaybeQualified TypeName -&gt; Maybe (MaybeQualified TypeName)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(MaybeQualified TypeName -&gt; Maybe (MaybeQualified TypeName))
+-&gt; MaybeQualified TypeName -&gt; Maybe (MaybeQualified TypeName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Maybe ModuleName -&gt; MaybeQualified TypeName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017019"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017018"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (MaybeQualified TypeName)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Elara.Parse.Names.html#qOpId"><span class="hs-identifier hs-type">qOpId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier hs-type">OpName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span id="qOpId"><span class="annot"><span class="annottext">qOpId :: ParsecT
+  ElaraParseError TokenStream Identity (MaybeQualified OpName)
+</span><a href="Elara.Parse.Names.html#qOpId"><span class="hs-identifier hs-var hs-var">qOpId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe (MaybeQualified OpName))
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe (MaybeQualified OpName))
+ -&gt; ParsecT
+      ElaraParseError TokenStream Identity (MaybeQualified OpName))
+-&gt; (Token -&gt; Maybe (MaybeQualified OpName))
+-&gt; ParsecT
+     ElaraParseError TokenStream Identity (MaybeQualified OpName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQOperatorIdentifier"><span class="hs-identifier hs-type">TokenQOperatorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680017022"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017022"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680017023"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017023"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">MaybeQualified OpName -&gt; Maybe (MaybeQualified OpName)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(MaybeQualified OpName -&gt; Maybe (MaybeQualified OpName))
+-&gt; MaybeQualified OpName -&gt; Maybe (MaybeQualified OpName)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; Maybe ModuleName -&gt; MaybeQualified OpName
+forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
+</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; OpName
+</span><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier hs-var">OpName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017023"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680017022"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (MaybeQualified OpName)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- Unqualified identifiers</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier hs-type">varId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span>
+</span><span id="line-57"></span><span id="varId"><span class="annot"><span class="annottext">varId :: ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+</span><a href="Elara.Parse.Names.html#varId"><span class="hs-identifier hs-var hs-var">varId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe LowerAlphaName)
+-&gt; ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe LowerAlphaName)
+ -&gt; ParsecT ElaraParseError TokenStream Identity LowerAlphaName)
+-&gt; (Token -&gt; Maybe LowerAlphaName)
+-&gt; ParsecT ElaraParseError TokenStream Identity LowerAlphaName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenVariableIdentifier"><span class="hs-identifier hs-type">TokenVariableIdentifier</span></a></span><span> </span><span id="local-6989586621680017026"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017026"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; Maybe LowerAlphaName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; Maybe LowerAlphaName)
+-&gt; LowerAlphaName -&gt; Maybe LowerAlphaName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; LowerAlphaName
+</span><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-var">LowerAlphaName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017026"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe LowerAlphaName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Elara.Parse.Names.html#conId"><span class="hs-identifier hs-type">conId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-62"></span><span id="conId"><span class="annot"><span class="annottext">conId :: ParsecT ElaraParseError TokenStream Identity TypeName
+</span><a href="Elara.Parse.Names.html#conId"><span class="hs-identifier hs-var hs-var">conId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe TypeName)
+-&gt; ParsecT ElaraParseError TokenStream Identity TypeName
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe TypeName)
+ -&gt; ParsecT ElaraParseError TokenStream Identity TypeName)
+-&gt; (Token -&gt; Maybe TypeName)
+-&gt; ParsecT ElaraParseError TokenStream Identity TypeName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680017027"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017027"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Maybe TypeName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; Maybe TypeName) -&gt; TypeName -&gt; Maybe TypeName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeName
+</span><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-var">TypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017027"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe TypeName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><a href="Elara.Parse.Names.html#opId"><span class="hs-identifier hs-type">opId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier hs-type">OpName</span></a></span><span>
+</span><span id="line-67"></span><span id="opId"><span class="annot"><span class="annottext">opId :: ParsecT ElaraParseError TokenStream Identity OpName
+</span><a href="Elara.Parse.Names.html#opId"><span class="hs-identifier hs-var hs-var">opId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token -&gt; Maybe OpName)
+-&gt; ParsecT ElaraParseError TokenStream Identity OpName
+forall a. (Token -&gt; Maybe a) -&gt; Parser a
+</span><a href="Elara.Parse.Primitives.html#satisfyMap"><span class="hs-identifier hs-var">satisfyMap</span></a></span><span> </span><span class="annot"><span class="annottext">((Token -&gt; Maybe OpName)
+ -&gt; ParsecT ElaraParseError TokenStream Identity OpName)
+-&gt; (Token -&gt; Maybe OpName)
+-&gt; ParsecT ElaraParseError TokenStream Identity OpName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenOperatorIdentifier"><span class="hs-identifier hs-type">TokenOperatorIdentifier</span></a></span><span> </span><span id="local-6989586621680017029"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017029"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OpName -&gt; Maybe OpName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(OpName -&gt; Maybe OpName) -&gt; OpName -&gt; Maybe OpName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; OpName
+</span><a href="Elara.AST.Name.html#OpName"><span class="hs-identifier hs-var">OpName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680017029"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="annottext">Token
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe OpName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-70"></span></pre></body></html>

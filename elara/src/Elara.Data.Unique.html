@@ -1,0 +1,807 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680002176"><span id="local-6989586621680002177"><span id="local-6989586621680002178"><span id="local-6989586621680002179"></span></span></span></span><span class="hs-pragma">{-# LANGUAGE PatternSynonyms #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Aeson</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ToJSON</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unsafePerformIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">show</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="Unique"><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-var">Unique</span></a></span></span><span> </span><span id="local-6989586621680002000"><span class="annot"><a href="#local-6989586621680002000"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Unique"><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-var">Unique</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621680002000"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680002185"><span id="local-6989586621680002192"><span id="local-6989586621680002196"><span class="annot"><span class="annottext">Int -&gt; Unique a -&gt; ShowS
+[Unique a] -&gt; ShowS
+Unique a -&gt; String
+(Int -&gt; Unique a -&gt; ShowS)
+-&gt; (Unique a -&gt; String) -&gt; ([Unique a] -&gt; ShowS) -&gt; Show (Unique a)
+forall a. Show a =&gt; Int -&gt; Unique a -&gt; ShowS
+forall a. Show a =&gt; [Unique a] -&gt; ShowS
+forall a. Show a =&gt; Unique a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; Unique a -&gt; ShowS
+showsPrec :: Int -&gt; Unique a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; Unique a -&gt; String
+show :: Unique a -&gt; String
+$cshowList :: forall a. Show a =&gt; [Unique a] -&gt; ShowS
+showList :: [Unique a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002201"><span id="local-6989586621680002203"><span class="annot"><span class="annottext">(forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b)
+-&gt; (forall a b. a -&gt; Unique b -&gt; Unique a) -&gt; Functor Unique
+forall a b. a -&gt; Unique b -&gt; Unique a
+forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+$cfmap :: forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b
+fmap :: forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b
+$c&lt;$ :: forall a b. a -&gt; Unique b -&gt; Unique a
+&lt;$ :: forall a b. a -&gt; Unique b -&gt; Unique a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002213"><span id="local-6989586621680002218"><span id="local-6989586621680002222"><span id="local-6989586621680002224"><span id="local-6989586621680002226"><span id="local-6989586621680002232"><span id="local-6989586621680002238"><span id="local-6989586621680002241"><span id="local-6989586621680002244"><span id="local-6989586621680002247"><span id="local-6989586621680002250"><span id="local-6989586621680002253"><span id="local-6989586621680002258"><span id="local-6989586621680002263"><span class="annot"><span class="annottext">Typeable (Unique a)
+Typeable (Unique a) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; Unique a -&gt; c (Unique a))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Unique a))
+-&gt; (Unique a -&gt; Constr)
+-&gt; (Unique a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Unique a)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e))
+    -&gt; Maybe (c (Unique a)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; Unique a -&gt; Unique a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a))
+-&gt; Data (Unique a)
+Unique a -&gt; Constr
+Unique a -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; Unique a -&gt; Unique a
+forall a. Data a =&gt; Typeable (Unique a)
+forall a. Data a =&gt; Unique a -&gt; Constr
+forall a. Data a =&gt; Unique a -&gt; DataType
+forall a.
+Data a =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Unique a -&gt; Unique a
+forall a u.
+Data a =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; u
+forall a u.
+Data a =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; [u]
+forall a r r'.
+Data a =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+forall a r r'.
+Data a =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+forall a (m :: * -&gt; *).
+(Data a, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+forall a (m :: * -&gt; *).
+(Data a, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+forall a (c :: * -&gt; *).
+Data a =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Unique a)
+forall a (c :: * -&gt; *).
+Data a =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Unique a -&gt; c (Unique a)
+forall a (t :: * -&gt; *) (c :: * -&gt; *).
+(Data a, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Unique a))
+forall a (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data a, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Unique a))
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Unique a)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Unique a -&gt; c (Unique a)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Unique a))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Unique a))
+$cgfoldl :: forall a (c :: * -&gt; *).
+Data a =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Unique a -&gt; c (Unique a)
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Unique a -&gt; c (Unique a)
+$cgunfold :: forall a (c :: * -&gt; *).
+Data a =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Unique a)
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Unique a)
+$ctoConstr :: forall a. Data a =&gt; Unique a -&gt; Constr
+toConstr :: Unique a -&gt; Constr
+$cdataTypeOf :: forall a. Data a =&gt; Unique a -&gt; DataType
+dataTypeOf :: Unique a -&gt; DataType
+$cdataCast1 :: forall a (t :: * -&gt; *) (c :: * -&gt; *).
+(Data a, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Unique a))
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Unique a))
+$cdataCast2 :: forall a (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data a, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Unique a))
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Unique a))
+$cgmapT :: forall a.
+Data a =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Unique a -&gt; Unique a
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Unique a -&gt; Unique a
+$cgmapQl :: forall a r r'.
+Data a =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+$cgmapQr :: forall a r r'.
+Data a =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Unique a -&gt; r
+$cgmapQ :: forall a u.
+Data a =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; [u]
+$cgmapQi :: forall a u.
+Data a =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Unique a -&gt; u
+$cgmapM :: forall a (m :: * -&gt; *).
+(Data a, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+$cgmapMp :: forall a (m :: * -&gt; *).
+(Data a, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+$cgmapMo :: forall a (m :: * -&gt; *).
+(Data a, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Unique a -&gt; m (Unique a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002275"><span id="local-6989586621680002277"><span class="annot"><span class="annottext">(forall x. Unique a -&gt; Rep (Unique a) x)
+-&gt; (forall x. Rep (Unique a) x -&gt; Unique a) -&gt; Generic (Unique a)
+forall x. Rep (Unique a) x -&gt; Unique a
+forall x. Unique a -&gt; Rep (Unique a) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall a x. Rep (Unique a) x -&gt; Unique a
+forall a x. Unique a -&gt; Rep (Unique a) x
+$cfrom :: forall a x. Unique a -&gt; Rep (Unique a) x
+from :: forall x. Unique a -&gt; Rep (Unique a) x
+$cto :: forall a x. Rep (Unique a) x -&gt; Unique a
+to :: forall x. Rep (Unique a) x -&gt; Unique a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002288"><span id="local-6989586621680002293"><span id="local-6989586621680002299"><span id="local-6989586621680002304"><span class="annot"><span class="annottext">Functor Unique
+Foldable Unique
+(Functor Unique, Foldable Unique) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Unique a -&gt; f (Unique b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Unique (f a) -&gt; f (Unique a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Unique a -&gt; m (Unique b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Unique (m a) -&gt; m (Unique a))
+-&gt; Traversable Unique
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Unique (m a) -&gt; m (Unique a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Unique (f a) -&gt; f (Unique a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Unique a -&gt; m (Unique b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Unique a -&gt; f (Unique b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Unique a -&gt; f (Unique b)
+traverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Unique a -&gt; f (Unique b)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Unique (f a) -&gt; f (Unique a)
+sequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Unique (f a) -&gt; f (Unique a)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Unique a -&gt; m (Unique b)
+mapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Unique a -&gt; m (Unique b)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Unique (m a) -&gt; m (Unique a)
+sequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Unique (m a) -&gt; m (Unique a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002312"><span id="local-6989586621680002317"><span id="local-6989586621680002320"><span id="local-6989586621680002325"><span id="local-6989586621680002327"><span id="local-6989586621680002330"><span id="local-6989586621680002333"><span id="local-6989586621680002336"><span id="local-6989586621680002339"><span id="local-6989586621680002342"><span id="local-6989586621680002345"><span id="local-6989586621680002347"><span id="local-6989586621680002350"><span id="local-6989586621680002355"><span id="local-6989586621680002360"><span id="local-6989586621680002365"><span id="local-6989586621680002370"><span class="annot"><span class="annottext">(forall m. Monoid m =&gt; Unique m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a)
+-&gt; (forall a. Unique a -&gt; [a])
+-&gt; (forall a. Unique a -&gt; Bool)
+-&gt; (forall a. Unique a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Unique a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Unique a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Unique a -&gt; a)
+-&gt; (forall a. Num a =&gt; Unique a -&gt; a)
+-&gt; (forall a. Num a =&gt; Unique a -&gt; a)
+-&gt; Foldable Unique
+forall a. Eq a =&gt; a -&gt; Unique a -&gt; Bool
+forall a. Num a =&gt; Unique a -&gt; a
+forall a. Ord a =&gt; Unique a -&gt; a
+forall m. Monoid m =&gt; Unique m -&gt; m
+forall a. Unique a -&gt; Bool
+forall a. Unique a -&gt; Int
+forall a. Unique a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+$cfold :: forall m. Monoid m =&gt; Unique m -&gt; m
+fold :: forall m. Monoid m =&gt; Unique m -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m
+foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m
+foldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Unique a -&gt; m
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+foldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+foldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+foldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+foldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Unique a -&gt; b
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a
+foldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a
+foldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Unique a -&gt; a
+$ctoList :: forall a. Unique a -&gt; [a]
+toList :: forall a. Unique a -&gt; [a]
+$cnull :: forall a. Unique a -&gt; Bool
+null :: forall a. Unique a -&gt; Bool
+$clength :: forall a. Unique a -&gt; Int
+length :: forall a. Unique a -&gt; Int
+$celem :: forall a. Eq a =&gt; a -&gt; Unique a -&gt; Bool
+elem :: forall a. Eq a =&gt; a -&gt; Unique a -&gt; Bool
+$cmaximum :: forall a. Ord a =&gt; Unique a -&gt; a
+maximum :: forall a. Ord a =&gt; Unique a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Unique a -&gt; a
+minimum :: forall a. Ord a =&gt; Unique a -&gt; a
+$csum :: forall a. Num a =&gt; Unique a -&gt; a
+sum :: forall a. Num a =&gt; Unique a -&gt; a
+$cproduct :: forall a. Num a =&gt; Unique a -&gt; a
+product :: forall a. Num a =&gt; Unique a -&gt; a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">pattern</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique%27"><span class="hs-identifier hs-type">Unique'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680001990"><span class="annot"><a href="#local-6989586621680001990"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680001990"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">pattern</span><span> </span><span id="Unique%27"><span id="%24mUnique%27"><span class="annot"><span class="annottext">$mUnique' :: forall {r} {a}. Unique a -&gt; (a -&gt; r) -&gt; ((# #) -&gt; r) -&gt; r
+</span><a href="Elara.Data.Unique.html#Unique%27"><span class="hs-identifier hs-var hs-var">Unique'</span></a></span></span></span><span> </span><span class="annot"><a href="#local-6989586621680002380"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002380"><span class="annot"><a href="#local-6989586621680002380"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-pragma">{-# COMPLETE</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique%27"><span class="hs-pragma hs-type">Unique'</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span id="local-6989586621680001992"><span class="annot"><a href="Elara.Data.Unique.html#uniqueId"><span class="hs-identifier hs-type">uniqueId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680001992"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-21"></span><span id="uniqueId"><span class="annot"><span class="annottext">uniqueId :: forall a. Lens' (Unique a) Int
+</span><a href="Elara.Data.Unique.html#uniqueId"><span class="hs-identifier hs-var hs-var">uniqueId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Unique a -&gt; Int)
+-&gt; (Unique a -&gt; Int -&gt; Unique a)
+-&gt; Lens (Unique a) (Unique a) Int Int
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">lens</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680002383"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002383"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002383"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002384"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002384"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680002385"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002385"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; Unique a
+forall a. a -&gt; Int -&gt; Unique a
+</span><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-var">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002384"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002385"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span id="local-6989586621680002001"><span class="annot"><a href="Elara.Data.Unique.html#uniqueVal"><span class="hs-identifier hs-type">uniqueVal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002001"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680002001"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-24"></span><span id="uniqueVal"><span class="annot"><span class="annottext">uniqueVal :: forall a. Lens' (Unique a) a
+</span><a href="Elara.Data.Unique.html#uniqueVal"><span class="hs-identifier hs-var hs-var">uniqueVal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Unique a -&gt; a)
+-&gt; (Unique a -&gt; a -&gt; Unique a) -&gt; Lens (Unique a) (Unique a) a a
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">lens</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002387"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002387"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002387"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680002388"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002388"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680002389"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002389"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; Unique a
+forall a. a -&gt; Int -&gt; Unique a
+</span><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-var">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002389"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002388"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span id="local-6989586621680002390"><span class="annot"><a href="Elara.Data.Unique.html#unsafeMkUnique"><span class="hs-identifier hs-type">unsafeMkUnique</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680002390"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002390"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-27"></span><span id="unsafeMkUnique"><span class="annot"><span class="annottext">unsafeMkUnique :: forall a. a -&gt; Int -&gt; Unique a
+</span><a href="Elara.Data.Unique.html#unsafeMkUnique"><span class="hs-identifier hs-var hs-var">unsafeMkUnique</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int -&gt; Unique a
+forall a. a -&gt; Int -&gt; Unique a
+</span><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-var">Unique</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><span class="hs-comment">-- | A @Unique@ where the value is not important.</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">newtype</span><span> </span><span id="UniqueId"><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-var">UniqueId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="UniqueId"><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-var">UniqueId</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680002394"><span id="local-6989586621680002400"><span class="annot"><span class="annottext">UniqueId -&gt; UniqueId -&gt; Bool
+(UniqueId -&gt; UniqueId -&gt; Bool)
+-&gt; (UniqueId -&gt; UniqueId -&gt; Bool) -&gt; Eq UniqueId
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: UniqueId -&gt; UniqueId -&gt; Bool
+== :: UniqueId -&gt; UniqueId -&gt; Bool
+$c/= :: UniqueId -&gt; UniqueId -&gt; Bool
+/= :: UniqueId -&gt; UniqueId -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002411"><span id="local-6989586621680002417"><span id="local-6989586621680002422"><span id="local-6989586621680002427"><span id="local-6989586621680002432"><span id="local-6989586621680002437"><span id="local-6989586621680002442"><span class="annot"><span class="annottext">Eq UniqueId
+Eq UniqueId =&gt;
+(UniqueId -&gt; UniqueId -&gt; Ordering)
+-&gt; (UniqueId -&gt; UniqueId -&gt; Bool)
+-&gt; (UniqueId -&gt; UniqueId -&gt; Bool)
+-&gt; (UniqueId -&gt; UniqueId -&gt; Bool)
+-&gt; (UniqueId -&gt; UniqueId -&gt; Bool)
+-&gt; (UniqueId -&gt; UniqueId -&gt; UniqueId)
+-&gt; (UniqueId -&gt; UniqueId -&gt; UniqueId)
+-&gt; Ord UniqueId
+UniqueId -&gt; UniqueId -&gt; Bool
+UniqueId -&gt; UniqueId -&gt; Ordering
+UniqueId -&gt; UniqueId -&gt; UniqueId
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: UniqueId -&gt; UniqueId -&gt; Ordering
+compare :: UniqueId -&gt; UniqueId -&gt; Ordering
+$c&lt; :: UniqueId -&gt; UniqueId -&gt; Bool
+&lt; :: UniqueId -&gt; UniqueId -&gt; Bool
+$c&lt;= :: UniqueId -&gt; UniqueId -&gt; Bool
+&lt;= :: UniqueId -&gt; UniqueId -&gt; Bool
+$c&gt; :: UniqueId -&gt; UniqueId -&gt; Bool
+&gt; :: UniqueId -&gt; UniqueId -&gt; Bool
+$c&gt;= :: UniqueId -&gt; UniqueId -&gt; Bool
+&gt;= :: UniqueId -&gt; UniqueId -&gt; Bool
+$cmax :: UniqueId -&gt; UniqueId -&gt; UniqueId
+max :: UniqueId -&gt; UniqueId -&gt; UniqueId
+$cmin :: UniqueId -&gt; UniqueId -&gt; UniqueId
+min :: UniqueId -&gt; UniqueId -&gt; UniqueId
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002458"><span id="local-6989586621680002462"><span id="local-6989586621680002466"><span id="local-6989586621680002468"><span id="local-6989586621680002470"><span id="local-6989586621680002476"><span id="local-6989586621680002481"><span id="local-6989586621680002484"><span id="local-6989586621680002487"><span id="local-6989586621680002490"><span id="local-6989586621680002493"><span id="local-6989586621680002496"><span id="local-6989586621680002501"><span id="local-6989586621680002506"><span class="annot"><span class="annottext">Typeable UniqueId
+Typeable UniqueId =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; UniqueId -&gt; c UniqueId)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c UniqueId)
+-&gt; (UniqueId -&gt; Constr)
+-&gt; (UniqueId -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c UniqueId))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c UniqueId))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; UniqueId -&gt; UniqueId)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId)
+-&gt; Data UniqueId
+UniqueId -&gt; Constr
+UniqueId -&gt; DataType
+(forall b. Data b =&gt; b -&gt; b) -&gt; UniqueId -&gt; UniqueId
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c UniqueId
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; UniqueId -&gt; c UniqueId
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c UniqueId)
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c UniqueId)
+$cgfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; UniqueId -&gt; c UniqueId
+gfoldl :: forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; UniqueId -&gt; c UniqueId
+$cgunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c UniqueId
+gunfold :: forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c UniqueId
+$ctoConstr :: UniqueId -&gt; Constr
+toConstr :: UniqueId -&gt; Constr
+$cdataTypeOf :: UniqueId -&gt; DataType
+dataTypeOf :: UniqueId -&gt; DataType
+$cdataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c UniqueId)
+dataCast1 :: forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c UniqueId)
+$cdataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c UniqueId)
+dataCast2 :: forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c UniqueId)
+$cgmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; UniqueId -&gt; UniqueId
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; UniqueId -&gt; UniqueId
+$cgmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+gmapQl :: forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+$cgmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+gmapQr :: forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; UniqueId -&gt; r
+$cgmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; [u]
+gmapQ :: forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; [u]
+$cgmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; u
+gmapQi :: forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; UniqueId -&gt; u
+$cgmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+gmapM :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+$cgmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+gmapMp :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+$cgmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+gmapMo :: forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; UniqueId -&gt; m UniqueId
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680002512"><span id="local-6989586621680002514"><span class="annot"><span class="annottext">(forall x. UniqueId -&gt; Rep UniqueId x)
+-&gt; (forall x. Rep UniqueId x -&gt; UniqueId) -&gt; Generic UniqueId
+forall x. Rep UniqueId x -&gt; UniqueId
+forall x. UniqueId -&gt; Rep UniqueId x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. UniqueId -&gt; Rep UniqueId x
+from :: forall x. UniqueId -&gt; Rep UniqueId x
+$cto :: forall x. Rep UniqueId x -&gt; UniqueId
+to :: forall x. Rep UniqueId x -&gt; UniqueId
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002118"><span id="local-6989586621680002518"><span id="local-6989586621680002525"><span id="local-6989586621680002528"><span id="local-6989586621680002531"><span id="local-6989586621680002534"><span class="annot"><span class="hs-identifier hs-type">ToJSON</span></span><span> </span><span class="annot"><a href="#local-6989586621680002118"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ToJSON</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002118"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002598"><span id="local-6989586621680002605"><span id="local-6989586621680002608"><span id="local-6989586621680002611"><span id="local-6989586621680002614"><span class="annot"><span class="hs-identifier hs-type">ToJSON</span></span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span></span></span></span></span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002647"><span id="local-6989586621680002652"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621680002655"><span class="annot"><span class="annottext">show :: UniqueId -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680002656"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002656"><span class="hs-identifier hs-var">uniqueId</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">Text.Show.show</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002656"><span class="hs-identifier hs-var">uniqueId</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002009"><span id="local-6989586621680002660"><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621680002009"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002009"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002665"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002665"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680002666"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002666"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680002667"><span class="annot"><span class="annottext">== :: Unique a -&gt; Unique a -&gt; Bool
+</span><span class="hs-operator hs-var hs-var hs-var">==</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002668"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002668"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680002669"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002669"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002666"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002669"><span class="hs-identifier hs-var">j</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002665"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002668"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002011"><span id="local-6989586621680002677"><span id="local-6989586621680002680"><span id="local-6989586621680002683"><span id="local-6989586621680002686"><span id="local-6989586621680002689"><span id="local-6989586621680002692"><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680002011"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002011"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>    </span><span id="local-6989586621680002697"><span class="annot"><span class="annottext">compare :: Unique a -&gt; Unique a -&gt; Ordering
+</span><span class="hs-identifier hs-var hs-var hs-var">compare</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002698"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002698"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680002699"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002699"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002700"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002700"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680002701"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002701"><span class="hs-identifier hs-var">j</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002699"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002701"><span class="hs-identifier hs-var">j</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002698"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002700"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621680002702"><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621680002702"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621680002702"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span id="UniqueSupply"><span class="annot"><a href="Elara.Data.Unique.html#UniqueSupply"><span class="hs-identifier hs-var">UniqueSupply</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="UniqueSupply"><span class="annot"><a href="Elara.Data.Unique.html#UniqueSupply"><span class="hs-identifier hs-var">UniqueSupply</span></a></span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="_uniqueSupplyUniques"><span class="annot"><span class="annottext">UniqueSupply -&gt; [Int]
+</span><a href="Elara.Data.Unique.html#_uniqueSupplyUniques"><span class="hs-identifier hs-var hs-var">_uniqueSupplyUniques</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">]</span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Elara.Data.Unique.html#freshUniqueSupply"><span class="hs-identifier hs-type">freshUniqueSupply</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueSupply"><span class="hs-identifier hs-type">UniqueSupply</span></a></span><span>
+</span><span id="line-52"></span><span id="freshUniqueSupply"><span class="annot"><span class="annottext">freshUniqueSupply :: UniqueSupply
+</span><a href="Elara.Data.Unique.html#freshUniqueSupply"><span class="hs-identifier hs-var hs-var">freshUniqueSupply</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; UniqueSupply
+</span><a href="Elara.Data.Unique.html#UniqueSupply"><span class="hs-identifier hs-var">UniqueSupply</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Elara.Data.Unique.html#globalUniqueSupply"><span class="hs-identifier hs-type">globalUniqueSupply</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueSupply"><span class="hs-identifier hs-type">UniqueSupply</span></a></span><span>
+</span><span id="line-55"></span><span id="globalUniqueSupply"><span class="annot"><span class="annottext">globalUniqueSupply :: IORef UniqueSupply
+</span><a href="Elara.Data.Unique.html#globalUniqueSupply"><span class="hs-identifier hs-var hs-var">globalUniqueSupply</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (IORef UniqueSupply) -&gt; IORef UniqueSupply
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UniqueSupply -&gt; IO (IORef UniqueSupply)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; a -&gt; m (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">UniqueSupply
+</span><a href="Elara.Data.Unique.html#freshUniqueSupply"><span class="hs-identifier hs-var">freshUniqueSupply</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-pragma">{-# NOINLINE</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#globalUniqueSupply"><span class="hs-pragma hs-type">globalUniqueSupply</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Elara.Data.Unique.html#resetGlobalUniqueSupply"><span class="hs-identifier hs-type">resetGlobalUniqueSupply</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span id="resetGlobalUniqueSupply"><span class="annot"><span class="annottext">resetGlobalUniqueSupply :: IO ()
+</span><a href="Elara.Data.Unique.html#resetGlobalUniqueSupply"><span class="hs-identifier hs-var hs-var">resetGlobalUniqueSupply</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef UniqueSupply -&gt; UniqueSupply -&gt; IO ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IORef a -&gt; a -&gt; m ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef UniqueSupply
+</span><a href="Elara.Data.Unique.html#globalUniqueSupply"><span class="hs-identifier hs-var">globalUniqueSupply</span></a></span><span> </span><span class="annot"><span class="annottext">UniqueSupply
+</span><a href="Elara.Data.Unique.html#freshUniqueSupply"><span class="hs-identifier hs-var">freshUniqueSupply</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span id="uniqueSupplyUniques"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">UniqueSupply</span></span><span>
+</span><span id="line-62"></span><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">Unique</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span id="local-6989586621680002138"><span class="annot"><a href="Elara.Data.Unique.html#getUniqueId"><span class="hs-identifier hs-type">getUniqueId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002138"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span></span><span>
+</span><span id="line-65"></span><span id="getUniqueId"><span class="annot"><span class="annottext">getUniqueId :: forall a. Unique a -&gt; UniqueId
+</span><a href="Elara.Data.Unique.html#getUniqueId"><span class="hs-identifier hs-var hs-var">getUniqueId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Unique () -&gt; UniqueId
+</span><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-var">UniqueId</span></a></span><span> </span><span class="annot"><span class="annottext">(Unique () -&gt; UniqueId)
+-&gt; (Unique a -&gt; Unique ()) -&gt; Unique a -&gt; UniqueId
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Unique a -&gt; Unique ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><span class="hs-identifier hs-var">void</span></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span id="local-6989586621680002145"><span class="annot"><a href="Elara.Data.Unique.html#uniqueToText"><span class="hs-identifier hs-type">uniqueToText</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680002145"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002145"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
+</span><span id="line-68"></span><span id="uniqueToText"><span class="annot"><span class="annottext">uniqueToText :: forall a. (a -&gt; Text) -&gt; Unique a -&gt; Text
+</span><a href="Elara.Data.Unique.html#uniqueToText"><span class="hs-identifier hs-var hs-var">uniqueToText</span></a></span></span><span> </span><span id="local-6989586621680002728"><span class="annot"><span class="annottext">a -&gt; Text
+</span><a href="#local-6989586621680002728"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002729"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002729"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680002730"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002730"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Text
+</span><a href="#local-6989586621680002728"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002729"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Text
+forall b a. (Show a, IsString b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">Prelude.show</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002730"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002156"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002156"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002156"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621680002744"><span class="annot"><span class="annottext">pretty :: Unique a -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680002744"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span id="local-6989586621680002746"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002746"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680002747"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002747"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680002746"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;_&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002747"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621680002751"><span class="annot"><span class="annottext">pretty :: UniqueId -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680002752"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002752"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680002752"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002175"><span id="local-6989586621680002758"><span id="local-6989586621680002765"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680002175"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680002175"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680002783"><span id="local-6989586621680002790"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span></span></span><span>
+</span><span id="line-79"></span></pre></body></html>

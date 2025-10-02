@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Unique.html"><span class="hs-identifier">Elara.TypeInfer.Unique</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier">Unique</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier">UniqueId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier">UniqueId</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html"><span class="hs-identifier">Elara.Data.Unique.Effect</span></a></span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">type</span><span> </span><span id="UniqueTyVar"><span class="annot"><a href="Elara.TypeInfer.Unique.html#UniqueTyVar"><span class="hs-identifier hs-var">UniqueTyVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- Optional name for the type variable. Improves error messages</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="annot"><a href="Elara.TypeInfer.Unique.html#uniqueIdToTyVar"><span class="hs-identifier hs-type">uniqueIdToTyVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Unique.html#UniqueTyVar"><span class="hs-identifier hs-type">UniqueTyVar</span></a></span><span>
+</span><span id="line-11"></span><span id="uniqueIdToTyVar"><span class="annot"><span class="annottext">uniqueIdToTyVar :: UniqueId -&gt; UniqueTyVar
+</span><a href="Elara.TypeInfer.Unique.html#uniqueIdToTyVar"><span class="hs-identifier hs-var hs-var">uniqueIdToTyVar</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span> </span><span id="local-6989586621680003127"><span class="annot"><span class="annottext">Unique ()
+</span><a href="#local-6989586621680003127"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(() -&gt; Maybe Text) -&gt; Unique () -&gt; UniqueTyVar
+forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Text -&gt; () -&gt; Maybe Text
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Unique ()
+</span><a href="#local-6989586621680003127"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span id="local-6989586621680003108"><span class="annot"><a href="Elara.TypeInfer.Unique.html#makeUniqueTyVar"><span class="hs-identifier hs-type">makeUniqueTyVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier hs-type">UniqueGen</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680003108"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680003108"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Unique.html#UniqueTyVar"><span class="hs-identifier hs-type">UniqueTyVar</span></a></span></span><span>
+</span><span id="line-14"></span><span id="makeUniqueTyVar"><span class="annot"><span class="annottext">makeUniqueTyVar :: forall (r :: [Effect]). (UniqueGen :&gt; r) =&gt; Eff r UniqueTyVar
+</span><a href="Elara.TypeInfer.Unique.html#makeUniqueTyVar"><span class="hs-identifier hs-var hs-var">makeUniqueTyVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">UniqueId -&gt; UniqueTyVar
+</span><a href="Elara.TypeInfer.Unique.html#uniqueIdToTyVar"><span class="hs-identifier hs-var">uniqueIdToTyVar</span></a></span><span> </span><span class="annot"><span class="annottext">(UniqueId -&gt; UniqueTyVar) -&gt; Eff r UniqueId -&gt; Eff r UniqueTyVar
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Eff r UniqueId
+forall (r :: [Effect]). (UniqueGen :&gt; r) =&gt; Eff r UniqueId
+</span><a href="Elara.Data.Unique.Effect.html#makeUniqueId"><span class="hs-identifier hs-var">makeUniqueId</span></a></span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span id="local-6989586621680003117"><span class="annot"><a href="Elara.TypeInfer.Unique.html#makeUniqueTyVarWith"><span class="hs-identifier hs-type">makeUniqueTyVarWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Unique.Effect.html#UniqueGen"><span class="hs-identifier hs-type">UniqueGen</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680003117"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680003117"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Unique.html#UniqueTyVar"><span class="hs-identifier hs-type">UniqueTyVar</span></a></span></span><span>
+</span><span id="line-17"></span><span id="makeUniqueTyVarWith"><span class="annot"><span class="annottext">makeUniqueTyVarWith :: forall (r :: [Effect]).
+(UniqueGen :&gt; r) =&gt;
+Text -&gt; Eff r UniqueTyVar
+</span><a href="Elara.TypeInfer.Unique.html#makeUniqueTyVarWith"><span class="hs-identifier hs-var hs-var">makeUniqueTyVarWith</span></a></span></span><span> </span><span id="local-6989586621680003141"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680003141"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; Maybe Text -&gt; Maybe Text
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680003141"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Maybe Text)
+-&gt; Eff r UniqueTyVar -&gt; Eff r UniqueTyVar
+forall (f :: * -&gt; *) (g :: * -&gt; *) a b.
+(Functor f, Functor g) =&gt;
+(a -&gt; b) -&gt; f (g a) -&gt; f (g b)
+</span><span class="hs-operator hs-var">&lt;&lt;$&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Eff r UniqueTyVar
+forall (r :: [Effect]). (UniqueGen :&gt; r) =&gt; Eff r UniqueTyVar
+</span><a href="Elara.TypeInfer.Unique.html#makeUniqueTyVar"><span class="hs-identifier hs-var">makeUniqueTyVar</span></a></span><span>
+</span><span id="line-18"></span></pre></body></html>
