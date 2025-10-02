@@ -244,6 +244,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(logging)* :bug: Update polysemy-log dependency, maybe fixing some compilation issues - ([a32ba45](https://github.com/ElaraLang/elara/commit/a32ba45aabeeca0c16c0838f4f10f881dfc7637e)) 
 - *(nix)* :heavy_plus_sign: add rock dependency - ([568d228](https://github.com/ElaraLang/elara/commit/568d2284021d23046bc5a2f538f11dfe5686717c)) 
 - *(nix)* :arrow_up: Update hlint to work with ghc 9.12 extensions - ([198163a](https://github.com/ElaraLang/elara/commit/198163ae3321460c12f3c6323160dd35b6376171)) 
+- *(nix)* Disable ghcid as it causes way too many issues - ([4165493](https://github.com/ElaraLang/elara/commit/41654936c3fd38511fc3dcd6ade10f62e788f025)) 
 - :arrow_up: Update to GHC 9.10.1 - ([10db81c](https://github.com/ElaraLang/elara/commit/10db81cabb072cfe461638a97b313b10d470a574)) 
 - :building_construction: Make build flags consistent between tests and executables - ([997f2f1](https://github.com/ElaraLang/elara/commit/997f2f1d680e468315c4cf4a29068c0abdee816e)) 
 - :arrow_up: Update `optics` - ([eb35403](https://github.com/ElaraLang/elara/commit/eb3540318dbbd1a33081c34d538d2c360a68adcb)) 
