@@ -184,6 +184,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :coffin: Remove old polysemy pipeline stuff - ([f49ded8](https://github.com/ElaraLang/elara/commit/f49ded89be08cb53b9a6ac4f3b9aa55c3b565a1e)) 
 - Add files to diagnostics again when they're read - ([22d481c](https://github.com/ElaraLang/elara/commit/22d481c9a514f0dbc7770b7c0f086bec70eda4dc)) 
 - Add Styles.bold - ([0ee56aa](https://github.com/ElaraLang/elara/commit/0ee56aa2940e37e24769e11557e9d0335b89d0e1)) 
+- :coffin: Remove all usages of Polysemy - ([40dfc8b](https://github.com/ElaraLang/elara/commit/40dfc8b016107a33041fd372179034a765cd2c14)) 
 
 ### 📚 Documentation
 
