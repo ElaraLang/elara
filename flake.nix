@@ -66,8 +66,8 @@
         flake = hix.lib.flake (
           { config, ... }:
           {
-            # ghcVersions = ["ghc98" "ghc910" "ghc912"];
             compiler = "ghc912";
+            envs.dev.ghcid.enable = false;
             outputs.devShells = {
               # extending the default devshell to add the pre-commit hooks and some other nice things
               default = config.pkgs.mkShell {
@@ -104,11 +104,6 @@
                 directory = enable "os-string";
                 diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
                 incipit-base = jailbreak;
-                # polysemy-conc = jailbreak;
-                # polysemy-test = unbreak (jailbreak);
-                # polysemy-time = jailbreak;
-                # polysemy-resume = jailbreak;
-                # polysemy-log = jailbreak;
                 incipit-core = jailbreak;
                 ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
 
