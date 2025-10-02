@@ -82,6 +82,8 @@
                   nixfmt
 
                   mdbook
+                  mdbook-d2
+                  d2
                 ];
               };
             };

@@ -4,7 +4,9 @@ build:
   tools:
     rust: latest
   jobs:
+    install:
+      - curl -fsSL https://d2lang.com/install.sh | sh -s --
     build:
       html:
-        - cargo install mdbook
+        - cargo install mdbook mdbook-d2
         - mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html

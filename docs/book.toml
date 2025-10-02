@@ -3,3 +3,9 @@ authors = ["Alexander Wood"]
 language = "en"
 src = "src"
 title = "Elara Documentation"
+
+[preprocessor.d2]
+path = "d2"
+layout = "dagre"
+inline = true
+output-dir = "docs/d2"
