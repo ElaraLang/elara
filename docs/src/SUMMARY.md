@@ -1,6 +1,7 @@
 # Summary
 
-# Compiler Documentation
+# Elara Documentation
+- [Introduction](./compiler/introduction.md)
 
 # Compiler Usage
 - [Flags](./compiler/usage/flags.md)
