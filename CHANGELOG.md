@@ -196,6 +196,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Flesh out docs a lot but still much to do! - ([40cd369](https://github.com/ElaraLang/elara/commit/40cd3699126822d51a4473108db9d5cce32275a4)) 
 - Improve Query documentation - ([43628a3](https://github.com/ElaraLang/elara/commit/43628a3d163ca28148bea38a729b00f34b124300)) 
 - Improve Query docs more - ([61271ae](https://github.com/ElaraLang/elara/commit/61271aef7bec18a39fbb8a2194cd8c90bd9fb677)) 
+- Add an introduction and clearly link to haddock docs - ([2299963](https://github.com/ElaraLang/elara/commit/2299963430791eaf357d27e02e136a53c534ddbe)) 
 
 ### 🎨 Styling
 
