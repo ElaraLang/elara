@@ -84,6 +84,7 @@
                   mdbook
                   mdbook-d2
                   d2
+                  nixd
                 ];
               };
             };
