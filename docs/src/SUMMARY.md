@@ -15,3 +15,7 @@
 - [Stages](./compiler/internals/stages.md)
   - [Lexing](./compiler/internals/stages/lexing.md)
   - [ToCore](./compiler/internals/stages/to-core.md)
+
+# Language Reference
+- [Syntax](./language/syntax.md)
+  - [Annotations](./language/syntax/annotations.md)
