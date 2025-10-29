@@ -315,3 +315,7 @@ instance
         Nothing -> pretty v
 
 deriving instance Pretty (Select (Annotations ForValueDecl) ast) => Pretty (ValueDeclAnnotations ast)
+
+deriving instance Pretty (Expr ast) => Pretty (AnnotationArg ast)
+instance (Pretty (ASTLocate ast (Select AnnotationName ast)), Pretty (AnnotationArg ast)) => Pretty (Annotation ast) where
+    pretty (Annotation name args) = punctuation "#" <> pretty name <> hsep (pretty <$> args)

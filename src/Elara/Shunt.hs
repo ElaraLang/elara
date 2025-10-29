@@ -92,7 +92,7 @@ runShuntedDeclarationByNameQuery (Qualified name modName) = do
 runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
-    todo
+    pure Nothing
 -- mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
 -- let matchingBodies =
 --         mod
