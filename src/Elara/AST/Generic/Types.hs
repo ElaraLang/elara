@@ -32,6 +32,8 @@ module Elara.AST.Generic.Types (
     Declaration' (..),
     ValueDeclAnnotations (..),
     TypeDeclAnnotations (..),
+    Annotation (..),
+    AnnotationArg (..),
     typeOf,
     freeTypeVars,
     patternTypeOf,
@@ -67,6 +69,7 @@ import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST, UnlocatedAST)
 import GHC.Generics
 import GHC.TypeLits
+import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (group)
 
 {- | Used to select a field type for a given AST.
@@ -188,6 +191,7 @@ data DeclarationBody' (ast :: a)
       ValueTypeDef
         { _valueName :: ASTLocate ast (Select (ASTName ForValueDecl) ast)
         , _valueTypeDef :: !(Select ValueTypeDef ast)
+        , _valueTypeDefAnnotations :: ValueDeclAnnotations ast
         }
     | -- | type <name> <vars> = <type>
       TypeDeclaration
@@ -204,7 +208,7 @@ declarationBody'Name ::
     Getter (DeclarationBody' ast) (ASTLocate ast Name)
 declarationBody'Name = Prelude.to $ \case
     Value n _ _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
-    ValueTypeDef n _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
+    ValueTypeDef n _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
     TypeDeclaration n _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForType) ast) @Name toName n
 
 declarationBodyName ::
@@ -366,7 +370,7 @@ coerceType' (TupleType a) = TupleType (coerceType <$> a)
 coerceType' (ListType a) = ListType (coerceType a)
 
 coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotations ast2
-coerceValueDeclAnnotations (ValueDeclAnnotations a) = ValueDeclAnnotations a
+coerceValueDeclAnnotations (ValueDeclAnnotations a) = ValueDeclAnnotations (unsafeCoerce a) -- TODO make this not evil
 
 coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k a
+coerceTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k (unsafeCoerce a)

@@ -17,8 +17,8 @@ let (++) = ...
 we use annotations to specify the operator's metadata:
 
 ```fs
-@LeftAssociative
-@Fixity(6)
+#leftAssociative
+#fixity 6
 def (++) : String -> String -> String
 ```
 
@@ -27,8 +27,13 @@ def (++) : String -> String -> String
 Annotations themselves can be defined using the `annotation` keyword:
 
 ```fs
-annotation LeftAssociative
-annotation Fixity (precedence : Int)
+annotation targets (target : [AnnotationTarget])
+
+#targets [OperatorDecl]
+annotation leftAssociative
+
+#targets [OperatorDecl]
+annotation fixity (precedence : Int)
 ```
 
 TODO: I think we can extend this system in a lot of ways : for example, compile time metaprogramming, allowing annotations restrict where certain constructs can be used, aspect oriented programming, etc.

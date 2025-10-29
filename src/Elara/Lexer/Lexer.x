@@ -118,6 +118,7 @@ tokens :-
       \-\>                   { simpleTok TokenRightArrow }
       \<\-                   { simpleTok TokenLeftArrow }
       \=\>                   { simpleTok TokenDoubleRightArrow }
+      \#                     { simpleTok TokenHash }
       \@                     { simpleTok TokenAt }
       \(                     { simpleTok TokenLeftParen }
       \)                     { simpleTok TokenRightParen }

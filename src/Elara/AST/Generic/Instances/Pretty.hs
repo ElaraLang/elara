@@ -90,7 +90,7 @@ instance
                             )
              in prettyValueDeclaration n e typeOfE ann
         prettyDB (TypeDeclaration n vars t ann) = prettyTypeDeclaration n vars t ann
-        prettyDB (ValueTypeDef n t) = prettyValueTypeDef n t
+        prettyDB (ValueTypeDef n t _) = prettyValueTypeDef n t
 
 instance
     ( Pretty (Select Alias ast)

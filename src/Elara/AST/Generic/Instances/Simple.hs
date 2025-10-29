@@ -289,6 +289,9 @@ deriving instance
 deriving instance Show (Select (Annotations ForValueDecl) ast) => Show (ValueDeclAnnotations ast)
 deriving instance (Show (Select KindAnnotation ast), Show (Select (Annotations ForTypeDecl) ast)) => Show (TypeDeclAnnotations ast)
 
+deriving instance (Show (AnnotationArg ast), Show (ASTLocate ast (Select AnnotationName ast))) => Show (Annotation ast)
+deriving instance Show (Expr ast) => Show (AnnotationArg ast)
+
 -- Data instances
 
 deriving instance

@@ -137,7 +137,7 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
             let ann = coerceValueDeclAnnotations @Frontend @Desugared valueAnnotations
 
             pure (JustLet n wholeDeclRegion body (Just ann))
-        genPartial'' (ValueTypeDef n ty) = do
+        genPartial'' (ValueTypeDef n ty _) = do
             ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
             pure (JustDef n wholeDeclRegion ty' Nothing)
         genPartial'' (TypeDeclaration n vars typeDecl typeAnnotations) = do

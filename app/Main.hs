@@ -154,7 +154,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                 when dumpParsed $ do
                                     parsed <- for moduleNames $ \m -> do
                                         runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule m
-                                    inject $ dumpGraph parsed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".parsed.elr"
+                                    -- inject $ dumpGraph parsed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".parsed.elr"
                                     debug "Dumped parsed modules"
 
                                 when dumpDesugared $ do
