@@ -93,12 +93,12 @@ tokens :-
       \' (. # [\'\\] | " " | @escape) \' { parametrizedTok TokenChar (read . toString) }
 
       -- Keywords
-      let					           { simpleTok TokenLet }
+      let					 { simpleTok TokenLet }
       def                    { simpleTok TokenDef }
       if                     { simpleTok TokenIf }
       then                   { simpleTok TokenThen }
       else                   { simpleTok TokenElse }
-      in					           { simpleTok TokenIn }
+      in					 { simpleTok TokenIn }
       match                  { simpleTok TokenMatch }
       with                   { simpleTok TokenWith }
       data                   { simpleTok TokenData }
@@ -134,7 +134,7 @@ tokens :-
       \"                     { beginString stringSC }
 
       -- Identifiers
-      @variableIdentifier     { parametrizedTok TokenVariableIdentifier identity}
+      @variableIdentifier    { parametrizedTok TokenVariableIdentifier identity}
       @typeIdentifier        { parametrizedTok TokenConstructorIdentifier identity}
       @opIdentifier          { parametrizedTok TokenOperatorIdentifier identity}
   
