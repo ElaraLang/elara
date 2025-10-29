@@ -68,8 +68,6 @@ type instance Select (ASTType ForValueDecl) 'Shunted = Maybe ShuntedType
 
 type instance Select ValueTypeDef 'Shunted = DataConCantHappen
 
-type instance Select InfixDecl 'Shunted = DataConCantHappen
-
 type instance Select KindAnnotation 'Shunted = NoFieldValue
 
 type instance Select Alias 'Shunted = ShuntedType

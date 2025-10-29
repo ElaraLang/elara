@@ -107,9 +107,6 @@ tokens :-
       alias                  { simpleTok TokenAlias }
       module                 { simpleTok TokenModule } 
       import                 { simpleTok TokenImport }
-      infixl                 { simpleTok TokenInfixL }
-      infixr                 { simpleTok TokenInfixR }
-      infix                  { simpleTok TokenInfix }
 
       -- Symbols
       \;                     { simpleTok TokenSemicolon }

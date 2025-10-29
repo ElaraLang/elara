@@ -16,7 +16,6 @@ data DesugarError
     = DefWithoutLet DesugaredType
     | InfixWithoutDeclaration (Located Name) SourceRegion (ValueDeclAnnotations Desugared)
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
-    | DuplicateAnnotations (ValueDeclAnnotations Desugared) (ValueDeclAnnotations Desugared)
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
     | TuplePatternTooShort FrontendPattern
     deriving (Typeable, Show, Generic)
@@ -51,8 +50,6 @@ instance ReportableError DesugarError where
         Just $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
     getReport (InfixWithoutDeclaration n _ l) =
         Just $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
-    getReport (DuplicateAnnotations a b) =
-        Just $ Err (Just Codes.duplicateFixityAnnotations) ("Duplicate fixity annotations" <+> pretty a <+> "and" <+> pretty b) [] []
     getReport (TuplePatternTooShort p) =
         Just $
             Err

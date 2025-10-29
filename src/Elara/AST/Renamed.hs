@@ -73,8 +73,6 @@ type instance Select (Annotations ForValueDecl) Renamed = NoFieldValue
 
 type instance Select (Annotations ForTypeDecl) Renamed = NoFieldValue
 
-type instance Select InfixDecl Renamed = DataConCantHappen
-
 type instance Select KindAnnotation Renamed = NoFieldValue
 
 -- Selections for 'Declaration'

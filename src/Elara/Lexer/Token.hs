@@ -78,9 +78,6 @@ data Token
     | TokenDeriving
     | TokenMatch
     | TokenWith
-    | TokenInfixL
-    | TokenInfixR
-    | TokenInfix
     | -- | Variable Identifiers
       TokenVariableIdentifier Text
     | TokenConstructorIdentifier Text
@@ -145,9 +142,6 @@ tokenRepr = \case
     TokenDeriving -> "deriving"
     TokenMatch -> "match"
     TokenWith -> "with"
-    TokenInfixL -> "infixl"
-    TokenInfixR -> "infixr"
-    TokenInfix -> "infix"
     TokenVariableIdentifier i -> i
     TokenConstructorIdentifier i -> i
     TokenOperatorIdentifier i -> i

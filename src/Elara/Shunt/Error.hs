@@ -30,7 +30,7 @@ instance ReportableError ShuntError where
 
 data ShuntWarning
     = UnknownPrecedence OpTable RenamedDeclarationBody
-    deriving (Eq, Ord, Show)
+    deriving (Show, Eq, Ord)
 
 instance ReportableError ShuntWarning where
     report (UnknownPrecedence opTable lOperator) = do

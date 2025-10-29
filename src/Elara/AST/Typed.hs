@@ -74,8 +74,6 @@ type instance Select (ASTType ForValueDecl) 'Typed = Type SourceRegion
 
 type instance Select ValueTypeDef 'Typed = DataConCantHappen
 
-type instance Select InfixDecl 'Typed = DataConCantHappen
-
 type instance Select Alias 'Typed = (Type SourceRegion, ElaraKind)
 
 type instance Select ADTParam 'Typed = (Monotype SourceRegion, ElaraKind)

@@ -53,13 +53,12 @@ instance Pretty UnknownPretty where
 instance
     ( Pretty (Expr ast)
     , Pretty (ASTLocate ast (Select ASTTypeVar ast))
-    , -- , Pretty (ASTLocate ast (Select DeclarationName ast))
-      Pretty (ASTLocate ast (Select AnyName ast))
+    , Pretty (Select (Annotations ForValueDecl) ast)
+    , Pretty (ASTLocate ast (Select AnyName ast))
     , Pretty (ASTLocate ast (Select (ASTName ForValueDecl) ast))
     , Pretty (ASTLocate ast (Select (ASTName ForType) ast))
     , Pretty (ASTLocate ast (TypeDeclaration ast))
     , Pretty (Select ValueTypeDef ast)
-    , Pretty (Select InfixDecl ast)
     , Pretty valueType
     , ToMaybe (Select (ASTType ForValueDecl) ast) (Maybe valueType)
     , valueType ~ UnwrapMaybe (Select (ASTType ForValueDecl) ast)
@@ -93,7 +92,6 @@ instance
              in prettyValueDeclaration n e typeOfE ann
         prettyDB (TypeDeclaration n vars t ann) = prettyTypeDeclaration n vars t ann
         prettyDB (ValueTypeDef n t) = prettyValueTypeDef n t
-        prettyDB (InfixDecl f) = pretty f
 
 instance
     ( Pretty (Select Alias ast)
@@ -305,19 +303,6 @@ instance
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList
 
-instance (Pretty (ASTLocate ast (Select AnyName ast)), RUnlocate ast) => Pretty (ValueDeclAnnotations ast) where
-    pretty (ValueDeclAnnotations v _) = braces ("Operator fixity:" <+> maybe "None" pretty v)
-
-instance (Pretty (ASTLocate ast (Select AnyName ast)), RUnlocate (ast :: b)) => Pretty (InfixDeclaration ast) where
-    pretty (InfixDeclaration name prec assoc) =
-        ( case rUnlocate @b @ast assoc of
-            LeftAssoc -> "infixl"
-            RightAssoc -> "infixr"
-            NonAssoc -> "infix"
-        )
-            <+> pretty @Int (rUnlocate @b @ast prec)
-            <+> pretty name
-
 instance
     ( Pretty v
     , ToMaybe (Select PatternType ast) (Maybe pt)
@@ -329,3 +314,5 @@ instance
     pretty (TypedLambdaParam (v, t)) = case toMaybe t of
         Just t' -> pretty v <+> ":" <+> pretty @pt t'
         Nothing -> pretty v
+
+deriving instance Pretty (Select (Annotations ForValueDecl) ast) => Pretty (ValueDeclAnnotations ast)

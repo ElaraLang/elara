@@ -79,8 +79,6 @@ type instance Select (Patterns ForValueDecl) 'Desugared = NoFieldValue
 
 type instance Select ValueTypeDef 'Desugared = DataConCantHappen
 
-type instance Select InfixDecl 'Desugared = DataConCantHappen
-
 type instance Select KindAnnotation 'Desugared = NoFieldValue
 
 type instance Select Alias 'Desugared = DesugaredType

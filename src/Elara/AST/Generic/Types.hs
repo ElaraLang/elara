@@ -30,8 +30,6 @@ module Elara.AST.Generic.Types (
     TypeDeclaration (..),
     Declaration (..),
     Declaration' (..),
-    AssociativityType (..),
-    InfixDeclaration (..),
     ValueDeclAnnotations (..),
     TypeDeclAnnotations (..),
     typeOf,
@@ -47,7 +45,6 @@ module Elara.AST.Generic.Types (
     coerceType,
     coerceType',
     coerceTypeDeclaration,
-    coerceInfixDeclaration,
     pattern Expr',
     exprLocation,
     patternLocation,
@@ -112,22 +109,6 @@ data Expr' (ast :: a)
     | Tuple !(Select Tuple ast)
     | InParens !(Select InParens ast)
     deriving (Generic)
-
-data InfixDeclaration ast = InfixDeclaration
-    { name :: ASTLocate ast (Select AnyName ast)
-    , prec :: ASTLocate ast Int
-    , assoc :: ASTLocate ast AssociativityType
-    }
-    deriving (Generic)
-
-instance ToName (ASTLocate ast (Select AnyName ast)) => ContainsName (InfixDeclaration ast) Elara.AST.Name.Name where
-    containedName = field' @"name" % Prelude.to toName
-
-data AssociativityType
-    = LeftAssoc
-    | RightAssoc
-    | NonAssoc
-    deriving (Generic, Show, Eq, Ord)
 
 newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select (ASTType ForExpr) ast)
     deriving (Generic, Typeable)
@@ -215,8 +196,6 @@ data DeclarationBody' (ast :: a)
         , typeDeclarationBody :: ASTLocate ast (TypeDeclaration ast)
         , typeAnnotations :: TypeDeclAnnotations ast
         }
-    | -- | infix[l/r] <prec> <name>
-      InfixDecl !(Select InfixDecl ast)
     deriving (Generic)
 
 declarationBody'Name ::
@@ -227,9 +206,6 @@ declarationBody'Name = Prelude.to $ \case
     Value n _ _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
     ValueTypeDef n _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
     TypeDeclaration n _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForType) ast) @Name toName n
-    InfixDecl decl ->
-        let (InfixDeclaration n _ _) = dataConAs @(Select InfixDecl ast) @(InfixDeclaration ast) decl
-         in fmapUnlocated @_ @ast @(Select AnyName ast) @Name toName n
 
 declarationBodyName ::
     forall ast.
@@ -249,15 +225,13 @@ declarationName ::
     Getter (Declaration ast) (ASTLocate ast Name)
 declarationName = _Unwrapped % rUnlocated @_ @ast % declaration'Name @ast
 
-data ValueDeclAnnotations ast = ValueDeclAnnotations
-    { infixValueDecl :: Maybe (InfixDeclaration ast)
-    , valueAnnotations :: !(Select (Annotations ForValueDecl) ast)
+newtype ValueDeclAnnotations ast = ValueDeclAnnotations
+    { valueAnnotations :: Select (Annotations ForValueDecl) ast
     }
     deriving (Generic)
 
 data TypeDeclAnnotations ast = TypeDeclAnnotations
-    { infixTypeDecl :: Maybe (InfixDeclaration ast)
-    , kindAnn :: !(Select KindAnnotation ast)
+    { kindAnn :: !(Select KindAnnotation ast)
     , typeDeclAnnotations :: !(Select (Annotations ForTypeDecl) ast)
     }
     deriving (Generic)
@@ -392,13 +366,7 @@ coerceType' (TupleType a) = TupleType (coerceType <$> a)
 coerceType' (ListType a) = ListType (coerceType a)
 
 coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotations ast2
-coerceValueDeclAnnotations (ValueDeclAnnotations v a) = ValueDeclAnnotations (coerceInfixDeclaration <$> v) a
+coerceValueDeclAnnotations (ValueDeclAnnotations a) = ValueDeclAnnotations a
 
 coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations v k a) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) k a
-
-coerceInfixDeclaration ::
-    _ =>
-    InfixDeclaration ast1 ->
-    InfixDeclaration ast2
-coerceInfixDeclaration (InfixDeclaration n a b) = InfixDeclaration n a b
+coerceTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k a

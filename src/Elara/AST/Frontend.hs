@@ -55,9 +55,7 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     SelectFrontend ValueTypeDef = FrontendType
     -- SelectFrontend (Annotations ForExpr) = NoFieldValue
     SelectFrontend (Annotations x) = NoFieldValue
-    SelectFrontend (Annotations ForType) = NoFieldValue
     SelectFrontend KindAnnotation = NoFieldValue
-    SelectFrontend InfixDecl = InfixDeclaration 'Frontend
 
 -- Selections for 'Expr'
 

@@ -152,7 +152,6 @@ deriving instance
 
 deriving instance
     ( Eq (DeclarationBody' ast)
-    , Ord (Select InfixDecl ast)
     , Ord (Select ValueTypeDef ast)
     , Ord (Select (Patterns ForValueDecl) ast)
     , Ord (Select (ASTType ForValueDecl) ast)
@@ -167,8 +166,7 @@ deriving instance
     Ord (DeclarationBody' ast)
 
 deriving instance
-    ( Eq (Select InfixDecl ast)
-    , Eq (Select ValueTypeDef ast)
+    ( Eq (Select ValueTypeDef ast)
     , Eq (Select (Patterns ForValueDecl) ast)
     , Eq (Select (ASTType ForValueDecl) ast)
     , Eq (Expr ast)
@@ -180,28 +178,6 @@ deriving instance
     , Eq (ASTLocate ast (TypeDeclaration ast))
     ) =>
     Eq (DeclarationBody' ast)
-
-deriving instance (Eq (InfixDeclaration ast), Eq (Select KindAnnotation ast), Eq (Select (Annotations ForTypeDecl) ast)) => Eq (TypeDeclAnnotations ast)
-
-deriving instance
-    ( Eq (ASTLocate ast (Select AnyName ast))
-    , Eq (ASTLocate ast Int)
-    , Eq (ASTLocate ast AssociativityType)
-    ) =>
-    Eq (InfixDeclaration ast)
-
-deriving instance (Ord (InfixDeclaration ast), Ord (Select KindAnnotation ast), Ord (Select (Annotations ForTypeDecl) ast)) => Ord (TypeDeclAnnotations ast)
-
-deriving instance
-    ( Ord (ASTLocate ast (Select AnyName ast))
-    , Ord (ASTLocate ast Int)
-    , Ord (ASTLocate ast AssociativityType)
-    ) =>
-    Ord (InfixDeclaration ast)
-
-deriving instance (Eq (InfixDeclaration ast), Eq (Select (Annotations ForValueDecl) ast)) => Eq (ValueDeclAnnotations ast)
-
-deriving instance (Ord (InfixDeclaration ast), Ord (Select (Annotations ForValueDecl) ast)) => Ord (ValueDeclAnnotations ast)
 
 deriving instance
     ( Ord (Select Alias ast)
@@ -217,6 +193,11 @@ deriving instance
     , Eq (ASTLocate ast (Select ConstructorName ast))
     ) =>
     Eq (TypeDeclaration ast)
+
+deriving instance Eq (Select (Annotations ForValueDecl) ast) => Eq (ValueDeclAnnotations ast)
+deriving instance (Eq (Select KindAnnotation ast), Eq (Select (Annotations ForTypeDecl) ast)) => Eq (TypeDeclAnnotations ast)
+deriving instance Ord (Select (Annotations ForValueDecl) ast) => Ord (ValueDeclAnnotations ast)
+deriving instance (Ord (Select KindAnnotation ast), Ord (Select (Annotations ForTypeDecl) ast)) => Ord (TypeDeclAnnotations ast)
 
 -- Show instances
 
@@ -283,14 +264,12 @@ deriving instance
     ( (Show (Select ValueTypeDef ast))
     , (Show (Select (Patterns ForValueDecl) ast))
     , (Show (Select (ASTType ForExpr) ast))
-    , Show (Select InfixDecl ast)
     , Show (Select (ASTType ForValueDecl) ast)
     , Show (ASTLocate ast (Select ASTTypeVar ast))
     , Show (ASTLocate ast (Select (ASTName ForType) ast))
     , Show (ASTLocate ast (Select (ASTName ForValueDecl) ast))
     , Show (ASTLocate ast (Expr' ast))
     , Show (ASTLocate ast Int)
-    , Show (ASTLocate ast AssociativityType)
     , Show (ASTLocate ast (TypeDeclaration ast))
     , Show (TypeDeclAnnotations ast)
     , Show (ValueDeclAnnotations ast)
@@ -299,12 +278,6 @@ deriving instance
 
 deriving instance Show (ASTLocate ast (DeclarationBody' ast)) => Show (DeclarationBody ast)
 
-deriving instance (Show (ASTLocate ast (Select AnyName ast)), Show (ASTLocate ast Int), Show (ASTLocate ast AssociativityType)) => Show (InfixDeclaration ast)
-
-deriving instance (Show (InfixDeclaration ast), Show (Select KindAnnotation ast), Show (Select (Annotations ForTypeDecl) ast)) => Show (TypeDeclAnnotations ast)
-
-deriving instance (Show (InfixDeclaration ast), Show (Select (Annotations ForValueDecl) ast)) => Show (ValueDeclAnnotations ast)
-
 deriving instance
     ( Show (ASTLocate ast (Select ConstructorName ast))
     , Show (Type ast)
@@ -312,6 +285,9 @@ deriving instance
     , Show (Select ADTParam ast)
     ) =>
     Show (TypeDeclaration ast)
+
+deriving instance Show (Select (Annotations ForValueDecl) ast) => Show (ValueDeclAnnotations ast)
+deriving instance (Show (Select KindAnnotation ast), Show (Select (Annotations ForTypeDecl) ast)) => Show (TypeDeclAnnotations ast)
 
 -- Data instances
 

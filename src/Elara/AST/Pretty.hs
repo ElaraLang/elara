@@ -7,6 +7,7 @@ module Elara.AST.Pretty where
 
 import Data.Generics.Wrapped
 import Elara.AST.Generic.Types
+import Elara.AST.Select (ASTSelector (..), ForSelector (ForValueDecl))
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Prelude hiding (group)
@@ -146,7 +147,10 @@ prettyList l =
 prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)
 
-prettyValueDeclaration :: forall ast a1 a2 a3. (Pretty a1, Pretty a2, Pretty a3, Pretty (InfixDeclaration ast)) => a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
+prettyValueDeclaration ::
+    forall ast a1 a2 a3.
+    (Pretty a1, Pretty a2, Pretty a3, Pretty (Select (Annotations ForValueDecl) ast)) =>
+    a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
 prettyValueDeclaration name e expectedType anns =
     let defLine = prettyValueTypeDef name <$> expectedType
         annLine = prettyValueDeclAnnotations anns
@@ -157,9 +161,8 @@ prettyValueDeclaration name e expectedType anns =
             ]
      in vsep (maybeToList defLine <> [annLine] <> rest)
 
-prettyValueDeclAnnotations :: Pretty (InfixDeclaration ast) => ValueDeclAnnotations ast -> Doc AnsiStyle
-prettyValueDeclAnnotations (ValueDeclAnnotations Nothing _) = ""
-prettyValueDeclAnnotations (ValueDeclAnnotations (Just x) _) = pretty x
+prettyValueDeclAnnotations :: Pretty (Select (Annotations ForValueDecl) ast) => ValueDeclAnnotations ast -> Doc AnsiStyle
+prettyValueDeclAnnotations (ValueDeclAnnotations x) = pretty x
 
 prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyValueTypeDef name t = keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t

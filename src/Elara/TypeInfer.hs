@@ -316,10 +316,7 @@ inferDeclaration (Declaration ld) = do
                     ctors' <- traverse inferCtor ctors
                     let ann' =
                             Generic.TypeDeclAnnotations
-                                { infixTypeDecl =
-                                    Generic.coerceInfixDeclaration
-                                        <$> anns.infixTypeDecl
-                                , kindAnn = kind
+                                { kindAnn = kind
                                 , typeDeclAnnotations = NoFieldValue
                                 }
                     pure

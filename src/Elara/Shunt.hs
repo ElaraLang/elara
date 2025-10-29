@@ -36,6 +36,7 @@ import GHC.Exts (the)
 import Optics (Field4 (_4), Field5 (_5), filtered)
 import Print (debugPretty)
 import Rock (Rock, fetch)
+import TODO (todo)
 import Prelude hiding (modify')
 
 -- effects the shunter itself needs
@@ -91,29 +92,30 @@ runShuntedDeclarationByNameQuery (Qualified name modName) = do
 runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
-    mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
-    let matchingBodies =
-            mod
-                ^.. _Unwrapped
-                % unlocated
-                % field' @"declarations"
-                % each
-                % _Unwrapped
-                % unlocated
-                % field' @"body"
-                % filtered (\b -> b ^. declarationBodyName % unlocated == name)
+    todo
+-- mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
+-- let matchingBodies =
+--         mod
+--             ^.. _Unwrapped
+--             % unlocated
+--             % field' @"declarations"
+--             % each
+--             % _Unwrapped
+--             % unlocated
+--             % field' @"body"
+--             % filtered (\b -> b ^. declarationBodyName % unlocated == name)
 
-        valueInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"Value" % _5 % field' @"infixValueDecl"
-        typeInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"TypeDeclaration" % _4 % field' @"infixTypeDecl"
+--     valueInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"Value" % _5 % field' @"infixValueDecl"
+--     typeInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"TypeDeclaration" % _4 % field' @"infixTypeDecl"
 
-        infixDecls = (valueInfixDecls <> typeInfixDecls) ^.. each % _Just
+--     infixDecls = (valueInfixDecls <> typeInfixDecls) ^.. each % _Just
 
-    case infixDecls of
-        [] -> do
-            Eff.tell $ one (UnknownPrecedence mempty (the matchingBodies))
-            pure Nothing
-        [i] -> pure $ Just $ infixDeclToOpInfo i
-        _tooMany -> error "ambiguous"
+-- case infixDecls of
+--     [] -> do
+--         Eff.tell $ one (UnknownPrecedence mempty (the matchingBodies))
+--         pure Nothing
+--     [i] -> pure $ Just $ infixDeclToOpInfo i
+--     _tooMany -> error "ambiguous"
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 
@@ -127,14 +129,12 @@ createOpTable = execState mempty . traverseModule_ addDeclsToOpTable'
 
 addDeclsToOpTable' :: _ => Declaration Renamed -> Eff r ()
 addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity) a)} ->
-        let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
-         in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations Nothing a)} -> do
+    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations a)} -> do
         debugPretty $ "No fixity for value declaration: " <> pretty _valueName
-    TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue a) ->
-        let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
-         in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+    TypeDeclaration name _ _ (TypeDeclAnnotations NoFieldValue a) ->
+        -- let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
+        --  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+        todo
     _ -> pass
 
 -- Convert operator to its qualified name for lookup
@@ -210,12 +210,12 @@ type ShuntPipelineEffects es =
     , Rock Elara.Query.Query :> es
     )
 
-infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
-infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
-  where
-    convAssoc LeftAssoc = LeftAssociative
-    convAssoc RightAssoc = RightAssociative
-    convAssoc NonAssoc = NonAssociative
+-- infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
+-- infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+--   where
+--     convAssoc LeftAssoc = LeftAssociative
+--     convAssoc RightAssoc = RightAssociative
+--     convAssoc NonAssoc = NonAssociative
 
 shuntWith ::
     forall es.

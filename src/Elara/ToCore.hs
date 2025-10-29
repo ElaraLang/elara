@@ -240,7 +240,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
     decls <- fmap concat $ for (allEntriesRevTopologically declGraph) $ \decl -> do
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value{} -> pure []
-            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind _) -> debugWith ("Type decl: " <+> pretty n) $ do
+            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations kind _) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
                 let tyCon =
                         TyCon
@@ -273,7 +273,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
                             (tvs ^.. each % unlocated % to mkTypeVar)
                             (CoreDataDecl tyCon (toList ctors''))
                     ]
-            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind _) -> do
+            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations kind _) -> do
                 todo
 
     sccs <- buildModuleSCCs m'
