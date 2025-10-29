@@ -262,6 +262,7 @@ test-suite elara-test
       Boilerplate
       Common
       HedgehogSyd
+      Golden
       Infer
       Infer.Unify
       Lex
@@ -273,6 +274,7 @@ test-suite elara-test
       Parse.Expressions
       Parse.Patterns
       Region
+      Rules
       Shunt
   hs-source-dirs:
       test

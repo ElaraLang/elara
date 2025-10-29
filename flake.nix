@@ -243,7 +243,6 @@
                     "silently"
                   ];
                   source-dirs = "test";
-
                   component = {
                     other-modules = [
                       "Arbitrary.AST"
@@ -253,6 +252,7 @@
                       "Boilerplate"
                       "Common"
                       "HedgehogSyd"
+                      "Golden"
                       "Infer"
                       "Infer.Unify"
                       "Lex"
@@ -264,6 +264,7 @@
                       "Parse.Expressions"
                       "Parse.Patterns"
                       "Region"
+                      "Rules"
                       "Shunt"
                     ];
                   };
