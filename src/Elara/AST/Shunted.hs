@@ -75,9 +75,6 @@ type instance Select Alias 'Shunted = ShuntedType
 type instance Select ADTParam 'Shunted = ShuntedType
 
 -- Selections for 'Declaration'
--- type instance Select DeclarationName 'Shunted = Qualified Name
-
-type instance Select AnyName Shunted = Name
 
 type instance Select (ASTName ForType) Shunted = Qualified TypeName
 

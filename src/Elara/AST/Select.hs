@@ -54,18 +54,28 @@ type data ASTSelector
       Patterns ForSelector
     | -- | Type of types of specific elements
       ASTType ForSelector
-    | AnyName
-    | VarPat
-    | ConPat
-    | AnnotationName
-    | ValueTypeDef
-    | Tuple
-    | InParens
-    | ListPattern
-    | TuplePattern
-    | ConsPattern
-    | SymOp
-    | Infixed
+    | -- | Type used for the value of variable patterns, i.e. a variable name
+      VarPat
+    | -- | Type used for the value of constructor patterns, i.e. a constructor name
+      ConPat
+    | -- | Type used for the name of an annotation
+      AnnotationName
+    | -- | Type used for the <type> part in a @def <name> : <type>@ statement
+      ValueTypeDef
+    | -- | Type of a tuple expression
+      Tuple
+    | -- | Type of an expression wrapped in parenthesis
+      InParens
+    | -- | A list literal pattern
+      ListPattern
+    | -- | A tuple literal pattern
+      TuplePattern
+    | -- | A cons literal pattern
+      ConsPattern
+    | -- | An operator's name that is symbolic, i.e. made of symbols
+      SymOp
+    | -- | The name of the "operator" in an infix (e.g. @a `f` b@) expression
+      Infixed
 
 type data ForSelector
     = ForType

@@ -54,7 +54,6 @@ instance
     ( Pretty (Expr ast)
     , Pretty (ASTLocate ast (Select ASTTypeVar ast))
     , Pretty (Select (Annotations ForValueDecl) ast)
-    , Pretty (ASTLocate ast (Select AnyName ast))
     , Pretty (ASTLocate ast (Select (ASTName ForValueDecl) ast))
     , Pretty (ASTLocate ast (Select (ASTName ForType) ast))
     , Pretty (ASTLocate ast (TypeDeclaration ast))

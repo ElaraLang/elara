@@ -42,7 +42,6 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     -- Selections for 'DeclarationBody'
     SelectFrontend (Patterns ForValueDecl) = [FrontendPattern]
     -- Selections for 'Declaration'
-    SelectFrontend AnyName = Name
     SelectFrontend (ASTName ForType) = TypeName
     SelectFrontend (ASTName ForValueDecl) = VarName
     -- Selections for 'Type'

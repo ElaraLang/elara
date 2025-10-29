@@ -76,9 +76,6 @@ type instance Select (Annotations ForTypeDecl) Renamed = NoFieldValue
 type instance Select KindAnnotation Renamed = NoFieldValue
 
 -- Selections for 'Declaration'
--- type instance Select DeclarationName Renamed = Qualified Name
-
-type instance Select AnyName Renamed = Name
 
 type instance Select (ASTName ForTypeDecl) Renamed = Qualified TypeName
 type instance Select (ASTName ForType) Renamed = Qualified TypeName

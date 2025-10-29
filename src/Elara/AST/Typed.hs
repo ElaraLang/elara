@@ -79,9 +79,6 @@ type instance Select Alias 'Typed = (Type SourceRegion, ElaraKind)
 type instance Select ADTParam 'Typed = (Monotype SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
--- type instance Select DeclarationName 'Typed = Qualified Name
-
-type instance Select AnyName Typed = Name
 
 type instance Select (ASTName ForType) Typed = Qualified TypeName
 

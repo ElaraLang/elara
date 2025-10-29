@@ -67,8 +67,6 @@ type instance Select TypeApplication 'Desugared = DesugaredType
 -- Selections for 'Declaration'
 -- type instance Select DeclarationName 'Desugared = Name
 
-type instance Select AnyName 'Desugared = Name
-
 type instance Select (ASTName ForType) 'Desugared = TypeName
 
 type instance Select (ASTName ForExpr) 'Desugared = VarName
