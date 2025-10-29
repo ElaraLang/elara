@@ -1,6 +1,6 @@
 module Golden where
 
-import Boilerplate ( finaliseEffects, pipelineResShouldSucceed)
+import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
 import Effectful.Concurrent (runConcurrent)
 import Effectful.FileSystem (runFileSystem)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
@@ -13,26 +13,39 @@ import Rock qualified
 import Rock.Memo qualified
 import Rock.MemoE (memoiseRunIO)
 import System.IO.Silently (capture_)
-import Test.Syd (Spec, describe, goldenStringFile, it)
+import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it, parallel, sequential)
+
+defaultSettings =
+    CompilerSettings
+        { dumpSettings = defaultDumpSettings
+        , runWith = RunWithNone
+        , mainFile = Nothing
+        }
 
 spec :: Spec
-spec = describe "Golden tests" $ do
+spec = describe "Golden tests" $ sequential $ do
     it "Runs hello world" $ do
-        let compilerSettings =
-                CompilerSettings
-                    { mainFile = Just "test/test_resources/golden_inputs/simple-1.txt"
-                    , dumpSettings = defaultDumpSettings
-                    , runWith = RunWithInterpreter
-                    }
+        runGolden defaultSettings "simple-1"
 
-        goldenStringFile "test/test_resources/golden_outputs/simple-1.txt" $ do
-                capture_ $
-                    pipelineResShouldSucceed $
-                        finaliseEffects $
-                            runFileSystem $
-                                uniqueGenToGlobalIO $
-                                    ignoreStructuredDebug $
-                                        runConcurrent $
-                                            memoiseRunIO @Elara.Query.Query $
-                                                Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules compilerSettings)) $
-                                                    Interpreter.runInterpreter Interpreter.run
+    it
+        "Counts to ten"
+        (runGolden defaultSettings "count-to-ten")
+
+runGolden :: CompilerSettings -> FilePath -> GoldenTest String
+runGolden settings goldenName = do
+    let inputPrefix = "test/test_resources/golden_inputs/"
+    let compilerSettings =
+            settings
+                { mainFile = Just (inputPrefix <> goldenName <> ".elr")
+                }
+    goldenStringFile ("test/test_resources/golden_outputs/" <> goldenName <> ".txt") $ do
+        capture_ $
+            pipelineResShouldSucceed $
+                finaliseEffects $
+                    runFileSystem $
+                        uniqueGenToGlobalIO $
+                            ignoreStructuredDebug $
+                                runConcurrent $
+                                    memoiseRunIO @Elara.Query.Query $
+                                        Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules compilerSettings)) $
+                                            Interpreter.runInterpreter Interpreter.run

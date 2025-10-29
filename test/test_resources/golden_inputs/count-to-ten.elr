@@ -1,0 +1,10 @@
+import Elara.Prim
+
+let main =
+    let count n =
+        if n > 10 then
+            println ""
+        else
+            println (toString n) >>= \_ -> count (n + 1)
+
+    count 10

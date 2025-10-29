@@ -1,3 +1,4 @@
 import Elara.Prim
+import Prelude
 
 let main = println "Hello world!"
