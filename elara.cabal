@@ -163,6 +163,7 @@ library
     , effectful-plugin
     , effectful-th
     , filepath
+    , generic-deriving
     , generic-optics
     , h2jvm
     , hashable
@@ -225,6 +226,7 @@ executable elara
     , effectful-th
     , elara
     , filepath
+    , generic-deriving
     , generic-optics
     , h2jvm
     , hashable
@@ -313,6 +315,7 @@ test-suite elara-test
     , effectful-th
     , elara
     , filepath
+    , generic-deriving
     , generic-optics
     , h2jvm
     , hashable

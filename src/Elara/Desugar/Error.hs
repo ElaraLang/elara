@@ -98,7 +98,7 @@ data PartialDeclaration
         (ValueDeclAnnotations Desugared)
     | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
     | Immediate Name DesugaredDeclarationBody
-    deriving (Typeable, Show)
+    deriving (Typeable, Show, Generic)
 
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _ _) = sr

@@ -46,7 +46,7 @@ letDec :: Located ModuleName -> Parser FrontendDeclaration
 letDec modName = fmapLocated Declaration $ do
     (name, patterns, e) <- letPreamble
     let valueLocation = sconcat (e ^. _Unwrapped % _1 % sourceRegion :| (view (_Unwrapped % _1 % sourceRegion) <$> patterns))
-        annotations = ValueDeclAnnotations Nothing
+        annotations = ValueDeclAnnotations Nothing NoFieldValue
         value = DeclarationBody (Located valueLocation (Value name e patterns NoFieldValue annotations))
     pure (Declaration' modName value)
 
@@ -60,7 +60,7 @@ typeDeclaration modName = fmapLocated Declaration $ ignoringIndents $ do
     token_ TokenEquals
     body <- located (if isAlias then alias else adt)
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
-        annotations = TypeDeclAnnotations Nothing NoFieldValue
+        annotations = TypeDeclAnnotations Nothing NoFieldValue NoFieldValue
         value = DeclarationBody $ Located valueLocation (TypeDeclaration name args body annotations)
     pure (Declaration' modName value)
 

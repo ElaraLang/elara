@@ -15,7 +15,7 @@ import Elara.AST.Generic qualified as Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (Name (..), OpName, Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
-import Elara.AST.Select (LocatedAST (Typed))
+import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Typed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.TopologicalGraph
@@ -29,76 +29,78 @@ type instance ASTLocate' 'Typed = Located
 type instance ASTQual 'Typed = Qualified
 
 -- Selections for 'Expr'
-type instance Select "ExprType" 'Typed = Monotype SourceRegion
+type instance Select (ASTType ForExpr) 'Typed = Monotype SourceRegion
 
-type instance Select "LambdaPattern" 'Typed = TypedLambdaParam (Unique VarName) 'Typed
+type instance Select LambdaPattern 'Typed = TypedLambdaParam (Unique VarName) 'Typed
 
-type instance Select "LetPattern" 'Typed = NoFieldValue
+type instance Select LetPattern 'Typed = NoFieldValue
 
 -- VarRefs may have polytypes
-type instance Select "VarRef" 'Typed = (VarRef VarName, Type SourceRegion)
+type instance Select ASTVarRef 'Typed = (VarRef VarName, Type SourceRegion)
 
-type instance Select "ConRef" 'Typed = Qualified TypeName
+type instance Select ConRef 'Typed = Qualified TypeName
 
-type instance Select "SymOp" 'Typed = VarRef OpName
+type instance Select SymOp 'Typed = VarRef OpName
 
-type instance Select "Infixed" 'Typed = VarRef VarName
+type instance Select Infixed 'Typed = VarRef VarName
 
-type instance Select "LetParamName" 'Typed = Unique VarName
+type instance Select LetParamName 'Typed = Unique VarName
 
-type instance Select "InParens" 'Typed = DataConCantHappen
+type instance Select InParens 'Typed = DataConCantHappen
 
-type instance Select "List" 'Typed = DataConCantHappen
+type instance Select List 'Typed = DataConCantHappen
 
-type instance Select "Tuple" 'Typed = DataConCantHappen
+type instance Select Tuple 'Typed = DataConCantHappen
 
-type instance Select "BinaryOperator" 'Typed = DataConCantHappen
+type instance Select ASTBinaryOperator 'Typed = DataConCantHappen
 
-type instance Select "PatternType" 'Typed = Monotype SourceRegion
+type instance Select PatternType 'Typed = Monotype SourceRegion
 
-type instance Select "VarPat" 'Typed = Unique VarName
+type instance Select VarPat 'Typed = Unique VarName
 
-type instance Select "ConPat" 'Typed = Qualified TypeName
+type instance Select ConPat 'Typed = Qualified TypeName
 
-type instance Select "ListPattern" 'Typed = DataConCantHappen
+type instance Select ListPattern 'Typed = DataConCantHappen
 
-type instance Select "ConsPattern" 'Typed = DataConCantHappen
-type instance Select "TuplePattern" 'Typed = DataConCantHappen
+type instance Select ConsPattern 'Typed = DataConCantHappen
+type instance Select TuplePattern 'Typed = DataConCantHappen
 
-type instance Select "TypeApplication" Typed = Monotype SourceRegion
+type instance Select TypeApplication 'Typed = Monotype SourceRegion
 
 -- Selections for 'DeclarationBody'
-type instance Select "ValuePatterns" 'Typed = NoFieldValue
+type instance Select (Patterns ForValueDecl) 'Typed = NoFieldValue
 
-type instance Select "ValueType" 'Typed = Type SourceRegion
+type instance Select (ASTType ForValueDecl) 'Typed = Type SourceRegion
 
-type instance Select "ValueTypeDef" 'Typed = DataConCantHappen
+type instance Select ValueTypeDef 'Typed = DataConCantHappen
 
-type instance Select "InfixDecl" 'Typed = DataConCantHappen
+type instance Select InfixDecl 'Typed = DataConCantHappen
 
-type instance Select "Alias" 'Typed = (Type SourceRegion, ElaraKind)
+type instance Select Alias 'Typed = (Type SourceRegion, ElaraKind)
 
-type instance Select "ADTParam" 'Typed = (Monotype SourceRegion, ElaraKind)
+type instance Select ADTParam 'Typed = (Monotype SourceRegion, ElaraKind)
 
 -- Selections for 'Declaration'
-type instance Select "DeclarationName" 'Typed = Qualified Name
+-- type instance Select DeclarationName 'Typed = Qualified Name
 
-type instance Select "AnyName" Typed = Name
+type instance Select AnyName Typed = Name
 
-type instance Select "TypeName" Typed = Qualified TypeName
+type instance Select (ASTName ForType) Typed = Qualified TypeName
 
-type instance Select "ValueName" Typed = Qualified VarName
+type instance Select (ASTName ForValueDecl) Typed = Qualified VarName
 
 -- Selections for 'Type'
-type instance Select "TypeVar" 'Typed = UniqueTyVar
+type instance Select ASTTypeVar 'Typed = UniqueTyVar
 
-type instance Select "TypeKind" 'Typed = ElaraKind
+type instance Select TypeKind 'Typed = ElaraKind
 
-type instance Select "KindAnnotation" 'Typed = ElaraKind
+type instance Select KindAnnotation 'Typed = ElaraKind
 
-type instance Select "UserDefinedType" 'Typed = Qualified TypeName
+type instance Select UserDefinedType 'Typed = Qualified TypeName
 
-type instance Select "ConstructorName" 'Typed = Qualified TypeName
+type instance Select ConstructorName 'Typed = Qualified TypeName
+
+type instance Select (Annotations a) 'Typed = NoFieldValue
 
 type TypedExpr = Generic.Expr 'Typed
 

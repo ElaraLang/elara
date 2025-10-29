@@ -67,7 +67,7 @@ import Data.Kind qualified as Kind
 import Elara.AST.Generic.Utils
 import Elara.AST.Name (ContainsName (..), LowerAlphaName, ModuleName, Name, ToName (..))
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
-import Elara.AST.Select (LocatedAST, UnlocatedAST)
+import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST, UnlocatedAST)
 import GHC.Generics
 import GHC.TypeLits
 import Prelude hiding (group)
@@ -75,11 +75,11 @@ import Prelude hiding (group)
 {- | Used to select a field type for a given AST.
 
 Conventions for usage:
-If a selection is likely to be one of the "principal" newtypes ('Expr', 'Pattern', etc), it should not be wrapped in 'ASTLocate',
+If a selection is likely to be one of the principal newtypes ('Expr', 'Pattern', etc), it should not be wrapped in 'ASTLocate',
 as this increases friction and creates redundant 'Located' wrappers.
 This means that implementations should manually wrap in 'Locate' if not using one of the principal newtypes
 -}
-type family Select (s :: Symbol) (ast :: a) = (v :: Kind.Type)
+type family Select (s :: ASTSelector) (ast :: a) = (v :: Kind.Type)
 
 data Expr' (ast :: a)
     = Int Integer
@@ -87,40 +87,40 @@ data Expr' (ast :: a)
     | String Text
     | Char Char
     | Unit
-    | Var (ASTLocate ast (Select "VarRef" ast))
-    | Constructor (ASTLocate ast (Select "ConRef" ast))
+    | Var (ASTLocate ast (Select ASTVarRef ast))
+    | Constructor (ASTLocate ast (Select ConRef ast))
     | Lambda
-        (ASTLocate ast (Select "LambdaPattern" ast))
+        (ASTLocate ast (Select LambdaPattern ast))
         (Expr ast)
     | FunctionCall (Expr ast) (Expr ast)
-    | TypeApplication (Expr ast) (Select "TypeApplication" ast)
+    | TypeApplication (Expr ast) (Select TypeApplication ast)
     | If (Expr ast) (Expr ast) (Expr ast)
-    | BinaryOperator !(Select "BinaryOperator" ast)
-    | List !(Select "List" ast)
+    | BinaryOperator !(Select ASTBinaryOperator ast)
+    | List !(Select List ast)
     | Match (Expr ast) [(Pattern ast, Expr ast)]
     | LetIn
-        { letInParam :: ASTLocate ast (Select "LetParamName" ast)
-        , letInPattern :: Select "LetPattern" ast
+        { letInParam :: ASTLocate ast (Select LetParamName ast)
+        , letInPattern :: Select LetPattern ast
         , letInValue :: Expr ast
         , letInBody :: Expr ast
         }
     | Let
-        (ASTLocate ast (Select "LetParamName" ast))
-        (Select "LetPattern" ast)
+        (ASTLocate ast (Select LetParamName ast))
+        (Select LetPattern ast)
         (Expr ast)
     | Block (NonEmpty (Expr ast))
-    | Tuple !(Select "Tuple" ast)
-    | InParens !(Select "InParens" ast)
+    | Tuple !(Select Tuple ast)
+    | InParens !(Select InParens ast)
     deriving (Generic)
 
 data InfixDeclaration ast = InfixDeclaration
-    { name :: ASTLocate ast (Select "AnyName" ast)
+    { name :: ASTLocate ast (Select AnyName ast)
     , prec :: ASTLocate ast Int
     , assoc :: ASTLocate ast AssociativityType
     }
     deriving (Generic)
 
-instance ToName (ASTLocate ast (Select "AnyName" ast)) => ContainsName (InfixDeclaration ast) Name where
+instance ToName (ASTLocate ast (Select AnyName ast)) => ContainsName (InfixDeclaration ast) Elara.AST.Name.Name where
     containedName = field' @"name" % Prelude.to toName
 
 data AssociativityType
@@ -129,7 +129,7 @@ data AssociativityType
     | NonAssoc
     deriving (Generic, Show, Eq, Ord)
 
-newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select "ExprType" ast)
+newtype Expr (ast :: a) = Expr (ASTLocate ast (Expr' ast), Select (ASTType ForExpr) ast)
     deriving (Generic, Typeable)
 
 pattern Expr' ::
@@ -139,10 +139,10 @@ pattern Expr' ::
     Expr ast
 pattern Expr' e' <- Expr (rUnlocate @astK @ast -> e', _)
 
-typeOf :: forall ast. Expr ast -> Select "ExprType" ast
+typeOf :: forall ast. Expr ast -> Select (ASTType ForExpr) ast
 typeOf (Expr (_, t)) = t
 
-patternTypeOf :: forall ast. Pattern ast -> Select "PatternType" ast
+patternTypeOf :: forall ast. Pattern ast -> Select PatternType ast
 patternTypeOf (Pattern (_, t)) = t
 
 exprLocation :: ASTLocate' ast ~ Located => Lens' (Expr ast) SourceRegion
@@ -152,11 +152,11 @@ patternLocation :: ASTLocate' ast ~ Located => Lens' (Pattern ast) SourceRegion
 patternLocation = _Unwrapped % _1 % sourceRegion
 
 data Pattern' ast
-    = VarPattern (ASTLocate ast (Select "VarPat" ast))
-    | ConstructorPattern (ASTLocate ast (Select "ConPat" ast)) [Pattern ast]
-    | ListPattern !(Select "ListPattern" ast)
-    | TuplePattern !(Select "TuplePattern" ast)
-    | ConsPattern !(Select "ConsPattern" ast)
+    = VarPattern (ASTLocate ast (Select VarPat ast))
+    | ConstructorPattern (ASTLocate ast (Select ConPat ast)) [Pattern ast]
+    | ListPattern !(Select ListPattern ast)
+    | TuplePattern !(Select TuplePattern ast)
+    | ConsPattern !(Select ConsPattern ast)
     | WildcardPattern
     | IntegerPattern Integer
     | FloatPattern Double
@@ -165,18 +165,18 @@ data Pattern' ast
     | UnitPattern
     deriving (Generic)
 
-newtype Pattern ast = Pattern (ASTLocate ast (Pattern' ast), Select "PatternType" ast)
+newtype Pattern ast = Pattern (ASTLocate ast (Pattern' ast), Select PatternType ast)
     deriving (Generic)
 
 {- | Wrapper over a tuple of a param name and its type
 Used mainly to influence Prettyprinting (if we just used a tuple it would get printed as (x,t) rather than x:t)
 -}
-newtype TypedLambdaParam v ast = TypedLambdaParam (v, Select "PatternType" ast)
+newtype TypedLambdaParam v ast = TypedLambdaParam (v, Select PatternType ast)
     deriving (Generic)
 
 data BinaryOperator' (ast :: a)
-    = SymOp (ASTLocate ast (Select "SymOp" ast))
-    | Infixed (Select "Infixed" ast)
+    = SymOp (ASTLocate ast (Select SymOp ast))
+    | Infixed (Select Infixed ast)
     deriving (Generic)
 
 newtype BinaryOperator ast = MkBinaryOperator (ASTLocate ast (BinaryOperator' ast))
@@ -197,26 +197,26 @@ newtype DeclarationBody (ast :: a) = DeclarationBody (ASTLocate ast (Declaration
 data DeclarationBody' (ast :: a)
     = -- | let <p> = <e>
       Value
-        { _valueName :: ASTLocate ast (Select "ValueName" ast)
+        { _valueName :: ASTLocate ast (Select (ASTName ForValueDecl) ast)
         , _expression :: Expr ast
-        , _patterns :: Select "ValuePatterns" ast
-        , _valueType :: Select "ValueType" ast
+        , _patterns :: Select (Patterns ForValueDecl) ast
+        , _valueType :: Select (ASTType ForValueDecl) ast
         , _valueAnnotations :: ValueDeclAnnotations ast
         }
     | -- | def <name> : <type>.
       ValueTypeDef
-        { _valueName :: ASTLocate ast (Select "ValueName" ast)
-        , _valueTypeDef :: !(Select "ValueTypeDef" ast)
+        { _valueName :: ASTLocate ast (Select (ASTName ForValueDecl) ast)
+        , _valueTypeDef :: !(Select ValueTypeDef ast)
         }
     | -- | type <name> <vars> = <type>
       TypeDeclaration
-        { _typeDeclarationName :: ASTLocate ast (Select "TypeName" ast)
-        , typeVars :: [ASTLocate ast (Select "TypeVar" ast)]
+        { _typeDeclarationName :: ASTLocate ast (Select (ASTName ForType) ast)
+        , typeVars :: [ASTLocate ast (Select ASTTypeVar ast)]
         , typeDeclarationBody :: ASTLocate ast (TypeDeclaration ast)
         , typeAnnotations :: TypeDeclAnnotations ast
         }
     | -- | infix[l/r] <prec> <name>
-      InfixDecl !(Select "InfixDecl" ast)
+      InfixDecl !(Select InfixDecl ast)
     deriving (Generic)
 
 declarationBody'Name ::
@@ -224,12 +224,12 @@ declarationBody'Name ::
     _ =>
     Getter (DeclarationBody' ast) (ASTLocate ast Name)
 declarationBody'Name = Prelude.to $ \case
-    Value n _ _ _ _ -> fmapUnlocated @_ @ast @(Select "ValueName" ast) @Name toName n
-    ValueTypeDef n _ -> fmapUnlocated @_ @ast @(Select "ValueName" ast) @Name toName n
-    TypeDeclaration n _ _ _ -> fmapUnlocated @_ @ast @(Select "TypeName" ast) @Name toName n
+    Value n _ _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
+    ValueTypeDef n _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
+    TypeDeclaration n _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForType) ast) @Name toName n
     InfixDecl decl ->
-        let (InfixDeclaration n _ _) = dataConAs @(Select "InfixDecl" ast) @(InfixDeclaration ast) decl
-         in fmapUnlocated @_ @ast @(Select "AnyName" ast) @Name toName n
+        let (InfixDeclaration n _ _) = dataConAs @(Select InfixDecl ast) @(InfixDeclaration ast) decl
+         in fmapUnlocated @_ @ast @(Select AnyName ast) @Name toName n
 
 declarationBodyName ::
     forall ast.
@@ -249,14 +249,16 @@ declarationName ::
     Getter (Declaration ast) (ASTLocate ast Name)
 declarationName = _Unwrapped % rUnlocated @_ @ast % declaration'Name @ast
 
-newtype ValueDeclAnnotations ast = ValueDeclAnnotations
+data ValueDeclAnnotations ast = ValueDeclAnnotations
     { infixValueDecl :: Maybe (InfixDeclaration ast)
+    , valueAnnotations :: !(Select (Annotations ForValueDecl) ast)
     }
     deriving (Generic)
 
 data TypeDeclAnnotations ast = TypeDeclAnnotations
     { infixTypeDecl :: Maybe (InfixDeclaration ast)
-    , kindAnn :: !(Select "KindAnnotation" ast)
+    , kindAnn :: !(Select KindAnnotation ast)
+    , typeDeclAnnotations :: !(Select (Annotations ForTypeDecl) ast)
     }
     deriving (Generic)
 
@@ -264,28 +266,28 @@ data TypeDeclaration ast
     = ADT
         ( NonEmpty
             -- Non-empty list of constructors
-            ( ASTLocate ast (Select "ConstructorName" ast) -- Constructor name
-            , [Select "ADTParam" ast] -- Constructor parameters
+            ( ASTLocate ast (Select ConstructorName ast) -- Constructor name
+            , [Select ADTParam ast] -- Constructor parameters
             )
         )
-    | Alias !(Select "Alias" ast)
+    | Alias !(Select Alias ast)
     deriving (Generic)
 
-newtype Type ast = Type (ASTLocate ast (Type' ast), Select "TypeKind" ast)
+newtype Type ast = Type (ASTLocate ast (Type' ast), Select TypeKind ast)
     deriving (Generic)
 
 data Type' ast
-    = TypeVar (ASTLocate ast (Select "TypeVar" ast))
+    = TypeVar (ASTLocate ast (Select ASTTypeVar ast))
     | FunctionType (Type ast) (Type ast)
     | UnitType
     | TypeConstructorApplication (Type ast) (Type ast)
-    | UserDefinedType (ASTLocate ast (Select "UserDefinedType" ast))
+    | UserDefinedType (ASTLocate ast (Select UserDefinedType ast))
     | RecordType (NonEmpty (ASTLocate ast LowerAlphaName, Type ast))
     | TupleType (NonEmpty (Type ast))
     | ListType (Type ast)
     deriving (Generic)
 
-freeTypeVars :: _ => Type ast -> [ASTLocate ast (Select "TypeVar" ast)]
+freeTypeVars :: _ => Type ast -> [ASTLocate ast (Select ASTTypeVar ast)]
 freeTypeVars =
     nubOrdOn (view unlocated) -- remove duplicates, ignore location info when comparing
         . concatMapOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
@@ -293,6 +295,22 @@ freeTypeVars =
     names = \case
         TypeVar l -> [l]
         _ -> [] -- cosmos takes care of the recursion :D
+
+-- Annotations
+
+data Annotation ast = Annotation
+    { annotationName :: ASTLocate ast (Select AnnotationName ast)
+    , annotationArgs :: [AnnotationArg ast]
+    }
+    deriving (Generic)
+
+{- | An annotation argument
+This is wrapper around an expression with the invariant that it must be a constant value
+-}
+newtype AnnotationArg ast = AnnotationArg
+    { annotationArgValue :: Expr ast
+    }
+    deriving (Generic)
 
 -- Ttg stuff
 
@@ -344,7 +362,7 @@ type family CleanupLocated g where
     -- Remove located wrappers for the newtypes
     CleanupLocated (Located (Expr a)) = CleanupLocated (Expr a)
     CleanupLocated (Located (Pattern a)) = CleanupLocated (Pattern a)
-    CleanupLocated (Located (BinaryOperator a)) = CleanupLocated (BinaryOperator a)
+    CleanupLocated (Located (Elara.AST.Generic.Types.BinaryOperator a)) = CleanupLocated (Elara.AST.Generic.Types.BinaryOperator a)
     CleanupLocated (Located (Declaration a)) = CleanupLocated (Declaration a)
     CleanupLocated (Located (DeclarationBody a)) = CleanupLocated (DeclarationBody a)
     CleanupLocated (Located (Type a)) = CleanupLocated (Type a)
@@ -374,10 +392,10 @@ coerceType' (TupleType a) = TupleType (coerceType <$> a)
 coerceType' (ListType a) = ListType (coerceType a)
 
 coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotations ast2
-coerceValueDeclAnnotations (ValueDeclAnnotations v) = ValueDeclAnnotations (coerceInfixDeclaration <$> v)
+coerceValueDeclAnnotations (ValueDeclAnnotations v a) = ValueDeclAnnotations (coerceInfixDeclaration <$> v) a
 
 coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations v k) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) k
+coerceTypeDeclAnnotations (TypeDeclAnnotations v k a) = TypeDeclAnnotations (coerceInfixDeclaration <$> v) k a
 
 coerceInfixDeclaration ::
     _ =>

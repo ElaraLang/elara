@@ -54,7 +54,7 @@ resolvePartialDeclaration ((AllDecl n sr ty e ann)) =
 resolvePartialDeclaration (JustInfix n sr v) = throwError (InfixWithoutDeclaration n sr v)
 
 resolveAnn :: Maybe (ValueDeclAnnotations Desugared) -> ValueDeclAnnotations Desugared
-resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
+resolveAnn = fromMaybe (ValueDeclAnnotations Nothing NoFieldValue)
 
 getDesugaredModule ::
     ModuleName ->
@@ -88,9 +88,9 @@ assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDe
 assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throwError (PartialNamesNotEqual p1 p2)
 
 resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
-resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throwError (DuplicateAnnotations a b)
-resolveDupeInfixes (Just (ValueDeclAnnotations a)) (Just (ValueDeclAnnotations b)) = pure (ValueDeclAnnotations (a <|> b))
-resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b))
+resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _) _)) (Just b@(ValueDeclAnnotations (Just _) _)) = throwError (DuplicateAnnotations a b)
+resolveDupeInfixes (Just (ValueDeclAnnotations a _)) (Just (ValueDeclAnnotations b _)) = pure (ValueDeclAnnotations (a <|> b) NoFieldValue)
+resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing NoFieldValue) (a <|> b))
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
 mergePartials p1@(JustInfix n sr i) p2@(JustDef n' sr' ty Nothing) = do
@@ -132,7 +132,7 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
 
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
         genPartial'' (InfixDecl (InfixDeclaration n p a)) = do
-            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a))
+            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a)) NoFieldValue
 
             pure (JustInfix n wholeDeclRegion infix'')
         genPartial'' (Value n e pats _ valueAnnotations) = do

@@ -127,12 +127,12 @@ createOpTable = execState mempty . traverseModule_ addDeclsToOpTable'
 
 addDeclsToOpTable' :: _ => Declaration Renamed -> Eff r ()
 addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
+    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity) a)} ->
         let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
          in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations Nothing)} -> do
+    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations Nothing a)} -> do
         debugPretty $ "No fixity for value declaration: " <> pretty _valueName
-    TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
+    TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue a) ->
         let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
          in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
     _ -> pass

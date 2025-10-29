@@ -320,6 +320,7 @@ inferDeclaration (Declaration ld) = do
                                     Generic.coerceInfixDeclaration
                                         <$> anns.infixTypeDecl
                                 , kindAnn = kind
+                                , typeDeclAnnotations = NoFieldValue
                                 }
                     pure
                         ( TypeDeclaration

@@ -158,8 +158,8 @@ prettyValueDeclaration name e expectedType anns =
      in vsep (maybeToList defLine <> [annLine] <> rest)
 
 prettyValueDeclAnnotations :: Pretty (InfixDeclaration ast) => ValueDeclAnnotations ast -> Doc AnsiStyle
-prettyValueDeclAnnotations (ValueDeclAnnotations Nothing) = ""
-prettyValueDeclAnnotations (ValueDeclAnnotations (Just x)) = pretty x
+prettyValueDeclAnnotations (ValueDeclAnnotations Nothing _) = ""
+prettyValueDeclAnnotations (ValueDeclAnnotations (Just x) _) = pretty x
 
 prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
 prettyValueTypeDef name t = keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t

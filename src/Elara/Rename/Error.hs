@@ -1,7 +1,6 @@
 module Elara.Rename.Error where
 
 import Data.Generics.Product
-import Data.Generics.Sum (_As)
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
