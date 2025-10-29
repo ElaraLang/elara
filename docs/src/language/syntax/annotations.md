@@ -22,3 +22,14 @@ we use annotations to specify the operator's metadata:
 def (++) : String -> String -> String
 ```
 
+## Defining Annotations
+
+Annotations themselves can be defined using the `annotation` keyword:
+
+```fs
+annotation LeftAssociative
+annotation Fixity (precedence : Int)
+```
+
+TODO: I think we can extend this system in a lot of ways : for example, compile time metaprogramming, allowing annotations restrict where certain constructs can be used, aspect oriented programming, etc.
+could we make annotations first class / functions? eg `annotation Memoise : (a -> b) -> (a -> b)`
