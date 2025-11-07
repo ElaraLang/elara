@@ -14,6 +14,11 @@ type Tuple2 a b = Tuple2 a b
 
 type Ordering = LT | EQ | GT
 
+type Associativity = 
+    LeftAssociative
+
+type Fixity = Fixity Int
+
 #LeftAssociative #Fixity 6 
 def (+) : Int -> Int -> Int
 let (+) = elaraPrimitive "+"

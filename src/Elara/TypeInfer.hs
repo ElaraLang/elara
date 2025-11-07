@@ -316,12 +316,15 @@ inferDeclaration (Declaration ld) = do
                             pure (ctorName, t')
 
                     ctors' <- traverse inferCtor ctors
-                    -- let annotations = Generic.coerceTypeDeclAnnotations @Shunted @Typed anns
-                    let ann' =
-                            Generic.TypeDeclAnnotations
-                                { kindAnn = kind
-                                , typeDeclAnnotations = undefined anns
-                                }
+                    ann' <- case anns of
+                        Generic.TypeDeclAnnotations kind_ anns' -> do
+                            anns <- traverse inferAnnotation anns'
+                            pure
+                                Generic.TypeDeclAnnotations
+                                    { kindAnn = kind
+                                    , typeDeclAnnotations = anns
+                                    }
+
                     pure
                         ( TypeDeclaration
                             name
@@ -337,12 +340,24 @@ inferAnnotation :: _ => Generic.Annotation Shunted -> Eff r (Generic.Annotation 
 inferAnnotation (Generic.Annotation name args) = do
     args' <-
         traverse
-            ( \(Generic.AnnotationArg e) ->
-                Generic.AnnotationArg . fst
-                    <$> inferValue undefined e Nothing
-            )
+            inferAnnotationArg
             args
     pure (Generic.Annotation name args')
+
+inferAnnotationArg ::
+    _ =>
+    Generic.AnnotationArg Shunted ->
+    Eff r (Generic.AnnotationArg Typed)
+inferAnnotationArg (Generic.AnnotationArg e) = do
+    -- We don't have an expected type for annotation arguments since they are unnamed
+    ((typedExpr, t), constraint) <- runWriter $ generateConstraints e
+
+    (finalConstraint, subst) <- solveConstraint mempty (fuv t <> fuv constraint) constraint
+    case finalConstraint of
+        EmptyConstraint _ -> pass
+        _ -> throwError $ UnresolvedConstraint undefined finalConstraint
+
+    pure $ Generic.AnnotationArg (getExpr (substituteAll subst (SubstitutableExpr typedExpr)))
 
 inferValue ::
     forall r.
