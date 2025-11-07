@@ -92,8 +92,10 @@ runShuntedDeclarationByNameQuery (Qualified name modName) = do
 runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
+
+    mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
+    -- debugPretty mod
     pure Nothing
--- mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
 -- let matchingBodies =
 --         mod
 --             ^.. _Unwrapped
@@ -253,9 +255,15 @@ shuntDeclarationBody opL (DeclarationBody rdb) = DeclarationBody <$> traverseOf 
     go (Value name e _ ty ann) = do
         shunted <- let ?lookup = opL in fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value name shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
+        ann <- traverseValueDeclAnnotations (let ?lookup = opL in shuntAnnotation) ann
+        pure (Value name shunted NoFieldValue ty' ann)
     go (TypeDeclaration name vars ty ann) =
         pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+
+shuntAnnotation :: (ShuntPipelineEffects r, (?lookup :: OpLookup r)) => Annotation Renamed -> Eff r (Annotation Shunted)
+shuntAnnotation (Annotation name args) = do
+    args' <- traverseOf (each % _Unwrapped) fixExpr args
+    pure $ Annotation name args'
 
 fixExpr :: ShuntPipelineEffects r => (?lookup :: OpLookup r) => RenamedExpr -> Eff r ShuntedExpr
 fixExpr e = do

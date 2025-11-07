@@ -83,7 +83,8 @@ type instance Select Alias 'Desugared = DesugaredType
 
 type instance Select ADTParam 'Desugared = DesugaredType
 
-type instance Select (Annotations any) 'Desugared = NoFieldValue
+type instance Select AnnotationName 'Desugared = MaybeQualified TypeName
+type instance Select (Annotations any) 'Desugared = [Annotation Desugared]
 
 -- Selections for 'Type'
 type instance Select ASTTypeVar 'Desugared = LowerAlphaName

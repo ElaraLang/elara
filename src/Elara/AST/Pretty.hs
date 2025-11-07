@@ -152,20 +152,22 @@ prettyValueDeclaration ::
     (Pretty a1, Pretty a2, Pretty a3, Pretty (Select (Annotations ForValueDecl) ast)) =>
     a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
 prettyValueDeclaration name e expectedType anns =
-    let defLine = prettyValueTypeDef name <$> expectedType
+    let defLine = (\x -> prettyValueTypeDef @ast name x Nothing) <$> expectedType
         annLine = prettyValueDeclAnnotations anns
         rest =
             [ keyword "let" <+> pretty name <+> punctuation "="
             , indent indentDepth (pretty e)
             , "" -- add a newline
             ]
-     in vsep (maybeToList defLine <> [annLine] <> rest)
+     in vsep (annLine : maybeToList defLine <> rest)
 
 prettyValueDeclAnnotations :: Pretty (Select (Annotations ForValueDecl) ast) => ValueDeclAnnotations ast -> Doc AnsiStyle
 prettyValueDeclAnnotations (ValueDeclAnnotations x) = pretty x
 
-prettyValueTypeDef :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
-prettyValueTypeDef name t = keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t
+prettyValueTypeDef :: forall ast a1 a2. (Pretty a1, Pretty a2, Pretty (Select (Annotations ForValueDecl) ast)) => a1 -> a2 -> Maybe (ValueDeclAnnotations ast) -> Doc AnsiStyle
+prettyValueTypeDef name t anns =
+    let annLine = fmap ("#" <>) (prettyValueDeclAnnotations <$> anns)
+     in vsep [fromMaybe "" annLine, keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t]
 
 prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> TypeDeclAnnotations ast -> Doc AnsiStyle
 prettyTypeDeclaration name vars t _ =

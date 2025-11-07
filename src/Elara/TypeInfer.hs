@@ -56,6 +56,7 @@ import Optics (forOf_)
 import Relude.Extra (fmapToSnd)
 import Rock qualified
 import TODO
+import Unsafe.Coerce (unsafeCoerce)
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r
@@ -212,7 +213,7 @@ runTypeCheckedExprQuery :: Qualified VarName -> Eff (ConsQueryEffects (Rock.Rock
 runTypeCheckedExprQuery name = debugWithResult ("runTypeCheckedExprQuery: " <> pretty name) $ do
     mod <- Rock.fetch $ TypeCheckedModule (qualifier name)
     let decls = mod ^. _Unwrapped % unlocated % field' @"declarations"
-    debug $ "Declarations in module:" <+> pretty decls
+    -- debug $ "Declarations in module:" <+> pretty decls
     case find
         (\(Declaration ld) -> (ld ^. unlocated % field' @"body" % _Unwrapped % unlocated) ^? _Ctor' @"Value" % _1 % unlocated == Just name)
         decls of
@@ -293,7 +294,8 @@ inferDeclaration (Declaration ld) = do
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
-            pure (Value name typedExpr NoFieldValue (Polytype polytype) (Generic.coerceValueDeclAnnotations annotations))
+            annotations <- Generic.traverseValueDeclAnnotations inferAnnotation annotations
+            pure (Value name typedExpr NoFieldValue (Polytype polytype) annotations)
         TypeDeclaration name tyVars body anns -> do
             (kind, decl') <- inferKind (name ^. unlocated) tyVars (body ^. unlocated)
             case decl' of
@@ -314,10 +316,11 @@ inferDeclaration (Declaration ld) = do
                             pure (ctorName, t')
 
                     ctors' <- traverse inferCtor ctors
+                    -- let annotations = Generic.coerceTypeDeclAnnotations @Shunted @Typed anns
                     let ann' =
                             Generic.TypeDeclAnnotations
                                 { kindAnn = kind
-                                , typeDeclAnnotations = NoFieldValue
+                                , typeDeclAnnotations = undefined anns
                                 }
                     pure
                         ( TypeDeclaration
@@ -329,6 +332,17 @@ inferDeclaration (Declaration ld) = do
 
 createTypeVar :: Located (Unique LowerAlphaName) -> UniqueTyVar
 createTypeVar (Located _ u) = fmap (Just . nameText) u
+
+inferAnnotation :: _ => Generic.Annotation Shunted -> Eff r (Generic.Annotation Typed)
+inferAnnotation (Generic.Annotation name args) = do
+    args' <-
+        traverse
+            ( \(Generic.AnnotationArg e) ->
+                Generic.AnnotationArg . fst
+                    <$> inferValue undefined e Nothing
+            )
+            args
+    pure (Generic.Annotation name args')
 
 inferValue ::
     forall r.

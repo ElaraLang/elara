@@ -12,7 +12,7 @@ module Elara.AST.Shunted where
 
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName, VarName)
+import Elara.AST.Name (LowerAlphaName, OpName, Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef)
@@ -90,7 +90,8 @@ type instance Select UserDefinedType 'Shunted = Qualified TypeName
 
 type instance Select ConstructorName 'Shunted = Qualified TypeName
 
-type instance Select (Annotations a) 'Shunted = NoFieldValue
+type instance Select AnnotationName 'Shunted = Qualified TypeName
+type instance Select (Annotations a) 'Shunted = [Annotation Shunted]
 
 type ShuntedExpr = Expr 'Shunted
 

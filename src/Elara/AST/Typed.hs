@@ -95,7 +95,8 @@ type instance Select UserDefinedType 'Typed = Qualified TypeName
 
 type instance Select ConstructorName 'Typed = Qualified TypeName
 
-type instance Select (Annotations a) 'Typed = NoFieldValue
+type instance Select AnnotationName 'Typed = Qualified TypeName
+type instance Select (Annotations a) 'Typed = [Generic.Annotation 'Typed]
 
 type TypedExpr = Generic.Expr 'Typed
 

@@ -89,10 +89,6 @@ data PartialDeclaration
         SourceRegion
         DesugaredExpr
         (Maybe (ValueDeclAnnotations Desugared))
-    | JustInfix
-        (Located Name)
-        SourceRegion
-        (ValueDeclAnnotations Desugared)
     | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
     | Immediate Name DesugaredDeclarationBody
     deriving (Typeable, Show, Generic)
@@ -100,13 +96,11 @@ data PartialDeclaration
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _ _) = sr
 partialDeclarationSourceRegion (JustLet _ sr _ _) = sr
-partialDeclarationSourceRegion (JustInfix _ sr _) = sr
 partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
 partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
 
 instance Pretty PartialDeclaration where
     pretty (JustDef n _ _ _) = "JustDef" <+> pretty n
     pretty (JustLet n _ _ _) = "JustLet" <+> pretty n
-    pretty (JustInfix n _ _) = "JustInfix" <+> pretty n
     pretty (AllDecl n _ _ _ _) = "All" <+> pretty n
     pretty (Immediate n _) = "Immediate" <+> pretty n

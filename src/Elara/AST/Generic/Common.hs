@@ -2,6 +2,7 @@ module Elara.AST.Generic.Common where
 
 import Data.Data
 import Elara.Data.Pretty
+import GHC.TypeError
 
 data DataConCantHappen deriving (Generic, Data, Show, Eq, Ord)
 
@@ -16,5 +17,5 @@ data NoFieldValue = NoFieldValue
     deriving (Generic, Data, Show, Eq, Ord)
 
 instance Pretty NoFieldValue where
-    pretty :: HasCallStack => NoFieldValue -> Doc AnsiStyle
-    pretty _ = error "This instance should never be used"
+    pretty :: NoFieldValue -> Doc AnsiStyle
+    pretty _ = "NoFieldValue"

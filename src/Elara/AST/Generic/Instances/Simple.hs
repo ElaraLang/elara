@@ -199,6 +199,12 @@ deriving instance (Eq (Select KindAnnotation ast), Eq (Select (Annotations ForTy
 deriving instance Ord (Select (Annotations ForValueDecl) ast) => Ord (ValueDeclAnnotations ast)
 deriving instance (Ord (Select KindAnnotation ast), Ord (Select (Annotations ForTypeDecl) ast)) => Ord (TypeDeclAnnotations ast)
 
+deriving instance Eq (Expr ast) => Eq (AnnotationArg ast)
+deriving instance (Eq (ASTLocate ast (Select AnnotationName ast)), Eq (AnnotationArg ast)) => Eq (Annotation ast)
+
+deriving instance Ord (Expr ast) => Ord (AnnotationArg ast)
+deriving instance (Ord (ASTLocate ast (Select AnnotationName ast)), Ord (AnnotationArg ast)) => Ord (Annotation ast)
+
 -- Show instances
 
 deriving instance

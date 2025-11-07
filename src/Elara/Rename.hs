@@ -301,7 +301,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
     renameDeclarationBody' (Value name val _ ty ann) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType True)) ty
         val' <- renameExpr val
-        let ann' = coerceValueDeclAnnotations ann
+        ann' <- traverseValueDeclAnnotations renameAnnotation ann
         thisModule <- askCurrentModule
         let qualifiedName =
                 sequenceA $
@@ -324,6 +324,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
                     sequenceA $
                         Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
             pure $ TypeDeclaration qualifiedName vars' ty' ann'
+
+renameAnnotation :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => Annotation Desugared -> Eff r (Annotation Renamed)
+renameAnnotation (Annotation name args) = do
+    name' <- qualifyTypeName name
+    args' <- traverseOf (each % _Unwrapped) renameExpr args
+    pure $ Annotation name' args'
 
 renameTypeDeclaration :: _ => ModuleName -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do

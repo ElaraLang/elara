@@ -51,7 +51,8 @@ module Elara.AST.Generic.Types (
     exprLocation,
     patternLocation,
     coerceTypeDeclAnnotations,
-    coerceValueDeclAnnotations,
+    traverseValueDeclAnnotations,
+    traverseTypeDeclAnnotations,
     declarationBody'Name,
     declarationBodyName,
     declaration'Name,
@@ -369,8 +370,32 @@ coerceType' (RecordType a) = RecordType (fmap coerceType <$> a)
 coerceType' (TupleType a) = TupleType (coerceType <$> a)
 coerceType' (ListType a) = ListType (coerceType a)
 
-coerceValueDeclAnnotations :: _ => ValueDeclAnnotations ast1 -> ValueDeclAnnotations ast2
-coerceValueDeclAnnotations (ValueDeclAnnotations a) = ValueDeclAnnotations (unsafeCoerce a) -- TODO make this not evil
+traverseValueDeclAnnotations ::
+    ( Select (Annotations ForValueDecl) ast1 ~ t (Annotation ast1)
+    , Select (Annotations ForValueDecl) ast2 ~ t (Annotation ast2)
+    , Traversable t
+    , _
+    ) =>
+    (Annotation ast1 -> f (Annotation ast2)) ->
+    ValueDeclAnnotations ast1 ->
+    f (ValueDeclAnnotations ast2)
+traverseValueDeclAnnotations f (ValueDeclAnnotations a) = ValueDeclAnnotations <$> traverse f a
 
-coerceTypeDeclAnnotations :: _ => TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
+traverseTypeDeclAnnotations ::
+    ( Select (Annotations ForTypeDecl) ast1 ~ t (Annotation ast1)
+    , Select (Annotations ForTypeDecl) ast2 ~ t (Annotation ast2)
+    , Traversable t
+    , _
+    ) =>
+    (Annotation ast1 -> f (Annotation ast2)) ->
+    TypeDeclAnnotations ast1 ->
+    f (TypeDeclAnnotations ast2)
+traverseTypeDeclAnnotations f (TypeDeclAnnotations k a) = TypeDeclAnnotations k <$> traverse f a
+
+coerceTypeDeclAnnotations ::
+    ( Select (Annotations ForTypeDecl) ast1 ~ [Annotation ast1]
+    , Select (Annotations ForTypeDecl) ast2 ~ [Annotation ast2]
+    , _
+    ) =>
+    TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
 coerceTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k (unsafeCoerce a)

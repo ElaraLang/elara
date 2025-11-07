@@ -69,9 +69,8 @@ type instance Select Alias Renamed = RenamedType
 
 type instance Select ADTParam Renamed = RenamedType
 
-type instance Select (Annotations ForValueDecl) Renamed = NoFieldValue
-
-type instance Select (Annotations ForTypeDecl) Renamed = NoFieldValue
+type instance Select AnnotationName Renamed = Qualified TypeName
+type instance Select (Annotations x) Renamed = [Annotation Renamed]
 
 type instance Select KindAnnotation Renamed = NoFieldValue
 
