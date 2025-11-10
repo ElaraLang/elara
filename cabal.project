@@ -1,0 +1,4 @@
+packages: elara.cabal
+package *
+    profiling: True
+    profiling-detail: late
