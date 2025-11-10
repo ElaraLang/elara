@@ -182,7 +182,6 @@
                     "mtl"
                     "optics"
                     "parser-combinators"
-
                     "pretty-simple"
                     "prettyprinter"
                     "prettyprinter-ansi-terminal"
@@ -191,6 +190,7 @@
                     "safe-exceptions"
                     "some"
                     "stringsearch"
+                    "template-haskell"
                     "terminal-size"
                     "text-metrics"
                     "utf8-string"

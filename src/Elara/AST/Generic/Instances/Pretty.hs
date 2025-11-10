@@ -68,17 +68,37 @@ instance
     ) =>
     Pretty (Declaration' ast)
     where
-    pretty (Declaration' _ b) =
+    pretty (Declaration' _ b) = pretty b
+
+instance
+    ( Pretty (Expr ast)
+    , Pretty (ASTLocate ast (Select ASTTypeVar ast))
+    , Pretty (Select (Annotations ForValueDecl) ast)
+    , Pretty (ASTLocate ast (Select (ASTName ForValueDecl) ast))
+    , Pretty (ASTLocate ast (Select (ASTName ForType) ast))
+    , Pretty (ASTLocate ast (TypeDeclaration ast))
+    , Pretty (Select ValueTypeDef ast)
+    , Pretty valueType
+    , ToMaybe (Select (ASTType ForValueDecl) ast) (Maybe valueType)
+    , valueType ~ UnwrapMaybe (Select (ASTType ForValueDecl) ast)
+    , Pretty exprType
+    , exprType ~ UnwrapMaybe (Select (ASTType ForExpr) ast)
+    , ToMaybe (Select (ASTType ForExpr) ast) (Maybe exprType)
+    , RUnlocate (ast :: b)
+    ) =>
+    Pretty (DeclarationBody ast)
+    where
+    -- The type of a 'Value' can appear in 2 places: Either as a field in 'Value''s constructor, or as the second field of the 'Expr' tuple
+    -- We know that only one will ever exist at a time (in theory, this isn't a formal invariant) so need to find a way of handling both cases
+    -- The fields have different types, but both are required to have a Pretty instance (see constraints above).
+    -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
+    -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
+    -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
+    pretty b = do
         let val = b ^. _Unwrapped
             y = rUnlocate @b @ast @(DeclarationBody' ast) val
          in prettyDB y
       where
-        -- The type of a 'Value' can appear in 2 places: Either as a field in 'Value''s constructor, or as the second field of the 'Expr' tuple
-        -- We know that only one will ever exist at a time (in theory, this isn't a formal invariant) so need to find a way of handling both cases
-        -- The fields have different types, but both are required to have a Pretty instance (see constraints above).
-        -- 'prettyValueDeclaration' takes a 'Pretty a3 => Maybe a3' as its third argument, representing the type of the value.
-        -- To make the two compatible, we create an existential wrapper 'UnknownPretty' which has a 'Pretty' instance, and use that as the type of the third argument.
-        -- The converting of values to a 'Maybe' is handled by the 'ToMaybe' class.
         prettyDB (Value n e@(Expr (_, t)) _ t' ann) =
             let typeOfE =
                     -- Prioritise the type in the declaration (as this is either a type the user explicitly wrote, or a generalised version)

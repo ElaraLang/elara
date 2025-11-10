@@ -69,6 +69,7 @@ library
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
+      Elara.Error.Internal
       Elara.Interpreter
       Elara.Lexer.Action
       Elara.Lexer.Char
@@ -97,7 +98,9 @@ library
       Elara.Prim.Core
       Elara.Prim.Rename
       Elara.Query
+      Elara.Query.Common
       Elara.Query.Effects
+      Elara.Query.TH
       Elara.ReadFile
       Elara.Rename
       Elara.Rename.Error
@@ -183,6 +186,7 @@ library
     , safe-exceptions
     , some
     , stringsearch
+    , template-haskell
     , terminal-size
     , text-metrics
     , utf8-string
@@ -245,6 +249,7 @@ executable elara
     , safe-exceptions
     , some
     , stringsearch
+    , template-haskell
     , terminal-size
     , text-metrics
     , utf8-string

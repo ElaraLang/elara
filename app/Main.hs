@@ -8,11 +8,9 @@ module Main (
 where
 
 import Control.Exception as E
-
--- import Elara.CoreToIR
-
 import Effectful (Eff, IOE, inject, runEff, (:>))
 import Effectful.FileSystem (runFileSystem)
+import Elara.AST.Select
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique (
@@ -171,7 +169,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
 
                                 when dumpShunted $ do
                                     shunted <- for moduleNames $ \m -> do
-                                        runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule m
+                                        runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted m
                                     inject $ dumpGraph shunted (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".shunted.elr"
                                     debug "Dumped shunted modules"
 

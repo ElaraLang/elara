@@ -40,7 +40,7 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
-import Elara.Query (Query (..))
+import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
 import Elara.Shunt.Error (ShuntError)
@@ -69,6 +69,7 @@ type InferPipelineEffects r =
     )
 
 runGetTypeCheckedModuleQuery ::
+    SupportsQuery QueryModuleByName Shunted =>
     ModuleName ->
     Eff
         ( ConsQueryEffects
@@ -77,13 +78,14 @@ runGetTypeCheckedModuleQuery ::
         )
         (Module 'Typed)
 runGetTypeCheckedModuleQuery mn = do
-    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule mn
+    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
     r <- runInferEffects $ evalState initialInferState (inferModule shunted)
     pure (fst r)
 
 runTypeOfQuery ::
     forall loc.
     loc ~ SourceRegion =>
+    (SupportsQuery QueryRequiredDeclarationByName Shunted, SupportsQuery QueryModuleByName Shunted) =>
     TypeEnvKey loc ->
     Eff
         ( ConsQueryEffects
@@ -111,17 +113,17 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
                                     -- Read from the environment (now populated) without re-querying
                                     lookupType (DataConKey con)
 
-runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
+runKindOfQuery :: SupportsQuery QueryModuleByName Shunted => Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
     seedConstructorsFor (qualifier qtn)
 
     -- in theory it should be here now...
     lookupKindVarMaybe (Left qtn)
 
-seedConstructorsFor :: _ => ModuleName -> Eff r ()
+seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, _) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule moduleName
+    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
     let declarations =
             mod
                 ^.. _Unwrapped
@@ -185,6 +187,7 @@ runInferEffects =
         . inject
 
 runInferSCCQuery ::
+    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     SCCKey ->
     Eff
         (ConsQueryEffects (Rock.Rock Query : r))
@@ -192,18 +195,18 @@ runInferSCCQuery ::
 runInferSCCQuery key = do
     fst <$> runInferEffects (evalState initialInferState $ inferSCC (sccKeyToSCC key))
 
-seedSCC :: _ => SCC (Qualified VarName) -> Eff r ()
+seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r ()
 seedSCC scc = do
     for_ scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         seedDeclaration decl
 
-inferSCC :: _ => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
+inferSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     debug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         inferred <- inferDeclarationScheme decl
         pure (component, inferred)
 

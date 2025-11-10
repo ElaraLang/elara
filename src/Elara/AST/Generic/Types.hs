@@ -69,7 +69,6 @@ import Elara.AST.Name (ContainsName (..), LowerAlphaName, ModuleName, Name, ToNa
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST, UnlocatedAST)
 import GHC.Generics
-import GHC.TypeLits
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (group)
 
@@ -205,7 +204,14 @@ data DeclarationBody' (ast :: a)
 
 declarationBody'Name ::
     forall ast.
-    _ =>
+    ( CleanupLocated (Located (Select (ASTName ForType) ast))
+        ~ Located (Select (ASTName ForType) ast)
+    , CleanupLocated (Located (Select (ASTName ForValueDecl) ast))
+        ~ Located (Select (ASTName ForValueDecl) ast)
+    , RUnlocate ast
+    , ToName (Select (ASTName ForValueDecl) ast)
+    , ToName (Select (ASTName ForType) ast)
+    ) =>
     Getter (DeclarationBody' ast) (ASTLocate ast Name)
 declarationBody'Name = Prelude.to $ \case
     Value n _ _ _ _ -> fmapUnlocated @_ @ast @(Select (ASTName ForValueDecl) ast) @Name toName n
@@ -293,6 +299,10 @@ newtype AnnotationArg ast = AnnotationArg
 
 -- Ttg stuff
 
+{- | The idea of this class is to provide a way to work under both located and unlocated ASTs
+We define functions which are polymorphic over the location strategy used in the AST
+For example, 'rUnlocate' provides a way to extract the unlocated value from an AST node, regardless of whether the AST is located or unlocated
+-}
 type RUnlocate :: ast -> Kind.Constraint
 class RUnlocate ast where
     rUnlocate ::
@@ -318,7 +328,7 @@ class RUnlocate ast where
 
 instance ASTLocate' ast ~ Located => RUnlocate (ast :: LocatedAST) where
     rUnlocated = castOptic unlocated
-    fmapUnlocated = fmap
+    fmapUnlocated = fmap @Located
     traverseUnlocated = traversalVL traverse
 
 instance ASTLocate' ast ~ Unlocated => RUnlocate (ast :: UnlocatedAST) where

@@ -1,8 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeData #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
--- for the HasMemoiseE instance
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- |
 Module: Elara.Query
@@ -15,13 +15,16 @@ Description: This module defines the queries used in the Elara compiler.
 -}
 module Elara.Query where
 
-import Data.GADT.Compare.TH
 import Data.GADT.Show.TH
 import Data.Hashable (hash)
 import Effectful
 import Effectful.FileSystem (FileSystem)
+import Elara.Query.TH
 
+import Data.Data (type (:~:) (Refl))
+import Data.GADT.Compare
 import Data.Graph (SCC)
+import Data.Typeable (eqT, typeRep)
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local
 import Elara.AST.Generic (Declaration)
@@ -89,10 +92,33 @@ data Query (es :: [Effect]) a where
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module 'Desugared)
     RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module 'Renamed)
+    ModuleByName ::
+        forall (ast :: LocatedAST).
+        ( Typeable ast
+        , SupportsQuery QueryModuleByName ast
+        , HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)
+        ) =>
+        ModuleName -> Query (QueryEffectsOf QueryModuleByName ast) (QueryReturnTypeOf QueryModuleByName ast)
+    DeclarationByName ::
+        forall (ast :: LocatedAST).
+        ( Typeable ast
+        , SupportsQuery QueryDeclarationByName ast
+        ) =>
+        QueryArgsOf QueryDeclarationByName ast ->
+        Query
+            (QueryEffectsOf QueryDeclarationByName ast)
+            (QueryReturnTypeOf QueryDeclarationByName ast)
+    RequiredDeclarationByName ::
+        forall (ast :: LocatedAST).
+        ( Typeable ast
+        , SupportsQuery QueryRequiredDeclarationByName ast
+        ) =>
+        QueryArgsOf QueryRequiredDeclarationByName ast ->
+        Query
+            (QueryEffectsOf QueryRequiredDeclarationByName ast)
+            (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
     -- \* Shunting Queries
-    ShuntedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Module 'Shunted)
-    ShuntedDeclarationByName :: Qualified Name -> Query (WithRock (ConsQueryEffects '[Error ShuntError])) (Declaration 'Shunted)
-    GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning)])) (Maybe OpInfo)
+    GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
     -- \* Pre-Inference Queries
     -- These are related to preparing SCCs etc for type inference
@@ -116,80 +142,191 @@ data Query (es :: [Effect]) a where
     GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetFinalisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
 
+-- | List of query kinds at the type level
+type data QueryType
+    = QueryRequiredDeclarationByName
+    | QueryDeclarationByName
+    | QueryModuleByName
+
+-- | The effects required to run a specific query
+type family QueryEffectsOf (q :: QueryType) ast = es where
+    QueryEffectsOf QueryDeclarationByName Desugared = WithRock (ConsQueryEffects '[Error DesugarError])
+    QueryEffectsOf QueryDeclarationByName Renamed = WithRock (ConsQueryEffects '[Error RenameError])
+    QueryEffectsOf QueryDeclarationByName Shunted = WithRock (ConsQueryEffects '[Error ShuntError])
+    QueryEffectsOf QueryRequiredDeclarationByName ast = QueryEffectsOf QueryDeclarationByName ast
+    QueryEffectsOf QueryModuleByName Desugared = WithRock (ConsQueryEffects '[Error DesugarError])
+    QueryEffectsOf QueryModuleByName Renamed = WithRock (ConsQueryEffects '[Error RenameError])
+    QueryEffectsOf QueryModuleByName Shunted = WithRock (ConsQueryEffects '[Error ShuntError])
+
+type family QueryReturnTypeOf (q :: QueryType) ast = r where
+    QueryReturnTypeOf QueryDeclarationByName ast = Maybe (Declaration ast)
+    QueryReturnTypeOf QueryRequiredDeclarationByName ast = Declaration ast
+    QueryReturnTypeOf QueryModuleByName ast = Module ast
+
+type family QueryArgsOf (q :: QueryType) ast where
+    QueryArgsOf QueryDeclarationByName ast = Qualified Name
+    QueryArgsOf QueryRequiredDeclarationByName ast = Qualified Name
+    QueryArgsOf QueryModuleByName ast = ModuleName
+
+class
+    ( Typeable ast
+    , HasMinimumQueryEffects (QueryEffectsOf q ast)
+    ) =>
+    SupportsQuery (q :: QueryType) (ast :: LocatedAST)
+    where
+    query :: QueryArgsOf q ast -> Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
+
 deriving instance Eq (Query es a)
 
 deriving instance Show (Query es a)
 
-deriveGEq ''Query
+$(makeTag ''Query)
+$(makeWithMemoiseE ''Query)
+
+instance GCompare (Query es) => GEq (Query es) where
+    geq x y = case gcompare x y of
+        GEQ -> Just Refl
+        _ -> Nothing
 deriveGShow ''Query
-deriveGCompare ''Query
+instance GCompare (Query es) where
+    gcompare a b =
+        case compare (tag a) (tag b) of -- first compare tags (i.e. constructors)
+            LT -> GLT
+            GT -> GGT
+            EQ -> sameCtor a b
+      where
+        tag = tagQuery
+        sameCtor ::
+            Query es x -> Query es y -> GOrdering x y
+        sameCtor GetCompilerSettings GetCompilerSettings = GEQ
+        sameCtor InputFiles InputFiles = GEQ
+        sameCtor (GetFileContents p1) (GetFileContents p2) =
+            ord p1 p2
+        sameCtor (ModulePath m1) (ModulePath m2) =
+            ord m1 m2
+        sameCtor (LexedFile p1) (LexedFile p2) =
+            ord p1 p2
+        sameCtor (ParsedFile p1) (ParsedFile p2) =
+            ord p1 p2
+        sameCtor (ParsedModule m1) (ParsedModule m2) =
+            ord m1 m2
+        sameCtor (DesugaredModule m1) (DesugaredModule m2) =
+            ord m1 m2
+        sameCtor (RenamedModule m1) (RenamedModule m2) =
+            ord m1 m2
+        sameCtor (GetOpInfo v1) (GetOpInfo v2) =
+            ord v1 v2
+        sameCtor (GetOpTableIn m1) (GetOpTableIn m2) =
+            ord m1 m2
+        sameCtor (FreeVarsOf v1) (FreeVarsOf v2) =
+            ord v1 v2
+        sameCtor (ReachableSubgraphOf v1) (ReachableSubgraphOf v2) =
+            ord v1 v2
+        sameCtor (GetSCCsOf v1) (GetSCCsOf v2) =
+            ord v1 v2
+        sameCtor (SCCKeyOf v1) (SCCKeyOf v2) =
+            ord v1 v2
+        sameCtor (TypeCheckedModule m1) (TypeCheckedModule m2) =
+            ord m1 m2
+        sameCtor (TypeCheckedExpr v1) (TypeCheckedExpr v2) =
+            ord v1 v2
+        sameCtor (TypeOf k1) (TypeOf k2) =
+            ord k1 k2
+        sameCtor (InferSCC k1) (InferSCC k2) =
+            ord k1 k2
+        sameCtor (KindOf t1) (KindOf t2) =
+            ord t1 t2
+        sameCtor (GetCoreModule m1) (GetCoreModule m2) =
+            ord m1 m2
+        sameCtor (GetTyCon n1) (GetTyCon n2) =
+            ord n1 n2
+        sameCtor (GetDataCon n1) (GetDataCon n2) =
+            ord n1 n2
+        sameCtor (GetOptimisedCoreModule m1) (GetOptimisedCoreModule m2) =
+            ord m1 m2
+        sameCtor (GetANFCoreModule m1) (GetANFCoreModule m2) =
+            ord m1 m2
+        sameCtor (GetClosureLiftedModule m1) (GetClosureLiftedModule m2) =
+            ord m1 m2
+        sameCtor (GetFinalisedCoreModule m1) (GetFinalisedCoreModule m2) =
+            ord m1 m2
+        -- Special: compare both the name and the type index
+        sameCtor (DeclarationByName @ast1 n1) (DeclarationByName @ast2 n2) =
+            case compare n1 n2 of
+                LT -> GLT
+                GT -> GGT
+                EQ -> case eqT @ast1 @ast2 of
+                    Just Refl -> GEQ
+                    Nothing ->
+                        case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                            LT -> GLT
+                            GT -> GGT
+                            EQ -> GLT -- unreachable, but keep totality
+        sameCtor (RequiredDeclarationByName @ast1 n1) (RequiredDeclarationByName @ast2 n2) =
+            case compare n1 n2 of
+                LT -> GLT
+                GT -> GGT
+                EQ -> case eqT @ast1 @ast2 of
+                    Just Refl -> GEQ
+                    Nothing ->
+                        case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                            LT -> GLT
+                            GT -> GGT
+                            EQ -> GLT -- unreachable, but keep totality
+        sameCtor (ModuleByName @ast1 m1) (ModuleByName @ast2 m2) =
+            case compare m1 m2 of
+                LT -> GLT
+                GT -> GGT
+                EQ -> case eqT @ast1 @ast2 of
+                    Just Refl -> GEQ
+                    Nothing ->
+                        case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                            LT -> GLT
+                            GT -> GGT
+                            EQ -> GLT -- unreachable, but keep totality
+                            -- helper for payloads with Ord
+        ord :: Ord v => v -> v -> GOrdering a a
+        ord x y = case compare x y of
+            LT -> GLT
+            GT -> GGT
+            EQ -> GEQ
 
 instance Hashable (Query es a) where
-    hashWithSalt salt = \case
-        GetCompilerSettings -> h 0 ()
-        InputFiles -> h 1 ()
-        GetFileContents fp -> h 2 fp
-        LexedFile fp -> h 3 fp
-        ParsedFile fp -> h 4 fp
-        ModulePath mn -> h 5 mn
-        ParsedModule mn -> h 6 mn
-        DesugaredModule mn -> h 7 mn
-        RenamedModule mn -> h 8 mn
-        ShuntedModule mn -> h 9 mn
-        ShuntedDeclarationByName qn -> h 14 qn
-        GetOpInfo name -> h 10 name
-        GetOpTableIn mn -> h 11 mn
-        FreeVarsOf v -> h 15 v
-        ReachableSubgraphOf v -> h 16 v
-        GetSCCsOf v -> h 17 v
-        SCCKeyOf v -> h 19 v
-        TypeCheckedModule mn -> h 12 mn
-        TypeOf loc -> h 13 loc
-        InferSCC key -> h 18 key
-        KindOf qtn -> h 20 qtn
-        GetCoreModule mn -> h 21 mn
-        GetTyCon qn -> h 22 qn
-        GetDataCon qn -> h 23 qn
-        GetOptimisedCoreModule mn -> h 24 mn
-        GetANFCoreModule mn -> h 25 mn
-        GetClosureLiftedModule mn -> h 26 mn
-        GetFinalisedCoreModule mn -> h 27 mn
-        TypeCheckedExpr qn -> h 28 qn
+    hashWithSalt salt q = case q of
+        GetCompilerSettings -> h ()
+        InputFiles -> h ()
+        GetFileContents fp -> h fp
+        LexedFile fp -> h fp
+        ParsedFile fp -> h fp
+        ModulePath mn -> h mn
+        ParsedModule mn -> h mn
+        DesugaredModule mn -> h mn
+        RenamedModule mn -> h mn
+        DeclarationByName @ast name -> h (name, typeRep (Proxy @ast))
+        RequiredDeclarationByName @ast name -> h (name, typeRep (Proxy @ast))
+        ModuleByName @ast mn -> h (mn, typeRep (Proxy @ast))
+        GetOpInfo name -> h name
+        GetOpTableIn mn -> h mn
+        FreeVarsOf v -> h v
+        ReachableSubgraphOf v -> h v
+        GetSCCsOf v -> h v
+        SCCKeyOf v -> h v
+        TypeCheckedModule mn -> h mn
+        TypeOf loc -> h loc
+        InferSCC key -> h key
+        KindOf qtn -> h qtn
+        GetCoreModule mn -> h mn
+        GetTyCon qn -> h qn
+        GetDataCon qn -> h qn
+        GetOptimisedCoreModule mn -> h mn
+        GetANFCoreModule mn -> h mn
+        GetClosureLiftedModule mn -> h mn
+        GetFinalisedCoreModule mn -> h mn
+        TypeCheckedExpr qn -> h qn
       where
-        h :: Hashable b => Int -> b -> Int
-        h tag payload =
-            hash tag `hashWithSalt` payload `hashWithSalt` salt
+        t = tagQuery q
+        h :: Hashable b => b -> Int
+        h payload = hash t `hashWithSalt` payload `hashWithSalt` salt
 
--- alas, this sucks
-{-# HLINT ignore "Use id" #-}
 instance HasMemoiseE Query where
-    withMemoiseE = \case
-        GetCompilerSettings -> \x -> x
-        InputFiles -> \x -> x
-        GetFileContents{} -> \x -> x
-        LexedFile{} -> \x -> x
-        ParsedFile{} -> \x -> x
-        ModulePath{} -> \x -> x
-        ParsedModule{} -> \x -> x
-        DesugaredModule{} -> \x -> x
-        RenamedModule{} -> \x -> x
-        ShuntedModule{} -> \x -> x
-        ShuntedDeclarationByName{} -> \x -> x
-        GetOpInfo{} -> \x -> x
-        GetOpTableIn{} -> \x -> x
-        FreeVarsOf{} -> \x -> x
-        ReachableSubgraphOf{} -> \x -> x
-        GetSCCsOf{} -> \x -> x
-        SCCKeyOf{} -> \x -> x
-        TypeCheckedModule{} -> \x -> x
-        TypeCheckedExpr{} -> \x -> x
-        TypeOf{} -> \x -> x
-        InferSCC{} -> \x -> x
-        KindOf{} -> \x -> x
-        GetCoreModule{} -> \x -> x
-        GetTyCon{} -> \x -> x
-        GetDataCon{} -> \x -> x
-        GetOptimisedCoreModule{} -> \x -> x
-        GetANFCoreModule{} -> \x -> x
-        GetClosureLiftedModule{} -> \x -> x
-        GetFinalisedCoreModule{} -> \x -> x
+    withMemoiseE = withMemoiseEQuery

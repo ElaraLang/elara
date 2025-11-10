@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -7,11 +8,13 @@
 
 module Elara.Shunt where
 
+import Control.Applicative.Combinators (sepBy)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
 import Effectful (Eff, IOE, inject, (:>))
 import Effectful.Error.Static qualified as Eff
+import Effectful.Exception (throwIO)
 import Effectful.State.Static.Local (execState, modify)
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Generic
@@ -27,7 +30,8 @@ import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (runErrorOrReport)
-import Elara.Query (Query (..))
+import Elara.Error.Internal
+import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
 import Elara.Rename.Error (RenameError)
 import Elara.Shunt.Error
@@ -73,44 +77,19 @@ runGetShuntedModuleQuery mn = do
   where
     opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
-runShuntedDeclarationByNameQuery :: Qualified Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Declaration 'Shunted)
-runShuntedDeclarationByNameQuery (Qualified name modName) = do
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule modName
-
-    let matchingBodies =
-            mod
-                ^.. _Unwrapped
-                % unlocated
-                % field' @"declarations"
-                % each
-                % filtered (\b -> b ^. declarationName % unlocated == name)
-
-    case matchingBodies of
-        [body] -> pure body
-        _ -> error "ambigious"
-
-runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
+runGetOpInfoQuery :: SupportsQuery QueryDeclarationByName Renamed => IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
     -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
 
-    mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
-    -- debugPretty mod
-    pure Nothing
--- let matchingBodies =
---         mod
---             ^.. _Unwrapped
---             % unlocated
---             % field' @"declarations"
---             % each
---             % _Unwrapped
---             % unlocated
---             % field' @"body"
---             % filtered (\b -> b ^. declarationBodyName % unlocated == name)
-
---     valueInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"Value" % _5 % field' @"infixValueDecl"
---     typeInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"TypeDeclaration" % _4 % field' @"infixTypeDecl"
-
---     infixDecls = (valueInfixDecls <> typeInfixDecls) ^.. each % _Just
+    decl <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationByName @Renamed (Qualified name modName)
+    case decl of
+        Nothing -> do
+            Eff.throwError $ UnknownOperator name modName
+        Just x -> do
+            x ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated % to \case
+                Value{_valueAnnotations = (ValueDeclAnnotations a)} -> do
+                    debugPretty a
+                    pure Nothing
 
 -- case infixDecls of
 --     [] -> do
@@ -200,7 +179,7 @@ fixOperators = reassoc
                     pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
+opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
 opInfo operator = do
     let name = opNameOf operator
     Rock.fetch (Elara.Query.GetOpInfo name)

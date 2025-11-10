@@ -131,8 +131,5 @@ let json = jsonNull <|> jsonInt <|> jsonString <|> jsonArray <|> jsonObject
 
 
 let main = 
-    match runParser json "[{\"a\": 1}, 12345, null, []]" with
-        None -> println "Failed to parse"
-        Some (result, _) -> println (toString result) >>= \_ -> println (1+1)
+    println (1 + 1 + 1 + 1 * 2)
 
-    
