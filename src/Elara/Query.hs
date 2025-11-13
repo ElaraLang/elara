@@ -49,7 +49,6 @@ import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
-import Elara.Query.Class
 import Elara.Query.Effects
 import Elara.Query.Errors
 import Elara.ReadFile (FileContents)
