@@ -1,0 +1,1599 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">-- | AST agnostic implementations of rules</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Rules.Generic.html"><span class="hs-identifier">Elara.Rules.Generic</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Generics.Product</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">HasField'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Generics.Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">_Unwrapped</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Exception</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html"><span class="hs-identifier">Elara.AST.Generic.Types</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Introspection.html"><span class="hs-identifier">Elara.AST.Introspection</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Module.html"><span class="hs-identifier">Elara.AST.Module</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Select.html"><span class="hs-identifier">Elara.AST.Select</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Internal.html"><span class="hs-identifier">Elara.Error.Internal</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Query.html"><span class="hs-identifier">Elara.Query</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Query.Effects.html"><span class="hs-identifier">Elara.Query.Effects</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Query.Errors.html"><span class="hs-identifier">Elara.Query.Errors</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Optics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">filtered</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">has</span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Rock.html"><span class="hs-identifier">Rock</span></a></span><span> </span><span class="hs-keyword">qualified</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621680047815"><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryModuleByName"><span class="hs-identifier hs-type">QueryModuleByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.Effects.html#HasMinimumQueryEffects"><span class="hs-identifier hs-type">HasMinimumQueryEffects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Rock.html#Rock"><span class="hs-identifier hs-type">Rock.Rock</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#Query"><span class="hs-identifier hs-type">Query</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Subset</span></span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryModuleByName"><span class="hs-identifier hs-type">QueryModuleByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.html#QueryReturnTypeOf"><span class="hs-identifier hs-type">QueryReturnTypeOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryModuleByName"><span class="hs-identifier hs-type">QueryModuleByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ToName"><span class="hs-identifier hs-type">ToName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForValueDecl"><span class="hs-identifier hs-type">ForValueDecl</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ToName"><span class="hs-identifier hs-type">ToName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForType"><span class="hs-identifier hs-type">ForType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- TODO these are stupid and we should find a way to remove them</span><span>
+</span><span id="line-37"></span><span>      </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForType"><span class="hs-identifier hs-type">ForType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForType"><span class="hs-identifier hs-type">ForType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForValueDecl"><span class="hs-identifier hs-type">ForValueDecl</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForValueDecl"><span class="hs-identifier hs-type">ForValueDecl</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="QuerySpecificEffectsOf"><span class="annot"><a href="Elara.Query.html#QuerySpecificEffectsOf"><span class="hs-identifier hs-var">QuerySpecificEffectsOf</span></a></span></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Query.Errors.html#StandardQueryError"><span class="hs-identifier hs-type">StandardQueryError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-43"></span><span>    </span><span id="local-6989586621680048375"><span class="annot"><span class="annottext">query :: HasCallStack =&gt;
+QueryArgsOf QueryDeclarationByName ast
+-&gt; Eff
+     (QueryEffectsOf QueryDeclarationByName ast)
+     (QueryReturnTypeOf QueryDeclarationByName ast)
+</span><a href="#local-6989586621680048375"><span class="hs-identifier hs-var hs-var hs-var">query</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680048378"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680048378"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680048379"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048379"><span class="hs-identifier hs-var">modName</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-44"></span><span>        </span><span id="local-6989586621680048380"><span class="annot"><a href="#local-6989586621680048380"><span class="hs-identifier hs-var">mod</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier">Module</span></span><span> </span><span class="annot"><span class="hs-identifier">ast</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (QueryEffectsOf QueryModuleByName ast)
+  (QueryReturnTypeOf QueryModuleByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryModuleByName ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">(Query
+   (QueryEffectsOf QueryModuleByName ast)
+   (QueryReturnTypeOf QueryModuleByName ast)
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (QueryReturnTypeOf QueryModuleByName ast))
+-&gt; Query
+     (QueryEffectsOf QueryModuleByName ast)
+     (QueryReturnTypeOf QueryModuleByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryModuleByName ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, SupportsQuery QueryModuleByName ast,
+ HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)) =&gt;
+ModuleName
+-&gt; Query
+     (QueryEffectsOf QueryModuleByName ast)
+     (QueryReturnTypeOf QueryModuleByName ast)
+</span><a href="Elara.Query.html#ModuleByName"><span class="hs-identifier hs-var">ModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048379"><span class="hs-identifier hs-var">modName</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680048383"><span class="annot"><a href="#local-6989586621680048383"><span class="hs-identifier hs-var hs-var">matchingBodies</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-47"></span><span>                </span><span class="annot"><span class="annottext">Module ast
+</span><a href="#local-6989586621680048380"><span class="hs-identifier hs-var">mod</span></a></span><span>
+</span><span id="line-48"></span><span>                    </span><span class="annot"><span class="annottext">Module ast
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+-&gt; [Declaration ast]
+forall k s (is :: IxList) a.
+Is k A_Fold =&gt;
+s -&gt; Optic' k is s a -&gt; [a]
+</span><span class="hs-operator hs-var">^..</span></span><span> </span><span class="annot"><span class="annottext">forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>                    </span><span class="annot"><span class="annottext">Iso
+  (Module ast)
+  (Module ast)
+  (CleanupLocated (ASTLocate' ast (Module' ast)))
+  (CleanupLocated (ASTLocate' ast (Module' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Module' ast)))
+     (CleanupLocated (ASTLocate' ast (Module' ast)))
+     (Module' ast)
+     (Module' ast)
+-&gt; Optic
+     A_Getter '[] (Module ast) (Module ast) (Module' ast) (Module' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter '[] (Module ast) (Module ast) (Module' ast) (Module' ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (Module' ast)
+     (Module' ast)
+     [Declaration ast]
+     [Declaration ast]
+-&gt; Optic
+     A_Getter
+     '[]
+     (Module ast)
+     (Module ast)
+     [Declaration ast]
+     [Declaration ast]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;declarations&quot;</span></span><span>
+</span><span id="line-51"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Module ast)
+  (Module ast)
+  [Declaration ast]
+  [Declaration ast]
+-&gt; Optic
+     A_Traversal
+     '[Int]
+     [Declaration ast]
+     [Declaration ast]
+     (Declaration ast)
+     (Declaration ast)
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Traversal
+  '[Int]
+  [Declaration ast]
+  [Declaration ast]
+  (Declaration ast)
+  (Declaration ast)
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span>
+</span><span id="line-52"></span><span>                    </span><span class="annot"><span class="annottext">Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Declaration ast -&gt; Bool)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+forall a. (a -&gt; Bool) -&gt; AffineFold a a
+</span><span class="hs-identifier hs-var">filtered</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680048389"><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048389"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048389"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Declaration ast
+-&gt; Optic' A_Getter '[] (Declaration ast) Name -&gt; Name
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall {a} (ast :: a).
+(CleanupLocated (Located (Select (ASTName ForType) ast))
+ ~ Located (Select (ASTName ForType) ast),
+ CleanupLocated (Located (Select (ASTName ForValueDecl) ast))
+ ~ Located (Select (ASTName ForValueDecl) ast),
+ RUnlocate ast, ToName (Select (ASTName ForValueDecl) ast),
+ ToName (Select (ASTName ForType) ast)) =&gt;
+Getter (Declaration ast) (CleanupLocated (ASTLocate' ast Name))
+forall (ast :: LocatedAST).
+(CleanupLocated (Located (Select (ASTName ForType) ast))
+ ~ Located (Select (ASTName ForType) ast),
+ CleanupLocated (Located (Select (ASTName ForValueDecl) ast))
+ ~ Located (Select (ASTName ForValueDecl) ast),
+ RUnlocate ast, ToName (Select (ASTName ForValueDecl) ast),
+ ToName (Select (ASTName ForType) ast)) =&gt;
+Getter (Declaration ast) (CleanupLocated (ASTLocate' ast Name))
+</span><a href="Elara.AST.Generic.Types.html#declarationName"><span class="hs-identifier hs-var">declarationName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast Name))
+  (CleanupLocated (ASTLocate' ast Name))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast Name))
+     (CleanupLocated (ASTLocate' ast Name))
+     Name
+     Name
+-&gt; Optic' A_Getter '[] (Declaration ast) Name
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047815"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Name -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680048378"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680048383"><span class="hs-identifier hs-type">matchingBodies</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-55"></span><span>            </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Declaration ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Declaration ast))
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Declaration ast)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-56"></span><span>            </span><span class="hs-special">[</span><span id="local-6989586621680048392"><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048392"><span class="hs-identifier hs-var">decl</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Declaration ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Declaration ast))
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Declaration ast -&gt; Maybe (Declaration ast)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048392"><span class="hs-identifier hs-var">decl</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>            </span><span class="annot"><span class="annottext">[Declaration ast]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Declaration ast))
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">(InternalError
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (Maybe (Declaration ast)))
+-&gt; InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Declaration ast))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Name -&gt; InternalError
+</span><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048379"><span class="hs-identifier hs-var">modName</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680048378"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-60"></span><span>    </span><span id="local-6989586621680047996"><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Query.Effects.html#HasMinimumQueryEffects"><span class="hs-identifier hs-type">HasMinimumQueryEffects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConRef"><span class="hs-identifier hs-type">ConRef</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Subset</span></span><span>
+</span><span id="line-63"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryModuleByName"><span class="hs-identifier hs-type">QueryModuleByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryModuleByName"><span class="hs-identifier hs-type">QueryModuleByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Rock.html#Rock"><span class="hs-identifier hs-type">Rock.Rock</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#Query"><span class="hs-identifier hs-type">Query</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ADTParam"><span class="hs-identifier hs-type">ADTParam</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForType"><span class="hs-identifier hs-type">ForType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ASTTypeVar"><span class="hs-identifier hs-type">ASTTypeVar</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#TypeDeclaration"><span class="hs-identifier hs-type">TypeDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Declaration%27"><span class="hs-identifier hs-type">Declaration'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConstructorName"><span class="hs-identifier hs-type">ConstructorName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConstructorName"><span class="hs-identifier hs-type">ConstructorName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConstructorName"><span class="hs-identifier hs-type">ConstructorName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.html#QueryReturnTypeOf"><span class="hs-identifier hs-type">QueryReturnTypeOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Declaration"><span class="hs-identifier hs-type">Declaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span></span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>    </span><span id="local-6989586621680048738"><span class="annot"><span class="annottext">query :: HasCallStack =&gt;
+QueryArgsOf QueryConstructorDeclaration ast
+-&gt; Eff
+     (QueryEffectsOf QueryConstructorDeclaration ast)
+     (QueryReturnTypeOf QueryConstructorDeclaration ast)
+</span><a href="Elara.Query.html#query"><span class="hs-identifier hs-var hs-var hs-var">query</span></a></span></span><span> </span><span id="local-6989586621680048739"><span class="annot"><span class="annottext">qn :: QueryArgsOf QueryConstructorDeclaration ast
+</span><a href="#local-6989586621680048739"><span class="hs-identifier hs-var">qn</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680048740"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680048740"><span class="hs-identifier hs-var">typeName</span></a></span></span><span> </span><span id="local-6989586621680048741"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048741"><span class="hs-identifier hs-var">modName</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-81"></span><span>        </span><span id="local-6989586621680048742"><span class="annot"><a href="#local-6989586621680048742"><span class="hs-identifier hs-var">mod</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (QueryEffectsOf QueryModuleByName ast)
+  (QueryReturnTypeOf QueryModuleByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryModuleByName ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">(Query
+   (QueryEffectsOf QueryModuleByName ast)
+   (QueryReturnTypeOf QueryModuleByName ast)
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (QueryReturnTypeOf QueryModuleByName ast))
+-&gt; Query
+     (QueryEffectsOf QueryModuleByName ast)
+     (QueryReturnTypeOf QueryModuleByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryModuleByName ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, SupportsQuery QueryModuleByName ast,
+ HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)) =&gt;
+ModuleName
+-&gt; Query
+     (QueryEffectsOf QueryModuleByName ast)
+     (QueryReturnTypeOf QueryModuleByName ast)
+</span><a href="Elara.Query.html#ModuleByName"><span class="hs-identifier hs-var">ModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048741"><span class="hs-identifier hs-var">modName</span></a></span><span>
+</span><span id="line-82"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680048743"><span class="annot"><a href="#local-6989586621680048743"><span class="hs-identifier hs-var hs-var">matchingBodies</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-83"></span><span>                </span><span class="annot"><span class="annottext">Module ast
+QueryReturnTypeOf QueryModuleByName ast
+</span><a href="#local-6989586621680048742"><span class="hs-identifier hs-var">mod</span></a></span><span>
+</span><span id="line-84"></span><span>                    </span><span class="annot"><span class="annottext">Module ast
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+-&gt; [Declaration ast]
+forall k s (is :: IxList) a.
+Is k A_Fold =&gt;
+s -&gt; Optic' k is s a -&gt; [a]
+</span><span class="hs-operator hs-var">^..</span></span><span> </span><span class="annot"><span class="annottext">forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate"><span class="hs-identifier hs-type">ASTLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>                    </span><span class="annot"><span class="annottext">Iso
+  (Module ast)
+  (Module ast)
+  (CleanupLocated (ASTLocate' ast (Module' ast)))
+  (CleanupLocated (ASTLocate' ast (Module' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Module' ast)))
+     (CleanupLocated (ASTLocate' ast (Module' ast)))
+     (Module' ast)
+     (Module' ast)
+-&gt; Optic
+     A_Getter '[] (Module ast) (Module ast) (Module' ast) (Module' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter '[] (Module ast) (Module ast) (Module' ast) (Module' ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (Module' ast)
+     (Module' ast)
+     [Declaration ast]
+     [Declaration ast]
+-&gt; Optic
+     A_Getter
+     '[]
+     (Module ast)
+     (Module ast)
+     [Declaration ast]
+     [Declaration ast]
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;declarations&quot;</span></span><span>
+</span><span id="line-87"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Module ast)
+  (Module ast)
+  [Declaration ast]
+  [Declaration ast]
+-&gt; Optic
+     A_Traversal
+     '[Int]
+     [Declaration ast]
+     [Declaration ast]
+     (Declaration ast)
+     (Declaration ast)
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Traversal
+  '[Int]
+  [Declaration ast]
+  [Declaration ast]
+  (Declaration ast)
+  (Declaration ast)
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span>
+</span><span id="line-88"></span><span>                    </span><span class="annot"><span class="annottext">Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+-&gt; Optic' A_Fold '[Int] (Module ast) (Declaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(Declaration ast -&gt; Bool)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration ast)
+forall a. (a -&gt; Bool) -&gt; AffineFold a a
+</span><span class="hs-identifier hs-var">filtered</span></span><span>
+</span><span id="line-89"></span><span>                        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Fold
+  '[Int]
+  (Declaration ast)
+  (QueryArgsOf QueryConstructorDeclaration ast)
+-&gt; Declaration ast -&gt; Bool
+forall k (is :: IxList) s a.
+Is k A_Fold =&gt;
+Optic' k is s a -&gt; s -&gt; Bool
+</span><span class="hs-identifier hs-var">has</span></span><span>
+</span><span id="line-90"></span><span>                            </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (ASTLocate ast (Declaration' ast))
+  (ASTLocate ast (Declaration' ast))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-91"></span><span>                                </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (ASTLocate ast (Declaration' ast))
+  (ASTLocate ast (Declaration' ast))
+-&gt; Optic
+     A_Getter
+     '[]
+     (ASTLocate ast (Declaration' ast))
+     (ASTLocate ast (Declaration' ast))
+     (Declaration' ast)
+     (Declaration' ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration' ast)
+     (Declaration' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Declaration%27"><span class="hs-identifier hs-type">Declaration'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (Declaration' ast)
+  (Declaration' ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (Declaration' ast)
+     (Declaration' ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;body&quot;</span></span><span>
+</span><span id="line-93"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+-&gt; Optic
+     An_Iso
+     '[]
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  An_Iso
+  '[]
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-94"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (DeclarationBody' ast)
+     (DeclarationBody' ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (DeclarationBody' ast)
+     (DeclarationBody' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#DeclarationBody%27"><span class="hs-identifier hs-type">DeclarationBody'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (DeclarationBody' ast)
+  (DeclarationBody' ast)
+-&gt; Optic
+     A_Prism
+     '[]
+     (DeclarationBody' ast)
+     (DeclarationBody' ast)
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (ctor :: Symbol) s a.
+AsConstructor' ctor s a =&gt;
+Prism s s a a
+</span><span class="hs-identifier hs-var">_Ctor'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;TypeDeclaration&quot;</span></span><span>
+</span><span id="line-96"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  An_AffineFold
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (ASTLocate ast (Select (ASTName ForType) ast),
+   [ASTLocate ast (Select ASTTypeVar ast)],
+   ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+  (ASTLocate ast (Select (ASTName ForType) ast),
+   [ASTLocate ast (Select ASTTypeVar ast)],
+   ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+     (ASTLocate ast (Select (ASTName ForType) ast),
+      [ASTLocate ast (Select ASTTypeVar ast)],
+      ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+     (ASTLocate ast (TypeDeclaration ast))
+     (ASTLocate ast (TypeDeclaration ast))
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (ASTLocate ast (TypeDeclaration ast))
+     (ASTLocate ast (TypeDeclaration ast))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Lens
+  '[]
+  (ASTLocate ast (Select (ASTName ForType) ast),
+   [ASTLocate ast (Select ASTTypeVar ast)],
+   ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+  (ASTLocate ast (Select (ASTName ForType) ast),
+   [ASTLocate ast (Select ASTTypeVar ast)],
+   ASTLocate ast (TypeDeclaration ast), TypeDeclAnnotations ast)
+  (ASTLocate ast (TypeDeclaration ast))
+  (ASTLocate ast (TypeDeclaration ast))
+forall s t a b. Field3 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_3</span></span><span>
+</span><span id="line-97"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  An_AffineFold
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (ASTLocate ast (TypeDeclaration ast))
+  (ASTLocate ast (TypeDeclaration ast))
+-&gt; Optic
+     A_Getter
+     '[]
+     (ASTLocate ast (TypeDeclaration ast))
+     (ASTLocate ast (TypeDeclaration ast))
+     (TypeDeclaration ast)
+     (TypeDeclaration ast)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (TypeDeclaration ast)
+     (TypeDeclaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#TypeDeclaration"><span class="hs-identifier hs-type">TypeDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  An_AffineFold
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (TypeDeclaration ast)
+  (TypeDeclaration ast)
+-&gt; Optic
+     A_Prism
+     '[]
+     (TypeDeclaration ast)
+     (TypeDeclaration ast)
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (ctor :: Symbol) s a.
+AsConstructor' ctor s a =&gt;
+Prism s s a a
+</span><span class="hs-identifier hs-var">_Ctor'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;ADT&quot;</span></span><span>
+</span><span id="line-99"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  An_AffineFold
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (NonEmpty
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast]))
+  (NonEmpty
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast]))
+-&gt; Optic
+     A_Traversal
+     '[Int]
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+     (NonEmpty
+        (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+         [Select ADTParam ast]))
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+-&gt; Optic
+     A_Fold
+     '[Int]
+     (Declaration ast)
+     (Declaration ast)
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Traversal
+  '[Int]
+  (NonEmpty
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast]))
+  (NonEmpty
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast]))
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+forall i s t a b. Each i s t a b =&gt; IxTraversal i s t a b
+</span><span class="hs-identifier hs-var">each</span></span><span>
+</span><span id="line-100"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  '[Int]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+-&gt; Optic
+     A_Lens
+     '[]
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+      [Select ADTParam ast])
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+-&gt; Optic
+     A_Fold
+     '[Int]
+     (Declaration ast)
+     (Declaration ast)
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  A_Lens
+  '[]
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)),
+   [Select ADTParam ast])
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span>
+</span><span id="line-101"></span><span>                                </span><span class="annot"><span class="annottext">Optic
+  A_Fold
+  '[Int]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+-&gt; Optic'
+     A_Fold
+     '[Int]
+     (Declaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConstructorName"><span class="hs-identifier hs-type">ConstructorName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680047996"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>                                </span><span class="annot"><span class="annottext">Optic'
+  A_Fold
+  '[Int]
+  (Declaration ast)
+  (QueryArgsOf QueryConstructorDeclaration ast)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+-&gt; Optic'
+     A_Fold
+     '[Int]
+     (Declaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">(QueryArgsOf QueryConstructorDeclaration ast -&gt; Bool)
+-&gt; Optic
+     An_AffineFold
+     '[]
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+     (QueryArgsOf QueryConstructorDeclaration ast)
+forall a. (a -&gt; Bool) -&gt; AffineFold a a
+</span><span class="hs-identifier hs-var">filtered</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">QueryArgsOf QueryConstructorDeclaration ast
+-&gt; QueryArgsOf QueryConstructorDeclaration ast -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">QueryArgsOf QueryConstructorDeclaration ast
+</span><a href="#local-6989586621680048739"><span class="hs-identifier hs-var">qn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>                            </span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span>                        </span><span class="hs-special">)</span><span>
+</span><span id="line-105"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680048743"><span class="hs-identifier hs-type">matchingBodies</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-106"></span><span>            </span><span class="hs-special">[</span><span id="local-6989586621680048747"><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048747"><span class="hs-identifier hs-var">decl</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Declaration ast
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048747"><span class="hs-identifier hs-var">decl</span></a></span><span>
+</span><span id="line-107"></span><span>            </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">(InternalError
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (Declaration ast))
+-&gt; InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Qualified Name -&gt; InternalError
+</span><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-var">RequiredDeclNotFound</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; Name) -&gt; Qualified TypeName -&gt; Qualified Name
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+QueryArgsOf QueryConstructorDeclaration ast
+</span><a href="#local-6989586621680048739"><span class="hs-identifier hs-var">qn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>            </span><span class="annot"><span class="annottext">[Declaration ast]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">(InternalError
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (Declaration ast))
+-&gt; InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Name -&gt; InternalError
+</span><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680048741"><span class="hs-identifier hs-var">modName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680048740"><span class="hs-identifier hs-var">typeName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621680048156"><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-114"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Introspection.html#IntrospectableAnnotations"><span class="hs-identifier hs-type">IntrospectableAnnotations</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-115"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-116"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotations"><span class="hs-identifier hs-type">DeclarationAnnotations</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span></span><span>
+</span><span id="line-117"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-118"></span><span>    </span><span id="local-6989586621680048940"><span class="annot"><span class="annottext">query :: HasCallStack =&gt;
+QueryArgsOf DeclarationAnnotations ast
+-&gt; Eff
+     (QueryEffectsOf DeclarationAnnotations ast)
+     (QueryReturnTypeOf DeclarationAnnotations ast)
+</span><a href="Elara.Query.html#query"><span class="hs-identifier hs-var hs-var hs-var">query</span></a></span></span><span> </span><span id="local-6989586621680048941"><span class="annot"><span class="annottext">QueryArgsOf DeclarationAnnotations ast
+</span><a href="#local-6989586621680048941"><span class="hs-identifier hs-var">qn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-119"></span><span>        </span><span id="local-6989586621680048942"><span class="annot"><a href="#local-6989586621680048942"><span class="hs-identifier hs-var">decl</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (QueryEffectsOf QueryRequiredDeclarationByName ast)
+  (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">(Query
+   (QueryEffectsOf QueryRequiredDeclarationByName ast)
+   (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (QueryReturnTypeOf QueryRequiredDeclarationByName ast))
+-&gt; Query
+     (QueryEffectsOf QueryRequiredDeclarationByName ast)
+     (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, SupportsQuery QueryRequiredDeclarationByName ast) =&gt;
+QueryArgsOf QueryRequiredDeclarationByName ast
+-&gt; Query
+     (QueryEffectsOf QueryRequiredDeclarationByName ast)
+     (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+</span><a href="Elara.Query.html#RequiredDeclarationByName"><span class="hs-identifier hs-var">RequiredDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">QueryArgsOf QueryRequiredDeclarationByName ast
+QueryArgsOf DeclarationAnnotations ast
+</span><a href="#local-6989586621680048941"><span class="hs-identifier hs-var">qn</span></a></span><span>
+</span><span id="line-120"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680048944"><span class="annot"><a href="#local-6989586621680048944"><span class="hs-identifier hs-var hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-121"></span><span>                </span><span class="annot"><span class="annottext">Declaration ast
+QueryReturnTypeOf QueryRequiredDeclarationByName ast
+</span><a href="#local-6989586621680048942"><span class="hs-identifier hs-var">decl</span></a></span><span>
+</span><span id="line-122"></span><span>                    </span><span class="annot"><span class="annottext">Declaration ast
+-&gt; Optic' A_Getter '[] (Declaration ast) (DeclarationBody' ast)
+-&gt; DeclarationBody' ast
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-123"></span><span>                    </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+     (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+     (Declaration' ast)
+     (Declaration' ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration' ast)
+     (Declaration' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Declaration%27"><span class="hs-identifier hs-type">Declaration'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (Declaration' ast)
+  (Declaration' ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (Declaration' ast)
+     (Declaration' ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;body&quot;</span></span><span>
+</span><span id="line-125"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+-&gt; Optic
+     An_Iso
+     '[]
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  An_Iso
+  '[]
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-126"></span><span>                    </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (DeclarationBody' ast)
+     (DeclarationBody' ast)
+-&gt; Optic' A_Getter '[] (Declaration ast) (DeclarationBody' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#DeclarationBody%27"><span class="hs-identifier hs-type">DeclarationBody'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680048944"><span class="hs-identifier hs-type">body</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-128"></span><span>            </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_valueAnnotations :: forall a (ast :: a).
+DeclarationBody' ast -&gt; ValueDeclAnnotations ast
+</span><a href="Elara.AST.Generic.Types.html#_valueAnnotations"><span class="hs-identifier hs-var">_valueAnnotations</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621680048947"><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+</span><a href="#local-6989586621680048947"><span class="hs-identifier hs-var">annotations</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Annotation ast]
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     [Annotation ast]
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall {a} (ast :: a) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+forall (ast :: LocatedAST) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+</span><a href="Elara.AST.Introspection.html#getAnnotations"><span class="hs-identifier hs-var">getAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Select.html#ForValueDecl"><span class="hs-identifier hs-type">ForValueDecl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+</span><a href="#local-6989586621680048947"><span class="hs-identifier hs-var">annotations</span></a></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+-&gt; Optic'
+     An_Iso
+     '[]
+     (ValueDeclAnnotations ast)
+     (Select (Annotations ForValueDecl) ast)
+-&gt; Select (Annotations ForValueDecl) ast
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  An_Iso
+  '[]
+  (ValueDeclAnnotations ast)
+  (Select (Annotations ForValueDecl) ast)
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>            </span><span class="annot"><a href="Elara.AST.Generic.Types.html#ValueTypeDef"><span class="hs-identifier hs-type">ValueTypeDef</span></a></span><span> </span><span class="annot"><span class="annottext">ASTLocate ast (Select (ASTName ForValueDecl) ast)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Select ValueTypeDef ast
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680048950"><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+</span><a href="#local-6989586621680048950"><span class="hs-identifier hs-var">annotations</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Annotation ast]
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     [Annotation ast]
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall {a} (ast :: a) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+forall (ast :: LocatedAST) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+</span><a href="Elara.AST.Introspection.html#getAnnotations"><span class="hs-identifier hs-var">getAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Select.html#ForValueDecl"><span class="hs-identifier hs-type">ForValueDecl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+</span><a href="#local-6989586621680048950"><span class="hs-identifier hs-var">annotations</span></a></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations ast
+-&gt; Optic'
+     An_Iso
+     '[]
+     (ValueDeclAnnotations ast)
+     (Select (Annotations ForValueDecl) ast)
+-&gt; Select (Annotations ForValueDecl) ast
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  An_Iso
+  '[]
+  (ValueDeclAnnotations ast)
+  (Select (Annotations ForValueDecl) ast)
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- i am fairly sure this branch should never be hit</span><span>
+</span><span id="line-130"></span><span>            </span><span class="annot"><a href="Elara.AST.Generic.Types.html#TypeDeclaration"><span class="hs-identifier hs-type">TypeDeclaration</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">typeAnnotations :: forall a (ast :: a).
+DeclarationBody' ast -&gt; TypeDeclAnnotations ast
+</span><a href="Elara.AST.Generic.Types.html#typeAnnotations"><span class="hs-identifier hs-var">typeAnnotations</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621680048953"><span class="annot"><span class="annottext">TypeDeclAnnotations ast
+</span><a href="#local-6989586621680048953"><span class="hs-identifier hs-var">annotations</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Annotation ast]
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     [Annotation ast]
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall {a} (ast :: a) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+forall (ast :: LocatedAST) (sel :: ForSelector).
+IntrospectableAnnotations ast =&gt;
+Select (Annotations sel) ast -&gt; [Annotation ast]
+</span><a href="Elara.AST.Introspection.html#getAnnotations"><span class="hs-identifier hs-var">getAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048156"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Select.html#ForTypeDecl"><span class="hs-identifier hs-type">ForTypeDecl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeDeclAnnotations ast
+</span><a href="#local-6989586621680048953"><span class="hs-identifier hs-var">annotations</span></a></span><span> </span><span class="annot"><span class="annottext">TypeDeclAnnotations ast
+-&gt; Optic'
+     A_Lens
+     '[]
+     (TypeDeclAnnotations ast)
+     (Select (Annotations ForTypeDecl) ast)
+-&gt; Select (Annotations ForTypeDecl) ast
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;typeDeclAnnotations&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-133"></span><span>    </span><span id="local-6989586621680048204"><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-134"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Subset</span></span><span>
+</span><span id="line-135"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-136"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.Effects.html#HasMinimumQueryEffects"><span class="hs-identifier hs-type">HasMinimumQueryEffects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Rock.html#Rock"><span class="hs-identifier hs-type">Rock.Rock</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#Query"><span class="hs-identifier hs-type">Query</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryEffectsOf"><span class="hs-identifier hs-type">QueryEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-140"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-141"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span></span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-143"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="QuerySpecificEffectsOf"><span class="annot"><a href="Elara.Query.html#QuerySpecificEffectsOf"><span class="hs-identifier hs-var">QuerySpecificEffectsOf</span></a></span></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryRequiredDeclarationByName"><span class="hs-identifier hs-type">QueryRequiredDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Query.html#QuerySpecificEffectsOf"><span class="hs-identifier hs-type">QuerySpecificEffectsOf</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryDeclarationByName"><span class="hs-identifier hs-type">QueryDeclarationByName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621680048980"><span class="annot"><span class="annottext">query :: HasCallStack =&gt;
+QueryArgsOf QueryRequiredDeclarationByName ast
+-&gt; Eff
+     (QueryEffectsOf QueryRequiredDeclarationByName ast)
+     (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+</span><a href="Elara.Query.html#query"><span class="hs-identifier hs-var hs-var hs-var">query</span></a></span></span><span> </span><span id="local-6989586621680048981"><span class="annot"><span class="annottext">QueryArgsOf QueryRequiredDeclarationByName ast
+</span><a href="#local-6989586621680048981"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-145"></span><span>        </span><span id="local-6989586621680048982"><span class="annot"><a href="#local-6989586621680048982"><span class="hs-identifier hs-var">mDecl</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (QueryEffectsOf QueryDeclarationByName ast)
+  (QueryReturnTypeOf QueryDeclarationByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryDeclarationByName ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">(Query
+   (QueryEffectsOf QueryDeclarationByName ast)
+   (QueryReturnTypeOf QueryDeclarationByName ast)
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (QueryReturnTypeOf QueryDeclarationByName ast))
+-&gt; Query
+     (QueryEffectsOf QueryDeclarationByName ast)
+     (QueryReturnTypeOf QueryDeclarationByName ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf QueryDeclarationByName ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, SupportsQuery QueryDeclarationByName ast) =&gt;
+QueryArgsOf QueryDeclarationByName ast
+-&gt; Query
+     (QueryEffectsOf QueryDeclarationByName ast)
+     (QueryReturnTypeOf QueryDeclarationByName ast)
+</span><a href="Elara.Query.html#DeclarationByName"><span class="hs-identifier hs-var">DeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048204"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">QueryArgsOf QueryRequiredDeclarationByName ast
+QueryArgsOf QueryDeclarationByName ast
+</span><a href="#local-6989586621680048981"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-146"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680048982"><span class="hs-identifier hs-type">mDecl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-147"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680048984"><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048984"><span class="hs-identifier hs-var">decl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Declaration ast
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680048984"><span class="hs-identifier hs-var">decl</span></a></span><span>
+</span><span id="line-148"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Declaration ast)
+QueryReturnTypeOf QueryDeclarationByName ast
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">(InternalError
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (Declaration ast))
+-&gt; InternalError
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Qualified Name -&gt; InternalError
+</span><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-var">RequiredDeclNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+QueryArgsOf QueryRequiredDeclarationByName ast
+</span><a href="#local-6989586621680048981"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-151"></span><span>    </span><span id="local-6989586621680048212"><span id="local-6989586621680048213"><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-152"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-153"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotations"><span class="hs-identifier hs-type">DeclarationAnnotations</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#QueryConstructorDeclaration"><span class="hs-identifier hs-type">QueryConstructorDeclaration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#AnnotationName"><span class="hs-identifier hs-type">AnnotationName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span>
+</span><span id="line-157"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ConRef"><span class="hs-identifier hs-type">ConRef</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span>
+</span><span id="line-159"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span>
+</span><span id="line-160"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span>
+</span><span id="line-161"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span>
+</span><span id="line-162"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate%27"><span class="hs-identifier hs-type">ASTLocate'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Select.html#ASTName"><span class="hs-identifier hs-type">ASTName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#ForType"><span class="hs-identifier hs-type">ForType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-163"></span><span>        </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#CleanupLocated"><span class="hs-identifier hs-type">CleanupLocated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ASTLocate%27"><span class="hs-identifier hs-type">ASTLocate'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-164"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-165"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SupportsQuery"><span class="hs-identifier hs-type">SupportsQuery</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotationsOfType"><span class="hs-identifier hs-type">DeclarationAnnotationsOfType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span></span></span><span>
+</span><span id="line-166"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-167"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="QuerySpecificEffectsOf"><span class="annot"><a href="Elara.Query.html#QuerySpecificEffectsOf"><span class="hs-identifier hs-var">QuerySpecificEffectsOf</span></a></span></span><span> </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotationsOfType"><span class="hs-identifier hs-type">DeclarationAnnotationsOfType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Query.Errors.html#StandardQueryError"><span class="hs-identifier hs-type">StandardQueryError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span>
+</span><span id="line-168"></span><span>    </span><span id="local-6989586621680049186"><span class="annot"><span class="annottext">query :: HasCallStack =&gt;
+QueryArgsOf DeclarationAnnotationsOfType ast
+-&gt; Eff
+     (QueryEffectsOf DeclarationAnnotationsOfType ast)
+     (QueryReturnTypeOf DeclarationAnnotationsOfType ast)
+</span><a href="Elara.Query.html#query"><span class="hs-identifier hs-var hs-var hs-var">query</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680049187"><span class="annot"><span class="annottext">declName :: Qualified Name
+</span><a href="#local-6989586621680049187"><span class="hs-identifier hs-var">declName</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680049188"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680049188"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680049189"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680049189"><span class="hs-identifier hs-var">modName</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680049190"><span class="annot"><span class="annottext">annName
+</span><a href="#local-6989586621680049190"><span class="hs-identifier hs-var">annName</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-169"></span><span>        </span><span id="local-6989586621680049191"><span class="annot"><a href="#local-6989586621680049191"><span class="hs-identifier hs-var">annotations</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (QueryEffectsOf DeclarationAnnotations ast)
+  (QueryReturnTypeOf DeclarationAnnotations ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf DeclarationAnnotations ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">(Query
+   (QueryEffectsOf DeclarationAnnotations ast)
+   (QueryReturnTypeOf DeclarationAnnotations ast)
+ -&gt; Eff
+      (WithRock (ConsQueryEffects (StandardQueryError ast)))
+      (QueryReturnTypeOf DeclarationAnnotations ast))
+-&gt; Query
+     (QueryEffectsOf DeclarationAnnotations ast)
+     (QueryReturnTypeOf DeclarationAnnotations ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (QueryReturnTypeOf DeclarationAnnotations ast)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, SupportsQuery DeclarationAnnotations ast) =&gt;
+QueryArgsOf QueryDeclarationByName ast
+-&gt; Query
+     (QueryEffectsOf DeclarationAnnotations ast)
+     (QueryReturnTypeOf DeclarationAnnotations ast)
+</span><a href="Elara.Query.html#DeclarationAnnotations"><span class="hs-identifier hs-var">DeclarationAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; ModuleName -&gt; Qualified Name
+forall name. name -&gt; ModuleName -&gt; Qualified name
+</span><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-var">Qualified</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680049188"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680049189"><span class="hs-identifier hs-var">modName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span><span>
+</span><span id="line-171"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">fmap</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">catMaybes</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680049191"><span class="hs-identifier hs-type">annotations</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680049195"><span class="annot"><span class="annottext">Annotation ast
+</span><a href="#local-6989586621680049195"><span class="hs-identifier hs-var">ann</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-172"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680049196"><span class="annot"><span class="annottext">name :: Qualified TypeName
+</span><a href="#local-6989586621680049196"><span class="hs-identifier hs-var hs-var hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Annotation ast
+</span><a href="#local-6989586621680049195"><span class="hs-identifier hs-var">ann</span></a></span><span> </span><span class="annot"><span class="annottext">Annotation ast
+-&gt; Optic' A_Getter '[] (Annotation ast) (Qualified TypeName)
+-&gt; Qualified TypeName
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;annotationName&quot;</span></span><span> </span><span class="annot"><span class="annottext">Lens
+  (Annotation ast)
+  (Annotation ast)
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+  (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     (Qualified TypeName)
+     (Qualified TypeName)
+-&gt; Optic' A_Getter '[] (Annotation ast) (Qualified TypeName)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Select"><span class="hs-identifier hs-type">Select</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#AnnotationName"><span class="hs-identifier hs-type">AnnotationName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-173"></span><span>            </span><span id="local-6989586621680049197"><span class="annot"><a href="#local-6989586621680049197"><span class="hs-identifier hs-var">annotationDecl</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+  (WithRock (ConsQueryEffects (StandardQueryError ast)))
+  (Declaration ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Declaration ast)
+forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
+       a.
+(Subset xs es, Rock f :&gt; es, HasCallStack) =&gt;
+f xs a -&gt; Eff es a
+</span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (ast :: LocatedAST).
+(Typeable ast, Ord (Select ConRef ast),
+ Hashable (Select ConRef ast),
+ SupportsQuery QueryConstructorDeclaration ast) =&gt;
+QueryArgsOf QueryConstructorDeclaration ast
+-&gt; Query
+     (QueryEffectsOf QueryConstructorDeclaration ast)
+     (QueryReturnTypeOf QueryConstructorDeclaration ast)
+</span><a href="Elara.Query.html#ConstructorDeclaration"><span class="hs-identifier hs-var">ConstructorDeclaration</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+QueryArgsOf QueryConstructorDeclaration ast
+</span><a href="#local-6989586621680049196"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>
+</span><span id="line-175"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680049199"><span class="annot"><a href="#local-6989586621680049199"><span class="hs-identifier hs-var hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-176"></span><span>                    </span><span class="annot"><span class="annottext">Declaration ast
+</span><a href="#local-6989586621680049197"><span class="hs-identifier hs-var">annotationDecl</span></a></span><span>
+</span><span id="line-177"></span><span>                        </span><span class="annot"><span class="annottext">Declaration ast
+-&gt; Optic' A_Getter '[] (Declaration ast) (DeclarationBody' ast)
+-&gt; DeclarationBody' ast
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-178"></span><span>                        </span><span class="annot"><span class="annottext">Iso
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+  (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+     (CleanupLocated (ASTLocate' ast (Declaration' ast)))
+     (Declaration' ast)
+     (Declaration' ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (Declaration' ast)
+     (Declaration' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Declaration%27"><span class="hs-identifier hs-type">Declaration'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-179"></span><span>                        </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (Declaration' ast)
+  (Declaration' ast)
+-&gt; Optic
+     A_Lens
+     '[]
+     (Declaration' ast)
+     (Declaration' ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall (field :: Symbol) s a. HasField' field s a =&gt; Lens s s a a
+</span><span class="hs-identifier hs-var">field'</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;body&quot;</span></span><span>
+</span><span id="line-180"></span><span>                        </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+-&gt; Optic
+     An_Iso
+     '[]
+     (DeclarationBody ast)
+     (DeclarationBody ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (Declaration ast)
+     (Declaration ast)
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic
+  An_Iso
+  '[]
+  (DeclarationBody ast)
+  (DeclarationBody ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+forall s t a b. Wrapped s t a b =&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-181"></span><span>                        </span><span class="annot"><span class="annottext">Optic
+  A_Getter
+  '[]
+  (Declaration ast)
+  (Declaration ast)
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+  (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+-&gt; Optic
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (CleanupLocated (ASTLocate' ast (DeclarationBody' ast)))
+     (DeclarationBody' ast)
+     (DeclarationBody' ast)
+-&gt; Optic' A_Getter '[] (Declaration ast) (DeclarationBody' ast)
+forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
+       b.
+(JoinKinds k l m, AppendIndices is js ks) =&gt;
+Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
+</span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#DeclarationBody%27"><span class="hs-identifier hs-type">DeclarationBody'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-182"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680049199"><span class="hs-identifier hs-type">body</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-183"></span><span>                </span><span class="annot"><a href="Elara.AST.Generic.Types.html#TypeDeclaration"><span class="hs-identifier hs-type">TypeDeclaration</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">_typeDeclarationName :: forall a (ast :: a).
+DeclarationBody' ast
+-&gt; ASTLocate ast (Select (ASTName ForType) ast)
+</span><a href="Elara.AST.Generic.Types.html#_typeDeclarationName"><span class="hs-identifier hs-var">_typeDeclarationName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621680049201"><span class="annot"><span class="annottext">CleanupLocated (ASTLocate' ast (Select (ASTName ForType) ast))
+</span><a href="#local-6989586621680049201"><span class="hs-identifier hs-var">tName</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">CleanupLocated (ASTLocate' ast (Qualified TypeName))
+CleanupLocated (ASTLocate' ast (Select (ASTName ForType) ast))
+</span><a href="#local-6989586621680049201"><span class="hs-identifier hs-var">tName</span></a></span><span> </span><span class="annot"><span class="annottext">CleanupLocated (ASTLocate' ast (Qualified TypeName))
+-&gt; Optic'
+     A_Getter
+     '[]
+     (CleanupLocated (ASTLocate' ast (Qualified TypeName)))
+     annName
+-&gt; annName
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
+(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
+Getter (ASTLocate ast1 a) a
+</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048212"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680048213"><span class="hs-identifier hs-type">annName</span></a></span><span> </span><span class="annot"><span class="annottext">annName -&gt; annName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">annName
+</span><a href="#local-6989586621680049190"><span class="hs-identifier hs-var">annName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Annotation ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Annotation ast))
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Annotation ast -&gt; Maybe (Annotation ast)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Annotation ast
+</span><a href="#local-6989586621680049195"><span class="hs-identifier hs-var">ann</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span>                </span><span class="annot"><span class="annottext">DeclarationBody' ast
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Annotation ast)
+-&gt; Eff
+     (WithRock (ConsQueryEffects (StandardQueryError ast)))
+     (Maybe (Annotation ast))
+forall a.
+a -&gt; Eff (WithRock (ConsQueryEffects (StandardQueryError ast))) a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Annotation ast)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-185"></span></pre></body></html>

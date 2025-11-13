@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680020613"><span id="local-6989586621680020614"><span id="local-6989586621680020615"><span id="local-6989586621680020616"><span id="local-6989586621680020617"><span id="local-6989586621680020618"><span id="local-6989586621680020619"><span id="local-6989586621680020620"><span id="local-6989586621680020621"><span id="local-6989586621680020622"><span id="local-6989586621680020623"><span id="local-6989586621680020624"><span id="local-6989586621680020625"><span id="local-6989586621680020626"><span id="local-6989586621680020627"><span id="local-6989586621680020628"><span id="local-6989586621680020629"><span id="local-6989586621680020630"><span id="local-6989586621680020631"><span id="local-6989586621680020632"><span id="local-6989586621680020633"><span id="local-6989586621680020634"><span id="local-6989586621680020635"><span id="local-6989586621680020636"><span id="local-6989586621680020637"><span id="local-6989586621680020638"><span id="local-6989586621680020639"><span id="local-6989586621680020640"><span id="local-6989586621680020641"><span id="local-6989586621680020642"><span id="local-6989586621680020643"><span id="local-6989586621680020644"><span id="local-6989586621680020645"><span id="local-6989586621680020646"><span id="local-6989586621680020647"><span id="local-6989586621680020648"><span id="local-6989586621680020649"><span id="local-6989586621680020650"></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680015140"><span id="local-6989586621680015141"><span id="local-6989586621680015142"><span id="local-6989586621680015143"><span id="local-6989586621680015144"><span id="local-6989586621680015145"><span id="local-6989586621680015146"><span id="local-6989586621680015147"><span id="local-6989586621680015148"><span id="local-6989586621680015149"><span id="local-6989586621680015150"><span id="local-6989586621680015151"><span id="local-6989586621680015152"><span id="local-6989586621680015153"><span id="local-6989586621680015154"><span id="local-6989586621680015155"><span id="local-6989586621680015156"><span id="local-6989586621680015157"><span id="local-6989586621680015158"><span id="local-6989586621680015159"><span id="local-6989586621680015160"><span id="local-6989586621680015161"><span id="local-6989586621680015162"><span id="local-6989586621680015163"><span id="local-6989586621680015164"><span id="local-6989586621680015165"><span id="local-6989586621680015166"><span id="local-6989586621680015167"><span id="local-6989586621680015168"><span id="local-6989586621680015169"><span id="local-6989586621680015170"><span id="local-6989586621680015171"><span id="local-6989586621680015172"><span id="local-6989586621680015173"><span id="local-6989586621680015174"><span id="local-6989586621680015175"><span id="local-6989586621680015176"><span id="local-6989586621680015177"></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">)</span><span>
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span class="hs-special">)</span><span>
@@ -14,7 +14,7 @@
 </span><span id="line-13"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="tvKind"><span class="annot"><span class="annottext">TypeVariable -&gt; ElaraKind
 </span><a href="Elara.Core.html#tvKind"><span class="hs-identifier hs-var hs-var">tvKind</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
 </span><span id="line-14"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-15"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680020657"><span id="local-6989586621680020666"><span id="local-6989586621680020670"><span class="annot"><span class="annottext">Int -&gt; TypeVariable -&gt; ShowS
+</span><span id="line-15"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015184"><span id="local-6989586621680015193"><span id="local-6989586621680015197"><span class="annot"><span class="annottext">Int -&gt; TypeVariable -&gt; ShowS
 [TypeVariable] -&gt; ShowS
 TypeVariable -&gt; String
 (Int -&gt; TypeVariable -&gt; ShowS)
@@ -29,7 +29,7 @@ $cshow :: TypeVariable -&gt; String
 show :: TypeVariable -&gt; String
 $cshowList :: [TypeVariable] -&gt; ShowS
 showList :: [TypeVariable] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020678"><span id="local-6989586621680020685"><span class="annot"><span class="annottext">TypeVariable -&gt; TypeVariable -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015205"><span id="local-6989586621680015212"><span class="annot"><span class="annottext">TypeVariable -&gt; TypeVariable -&gt; Bool
 (TypeVariable -&gt; TypeVariable -&gt; Bool)
 -&gt; (TypeVariable -&gt; TypeVariable -&gt; Bool) -&gt; Eq TypeVariable
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -37,7 +37,7 @@ $c== :: TypeVariable -&gt; TypeVariable -&gt; Bool
 == :: TypeVariable -&gt; TypeVariable -&gt; Bool
 $c/= :: TypeVariable -&gt; TypeVariable -&gt; Bool
 /= :: TypeVariable -&gt; TypeVariable -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020695"><span id="local-6989586621680020702"><span id="local-6989586621680020707"><span id="local-6989586621680020709"><span id="local-6989586621680020711"><span id="local-6989586621680020717"><span id="local-6989586621680020722"><span id="local-6989586621680020725"><span id="local-6989586621680020728"><span id="local-6989586621680020731"><span id="local-6989586621680020734"><span id="local-6989586621680020737"><span id="local-6989586621680020742"><span id="local-6989586621680020747"><span class="annot"><span class="annottext">Typeable TypeVariable
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015222"><span id="local-6989586621680015229"><span id="local-6989586621680015234"><span id="local-6989586621680015236"><span id="local-6989586621680015238"><span id="local-6989586621680015244"><span id="local-6989586621680015249"><span id="local-6989586621680015252"><span id="local-6989586621680015255"><span id="local-6989586621680015258"><span id="local-6989586621680015261"><span id="local-6989586621680015264"><span id="local-6989586621680015269"><span id="local-6989586621680015274"><span class="annot"><span class="annottext">Typeable TypeVariable
 Typeable TypeVariable =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -203,7 +203,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; TypeVariable -&gt; m TypeVariable
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020763"><span id="local-6989586621680020770"><span id="local-6989586621680020775"><span id="local-6989586621680020779"><span id="local-6989586621680020782"><span id="local-6989586621680020785"><span id="local-6989586621680020788"><span class="annot"><span class="annottext">Eq TypeVariable
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015290"><span id="local-6989586621680015297"><span id="local-6989586621680015302"><span id="local-6989586621680015306"><span id="local-6989586621680015309"><span id="local-6989586621680015312"><span id="local-6989586621680015315"><span class="annot"><span class="annottext">Eq TypeVariable
 Eq TypeVariable =&gt;
 (TypeVariable -&gt; TypeVariable -&gt; Ordering)
 -&gt; (TypeVariable -&gt; TypeVariable -&gt; Bool)
@@ -240,7 +240,7 @@ $cmax :: TypeVariable -&gt; TypeVariable -&gt; TypeVariable
 max :: TypeVariable -&gt; TypeVariable -&gt; TypeVariable
 $cmin :: TypeVariable -&gt; TypeVariable -&gt; TypeVariable
 min :: TypeVariable -&gt; TypeVariable -&gt; TypeVariable
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020800"><span id="local-6989586621680020802"><span class="annot"><span class="annottext">(forall x. TypeVariable -&gt; Rep TypeVariable x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015327"><span id="local-6989586621680015329"><span class="annot"><span class="annottext">(forall x. TypeVariable -&gt; Rep TypeVariable x)
 -&gt; (forall x. Rep TypeVariable x -&gt; TypeVariable)
 -&gt; Generic TypeVariable
 forall x. Rep TypeVariable x -&gt; TypeVariable
@@ -256,7 +256,7 @@ to :: forall x. Rep TypeVariable x -&gt; TypeVariable
 </span><span id="line-17"></span><span class="hs-keyword">data</span><span> </span><span id="Var"><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-var">Var</span></a></span></span><span>
 </span><span id="line-18"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="TyVar"><span class="annot"><a href="Elara.Core.html#TyVar"><span class="hs-identifier hs-var">TyVar</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span><span>
 </span><span id="line-19"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Id"><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-var">Id</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#UnlocatedVarRef"><span class="hs-identifier hs-type">UnlocatedVarRef</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Core.html#DataCon"><span class="hs-identifier hs-type">DataCon</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-20"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680020810"><span id="local-6989586621680020823"><span id="local-6989586621680020827"><span class="annot"><span class="annottext">Int -&gt; Var -&gt; ShowS
+</span><span id="line-20"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015337"><span id="local-6989586621680015350"><span id="local-6989586621680015354"><span class="annot"><span class="annottext">Int -&gt; Var -&gt; ShowS
 [Var] -&gt; ShowS
 Var -&gt; String
 (Int -&gt; Var -&gt; ShowS)
@@ -269,7 +269,7 @@ $cshow :: Var -&gt; String
 show :: Var -&gt; String
 $cshowList :: [Var] -&gt; ShowS
 showList :: [Var] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020837"><span id="local-6989586621680020850"><span id="local-6989586621680020861"><span id="local-6989586621680020863"><span id="local-6989586621680020865"><span id="local-6989586621680020871"><span id="local-6989586621680020876"><span id="local-6989586621680020879"><span id="local-6989586621680020882"><span id="local-6989586621680020885"><span id="local-6989586621680020888"><span id="local-6989586621680020891"><span id="local-6989586621680020896"><span id="local-6989586621680020901"><span class="annot"><span class="annottext">Typeable Var
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015364"><span id="local-6989586621680015377"><span id="local-6989586621680015388"><span id="local-6989586621680015390"><span id="local-6989586621680015392"><span id="local-6989586621680015398"><span id="local-6989586621680015403"><span id="local-6989586621680015406"><span id="local-6989586621680015409"><span id="local-6989586621680015412"><span id="local-6989586621680015415"><span id="local-6989586621680015418"><span id="local-6989586621680015423"><span id="local-6989586621680015428"><span class="annot"><span class="annottext">Typeable Var
 Typeable Var =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -422,14 +422,14 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; Var -&gt; m Var
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020914"><span id="local-6989586621680020928"><span class="annot"><span class="annottext">Var -&gt; Var -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015441"><span id="local-6989586621680015455"><span class="annot"><span class="annottext">Var -&gt; Var -&gt; Bool
 (Var -&gt; Var -&gt; Bool) -&gt; (Var -&gt; Var -&gt; Bool) -&gt; Eq Var
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Var -&gt; Var -&gt; Bool
 == :: Var -&gt; Var -&gt; Bool
 $c/= :: Var -&gt; Var -&gt; Bool
 /= :: Var -&gt; Var -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020939"><span id="local-6989586621680020950"><span id="local-6989586621680020959"><span id="local-6989586621680020963"><span id="local-6989586621680020966"><span id="local-6989586621680020969"><span id="local-6989586621680020972"><span class="annot"><span class="annottext">Eq Var
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015466"><span id="local-6989586621680015477"><span id="local-6989586621680015486"><span id="local-6989586621680015490"><span id="local-6989586621680015493"><span id="local-6989586621680015496"><span id="local-6989586621680015499"><span class="annot"><span class="annottext">Eq Var
 Eq Var =&gt;
 (Var -&gt; Var -&gt; Ordering)
 -&gt; (Var -&gt; Var -&gt; Bool)
@@ -466,7 +466,7 @@ $cmax :: Var -&gt; Var -&gt; Var
 max :: Var -&gt; Var -&gt; Var
 $cmin :: Var -&gt; Var -&gt; Var
 min :: Var -&gt; Var -&gt; Var
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680020983"><span id="local-6989586621680020985"><span class="annot"><span class="annottext">(forall x. Var -&gt; Rep Var x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015510"><span id="local-6989586621680015512"><span class="annot"><span class="annottext">(forall x. Var -&gt; Rep Var x)
 -&gt; (forall x. Rep Var x -&gt; Var) -&gt; Generic Var
 forall x. Rep Var x -&gt; Var
 forall x. Var -&gt; Rep Var x
@@ -478,16 +478,16 @@ $cto :: forall x. Rep Var x -&gt; Var
 to :: forall x. Rep Var x -&gt; Var
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span class="hs-keyword">data</span><span> </span><span id="Expr"><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-var">Expr</span></a></span></span><span> </span><span id="local-6989586621680020510"><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span></span><span>
-</span><span id="line-23"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Var"><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-var">Var</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">data</span><span> </span><span id="Expr"><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-var">Expr</span></a></span></span><span> </span><span id="local-6989586621680015037"><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Var"><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-var">Var</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span>
 </span><span id="line-24"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Lit"><span class="annot"><a href="Elara.Core.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span>
-</span><span id="line-25"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="App"><span class="annot"><a href="Elara.Core.html#App"><span class="hs-identifier hs-var">App</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyApp"><span class="annot"><a href="Elara.Core.html#TyApp"><span class="hs-identifier hs-var">TyApp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
-</span><span id="line-27"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Lam"><span class="annot"><a href="Elara.Core.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-28"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyLam"><span class="annot"><a href="Elara.Core.html#TyLam"><span class="hs-identifier hs-var">TyLam</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Let"><span class="annot"><a href="Elara.Core.html#Let"><span class="hs-identifier hs-var">Let</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-30"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Match"><span class="annot"><a href="Elara.Core.html#Match"><span class="hs-identifier hs-var">Match</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Alt"><span class="hs-identifier hs-type">Alt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020510"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-31"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680020997"><span id="local-6989586621680021027"><span id="local-6989586621680021030"><span class="annot"><span class="annottext">Int -&gt; Expr b -&gt; ShowS
+</span><span id="line-25"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="App"><span class="annot"><a href="Elara.Core.html#App"><span class="hs-identifier hs-var">App</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyApp"><span class="annot"><a href="Elara.Core.html#TyApp"><span class="hs-identifier hs-var">TyApp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Lam"><span class="annot"><a href="Elara.Core.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyLam"><span class="annot"><a href="Elara.Core.html#TyLam"><span class="hs-identifier hs-var">TyLam</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Let"><span class="annot"><a href="Elara.Core.html#Let"><span class="hs-identifier hs-var">Let</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Match"><span class="annot"><a href="Elara.Core.html#Match"><span class="hs-identifier hs-var">Match</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Alt"><span class="hs-identifier hs-type">Alt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015037"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015524"><span id="local-6989586621680015554"><span id="local-6989586621680015557"><span class="annot"><span class="annottext">Int -&gt; Expr b -&gt; ShowS
 [Expr b] -&gt; ShowS
 Expr b -&gt; String
 (Int -&gt; Expr b -&gt; ShowS)
@@ -503,7 +503,7 @@ $cshow :: forall b. Show b =&gt; Expr b -&gt; String
 show :: Expr b -&gt; String
 $cshowList :: forall b. Show b =&gt; [Expr b] -&gt; ShowS
 showList :: [Expr b] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021038"><span id="local-6989586621680021062"><span class="annot"><span class="annottext">Expr b -&gt; Expr b -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015565"><span id="local-6989586621680015589"><span class="annot"><span class="annottext">Expr b -&gt; Expr b -&gt; Bool
 (Expr b -&gt; Expr b -&gt; Bool)
 -&gt; (Expr b -&gt; Expr b -&gt; Bool) -&gt; Eq (Expr b)
 forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
@@ -512,7 +512,7 @@ $c== :: forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
 == :: Expr b -&gt; Expr b -&gt; Bool
 $c/= :: forall b. Eq b =&gt; Expr b -&gt; Expr b -&gt; Bool
 /= :: Expr b -&gt; Expr b -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021074"><span id="local-6989586621680021097"><span id="local-6989586621680021116"><span id="local-6989586621680021118"><span id="local-6989586621680021120"><span id="local-6989586621680021126"><span id="local-6989586621680021131"><span id="local-6989586621680021134"><span id="local-6989586621680021137"><span id="local-6989586621680021140"><span id="local-6989586621680021143"><span id="local-6989586621680021146"><span id="local-6989586621680021151"><span id="local-6989586621680021156"><span class="annot"><span class="annottext">Typeable (Expr b)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015601"><span id="local-6989586621680015624"><span id="local-6989586621680015643"><span id="local-6989586621680015645"><span id="local-6989586621680015647"><span id="local-6989586621680015653"><span id="local-6989586621680015658"><span id="local-6989586621680015661"><span id="local-6989586621680015664"><span id="local-6989586621680015667"><span id="local-6989586621680015670"><span id="local-6989586621680015673"><span id="local-6989586621680015678"><span id="local-6989586621680015683"><span class="annot"><span class="annottext">Typeable (Expr b)
 Typeable (Expr b) =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -711,7 +711,7 @@ $cgmapMo :: forall b (m :: * -&gt; *).
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; Expr b -&gt; m (Expr b)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021169"><span id="local-6989586621680021171"><span class="annot"><span class="annottext">(forall x. Expr b -&gt; Rep (Expr b) x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015696"><span id="local-6989586621680015698"><span class="annot"><span class="annottext">(forall x. Expr b -&gt; Rep (Expr b) x)
 -&gt; (forall x. Rep (Expr b) x -&gt; Expr b) -&gt; Generic (Expr b)
 forall x. Rep (Expr b) x -&gt; Expr b
 forall x. Expr b -&gt; Rep (Expr b) x
@@ -725,9 +725,9 @@ $cto :: forall b x. Rep (Expr b) x -&gt; Expr b
 to :: forall x. Rep (Expr b) x -&gt; Expr b
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-32"></span><span>
-</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680020495"><span class="annot"><a href="Prelude.html#Plated"><span class="hs-identifier hs-type">Plated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020495"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-34"></span><span>    </span><span id="local-6989586621680021176"><span class="annot"><span class="annottext">plate :: Traversal' (Expr b) (Expr b)
-</span><a href="#local-6989586621680021176"><span class="hs-identifier hs-var hs-var hs-var">plate</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TraversalVL (Expr b) (Expr b) (Expr b) (Expr b)
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680015022"><span class="annot"><a href="Prelude.html#Plated"><span class="hs-identifier hs-type">Plated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015022"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621680015703"><span class="annot"><span class="annottext">plate :: Traversal' (Expr b) (Expr b)
+</span><a href="#local-6989586621680015703"><span class="hs-identifier hs-var hs-var hs-var">plate</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TraversalVL (Expr b) (Expr b) (Expr b) (Expr b)
 -&gt; Traversal' (Expr b) (Expr b)
 forall s t a b. TraversalVL s t a b -&gt; Traversal s t a b
 </span><span class="hs-identifier hs-var">traversalVL</span></span><span> </span><span class="annot"><span class="annottext">(TraversalVL (Expr b) (Expr b) (Expr b) (Expr b)
@@ -735,93 +735,93 @@ forall s t a b. TraversalVL s t a b -&gt; Traversal s t a b
 -&gt; TraversalVL (Expr b) (Expr b) (Expr b) (Expr b)
 -&gt; Traversal' (Expr b) (Expr b)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680021208"><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-35"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621680021209"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021209"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680015735"><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-35"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621680015736"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680015736"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Expr b
 forall b. b -&gt; Expr b
 </span><a href="Elara.Core.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021209"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621680021210"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621680021210"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
+</span><a href="#local-6989586621680015736"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621680015737"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621680015737"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Expr b
 forall b. Literal -&gt; Expr b
 </span><a href="Elara.Core.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621680021210"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-37"></span><span>        </span><span class="annot"><a href="Elara.Core.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621680021211"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021211"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680021212"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021212"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680015737"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>        </span><span class="annot"><a href="Elara.Core.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621680015738"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015738"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680015739"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015739"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Expr b -&gt; Expr b
 forall b. Expr b -&gt; Expr b -&gt; Expr b
 </span><a href="Elara.Core.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b -&gt; Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021211"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015738"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021212"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-38"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyApp"><span class="hs-identifier hs-type">TyApp</span></a></span><span> </span><span id="local-6989586621680021214"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021214"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680021215"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021215"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Type -&gt; Expr b
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015739"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-38"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyApp"><span class="hs-identifier hs-type">TyApp</span></a></span><span> </span><span id="local-6989586621680015741"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015741"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680015742"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680015742"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Type -&gt; Expr b
 forall b. Expr b -&gt; Type -&gt; Expr b
 </span><a href="Elara.Core.html#TyApp"><span class="hs-identifier hs-var">TyApp</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Type -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Type -&gt; Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021214"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Expr b) -&gt; f Type -&gt; f (Expr b)
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015741"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Expr b) -&gt; f Type -&gt; f (Expr b)
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021215"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-39"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621680021216"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021216"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680021217"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021217"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680015742"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-39"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621680015743"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680015743"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680015744"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015744"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b -&gt; Expr b -&gt; Expr b
 forall b. b -&gt; Expr b -&gt; Expr b
 </span><a href="Elara.Core.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021216"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
+</span><a href="#local-6989586621680015743"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021217"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-40"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyLam"><span class="hs-identifier hs-type">TyLam</span></a></span><span> </span><span id="local-6989586621680021218"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021218"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680021219"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021219"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015744"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyLam"><span class="hs-identifier hs-type">TyLam</span></a></span><span> </span><span id="local-6989586621680015745"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680015745"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680015746"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015746"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Expr b -&gt; Expr b
 forall b. Type -&gt; Expr b -&gt; Expr b
 </span><a href="Elara.Core.html#TyLam"><span class="hs-identifier hs-var">TyLam</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021218"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
+</span><a href="#local-6989586621680015745"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021219"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-41"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621680021220"><span class="annot"><span class="annottext">Bind b
-</span><a href="#local-6989586621680021220"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680021221"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021221"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bind b -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015746"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621680015747"><span class="annot"><span class="annottext">Bind b
+</span><a href="#local-6989586621680015747"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680015748"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015748"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bind b -&gt; Expr b -&gt; Expr b
 forall b. Bind b -&gt; Expr b -&gt; Expr b
 </span><a href="Elara.Core.html#Let"><span class="hs-identifier hs-var">Let</span></a></span><span> </span><span class="annot"><span class="annottext">(Bind b -&gt; Expr b -&gt; Expr b) -&gt; f (Bind b) -&gt; f (Expr b -&gt; Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Bind b -&gt; f (Bind b)
-</span><a href="#local-6989586621680021222"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">Bind b
-</span><a href="#local-6989586621680021220"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f (Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
+</span><a href="#local-6989586621680015749"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">Bind b
+</span><a href="#local-6989586621680015747"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f (Expr b -&gt; Expr b) -&gt; f (Expr b) -&gt; f (Expr b)
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021221"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015748"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-42"></span><span>          </span><span class="hs-keyword">where</span><span>
-</span><span id="line-43"></span><span>            </span><span id="local-6989586621680021222"><span class="annot"><span class="annottext">f' :: Bind b -&gt; f (Bind b)
-</span><a href="#local-6989586621680021222"><span class="hs-identifier hs-var hs-var">f'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-44"></span><span>                </span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">G.Recursive</span></a></span><span> </span><span id="local-6989586621680021224"><span class="annot"><span class="annottext">[(b, Expr b)]
-</span><a href="#local-6989586621680021224"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(b, Expr b)] -&gt; Bind b
+</span><span id="line-43"></span><span>            </span><span id="local-6989586621680015749"><span class="annot"><span class="annottext">f' :: Bind b -&gt; f (Bind b)
+</span><a href="#local-6989586621680015749"><span class="hs-identifier hs-var hs-var">f'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-44"></span><span>                </span><span class="annot"><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-type">G.Recursive</span></a></span><span> </span><span id="local-6989586621680015751"><span class="annot"><span class="annottext">[(b, Expr b)]
+</span><a href="#local-6989586621680015751"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(b, Expr b)] -&gt; Bind b
 forall b (expr :: * -&gt; *). [(b, expr b)] -&gt; Bind b expr
 </span><a href="Elara.Core.Generic.html#Recursive"><span class="hs-identifier hs-var">G.Recursive</span></a></span><span> </span><span class="annot"><span class="annottext">([(b, Expr b)] -&gt; Bind b) -&gt; f [(b, Expr b)] -&gt; f (Bind b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -840,32 +840,32 @@ forall (f :: * -&gt; *) a b.
 Applicative f =&gt;
 (a -&gt; f b) -&gt; (b, a) -&gt; f (b, b)
 </span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(b, Expr b)]
-</span><a href="#local-6989586621680021224"><span class="hs-identifier hs-var">bs</span></a></span><span>
-</span><span id="line-45"></span><span>                </span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">G.NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021227"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021227"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021228"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021228"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(b, Expr b) -&gt; Bind b
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(b, Expr b)]
+</span><a href="#local-6989586621680015751"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-45"></span><span>                </span><span class="annot"><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-type">G.NonRecursive</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015754"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680015754"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015755"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015755"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(b, Expr b) -&gt; Bind b
 forall b (expr :: * -&gt; *). (b, expr b) -&gt; Bind b expr
 </span><a href="Elara.Core.Generic.html#NonRecursive"><span class="hs-identifier hs-var">G.NonRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">((b, Expr b) -&gt; Bind b)
 -&gt; (Expr b -&gt; (b, Expr b)) -&gt; Expr b -&gt; Bind b
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021227"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Bind b) -&gt; f (Expr b) -&gt; f (Bind b)
+</span><a href="#local-6989586621680015754"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Bind b) -&gt; f (Expr b) -&gt; f (Bind b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021228"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-46"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Match"><span class="hs-identifier hs-type">Match</span></a></span><span> </span><span id="local-6989586621680021230"><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021230"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680021231"><span class="annot"><span class="annottext">Maybe b
-</span><a href="#local-6989586621680021231"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680021232"><span class="annot"><span class="annottext">[Alt b]
-</span><a href="#local-6989586621680021232"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Maybe b -&gt; [Alt b] -&gt; Expr b
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015755"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-46"></span><span>        </span><span class="annot"><a href="Elara.Core.html#Match"><span class="hs-identifier hs-type">Match</span></a></span><span> </span><span id="local-6989586621680015757"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015757"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680015758"><span class="annot"><span class="annottext">Maybe b
+</span><a href="#local-6989586621680015758"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621680015759"><span class="annot"><span class="annottext">[Alt b]
+</span><a href="#local-6989586621680015759"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; Maybe b -&gt; [Alt b] -&gt; Expr b
 forall b. Expr b -&gt; Maybe b -&gt; [Alt b] -&gt; Expr b
 </span><a href="Elara.Core.html#Match"><span class="hs-identifier hs-var">Match</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr b -&gt; Maybe b -&gt; [Alt b] -&gt; Expr b)
 -&gt; f (Expr b) -&gt; f (Maybe b -&gt; [Alt b] -&gt; Expr b)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
-</span><a href="#local-6989586621680021230"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">f (Maybe b -&gt; [Alt b] -&gt; Expr b)
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680015757"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">f (Maybe b -&gt; [Alt b] -&gt; Expr b)
 -&gt; f (Maybe b) -&gt; f ([Alt b] -&gt; Expr b)
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
@@ -873,7 +873,7 @@ forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe b
-</span><a href="#local-6989586621680021231"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f ([Alt b] -&gt; Expr b) -&gt; f [Alt b] -&gt; f (Expr b)
+</span><a href="#local-6989586621680015758"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">f ([Alt b] -&gt; Expr b) -&gt; f [Alt b] -&gt; f (Expr b)
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Alt b -&gt; f (Alt b)) -&gt; [Alt b] -&gt; f [Alt b]
@@ -887,22 +887,22 @@ Applicative f =&gt;
 forall {f :: * -&gt; *} {t} {a} {a} {b}.
 Functor f =&gt;
 (t -&gt; f a) -&gt; (a, b, t) -&gt; f (a, b, a)
-</span><a href="#local-6989586621680021233"><span class="hs-identifier hs-var">traverse3</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
-</span><a href="#local-6989586621680021208"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Alt b]
-</span><a href="#local-6989586621680021232"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><a href="#local-6989586621680015760"><span class="hs-identifier hs-var">traverse3</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b -&gt; f (Expr b)
+</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Alt b]
+</span><a href="#local-6989586621680015759"><span class="hs-keyword hs-var">as</span></a></span><span>
 </span><span id="line-47"></span><span>          </span><span class="hs-keyword">where</span><span>
-</span><span id="line-48"></span><span>            </span><span id="local-6989586621680021233"><span class="annot"><span class="annottext">traverse3 :: (t -&gt; f a) -&gt; (a, b, t) -&gt; f (a, b, a)
-</span><a href="#local-6989586621680021233"><span class="hs-identifier hs-var hs-var">traverse3</span></a></span></span><span> </span><span id="local-6989586621680021236"><span class="annot"><span class="annottext">t -&gt; f a
-</span><a href="#local-6989586621680021236"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021237"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621680021237"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021238"><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021238"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021239"><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621680021239"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621680021237"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b
-</span><a href="#local-6989586621680021238"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, b, a)) -&gt; f a -&gt; f (a, b, a)
+</span><span id="line-48"></span><span>            </span><span id="local-6989586621680015760"><span class="annot"><span class="annottext">traverse3 :: (t -&gt; f a) -&gt; (a, b, t) -&gt; f (a, b, a)
+</span><a href="#local-6989586621680015760"><span class="hs-identifier hs-var hs-var">traverse3</span></a></span></span><span> </span><span id="local-6989586621680015763"><span class="annot"><span class="annottext">t -&gt; f a
+</span><a href="#local-6989586621680015763"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015764"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680015764"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015765"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680015765"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015766"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680015766"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680015764"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680015765"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, b, a)) -&gt; f a -&gt; f (a, b, a)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">t -&gt; f a
-</span><a href="#local-6989586621680021236"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">t
-</span><a href="#local-6989586621680021239"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><a href="#local-6989586621680015763"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680015766"><span class="hs-identifier hs-var">c</span></a></span><span>
 </span><span id="line-49"></span><span>
 </span><span id="line-50"></span><span class="hs-keyword">type</span><span> </span><span id="CoreExpr"><span class="annot"><a href="Elara.Core.html#CoreExpr"><span class="hs-identifier hs-var">CoreExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span>
 </span><span id="line-51"></span><span>
@@ -910,15 +910,15 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span id="line-53"></span><span>
 </span><span id="line-54"></span><span class="hs-keyword">type</span><span> </span><span id="CoreBind"><span class="annot"><a href="Elara.Core.html#CoreBind"><span class="hs-identifier hs-var">CoreBind</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span>
 </span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="hs-keyword">type</span><span> </span><span id="Bind"><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-var">Bind</span></a></span></span><span> </span><span id="local-6989586621680021243"><span class="annot"><a href="#local-6989586621680021243"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680021243"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">type</span><span> </span><span id="Bind"><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-var">Bind</span></a></span></span><span> </span><span id="local-6989586621680015770"><span class="annot"><a href="#local-6989586621680015770"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Core.Generic.html#Bind"><span class="hs-identifier hs-type">G.Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015770"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-keyword">type</span><span> </span><span id="Alt"><span class="annot"><a href="Elara.Core.html#Alt"><span class="hs-identifier hs-var">Alt</span></a></span></span><span> </span><span id="local-6989586621680021244"><span class="annot"><a href="#local-6989586621680021244"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-type">AltCon</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680021244"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680021244"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">type</span><span> </span><span id="Alt"><span class="annot"><a href="Elara.Core.html#Alt"><span class="hs-identifier hs-var">Alt</span></a></span></span><span> </span><span id="local-6989586621680015771"><span class="annot"><a href="#local-6989586621680015771"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-type">AltCon</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680015771"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015771"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-59"></span><span>
 </span><span id="line-60"></span><span class="hs-keyword">data</span><span> </span><span id="AltCon"><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-var">AltCon</span></a></span></span><span>
 </span><span id="line-61"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="DataAlt"><span class="annot"><a href="Elara.Core.html#DataAlt"><span class="hs-identifier hs-var">DataAlt</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#DataCon"><span class="hs-identifier hs-type">DataCon</span></a></span><span>
 </span><span id="line-62"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="LitAlt"><span class="annot"><a href="Elara.Core.html#LitAlt"><span class="hs-identifier hs-var">LitAlt</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span>
 </span><span id="line-63"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DEFAULT"><span class="annot"><a href="Elara.Core.html#DEFAULT"><span class="hs-identifier hs-var">DEFAULT</span></a></span></span><span>
-</span><span id="line-64"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021249"><span id="local-6989586621680021255"><span id="local-6989586621680021258"><span class="annot"><span class="annottext">Int -&gt; AltCon -&gt; ShowS
+</span><span id="line-64"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015776"><span id="local-6989586621680015782"><span id="local-6989586621680015785"><span class="annot"><span class="annottext">Int -&gt; AltCon -&gt; ShowS
 [AltCon] -&gt; ShowS
 AltCon -&gt; String
 (Int -&gt; AltCon -&gt; ShowS)
@@ -931,7 +931,7 @@ $cshow :: AltCon -&gt; String
 show :: AltCon -&gt; String
 $cshowList :: [AltCon] -&gt; ShowS
 showList :: [AltCon] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021261"><span id="local-6989586621680021267"><span class="annot"><span class="annottext">AltCon -&gt; AltCon -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015788"><span id="local-6989586621680015794"><span class="annot"><span class="annottext">AltCon -&gt; AltCon -&gt; Bool
 (AltCon -&gt; AltCon -&gt; Bool)
 -&gt; (AltCon -&gt; AltCon -&gt; Bool) -&gt; Eq AltCon
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -939,7 +939,7 @@ $c== :: AltCon -&gt; AltCon -&gt; Bool
 == :: AltCon -&gt; AltCon -&gt; Bool
 $c/= :: AltCon -&gt; AltCon -&gt; Bool
 /= :: AltCon -&gt; AltCon -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021272"><span id="local-6989586621680021276"><span id="local-6989586621680021280"><span id="local-6989586621680021282"><span id="local-6989586621680021284"><span id="local-6989586621680021289"><span id="local-6989586621680021294"><span id="local-6989586621680021297"><span id="local-6989586621680021300"><span id="local-6989586621680021303"><span id="local-6989586621680021306"><span id="local-6989586621680021309"><span id="local-6989586621680021314"><span id="local-6989586621680021319"><span class="annot"><span class="annottext">Typeable AltCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015799"><span id="local-6989586621680015803"><span id="local-6989586621680015807"><span id="local-6989586621680015809"><span id="local-6989586621680015811"><span id="local-6989586621680015816"><span id="local-6989586621680015821"><span id="local-6989586621680015824"><span id="local-6989586621680015827"><span id="local-6989586621680015830"><span id="local-6989586621680015833"><span id="local-6989586621680015836"><span id="local-6989586621680015841"><span id="local-6989586621680015846"><span class="annot"><span class="annottext">Typeable AltCon
 Typeable AltCon =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -1094,7 +1094,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; AltCon -&gt; m AltCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021324"><span id="local-6989586621680021326"><span class="annot"><span class="annottext">(forall x. AltCon -&gt; Rep AltCon x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015851"><span id="local-6989586621680015853"><span class="annot"><span class="annottext">(forall x. AltCon -&gt; Rep AltCon x)
 -&gt; (forall x. Rep AltCon x -&gt; AltCon) -&gt; Generic AltCon
 forall x. Rep AltCon x -&gt; AltCon
 forall x. AltCon -&gt; Rep AltCon x
@@ -1104,7 +1104,7 @@ $cfrom :: forall x. AltCon -&gt; Rep AltCon x
 from :: forall x. AltCon -&gt; Rep AltCon x
 $cto :: forall x. Rep AltCon x -&gt; AltCon
 to :: forall x. Rep AltCon x -&gt; AltCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021331"><span id="local-6989586621680021336"><span id="local-6989586621680021340"><span id="local-6989586621680021344"><span id="local-6989586621680021347"><span id="local-6989586621680021350"><span id="local-6989586621680021353"><span class="annot"><span class="annottext">Eq AltCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015858"><span id="local-6989586621680015863"><span id="local-6989586621680015867"><span id="local-6989586621680015871"><span id="local-6989586621680015874"><span id="local-6989586621680015877"><span id="local-6989586621680015880"><span class="annot"><span class="annottext">Eq AltCon
 Eq AltCon =&gt;
 (AltCon -&gt; AltCon -&gt; Ordering)
 -&gt; (AltCon -&gt; AltCon -&gt; Bool)
@@ -1155,7 +1155,7 @@ min :: AltCon -&gt; AltCon -&gt; AltCon
 </span><a href="Elara.Core.html#dataConDataType"><span class="hs-identifier hs-var hs-var">dataConDataType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#TyCon"><span class="hs-identifier hs-type">TyCon</span></a></span><span>
 </span><span id="line-73"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a DataCon for `Bar a` with @dataConDataType = Foo a@. This should be identical to @functionTypeResult . dataConType@</span></span><span>
 </span><span id="line-74"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-75"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021360"><span id="local-6989586621680021368"><span id="local-6989586621680021371"><span class="annot"><span class="annottext">Int -&gt; DataCon -&gt; ShowS
+</span><span id="line-75"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015887"><span id="local-6989586621680015895"><span id="local-6989586621680015898"><span class="annot"><span class="annottext">Int -&gt; DataCon -&gt; ShowS
 [DataCon] -&gt; ShowS
 DataCon -&gt; String
 (Int -&gt; DataCon -&gt; ShowS)
@@ -1168,7 +1168,7 @@ $cshow :: DataCon -&gt; String
 show :: DataCon -&gt; String
 $cshowList :: [DataCon] -&gt; ShowS
 showList :: [DataCon] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021374"><span id="local-6989586621680021381"><span class="annot"><span class="annottext">DataCon -&gt; DataCon -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015901"><span id="local-6989586621680015908"><span class="annot"><span class="annottext">DataCon -&gt; DataCon -&gt; Bool
 (DataCon -&gt; DataCon -&gt; Bool)
 -&gt; (DataCon -&gt; DataCon -&gt; Bool) -&gt; Eq DataCon
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -1176,7 +1176,7 @@ $c== :: DataCon -&gt; DataCon -&gt; Bool
 == :: DataCon -&gt; DataCon -&gt; Bool
 $c/= :: DataCon -&gt; DataCon -&gt; Bool
 /= :: DataCon -&gt; DataCon -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021386"><span id="local-6989586621680021393"><span id="local-6989586621680021399"><span id="local-6989586621680021401"><span id="local-6989586621680021403"><span id="local-6989586621680021408"><span id="local-6989586621680021413"><span id="local-6989586621680021416"><span id="local-6989586621680021419"><span id="local-6989586621680021422"><span id="local-6989586621680021425"><span id="local-6989586621680021428"><span id="local-6989586621680021433"><span id="local-6989586621680021438"><span class="annot"><span class="annottext">Typeable DataCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015913"><span id="local-6989586621680015920"><span id="local-6989586621680015926"><span id="local-6989586621680015928"><span id="local-6989586621680015930"><span id="local-6989586621680015935"><span id="local-6989586621680015940"><span id="local-6989586621680015943"><span id="local-6989586621680015946"><span id="local-6989586621680015949"><span id="local-6989586621680015952"><span id="local-6989586621680015955"><span id="local-6989586621680015960"><span id="local-6989586621680015965"><span class="annot"><span class="annottext">Typeable DataCon
 Typeable DataCon =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -1337,7 +1337,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; DataCon -&gt; m DataCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021443"><span id="local-6989586621680021445"><span class="annot"><span class="annottext">(forall x. DataCon -&gt; Rep DataCon x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015970"><span id="local-6989586621680015972"><span class="annot"><span class="annottext">(forall x. DataCon -&gt; Rep DataCon x)
 -&gt; (forall x. Rep DataCon x -&gt; DataCon) -&gt; Generic DataCon
 forall x. Rep DataCon x -&gt; DataCon
 forall x. DataCon -&gt; Rep DataCon x
@@ -1347,7 +1347,7 @@ $cfrom :: forall x. DataCon -&gt; Rep DataCon x
 from :: forall x. DataCon -&gt; Rep DataCon x
 $cto :: forall x. Rep DataCon x -&gt; DataCon
 to :: forall x. Rep DataCon x -&gt; DataCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021450"><span id="local-6989586621680021457"><span id="local-6989586621680021463"><span id="local-6989586621680021466"><span id="local-6989586621680021469"><span id="local-6989586621680021472"><span id="local-6989586621680021475"><span class="annot"><span class="annottext">Eq DataCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015977"><span id="local-6989586621680015984"><span id="local-6989586621680015990"><span id="local-6989586621680015993"><span id="local-6989586621680015996"><span id="local-6989586621680015999"><span id="local-6989586621680016002"><span class="annot"><span class="annottext">Eq DataCon
 Eq DataCon =&gt;
 (DataCon -&gt; DataCon -&gt; Ordering)
 -&gt; (DataCon -&gt; DataCon -&gt; Bool)
@@ -1397,7 +1397,7 @@ min :: DataCon -&gt; DataCon -&gt; DataCon
 </span><span id="line-85"></span><span>      </span><span id="ConTy"><span class="annot"><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-var">ConTy</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#TyCon"><span class="hs-identifier hs-type">TyCon</span></a></span><span>
 </span><span id="line-86"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A forall quantified type, @forall a. T@</span></span><span>
 </span><span id="line-87"></span><span>      </span><span id="ForAllTy"><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-var">ForAllTy</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.Core.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
-</span><span id="line-88"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021483"><span id="local-6989586621680021498"><span id="local-6989586621680021501"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
+</span><span id="line-88"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680016010"><span id="local-6989586621680016025"><span id="local-6989586621680016028"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
 [Type] -&gt; ShowS
 Type -&gt; String
 (Int -&gt; Type -&gt; ShowS)
@@ -1410,14 +1410,14 @@ $cshow :: Type -&gt; String
 show :: Type -&gt; String
 $cshowList :: [Type] -&gt; ShowS
 showList :: [Type] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021504"><span id="local-6989586621680021516"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016031"><span id="local-6989586621680016043"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
 (Type -&gt; Type -&gt; Bool) -&gt; (Type -&gt; Type -&gt; Bool) -&gt; Eq Type
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Type -&gt; Type -&gt; Bool
 == :: Type -&gt; Type -&gt; Bool
 $c/= :: Type -&gt; Type -&gt; Bool
 /= :: Type -&gt; Type -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021521"><span id="local-6989586621680021531"><span id="local-6989586621680021541"><span id="local-6989586621680021543"><span id="local-6989586621680021545"><span id="local-6989586621680021550"><span id="local-6989586621680021555"><span id="local-6989586621680021558"><span id="local-6989586621680021561"><span id="local-6989586621680021564"><span id="local-6989586621680021567"><span id="local-6989586621680021570"><span id="local-6989586621680021575"><span id="local-6989586621680021580"><span class="annot"><span class="annottext">Typeable Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016048"><span id="local-6989586621680016058"><span id="local-6989586621680016068"><span id="local-6989586621680016070"><span id="local-6989586621680016072"><span id="local-6989586621680016077"><span id="local-6989586621680016082"><span id="local-6989586621680016085"><span id="local-6989586621680016088"><span id="local-6989586621680016091"><span id="local-6989586621680016094"><span id="local-6989586621680016097"><span id="local-6989586621680016102"><span id="local-6989586621680016107"><span class="annot"><span class="annottext">Typeable Type
 Typeable Type =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -1570,7 +1570,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; Type -&gt; m Type
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021587"><span id="local-6989586621680021598"><span id="local-6989586621680021601"><span id="local-6989586621680021604"><span id="local-6989586621680021607"><span id="local-6989586621680021610"><span id="local-6989586621680021613"><span class="annot"><span class="annottext">Eq Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016114"><span id="local-6989586621680016125"><span id="local-6989586621680016128"><span id="local-6989586621680016131"><span id="local-6989586621680016134"><span id="local-6989586621680016137"><span id="local-6989586621680016140"><span class="annot"><span class="annottext">Eq Type
 Eq Type =&gt;
 (Type -&gt; Type -&gt; Ordering)
 -&gt; (Type -&gt; Type -&gt; Bool)
@@ -1607,7 +1607,7 @@ $cmax :: Type -&gt; Type -&gt; Type
 max :: Type -&gt; Type -&gt; Type
 $cmin :: Type -&gt; Type -&gt; Type
 min :: Type -&gt; Type -&gt; Type
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021616"><span id="local-6989586621680021618"><span class="annot"><span class="annottext">(forall x. Type -&gt; Rep Type x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016143"><span id="local-6989586621680016145"><span class="annot"><span class="annottext">(forall x. Type -&gt; Rep Type x)
 -&gt; (forall x. Rep Type x -&gt; Type) -&gt; Generic Type
 forall x. Rep Type x -&gt; Type
 forall x. Type -&gt; Rep Type x
@@ -1626,7 +1626,7 @@ to :: forall x. Rep Type x -&gt; Type
 </span><span id="line-94"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span>
 </span><span id="line-95"></span><span>        </span><span class="annot"><span class="hs-comment">-- | The details of the type constructor</span></span><span>
 </span><span id="line-96"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyConDetails"><span class="hs-identifier hs-type">TyConDetails</span></a></span><span>
-</span><span id="line-97"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021622"><span id="local-6989586621680021629"><span id="local-6989586621680021632"><span class="annot"><span class="annottext">Int -&gt; TyCon -&gt; ShowS
+</span><span id="line-97"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680016149"><span id="local-6989586621680016156"><span id="local-6989586621680016159"><span class="annot"><span class="annottext">Int -&gt; TyCon -&gt; ShowS
 [TyCon] -&gt; ShowS
 TyCon -&gt; String
 (Int -&gt; TyCon -&gt; ShowS)
@@ -1639,14 +1639,14 @@ $cshow :: TyCon -&gt; String
 show :: TyCon -&gt; String
 $cshowList :: [TyCon] -&gt; ShowS
 showList :: [TyCon] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021635"><span id="local-6989586621680021641"><span class="annot"><span class="annottext">TyCon -&gt; TyCon -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016162"><span id="local-6989586621680016168"><span class="annot"><span class="annottext">TyCon -&gt; TyCon -&gt; Bool
 (TyCon -&gt; TyCon -&gt; Bool) -&gt; (TyCon -&gt; TyCon -&gt; Bool) -&gt; Eq TyCon
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: TyCon -&gt; TyCon -&gt; Bool
 == :: TyCon -&gt; TyCon -&gt; Bool
 $c/= :: TyCon -&gt; TyCon -&gt; Bool
 /= :: TyCon -&gt; TyCon -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021646"><span id="local-6989586621680021652"><span id="local-6989586621680021657"><span id="local-6989586621680021659"><span id="local-6989586621680021661"><span id="local-6989586621680021666"><span id="local-6989586621680021671"><span id="local-6989586621680021674"><span id="local-6989586621680021677"><span id="local-6989586621680021680"><span id="local-6989586621680021683"><span id="local-6989586621680021686"><span id="local-6989586621680021691"><span id="local-6989586621680021696"><span class="annot"><span class="annottext">Typeable TyCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016173"><span id="local-6989586621680016179"><span id="local-6989586621680016184"><span id="local-6989586621680016186"><span id="local-6989586621680016188"><span id="local-6989586621680016193"><span id="local-6989586621680016198"><span id="local-6989586621680016201"><span id="local-6989586621680016204"><span id="local-6989586621680016207"><span id="local-6989586621680016210"><span id="local-6989586621680016213"><span id="local-6989586621680016218"><span id="local-6989586621680016223"><span class="annot"><span class="annottext">Typeable TyCon
 Typeable TyCon =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -1799,7 +1799,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; TyCon -&gt; m TyCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021703"><span id="local-6989586621680021709"><span id="local-6989586621680021714"><span id="local-6989586621680021717"><span id="local-6989586621680021720"><span id="local-6989586621680021723"><span id="local-6989586621680021726"><span class="annot"><span class="annottext">Eq TyCon
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016230"><span id="local-6989586621680016236"><span id="local-6989586621680016241"><span id="local-6989586621680016244"><span id="local-6989586621680016247"><span id="local-6989586621680016250"><span id="local-6989586621680016253"><span class="annot"><span class="annottext">Eq TyCon
 Eq TyCon =&gt;
 (TyCon -&gt; TyCon -&gt; Ordering)
 -&gt; (TyCon -&gt; TyCon -&gt; Bool)
@@ -1836,7 +1836,7 @@ $cmax :: TyCon -&gt; TyCon -&gt; TyCon
 max :: TyCon -&gt; TyCon -&gt; TyCon
 $cmin :: TyCon -&gt; TyCon -&gt; TyCon
 min :: TyCon -&gt; TyCon -&gt; TyCon
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021729"><span id="local-6989586621680021731"><span class="annot"><span class="annottext">(forall x. TyCon -&gt; Rep TyCon x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016256"><span id="local-6989586621680016258"><span class="annot"><span class="annottext">(forall x. TyCon -&gt; Rep TyCon x)
 -&gt; (forall x. Rep TyCon x -&gt; TyCon) -&gt; Generic TyCon
 forall x. Rep TyCon x -&gt; TyCon
 forall x. TyCon -&gt; Rep TyCon x
@@ -1856,7 +1856,7 @@ to :: forall x. Rep TyCon x -&gt; TyCon
 </span><span id="line-104"></span><span>        </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">]</span><span>
 </span><span id="line-105"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TyAlias"><span class="annot"><a href="Elara.Core.html#TyAlias"><span class="hs-identifier hs-var">TyAlias</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-106"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Prim"><span class="annot"><a href="Elara.Core.html#Prim"><span class="hs-identifier hs-var">Prim</span></a></span></span><span>
-</span><span id="line-107"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021737"><span id="local-6989586621680021744"><span id="local-6989586621680021747"><span class="annot"><span class="annottext">Int -&gt; TyConDetails -&gt; ShowS
+</span><span id="line-107"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680016264"><span id="local-6989586621680016271"><span id="local-6989586621680016274"><span class="annot"><span class="annottext">Int -&gt; TyConDetails -&gt; ShowS
 [TyConDetails] -&gt; ShowS
 TyConDetails -&gt; String
 (Int -&gt; TyConDetails -&gt; ShowS)
@@ -1871,7 +1871,7 @@ $cshow :: TyConDetails -&gt; String
 show :: TyConDetails -&gt; String
 $cshowList :: [TyConDetails] -&gt; ShowS
 showList :: [TyConDetails] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021751"><span id="local-6989586621680021758"><span class="annot"><span class="annottext">TyConDetails -&gt; TyConDetails -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016278"><span id="local-6989586621680016285"><span class="annot"><span class="annottext">TyConDetails -&gt; TyConDetails -&gt; Bool
 (TyConDetails -&gt; TyConDetails -&gt; Bool)
 -&gt; (TyConDetails -&gt; TyConDetails -&gt; Bool) -&gt; Eq TyConDetails
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -1879,7 +1879,7 @@ $c== :: TyConDetails -&gt; TyConDetails -&gt; Bool
 == :: TyConDetails -&gt; TyConDetails -&gt; Bool
 $c/= :: TyConDetails -&gt; TyConDetails -&gt; Bool
 /= :: TyConDetails -&gt; TyConDetails -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021764"><span id="local-6989586621680021769"><span id="local-6989586621680021774"><span id="local-6989586621680021776"><span id="local-6989586621680021778"><span id="local-6989586621680021783"><span id="local-6989586621680021788"><span id="local-6989586621680021791"><span id="local-6989586621680021794"><span id="local-6989586621680021797"><span id="local-6989586621680021800"><span id="local-6989586621680021803"><span id="local-6989586621680021808"><span id="local-6989586621680021813"><span class="annot"><span class="annottext">Typeable TyConDetails
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016291"><span id="local-6989586621680016296"><span id="local-6989586621680016301"><span id="local-6989586621680016303"><span id="local-6989586621680016305"><span id="local-6989586621680016310"><span id="local-6989586621680016315"><span id="local-6989586621680016318"><span id="local-6989586621680016321"><span id="local-6989586621680016324"><span id="local-6989586621680016327"><span id="local-6989586621680016330"><span id="local-6989586621680016335"><span id="local-6989586621680016340"><span class="annot"><span class="annottext">Typeable TyConDetails
 Typeable TyConDetails =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -2045,7 +2045,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; TyConDetails -&gt; m TyConDetails
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021822"><span id="local-6989586621680021828"><span id="local-6989586621680021833"><span id="local-6989586621680021836"><span id="local-6989586621680021839"><span id="local-6989586621680021842"><span id="local-6989586621680021845"><span class="annot"><span class="annottext">Eq TyConDetails
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016349"><span id="local-6989586621680016355"><span id="local-6989586621680016360"><span id="local-6989586621680016363"><span id="local-6989586621680016366"><span id="local-6989586621680016369"><span id="local-6989586621680016372"><span class="annot"><span class="annottext">Eq TyConDetails
 Eq TyConDetails =&gt;
 (TyConDetails -&gt; TyConDetails -&gt; Ordering)
 -&gt; (TyConDetails -&gt; TyConDetails -&gt; Bool)
@@ -2082,7 +2082,7 @@ $cmax :: TyConDetails -&gt; TyConDetails -&gt; TyConDetails
 max :: TyConDetails -&gt; TyConDetails -&gt; TyConDetails
 $cmin :: TyConDetails -&gt; TyConDetails -&gt; TyConDetails
 min :: TyConDetails -&gt; TyConDetails -&gt; TyConDetails
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021850"><span id="local-6989586621680021852"><span class="annot"><span class="annottext">(forall x. TyConDetails -&gt; Rep TyConDetails x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016377"><span id="local-6989586621680016379"><span class="annot"><span class="annottext">(forall x. TyConDetails -&gt; Rep TyConDetails x)
 -&gt; (forall x. Rep TyConDetails x -&gt; TyConDetails)
 -&gt; Generic TyConDetails
 forall x. Rep TyConDetails x -&gt; TyConDetails
@@ -2096,81 +2096,81 @@ to :: forall x. Rep TyConDetails x -&gt; TyConDetails
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-108"></span><span>
 </span><span id="line-109"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Prelude.html#Plated"><span class="hs-identifier hs-type">Plated</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-110"></span><span>    </span><span id="local-6989586621680021856"><span class="annot"><span class="annottext">plate :: Traversal' Type Type
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621680016383"><span class="annot"><span class="annottext">plate :: Traversal' Type Type
 </span><a href="Prelude.html#plate"><span class="hs-identifier hs-var hs-var hs-var">plate</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TraversalVL Type Type Type Type -&gt; Traversal' Type Type
 forall s t a b. TraversalVL s t a b -&gt; Traversal s t a b
 </span><span class="hs-identifier hs-var">traversalVL</span></span><span> </span><span class="annot"><span class="annottext">(TraversalVL Type Type Type Type -&gt; Traversal' Type Type)
 -&gt; TraversalVL Type Type Type Type -&gt; Traversal' Type Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680021866"><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-111"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyVarTy"><span class="hs-identifier hs-type">TyVarTy</span></a></span><span> </span><span id="local-6989586621680021867"><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021867"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680016393"><span class="annot"><span class="annottext">Type -&gt; f Type
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-111"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyVarTy"><span class="hs-identifier hs-type">TyVarTy</span></a></span><span> </span><span id="local-6989586621680016394"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016394"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeVariable -&gt; Type
 </span><a href="Elara.Core.html#TyVarTy"><span class="hs-identifier hs-var">TyVarTy</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021867"><span class="hs-identifier hs-var">tv</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-112"></span><span>        </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span id="local-6989586621680021868"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021868"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680021869"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021869"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
+</span><a href="#local-6989586621680016394"><span class="hs-identifier hs-var">tv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>        </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span id="local-6989586621680016395"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016395"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680016396"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016396"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
 </span><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-var">FuncTy</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type -&gt; Type) -&gt; f Type -&gt; f (Type -&gt; Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021868"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Type) -&gt; f Type -&gt; f Type
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016395"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Type) -&gt; f Type -&gt; f Type
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021869"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-113"></span><span>        </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span id="local-6989586621680021870"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021870"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680021871"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021871"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016396"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span id="local-6989586621680016397"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016397"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680016398"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016398"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
 </span><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-var">AppTy</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type -&gt; Type) -&gt; f Type -&gt; f (Type -&gt; Type)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021870"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Type) -&gt; f Type -&gt; f Type
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016397"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f (Type -&gt; Type) -&gt; f Type -&gt; f Type
 forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021871"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-114"></span><span>        </span><span class="annot"><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-type">ConTy</span></a></span><span> </span><span id="local-6989586621680021872"><span class="annot"><span class="annottext">TyCon
-</span><a href="#local-6989586621680021872"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016398"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-type">ConTy</span></a></span><span> </span><span id="local-6989586621680016399"><span class="annot"><span class="annottext">TyCon
+</span><a href="#local-6989586621680016399"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
 forall a. a -&gt; f a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TyCon -&gt; Type
 </span><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-var">ConTy</span></a></span><span> </span><span class="annot"><span class="annottext">TyCon
-</span><a href="#local-6989586621680021872"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-115"></span><span>        </span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span id="local-6989586621680021873"><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021873"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680021874"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021874"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; Type -&gt; Type
+</span><a href="#local-6989586621680016399"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>        </span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span id="local-6989586621680016400"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016400"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680016401"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016401"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; Type -&gt; Type
 </span><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-var">ForAllTy</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021873"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; f Type -&gt; f Type
+</span><a href="#local-6989586621680016400"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; f Type -&gt; f Type
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; f Type
-</span><a href="#local-6989586621680021866"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021874"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680016393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016401"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-116"></span><span>
 </span><span id="line-117"></span><span class="annot"><span class="hs-comment">-- | The arity of a function type</span></span><span>
 </span><span id="line-118"></span><span class="annot"><a href="Elara.Core.html#typeArity"><span class="hs-identifier hs-type">typeArity</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-119"></span><span id="typeArity"><span class="annot"><span class="annottext">typeArity :: Type -&gt; Int
 </span><a href="Elara.Core.html#typeArity"><span class="hs-identifier hs-var hs-var">typeArity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-120"></span><span>    </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680021879"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021879"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680016406"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016406"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Int
 </span><a href="Elara.Core.html#typeArity"><span class="hs-identifier hs-var">typeArity</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021879"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621680016406"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680021881"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021881"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680016408"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016408"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Int
 </span><a href="Elara.Core.html#typeArity"><span class="hs-identifier hs-var">typeArity</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021881"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680016408"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-122"></span><span>    </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
@@ -2179,35 +2179,35 @@ forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span id="line-125"></span><span id="functionTypeArgs"><span class="annot"><span class="annottext">functionTypeArgs :: Type -&gt; [Type]
 </span><a href="Elara.Core.html#functionTypeArgs"><span class="hs-identifier hs-var hs-var">functionTypeArgs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-126"></span><span>    </span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680021883"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021883"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type]
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680016410"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016410"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type]
 </span><a href="Elara.Core.html#functionTypeArgs"><span class="hs-identifier hs-var">functionTypeArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021883"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-127"></span><span>    </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span id="local-6989586621680021884"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021884"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680021885"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021885"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021884"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type] -&gt; [Type]
+</span><a href="#local-6989586621680016410"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-127"></span><span>    </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span id="local-6989586621680016411"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016411"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680016412"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016412"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016411"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type] -&gt; [Type]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type]
 </span><a href="Elara.Core.html#functionTypeArgs"><span class="hs-identifier hs-var">functionTypeArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021885"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621680016412"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-128"></span><span>    </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-129"></span><span>
 </span><span id="line-130"></span><span class="annot"><a href="Elara.Core.html#conTyArgs"><span class="hs-identifier hs-type">conTyArgs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-131"></span><span id="conTyArgs"><span class="annot"><span class="annottext">conTyArgs :: Type -&gt; [Type]
 </span><a href="Elara.Core.html#conTyArgs"><span class="hs-identifier hs-var hs-var">conTyArgs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-132"></span><span>    </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-type">ConTy</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span id="local-6989586621680021887"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021887"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021887"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-133"></span><span>    </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span id="local-6989586621680021888"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021888"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621680021889"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021889"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type]
+</span><span id="line-132"></span><span>    </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#ConTy"><span class="hs-identifier hs-type">ConTy</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span id="local-6989586621680016414"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016414"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016414"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-133"></span><span>    </span><span class="annot"><a href="Elara.Core.html#AppTy"><span class="hs-identifier hs-type">AppTy</span></a></span><span> </span><span id="local-6989586621680016415"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016415"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621680016416"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016416"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Type]
 </span><a href="Elara.Core.html#conTyArgs"><span class="hs-identifier hs-var">conTyArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021888"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Type] -&gt; [Type]
+</span><a href="#local-6989586621680016415"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Type] -&gt; [Type]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021889"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621680016416"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-134"></span><span>    </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-135"></span><span>
@@ -2215,55 +2215,55 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span id="line-137"></span><span id="functionTypeResult"><span class="annot"><span class="annottext">functionTypeResult :: Type -&gt; Type
 </span><a href="Elara.Core.html#functionTypeResult"><span class="hs-identifier hs-var hs-var">functionTypeResult</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-138"></span><span>    </span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680021891"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021891"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680016418"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016418"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
 </span><a href="Elara.Core.html#functionTypeResult"><span class="hs-identifier hs-var">functionTypeResult</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021891"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680016418"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-139"></span><span>    </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">FuncTy</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680021892"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021892"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680016419"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016419"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
 </span><a href="Elara.Core.html#functionTypeResult"><span class="hs-identifier hs-var">functionTypeResult</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021892"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-140"></span><span>    </span><span id="local-6989586621680021893"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021893"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021893"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680016419"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-140"></span><span>    </span><span id="local-6989586621680016420"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016420"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016420"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-141"></span><span>
 </span><span id="line-142"></span><span class="annot"><a href="Elara.Core.html#instantiate"><span class="hs-identifier hs-type">instantiate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-143"></span><span id="instantiate"><span class="annot"><span class="annottext">instantiate :: Type -&gt; Type -&gt; Type
-</span><a href="Elara.Core.html#instantiate"><span class="hs-identifier hs-var hs-var">instantiate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span id="local-6989586621680021895"><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021895"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680021896"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021896"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680021897"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021897"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; Type -&gt; Type -&gt; Type
+</span><a href="Elara.Core.html#instantiate"><span class="hs-identifier hs-var hs-var">instantiate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#ForAllTy"><span class="hs-identifier hs-type">ForAllTy</span></a></span><span> </span><span id="local-6989586621680016422"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016422"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680016423"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016423"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680016424"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016424"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; Type -&gt; Type -&gt; Type
 </span><a href="Elara.Core.html#substTypeVar"><span class="hs-identifier hs-var">substTypeVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021895"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021897"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021896"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-144"></span><span class="annot"><a href="Elara.Core.html#instantiate"><span class="hs-identifier hs-var">instantiate</span></a></span><span> </span><span id="local-6989586621680021899"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021899"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016422"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016424"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016423"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-144"></span><span class="annot"><a href="Elara.Core.html#instantiate"><span class="hs-identifier hs-var">instantiate</span></a></span><span> </span><span id="local-6989586621680016426"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016426"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021899"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680016426"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-145"></span><span>
 </span><span id="line-146"></span><span class="annot"><a href="Elara.Core.html#substTypeVar"><span class="hs-identifier hs-type">substTypeVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
 </span><span id="line-147"></span><span id="substTypeVar"><span class="annot"><span class="annottext">substTypeVar :: TypeVariable -&gt; Type -&gt; Type -&gt; Type
-</span><a href="Elara.Core.html#substTypeVar"><span class="hs-identifier hs-var hs-var">substTypeVar</span></a></span></span><span> </span><span id="local-6989586621680021902"><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021902"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680021903"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021903"><span class="hs-identifier hs-var">replaceWith</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Type -&gt; Type
+</span><a href="Elara.Core.html#substTypeVar"><span class="hs-identifier hs-var hs-var">substTypeVar</span></a></span></span><span> </span><span id="local-6989586621680016429"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016429"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span id="local-6989586621680016430"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016430"><span class="hs-identifier hs-var">replaceWith</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Type -&gt; Type
 forall a. Plated a =&gt; (a -&gt; a) -&gt; a -&gt; a
 </span><a href="Prelude.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
-</span><a href="#local-6989586621680021905"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><a href="#local-6989586621680016432"><span class="hs-identifier hs-var">f</span></a></span><span>
 </span><span id="line-148"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-149"></span><span>    </span><span id="local-6989586621680021905"><span class="annot"><span class="annottext">f :: Type -&gt; Type
-</span><a href="#local-6989586621680021905"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-150"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyVarTy"><span class="hs-identifier hs-type">TyVarTy</span></a></span><span> </span><span id="local-6989586621680021906"><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021906"><span class="hs-identifier hs-var">tv'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021902"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; TypeVariable -&gt; Bool
+</span><span id="line-149"></span><span>    </span><span id="local-6989586621680016432"><span class="annot"><span class="annottext">f :: Type -&gt; Type
+</span><a href="#local-6989586621680016432"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-150"></span><span>        </span><span class="annot"><a href="Elara.Core.html#TyVarTy"><span class="hs-identifier hs-type">TyVarTy</span></a></span><span> </span><span id="local-6989586621680016433"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016433"><span class="hs-identifier hs-var">tv'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680016429"><span class="hs-identifier hs-var">tv</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; TypeVariable -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">TypeVariable
-</span><a href="#local-6989586621680021906"><span class="hs-identifier hs-var">tv'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021903"><span class="hs-identifier hs-var">replaceWith</span></a></span><span>
-</span><span id="line-151"></span><span>        </span><span id="local-6989586621680021907"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021907"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680021907"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><a href="#local-6989586621680016433"><span class="hs-identifier hs-var">tv'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016430"><span class="hs-identifier hs-var">replaceWith</span></a></span><span>
+</span><span id="line-151"></span><span>        </span><span id="local-6989586621680016434"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016434"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680016434"><span class="hs-identifier hs-var">other</span></a></span><span>
 </span><span id="line-152"></span><span>
 </span><span id="line-153"></span><span class="hs-keyword">data</span><span> </span><span id="Literal"><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-var">Literal</span></a></span></span><span>
 </span><span id="line-154"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Int"><span class="annot"><a href="Elara.Core.html#Int"><span class="hs-identifier hs-var">Int</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
@@ -2271,7 +2271,7 @@ forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span id="line-156"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Char"><span class="annot"><a href="Elara.Core.html#Char"><span class="hs-identifier hs-var">Char</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
 </span><span id="line-157"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Double"><span class="annot"><a href="Elara.Core.html#Double"><span class="hs-identifier hs-var">Double</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span>
 </span><span id="line-158"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Unit"><span class="annot"><a href="Elara.Core.html#Unit"><span class="hs-identifier hs-var">Unit</span></a></span></span><span>
-</span><span id="line-159"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680021914"><span id="local-6989586621680021927"><span id="local-6989586621680021930"><span class="annot"><span class="annottext">Int -&gt; Literal -&gt; ShowS
+</span><span id="line-159"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680016441"><span id="local-6989586621680016454"><span id="local-6989586621680016457"><span class="annot"><span class="annottext">Int -&gt; Literal -&gt; ShowS
 [Literal] -&gt; ShowS
 Literal -&gt; String
 (Int -&gt; Literal -&gt; ShowS)
@@ -2284,7 +2284,7 @@ $cshow :: Literal -&gt; String
 show :: Literal -&gt; String
 $cshowList :: [Literal] -&gt; ShowS
 showList :: [Literal] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021933"><span id="local-6989586621680021944"><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016460"><span id="local-6989586621680016471"><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
 (Literal -&gt; Literal -&gt; Bool)
 -&gt; (Literal -&gt; Literal -&gt; Bool) -&gt; Eq Literal
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -2292,7 +2292,7 @@ $c== :: Literal -&gt; Literal -&gt; Bool
 == :: Literal -&gt; Literal -&gt; Bool
 $c/= :: Literal -&gt; Literal -&gt; Bool
 /= :: Literal -&gt; Literal -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680021949"><span id="local-6989586621680021958"><span id="local-6989586621680021964"><span id="local-6989586621680021966"><span id="local-6989586621680021968"><span id="local-6989586621680021973"><span id="local-6989586621680021978"><span id="local-6989586621680021981"><span id="local-6989586621680021984"><span id="local-6989586621680021987"><span id="local-6989586621680021990"><span id="local-6989586621680021993"><span id="local-6989586621680021998"><span id="local-6989586621680022003"><span class="annot"><span class="annottext">Typeable Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016476"><span id="local-6989586621680016485"><span id="local-6989586621680016491"><span id="local-6989586621680016493"><span id="local-6989586621680016495"><span id="local-6989586621680016500"><span id="local-6989586621680016505"><span id="local-6989586621680016508"><span id="local-6989586621680016511"><span id="local-6989586621680016514"><span id="local-6989586621680016517"><span id="local-6989586621680016520"><span id="local-6989586621680016525"><span id="local-6989586621680016530"><span class="annot"><span class="annottext">Typeable Literal
 Typeable Literal =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -2453,7 +2453,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; Literal -&gt; m Literal
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680022008"><span id="local-6989586621680022010"><span class="annot"><span class="annottext">(forall x. Literal -&gt; Rep Literal x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016535"><span id="local-6989586621680016537"><span class="annot"><span class="annottext">(forall x. Literal -&gt; Rep Literal x)
 -&gt; (forall x. Rep Literal x -&gt; Literal) -&gt; Generic Literal
 forall x. Rep Literal x -&gt; Literal
 forall x. Literal -&gt; Rep Literal x
@@ -2463,7 +2463,7 @@ $cfrom :: forall x. Literal -&gt; Rep Literal x
 from :: forall x. Literal -&gt; Rep Literal x
 $cto :: forall x. Rep Literal x -&gt; Literal
 to :: forall x. Rep Literal x -&gt; Literal
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680022015"><span id="local-6989586621680022025"><span id="local-6989586621680022028"><span id="local-6989586621680022031"><span id="local-6989586621680022034"><span id="local-6989586621680022037"><span id="local-6989586621680022040"><span class="annot"><span class="annottext">Eq Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680016542"><span id="local-6989586621680016552"><span id="local-6989586621680016555"><span id="local-6989586621680016558"><span id="local-6989586621680016561"><span id="local-6989586621680016564"><span id="local-6989586621680016567"><span class="annot"><span class="annottext">Eq Literal
 Eq Literal =&gt;
 (Literal -&gt; Literal -&gt; Ordering)
 -&gt; (Literal -&gt; Literal -&gt; Bool)
@@ -2502,23 +2502,23 @@ $cmin :: Literal -&gt; Literal -&gt; Literal
 min :: Literal -&gt; Literal -&gt; Literal
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-160"></span><span>
-</span><span id="line-161"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680020602"><span id="local-6989586621680022047"><span id="local-6989586621680022054"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680020602"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020602"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-161"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680015129"><span id="local-6989586621680016574"><span id="local-6989586621680016581"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680015129"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015129"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
 </span><span id="line-162"></span><span>
-</span><span id="line-163"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680020601"><span id="local-6989586621680022122"><span id="local-6989586621680022129"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680020601"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680020601"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-163"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680015128"><span id="local-6989586621680016649"><span id="local-6989586621680016656"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="#local-6989586621680015128"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Bind"><span class="hs-identifier hs-type">Bind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015128"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
 </span><span id="line-164"></span><span>
-</span><span id="line-165"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022145"><span id="local-6989586621680022151"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span></span></span><span>
+</span><span id="line-165"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016672"><span id="local-6989586621680016678"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span></span></span><span>
 </span><span id="line-166"></span><span>
-</span><span id="line-167"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022183"><span id="local-6989586621680022189"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-type">AltCon</span></a></span></span></span><span>
+</span><span id="line-167"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016710"><span id="local-6989586621680016716"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#AltCon"><span class="hs-identifier hs-type">AltCon</span></a></span></span></span><span>
 </span><span id="line-168"></span><span>
-</span><span id="line-169"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022207"><span id="local-6989586621680022213"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#DataCon"><span class="hs-identifier hs-type">DataCon</span></a></span></span></span><span>
+</span><span id="line-169"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016734"><span id="local-6989586621680016740"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#DataCon"><span class="hs-identifier hs-type">DataCon</span></a></span></span></span><span>
 </span><span id="line-170"></span><span>
-</span><span id="line-171"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022233"><span id="local-6989586621680022239"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span></span></span><span>
+</span><span id="line-171"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016760"><span id="local-6989586621680016766"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Type</span></a></span></span></span><span>
 </span><span id="line-172"></span><span>
-</span><span id="line-173"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022267"><span id="local-6989586621680022273"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TyCon"><span class="hs-identifier hs-type">TyCon</span></a></span></span></span><span>
+</span><span id="line-173"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016794"><span id="local-6989586621680016800"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TyCon"><span class="hs-identifier hs-type">TyCon</span></a></span></span></span><span>
 </span><span id="line-174"></span><span>
-</span><span id="line-175"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022288"><span id="local-6989586621680022294"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TyConDetails"><span class="hs-identifier hs-type">TyConDetails</span></a></span></span></span><span>
+</span><span id="line-175"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016815"><span id="local-6989586621680016821"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TyConDetails"><span class="hs-identifier hs-type">TyConDetails</span></a></span></span></span><span>
 </span><span id="line-176"></span><span>
-</span><span id="line-177"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022313"><span id="local-6989586621680022319"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span></span></span><span>
+</span><span id="line-177"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016840"><span id="local-6989586621680016846"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span></span></span><span>
 </span><span id="line-178"></span><span>
-</span><span id="line-179"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680022336"><span id="local-6989586621680022343"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span></span></span><span>
+</span><span id="line-179"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680016863"><span id="local-6989586621680016870"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Var</span></a></span></span></span><span>
 </span><span id="line-180"></span></pre></body></html>

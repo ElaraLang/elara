@@ -1,17 +1,19 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html"><span class="hs-identifier">Elara.Shunt.Error</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html"><span class="hs-identifier">Elara.AST.Generic.Types</span></a></span><span>
-</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#HasSourceRegion"><span class="hs-identifier">HasSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier">sourceRegion</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier">sourceRegionToDiagnosePosition</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html"><span class="hs-identifier">Elara.AST.Renamed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedDeclarationBody"><span class="hs-identifier">RenamedDeclarationBody</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Codes</span></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html"><span class="hs-identifier">Elara.Shunt.Operator</span></a></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Error.Diagnose</span></span><span>
-</span><span id="line-11"></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="ShuntError"><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-var">ShuntError</span></a></span></span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="SamePrecedenceError"><span class="annot"><a href="Elara.Shunt.Error.html#SamePrecedenceError"><span class="hs-identifier hs-var">SamePrecedenceError</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier hs-type">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier hs-type">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680038812"><span id="local-6989586621680038821"><span id="local-6989586621680038825"><span class="annot"><span class="annottext">Int -&gt; ShuntError -&gt; ShowS
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#HasSourceRegion"><span class="hs-identifier">HasSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier">sourceRegion</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier">sourceRegionToDiagnosePosition</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html"><span class="hs-identifier">Elara.AST.Renamed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedDeclarationBody"><span class="hs-identifier">RenamedDeclarationBody</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Codes</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html"><span class="hs-identifier">Elara.Shunt.Operator</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Error.Diagnose</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="ShuntError"><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-var">ShuntError</span></a></span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="SamePrecedenceError"><span class="annot"><a href="Elara.Shunt.Error.html#SamePrecedenceError"><span class="hs-identifier hs-var">SamePrecedenceError</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier hs-type">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier hs-type">RenamedBinaryOperator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="UnknownOperator"><span class="annot"><a href="Elara.Shunt.Error.html#UnknownOperator"><span class="hs-identifier hs-var">UnknownOperator</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680033783"><span id="local-6989586621680033797"><span id="local-6989586621680033801"><span class="annot"><span class="annottext">Int -&gt; ShuntError -&gt; ShowS
 [ShuntError] -&gt; ShowS
 ShuntError -&gt; String
 (Int -&gt; ShuntError -&gt; ShowS)
@@ -27,26 +29,26 @@ show :: ShuntError -&gt; String
 $cshowList :: [ShuntError] -&gt; ShowS
 showList :: [ShuntError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680038865"><span id="local-6989586621680038869"><span id="local-6989586621680038872"><span id="local-6989586621680038875"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-type">ShuntError</span></a></span></span></span></span></span><span>
-</span><span id="line-17"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680038879"><span id="local-6989586621680038883"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-type">ShuntError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-18"></span><span>    </span><span id="local-6989586621680038912"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680033841"><span id="local-6989586621680033845"><span id="local-6989586621680033848"><span id="local-6989586621680033851"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-type">ShuntError</span></a></span></span></span></span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680033855"><span id="local-6989586621680033859"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntError"><span class="hs-identifier hs-type">ShuntError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>    </span><span id="local-6989586621680033888"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
 (DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
 ShuntError -&gt; Eff r ()
-</span><a href="#local-6989586621680038912"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Error.html#SamePrecedenceError"><span class="hs-identifier hs-type">SamePrecedenceError</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680038914"><span class="annot"><span class="annottext">op1 :: RenamedBinaryOperator
-</span><a href="#local-6989586621680038914"><span class="hs-identifier hs-var">op1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#MkBinaryOperator"><span class="hs-identifier hs-type">MkBinaryOperator</span></a></span><span> </span><span id="local-6989586621680038916"><span class="annot"><span class="annottext">ASTLocate 'Renamed (BinaryOperator' 'Renamed)
-</span><a href="#local-6989586621680038916"><span class="hs-identifier hs-var">op1'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680038917"><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680038917"><span class="hs-identifier hs-var">a1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680038918"><span class="annot"><span class="annottext">op2 :: RenamedBinaryOperator
-</span><a href="#local-6989586621680038918"><span class="hs-identifier hs-var">op2</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#MkBinaryOperator"><span class="hs-identifier hs-type">MkBinaryOperator</span></a></span><span> </span><span id="local-6989586621680038919"><span class="annot"><span class="annottext">ASTLocate 'Renamed (BinaryOperator' 'Renamed)
-</span><a href="#local-6989586621680038919"><span class="hs-identifier hs-var">op2'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680038920"><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680038920"><span class="hs-identifier hs-var">a2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-19"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680038921"><span class="annot"><span class="annottext">op1Src :: Position
-</span><a href="#local-6989586621680038921"><span class="hs-identifier hs-var hs-var hs-var">op1Src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
+</span><a href="#local-6989586621680033888"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Error.html#SamePrecedenceError"><span class="hs-identifier hs-type">SamePrecedenceError</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680033890"><span class="annot"><span class="annottext">op1 :: RenamedBinaryOperator
+</span><a href="#local-6989586621680033890"><span class="hs-identifier hs-var">op1</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#MkBinaryOperator"><span class="hs-identifier hs-type">MkBinaryOperator</span></a></span><span> </span><span id="local-6989586621680033892"><span class="annot"><span class="annottext">ASTLocate 'Renamed (BinaryOperator' 'Renamed)
+</span><a href="#local-6989586621680033892"><span class="hs-identifier hs-var">op1'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680033893"><span class="annot"><span class="annottext">OpInfo
+</span><a href="#local-6989586621680033893"><span class="hs-identifier hs-var">a1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680033894"><span class="annot"><span class="annottext">op2 :: RenamedBinaryOperator
+</span><a href="#local-6989586621680033894"><span class="hs-identifier hs-var">op2</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#MkBinaryOperator"><span class="hs-identifier hs-type">MkBinaryOperator</span></a></span><span> </span><span id="local-6989586621680033895"><span class="annot"><span class="annottext">ASTLocate 'Renamed (BinaryOperator' 'Renamed)
+</span><a href="#local-6989586621680033895"><span class="hs-identifier hs-var">op2'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680033896"><span class="annot"><span class="annottext">OpInfo
+</span><a href="#local-6989586621680033896"><span class="hs-identifier hs-var">a2</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-21"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680033897"><span class="annot"><span class="annottext">op1Src :: Position
+</span><a href="#local-6989586621680033897"><span class="hs-identifier hs-var hs-var hs-var">op1Src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
 </span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">(SourceRegion -&gt; Position) -&gt; SourceRegion -&gt; Position
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
 ASTLocate 'Renamed (BinaryOperator' 'Renamed)
-</span><a href="#local-6989586621680038916"><span class="hs-identifier hs-var">op1'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
+</span><a href="#local-6989586621680033892"><span class="hs-identifier hs-var">op1'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
 -&gt; Optic'
      A_Lens NoIx (Located (BinaryOperator' 'Renamed)) SourceRegion
 -&gt; SourceRegion
@@ -57,13 +59,13 @@ s -&gt; Optic' k is s a -&gt; a
   A_Lens NoIx (Located (BinaryOperator' 'Renamed)) SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span>
-</span><span id="line-20"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680038923"><span class="annot"><span class="annottext">op2Src :: Position
-</span><a href="#local-6989586621680038923"><span class="hs-identifier hs-var hs-var">op2Src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
+</span><span id="line-22"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680033899"><span class="annot"><span class="annottext">op2Src :: Position
+</span><a href="#local-6989586621680033899"><span class="hs-identifier hs-var hs-var">op2Src</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
 </span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">(SourceRegion -&gt; Position) -&gt; SourceRegion -&gt; Position
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
 ASTLocate 'Renamed (BinaryOperator' 'Renamed)
-</span><a href="#local-6989586621680038919"><span class="hs-identifier hs-var">op2'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
+</span><a href="#local-6989586621680033895"><span class="hs-identifier hs-var">op2'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (BinaryOperator' 'Renamed)
 -&gt; Optic'
      A_Lens NoIx (Located (BinaryOperator' 'Renamed)) SourceRegion
 -&gt; SourceRegion
@@ -74,7 +76,7 @@ s -&gt; Optic' k is s a -&gt; a
   A_Lens NoIx (Located (BinaryOperator' 'Renamed)) SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span>
-</span><span id="line-21"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
+</span><span id="line-23"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
 forall t (es :: [Effect]).
 (HasCallStack, DiagnosticWriter t :&gt; es) =&gt;
 Report t -&gt; Eff es ()
@@ -82,7 +84,7 @@ Report t -&gt; Eff es ()
 -&gt; Report (Doc AnsiStyle) -&gt; Eff r ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-22"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+</span><span id="line-24"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
 -&gt; Doc AnsiStyle
 -&gt; [(Position, Marker (Doc AnsiStyle))]
 -&gt; [Note (Doc AnsiStyle)]
@@ -91,57 +93,72 @@ forall msg.
 Maybe msg
 -&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
 </span><span class="hs-identifier hs-var">Err</span></span><span>
-</span><span id="line-23"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Maybe (Doc AnsiStyle)
+</span><span id="line-25"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Maybe (Doc AnsiStyle)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 ErrorCode
 </span><a href="Elara.Error.Codes.html#samePrecedence"><span class="hs-identifier hs-var">Codes.samePrecedence</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-24"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-26"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Cannot mix operators with same precedence &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">RenamedBinaryOperator -&gt; Doc AnsiStyle
 </span><a href="Elara.Shunt.Operator.html#prettyOp"><span class="hs-identifier hs-var">prettyOp</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedBinaryOperator
-</span><a href="#local-6989586621680038914"><span class="hs-identifier hs-var">op1</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680033890"><span class="hs-identifier hs-var">op1</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot; and &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">RenamedBinaryOperator -&gt; Doc AnsiStyle
 </span><a href="Elara.Shunt.Operator.html#prettyOp"><span class="hs-identifier hs-var">prettyOp</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedBinaryOperator
-</span><a href="#local-6989586621680038918"><span class="hs-identifier hs-var">op2</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680033894"><span class="hs-identifier hs-var">op2</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot; when both operators have different associativity.&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-25"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
-</span><a href="#local-6989586621680038921"><span class="hs-identifier hs-var">op1Src</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><span id="line-27"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
+</span><a href="#local-6989586621680033897"><span class="hs-identifier hs-var">op1Src</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpInfo -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680038917"><span class="hs-identifier hs-var">a1</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
-</span><a href="#local-6989586621680038923"><span class="hs-identifier hs-var">op2Src</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680033893"><span class="hs-identifier hs-var">a1</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
+</span><a href="#local-6989586621680033899"><span class="hs-identifier hs-var">op2Src</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpInfo -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680038920"><span class="hs-identifier hs-var">a2</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-26"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+</span><a href="#local-6989586621680033896"><span class="hs-identifier hs-var">a2</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-28"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
 forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Add parentheses to resolve the ambiguity&quot;</span></span><span>
-</span><span id="line-27"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+</span><span id="line-29"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
 forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Change the precedence of one of the operators&quot;</span></span><span>
-</span><span id="line-28"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+</span><span id="line-30"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
 forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Change the associativity of one of the operators&quot;</span></span><span>
-</span><span id="line-29"></span><span>                </span><span class="hs-special">]</span><span>
-</span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-keyword">data</span><span> </span><span id="ShuntWarning"><span class="annot"><a href="Elara.Shunt.Error.html#ShuntWarning"><span class="hs-identifier hs-var">ShuntWarning</span></a></span></span><span>
-</span><span id="line-32"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="UnknownPrecedence"><span class="annot"><a href="Elara.Shunt.Error.html#UnknownPrecedence"><span class="hs-identifier hs-var">UnknownPrecedence</span></a></span></span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpTable"><span class="hs-identifier hs-type">OpTable</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedDeclarationBody"><span class="hs-identifier hs-type">RenamedDeclarationBody</span></a></span><span>
-</span><span id="line-33"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680038933"><span id="local-6989586621680038942"><span class="annot"><span class="annottext">ShuntWarning -&gt; ShuntWarning -&gt; Bool
+</span><span id="line-31"></span><span>                </span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">data</span><span> </span><span id="ShuntWarning"><span class="annot"><a href="Elara.Shunt.Error.html#ShuntWarning"><span class="hs-identifier hs-var">ShuntWarning</span></a></span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="UnknownPrecedence"><span class="annot"><a href="Elara.Shunt.Error.html#UnknownPrecedence"><span class="hs-identifier hs-var">UnknownPrecedence</span></a></span></span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpTable"><span class="hs-identifier hs-type">OpTable</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Renamed.html#RenamedDeclarationBody"><span class="hs-identifier hs-type">RenamedDeclarationBody</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680033909"><span id="local-6989586621680033919"><span id="local-6989586621680033923"><span class="annot"><span class="annottext">Int -&gt; ShuntWarning -&gt; ShowS
+[ShuntWarning] -&gt; ShowS
+ShuntWarning -&gt; String
+(Int -&gt; ShuntWarning -&gt; ShowS)
+-&gt; (ShuntWarning -&gt; String)
+-&gt; ([ShuntWarning] -&gt; ShowS)
+-&gt; Show ShuntWarning
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ShuntWarning -&gt; ShowS
+showsPrec :: Int -&gt; ShuntWarning -&gt; ShowS
+$cshow :: ShuntWarning -&gt; String
+show :: ShuntWarning -&gt; String
+$cshowList :: [ShuntWarning] -&gt; ShowS
+showList :: [ShuntWarning] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680034066"><span id="local-6989586621680034075"><span class="annot"><span class="annottext">ShuntWarning -&gt; ShuntWarning -&gt; Bool
 (ShuntWarning -&gt; ShuntWarning -&gt; Bool)
 -&gt; (ShuntWarning -&gt; ShuntWarning -&gt; Bool) -&gt; Eq ShuntWarning
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -149,7 +166,7 @@ $c== :: ShuntWarning -&gt; ShuntWarning -&gt; Bool
 == :: ShuntWarning -&gt; ShuntWarning -&gt; Bool
 $c/= :: ShuntWarning -&gt; ShuntWarning -&gt; Bool
 /= :: ShuntWarning -&gt; ShuntWarning -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680039096"><span id="local-6989586621680039106"><span id="local-6989586621680039114"><span id="local-6989586621680039118"><span id="local-6989586621680039121"><span id="local-6989586621680039124"><span id="local-6989586621680039127"><span class="annot"><span class="annottext">Eq ShuntWarning
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680034225"><span id="local-6989586621680034235"><span id="local-6989586621680034243"><span id="local-6989586621680034247"><span id="local-6989586621680034250"><span id="local-6989586621680034253"><span id="local-6989586621680034256"><span class="annot"><span class="annottext">Eq ShuntWarning
 Eq ShuntWarning =&gt;
 (ShuntWarning -&gt; ShuntWarning -&gt; Ordering)
 -&gt; (ShuntWarning -&gt; ShuntWarning -&gt; Bool)
@@ -186,36 +203,21 @@ $cmax :: ShuntWarning -&gt; ShuntWarning -&gt; ShuntWarning
 max :: ShuntWarning -&gt; ShuntWarning -&gt; ShuntWarning
 $cmin :: ShuntWarning -&gt; ShuntWarning -&gt; ShuntWarning
 min :: ShuntWarning -&gt; ShuntWarning -&gt; ShuntWarning
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680039617"><span id="local-6989586621680039627"><span id="local-6989586621680039631"><span class="annot"><span class="annottext">Int -&gt; ShuntWarning -&gt; ShowS
-[ShuntWarning] -&gt; ShowS
-ShuntWarning -&gt; String
-(Int -&gt; ShuntWarning -&gt; ShowS)
--&gt; (ShuntWarning -&gt; String)
--&gt; ([ShuntWarning] -&gt; ShowS)
--&gt; Show ShuntWarning
-forall a.
-(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
-$cshowsPrec :: Int -&gt; ShuntWarning -&gt; ShowS
-showsPrec :: Int -&gt; ShuntWarning -&gt; ShowS
-$cshow :: ShuntWarning -&gt; String
-show :: ShuntWarning -&gt; String
-$cshowList :: [ShuntWarning] -&gt; ShowS
-showList :: [ShuntWarning] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-34"></span><span>
-</span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680039777"><span id="local-6989586621680039781"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntWarning"><span class="hs-identifier hs-type">ShuntWarning</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>    </span><span id="local-6989586621680039844"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680034729"><span id="local-6989586621680034733"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Error.html#ShuntWarning"><span class="hs-identifier hs-type">ShuntWarning</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>    </span><span id="local-6989586621680034784"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
 (DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
 ShuntWarning -&gt; Eff r ()
-</span><a href="Elara.Error.html#report"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Error.html#UnknownPrecedence"><span class="hs-identifier hs-type">UnknownPrecedence</span></a></span><span> </span><span id="local-6989586621680039845"><span class="annot"><span class="annottext">OpTable
-</span><a href="#local-6989586621680039845"><span class="hs-identifier hs-var">opTable</span></a></span></span><span> </span><span id="local-6989586621680039846"><span class="annot"><span class="annottext">RenamedDeclarationBody
-</span><a href="#local-6989586621680039846"><span class="hs-identifier hs-var">lOperator</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-37"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680039847"><span class="annot"><span class="annottext">opSrc :: Position
-</span><a href="#local-6989586621680039847"><span class="hs-identifier hs-var hs-var">opSrc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
+</span><a href="Elara.Error.html#report"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Error.html#UnknownPrecedence"><span class="hs-identifier hs-type">UnknownPrecedence</span></a></span><span> </span><span id="local-6989586621680034785"><span class="annot"><span class="annottext">OpTable
+</span><a href="#local-6989586621680034785"><span class="hs-identifier hs-var">opTable</span></a></span></span><span> </span><span id="local-6989586621680034786"><span class="annot"><span class="annottext">RenamedDeclarationBody
+</span><a href="#local-6989586621680034786"><span class="hs-identifier hs-var">lOperator</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-39"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680034787"><span class="annot"><span class="annottext">opSrc :: Position
+</span><a href="#local-6989586621680034787"><span class="hs-identifier hs-var hs-var">opSrc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
 </span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">(SourceRegion -&gt; Position) -&gt; SourceRegion -&gt; Position
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">RenamedDeclarationBody
-</span><a href="#local-6989586621680039846"><span class="hs-identifier hs-var">lOperator</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedDeclarationBody
+</span><a href="#local-6989586621680034786"><span class="hs-identifier hs-var">lOperator</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedDeclarationBody
 -&gt; Optic' A_Getter NoIx RenamedDeclarationBody SourceRegion
 -&gt; SourceRegion
 forall k s (is :: IxList) a.
@@ -231,16 +233,12 @@ s -&gt; Optic' k is s a -&gt; a
 Getter
   RenamedDeclarationBody (CleanupLocated (ASTLocate' 'Renamed Name))
 forall {a} (ast :: a).
-(CleanupLocated (Located (Select &quot;TypeName&quot; ast))
- ~ Located (Select &quot;TypeName&quot; ast),
- CleanupLocated (Located (Select &quot;ValueName&quot; ast))
- ~ Located (Select &quot;ValueName&quot; ast),
- CleanupLocated (Located (Select &quot;AnyName&quot; ast))
- ~ Located (Select &quot;AnyName&quot; ast),
- RUnlocate ast,
- DataConAs (Select &quot;InfixDecl&quot; ast) (InfixDeclaration ast),
- ToName (Select &quot;TypeName&quot; ast), ToName (Select &quot;ValueName&quot; ast),
- ToName (Select &quot;AnyName&quot; ast)) =&gt;
+(CleanupLocated (Located (Select (ASTName ForValueDecl) ast))
+ ~ Located (Select (ASTName ForValueDecl) ast),
+ CleanupLocated (Located (Select (ASTName ForType) ast))
+ ~ Located (Select (ASTName ForType) ast),
+ RUnlocate ast, ToName (Select (ASTName ForValueDecl) ast),
+ ToName (Select (ASTName ForType) ast)) =&gt;
 Getter (DeclarationBody ast) (CleanupLocated (ASTLocate' ast Name))
 </span><a href="Elara.AST.Generic.Types.html#declarationBodyName"><span class="hs-identifier hs-var">declarationBodyName</span></a></span><span> </span><span class="annot"><span class="annottext">Optic
   A_Getter
@@ -260,8 +258,8 @@ Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
   A_Lens NoIx (Located Name) (Located Name) SourceRegion SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span>
-</span><span id="line-38"></span><span>
-</span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
 forall t (es :: [Effect]).
 (HasCallStack, DiagnosticWriter t :&gt; es) =&gt;
 Report t -&gt; Eff es ()
@@ -269,7 +267,7 @@ Report t -&gt; Eff es ()
 -&gt; Report (Doc AnsiStyle) -&gt; Eff r ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-40"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+</span><span id="line-42"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
 -&gt; Doc AnsiStyle
 -&gt; [(Position, Marker (Doc AnsiStyle))]
 -&gt; [Note (Doc AnsiStyle)]
@@ -278,21 +276,21 @@ forall msg.
 Maybe msg
 -&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
 </span><span class="hs-identifier hs-var">Warn</span></span><span>
-</span><span id="line-41"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Maybe (Doc AnsiStyle)
+</span><span id="line-43"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Maybe (Doc AnsiStyle)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownPrecedence"><span class="hs-identifier hs-var">Codes.unknownPrecedence</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+</span><span id="line-44"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
 forall ann. [Doc ann] -&gt; Doc ann
 </span><span class="hs-identifier hs-var">vsep</span></span><span>
-</span><span id="line-43"></span><span>                    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-45"></span><span>                    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Unknown precedence/associativity for operator&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Located Name -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RenamedDeclarationBody
-</span><a href="#local-6989586621680039846"><span class="hs-identifier hs-var">lOperator</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedDeclarationBody
+</span><a href="#local-6989586621680034786"><span class="hs-identifier hs-var">lOperator</span></a></span><span> </span><span class="annot"><span class="annottext">RenamedDeclarationBody
 -&gt; Optic
      A_Getter
      NoIx
@@ -314,37 +312,33 @@ s -&gt; Optic' k is s a -&gt; a
 Getter
   RenamedDeclarationBody (CleanupLocated (ASTLocate' 'Renamed Name))
 forall {a} (ast :: a).
-(CleanupLocated (Located (Select &quot;TypeName&quot; ast))
- ~ Located (Select &quot;TypeName&quot; ast),
- CleanupLocated (Located (Select &quot;ValueName&quot; ast))
- ~ Located (Select &quot;ValueName&quot; ast),
- CleanupLocated (Located (Select &quot;AnyName&quot; ast))
- ~ Located (Select &quot;AnyName&quot; ast),
- RUnlocate ast,
- DataConAs (Select &quot;InfixDecl&quot; ast) (InfixDeclaration ast),
- ToName (Select &quot;TypeName&quot; ast), ToName (Select &quot;ValueName&quot; ast),
- ToName (Select &quot;AnyName&quot; ast)) =&gt;
+(CleanupLocated (Located (Select (ASTName ForValueDecl) ast))
+ ~ Located (Select (ASTName ForValueDecl) ast),
+ CleanupLocated (Located (Select (ASTName ForType) ast))
+ ~ Located (Select (ASTName ForType) ast),
+ RUnlocate ast, ToName (Select (ASTName ForValueDecl) ast),
+ ToName (Select (ASTName ForType) ast)) =&gt;
 Getter (DeclarationBody ast) (CleanupLocated (ASTLocate' ast Name))
 </span><a href="Elara.AST.Generic.Types.html#declarationBodyName"><span class="hs-identifier hs-var">declarationBodyName</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>                        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><span id="line-46"></span><span>                        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;. The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. &quot;</span></span><span>
-</span><span id="line-45"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-47"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Known Operators:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">OpTable -&gt; Doc AnsiStyle
 </span><a href="Elara.Shunt.Operator.html#prettyOpTable"><span class="hs-identifier hs-var">prettyOpTable</span></a></span><span> </span><span class="annot"><span class="annottext">OpTable
-</span><a href="#local-6989586621680039845"><span class="hs-identifier hs-var">opTable</span></a></span><span>
-</span><span id="line-46"></span><span>                    </span><span class="hs-special">]</span><span>
-</span><span id="line-47"></span><span>                </span><span class="hs-special">)</span><span>
-</span><span id="line-48"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
-</span><a href="#local-6989586621680039847"><span class="hs-identifier hs-var">opSrc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680034785"><span class="hs-identifier hs-var">opTable</span></a></span><span>
+</span><span id="line-48"></span><span>                    </span><span class="hs-special">]</span><span>
+</span><span id="line-49"></span><span>                </span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
+</span><a href="#local-6989586621680034787"><span class="hs-identifier hs-var">opSrc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;operator declared here&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-49"></span><span>                </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+</span><span id="line-51"></span><span>                </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
 forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol&quot;</span></span><span class="hs-special">]</span><span>
-</span><span id="line-50"></span></pre></body></html>
+</span><span id="line-52"></span></pre></body></html>

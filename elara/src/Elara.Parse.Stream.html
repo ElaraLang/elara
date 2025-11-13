@@ -17,7 +17,7 @@
 </span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="skipIndents"><span class="annot"><span class="annottext">TokenStream -&gt; Bool
 </span><a href="Elara.Parse.Stream.html#skipIndents"><span class="hs-identifier hs-var hs-var">skipIndents</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-16"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015641"><span id="local-6989586621680015652"><span id="local-6989586621680015656"><span class="annot"><span class="annottext">Int -&gt; TokenStream -&gt; ShowS
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011445"><span id="local-6989586621680011456"><span id="local-6989586621680011460"><span class="annot"><span class="annottext">Int -&gt; TokenStream -&gt; ShowS
 [TokenStream] -&gt; ShowS
 TokenStream -&gt; String
 (Int -&gt; TokenStream -&gt; ShowS)
@@ -32,7 +32,7 @@ $cshow :: TokenStream -&gt; String
 show :: TokenStream -&gt; String
 $cshowList :: [TokenStream] -&gt; ShowS
 showList :: [TokenStream] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015664"><span id="local-6989586621680015673"><span class="annot"><span class="annottext">TokenStream -&gt; TokenStream -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011468"><span id="local-6989586621680011477"><span class="annot"><span class="annottext">TokenStream -&gt; TokenStream -&gt; Bool
 (TokenStream -&gt; TokenStream -&gt; Bool)
 -&gt; (TokenStream -&gt; TokenStream -&gt; Bool) -&gt; Eq TokenStream
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -42,120 +42,120 @@ $c/= :: TokenStream -&gt; TokenStream -&gt; Bool
 /= :: TokenStream -&gt; TokenStream -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-18"></span><span>
-</span><span id="line-19"></span><span class="hs-keyword">pattern</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#L"><span class="hs-identifier hs-type">L</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680015512"><span class="annot"><a href="#local-6989586621680015512"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015512"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">pattern</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#L"><span class="hs-identifier hs-type">L</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680011316"><span class="annot"><a href="#local-6989586621680011316"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680011316"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-20"></span><span class="hs-keyword">pattern</span><span> </span><span id="L"><span id="%24mL"><span class="annot"><span class="annottext">$mL :: forall {r} {a}. Located a -&gt; (a -&gt; r) -&gt; ((# #) -&gt; r) -&gt; r
-</span><a href="Elara.Parse.Stream.html#L"><span class="hs-identifier hs-var hs-var">L</span></a></span></span></span><span> </span><span class="annot"><a href="#local-6989586621680015682"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680015682"><span class="annot"><a href="#local-6989586621680015682"><span class="hs-identifier hs-var">i</span></a></span></span><span>
+</span><a href="Elara.Parse.Stream.html#L"><span class="hs-identifier hs-var hs-var">L</span></a></span></span></span><span> </span><span class="annot"><a href="#local-6989586621680011486"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680011486"><span class="annot"><a href="#local-6989586621680011486"><span class="hs-identifier hs-var">i</span></a></span></span><span>
 </span><span id="line-21"></span><span>
 </span><span id="line-22"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Stream</span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-23"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Token"><span class="annot"><span class="hs-identifier hs-var">Token</span></span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span>
 </span><span id="line-24"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Tokens"><span class="annot"><span class="hs-identifier hs-var">Tokens</span></span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-25"></span><span>    </span><span id="local-6989586621680015705"><span class="annot"><span class="annottext">tokenToChunk :: Proxy TokenStream -&gt; Token TokenStream -&gt; Tokens TokenStream
-</span><a href="#local-6989586621680015705"><span class="hs-identifier hs-var hs-var hs-var">tokenToChunk</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
-</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680015708"><span class="annot"><span class="annottext">Token TokenStream
-</span><a href="#local-6989586621680015708"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Token TokenStream
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621680011509"><span class="annot"><span class="annottext">tokenToChunk :: Proxy TokenStream -&gt; Token TokenStream -&gt; Tokens TokenStream
+</span><a href="#local-6989586621680011509"><span class="hs-identifier hs-var hs-var hs-var">tokenToChunk</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680011512"><span class="annot"><span class="annottext">Token TokenStream
+</span><a href="#local-6989586621680011512"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Token TokenStream
 Lexeme
-</span><a href="#local-6989586621680015708"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-26"></span><span>    </span><span id="local-6989586621680015709"><span class="annot"><span class="annottext">tokensToChunk :: Proxy TokenStream -&gt; [Token TokenStream] -&gt; Tokens TokenStream
-</span><a href="#local-6989586621680015709"><span class="hs-identifier hs-var hs-var hs-var">tokensToChunk</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
-</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680015711"><span class="annot"><span class="annottext">[Token TokenStream]
-</span><a href="#local-6989586621680015711"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Token TokenStream]
+</span><a href="#local-6989586621680011512"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-26"></span><span>    </span><span id="local-6989586621680011513"><span class="annot"><span class="annottext">tokensToChunk :: Proxy TokenStream -&gt; [Token TokenStream] -&gt; Tokens TokenStream
+</span><a href="#local-6989586621680011513"><span class="hs-identifier hs-var hs-var hs-var">tokensToChunk</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680011515"><span class="annot"><span class="annottext">[Token TokenStream]
+</span><a href="#local-6989586621680011515"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Token TokenStream]
 Tokens TokenStream
-</span><a href="#local-6989586621680015711"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-27"></span><span>    </span><span id="local-6989586621680015712"><span class="annot"><span class="annottext">chunkToTokens :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; [Token TokenStream]
-</span><a href="#local-6989586621680015712"><span class="hs-identifier hs-var hs-var hs-var">chunkToTokens</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><a href="#local-6989586621680011515"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span id="local-6989586621680011516"><span class="annot"><span class="annottext">chunkToTokens :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; [Token TokenStream]
+</span><a href="#local-6989586621680011516"><span class="hs-identifier hs-var hs-var hs-var">chunkToTokens</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; [Lexeme]
 Tokens TokenStream -&gt; [Token TokenStream]
 forall a. a -&gt; a
 </span><a href="Prelude.html#identity"><span class="hs-identifier hs-var">identity</span></a></span><span>
-</span><span id="line-28"></span><span>    </span><span id="local-6989586621680015717"><span class="annot"><span class="annottext">chunkLength :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; Int
-</span><a href="#local-6989586621680015717"><span class="hs-identifier hs-var hs-var hs-var">chunkLength</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><span id="line-28"></span><span>    </span><span id="local-6989586621680011521"><span class="annot"><span class="annottext">chunkLength :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; Int
+</span><a href="#local-6989586621680011521"><span class="hs-identifier hs-var hs-var hs-var">chunkLength</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Int
 Tokens TokenStream -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span>
-</span><span id="line-29"></span><span>    </span><span id="local-6989586621680015721"><span class="annot"><span class="annottext">chunkEmpty :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; Bool
-</span><a href="#local-6989586621680015721"><span class="hs-identifier hs-var hs-var hs-var">chunkEmpty</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621680011525"><span class="annot"><span class="annottext">chunkEmpty :: Proxy TokenStream -&gt; Tokens TokenStream -&gt; Bool
+</span><a href="#local-6989586621680011525"><span class="hs-identifier hs-var hs-var hs-var">chunkEmpty</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Bool
 Tokens TokenStream -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span>
 </span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">take1_</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text.Megaparsec.Token</span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>    </span><span id="local-6989586621680015728"><span class="annot"><span class="annottext">take1_ :: TokenStream -&gt; Maybe (Token TokenStream, TokenStream)
+</span><span id="line-31"></span><span>    </span><span id="local-6989586621680011532"><span class="annot"><span class="annottext">take1_ :: TokenStream -&gt; Maybe (Token TokenStream, TokenStream)
 </span><span class="hs-identifier hs-var hs-var hs-var">take1_</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Token TokenStream, TokenStream)
 Maybe (Lexeme, TokenStream)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">take1_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680015729"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015729"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680015730"><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680015730"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680015731"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015731"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680015732"><span class="annot"><span class="annottext">skipIndents :: Bool
-</span><a href="#local-6989586621680015732"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Bool
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">take1_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680011533"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011533"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680011534"><span class="annot"><span class="annottext">Token
+</span><a href="#local-6989586621680011534"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680011535"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011535"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680011536"><span class="annot"><span class="annottext">skipIndents :: Bool
+</span><a href="#local-6989586621680011536"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Token -&gt; Bool
 </span><a href="Elara.Lexer.Token.html#isIndent"><span class="hs-identifier hs-var">isIndent</span></a></span><span> </span><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680015730"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TokenStream -&gt; Maybe (Token TokenStream, TokenStream)
+</span><a href="#local-6989586621680011534"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TokenStream -&gt; Maybe (Token TokenStream, TokenStream)
 forall s. Stream s =&gt; s -&gt; Maybe (Token s, s)
 </span><span class="hs-identifier hs-var">take1_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015729"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015731"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015732"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">take1_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680015734"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015734"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015735"><span class="annot"><span class="annottext">Lexeme
-</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680015736"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015736"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680015737"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015737"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680011533"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011535"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011536"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">take1_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680011538"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011538"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011539"><span class="annot"><span class="annottext">Lexeme
+</span><a href="#local-6989586621680011539"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680011540"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011540"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680011541"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011541"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-34"></span><span>        </span><span class="annot"><span class="annottext">(Lexeme, TokenStream) -&gt; Maybe (Lexeme, TokenStream)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Lexeme
-</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
+</span><a href="#local-6989586621680011539"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Text -&gt; Text
 </span><span class="hs-identifier hs-var">T.drop</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
 forall s. VisualStream s =&gt; Proxy s -&gt; NonEmpty (Token s) -&gt; Int
 </span><span class="hs-identifier hs-var">tokensLength</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall t. Proxy t
 forall {k} (t :: k). Proxy t
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Lexeme
-</span><a href="#local-6989586621680015735"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Lexeme -&gt; [Lexeme] -&gt; NonEmpty Lexeme
+</span><a href="#local-6989586621680011539"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Lexeme -&gt; [Lexeme] -&gt; NonEmpty Lexeme
 forall a. a -&gt; [a] -&gt; NonEmpty a
 </span><span class="hs-operator hs-var">:|</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015734"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015736"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015737"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680015749"><span class="annot"><span class="annottext">takeN_ :: Int -&gt; TokenStream -&gt; Maybe (Tokens TokenStream, TokenStream)
-</span><a href="#local-6989586621680015749"><span class="hs-identifier hs-var hs-var hs-var">takeN_</span></a></span></span><span> </span><span id="local-6989586621680015751"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015751"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680015752"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015752"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680015753"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015753"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680015754"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015754"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011538"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011540"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011541"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680011553"><span class="annot"><span class="annottext">takeN_ :: Int -&gt; TokenStream -&gt; Maybe (Tokens TokenStream, TokenStream)
+</span><a href="#local-6989586621680011553"><span class="hs-identifier hs-var hs-var hs-var">takeN_</span></a></span></span><span> </span><span id="local-6989586621680011555"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680011555"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680011556"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011556"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680011557"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011557"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680011558"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011558"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015751"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621680011555"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Lexeme], TokenStream) -&gt; Maybe ([Lexeme], TokenStream)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015752"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015753"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015754"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011556"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011557"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011558"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-37"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015753"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ([Lexeme], TokenStream)
+</span><a href="#local-6989586621680011557"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ([Lexeme], TokenStream)
 Maybe (Tokens TokenStream, TokenStream)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
 </span><span id="line-38"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-comment">-- repeatedly call take1_ until it returns Nothing</span><span>
 </span><span id="line-39"></span><span>            </span><span class="hs-glyph">=</span><span>
-</span><span id="line-40"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015756"><span class="annot"><span class="annottext">Tokens TokenStream
-</span><a href="#local-6989586621680015756"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015757"><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015757"><span class="hs-identifier hs-var">s'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token TokenStream -&gt; Bool)
+</span><span id="line-40"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011560"><span class="annot"><span class="annottext">Tokens TokenStream
+</span><a href="#local-6989586621680011560"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011561"><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680011561"><span class="hs-identifier hs-var">s'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Token TokenStream -&gt; Bool)
 -&gt; TokenStream -&gt; (Tokens TokenStream, TokenStream)
 forall s. Stream s =&gt; (Token s -&gt; Bool) -&gt; s -&gt; (Tokens s, s)
 </span><span class="hs-identifier hs-var">takeWhile_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Lexeme -&gt; Bool
@@ -163,70 +163,70 @@ forall a b. a -&gt; b -&gt; a
 </span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015752"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015753"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015754"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011556"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011557"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011558"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-41"></span><span>             </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; TokenStream -&gt; Maybe (Tokens TokenStream, TokenStream)
 forall s. Stream s =&gt; Int -&gt; s -&gt; Maybe (Tokens s, s)
 </span><span class="hs-identifier hs-var">takeN_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015751"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621680011555"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
 Tokens TokenStream
-</span><a href="#local-6989586621680015756"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015757"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680011560"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680011561"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-42"></span><span>                    </span><span class="annot"><span class="annottext">Maybe (Tokens TokenStream, TokenStream)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe ([Lexeme], TokenStream)
 Maybe (Tokens TokenStream, TokenStream)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-43"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015760"><span class="annot"><span class="annottext">Tokens TokenStream
-</span><a href="#local-6989586621680015760"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015761"><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015761"><span class="hs-identifier hs-var">s''</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">([Lexeme], TokenStream) -&gt; Maybe ([Lexeme], TokenStream)
+</span><span id="line-43"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011564"><span class="annot"><span class="annottext">Tokens TokenStream
+</span><a href="#local-6989586621680011564"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011565"><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680011565"><span class="hs-identifier hs-var">s''</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">([Lexeme], TokenStream) -&gt; Maybe ([Lexeme], TokenStream)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lexeme]
 Tokens TokenStream
-</span><a href="#local-6989586621680015756"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; [Lexeme] -&gt; [Lexeme]
+</span><a href="#local-6989586621680011560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; [Lexeme] -&gt; [Lexeme]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
 Tokens TokenStream
-</span><a href="#local-6989586621680015760"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015761"><span class="hs-identifier hs-var">s''</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011564"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680011565"><span class="hs-identifier hs-var">s''</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-44"></span><span>
-</span><span id="line-45"></span><span>    </span><span id="local-6989586621680015763"><span class="annot"><span class="annottext">takeWhile_ :: (Token TokenStream -&gt; Bool)
+</span><span id="line-45"></span><span>    </span><span id="local-6989586621680011567"><span class="annot"><span class="annottext">takeWhile_ :: (Token TokenStream -&gt; Bool)
 -&gt; TokenStream -&gt; (Tokens TokenStream, TokenStream)
-</span><span class="hs-identifier hs-var hs-var hs-var">takeWhile_</span></span></span><span> </span><span id="local-6989586621680015764"><span class="annot"><span class="annottext">Token TokenStream -&gt; Bool
-</span><a href="#local-6989586621680015764"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680015765"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015765"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680015766"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015766"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680015767"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015767"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-46"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680015768"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015768"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015769"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015769"><span class="hs-identifier hs-var">s'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Lexeme -&gt; Bool) -&gt; [Lexeme] -&gt; ([Lexeme], [Lexeme])
+</span><span class="hs-identifier hs-var hs-var hs-var">takeWhile_</span></span></span><span> </span><span id="local-6989586621680011568"><span class="annot"><span class="annottext">Token TokenStream -&gt; Bool
+</span><a href="#local-6989586621680011568"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span id="local-6989586621680011569"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011569"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680011570"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011570"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680011571"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011571"><span class="hs-identifier hs-var">skipIndents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011572"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011572"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011573"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011573"><span class="hs-identifier hs-var">s'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Lexeme -&gt; Bool) -&gt; [Lexeme] -&gt; ([Lexeme], [Lexeme])
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; ([a], [a])
 </span><span class="hs-identifier hs-var">span</span></span><span> </span><span class="annot"><span class="annottext">Token TokenStream -&gt; Bool
 Lexeme -&gt; Bool
-</span><a href="#local-6989586621680015764"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015766"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><a href="#local-6989586621680011568"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011570"><span class="hs-identifier hs-var">s</span></a></span><span>
 </span><span id="line-47"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Maybe (NonEmpty Lexeme)
 forall a. [a] -&gt; Maybe (NonEmpty a)
 </span><span class="hs-identifier hs-var">nonEmpty</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015768"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680011572"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-48"></span><span>                </span><span class="annot"><span class="annottext">Maybe (NonEmpty Lexeme)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lexeme]
 Tokens TokenStream
-</span><a href="#local-6989586621680015768"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
+</span><a href="#local-6989586621680011572"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015765"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015769"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015767"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680015772"><span class="annot"><span class="annottext">NonEmpty Lexeme
-</span><a href="#local-6989586621680015772"><span class="hs-identifier hs-var">nex</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011569"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011573"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011571"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680011576"><span class="annot"><span class="annottext">NonEmpty Lexeme
+</span><a href="#local-6989586621680011576"><span class="hs-identifier hs-var">nex</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lexeme]
 Tokens TokenStream
-</span><a href="#local-6989586621680015768"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
+</span><a href="#local-6989586621680011572"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Text -&gt; Text
 </span><span class="hs-identifier hs-var">T.drop</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
 forall s. VisualStream s =&gt; Proxy s -&gt; NonEmpty (Token s) -&gt; Int
@@ -234,14 +234,14 @@ forall s. VisualStream s =&gt; Proxy s -&gt; NonEmpty (Token s) -&gt; Int
 forall {k} (t :: k). Proxy t
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NonEmpty (Token TokenStream)
 NonEmpty Lexeme
-</span><a href="#local-6989586621680015772"><span class="hs-identifier hs-var">nex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015765"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015769"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015767"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011576"><span class="hs-identifier hs-var">nex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011569"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011573"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680011571"><span class="hs-identifier hs-var">skipIndents</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-50"></span><span>
 </span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VisualStream</span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-52"></span><span>    </span><span id="local-6989586621680015788"><span class="annot"><span class="annottext">showTokens :: Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; String
-</span><a href="#local-6989586621680015788"><span class="hs-identifier hs-var hs-var hs-var">showTokens</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621680011592"><span class="annot"><span class="annottext">showTokens :: Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; String
+</span><a href="#local-6989586621680011592"><span class="hs-identifier hs-var hs-var hs-var">showTokens</span></a></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-53"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; String
 forall a. ToString a =&gt; a -&gt; String
@@ -275,22 +275,22 @@ Optic' k is s a -&gt; s -&gt; a
 </span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx Lexeme Token
 forall a b. Lens (Located a) (Located b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span>    </span><span id="local-6989586621680015799"><span class="annot"><span class="annottext">tokensLength :: Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621680011603"><span class="annot"><span class="annottext">tokensLength :: Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
 </span><span class="hs-identifier hs-var hs-var hs-var">tokensLength</span></span></span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream
-</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680015800"><span class="annot"><span class="annottext">NonEmpty (Token TokenStream)
-</span><a href="#local-6989586621680015800"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Int -&gt; Int
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span id="local-6989586621680011604"><span class="annot"><span class="annottext">NonEmpty (Token TokenStream)
+</span><a href="#local-6989586621680011604"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Int -&gt; Int
 forall a (f :: * -&gt; *). (Foldable f, Num a) =&gt; f a -&gt; a
 </span><span class="hs-identifier hs-var">sum</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Lexeme -&gt; Int
 </span><a href="Elara.Parse.Stream.html#tokenLength"><span class="hs-identifier hs-var">tokenLength</span></a></span><span> </span><span class="annot"><span class="annottext">(Lexeme -&gt; Int) -&gt; NonEmpty Lexeme -&gt; NonEmpty Int
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty (Token TokenStream)
 NonEmpty Lexeme
-</span><a href="#local-6989586621680015800"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011604"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-58"></span><span>
-</span><span id="line-59"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680015808"><span class="annot"><span class="hs-identifier hs-type">TraversableStream</span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-60"></span><span>    </span><span id="local-6989586621680015832"><span class="annot"><span class="annottext">reachOffset :: Int -&gt; PosState TokenStream -&gt; (Maybe String, PosState TokenStream)
-</span><a href="#local-6989586621680015832"><span class="hs-identifier hs-var hs-var hs-var">reachOffset</span></a></span></span><span> </span><span id="local-6989586621680015834"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015834"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">PosState</span></span><span class="hs-special">{</span><span id="local-6989586621680015836"><span id="local-6989586621680015837"><span id="local-6989586621680015838"><span id="local-6989586621680015839"><span id="local-6989586621680015840"><span class="annot"><span class="annottext">Int
+</span><span id="line-59"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680011612"><span class="annot"><span class="hs-identifier hs-type">TraversableStream</span></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>    </span><span id="local-6989586621680011636"><span class="annot"><span class="annottext">reachOffset :: Int -&gt; PosState TokenStream -&gt; (Maybe String, PosState TokenStream)
+</span><a href="#local-6989586621680011636"><span class="hs-identifier hs-var hs-var hs-var">reachOffset</span></a></span></span><span> </span><span id="local-6989586621680011638"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680011638"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">PosState</span></span><span class="hs-special">{</span><span id="local-6989586621680011640"><span id="local-6989586621680011641"><span id="local-6989586621680011642"><span id="local-6989586621680011643"><span id="local-6989586621680011644"><span class="annot"><span class="annottext">Int
 String
 Pos
 SourcePos
@@ -305,79 +305,79 @@ pstateLinePrefix :: forall s. PosState s -&gt; String
 pstateOffset :: forall s. PosState s -&gt; Int
 pstateSourcePos :: forall s. PosState s -&gt; SourcePos
 pstateTabWidth :: forall s. PosState s -&gt; Pos
-</span><a href="#local-6989586621680015836"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680011640"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-61"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe String
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 forall a. ToString a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">toString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015846"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011650"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015847"><span class="hs-identifier hs-var">restOfLine</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011651"><span class="hs-identifier hs-var">restOfLine</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">PosState</span></span><span>
 </span><span id="line-63"></span><span>            </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">pstateInput :: TokenStream
 </span><span class="hs-identifier hs-var">pstateInput</span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-64"></span><span>                </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span>
 </span><span id="line-65"></span><span>                    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">tokenStreamInput :: Text
 </span><a href="Elara.Parse.Stream.html#tokenStreamInput"><span class="hs-identifier hs-var">tokenStreamInput</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015848"><span class="hs-identifier hs-var">postStr</span></a></span><span>
+</span><a href="#local-6989586621680011652"><span class="hs-identifier hs-var">postStr</span></a></span><span>
 </span><span id="line-66"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">tokenStreamTokens :: [Lexeme]
 </span><a href="Elara.Parse.Stream.html#tokenStreamTokens"><span class="hs-identifier hs-var">tokenStreamTokens</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015849"><span class="hs-identifier hs-var">postLexemes</span></a></span><span>
+</span><a href="#local-6989586621680011653"><span class="hs-identifier hs-var">postLexemes</span></a></span><span>
 </span><span id="line-67"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">skipIndents :: Bool
 </span><a href="Elara.Parse.Stream.html#skipIndents"><span class="hs-identifier hs-var">skipIndents</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015836"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">skipIndents</span><span>
+</span><a href="#local-6989586621680011640"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">skipIndents</span><span>
 </span><span id="line-68"></span><span>                    </span><span class="hs-special">}</span><span>
 </span><span id="line-69"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">pstateOffset :: Int
 </span><span class="hs-identifier hs-var">pstateOffset</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Ord a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">max</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015837"><span class="hs-identifier hs-var">pstateOffset</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015834"><span class="hs-identifier hs-var">o</span></a></span><span>
+</span><a href="#local-6989586621680011641"><span class="hs-identifier hs-var">pstateOffset</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680011638"><span class="hs-identifier hs-var">o</span></a></span><span>
 </span><span id="line-70"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">pstateSourcePos :: SourcePos
 </span><span class="hs-identifier hs-var">pstateSourcePos</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourcePos
-</span><a href="#local-6989586621680015851"><span class="hs-identifier hs-var">newSourcePos</span></a></span><span>
+</span><a href="#local-6989586621680011655"><span class="hs-identifier hs-var">newSourcePos</span></a></span><span>
 </span><span id="line-71"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">pstateTabWidth :: Pos
 </span><span class="hs-identifier hs-var">pstateTabWidth</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pos
-</span><a href="#local-6989586621680015839"><span class="hs-identifier hs-var">pstateTabWidth</span></a></span><span>
+</span><a href="#local-6989586621680011643"><span class="hs-identifier hs-var">pstateTabWidth</span></a></span><span>
 </span><span id="line-72"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">pstateLinePrefix :: String
 </span><span class="hs-identifier hs-var">pstateLinePrefix</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
 forall a. ToString a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">toString</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015846"><span class="hs-identifier hs-var">prefix</span></a></span><span>
+</span><a href="#local-6989586621680011650"><span class="hs-identifier hs-var">prefix</span></a></span><span>
 </span><span id="line-73"></span><span>            </span><span class="hs-special">}</span><span>
 </span><span id="line-74"></span><span>        </span><span class="hs-special">)</span><span>
 </span><span id="line-75"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-76"></span><span>        </span><span id="local-6989586621680015846"><span class="annot"><span class="annottext">prefix :: Text
-</span><a href="#local-6989586621680015846"><span class="hs-identifier hs-var hs-var">prefix</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-76"></span><span>        </span><span id="local-6989586621680011650"><span class="annot"><span class="annottext">prefix :: Text
+</span><a href="#local-6989586621680011650"><span class="hs-identifier hs-var hs-var">prefix</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-77"></span><span>            </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621680015852"><span class="hs-identifier hs-var">sameLine</span></a></span><span>
+</span><a href="#local-6989586621680011656"><span class="hs-identifier hs-var">sameLine</span></a></span><span>
 </span><span id="line-78"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
 forall a. IsString a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">fromString</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680015840"><span class="hs-identifier hs-var">pstateLinePrefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011644"><span class="hs-identifier hs-var">pstateLinePrefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015853"><span class="hs-identifier hs-var">preLine</span></a></span><span>
+</span><a href="#local-6989586621680011657"><span class="hs-identifier hs-var">preLine</span></a></span><span>
 </span><span id="line-79"></span><span>                </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015853"><span class="hs-identifier hs-var">preLine</span></a></span><span>
-</span><span id="line-80"></span><span>        </span><span id="local-6989586621680015852"><span class="annot"><span class="annottext">sameLine :: Bool
-</span><a href="#local-6989586621680015852"><span class="hs-identifier hs-var hs-var">sameLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourcePos -&gt; Pos
+</span><a href="#local-6989586621680011657"><span class="hs-identifier hs-var">preLine</span></a></span><span>
+</span><span id="line-80"></span><span>        </span><span id="local-6989586621680011656"><span class="annot"><span class="annottext">sameLine :: Bool
+</span><a href="#local-6989586621680011656"><span class="hs-identifier hs-var hs-var">sameLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourcePos -&gt; Pos
 </span><span class="hs-identifier hs-var">sourceLine</span></span><span> </span><span class="annot"><span class="annottext">SourcePos
-</span><a href="#local-6989586621680015851"><span class="hs-identifier hs-var">newSourcePos</span></a></span><span> </span><span class="annot"><span class="annottext">Pos -&gt; Pos -&gt; Bool
+</span><a href="#local-6989586621680011655"><span class="hs-identifier hs-var">newSourcePos</span></a></span><span> </span><span class="annot"><span class="annottext">Pos -&gt; Pos -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">SourcePos -&gt; Pos
 </span><span class="hs-identifier hs-var">sourceLine</span></span><span> </span><span class="annot"><span class="annottext">SourcePos
-</span><a href="#local-6989586621680015838"><span class="hs-identifier hs-var">pstateSourcePos</span></a></span><span>
-</span><span id="line-81"></span><span>        </span><span id="local-6989586621680015851"><span class="annot"><span class="annottext">newSourcePos :: SourcePos
-</span><a href="#local-6989586621680015851"><span class="hs-identifier hs-var hs-var">newSourcePos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680011642"><span class="hs-identifier hs-var">pstateSourcePos</span></a></span><span>
+</span><span id="line-81"></span><span>        </span><span id="local-6989586621680011655"><span class="annot"><span class="annottext">newSourcePos :: SourcePos
+</span><a href="#local-6989586621680011655"><span class="hs-identifier hs-var hs-var">newSourcePos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-82"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015849"><span class="hs-identifier hs-var">postLexemes</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680011653"><span class="hs-identifier hs-var">postLexemes</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-83"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">SourcePos
-</span><a href="#local-6989586621680015838"><span class="hs-identifier hs-var">pstateSourcePos</span></a></span><span>
-</span><span id="line-84"></span><span>                </span><span class="hs-special">(</span><span id="local-6989586621680015855"><span class="annot"><span class="annottext">Lexeme
-</span><a href="#local-6989586621680015855"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011642"><span class="hs-identifier hs-var">pstateSourcePos</span></a></span><span>
+</span><span id="line-84"></span><span>                </span><span class="hs-special">(</span><span id="local-6989586621680011659"><span class="annot"><span class="annottext">Lexeme
+</span><a href="#local-6989586621680011659"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Lexeme
 -&gt; Lens' Lexeme SourceRegion
 -&gt; Lens' RealSourceRegion RealPosition
@@ -389,30 +389,30 @@ Located a2
 -&gt; Lens' RealSourceRegion RealPosition
 -&gt; SourcePos
 </span><a href="Elara.Parse.Stream.html#sourceRegionToSourcePos"><span class="hs-identifier hs-var">sourceRegionToSourcePos</span></a></span><span> </span><span class="annot"><span class="annottext">Lexeme
-</span><a href="#local-6989586621680015855"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' Lexeme SourceRegion
+</span><a href="#local-6989586621680011659"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' Lexeme SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' RealSourceRegion RealPosition
 </span><a href="Elara.AST.Region.html#startPos"><span class="hs-identifier hs-var">startPos</span></a></span><span>
-</span><span id="line-85"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621680015857"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015857"><span class="hs-identifier hs-var">preLexemes</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015849"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015849"><span class="hs-identifier hs-var">postLexemes</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Lexeme] -&gt; ([Lexeme], [Lexeme])
+</span><span id="line-85"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621680011661"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011661"><span class="hs-identifier hs-var">preLexemes</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011653"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680011653"><span class="hs-identifier hs-var">postLexemes</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Lexeme] -&gt; ([Lexeme], [Lexeme])
 forall a. Int -&gt; [a] -&gt; ([a], [a])
 </span><span class="hs-identifier hs-var">splitAt</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015834"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621680011638"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015837"><span class="hs-identifier hs-var">pstateOffset</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TokenStream -&gt; [Lexeme]
+</span><a href="#local-6989586621680011641"><span class="hs-identifier hs-var">pstateOffset</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TokenStream -&gt; [Lexeme]
 </span><a href="Elara.Parse.Stream.html#tokenStreamTokens"><span class="hs-identifier hs-var">tokenStreamTokens</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015836"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-86"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621680015859"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015859"><span class="hs-identifier hs-var">preStr</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680015848"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015848"><span class="hs-identifier hs-var">postStr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Text -&gt; (Text, Text)
+</span><a href="#local-6989586621680011640"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621680011663"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011663"><span class="hs-identifier hs-var">preStr</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011652"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011652"><span class="hs-identifier hs-var">postStr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Text -&gt; (Text, Text)
 </span><span class="hs-identifier hs-var">T.splitAt</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015861"><span class="hs-identifier hs-var">tokensConsumed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TokenStream -&gt; Text
+</span><a href="#local-6989586621680011665"><span class="hs-identifier hs-var">tokensConsumed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TokenStream -&gt; Text
 </span><a href="Elara.Parse.Stream.html#tokenStreamInput"><span class="hs-identifier hs-var">tokenStreamInput</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680015836"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-87"></span><span>        </span><span id="local-6989586621680015853"><span class="annot"><span class="annottext">preLine :: Text
-</span><a href="#local-6989586621680015853"><span class="hs-identifier hs-var hs-var">preLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
+</span><a href="#local-6989586621680011640"><span class="hs-identifier hs-var">pstateInput</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>        </span><span id="local-6989586621680011657"><span class="annot"><span class="annottext">preLine :: Text
+</span><a href="#local-6989586621680011657"><span class="hs-identifier hs-var hs-var">preLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><span class="hs-identifier hs-var">T.reverse</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Text) -&gt; (Text -&gt; Text) -&gt; Text -&gt; Text
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; Text -&gt; Text
@@ -425,51 +425,51 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">T.reverse</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Text) -&gt; Text -&gt; Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015859"><span class="hs-identifier hs-var">preStr</span></a></span><span>
-</span><span id="line-88"></span><span>        </span><span id="local-6989586621680015861"><span class="annot"><span class="annottext">tokensConsumed :: Int
-</span><a href="#local-6989586621680015861"><span class="hs-identifier hs-var hs-var">tokensConsumed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680011663"><span class="hs-identifier hs-var">preStr</span></a></span><span>
+</span><span id="line-88"></span><span>        </span><span id="local-6989586621680011665"><span class="annot"><span class="annottext">tokensConsumed :: Int
+</span><a href="#local-6989586621680011665"><span class="hs-identifier hs-var hs-var">tokensConsumed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-89"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Lexeme] -&gt; Maybe (NonEmpty Lexeme)
 forall a. [a] -&gt; Maybe (NonEmpty a)
 </span><span class="hs-identifier hs-var">nonEmpty</span></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680015857"><span class="hs-identifier hs-var">preLexemes</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680011661"><span class="hs-identifier hs-var">preLexemes</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-90"></span><span>                </span><span class="annot"><span class="annottext">Maybe (NonEmpty Lexeme)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
-</span><span id="line-91"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680015865"><span class="annot"><span class="annottext">NonEmpty Lexeme
-</span><a href="#local-6989586621680015865"><span class="hs-identifier hs-var">nePre</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
+</span><span id="line-91"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680011669"><span class="annot"><span class="annottext">NonEmpty Lexeme
+</span><a href="#local-6989586621680011669"><span class="hs-identifier hs-var">nePre</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Proxy TokenStream -&gt; NonEmpty (Token TokenStream) -&gt; Int
 forall s. VisualStream s =&gt; Proxy s -&gt; NonEmpty (Token s) -&gt; Int
 </span><span class="hs-identifier hs-var">tokensLength</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall t. Proxy t
 forall {k} (t :: k). Proxy t
 </span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NonEmpty (Token TokenStream)
 NonEmpty Lexeme
-</span><a href="#local-6989586621680015865"><span class="hs-identifier hs-var">nePre</span></a></span><span>
-</span><span id="line-92"></span><span>        </span><span id="local-6989586621680015847"><span class="annot"><span class="annottext">restOfLine :: Text
-</span><a href="#local-6989586621680015847"><span class="hs-identifier hs-var hs-var">restOfLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011669"><span class="hs-identifier hs-var">nePre</span></a></span><span>
+</span><span id="line-92"></span><span>        </span><span id="local-6989586621680011651"><span class="annot"><span class="annottext">restOfLine :: Text
+</span><a href="#local-6989586621680011651"><span class="hs-identifier hs-var hs-var">restOfLine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; Text -&gt; Text
 </span><span class="hs-identifier hs-var">T.takeWhile</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'\n'</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680015848"><span class="hs-identifier hs-var">postStr</span></a></span><span>
+</span><a href="#local-6989586621680011652"><span class="hs-identifier hs-var">postStr</span></a></span><span>
 </span><span id="line-93"></span><span>
-</span><span id="line-94"></span><span id="local-6989586621680015584"><span id="local-6989586621680015585"><span class="annot"><a href="Elara.Parse.Stream.html#sourceRegionToSourcePos"><span class="hs-identifier hs-type">sourceRegionToSourcePos</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#HasPath"><span class="hs-identifier hs-type">HasPath</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015584"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015585"><span class="hs-identifier hs-type">a2</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680015585"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680015584"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#RealSourceRegion"><span class="hs-identifier hs-type">RealSourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#RealPosition"><span class="hs-identifier hs-type">RealPosition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SourcePos</span></span></span></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680011388"><span id="local-6989586621680011389"><span class="annot"><a href="Elara.Parse.Stream.html#sourceRegionToSourcePos"><span class="hs-identifier hs-type">sourceRegionToSourcePos</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#HasPath"><span class="hs-identifier hs-type">HasPath</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680011388"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680011389"><span class="hs-identifier hs-type">a2</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680011389"><span class="hs-identifier hs-type">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680011388"><span class="hs-identifier hs-type">a1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#RealSourceRegion"><span class="hs-identifier hs-type">RealSourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#RealPosition"><span class="hs-identifier hs-type">RealPosition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SourcePos</span></span></span></span><span>
 </span><span id="line-95"></span><span id="sourceRegionToSourcePos"><span class="annot"><span class="annottext">sourceRegionToSourcePos :: forall a1 a2.
 HasPath a1 =&gt;
 Located a2
 -&gt; Lens' (Located a2) a1
 -&gt; Lens' RealSourceRegion RealPosition
 -&gt; SourcePos
-</span><a href="Elara.Parse.Stream.html#sourceRegionToSourcePos"><span class="hs-identifier hs-var hs-var">sourceRegionToSourcePos</span></a></span></span><span> </span><span id="local-6989586621680015889"><span class="annot"><span class="annottext">Located a2
-</span><a href="#local-6989586621680015889"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span id="local-6989586621680015890"><span class="annot"><span class="annottext">Lens' (Located a2) a1
-</span><a href="#local-6989586621680015890"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680015891"><span class="annot"><span class="annottext">Lens' RealSourceRegion RealPosition
-</span><a href="#local-6989586621680015891"><span class="hs-identifier hs-var">which</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-96"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680015892"><span class="annot"><span class="annottext">fp :: Maybe String
-</span><a href="#local-6989586621680015892"><span class="hs-identifier hs-var hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located a2) (Maybe String)
+</span><a href="Elara.Parse.Stream.html#sourceRegionToSourcePos"><span class="hs-identifier hs-var hs-var">sourceRegionToSourcePos</span></a></span></span><span> </span><span id="local-6989586621680011693"><span class="annot"><span class="annottext">Located a2
+</span><a href="#local-6989586621680011693"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span id="local-6989586621680011694"><span class="annot"><span class="annottext">Lens' (Located a2) a1
+</span><a href="#local-6989586621680011694"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680011695"><span class="annot"><span class="annottext">Lens' RealSourceRegion RealPosition
+</span><a href="#local-6989586621680011695"><span class="hs-identifier hs-var">which</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680011696"><span class="annot"><span class="annottext">fp :: Maybe String
+</span><a href="#local-6989586621680011696"><span class="hs-identifier hs-var hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located a2) (Maybe String)
 -&gt; Located a2 -&gt; Maybe String
 forall k (is :: IxList) s a.
 Is k A_Getter =&gt;
 Optic' k is s a -&gt; s -&gt; a
 </span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Lens' (Located a2) a1
-</span><a href="#local-6989586621680015890"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (Located a2) a1
+</span><a href="#local-6989586621680011694"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Lens' (Located a2) a1
 -&gt; Optic A_Lens NoIx a1 a1 (Maybe String) (Maybe String)
 -&gt; Optic' A_Lens NoIx (Located a2) (Maybe String)
 forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
@@ -479,7 +479,7 @@ Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
 </span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Optic A_Lens NoIx a1 a1 (Maybe String) (Maybe String)
 forall a. HasPath a =&gt; Lens' a (Maybe String)
 </span><a href="Elara.AST.Region.html#path"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Located a2
-</span><a href="#local-6989586621680015889"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><a href="#local-6989586621680011693"><span class="hs-identifier hs-var">sr</span></a></span><span>
 </span><span id="line-97"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Optic' An_AffineTraversal NoIx (Located a2) RealPosition
 -&gt; Located a2 -&gt; Maybe RealPosition
 forall k (is :: IxList) s a.
@@ -527,39 +527,39 @@ forall k l m (is :: IxList) (js :: IxList) (ks :: IxList) s t u v a
 (JoinKinds k l m, AppendIndices is js ks) =&gt;
 Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
 </span><span class="hs-operator hs-var">%</span></span><span> </span><span class="annot"><span class="annottext">Lens' RealSourceRegion RealPosition
-</span><a href="#local-6989586621680015891"><span class="hs-identifier hs-var">which</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Located a2
-</span><a href="#local-6989586621680015889"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-98"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680015895"><span class="annot"><span class="annottext">RealPosition
-</span><a href="#local-6989586621680015895"><span class="hs-identifier hs-var">pos</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; RealPosition -&gt; SourcePos
+</span><a href="#local-6989586621680011695"><span class="hs-identifier hs-var">which</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Located a2
+</span><a href="#local-6989586621680011693"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-98"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680011699"><span class="annot"><span class="annottext">RealPosition
+</span><a href="#local-6989586621680011699"><span class="hs-identifier hs-var">pos</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; RealPosition -&gt; SourcePos
 </span><a href="Elara.Parse.Stream.html#realPositionToSourcePos"><span class="hs-identifier hs-var">realPositionToSourcePos</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621680015892"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">RealPosition
-</span><a href="#local-6989586621680015895"><span class="hs-identifier hs-var">pos</span></a></span><span>
+</span><a href="#local-6989586621680011696"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">RealPosition
+</span><a href="#local-6989586621680011699"><span class="hs-identifier hs-var">pos</span></a></span><span>
 </span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">Maybe RealPosition
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; SourcePos
 </span><a href="Elara.AST.Region.html#generatedSourcePos"><span class="hs-identifier hs-var">generatedSourcePos</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621680015892"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><a href="#local-6989586621680011696"><span class="hs-identifier hs-var">fp</span></a></span><span>
 </span><span id="line-100"></span><span>
 </span><span id="line-101"></span><span class="annot"><a href="Elara.Parse.Stream.html#realPositionToSourcePos"><span class="hs-identifier hs-type">realPositionToSourcePos</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#RealPosition"><span class="hs-identifier hs-type">RealPosition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SourcePos</span></span><span>
 </span><span id="line-102"></span><span id="realPositionToSourcePos"><span class="annot"><span class="annottext">realPositionToSourcePos :: Maybe String -&gt; RealPosition -&gt; SourcePos
-</span><a href="Elara.Parse.Stream.html#realPositionToSourcePos"><span class="hs-identifier hs-var hs-var">realPositionToSourcePos</span></a></span></span><span> </span><span id="local-6989586621680015898"><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621680015898"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Position"><span class="hs-identifier hs-type">Position</span></a></span><span> </span><span id="local-6989586621680015899"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015899"><span class="hs-identifier hs-var">line</span></a></span></span><span> </span><span id="local-6989586621680015900"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015900"><span class="hs-identifier hs-var">column</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Elara.Parse.Stream.html#realPositionToSourcePos"><span class="hs-identifier hs-var hs-var">realPositionToSourcePos</span></a></span></span><span> </span><span id="local-6989586621680011702"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621680011702"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Position"><span class="hs-identifier hs-type">Position</span></a></span><span> </span><span id="local-6989586621680011703"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680011703"><span class="hs-identifier hs-var">line</span></a></span></span><span> </span><span id="local-6989586621680011704"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680011704"><span class="hs-identifier hs-var">column</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-103"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">SourcePos</span></span><span>
 </span><span id="line-104"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">sourceName :: String
 </span><span class="hs-identifier hs-var">sourceName</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe String -&gt; String
 forall a. a -&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="Elara.AST.Region.html#generatedFileName"><span class="hs-identifier hs-var">generatedFileName</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621680015898"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><a href="#local-6989586621680011702"><span class="hs-identifier hs-var">fp</span></a></span><span>
 </span><span id="line-105"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">sourceLine :: Pos
 </span><span class="hs-identifier hs-var">sourceLine</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Pos
 </span><span class="hs-identifier hs-var">mkPos</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015899"><span class="hs-identifier hs-var">line</span></a></span><span>
+</span><a href="#local-6989586621680011703"><span class="hs-identifier hs-var">line</span></a></span><span>
 </span><span id="line-106"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">sourceColumn :: Pos
 </span><span class="hs-identifier hs-var">sourceColumn</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Pos
 </span><span class="hs-identifier hs-var">mkPos</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680015900"><span class="hs-identifier hs-var">column</span></a></span><span>
+</span><a href="#local-6989586621680011704"><span class="hs-identifier hs-var">column</span></a></span><span>
 </span><span id="line-107"></span><span>        </span><span class="hs-special">}</span><span>
 </span><span id="line-108"></span><span>
 </span><span id="line-109"></span><span class="annot"><a href="Elara.Parse.Stream.html#tokenLength"><span class="hs-identifier hs-type">tokenLength</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
