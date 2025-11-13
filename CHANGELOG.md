@@ -197,6 +197,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve Query documentation - ([43628a3](https://github.com/ElaraLang/elara/commit/43628a3d163ca28148bea38a729b00f34b124300)) 
 - Improve Query docs more - ([61271ae](https://github.com/ElaraLang/elara/commit/61271aef7bec18a39fbb8a2194cd8c90bd9fb677)) 
 - Add an introduction and clearly link to haddock docs - ([2299963](https://github.com/ElaraLang/elara/commit/2299963430791eaf357d27e02e136a53c534ddbe)) 
+- Begin language reference for syntax and annotations - ([25f870a](https://github.com/ElaraLang/elara/commit/25f870a8003b208f6bc46034549ce42bc89c8c1e)) 
+- Flesh out annotation documentation - ([2b28890](https://github.com/ElaraLang/elara/commit/2b28890969e5d3d31549ad291f5840e607e39b86)) 
 
 ### 🎨 Styling
 
@@ -226,6 +228,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### 🧪 Testing
 
+- *(interpreter)* Add & refactor golden tests - ([4d2513f](https://github.com/ElaraLang/elara/commit/4d2513f49f0c9a6d8c28c246e3eb705bdf8e2c89)) 
 - *(parser)* :white_check_mark: Improve tests of parser and lexer - ([5aad58c](https://github.com/ElaraLang/elara/commit/5aad58cb93b148eadc1fae34a1a5cee92a6ce966)) 
 - *(type-infer)* :white_check_mark: Improve behaviour of applicableTyApp and test cases - ([06ad585](https://github.com/ElaraLang/elara/commit/06ad585f6d548bef257ea10eccd592394bd21e14)) 
 - :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
@@ -247,6 +250,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* :heavy_plus_sign: add rock dependency - ([568d228](https://github.com/ElaraLang/elara/commit/568d2284021d23046bc5a2f538f11dfe5686717c)) 
 - *(nix)* :arrow_up: Update hlint to work with ghc 9.12 extensions - ([198163a](https://github.com/ElaraLang/elara/commit/198163ae3321460c12f3c6323160dd35b6376171)) 
 - *(nix)* Disable ghcid as it causes way too many issues - ([4165493](https://github.com/ElaraLang/elara/commit/41654936c3fd38511fc3dcd6ade10f62e788f025)) 
+- *(tests)* Ensure all modules are in `other-modules` - ([1284e99](https://github.com/ElaraLang/elara/commit/1284e99a1d4febf888e5a6ac13afc6be22436636)) 
 - :arrow_up: Update to GHC 9.10.1 - ([10db81c](https://github.com/ElaraLang/elara/commit/10db81cabb072cfe461638a97b313b10d470a574)) 
 - :building_construction: Make build flags consistent between tests and executables - ([997f2f1](https://github.com/ElaraLang/elara/commit/997f2f1d680e468315c4cf4a29068c0abdee816e)) 
 - :arrow_up: Update `optics` - ([eb35403](https://github.com/ElaraLang/elara/commit/eb3540318dbbd1a33081c34d538d2c360a68adcb)) 
