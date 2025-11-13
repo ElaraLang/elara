@@ -14,7 +14,7 @@ import Elara.AST.Generic.Common (NoFieldValue (..))
 import Elara.AST.Module (Module (Module))
 import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Select (LocatedAST (Typed))
+import Elara.AST.Select (ASTSelector (..), LocatedAST (Typed))
 import Elara.AST.StripLocation
 import Elara.AST.Typed
 import Elara.AST.VarRef (VarRef' (Global, Local), varRefVal)
@@ -240,7 +240,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
     decls <- fmap concat $ for (allEntriesRevTopologically declGraph) $ \decl -> do
         case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
             Value{} -> pure []
-            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations _ kind) -> debugWith ("Type decl: " <+> pretty n) $ do
+            TypeDeclaration n tvs (Located _ (ADT ctors)) (TypeDeclAnnotations kind _) -> debugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
                 let tyCon =
                         TyCon
@@ -273,7 +273,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
                             (tvs ^.. each % unlocated % to mkTypeVar)
                             (CoreDataDecl tyCon (toList ctors''))
                     ]
-            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations _ kind) -> do
+            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations kind _) -> do
                 todo
 
     sccs <- buildModuleSCCs m'
@@ -282,7 +282,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
         sccToCore members
     pure $ CoreModule name (decls <> valueDecls)
 
-mkTypeVar :: Select "TypeVar" 'Typed -> Core.TypeVariable
+mkTypeVar :: Select ASTTypeVar 'Typed -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type

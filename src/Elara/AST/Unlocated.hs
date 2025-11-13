@@ -6,7 +6,7 @@ module Elara.AST.Unlocated where
 import Data.Kind qualified as Kind
 import Elara.AST.Generic
 import Elara.AST.Region (Located)
-import Elara.AST.Select (LocatedAST (..), UnlocatedAST (..))
+import Elara.AST.Select (LocatedAST (..), UnlocatedAST (..), UnlocatedToLocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
 import Elara.Data.Unique (Unique)
 
@@ -20,15 +20,17 @@ type instance ASTLocate' 'UnlocatedShunted = Unlocated
 
 type instance ASTLocate' 'UnlocatedTyped = Unlocated
 
-type instance Select any 'UnlocatedFrontend = Replace 'Frontend 'UnlocatedFrontend (Select any 'Frontend)
+type instance Select any ast = Replace (UnlocatedToLocated ast) ast (Select any (UnlocatedToLocated ast))
 
-type instance Select any 'UnlocatedDesugared = Replace 'Desugared 'UnlocatedDesugared (Select any 'Desugared)
+-- type instance Select any 'UnlocatedFrontend = Replace 'Frontend 'UnlocatedFrontend (Select any 'Frontend)
 
-type instance Select any 'UnlocatedRenamed = Replace 'Renamed 'UnlocatedRenamed (Select any 'Renamed)
+-- type instance Select any 'UnlocatedDesugared = Replace 'Desugared 'UnlocatedDesugared (Select any 'Desugared)
 
-type instance Select any 'UnlocatedShunted = Replace 'Shunted 'UnlocatedShunted (Select any 'Shunted)
+-- type instance Select any 'UnlocatedRenamed = Replace 'Renamed 'UnlocatedRenamed (Select any 'Renamed)
 
-type instance Select any 'UnlocatedTyped = Replace 'Typed 'UnlocatedTyped (Select any 'Typed)
+-- type instance Select any 'UnlocatedShunted = Replace 'Shunted 'UnlocatedShunted (Select any 'Shunted)
+
+-- type instance Select any 'UnlocatedTyped = Replace 'Typed 'UnlocatedTyped (Select any 'Typed)
 
 type family Replace (needle :: LocatedAST) (replacement :: UnlocatedAST) (haystack :: Kind.Type) where
     Replace _ _ (VarRef a) = UnlocatedVarRef a -- This doesn't really belong here but it's easier than putting it elsewhere

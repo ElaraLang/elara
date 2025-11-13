@@ -14,7 +14,7 @@ import Data.Generics.Product hiding (list)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, IOE, (:>))
+import Effectful (Eff, IOE, inject, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
@@ -36,8 +36,11 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
+import Elara.Prim.Rename (primitiveRenameState)
+import Elara.Query (QueryModuleByName, SupportsQuery)
 import Elara.Query qualified
 import Elara.Query.Effects
+import Elara.Query.Errors
 import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
 import Optics (anyOf, filteredBy, traverseOf_)
@@ -68,6 +71,10 @@ type InnerRename r =
     , StructuredDebug :> r
     , Eff.Reader (Maybe (Module 'Desugared)) :> r -- the module we're renaming
     )
+
+instance SupportsQuery QueryModuleByName Renamed where
+    type QuerySpecificEffectsOf QueryModuleByName Renamed = StandardQueryError Renamed
+    query mn = Eff.evalState primitiveRenameState $ inject $ getRenamedModule mn
 
 getRenamedModule ::
     ModuleName ->
@@ -301,7 +308,7 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
     renameDeclarationBody' (Value name val _ ty ann) = scoped $ do
         ty' <- traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType True)) ty
         val' <- renameExpr val
-        let ann' = coerceValueDeclAnnotations ann
+        ann' <- traverseValueDeclAnnotations renameAnnotation ann
         thisModule <- askCurrentModule
         let qualifiedName =
                 sequenceA $
@@ -324,6 +331,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
                     sequenceA $
                         Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
             pure $ TypeDeclaration qualifiedName vars' ty' ann'
+
+renameAnnotation :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => Annotation Desugared -> Eff r (Annotation Renamed)
+renameAnnotation (Annotation name args) = do
+    name' <- qualifyTypeName name
+    args' <- traverseOf (each % _Unwrapped) renameExpr args
+    pure $ Annotation name' args'
 
 renameTypeDeclaration :: _ => ModuleName -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
 renameTypeDeclaration _ (Alias t) = do

@@ -1,95 +1,135 @@
+{-# LANGUAGE TypeFamilyDependencies #-}
 -- Since when was there a warning for orphan type families?
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Elara.AST.Frontend where
 
+import Data.Kind qualified as Kind
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
-import Elara.AST.Select (LocatedAST (Frontend))
+import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Frontend))
 
 -- Generic location and qualification types
 type instance ASTLocate' 'Frontend = Located
 
 type instance ASTQual 'Frontend = MaybeQualified
 
+type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
+    SelectFrontend (ASTType ForValueDecl) = NoFieldValue
+    SelectFrontend (ASTType ForExpr) = Maybe FrontendType
+    SelectFrontend LambdaPattern = [FrontendPattern]
+    SelectFrontend LetPattern = [FrontendPattern]
+    SelectFrontend ASTVarRef = MaybeQualified VarName
+    SelectFrontend ConRef = MaybeQualified TypeName
+    SelectFrontend LetParamName = VarName
+    SelectFrontend InParens = FrontendExpr
+    SelectFrontend List = [FrontendExpr]
+    SelectFrontend Tuple = NonEmpty FrontendExpr
+    SelectFrontend ASTBinaryOperator = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
+    SelectFrontend TypeApplication = FrontendType
+    -- Selections for 'BinaryOperator'
+    SelectFrontend SymOp = MaybeQualified OpName
+    SelectFrontend Infixed = Located (MaybeQualified VarOrConName)
+    -- Selections for 'Pattern'
+    SelectFrontend PatternType = Maybe FrontendType
+    SelectFrontend VarPat = LowerAlphaName
+    SelectFrontend ConPat = MaybeQualified TypeName
+    SelectFrontend ListPattern = [FrontendPattern]
+    SelectFrontend TuplePattern = NonEmpty FrontendPattern
+    SelectFrontend ConsPattern = (FrontendPattern, FrontendPattern)
+    -- Selections for 'DeclarationBody'
+    SelectFrontend (Patterns ForValueDecl) = [FrontendPattern]
+    -- Selections for 'Declaration'
+    SelectFrontend (ASTName ForType) = TypeName
+    SelectFrontend (ASTName ForValueDecl) = VarName
+    -- Selections for 'Type'
+    SelectFrontend ASTTypeVar = LowerAlphaName
+    SelectFrontend TypeKind = NoFieldValue
+    SelectFrontend UserDefinedType = MaybeQualified TypeName
+    SelectFrontend ConstructorName = TypeName
+    SelectFrontend Alias = FrontendType
+    SelectFrontend ADTParam = FrontendType
+    SelectFrontend ValueTypeDef = FrontendType
+    -- SelectFrontend (Annotations ForExpr) = NoFieldValue
+    SelectFrontend AnnotationName = MaybeQualified TypeName
+    SelectFrontend (Annotations _) = [Annotation Frontend]
+    SelectFrontend KindAnnotation = NoFieldValue
+
 -- Selections for 'Expr'
-type instance Select "ExprType" 'Frontend = Maybe FrontendType
 
-type instance Select "LambdaPattern" 'Frontend = [FrontendPattern]
+type instance Select selector 'Frontend = SelectFrontend selector
 
-type instance Select "LetPattern" 'Frontend = [FrontendPattern]
+-- type instance Select LambdaPattern 'Frontend = [FrontendPattern]
 
-type instance Select "VarRef" 'Frontend = MaybeQualified VarName
+-- type instance Select LetPattern 'Frontend = [FrontendPattern]
 
-type instance Select "ConRef" 'Frontend = MaybeQualified TypeName
+-- type instance Select ASTVarRef 'Frontend = MaybeQualified VarName
 
-type instance Select "LetParamName" 'Frontend = VarName
+-- type instance Select ConRef 'Frontend = MaybeQualified TypeName
 
-type instance Select "InParens" 'Frontend = FrontendExpr
+-- type instance Select LetParamName 'Frontend = VarName
 
-type instance Select "List" 'Frontend = [FrontendExpr]
+-- type instance Select InParens 'Frontend = FrontendExpr
 
-type instance Select "Tuple" 'Frontend = NonEmpty FrontendExpr
+-- type instance Select List 'Frontend = [FrontendExpr]
 
-type instance Select "BinaryOperator" 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
+-- type instance Select Tuple 'Frontend = NonEmpty FrontendExpr
 
-type instance Select "TypeApplication" 'Frontend = FrontendType
+-- type instance Select ASTBinaryOperator 'Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
 
--- Selections for 'BinaryOperator'
-type instance Select "SymOp" 'Frontend = MaybeQualified OpName
+-- type instance Select TypeApplication 'Frontend = FrontendType
 
-type instance Select "Infixed" 'Frontend = Located (MaybeQualified VarOrConName)
+-- -- Selections for 'BinaryOperator'
+-- type instance Select SymOp 'Frontend = MaybeQualified OpName
 
--- Selections for 'Pattern'
-type instance Select "PatternType" 'Frontend = Maybe FrontendType
+-- type instance Select Infixed 'Frontend = Located (MaybeQualified VarOrConName)
 
-type instance Select "VarPat" 'Frontend = LowerAlphaName
+-- -- Selections for 'Pattern'
+-- type instance Select PatternType 'Frontend = Maybe FrontendType
+-- type instance Select VarPat 'Frontend = LowerAlphaName
+-- type instance Select ConPat 'Frontend = MaybeQualified TypeName
+-- type instance Select ListPattern 'Frontend = [FrontendPattern]
+-- type instance Select TuplePattern 'Frontend = NonEmpty FrontendPattern
+-- type instance Select ConsPattern 'Frontend = (FrontendPattern, FrontendPattern)
 
-type instance Select "ConPat" 'Frontend = MaybeQualified TypeName
+-- -- Selections for 'DeclarationBody'
+-- type instance Select (Patterns ForValueDecl) 'Frontend = [FrontendPattern]
 
-type instance Select "ListPattern" 'Frontend = [FrontendPattern]
-type instance Select "TuplePattern" 'Frontend = NonEmpty FrontendPattern
+-- type instance Select (ASTType ForExpr) 'Frontend = NoFieldValue
 
-type instance Select "ConsPattern" 'Frontend = (FrontendPattern, FrontendPattern)
+-- type instance Select ValueTypeDef 'Frontend = FrontendType
 
--- Selections for 'DeclarationBody'
-type instance Select "ValuePatterns" 'Frontend = [FrontendPattern]
+-- type instance Select Alias 'Frontend = FrontendType
 
-type instance Select "ValueType" 'Frontend = NoFieldValue
+-- type instance Select ADTParam 'Frontend = FrontendType
 
-type instance Select "ValueTypeDef" 'Frontend = FrontendType
+-- type instance Select (Annotations ForExpr) 'Frontend = NoFieldValue
 
-type instance Select "Alias" 'Frontend = FrontendType
+-- type instance Select (Annotations ForType) 'Frontend = NoFieldValue
 
-type instance Select "ADTParam" 'Frontend = FrontendType
+-- type instance Select KindAnnotation 'Frontend = NoFieldValue
 
-type instance Select "ValueDeclAnnotations" 'Frontend = NoFieldValue
+-- type instance Select InfixDecl 'Frontend = InfixDeclaration 'Frontend
 
-type instance Select "TypeDeclAnnotations" 'Frontend = NoFieldValue
+-- -- Selections for 'Declaration'
+-- -- type instance Select DeclarationName 'Frontend = Name
 
-type instance Select "KindAnnotation" 'Frontend = NoFieldValue
+-- type instance Select AnyName 'Frontend = Name
 
-type instance Select "InfixDecl" 'Frontend = InfixDeclaration 'Frontend
+-- type instance Select (ASTName ForType) 'Frontend = TypeName
 
--- Selections for 'Declaration'
-type instance Select "DeclarationName" 'Frontend = Name
+-- type instance Select (ASTName ForValueDecl) 'Frontend = VarName
 
-type instance Select "AnyName" 'Frontend = Name
+-- -- Selections for 'Type'
+-- type instance Select TypeVar 'Frontend = LowerAlphaName
 
-type instance Select "TypeName" 'Frontend = TypeName
+-- type instance Select TypeKind 'Frontend = NoFieldValue
 
-type instance Select "ValueName" 'Frontend = VarName
+-- type instance Select UserDefinedType 'Frontend = MaybeQualified TypeName
 
--- Selections for 'Type'
-type instance Select "TypeVar" 'Frontend = LowerAlphaName
-
-type instance Select "TypeKind" 'Frontend = NoFieldValue
-
-type instance Select "UserDefinedType" 'Frontend = MaybeQualified TypeName
-
-type instance Select "ConstructorName" 'Frontend = TypeName
+-- type instance Select ConstructorName 'Frontend = TypeName
 
 type FrontendExpr = Expr 'Frontend
 

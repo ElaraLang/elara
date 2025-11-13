@@ -28,6 +28,7 @@ import Elara.Utils (curry3)
 import Optics (traverseOf_)
 import Rock qualified
 import Rock.Memo (MemoQuery (MemoQuery))
+import TODO (todo)
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
@@ -51,10 +52,9 @@ resolvePartialDeclaration ((AllDecl n sr ty e ann)) =
         ( DeclarationBody
             (Located sr (Value n e NoFieldValue (Just ty) ann))
         )
-resolvePartialDeclaration (JustInfix n sr v) = throwError (InfixWithoutDeclaration n sr v)
 
 resolveAnn :: Maybe (ValueDeclAnnotations Desugared) -> ValueDeclAnnotations Desugared
-resolveAnn = fromMaybe (ValueDeclAnnotations Nothing)
+resolveAnn = fromMaybe (ValueDeclAnnotations undefined)
 
 getDesugaredModule ::
     ModuleName ->
@@ -87,31 +87,19 @@ desugarDeclarations mn decls = do
 assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDeclaration, Located a) -> Desugar ()
 assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throwError (PartialNamesNotEqual p1 p2)
 
-resolveDupeInfixes :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
-resolveDupeInfixes (Just a@(ValueDeclAnnotations (Just _))) (Just b@(ValueDeclAnnotations (Just _))) = throwError (DuplicateAnnotations a b)
-resolveDupeInfixes (Just (ValueDeclAnnotations a)) (Just (ValueDeclAnnotations b)) = pure (ValueDeclAnnotations (a <|> b))
-resolveDupeInfixes a b = pure (fromMaybe (ValueDeclAnnotations Nothing) (a <|> b))
+mergeAnnotations :: Maybe (ValueDeclAnnotations Desugared) -> Maybe (ValueDeclAnnotations Desugared) -> Desugar (ValueDeclAnnotations Desugared)
+mergeAnnotations (Just (ValueDeclAnnotations as)) (Just (ValueDeclAnnotations bs)) =
+    pure (ValueDeclAnnotations (as <> bs))
+mergeAnnotations a b = pure (fromMaybe (ValueDeclAnnotations todo) (a <|> b))
 
 mergePartials :: PartialDeclaration -> PartialDeclaration -> Desugar PartialDeclaration
-mergePartials p1@(JustInfix n sr i) p2@(JustDef n' sr' ty Nothing) = do
-    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
-    pure (JustDef n' (sr <> sr') ty (Just i))
-mergePartials p2@(JustDef n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
-    pure (JustDef n' (sr <> sr') ty (Just i))
-mergePartials p1@(JustInfix n sr i) p2@(JustLet n' sr' ty Nothing) = do
-    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
-    pure (JustLet n' (sr <> sr') ty (Just i))
-mergePartials p2@(JustLet n' sr' ty Nothing) p1@(JustInfix n sr i) = do
-    assertPartialNamesEqual (p1, n) (p2, NVarName <$> n')
-    pure (JustLet n' (sr <> sr') ty (Just i))
 mergePartials p1@(JustDef n sr ty mAnn) p2@(JustLet n' sr' e mAnn') = do
     assertPartialNamesEqual (p1, n) (p2, n')
-    ann <- resolveDupeInfixes mAnn mAnn'
+    ann <- mergeAnnotations mAnn mAnn'
     pure (AllDecl n' (sr <> sr') ty e ann)
 mergePartials p1@(JustLet n sr e mAnn) p2@(JustDef n' sr' ty mAnn') = do
     assertPartialNamesEqual (p1, n) (p2, n')
-    ann <- resolveDupeInfixes mAnn mAnn'
+    ann <- mergeAnnotations mAnn mAnn'
     pure (AllDecl n' (sr <> sr') ty e ann)
 mergePartials l r = throwError (DuplicateDeclaration l r)
 
@@ -131,29 +119,32 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
             modifyM (traverseOf partialDeclarations f)
 
         genPartial'' :: FrontendDeclarationBody' -> Desugar PartialDeclaration
-        genPartial'' (InfixDecl (InfixDeclaration n p a)) = do
-            let infix'' = ValueDeclAnnotations (Just (InfixDeclaration n p a))
-
-            pure (JustInfix n wholeDeclRegion infix'')
         genPartial'' (Value n e pats _ valueAnnotations) = do
             exp' <- desugarExpr e
             pats' <- traverse desugarPattern pats
             let body = foldLambda pats' exp'
-            let ann = coerceValueDeclAnnotations @Frontend @Desugared valueAnnotations
+            ann <- traverseValueDeclAnnotations desugarAnnotation valueAnnotations
 
             pure (JustLet n wholeDeclRegion body (Just ann))
-        genPartial'' (ValueTypeDef n ty) = do
+        genPartial'' (ValueTypeDef n ty annotations) = do
             ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
-            pure (JustDef n wholeDeclRegion ty' Nothing)
+            ann <- traverseValueDeclAnnotations desugarAnnotation annotations
+            pure (JustDef n wholeDeclRegion ty' (Just ann))
         genPartial'' (TypeDeclaration n vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
                 traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % _1 % unlocated) desugarType t
                 traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each % _Unwrapped % _1 % unlocated) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
-            let ann = coerceTypeDeclAnnotations @Frontend @Desugared typeAnnotations
+            ann <- traverseTypeDeclAnnotations desugarAnnotation typeAnnotations
             let decl' = TypeDeclaration n vars typeDecl' ann
             let bodyLoc = decl ^. the @"body" % _Unwrapped % sourceRegion
             pure (Immediate (n ^. unlocated % to NTypeName) (DeclarationBody (Located bodyLoc decl')))
+
+desugarAnnotation :: Annotation Frontend -> Desugar (Annotation Desugared)
+desugarAnnotation (Annotation n args) = Annotation n <$> traverse desugarAnnotationArg args
+
+desugarAnnotationArg :: AnnotationArg Frontend -> Desugar (AnnotationArg Desugared)
+desugarAnnotationArg (AnnotationArg e) = AnnotationArg <$> desugarExpr e
 
 desugarType :: FrontendType' -> Desugar DesugaredType'
 desugarType x = pure (unsafeCoerce x)

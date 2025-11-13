@@ -24,6 +24,11 @@ type ConsMinimumQueryEffects :: [Effect] -> [Effect]
 type ConsMinimumQueryEffects es =
     Memoise ': Concurrent ': es
 
+type HasMinimumQueryEffects es =
+    ( Memoise :> es
+    , Concurrent :> es
+    )
+
 type StandardQueryEffects = ConsQueryEffects '[]
 
 -- | Standard effects that almost every query will use

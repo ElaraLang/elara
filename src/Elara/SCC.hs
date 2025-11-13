@@ -12,23 +12,27 @@ import Elara.AST.Generic.Common
 import Elara.AST.Generic.Types
 import Elara.AST.Name
 import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.AST.VarRef
 import Elara.Error (runErrorOrReport)
+import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.SCC.Type
+import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
 import Optics
 import Rock qualified
 
 runFreeVarsQuery ::
+    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     Qualified VarName ->
     Eff
         (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
         (HashSet (Qualified VarName))
 runFreeVarsQuery name = do
-    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.ShuntedDeclarationByName (NVarName <$> name))
+    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
 
     let body = declaration ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated
 

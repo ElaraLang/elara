@@ -1,6 +1,7 @@
 module Elara.Shunt.Error where
 
 import Elara.AST.Generic.Types
+import Elara.AST.Name
 import Elara.AST.Region (HasSourceRegion (sourceRegion), sourceRegionToDiagnosePosition)
 import Elara.AST.Renamed (RenamedBinaryOperator, RenamedDeclarationBody)
 import Elara.Data.Pretty
@@ -11,6 +12,7 @@ import Error.Diagnose
 
 data ShuntError
     = SamePrecedenceError !(RenamedBinaryOperator, OpInfo) !(RenamedBinaryOperator, OpInfo)
+    | UnknownOperator !Name !ModuleName
     deriving (Show)
 
 instance Exception ShuntError
@@ -30,7 +32,7 @@ instance ReportableError ShuntError where
 
 data ShuntWarning
     = UnknownPrecedence OpTable RenamedDeclarationBody
-    deriving (Eq, Ord, Show)
+    deriving (Show, Eq, Ord)
 
 instance ReportableError ShuntWarning where
     report (UnknownPrecedence opTable lOperator) = do

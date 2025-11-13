@@ -68,6 +68,19 @@ primitiveVars = [fetchPrimitiveName]
 primitiveTypes :: [TypeName]
 primitiveTypes = [stringName, charName, intName, consName]
 
+fixityAnnotationName :: Qualified TypeName
+fixityAnnotationName = mkPrimQual (TypeName "Fixity")
+
+associativityAnnotationName :: Qualified TypeName
+associativityAnnotationName = mkPrimQual (TypeName "Associativity")
+
+leftAssociativeAnnotationName :: Qualified TypeName
+leftAssociativeAnnotationName = mkPrimQual (TypeName "LeftAssociative")
+rightAssociativeAnnotationName :: Qualified TypeName
+rightAssociativeAnnotationName = mkPrimQual (TypeName "RightAssociative")
+nonAssociativeAnnotationName :: Qualified TypeName
+nonAssociativeAnnotationName = mkPrimQual (TypeName "NonAssociative")
+
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
     -- assume all primitive types are kind Type

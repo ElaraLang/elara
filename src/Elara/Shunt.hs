@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -7,15 +8,18 @@
 
 module Elara.Shunt where
 
+import Control.Applicative.Combinators (sepBy)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
 import Effectful (Eff, IOE, inject, (:>))
 import Effectful.Error.Static qualified as Eff
+import Effectful.Exception (throwIO)
 import Effectful.State.Static.Local (execState, modify)
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
+import Elara.AST.Introspection
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion, sourceRegion, unlocated, withLocationOf)
@@ -24,19 +28,41 @@ import Elara.AST.Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.AST.VarRef
+import Elara.ConstExpr
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (runErrorOrReport)
-import Elara.Query (Query (..))
+import Elara.Error (ReportableError (report), runErrorOrReport)
+import Elara.Error.Internal
+import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
+import Elara.Query (Query (..), QueryType (..), SupportsQueries, SupportsQuery (..))
 import Elara.Query.Effects
+import Elara.Query.Errors
 import Elara.Rename.Error (RenameError)
+import Elara.Rules.Generic ()
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
 import GHC.Exts (the)
 import Optics (Field4 (_4), Field5 (_5), filtered)
-import Print (debugPretty)
+import Print (debugPretty, showPretty)
 import Rock (Rock, fetch)
+import TODO (todo)
 import Prelude hiding (modify')
+
+defaultPrecedence :: Precedence
+defaultPrecedence = mkPrecedence 9
+
+defaultAssociativity :: Associativity
+defaultAssociativity = LeftAssociative
+
+instance SupportsQuery QueryModuleByName Shunted where
+    type QuerySpecificEffectsOf QueryModuleByName Shunted = StandardQueryError Shunted
+    query mn = do
+        (mod, warnings) <- Eff.runWriter $ inject $ runGetShuntedModuleQuery mn
+        traverse_ report warnings
+        pure mod
+
+instance IntrospectableAnnotations Shunted where
+    getAnnotations a = a
 
 -- effects the shunter itself needs
 type ShuntEffects es =
@@ -72,48 +98,38 @@ runGetShuntedModuleQuery mn = do
   where
     opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
-runShuntedDeclarationByNameQuery :: Qualified Name -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) (Declaration 'Shunted)
-runShuntedDeclarationByNameQuery (Qualified name modName) = do
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule modName
+runGetOpInfoQuery ::
+    SupportsQueries [QueryDeclarationByName, DeclarationAnnotations, QueryConstructorDeclaration] Renamed =>
+    IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
+runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
+    fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, fixityAnnotationName)
+    assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, associativityAnnotationName)
+    -- It may be intuitive that if we received an ill-formed annotation, eg
+    -- @#Fixity "f"@ that we would throw an error
+    -- however, we instead choose to just ignore the annotation
+    -- and let the type checker handle this later on
+    -- otherwise it we have to do a "mini-type-check" here to validate the annotation
+    fixity <- case fixityAnns of
+        [] -> pure Nothing
+        [Annotation _ [fixityArg]] -> do
+            i <- interpretAnnotationArg fixityArg
+            case i of
+                ConstInt n | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
+                _invalid -> pure Nothing
+        _invalid -> pure Nothing
 
-    let matchingBodies =
-            mod
-                ^.. _Unwrapped
-                % unlocated
-                % field' @"declarations"
-                % each
-                % filtered (\b -> b ^. declarationName % unlocated == name)
+    assoc <- case assocAnns of
+        [] -> pure Nothing
+        [Annotation lAssoc _] | lAssoc ^. unlocated == leftAssociativeAnnotationName -> pure $ Just LeftAssociative
+        [Annotation rAssoc _] | rAssoc ^. unlocated == rightAssociativeAnnotationName -> pure $ Just RightAssociative
+        [Annotation nAssoc _] | nAssoc ^. unlocated == nonAssociativeAnnotationName -> pure $ Just NonAssociative
+        _invalid -> pure Nothing
 
-    case matchingBodies of
-        [body] -> pure body
-        _ -> error "ambigious"
-
-runGetOpInfoQuery :: IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
-runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
-    -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
-    mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule modName
-    let matchingBodies =
-            mod
-                ^.. _Unwrapped
-                % unlocated
-                % field' @"declarations"
-                % each
-                % _Unwrapped
-                % unlocated
-                % field' @"body"
-                % filtered (\b -> b ^. declarationBodyName % unlocated == name)
-
-        valueInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"Value" % _5 % field' @"infixValueDecl"
-        typeInfixDecls = matchingBodies ^.. each % _Unwrapped % unlocated % _Ctor' @"TypeDeclaration" % _4 % field' @"infixTypeDecl"
-
-        infixDecls = (valueInfixDecls <> typeInfixDecls) ^.. each % _Just
-
-    case infixDecls of
-        [] -> do
-            Eff.tell $ one (UnknownPrecedence mempty (the matchingBodies))
-            pure Nothing
-        [i] -> pure $ Just $ infixDeclToOpInfo i
-        _tooMany -> error "ambiguous"
+    pure $ case (fixity, assoc) of
+        (Just f, Just a) -> Just (OpInfo f a)
+        (Nothing, Just a) -> Just (OpInfo defaultPrecedence a)
+        (Just f, Nothing) -> Just (OpInfo f defaultAssociativity)
+        (Nothing, Nothing) -> Just (OpInfo defaultPrecedence defaultAssociativity)
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 
@@ -127,14 +143,12 @@ createOpTable = execState mempty . traverseModule_ addDeclsToOpTable'
 
 addDeclsToOpTable' :: _ => Declaration Renamed -> Eff r ()
 addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations (Just fixity))} ->
-        let nameRef = Global $ IgnoreLocation (NVarName <<$>> _valueName)
-         in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
-    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations Nothing)} -> do
+    Value{_valueName, _valueAnnotations = (ValueDeclAnnotations a)} -> do
         debugPretty $ "No fixity for value declaration: " <> pretty _valueName
-    TypeDeclaration name _ _ (TypeDeclAnnotations (Just fixity) NoFieldValue) ->
-        let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
-         in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+    TypeDeclaration name _ _ (TypeDeclAnnotations NoFieldValue a) ->
+        -- let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
+        --  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
+        todo
     _ -> pass
 
 -- Convert operator to its qualified name for lookup
@@ -198,7 +212,7 @@ fixOperators = reassoc
                     pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Rock Elara.Query.Query]) (Maybe OpInfo)
+opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
 opInfo operator = do
     let name = opNameOf operator
     Rock.fetch (Elara.Query.GetOpInfo name)
@@ -210,12 +224,12 @@ type ShuntPipelineEffects es =
     , Rock Elara.Query.Query :> es
     )
 
-infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
-infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
-  where
-    convAssoc LeftAssoc = LeftAssociative
-    convAssoc RightAssoc = RightAssociative
-    convAssoc NonAssoc = NonAssociative
+-- infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
+-- infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
+--   where
+--     convAssoc LeftAssoc = LeftAssociative
+--     convAssoc RightAssoc = RightAssociative
+--     convAssoc NonAssoc = NonAssociative
 
 shuntWith ::
     forall es.
@@ -253,9 +267,15 @@ shuntDeclarationBody opL (DeclarationBody rdb) = DeclarationBody <$> traverseOf 
     go (Value name e _ ty ann) = do
         shunted <- let ?lookup = opL in fixExpr e
         let ty' = fmap coerceType ty
-        pure (Value name shunted NoFieldValue ty' (coerceValueDeclAnnotations ann))
+        ann <- traverseValueDeclAnnotations (let ?lookup = opL in shuntAnnotation) ann
+        pure (Value name shunted NoFieldValue ty' ann)
     go (TypeDeclaration name vars ty ann) =
         pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+
+shuntAnnotation :: (ShuntPipelineEffects r, (?lookup :: OpLookup r)) => Annotation Renamed -> Eff r (Annotation Shunted)
+shuntAnnotation (Annotation name args) = do
+    args' <- traverseOf (each % _Unwrapped) fixExpr args
+    pure $ Annotation name args'
 
 fixExpr :: ShuntPipelineEffects r => (?lookup :: OpLookup r) => RenamedExpr -> Eff r ShuntedExpr
 fixExpr e = do

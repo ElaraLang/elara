@@ -1,11 +1,10 @@
 -- | Types used by the type inference engine
 module Elara.TypeInfer.Type where
 
-import Control.Lens (cons)
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
 import Elara.AST.Name
-import Elara.AST.Region (SourceRegion, generatedSourceRegion, spanningRegion)
+import Elara.AST.Region (SourceRegion, generatedSourceRegion)
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.TypeInfer.Unique
@@ -149,18 +148,20 @@ substitution = Substitution . one
 class Substitutable (a :: Kind.Type -> Kind.Type) loc where
     substitute :: UniqueTyVar -> Monotype loc -> a loc -> a loc
 
+    -- | Apply an entire substitution to a type, recursively until a fixed point is reached
     substituteAll :: Eq (a loc) => Substitution loc -> a loc -> a loc
-    substituteAll (Substitution s) a =
-        let subst = foldr (uncurry substitute) a (Map.toList s)
-         in if subst == a then a else substituteAll (Substitution s) subst
 
--- instance Substitutable Type where
---     substitute tv t (Forall tv' c m) = Forall tv' (substitute tv t c) (substitute tv t m)
+-- we keep this default impl disabled by default to encourage writing custom efficient implementations
+-- substituteAll (Substitution s) a = let subst = foldr (uncurry substitute) a (Map.toList s) in if subst == a then a else defaultSubstituteAll (Substitution s) subst -- recursively apply until we reach a fixed point
 
-instance Substitutable Constraint loc where
+instance Eq loc => Substitutable Constraint loc where
     substitute _ _ (EmptyConstraint l) = EmptyConstraint l
     substitute tv t (Conjunction l c1 c2) = Conjunction l (substitute tv t c1) (substitute tv t c2)
     substitute tv t (Equality l m1 m2) = Equality l (substitute tv t m1) (substitute tv t m2)
+
+    substituteAll _ (EmptyConstraint l) = EmptyConstraint l
+    substituteAll s (Conjunction l c1 c2) = Conjunction l (substituteAll s c1) (substituteAll s c2)
+    substituteAll s (Equality l m1 m2) = Equality l (substituteAll s m1) (substituteAll s m2)
 
 instance Substitutable Monotype loc where
     substitute _ _ (TypeVar loc (SkolemVar v)) = TypeVar loc (SkolemVar v)
@@ -169,6 +170,18 @@ instance Substitutable Monotype loc where
     substitute _ _ (Scalar loc s) = Scalar loc s
     substitute tv t (TypeConstructor loc dc ts) = TypeConstructor loc dc (substitute tv t <$> ts)
     substitute tv t (Function loc t1 t2) = Function loc (substitute tv t t1) (substitute tv t t2)
+
+    substituteAll (Substitution m) t@(TypeVar loc tv) = case tv of
+        SkolemVar v -> TypeVar loc (SkolemVar v) -- skolems are rigid
+        UnificationVar v ->
+            -- make sure we recursively apply substitutions until we reach a fixed point
+            let r = case Map.lookup v m of
+                    Just t' -> t'
+                    Nothing -> TypeVar loc (UnificationVar v)
+             in if r == t then t else substituteAll (Substitution m) r
+    substituteAll _ (Scalar loc sc) = Scalar loc sc
+    substituteAll s (TypeConstructor loc dc ts) = TypeConstructor loc dc (substituteAll s <$> ts)
+    substituteAll s (Function loc t1 t2) = Function loc (substituteAll s t1) (substituteAll s t2)
 
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)

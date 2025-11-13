@@ -40,9 +40,11 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
-import Elara.Query (Query (..))
+import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
+import Elara.Rules.Generic ()
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
+import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
@@ -50,12 +52,13 @@ import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), TypeEnvironment
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Type (..), TypeVariable (..), monotypeLoc, typeLoc)
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Optics (forOf_)
 import Relude.Extra (fmapToSnd)
 import Rock qualified
 import TODO
+import Unsafe.Coerce (unsafeCoerce)
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r
@@ -68,6 +71,7 @@ type InferPipelineEffects r =
     )
 
 runGetTypeCheckedModuleQuery ::
+    SupportsQuery QueryModuleByName Shunted =>
     ModuleName ->
     Eff
         ( ConsQueryEffects
@@ -76,13 +80,14 @@ runGetTypeCheckedModuleQuery ::
         )
         (Module 'Typed)
 runGetTypeCheckedModuleQuery mn = do
-    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule mn
+    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
     r <- runInferEffects $ evalState initialInferState (inferModule shunted)
     pure (fst r)
 
 runTypeOfQuery ::
     forall loc.
     loc ~ SourceRegion =>
+    (SupportsQuery QueryRequiredDeclarationByName Shunted, SupportsQuery QueryModuleByName Shunted) =>
     TypeEnvKey loc ->
     Eff
         ( ConsQueryEffects
@@ -110,17 +115,17 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
                                     -- Read from the environment (now populated) without re-querying
                                     lookupType (DataConKey con)
 
-runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
+runKindOfQuery :: SupportsQuery QueryModuleByName Shunted => Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
     seedConstructorsFor (qualifier qtn)
 
     -- in theory it should be here now...
     lookupKindVarMaybe (Left qtn)
 
-seedConstructorsFor :: _ => ModuleName -> Eff r ()
+seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, _) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedModule moduleName
+    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
     let declarations =
             mod
                 ^.. _Unwrapped
@@ -184,6 +189,7 @@ runInferEffects =
         . inject
 
 runInferSCCQuery ::
+    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     SCCKey ->
     Eff
         (ConsQueryEffects (Rock.Rock Query : r))
@@ -191,18 +197,18 @@ runInferSCCQuery ::
 runInferSCCQuery key = do
     fst <$> runInferEffects (evalState initialInferState $ inferSCC (sccKeyToSCC key))
 
-seedSCC :: _ => SCC (Qualified VarName) -> Eff r ()
+seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r ()
 seedSCC scc = do
     for_ scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         seedDeclaration decl
 
-inferSCC :: _ => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
+inferSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     debug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ShuntedDeclarationByName (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         inferred <- inferDeclarationScheme decl
         pure (component, inferred)
 
@@ -212,7 +218,7 @@ runTypeCheckedExprQuery :: Qualified VarName -> Eff (ConsQueryEffects (Rock.Rock
 runTypeCheckedExprQuery name = debugWithResult ("runTypeCheckedExprQuery: " <> pretty name) $ do
     mod <- Rock.fetch $ TypeCheckedModule (qualifier name)
     let decls = mod ^. _Unwrapped % unlocated % field' @"declarations"
-    debug $ "Declarations in module:" <+> pretty decls
+    -- debug $ "Declarations in module:" <+> pretty decls
     case find
         (\(Declaration ld) -> (ld ^. unlocated % field' @"body" % _Unwrapped % unlocated) ^? _Ctor' @"Value" % _1 % unlocated == Just name)
         decls of
@@ -293,7 +299,8 @@ inferDeclaration (Declaration ld) = do
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
-            pure (Value name typedExpr NoFieldValue (Polytype polytype) (Generic.coerceValueDeclAnnotations annotations))
+            annotations <- Generic.traverseValueDeclAnnotations inferAnnotation annotations
+            pure (Value name typedExpr NoFieldValue (Polytype polytype) annotations)
         TypeDeclaration name tyVars body anns -> do
             (kind, decl') <- inferKind (name ^. unlocated) tyVars (body ^. unlocated)
             case decl' of
@@ -314,13 +321,15 @@ inferDeclaration (Declaration ld) = do
                             pure (ctorName, t')
 
                     ctors' <- traverse inferCtor ctors
-                    let ann' =
-                            Generic.TypeDeclAnnotations
-                                { infixTypeDecl =
-                                    Generic.coerceInfixDeclaration
-                                        <$> anns.infixTypeDecl
-                                , kindAnn = kind
-                                }
+                    ann' <- case anns of
+                        Generic.TypeDeclAnnotations kind_ anns' -> do
+                            anns <- traverse inferAnnotation anns'
+                            pure
+                                Generic.TypeDeclAnnotations
+                                    { kindAnn = kind
+                                    , typeDeclAnnotations = anns
+                                    }
+
                     pure
                         ( TypeDeclaration
                             name
@@ -331,6 +340,29 @@ inferDeclaration (Declaration ld) = do
 
 createTypeVar :: Located (Unique LowerAlphaName) -> UniqueTyVar
 createTypeVar (Located _ u) = fmap (Just . nameText) u
+
+inferAnnotation :: _ => Generic.Annotation Shunted -> Eff r (Generic.Annotation Typed)
+inferAnnotation (Generic.Annotation name args) = do
+    args' <-
+        traverse
+            inferAnnotationArg
+            args
+    pure (Generic.Annotation name args')
+
+inferAnnotationArg ::
+    _ =>
+    Generic.AnnotationArg Shunted ->
+    Eff r (Generic.AnnotationArg Typed)
+inferAnnotationArg (Generic.AnnotationArg e) = do
+    -- We don't have an expected type for annotation arguments since they are unnamed
+    ((typedExpr, t), constraint) <- runWriter $ generateConstraints e
+
+    (finalConstraint, subst) <- solveConstraint mempty (fuv t <> fuv constraint) constraint
+    case finalConstraint of
+        EmptyConstraint _ -> pass
+        _ -> throwError $ UnresolvedConstraint undefined finalConstraint
+
+    pure $ Generic.AnnotationArg (getExpr (substituteAll subst (SubstitutableExpr typedExpr)))
 
 inferValue ::
     forall r.
@@ -383,7 +415,8 @@ skolemise = \case
     Polytype (Forall loc tyVars _ t) -> do
         -- Build a substitution mapping each quantified variable α to a rigid skolem #α
         let pairs = zip (fmap (view typed) tyVars) (TypeVar loc . SkolemVar <$> tyVars)
-        pure $ foldl' (\acc (tv, rep) -> substitute tv rep acc) t pairs
+            subst = Substitution $ fromList @(Map _ _) pairs
+        pure $ substituteAll subst t
 
 newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
 
@@ -395,6 +428,18 @@ instance Substitutable SubstitutableExpr SourceRegion where
                 over
                     (gplate @(Monotype SourceRegion) @TypedExpr')
                     (substitute tv t)
+                    (e ^. unlocated)
+
+        SubstitutableExpr (Generic.Expr (e' <$ e, exprType'))
+
+    -- overridden default for performance (provides a > 300% speedup by avoiding repeated traversals over potentially large expressions)
+    substituteAll s (SubstitutableExpr (Generic.Expr (e, exprType))) = do
+        let exprType' = substituteAll s exprType
+        let e' =
+                -- recursively apply subst to the children
+                over
+                    (gplate @(Monotype SourceRegion) @TypedExpr')
+                    (substituteAll s)
                     (e ^. unlocated)
 
         SubstitutableExpr (Generic.Expr (e' <$ e, exprType'))

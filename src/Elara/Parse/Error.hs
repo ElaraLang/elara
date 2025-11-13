@@ -9,6 +9,7 @@ module Elara.Parse.Error where
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
+import Elara.AST.Frontend (FrontendExpr)
 import Elara.AST.Name (MaybeQualified, VarName)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
@@ -18,6 +19,7 @@ import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Stream (TokenStream)
 import Error.Diagnose
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
+import TODO (todo)
 import Text.Megaparsec (unPos)
 import Text.Megaparsec qualified as MP
 import Text.Megaparsec.Error
@@ -28,6 +30,7 @@ data ElaraParseError
     | EmptyRecord SourceRegion
     | EmptyLambda SourceRegion
     | InfixPrecTooHigh (Located Integer)
+    | InvalidConstantExpression {wholeExpr :: FrontendExpr, offendingSection :: FrontendExpr}
     deriving (Eq, Show, Ord)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]
@@ -35,6 +38,7 @@ parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
+parseErrorSources (InvalidConstantExpression a b) = [todo]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =

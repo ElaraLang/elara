@@ -48,6 +48,8 @@ data Token
       TokenDoubleRightArrow
     | -- | @
       TokenAt
+    | -- | #
+      TokenHash
     | -- | `
       TokenBacktick
     | TokenInt Integer
@@ -78,9 +80,6 @@ data Token
     | TokenDeriving
     | TokenMatch
     | TokenWith
-    | TokenInfixL
-    | TokenInfixR
-    | TokenInfix
     | -- | Variable Identifiers
       TokenVariableIdentifier Text
     | TokenConstructorIdentifier Text
@@ -117,6 +116,7 @@ tokenRepr = \case
     TokenRightArrow -> "->"
     TokenDoubleRightArrow -> "=>"
     TokenAt -> "@"
+    TokenHash -> "#"
     TokenBacktick -> "`"
     TokenInt i -> show i
     TokenFloat f -> show f
@@ -145,9 +145,6 @@ tokenRepr = \case
     TokenDeriving -> "deriving"
     TokenMatch -> "match"
     TokenWith -> "with"
-    TokenInfixL -> "infixl"
-    TokenInfixR -> "infixr"
-    TokenInfix -> "infix"
     TokenVariableIdentifier i -> i
     TokenConstructorIdentifier i -> i
     TokenOperatorIdentifier i -> i
@@ -206,7 +203,7 @@ tokenEndsExpr = \case
     TokenDoubleColon -> False
     TokenDot -> False
     TokenIndent -> False
-    -- important: decent does end an expression because it closes a block
+    -- important: dedent does end an expression because it closes a block
     TokenDedent -> True
     -- everything else ends an expression:
     -- identifiers (var/ctor/qualified), literals, keywords, closers, LINESEP, EOF, etc.

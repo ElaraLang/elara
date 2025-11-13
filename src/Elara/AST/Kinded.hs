@@ -8,7 +8,7 @@ module Elara.AST.Kinded where
 import Elara.AST.Generic
 import Elara.AST.Name (Qualified)
 import Elara.AST.Region (Located (..))
-import Elara.AST.Select (LocatedAST (Kinded, MidKinded, Shunted))
+import Elara.AST.Select (ASTSelector (..), LocatedAST (Kinded, MidKinded, Shunted))
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Unique (UniqueId)
 
@@ -25,15 +25,15 @@ type instance Select x 'Kinded = ReplaceKinded x (Select x 'MidKinded)
 type instance Select x 'MidKinded = ReplaceMidKinded x (Select x 'Shunted)
 
 type family ReplaceKinded x r where
-    ReplaceKinded "KindAnnotation" r = ElaraKind
-    ReplaceKinded "TypeKind" r = ElaraKind
-    ReplaceKinded "ADTParam" r = KindedType
-    ReplaceKinded "Alias" r = KindedType
+    ReplaceKinded KindAnnotation r = ElaraKind
+    ReplaceKinded TypeKind r = ElaraKind
+    ReplaceKinded ADTParam r = KindedType
+    ReplaceKinded Alias r = KindedType
     ReplaceKinded x r = r
 
 type family ReplaceMidKinded x r where
-    ReplaceMidKinded "TypeKind" r = UniqueId
-    ReplaceMidKinded "ADTParam" r = MidKindedType
+    ReplaceMidKinded TypeKind r = UniqueId
+    ReplaceMidKinded ADTParam r = MidKindedType
     ReplaceMidKinded x r = r
 
 type KindedTypeDeclaration = TypeDeclaration 'Kinded
