@@ -14,7 +14,7 @@ import Data.Generics.Product hiding (list)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, IOE, (:>))
+import Effectful (Eff, IOE, inject, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
@@ -36,8 +36,11 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
+import Elara.Prim.Rename (primitiveRenameState)
+import Elara.Query (QueryModuleByName, SupportsQuery)
 import Elara.Query qualified
 import Elara.Query.Effects
+import Elara.Query.Errors
 import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
 import Optics (anyOf, filteredBy, traverseOf_)
@@ -68,6 +71,10 @@ type InnerRename r =
     , StructuredDebug :> r
     , Eff.Reader (Maybe (Module 'Desugared)) :> r -- the module we're renaming
     )
+
+instance SupportsQuery QueryModuleByName Renamed where
+    type QuerySpecificEffectsOf QueryModuleByName Renamed = StandardQueryError Renamed
+    query mn = Eff.evalState primitiveRenameState $ inject $ getRenamedModule mn
 
 getRenamedModule ::
     ModuleName ->

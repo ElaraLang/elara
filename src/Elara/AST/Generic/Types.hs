@@ -312,7 +312,11 @@ class RUnlocate ast where
         a
     rUnlocate = view (rUnlocated @_ @ast @a)
 
-    rUnlocated :: forall a. CleanupLocated (Located a) ~ Located a => Getter (ASTLocate ast a) a
+    rUnlocated ::
+        forall a.
+        CleanupLocated (Located a)
+            ~ Located a =>
+        Getter (ASTLocate ast a) a
 
     fmapUnlocated ::
         forall a b.

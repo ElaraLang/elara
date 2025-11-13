@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeData #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
@@ -24,10 +25,12 @@ import Elara.Query.TH
 import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
+import Data.Kind (Constraint)
 import Data.Typeable (eqT, typeRep)
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local
-import Elara.AST.Generic (Declaration)
+import Elara.AST.Generic (Annotation, Declaration, Select)
+import Elara.AST.Introspection
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion)
@@ -46,7 +49,9 @@ import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
+import Elara.Query.Class
 import Elara.Query.Effects
+import Elara.Query.Errors
 import Elara.ReadFile (FileContents)
 import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
@@ -58,11 +63,14 @@ import Elara.TypeInfer.Type (Polytype, Type)
 import Rock (Rock)
 import Rock.Memo (HasMemoiseE (..))
 
-{- | Appends 'Rock' to a list of effects.
-  This type mainly exists to avoid a cyclic import between this module and 'Elara.Query.Effects'
--}
 type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
+
+{- | The effects required to run a specific query
+| This should probably be moved to the 'SupportsQuery' class as an associated type
+-}
+type family QueryEffectsOf (q :: QueryType) ast = es where
+    QueryEffectsOf q ast = WithRock (ConsQueryEffects (QuerySpecificEffectsOf q ast))
 
 data Query (es :: [Effect]) a where
     -- \* Input Queries
@@ -92,6 +100,7 @@ data Query (es :: [Effect]) a where
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module 'Desugared)
     RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module 'Renamed)
+    -- | Lookup a module by name
     ModuleByName ::
         forall (ast :: LocatedAST).
         ( Typeable ast
@@ -99,6 +108,7 @@ data Query (es :: [Effect]) a where
         , HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)
         ) =>
         ModuleName -> Query (QueryEffectsOf QueryModuleByName ast) (QueryReturnTypeOf QueryModuleByName ast)
+    --  | Lookup a declaration by name, which may not exist
     DeclarationByName ::
         forall (ast :: LocatedAST).
         ( Typeable ast
@@ -108,6 +118,7 @@ data Query (es :: [Effect]) a where
         Query
             (QueryEffectsOf QueryDeclarationByName ast)
             (QueryReturnTypeOf QueryDeclarationByName ast)
+    --  | Lookup a declaration by name, which must exist, throwing an 'InternalError' if not found
     RequiredDeclarationByName ::
         forall (ast :: LocatedAST).
         ( Typeable ast
@@ -117,6 +128,26 @@ data Query (es :: [Effect]) a where
         Query
             (QueryEffectsOf QueryRequiredDeclarationByName ast)
             (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
+    -- | Looks up the declaration for a data constructor
+    ConstructorDeclaration ::
+        forall (ast :: LocatedAST).
+        (Typeable ast, Ord (Select ConRef ast), Hashable (Select ConRef ast), SupportsQuery QueryConstructorDeclaration ast) =>
+        QueryArgsOf QueryConstructorDeclaration ast ->
+        Query (QueryEffectsOf QueryConstructorDeclaration ast) (QueryReturnTypeOf QueryConstructorDeclaration ast)
+    DeclarationAnnotations ::
+        forall (ast :: LocatedAST).
+        (Typeable ast, SupportsQuery DeclarationAnnotations ast) =>
+        QueryArgsOf QueryDeclarationByName ast ->
+        Query (QueryEffectsOf DeclarationAnnotations ast) (QueryReturnTypeOf DeclarationAnnotations ast)
+    DeclarationAnnotationsOfType ::
+        forall (ast :: LocatedAST).
+        ( Typeable ast
+        , SupportsQuery DeclarationAnnotationsOfType ast
+        ) =>
+        QueryArgsOf DeclarationAnnotationsOfType ast ->
+        Query
+            (QueryEffectsOf DeclarationAnnotations ast)
+            (QueryReturnTypeOf DeclarationAnnotations ast)
     -- \* Shunting Queries
     GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
@@ -147,26 +178,29 @@ type data QueryType
     = QueryRequiredDeclarationByName
     | QueryDeclarationByName
     | QueryModuleByName
-
--- | The effects required to run a specific query
-type family QueryEffectsOf (q :: QueryType) ast = es where
-    QueryEffectsOf QueryDeclarationByName Desugared = WithRock (ConsQueryEffects '[Error DesugarError])
-    QueryEffectsOf QueryDeclarationByName Renamed = WithRock (ConsQueryEffects '[Error RenameError])
-    QueryEffectsOf QueryDeclarationByName Shunted = WithRock (ConsQueryEffects '[Error ShuntError])
-    QueryEffectsOf QueryRequiredDeclarationByName ast = QueryEffectsOf QueryDeclarationByName ast
-    QueryEffectsOf QueryModuleByName Desugared = WithRock (ConsQueryEffects '[Error DesugarError])
-    QueryEffectsOf QueryModuleByName Renamed = WithRock (ConsQueryEffects '[Error RenameError])
-    QueryEffectsOf QueryModuleByName Shunted = WithRock (ConsQueryEffects '[Error ShuntError])
+    | QueryConstructorDeclaration
+    | DeclarationAnnotations
+    | DeclarationAnnotationsOfType
 
 type family QueryReturnTypeOf (q :: QueryType) ast = r where
     QueryReturnTypeOf QueryDeclarationByName ast = Maybe (Declaration ast)
     QueryReturnTypeOf QueryRequiredDeclarationByName ast = Declaration ast
     QueryReturnTypeOf QueryModuleByName ast = Module ast
+    QueryReturnTypeOf QueryConstructorDeclaration ast = Declaration ast
+    QueryReturnTypeOf DeclarationAnnotations ast = [Annotation ast]
+    QueryReturnTypeOf DeclarationAnnotationsOfType ast = [Annotation ast]
 
 type family QueryArgsOf (q :: QueryType) ast where
     QueryArgsOf QueryDeclarationByName ast = Qualified Name
     QueryArgsOf QueryRequiredDeclarationByName ast = Qualified Name
     QueryArgsOf QueryModuleByName ast = ModuleName
+    QueryArgsOf QueryConstructorDeclaration ast = (Select ConRef ast)
+    QueryArgsOf DeclarationAnnotations ast = Qualified Name
+    -- \| Args are (declaration name, type name)
+    QueryArgsOf DeclarationAnnotationsOfType ast =
+        ( Qualified Name
+        , Qualified TypeName
+        )
 
 class
     ( Typeable ast
@@ -174,11 +208,28 @@ class
     ) =>
     SupportsQuery (q :: QueryType) (ast :: LocatedAST)
     where
-    query :: QueryArgsOf q ast -> Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
+    {- | Effects that are "unique" to this query.
+    Effects included in 'MinimumQueryEffects' should not be included here as they are expected to always be present
+    -}
+    type QuerySpecificEffectsOf q ast :: [Effect]
 
-deriving instance Eq (Query es a)
+    type QuerySpecificEffectsOf q ast = StandardQueryError ast
 
-deriving instance Show (Query es a)
+    query :: HasCallStack => QueryArgsOf q ast -> Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
+
+type family SupportsQueries (qs :: [QueryType]) (ast :: LocatedAST) = (c :: Constraint) where
+    SupportsQueries '[] ast = ()
+    SupportsQueries (q ': qs) ast =
+        ( SupportsQuery q ast
+        , SupportsQueries qs ast
+        )
+
+instance GEq (Query es) => Eq (Query es a) where
+    x == y = case geq x y of
+        Just Refl -> True
+        Nothing -> False
+
+-- deriving instance Show (Select ConRef ast) => Show (Query es a)
 
 $(makeTag ''Query)
 $(makeWithMemoiseE ''Query)
@@ -187,7 +238,6 @@ instance GCompare (Query es) => GEq (Query es) where
     geq x y = case gcompare x y of
         GEQ -> Just Refl
         _ -> Nothing
-deriveGShow ''Query
 instance GCompare (Query es) where
     gcompare a b =
         case compare (tag a) (tag b) of -- first compare tags (i.e. constructors)
@@ -284,14 +334,52 @@ instance GCompare (Query es) where
                             LT -> GLT
                             GT -> GGT
                             EQ -> GLT -- unreachable, but keep totality
-                            -- helper for payloads with Ord
+        sameCtor (ConstructorDeclaration @ast1 c1) (ConstructorDeclaration @ast2 c2) =
+            case eqT @ast1 @ast2 of
+                Just Refl -> ord c1 c2
+                Nothing ->
+                    case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                        LT -> GLT
+                        GT -> GGT
+                        EQ -> GLT -- unreachable, but keep totality
+        sameCtor (DeclarationAnnotations @ast1 n1) (DeclarationAnnotations @ast2 n2) =
+            case compare n1 n2 of
+                LT -> GLT
+                GT -> GGT
+                EQ -> case eqT @ast1 @ast2 of
+                    Just Refl -> GEQ
+                    Nothing ->
+                        case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                            LT -> GLT
+                            GT -> GGT
+                            EQ -> GLT -- unreachable, but keep totality
+        sameCtor (DeclarationAnnotationsOfType @ast1 (n1, a1)) (DeclarationAnnotationsOfType @ast2 (n2, a2)) =
+            compareThen
+                (n1, a1)
+                (n2, a2)
+                ( case eqT @ast1 @ast2 of
+                    Just Refl -> GEQ
+                    Nothing ->
+                        case compare (typeRep (Proxy @ast1)) (typeRep (Proxy @ast2)) of
+                            LT -> GLT
+                            GT -> GGT
+                            EQ -> GLT -- unreachable, but keep totality
+                )
+
+        compareThen a b f = case compare a b of
+            LT -> GLT
+            GT -> GGT
+            EQ -> f
+        --  helper for payloads with Ord
         ord :: Ord v => v -> v -> GOrdering a a
+
         ord x y = case compare x y of
             LT -> GLT
             GT -> GGT
             EQ -> GEQ
 
-instance Hashable (Query es a) where
+-- ordAST :: forall ast1 -> forall ast2 -> GOrdering a a
+instance Eq (Query es a) => Hashable (Query es a) where
     hashWithSalt salt q = case q of
         GetCompilerSettings -> h ()
         InputFiles -> h ()
@@ -305,6 +393,9 @@ instance Hashable (Query es a) where
         DeclarationByName @ast name -> h (name, typeRep (Proxy @ast))
         RequiredDeclarationByName @ast name -> h (name, typeRep (Proxy @ast))
         ModuleByName @ast mn -> h (mn, typeRep (Proxy @ast))
+        ConstructorDeclaration @ast conRef -> h (conRef, typeRep (Proxy @ast))
+        DeclarationAnnotations @ast name -> h (name, typeRep (Proxy @ast))
+        DeclarationAnnotationsOfType @ast (name, annName) -> h (name, annName, typeRep (Proxy @ast))
         GetOpInfo name -> h name
         GetOpTableIn mn -> h mn
         FreeVarsOf v -> h v
@@ -325,7 +416,7 @@ instance Hashable (Query es a) where
         TypeCheckedExpr qn -> h qn
       where
         t = tagQuery q
-        h :: Hashable b => b -> Int
+        h :: forall b. Hashable b => b -> Int
         h payload = hash t `hashWithSalt` payload `hashWithSalt` salt
 
 instance HasMemoiseE Query where

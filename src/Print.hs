@@ -52,3 +52,6 @@ debugPretty = traceM . toString . prettyToText
 
 debugWithResult :: (Show a1, Show a2) => a1 -> a2 -> a2
 debugWithResult name res = trace (show name <> " -> " <> show res) res
+
+tracePretty :: Pretty a => a -> b -> b
+tracePretty val = trace (toString $ prettyToText val)

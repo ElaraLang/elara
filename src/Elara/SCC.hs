@@ -20,6 +20,7 @@ import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.SCC.Type
+import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
 import Optics
 import Rock qualified

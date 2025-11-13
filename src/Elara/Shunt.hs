@@ -19,6 +19,7 @@ import Effectful.State.Static.Local (execState, modify)
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
+import Elara.AST.Introspection
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion, sourceRegion, unlocated, withLocationOf)
@@ -27,21 +28,41 @@ import Elara.AST.Renamed
 import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.AST.VarRef
+import Elara.ConstExpr
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (runErrorOrReport)
+import Elara.Error (ReportableError (report), runErrorOrReport)
 import Elara.Error.Internal
-import Elara.Query (Query (..), QueryType (..), SupportsQuery)
+import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
+import Elara.Query (Query (..), QueryType (..), SupportsQueries, SupportsQuery (..))
 import Elara.Query.Effects
+import Elara.Query.Errors
 import Elara.Rename.Error (RenameError)
+import Elara.Rules.Generic ()
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
 import GHC.Exts (the)
 import Optics (Field4 (_4), Field5 (_5), filtered)
-import Print (debugPretty)
+import Print (debugPretty, showPretty)
 import Rock (Rock, fetch)
 import TODO (todo)
 import Prelude hiding (modify')
+
+defaultPrecedence :: Precedence
+defaultPrecedence = mkPrecedence 9
+
+defaultAssociativity :: Associativity
+defaultAssociativity = LeftAssociative
+
+instance SupportsQuery QueryModuleByName Shunted where
+    type QuerySpecificEffectsOf QueryModuleByName Shunted = StandardQueryError Shunted
+    query mn = do
+        (mod, warnings) <- Eff.runWriter $ inject $ runGetShuntedModuleQuery mn
+        traverse_ report warnings
+        pure mod
+
+instance IntrospectableAnnotations Shunted where
+    getAnnotations a = a
 
 -- effects the shunter itself needs
 type ShuntEffects es =
@@ -77,26 +98,38 @@ runGetShuntedModuleQuery mn = do
   where
     opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
-runGetOpInfoQuery :: SupportsQuery QueryDeclarationByName Renamed => IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
-runGetOpInfoQuery (Global (IgnoreLocation (Located _ (Qualified name modName)))) = do
-    -- I would love to be able to use ShuntedDeclarationByName but it will recurse forever :(
+runGetOpInfoQuery ::
+    SupportsQueries [QueryDeclarationByName, DeclarationAnnotations, QueryConstructorDeclaration] Renamed =>
+    IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
+runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
+    fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, fixityAnnotationName)
+    assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, associativityAnnotationName)
+    -- It may be intuitive that if we received an ill-formed annotation, eg
+    -- @#Fixity "f"@ that we would throw an error
+    -- however, we instead choose to just ignore the annotation
+    -- and let the type checker handle this later on
+    -- otherwise it we have to do a "mini-type-check" here to validate the annotation
+    fixity <- case fixityAnns of
+        [] -> pure Nothing
+        [Annotation _ [fixityArg]] -> do
+            i <- interpretAnnotationArg fixityArg
+            case i of
+                ConstInt n | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
+                _invalid -> pure Nothing
+        _invalid -> pure Nothing
 
-    decl <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationByName @Renamed (Qualified name modName)
-    case decl of
-        Nothing -> do
-            Eff.throwError $ UnknownOperator name modName
-        Just x -> do
-            x ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated % to \case
-                Value{_valueAnnotations = (ValueDeclAnnotations a)} -> do
-                    debugPretty a
-                    pure Nothing
+    assoc <- case assocAnns of
+        [] -> pure Nothing
+        [Annotation lAssoc _] | lAssoc ^. unlocated == leftAssociativeAnnotationName -> pure $ Just LeftAssociative
+        [Annotation rAssoc _] | rAssoc ^. unlocated == rightAssociativeAnnotationName -> pure $ Just RightAssociative
+        [Annotation nAssoc _] | nAssoc ^. unlocated == nonAssociativeAnnotationName -> pure $ Just NonAssociative
+        _invalid -> pure Nothing
 
--- case infixDecls of
---     [] -> do
---         Eff.tell $ one (UnknownPrecedence mempty (the matchingBodies))
---         pure Nothing
---     [i] -> pure $ Just $ infixDeclToOpInfo i
---     _tooMany -> error "ambiguous"
+    pure $ case (fixity, assoc) of
+        (Just f, Just a) -> Just (OpInfo f a)
+        (Nothing, Just a) -> Just (OpInfo defaultPrecedence a)
+        (Just f, Nothing) -> Just (OpInfo f defaultAssociativity)
+        (Nothing, Nothing) -> Just (OpInfo defaultPrecedence defaultAssociativity)
 runGetOpInfoQuery (Local{}) = do
     pure Nothing -- TODO there must be a way of getting local operator info
 

@@ -1,12 +1,10 @@
 -- | Types used by the type inference engine
 module Elara.TypeInfer.Type where
 
-import Control.Lens (cons)
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
-import Data.Typeable
 import Elara.AST.Name
-import Elara.AST.Region (SourceRegion, generatedSourceRegion, spanningRegion)
+import Elara.AST.Region (SourceRegion, generatedSourceRegion)
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.TypeInfer.Unique

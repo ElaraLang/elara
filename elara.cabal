@@ -32,6 +32,7 @@ library
       Elara.AST.Generic.Pattern
       Elara.AST.Generic.Types
       Elara.AST.Generic.Utils
+      Elara.AST.Introspection
       Elara.AST.Kinded
       Elara.AST.Module
       Elara.AST.Name
@@ -44,6 +45,7 @@ library
       Elara.AST.Typed
       Elara.AST.Unlocated
       Elara.AST.VarRef
+      Elara.ConstExpr
       Elara.Core
       Elara.Core.Analysis
       Elara.Core.ANF
@@ -100,12 +102,14 @@ library
       Elara.Query
       Elara.Query.Common
       Elara.Query.Effects
+      Elara.Query.Errors
       Elara.Query.TH
       Elara.ReadFile
       Elara.Rename
       Elara.Rename.Error
       Elara.Rename.Imports
       Elara.Rules
+      Elara.Rules.Generic
       Elara.SCC
       Elara.SCC.Type
       Elara.Settings

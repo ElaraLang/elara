@@ -8,6 +8,8 @@ import Elara.AST.Name
 data InternalError
     = RequiredDeclNotFound (Qualified Name)
     | DuplicateDeclAfterDesugar ModuleName Name
+    | -- | When we parse an annotation at compile time but its arrangement is invalid
+      InvalidAnnotationArrangement
     deriving (Show, Eq)
 
 instance Exception InternalError

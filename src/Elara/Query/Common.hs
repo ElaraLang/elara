@@ -1,7 +1,7 @@
 module Elara.Query.Common where
 
-import qualified Elara.Query
-import qualified Rock
+import Elara.Query qualified
+import Rock qualified
 
 {- | Appends 'Rock' to a list of effects.
   This type mainly exists to avoid a cyclic import between this module and 'Elara.Query.Effects'

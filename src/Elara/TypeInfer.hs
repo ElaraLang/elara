@@ -42,7 +42,9 @@ import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
 import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
+import Elara.Rules.Generic ()
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
+import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)

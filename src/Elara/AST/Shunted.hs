@@ -12,11 +12,14 @@ module Elara.AST.Shunted where
 
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
+import Elara.AST.Introspection
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Unique (Unique)
+import Elara.Query
+import Elara.Query.Errors
 
 type instance ASTLocate' 'Shunted = Located
 
