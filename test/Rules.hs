@@ -8,4 +8,4 @@ import Rock qualified
 testRules :: HasCallStack => Rock.Rules Query
 testRules = \case
     -- GetOpInfo op -> runGetOpInfoQuery op
-    other -> error $ "No rule for " <> show other
+    other -> error "No rule"
