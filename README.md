@@ -2,9 +2,11 @@
 
 ![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)
 
-Elara is a purely functional programming language targeting the JVM. It features a Haskell & F# inspired syntax, a complete Hindley-Milner type system and pure functions in the type system (i.e. an IO monad).
+Elara is a **purely functional programming language** targeting the JVM. It draws inspiration from Haskell and F#, featuring a **Hindley-Milner type system** and **pure functions in the type system** (i.e., an IO monad).  
 
-**Please note that Elara is currently a work in progress and is not yet ready for production use.**
+> ⚠️ **Work in Progress:** Elara is experimental and **not ready for production use**.  
+
+---
 
 ## Examples
 
@@ -13,18 +15,14 @@ Elara is a purely functional programming language targeting the JVM. It features
 ```fs
 def main : IO ()
 let main = print "Hello, World!"
-```
 
-### Factorial
+Factorial
 
-```fs
 def factorial : Int -> Int
 let factorial n = if n == 0 then 1 else n * factorial (n - 1)
-```
 
-### Lists
+Lists
 
-```fs
 def sum : [Int] -> Int
 let sum ls =
     match ls with
@@ -34,11 +32,9 @@ let sum ls =
 def main : IO ()
 let main = print (sum [1, 2, 3])
 -- Prints 6
-```
 
-### Higher-Order Functions
+Higher-Order Functions
 
-```fs
 def map : (a -> b) -> [a] -> [b]
 let map f ls =
     match ls with
@@ -48,11 +44,9 @@ let map f ls =
 def main : IO ()
 let main = print (map (\x -> x * 2) [1, 2, 3])
 -- Prints [2, 4, 6]
-```
 
-### Data Types
+Data Types
 
-```fs
 type Option a = None | Some a
 
 def map : (a -> b) -> Option a -> Option b
@@ -64,55 +58,74 @@ let map f opt =
 def main : IO ()
 let main = print (map (\x -> x * 2) (Some 3))
 -- Prints Some 6
-```
 
-## Getting Involved
+Getting Involved
 
-If you're interested in Elara or contributing to its development, join our [Discord server](https://discord.gg/xu5gSTV) for frequent updates and discussions.
+Interested in Elara or contributing? Join our Discord server
 
-## Building & Running
+for updates, discussions, and collaboration.
+Building & Running
 
-Elara is extremely buggy and temperamental at the moment, but it _should_ function!
+Elara is still buggy and experimental, but it should function with the following prerequisites:
+Prerequisites
 
+    Java Runtime Environment (JRE): Java 8 or higher.
 
-### Running Prerequisites
+    Rebuild the JVM standard library (especially after modifying files):
 
-1. To run Elara you need a JRE. Anything above Java 8 should work
-2. Before running, and if you change the files, make sure to rebuild the Java standard library:
-
-```sh
 cd jvm-stdlib
 javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Unit.java Elara/Func0.java
 cd ../
-```
+
+Code Structure
+
+Elara programs currently require a rigid structure:
+
+    The root source.elr file must contain a Main module with a main function of type IO ().
+
+    All other code resides in the stdlib directory (standard library).
+
+Library Acknowledgments
+
+Elara is inspired by and owes thanks to numerous open-source projects, particularly Grace
+
+for its type checking implementation.
+License
+
+Elara is released under the MIT License
+
+.
+Technical Details
+Compiler Overview
+
+The Elara compiler is structured as multiple passes over the source code:
+
+    Lexing: Converts source code into tokens, handles layout rules, and strips comments.
+
+    Parsing: Produces the Frontend AST and checks for syntax errors.
+
+    Desugaring: Converts Frontend AST to Desugared AST:
+
+        Multi-argument lambdas → nested single-argument lambdas
+
+        Let bindings → lambdas
+
+        Duplicate declarations merged
+
+    Renaming: Generates unique names and resolves references in the Renamed AST.
+
+    Shunting: Applies operator precedence and associativity, transforming binary operators into prefix calls.
+
+    Type Checking: Infers and validates types, producing the Typed AST.
+
+    ToCore: Converts Typed AST to Core AST (typed lambda calculus) with heavy desugaring.
+
+    CoreToCore: Performs optimizations on the Core AST.
+
+    Emitting: Generates JVM bytecode and writes class files.
 
 
-## Code Structure
+This version is **ready to paste directly into your `README.md`** and looks clean on GitHub with proper headings, code blocks, and badges.  
 
-Currently the structure of an Elara program is very rigid: the `source.elr` file in the root directory _must_ contain a `Main` module with a `main` function of type `IO ()`, and all other code must be part of the standard library, in the `stdlib` directory.
+If you want, I can also **add a “Contributing” section with beginner-friendly tasks** to encourage new contributors. Do you want me to do that?
 
-## Library Acknowledgments
-
-Elara owes its existence to numerous open-source projects, particularly to [Grace](https://github.com/Gabriella439/grace) for its use as a reference implementation for type checking.
-
-## License
-
-Elara is released under the [MIT License](LICENSE).
-
-## Technical Details
-
-### How the compiler works
-
-The Elara compiler is fairly simple, composed of multiple passes on the source code. These are as follows:
-
-1. **Lexing:** The source code is converted into a list of tokens, layout rules are converted into braces and semicolons, and comments are removed.
-2. **Parsing:** The list of tokens is converted into the Frontend abstract syntax tree (AST). The Frontend AST almost directly mirrors the syntax of the language with very few transformations applied. The Parser checks for any syntax errors and reports them.
-3. **Desugaring:** The Frontend AST is converted into the Desugared AST. The Desugared AST is a bit misleading in that it is actually fairly conservative in its desugaring. The main differences are that multi-argument lambdas are converted into nested single-argument lambdas, let bindings have their parameters removed and are converted into lambdas, and declarations with identical names (i.e. `def` and `let`s) are converted into a single declaration.
-4. **Renaming:** Conversion to Renamed AST with name resolution and unique-ification. Every name is either resolved to a fully qualified name, or local variables are generated a unique name to avoid collisions.
-5. **Shunting:** Conversion to Shunted AST with operator precedence and associativity applied. A simple reassociation of the AST to match the precedence and associativity of operators. The notion of a "binary operator" is removed as they are all turned into prefix function calls.
-6. **Type Checking:** The Shunted AST is converted into the Typed AST by inferring and checking the types of every expression.
-7. **ToCore:** The Typed AST is converted into the Core AST. The Core AST is a very simple AST that is essentially a typed lambda calculus, very similar to GHC's Core language. Very extensive desugaring is done here, converting the entire language to the 8 constructors of the Core AST.
-8. **CoreToCore:** Repeated transformations of the Core AST, mainly performing optimisations.
-9. **Emitting:** The Core AST is converted into JVM bytecode and written to a class file.
-
----
