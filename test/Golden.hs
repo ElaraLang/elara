@@ -1,7 +1,7 @@
 module Golden where
 
 import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
-import Effectful.Concurrent (runConcurrent)
+import Effectful.Concurrent (runConcurrent, threadDelay)
 import Effectful.FileSystem (runFileSystem)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Interpreter qualified as Interpreter
@@ -13,7 +13,7 @@ import Rock qualified
 import Rock.Memo qualified
 import Rock.MemoE (memoiseRunIO)
 import System.IO.Silently (capture_)
-import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it, parallel, sequential)
+import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it, sequential)
 
 defaultSettings =
     CompilerSettings
@@ -47,5 +47,10 @@ runGolden settings goldenName = do
                             ignoreStructuredDebug $
                                 runConcurrent $
                                     memoiseRunIO @Elara.Query.Query $
-                                        Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules compilerSettings)) $
+                                        Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules compilerSettings)) $ do
+                                            -- the capture_ function is not thread safe and so can sometimes
+                                            -- intercept the output from the test runner
+                                            -- adding a small delay here seems to mostly mitigate the issue
+                                            -- albeit in a stupid way
+                                            threadDelay 50
                                             Interpreter.runInterpreter Interpreter.run
