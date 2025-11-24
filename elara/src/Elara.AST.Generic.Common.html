@@ -1,10 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680000130"><span id="local-6989586621680000131"><span id="local-6989586621680000132"></span></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html"><span class="hs-identifier">Elara.AST.Generic.Common</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680000671"><span id="local-6989586621680000672"><span id="local-6989586621680000673"></span></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html"><span class="hs-identifier">Elara.AST.Generic.Common</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span>
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
 </span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.TypeError</span></span><span>
 </span><span id="line-6"></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">data</span><span> </span><span id="DataConCantHappen"><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-var">DataConCantHappen</span></a></span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680000134"><span id="local-6989586621680000136"><span class="annot"><span class="annottext">(forall x. DataConCantHappen -&gt; Rep DataConCantHappen x)
+</span><span id="line-7"></span><span class="hs-keyword">data</span><span> </span><span id="DataConCantHappen"><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-var">DataConCantHappen</span></a></span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680000675"><span id="local-6989586621680000677"><span class="annot"><span class="annottext">(forall x. DataConCantHappen -&gt; Rep DataConCantHappen x)
 -&gt; (forall x. Rep DataConCantHappen x -&gt; DataConCantHappen)
 -&gt; Generic DataConCantHappen
 forall x. Rep DataConCantHappen x -&gt; DataConCantHappen
@@ -15,7 +15,7 @@ $cfrom :: forall x. DataConCantHappen -&gt; Rep DataConCantHappen x
 from :: forall x. DataConCantHappen -&gt; Rep DataConCantHappen x
 $cto :: forall x. Rep DataConCantHappen x -&gt; DataConCantHappen
 to :: forall x. Rep DataConCantHappen x -&gt; DataConCantHappen
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000144"><span id="local-6989586621680000146"><span id="local-6989586621680000148"><span id="local-6989586621680000150"><span id="local-6989586621680000152"><span id="local-6989586621680000158"><span id="local-6989586621680000163"><span id="local-6989586621680000166"><span id="local-6989586621680000169"><span id="local-6989586621680000172"><span id="local-6989586621680000175"><span id="local-6989586621680000178"><span id="local-6989586621680000183"><span id="local-6989586621680000188"><span class="annot"><span class="annottext">Typeable DataConCantHappen
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000685"><span id="local-6989586621680000687"><span id="local-6989586621680000689"><span id="local-6989586621680000691"><span id="local-6989586621680000693"><span id="local-6989586621680000699"><span id="local-6989586621680000704"><span id="local-6989586621680000707"><span id="local-6989586621680000710"><span id="local-6989586621680000713"><span id="local-6989586621680000716"><span id="local-6989586621680000719"><span id="local-6989586621680000724"><span id="local-6989586621680000729"><span class="annot"><span class="annottext">Typeable DataConCantHappen
 Typeable DataConCantHappen =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -202,7 +202,7 @@ gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d)
 -&gt; DataConCantHappen -&gt; m DataConCantHappen
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000198"><span id="local-6989586621680000200"><span id="local-6989586621680000204"><span class="annot"><span class="annottext">Int -&gt; DataConCantHappen -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000739"><span id="local-6989586621680000741"><span id="local-6989586621680000745"><span class="annot"><span class="annottext">Int -&gt; DataConCantHappen -&gt; ShowS
 [DataConCantHappen] -&gt; ShowS
 DataConCantHappen -&gt; String
 (Int -&gt; DataConCantHappen -&gt; ShowS)
@@ -217,7 +217,7 @@ $cshow :: DataConCantHappen -&gt; String
 show :: DataConCantHappen -&gt; String
 $cshowList :: [DataConCantHappen] -&gt; ShowS
 showList :: [DataConCantHappen] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000209"><span id="local-6989586621680000211"><span class="annot"><span class="annottext">DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000750"><span id="local-6989586621680000752"><span class="annot"><span class="annottext">DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
 (DataConCantHappen -&gt; DataConCantHappen -&gt; Bool)
 -&gt; (DataConCantHappen -&gt; DataConCantHappen -&gt; Bool)
 -&gt; Eq DataConCantHappen
@@ -226,7 +226,7 @@ $c== :: DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
 == :: DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
 $c/= :: DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
 /= :: DataConCantHappen -&gt; DataConCantHappen -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000218"><span id="local-6989586621680000220"><span id="local-6989586621680000224"><span id="local-6989586621680000227"><span id="local-6989586621680000230"><span id="local-6989586621680000233"><span id="local-6989586621680000236"><span class="annot"><span class="annottext">Eq DataConCantHappen
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000759"><span id="local-6989586621680000761"><span id="local-6989586621680000765"><span id="local-6989586621680000768"><span id="local-6989586621680000771"><span id="local-6989586621680000774"><span id="local-6989586621680000777"><span class="annot"><span class="annottext">Eq DataConCantHappen
 Eq DataConCantHappen =&gt;
 (DataConCantHappen -&gt; DataConCantHappen -&gt; Ordering)
 -&gt; (DataConCantHappen -&gt; DataConCantHappen -&gt; Bool)
@@ -267,21 +267,21 @@ min :: DataConCantHappen -&gt; DataConCantHappen -&gt; DataConCantHappen
 </span><span id="line-8"></span><span>
 </span><span id="line-9"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-type">DataConCantHappen</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-10"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-type">pretty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-type">DataConCantHappen</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
-</span><span id="line-11"></span><span>    </span><span id="local-6989586621680000255"><span class="annot"><span class="annottext">pretty :: HasCallStack =&gt; DataConCantHappen -&gt; Doc AnsiStyle
+</span><span id="line-11"></span><span>    </span><span id="local-6989586621680000796"><span class="annot"><span class="annottext">pretty :: HasCallStack =&gt; DataConCantHappen -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">DataConCantHappen
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;DataConCantHappen&quot;</span></span><span>
 </span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span id="local-6989586621680000121"><span class="annot"><a href="Elara.AST.Generic.Common.html#dataConCantHappen"><span class="hs-identifier hs-type">dataConCantHappen</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-type">DataConCantHappen</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680000121"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-13"></span><span id="local-6989586621680000662"><span class="annot"><a href="Elara.AST.Generic.Common.html#dataConCantHappen"><span class="hs-identifier hs-type">dataConCantHappen</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#DataConCantHappen"><span class="hs-identifier hs-type">DataConCantHappen</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680000662"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-14"></span><span id="dataConCantHappen"><span class="annot"><span class="annottext">dataConCantHappen :: forall a. DataConCantHappen -&gt; a
-</span><a href="Elara.AST.Generic.Common.html#dataConCantHappen"><span class="hs-identifier hs-var hs-var">dataConCantHappen</span></a></span></span><span> </span><span id="local-6989586621680000258"><span class="annot"><span class="annottext">DataConCantHappen
-</span><a href="#local-6989586621680000258"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">DataConCantHappen
-</span><a href="#local-6989586621680000258"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span>
+</span><a href="Elara.AST.Generic.Common.html#dataConCantHappen"><span class="hs-identifier hs-var hs-var">dataConCantHappen</span></a></span></span><span> </span><span id="local-6989586621680000799"><span class="annot"><span class="annottext">DataConCantHappen
+</span><a href="#local-6989586621680000799"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">DataConCantHappen
+</span><a href="#local-6989586621680000799"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span>
 </span><span id="line-15"></span><span>
 </span><span id="line-16"></span><span class="hs-keyword">data</span><span> </span><span id="NoFieldValue"><span class="annot"><a href="Elara.AST.Generic.Common.html#NoFieldValue"><span class="hs-identifier hs-var">NoFieldValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="NoFieldValue"><span class="annot"><a href="Elara.AST.Generic.Common.html#NoFieldValue"><span class="hs-identifier hs-var">NoFieldValue</span></a></span></span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680000261"><span id="local-6989586621680000263"><span class="annot"><span class="annottext">(forall x. NoFieldValue -&gt; Rep NoFieldValue x)
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680000802"><span id="local-6989586621680000804"><span class="annot"><span class="annottext">(forall x. NoFieldValue -&gt; Rep NoFieldValue x)
 -&gt; (forall x. Rep NoFieldValue x -&gt; NoFieldValue)
 -&gt; Generic NoFieldValue
 forall x. Rep NoFieldValue x -&gt; NoFieldValue
@@ -292,7 +292,7 @@ $cfrom :: forall x. NoFieldValue -&gt; Rep NoFieldValue x
 from :: forall x. NoFieldValue -&gt; Rep NoFieldValue x
 $cto :: forall x. Rep NoFieldValue x -&gt; NoFieldValue
 to :: forall x. Rep NoFieldValue x -&gt; NoFieldValue
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000268"><span id="local-6989586621680000270"><span id="local-6989586621680000272"><span id="local-6989586621680000274"><span id="local-6989586621680000276"><span id="local-6989586621680000282"><span id="local-6989586621680000287"><span id="local-6989586621680000290"><span id="local-6989586621680000293"><span id="local-6989586621680000296"><span id="local-6989586621680000299"><span id="local-6989586621680000302"><span id="local-6989586621680000307"><span id="local-6989586621680000312"><span class="annot"><span class="annottext">Typeable NoFieldValue
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000809"><span id="local-6989586621680000811"><span id="local-6989586621680000813"><span id="local-6989586621680000815"><span id="local-6989586621680000817"><span id="local-6989586621680000823"><span id="local-6989586621680000828"><span id="local-6989586621680000831"><span id="local-6989586621680000834"><span id="local-6989586621680000837"><span id="local-6989586621680000840"><span id="local-6989586621680000843"><span id="local-6989586621680000848"><span id="local-6989586621680000853"><span class="annot"><span class="annottext">Typeable NoFieldValue
 Typeable NoFieldValue =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -458,7 +458,7 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; NoFieldValue -&gt; m NoFieldValue
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000317"><span id="local-6989586621680000319"><span id="local-6989586621680000323"><span class="annot"><span class="annottext">Int -&gt; NoFieldValue -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000858"><span id="local-6989586621680000860"><span id="local-6989586621680000864"><span class="annot"><span class="annottext">Int -&gt; NoFieldValue -&gt; ShowS
 [NoFieldValue] -&gt; ShowS
 NoFieldValue -&gt; String
 (Int -&gt; NoFieldValue -&gt; ShowS)
@@ -473,7 +473,7 @@ $cshow :: NoFieldValue -&gt; String
 show :: NoFieldValue -&gt; String
 $cshowList :: [NoFieldValue] -&gt; ShowS
 showList :: [NoFieldValue] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000326"><span id="local-6989586621680000328"><span class="annot"><span class="annottext">NoFieldValue -&gt; NoFieldValue -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000867"><span id="local-6989586621680000869"><span class="annot"><span class="annottext">NoFieldValue -&gt; NoFieldValue -&gt; Bool
 (NoFieldValue -&gt; NoFieldValue -&gt; Bool)
 -&gt; (NoFieldValue -&gt; NoFieldValue -&gt; Bool) -&gt; Eq NoFieldValue
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -481,7 +481,7 @@ $c== :: NoFieldValue -&gt; NoFieldValue -&gt; Bool
 == :: NoFieldValue -&gt; NoFieldValue -&gt; Bool
 $c/= :: NoFieldValue -&gt; NoFieldValue -&gt; Bool
 /= :: NoFieldValue -&gt; NoFieldValue -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000334"><span id="local-6989586621680000336"><span id="local-6989586621680000338"><span id="local-6989586621680000342"><span id="local-6989586621680000345"><span id="local-6989586621680000348"><span id="local-6989586621680000351"><span class="annot"><span class="annottext">Eq NoFieldValue
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680000875"><span id="local-6989586621680000877"><span id="local-6989586621680000879"><span id="local-6989586621680000883"><span id="local-6989586621680000886"><span id="local-6989586621680000889"><span id="local-6989586621680000892"><span class="annot"><span class="annottext">Eq NoFieldValue
 Eq NoFieldValue =&gt;
 (NoFieldValue -&gt; NoFieldValue -&gt; Ordering)
 -&gt; (NoFieldValue -&gt; NoFieldValue -&gt; Bool)
@@ -522,7 +522,7 @@ min :: NoFieldValue -&gt; NoFieldValue -&gt; NoFieldValue
 </span><span id="line-18"></span><span>
 </span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#NoFieldValue"><span class="hs-identifier hs-type">NoFieldValue</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-20"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-type">pretty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Common.html#NoFieldValue"><span class="hs-identifier hs-type">NoFieldValue</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
-</span><span id="line-21"></span><span>    </span><span id="local-6989586621680000360"><span class="annot"><span class="annottext">pretty :: NoFieldValue -&gt; Doc AnsiStyle
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621680000901"><span class="annot"><span class="annottext">pretty :: NoFieldValue -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">NoFieldValue
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;NoFieldValue&quot;</span></span><span>

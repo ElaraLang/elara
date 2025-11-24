@@ -10,7 +10,7 @@ Unlike the stage-based errors, these errors indicate that something has gone wro
 </span><span id="line-10"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DuplicateDeclAfterDesugar"><span class="annot"><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
 </span><span id="line-11"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | When we parse an annotation at compile time but its arrangement is invalid</span></span><span>
 </span><span id="line-12"></span><span>      </span><span id="InvalidAnnotationArrangement"><span class="annot"><a href="Elara.Error.Internal.html#InvalidAnnotationArrangement"><span class="hs-identifier hs-var">InvalidAnnotationArrangement</span></a></span></span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013553"><span id="local-6989586621680013564"><span id="local-6989586621680013568"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
+</span><span id="line-13"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680014094"><span id="local-6989586621680014105"><span id="local-6989586621680014109"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
 [InternalError] -&gt; ShowS
 InternalError -&gt; String
 (Int -&gt; InternalError -&gt; ShowS)
@@ -25,7 +25,7 @@ $cshow :: InternalError -&gt; String
 show :: InternalError -&gt; String
 $cshowList :: [InternalError] -&gt; ShowS
 showList :: [InternalError] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680013574"><span id="local-6989586621680013585"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680014115"><span id="local-6989586621680014126"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
 (InternalError -&gt; InternalError -&gt; Bool)
 -&gt; (InternalError -&gt; InternalError -&gt; Bool) -&gt; Eq InternalError
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -35,5 +35,5 @@ $c/= :: InternalError -&gt; InternalError -&gt; Bool
 /= :: InternalError -&gt; InternalError -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-14"></span><span>
-</span><span id="line-15"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013595"><span id="local-6989586621680013599"><span id="local-6989586621680013602"><span id="local-6989586621680013605"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680014136"><span id="local-6989586621680014140"><span id="local-6989586621680014143"><span id="local-6989586621680014146"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
 </span><span id="line-16"></span></pre></body></html>

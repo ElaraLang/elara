@@ -93,7 +93,7 @@
 </span><span id="line-93"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TokenDedent"><span class="annot"><a href="Elara.Lexer.Token.html#TokenDedent"><span class="hs-identifier hs-var">TokenDedent</span></a></span></span><span>
 </span><span id="line-94"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TokenLineSeparator"><span class="annot"><a href="Elara.Lexer.Token.html#TokenLineSeparator"><span class="hs-identifier hs-var">TokenLineSeparator</span></a></span></span><span>
 </span><span id="line-95"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TokenEOF"><span class="annot"><a href="Elara.Lexer.Token.html#TokenEOF"><span class="hs-identifier hs-var">TokenEOF</span></a></span></span><span>
-</span><span id="line-96"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680010856"><span id="local-6989586621680010885"><span id="local-6989586621680010889"><span class="annot"><span class="annottext">Int -&gt; Token -&gt; ShowS
+</span><span id="line-96"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011397"><span id="local-6989586621680011426"><span id="local-6989586621680011430"><span class="annot"><span class="annottext">Int -&gt; Token -&gt; ShowS
 [Token] -&gt; ShowS
 Token -&gt; String
 (Int -&gt; Token -&gt; ShowS)
@@ -106,14 +106,14 @@ $cshow :: Token -&gt; String
 show :: Token -&gt; String
 $cshowList :: [Token] -&gt; ShowS
 showList :: [Token] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680010895"><span id="local-6989586621680010916"><span class="annot"><span class="annottext">Token -&gt; Token -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011436"><span id="local-6989586621680011457"><span class="annot"><span class="annottext">Token -&gt; Token -&gt; Bool
 (Token -&gt; Token -&gt; Bool) -&gt; (Token -&gt; Token -&gt; Bool) -&gt; Eq Token
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Token -&gt; Token -&gt; Bool
 == :: Token -&gt; Token -&gt; Bool
 $c/= :: Token -&gt; Token -&gt; Bool
 /= :: Token -&gt; Token -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680010924"><span id="local-6989586621680010954"><span id="local-6989586621680010958"><span id="local-6989586621680010961"><span id="local-6989586621680010964"><span id="local-6989586621680010967"><span id="local-6989586621680010970"><span class="annot"><span class="annottext">Eq Token
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011465"><span id="local-6989586621680011495"><span id="local-6989586621680011499"><span id="local-6989586621680011502"><span id="local-6989586621680011505"><span id="local-6989586621680011508"><span id="local-6989586621680011511"><span class="annot"><span class="annottext">Eq Token
 Eq Token =&gt;
 (Token -&gt; Token -&gt; Ordering)
 -&gt; (Token -&gt; Token -&gt; Bool)
@@ -150,7 +150,7 @@ $cmax :: Token -&gt; Token -&gt; Token
 max :: Token -&gt; Token -&gt; Token
 $cmin :: Token -&gt; Token -&gt; Token
 min :: Token -&gt; Token -&gt; Token
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680010976"><span id="local-6989586621680010978"><span class="annot"><span class="annottext">(forall x. Token -&gt; Rep Token x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011517"><span id="local-6989586621680011519"><span class="annot"><span class="annottext">(forall x. Token -&gt; Rep Token x)
 -&gt; (forall x. Rep Token x -&gt; Token) -&gt; Generic Token
 forall x. Rep Token x -&gt; Token
 forall x. Token -&gt; Rep Token x
@@ -161,7 +161,7 @@ from :: forall x. Token -&gt; Rep Token x
 $cto :: forall x. Rep Token x -&gt; Token
 to :: forall x. Rep Token x -&gt; Token
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-97"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680010986"><span id="local-6989586621680010993"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span></span></span><span>
+</span><span id="line-97"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680011527"><span id="local-6989586621680011534"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span></span></span><span>
 </span><span id="line-98"></span><span>
 </span><span id="line-99"></span><span class="annot"><a href="Elara.Lexer.Token.html#tokenRepr"><span class="hs-identifier hs-type">tokenRepr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-100"></span><span id="tokenRepr"><span class="annot"><span class="annottext">tokenRepr :: Token -&gt; Text
@@ -226,26 +226,26 @@ to :: forall x. Rep Token x -&gt; Token
 </span><span id="line-120"></span><span>    </span><span class="annot"><span class="annottext">Token
 </span><a href="Elara.Lexer.Token.html#TokenBacktick"><span class="hs-identifier hs-var">TokenBacktick</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;`&quot;</span></span><span>
-</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenInt"><span class="hs-identifier hs-type">TokenInt</span></a></span><span> </span><span id="local-6989586621680011212"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680011212"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Text
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenInt"><span class="hs-identifier hs-type">TokenInt</span></a></span><span> </span><span id="local-6989586621680011753"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680011753"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680011212"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-122"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenFloat"><span class="hs-identifier hs-type">TokenFloat</span></a></span><span> </span><span id="local-6989586621680011214"><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680011214"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Text
+</span><a href="#local-6989586621680011753"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenFloat"><span class="hs-identifier hs-type">TokenFloat</span></a></span><span> </span><span id="local-6989586621680011755"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680011755"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680011214"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenChar"><span class="hs-identifier hs-type">TokenChar</span></a></span><span> </span><span id="local-6989586621680011215"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680011215"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Text
+</span><a href="#local-6989586621680011755"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenChar"><span class="hs-identifier hs-type">TokenChar</span></a></span><span> </span><span id="local-6989586621680011756"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680011756"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680011215"><span class="hs-identifier hs-var">c</span></a></span><span>
-</span><span id="line-124"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenString"><span class="hs-identifier hs-type">TokenString</span></a></span><span> </span><span id="local-6989586621680011216"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011216"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
+</span><a href="#local-6989586621680011756"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenString"><span class="hs-identifier hs-type">TokenString</span></a></span><span> </span><span id="local-6989586621680011757"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011757"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011216"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><a href="#local-6989586621680011757"><span class="hs-identifier hs-var">s</span></a></span><span>
 </span><span id="line-125"></span><span>    </span><span class="annot"><span class="annottext">Token
 </span><a href="Elara.Lexer.Token.html#TokenLet"><span class="hs-identifier hs-var">TokenLet</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;let&quot;</span></span><span>
@@ -315,51 +315,51 @@ forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span id="line-147"></span><span>    </span><span class="annot"><span class="annottext">Token
 </span><a href="Elara.Lexer.Token.html#TokenWith"><span class="hs-identifier hs-var">TokenWith</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;with&quot;</span></span><span>
-</span><span id="line-148"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenVariableIdentifier"><span class="hs-identifier hs-type">TokenVariableIdentifier</span></a></span><span> </span><span id="local-6989586621680011217"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011217"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011217"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-149"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680011218"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011218"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011218"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-150"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenOperatorIdentifier"><span class="hs-identifier hs-type">TokenOperatorIdentifier</span></a></span><span> </span><span id="local-6989586621680011219"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011219"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011219"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-151"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQVariableIdentifier"><span class="hs-identifier hs-type">TokenQVariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011220"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011220"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011221"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011221"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
+</span><span id="line-148"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenVariableIdentifier"><span class="hs-identifier hs-type">TokenVariableIdentifier</span></a></span><span> </span><span id="local-6989586621680011758"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011758"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011758"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680011759"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011759"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011759"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-150"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenOperatorIdentifier"><span class="hs-identifier hs-type">TokenOperatorIdentifier</span></a></span><span> </span><span id="local-6989586621680011760"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011760"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011760"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-151"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQVariableIdentifier"><span class="hs-identifier hs-type">TokenQVariableIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011761"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680011761"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011762"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011762"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
 forall name. NameLike name =&gt; name -&gt; Text
 </span><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier hs-var">nameText</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011220"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011761"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011221"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-152"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQConstructorIdentifier"><span class="hs-identifier hs-type">TokenQConstructorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011222"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011222"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011223"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011223"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
+</span><a href="#local-6989586621680011762"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQConstructorIdentifier"><span class="hs-identifier hs-type">TokenQConstructorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011763"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680011763"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011764"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011764"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
 forall name. NameLike name =&gt; name -&gt; Text
 </span><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier hs-var">nameText</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011222"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011763"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011223"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-153"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQOperatorIdentifier"><span class="hs-identifier hs-type">TokenQOperatorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011224"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011224"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011225"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011225"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
+</span><a href="#local-6989586621680011764"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-153"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenQOperatorIdentifier"><span class="hs-identifier hs-type">TokenQOperatorIdentifier</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680011765"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680011765"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680011766"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011766"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Text
 forall name. NameLike name =&gt; name -&gt; Text
 </span><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier hs-var">nameText</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680011224"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621680011765"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011225"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621680011766"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-154"></span><span>    </span><span class="annot"><span class="annottext">Token
 </span><a href="Elara.Lexer.Token.html#TokenUnderscore"><span class="hs-identifier hs-var">TokenUnderscore</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;_&quot;</span></span><span>
@@ -379,17 +379,17 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span id="line-160"></span><span class="annot"><a href="Elara.Lexer.Token.html#unsafeTokenText"><span class="hs-identifier hs-type">unsafeTokenText</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-161"></span><span id="unsafeTokenText"><span class="annot"><span class="annottext">unsafeTokenText :: Token -&gt; Text
 </span><a href="Elara.Lexer.Token.html#unsafeTokenText"><span class="hs-identifier hs-var hs-var">unsafeTokenText</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-162"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenVariableIdentifier"><span class="hs-identifier hs-type">TokenVariableIdentifier</span></a></span><span> </span><span id="local-6989586621680011237"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011237"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011237"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-163"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680011238"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011238"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011238"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-164"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenOperatorIdentifier"><span class="hs-identifier hs-type">TokenOperatorIdentifier</span></a></span><span> </span><span id="local-6989586621680011239"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011239"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680011239"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-165"></span><span>    </span><span id="local-6989586621680011240"><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011240"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
+</span><span id="line-162"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenVariableIdentifier"><span class="hs-identifier hs-type">TokenVariableIdentifier</span></a></span><span> </span><span id="local-6989586621680011778"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011778"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011778"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-163"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenConstructorIdentifier"><span class="hs-identifier hs-type">TokenConstructorIdentifier</span></a></span><span> </span><span id="local-6989586621680011779"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011779"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011779"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-164"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenOperatorIdentifier"><span class="hs-identifier hs-type">TokenOperatorIdentifier</span></a></span><span> </span><span id="local-6989586621680011780"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011780"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680011780"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-165"></span><span>    </span><span id="local-6989586621680011781"><span class="annot"><span class="annottext">Token
+</span><a href="#local-6989586621680011781"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;unsafeTokenText: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -397,16 +397,16 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Token -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011240"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011781"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-166"></span><span>
 </span><span id="line-167"></span><span class="annot"><a href="Elara.Lexer.Token.html#unsafeTokenInt"><span class="hs-identifier hs-type">unsafeTokenInt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
 </span><span id="line-168"></span><span id="unsafeTokenInt"><span class="annot"><span class="annottext">unsafeTokenInt :: Token -&gt; Integer
 </span><a href="Elara.Lexer.Token.html#unsafeTokenInt"><span class="hs-identifier hs-var hs-var">unsafeTokenInt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-169"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenInt"><span class="hs-identifier hs-type">TokenInt</span></a></span><span> </span><span id="local-6989586621680011253"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680011253"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680011253"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-170"></span><span>    </span><span id="local-6989586621680011254"><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011254"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Integer
+</span><span id="line-169"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenInt"><span class="hs-identifier hs-type">TokenInt</span></a></span><span> </span><span id="local-6989586621680011794"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680011794"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680011794"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-170"></span><span>    </span><span id="local-6989586621680011795"><span class="annot"><span class="annottext">Token
+</span><a href="#local-6989586621680011795"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Integer
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;unsafeTokenInt: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -414,16 +414,16 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Token -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011254"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011795"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-171"></span><span>
 </span><span id="line-172"></span><span class="annot"><a href="Elara.Lexer.Token.html#unsafeTokenFloat"><span class="hs-identifier hs-type">unsafeTokenFloat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span>
 </span><span id="line-173"></span><span id="unsafeTokenFloat"><span class="annot"><span class="annottext">unsafeTokenFloat :: Token -&gt; Double
 </span><a href="Elara.Lexer.Token.html#unsafeTokenFloat"><span class="hs-identifier hs-var hs-var">unsafeTokenFloat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-174"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenFloat"><span class="hs-identifier hs-type">TokenFloat</span></a></span><span> </span><span id="local-6989586621680011266"><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680011266"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680011266"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-175"></span><span>    </span><span id="local-6989586621680011267"><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011267"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Double
+</span><span id="line-174"></span><span>    </span><span class="annot"><a href="Elara.Lexer.Token.html#TokenFloat"><span class="hs-identifier hs-type">TokenFloat</span></a></span><span> </span><span id="local-6989586621680011807"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680011807"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680011807"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-175"></span><span>    </span><span id="local-6989586621680011808"><span class="annot"><span class="annottext">Token
+</span><a href="#local-6989586621680011808"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Double
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;unsafeTokenFloat: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -431,7 +431,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Token -&gt; Text
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Token
-</span><a href="#local-6989586621680011267"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680011808"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-176"></span><span>
 </span><span id="line-177"></span><span class="annot"><a href="Elara.Lexer.Token.html#isIndent"><span class="hs-identifier hs-type">isIndent</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-178"></span><span id="isIndent"><span class="annot"><span class="annottext">isIndent :: Token -&gt; Bool
@@ -449,8 +449,8 @@ forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-182"></span><span>
 </span><span id="line-183"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Lexer.Token.html#Token"><span class="hs-identifier hs-type">Token</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-184"></span><span>    </span><span id="local-6989586621680011274"><span class="annot"><span class="annottext">pretty :: Token -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680011274"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
+</span><span id="line-184"></span><span>    </span><span id="local-6989586621680011815"><span class="annot"><span class="annottext">pretty :: Token -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680011815"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Doc AnsiStyle)
 -&gt; (Token -&gt; Text) -&gt; Token -&gt; Doc AnsiStyle

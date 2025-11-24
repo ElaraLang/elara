@@ -530,7 +530,7 @@
 </span><span class="hs-cpp">#ifdef WORDS_BIGENDIAN
 </span><span>  </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.word16ToInt16#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.wordToWord16#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.byteSwap16#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.word16ToWord#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.int16ToWord16#</span><span class="hs-cpp">
 #endif
-</span><span id="alexIndexInt16OffAddr"><span>  </span><span class="hs-special">(</span><span class="hs-identifier">indexInt16OffAddr#</span></span><span> </span><span class="hs-identifier">arr</span><span> </span><span class="hs-identifier">off</span><span class="hs-special">)</span><span id="local-6989586621680013397"></span><span class="hs-cpp">
+</span><span id="alexIndexInt16OffAddr"><span>  </span><span class="hs-special">(</span><span class="hs-identifier">indexInt16OffAddr#</span></span><span> </span><span class="hs-identifier">arr</span><span> </span><span class="hs-identifier">off</span><span class="hs-special">)</span><span id="local-6989586621680013938"></span><span class="hs-cpp">
 #ifdef WORDS_BIGENDIAN
 </span><span>  </span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-cpp">
 #endif
@@ -548,7 +548,7 @@
 </span><span class="hs-cpp">#ifdef WORDS_BIGENDIAN
 </span><span>  </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.word32ToInt32#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.wordToWord32#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.byteSwap32#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.word32ToWord#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">GHC.Exts.int32ToWord32#</span><span class="hs-cpp">
 #endif
-</span><span id="alexIndexInt32OffAddr"><span>  </span><span class="hs-special">(</span><span class="hs-identifier">indexInt32OffAddr#</span></span><span> </span><span class="hs-identifier">arr</span><span> </span><span class="hs-identifier">off</span><span class="hs-special">)</span><span id="local-6989586621680013400"></span><span class="hs-cpp">
+</span><span id="alexIndexInt32OffAddr"><span>  </span><span class="hs-special">(</span><span class="hs-identifier">indexInt32OffAddr#</span></span><span> </span><span class="hs-identifier">arr</span><span> </span><span class="hs-identifier">off</span><span class="hs-special">)</span><span id="local-6989586621680013941"></span><span class="hs-cpp">
 #ifdef WORDS_BIGENDIAN
 </span><span>  </span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-cpp">
 #endif
@@ -573,7 +573,7 @@
 </span><span id="line-497"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">AlexToken</span><span>  </span><span class="hs-glyph">!</span><span class="hs-identifier">AlexInput</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">Int</span><span> </span><span class="hs-identifier">a</span><span>
 </span><span id="line-498"></span><span>
 </span><span id="line-499"></span><span class="hs-comment">-- alexScan :: AlexInput -&gt; StartCode -&gt; AlexReturn a</span><span>
-</span><span id="line-500"></span><span id="AlexReturn"></span><span class="hs-identifier">alexScan</span><span> </span><span class="hs-identifier">input__</span><span id="local-6989586621680013142"><span> </span></span><span class="hs-identifier">IBOX</span><span class="hs-special">(</span><span class="hs-identifier">sc</span><span class="hs-special">)</span><span>
+</span><span id="line-500"></span><span id="AlexReturn"></span><span class="hs-identifier">alexScan</span><span> </span><span class="hs-identifier">input__</span><span id="local-6989586621680013683"><span> </span></span><span class="hs-identifier">IBOX</span><span class="hs-special">(</span><span class="hs-identifier">sc</span><span class="hs-special">)</span><span>
 </span><span id="line-501"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="AlexEOF"></span><span class="hs-identifier">alexScanUser</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">error</span><span> </span><span class="hs-string">&quot;alex rule requiring context was invoked by alexScan; use alexScanUser instead?&quot;</span><span class="hs-special">)</span><span> </span><span class="hs-identifier">input__</span><span> </span><span class="hs-identifier">IBOX</span><span class="hs-special">(</span><span class="hs-identifier">sc</span><span class="hs-special">)</span><span>
 </span><span id="line-502"></span><span>
 </span><span id="line-503"></span><span class="hs-comment">-- If the generated alexScan/alexScanUser functions are called multiple times</span><span>
