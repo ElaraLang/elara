@@ -117,6 +117,7 @@
                 effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
                 effectful-core = jailbreak;
                 effectful-plugin = jailbreak;
+                co-log-effectful = jailbreak (unbreak);
               };
             packages = {
               elara = {
