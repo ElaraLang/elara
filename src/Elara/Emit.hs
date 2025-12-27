@@ -42,6 +42,8 @@ import Elara.AST.VarRef
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module
+import Elara.Data.Pretty (prettyToText)
+import Elara.Emit.Lambda
 import Elara.Emit.Utils (createModuleName, generateFieldType)
 import Elara.Logging
 import JVM.Data.Abstract.Builder (ClassBuilder, addField, addMethod, runClassBuilder)
@@ -55,53 +57,70 @@ import JVM.Data.Abstract.Type
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.JVMVersion
 
--- emitCoreModule :: StructuredDebug :> r => CoreModule CoreBind -> Eff r ClassFile
--- emitCoreModule (CoreModule name decls) = do
---     (clf, _) <- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -> do
---         emitCoreDecl decl
---         pass
+emitCoreModule :: StructuredDebug :> r => CoreModule CoreBind -> Eff r ClassFile
+emitCoreModule (CoreModule name decls) = do
+    (clf, _) <- runClassBuilder (createModuleName name) java8 $ for_ decls $ \decl -> do
+        emitCoreDecl decl
+        pass
 
---     pure clf
+    pure clf
 
--- emitCoreDecl :: (ClassBuilder :> r, StructuredDebug r) => CoreDeclaration CoreBind -> Sem r ()
--- emitCoreDecl decl = case decl of
---     CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
---         let declName = varRefVal name
---         case e of
---             Core.Lit (Core.Int i) -> do
---                 addField $ ClassFileField [] declName (ObjectFieldType "java.lang.Integer") [ConstantValue (ConstantInteger (fromIntegral i))]
---             e -> do
---                 (_, attrs, code) <- runCodeBuilder (emitCoreExpr e)
---                 addMethod $ ClassFileMethod [] declName (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object"))) (fromList [Code $ CodeAttributeData 100 100 code [] attrs])
---         pass
---     _ -> pass
+emitCoreDecl :: (ClassBuilder :> r, StructuredDebug :> r) => CoreDeclaration CoreBind -> Eff r ()
+emitCoreDecl decl = case decl of
+    CoreValue (NonRecursive (n@(Id name type' _), e)) -> do
+        let declName = varRefVal name
+        case e of
+            Core.Lit (Core.Int i) -> do
+                addField $
+                    ClassFileField
+                        []
+                        declName
+                        (ObjectFieldType "java.lang.Integer")
+                        [ConstantValue (ConstantInteger (fromIntegral i))]
+            -- Core.Lam var body -> do
 
--- emitCoreExpr e = case e of
---     Core.Lit s -> do
---         emitValue s
---     (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "println"))) -> do
---         emit'
---             [ InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
---             ]
---     (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
---         emit'
---             [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
---             ]
---     v@(Var ((Id (Global (Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
---     Core.App f x -> do
---         emitCoreExpr x
---         emitCoreExpr f
---     other -> pass
+            e -> do
+                (_, attrs, code) <- runCodeBuilder (emitCoreExpr e)
+                addMethod $
+                    ClassFileMethod
+                        []
+                        declName
+                        (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.Object")))
+                        (fromList [Code $ CodeAttributeData 100 100 code [] attrs])
+        pass
+    _ -> pass
 
--- emitValue :: Member CodeBuilder r => Literal -> Sem r ()
--- emitValue s = case s of
---     Core.Int i ->
---         emit'
---             [ LDC (LDCInt (fromIntegral i))
---             , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
---             ]
---     Core.String s ->
---         emit'
---             [ LDC (LDCString s)
---             ]
---     _ -> error "Not implemented"
+emitCoreExpr e = case e of
+    Core.Lit s -> do
+        emitLiteral s
+    (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "println"))) -> do
+        emit'
+            [ InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.String"] (TypeReturn (ObjectFieldType "Elara.IO")))
+            ]
+    (App ((Var ((Id (Global (Qualified "elaraPrimitive" _)) _ _)))) (Lit (String "toString"))) -> do
+        emit'
+            [ InvokeVirtual (ClassInfoType "java.lang.Object") "toString" (MethodDescriptor [] (TypeReturn (ObjectFieldType "java.lang.String")))
+            ]
+    v@(Var ((Id (Global (Qualified n mn)) t _))) -> emit' [GetStatic (ClassInfoType $ createModuleName mn) n (generateFieldType t)]
+    Core.App f x -> do
+        emitCoreExpr x
+        emitCoreExpr f
+
+    -- Core.Lam var body -> do
+    --     emitLambda var body
+
+    other -> error $ "emitCoreExpr: Not implemented for " <> prettyToText other
+
+-- | Emit bytecode to load a literal onto the stack
+emitLiteral :: CodeBuilder :> r => Literal -> Eff r ()
+emitLiteral s = case s of
+    Core.Int i ->
+        emit'
+            [ LDC (LDCInt (fromIntegral i))
+            , InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn (ObjectFieldType "java.lang.Integer")))
+            ]
+    Core.String s ->
+        emit'
+            [ LDC (LDCString s)
+            ]
+    _ -> error "Not implemented"

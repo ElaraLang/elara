@@ -17,16 +17,20 @@ import Elara.Data.Unique (
     resetGlobalUniqueSupply,
  )
 
+import Data.Binary.Put
+import Data.Binary.Write
 import Data.Generics.Product (field')
 import Data.Generics.Wrapped (_Unwrapped)
 import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
+import Effectful.Error.Extra (fromEither)
 import Effectful.Error.Static (Error, runError)
 import Elara.AST.Module
 import Elara.AST.Name (nameText)
 import Elara.AST.Region
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
+import Elara.Emit qualified as Emit
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
 import Elara.Lexer.Utils (LexerError)
@@ -39,6 +43,9 @@ import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), DumpSettings (..), RunWithOption (..))
 import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
+import JVM.Data.Abstract.ClassFile
+import JVM.Data.Abstract.Name
+import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad
 import Prettyprinter.Render.Text
 import Print
@@ -48,7 +55,7 @@ import Rock.MemoE (memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnvironment)
-import System.FilePath (takeBaseName)
+import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (hSetEncoding, utf8)
 import Text.Printf
 
@@ -82,11 +89,12 @@ main = run `finally` cleanup
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
+        let runJVM = "--run-jvm" `elem` args || "ELARA_RUN_JVM" `elem` fmap fst env
 
         let compilerSettings =
                 CompilerSettings
                     { dumpSettings = DumpSettings{..}
-                    , runWith = if run then RunWithInterpreter else RunWithNone
+                    , runWith = if run then RunWithInterpreter else if runJVM then RunWithJVM else RunWithNone
                     , mainFile = Nothing
                     }
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
@@ -179,27 +187,41 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                     inject $ dumpGraph typed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".typed.elr"
                                     debug "Dumped typed modules"
 
-                                when dumpCore $ do
-                                    core <- for moduleNames $ \m -> do
-                                        Rock.fetch $ Elara.Query.GetCoreModule m
+                                -- when dumpCore $ do
+                                --     core <- for moduleNames $ \m -> do
+                                --         Rock.fetch $ Elara.Query.GetCoreModule m
 
-                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
+                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
 
                                 -- when dumpCore $ do
                                 --     core <- for moduleNames $ \m -> do
                                 --         Rock.fetch $ Elara.Query.GetANFCoreModule m
                                 --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText ) ".core.anf.elr"
 
-                                -- when dumpCore $ do
-                                --     core <- for moduleNames $ \m -> do
-                                --         Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
-                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText ) ".core.final.elr"
+                                when dumpCore $ do
+                                    core <- for moduleNames $ \m -> do
+                                        Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
+                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.final.elr"
 
                                 if runWith == RunWithInterpreter
                                     then
                                         Interpreter.runInterpreter Interpreter.run
                                     else
-                                        printPretty (Style.warning "Warning: " <> "nothing to do.")
+                                        if runWith == RunWithJVM
+                                            then do
+                                                cores <- for moduleNames $ \m -> do
+                                                    Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
+                                                classFiles <- for cores $ \coreMod -> do
+                                                    Emit.emitCoreModule coreMod
+                                                for_ (zip moduleNames classFiles) $ \(modName, classFile) -> do
+                                                    x <- runErrorOrReport $ fromEither $ convert classFile
+                                                    let bs = runPut (writeBinary x)
+                                                    let fp = "build/" <> suitableFilePath classFile.name
+                                                    liftIO $ createAndWriteFile fp bs
+                                                    putTextLn ("Compiled " <> showPretty modName <> " to " <> toText fp <> "!")
+
+                                                debug "Emitted JVM class files"
+                                            else printPretty (Style.warning "Warning: " <> "nothing to do.")
 
                                 -- printPretty loadedModules
                                 end <- liftIO getCPUTime
@@ -217,3 +239,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
+
+createAndWriteFile path content = do
+    createDirectoryIfMissing True $ takeDirectory path
+    writeFileLBS path content

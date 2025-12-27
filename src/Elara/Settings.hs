@@ -31,4 +31,5 @@ defaultDumpSettings =
 data RunWithOption
     = RunWithNone
     | RunWithInterpreter
+    | RunWithJVM
     deriving (Eq, Show)
