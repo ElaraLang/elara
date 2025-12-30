@@ -57,27 +57,42 @@ legacyLoggingExample = do
         debug "Nested log message"
         pure "result"
 
--- | Example 6: Real-world type inference scenario
+-- | Example 6: Real-world type inference scenario using withNamespace
 typeInferenceExample :: StructuredDebug :> r => Eff r ()
 typeInferenceExample = do
-    logInfoWithNS ["TypeInfer"] "Inferring types for module Main" $ do
-        logDebugWithNS ["TypeInfer"] "Processing function: factorial" $ do
-            logDebug "Parameter: n : Int"
-            logDebugWith "Inferring body type" $ do
-                logDebug "Expression: if n == 0 then 1 else n * factorial (n - 1)"
-                logDebug "Condition type: Bool"
-                logDebug "Then branch type: Int"
-                logDebug "Else branch type: Int"
-            logInfo "Inferred type: Int -> Int"
+    withNamespace ["TypeInfer"] $ do
+        logInfoWith "Inferring types for module Main" $ do
+            logDebugWith "Processing function: factorial" $ do
+                logDebug "Parameter: n : Int"
+                logDebugWith "Inferring body type" $ do
+                    logDebug "Expression: if n == 0 then 1 else n * factorial (n - 1)"
+                    logDebug "Condition type: Bool"
+                    logDebug "Then branch type: Int"
+                    logDebug "Else branch type: Int"
+                logInfo "Inferred type: Int -> Int"
 
-        logDebugWithNS ["TypeInfer"] "Processing function: main" $ do
-            logDebug "No parameters"
-            logDebugWith "Inferring body type" $ do
-                logDebug "Expression: print (factorial 5)"
-                logDebug "Argument type: Int"
-            logInfo "Inferred type: IO ()"
+            logDebugWith "Processing function: main" $ do
+                logDebug "No parameters"
+                logDebugWith "Inferring body type" $ do
+                    logDebug "Expression: print (factorial 5)"
+                    logDebug "Argument type: Int"
+                logInfo "Inferred type: IO ()"
 
-        logInfo "Type inference completed successfully"
+            logInfo "Type inference completed successfully"
+
+-- | Example 7: Using withNamespace to avoid repetition
+withNamespaceExample :: StructuredDebug :> r => Eff r ()
+withNamespaceExample = do
+    -- Without withNamespace - repetitive
+    logDebugNS ["Parser", "Expression"] "Parsing expression"
+    logDebugNS ["Parser", "Expression"] "Found operator"
+    logInfoNS ["Parser", "Expression"] "Expression parsed"
+    
+    -- With withNamespace - cleaner
+    withNamespace ["Parser", "Expression"] $ do
+        logDebug "Parsing expression"
+        logDebug "Found operator"
+        logInfo "Expression parsed"
 
 {- |
 Example output when running with different configurations:

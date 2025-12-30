@@ -30,7 +30,7 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith, Info, LogConfig(..))
+import Elara.Logging (debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith, LogLevel(Info), LogConfig(..))
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified

@@ -75,11 +75,18 @@ logError "Type mismatch detected"
 Organize logs by component using namespaces:
 
 ```haskell
--- Single namespace
+-- Explicit namespace for a single log
 logDebugNS ["TypeInfer"] "Generating constraints"
-
--- Nested namespace
 logInfoNS ["TypeInfer", "Unification"] "Unified types successfully"
+
+-- Set namespace context for a block (avoids repetition)
+withNamespace ["TypeInfer", "Unification"] $ do
+    logDebug "Starting unification"  -- Automatically gets [TypeInfer.Unification] namespace
+    logInfo "Types unified"  -- Also gets [TypeInfer.Unification] namespace
+    
+    -- Nested namespaces work too
+    withNamespace ["Solver"] $ do
+        logDebug "Running solver"  -- Gets [TypeInfer.Unification.Solver] namespace
 ```
 
 ### Scoped Logging

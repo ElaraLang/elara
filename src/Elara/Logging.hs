@@ -98,6 +98,8 @@ data StructuredDebug :: Effect where
     LogMsgNS :: HasCallStack => LogLevel -> [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
     LogWith :: HasCallStack => LogLevel -> Doc AnsiStyle -> m a -> StructuredDebug m a
     LogWithNS :: HasCallStack => LogLevel -> [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
+    -- Namespace context operation
+    WithNamespace :: HasCallStack => [T.Text] -> m a -> StructuredDebug m a
 
 type instance DispatchOf StructuredDebug = 'Dynamic
 
@@ -171,6 +173,19 @@ logDebugWithNS ns msg = send . LogWithNS Debug ns msg
 logInfoWithNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
 logInfoWithNS ns msg = send . LogWithNS Info ns msg
 
+-- | Set a namespace context for a block of code
+-- All log messages within this block will automatically include the namespace
+-- without needing to specify it explicitly.
+--
+-- Example:
+-- @
+-- withNamespace ["TypeInfer", "Unification"] $ do
+--     logDebug "Unifying types"  -- Automatically includes namespace
+--     logInfo "Unification complete"
+-- @
+withNamespace :: HasCallStack => StructuredDebug :> r => [T.Text] -> Eff r a -> Eff r a
+withNamespace ns act = send $ WithNamespace ns act
+
 -- | Extract source location from HasCallStack
 getSourceLoc :: HasCallStack => Maybe (String, Int)
 getSourceLoc = case getCallStack callStack of
@@ -230,6 +245,8 @@ structuredDebugToLogWith config = reinterpret (S.evalState ([] :: [T.Text]) . S.
     LogMsgNS level names msg -> logHelper level names msg getSourceLoc
     LogWith level msg act -> logWithHelper level [] msg act
     LogWithNS level names msg act -> logWithHelper level names msg act
+    -- Namespace context operation
+    WithNamespace names act -> withNamespaceHelper names act
   where
     logHelper :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Maybe (String, Int) -> Eff (StructuredDebug : r) ()
     logHelper level names msg srcLoc = do
@@ -255,6 +272,15 @@ structuredDebugToLogWith config = reinterpret (S.evalState ([] :: [T.Text]) . S.
         S.put ns
         pure res
 
+    withNamespaceHelper :: [T.Text] -> Eff (StructuredDebug : r) a -> Eff (StructuredDebug : r) a
+    withNamespaceHelper names act = do
+        ns <- S.get @[T.Text]
+        let fullNs = ns <> names
+        S.put fullNs
+        res <- localSeqUnlift env $ \unlift -> unlift act
+        S.put ns
+        pure res
+
 ignoreStructuredDebug :: Eff (StructuredDebug : r) a -> Eff r a
 ignoreStructuredDebug = interpret $ \env -> \case
     DebugOld _ -> pass
@@ -265,6 +291,7 @@ ignoreStructuredDebug = interpret $ \env -> \case
     LogMsgNS _ _ _ -> pass
     LogWith _ _ act -> localSeqUnlift env $ \unlift -> unlift act
     LogWithNS _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    WithNamespace _ act -> localSeqUnlift env $ \unlift -> unlift act
 
 {- | Inspired by https://x.com/Quelklef/status/1860188828876583146 !
 A recursive, pure function, which can be traced with a monadic effect.
