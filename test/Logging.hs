@@ -22,8 +22,8 @@ spec = do
         it "has sensible defaults" $ do
             let config = defaultLogConfig
             minLogLevel config `shouldBe` Debug
-            showTimestamps config `shouldBe` True
-            showSourceLoc config `shouldBe` True
+            showTimestamps config `shouldBe` False
+            showSourceLoc config `shouldBe` False
             namespaceFilter config `shouldBe` Nothing
 
     describe "shouldLog" $ do

@@ -46,12 +46,14 @@ data LogConfig = LogConfig
     deriving (Eq, Show)
 
 -- | Default log configuration
+-- Optimized for readability during simple debugging - timestamps and source locations are disabled by default
+-- Enable them via environment variables when needed for detailed diagnostics
 defaultLogConfig :: LogConfig
 defaultLogConfig =
     LogConfig
         { minLogLevel = Debug
-        , showTimestamps = True
-        , showSourceLoc = True
+        , showTimestamps = False
+        , showSourceLoc = False
         , namespaceFilter = Nothing
         }
 
@@ -59,8 +61,8 @@ defaultLogConfig =
 -- Environment variables:
 --   - ELARA_DEBUG: If set, enables debug level logging
 --   - ELARA_LOG_LEVEL: Set to DEBUG, INFO, WARN, or ERROR
---   - ELARA_LOG_TIMESTAMPS: Set to "true" or "false" (default: true)
---   - ELARA_LOG_SOURCE_LOC: Set to "true" or "false" (default: true)
+--   - ELARA_LOG_TIMESTAMPS: Set to "true" to enable timestamps (default: false)
+--   - ELARA_LOG_SOURCE_LOC: Set to "true" to enable source locations (default: false)
 --   - ELARA_LOG_NAMESPACE: Filter logs to only show messages from this namespace (dot-separated)
 getLogConfigFromEnv :: IO LogConfig
 getLogConfigFromEnv = do
@@ -80,8 +82,8 @@ getLogConfigFromEnv = do
     pure $
         LogConfig
             { minLogLevel = minLevel
-            , showTimestamps = maybe True (== "true") showTimestamps
-            , showSourceLoc = maybe True (== "true") showSourceLoc
+            , showTimestamps = maybe False (== "true") showTimestamps
+            , showSourceLoc = maybe False (== "true") showSourceLoc
             , namespaceFilter = fmap (T.split (== '.') . T.pack) namespaceFilter
             }
 

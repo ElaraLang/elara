@@ -20,21 +20,29 @@ Configure logging behavior using environment variables:
 |----------|-------------|--------|---------|
 | `ELARA_DEBUG` | Enable debug logging | any value | not set |
 | `ELARA_LOG_LEVEL` | Minimum log level | DEBUG, INFO, WARN, ERROR | INFO (or DEBUG if ELARA_DEBUG is set) |
-| `ELARA_LOG_TIMESTAMPS` | Show timestamps | true, false | true |
-| `ELARA_LOG_SOURCE_LOC` | Show source location | true, false | true |
+| `ELARA_LOG_TIMESTAMPS` | Show timestamps | true, false | **false** |
+| `ELARA_LOG_SOURCE_LOC` | Show source location | true, false | **false** |
 | `ELARA_LOG_NAMESPACE` | Filter by namespace | dot-separated namespace | not set |
+
+**Note**: Timestamps and source locations are disabled by default for cleaner output during simple debugging. Enable them when you need detailed diagnostics.
 
 ### Examples
 
 ```bash
-# Enable debug logging with all features
+# Enable debug logging (clean output)
 ELARA_DEBUG=1 elara --run
 
 # Show only warnings and errors
 ELARA_LOG_LEVEL=WARN elara --run
 
-# Disable timestamps
-ELARA_LOG_TIMESTAMPS=false elara --run
+# Enable timestamps for detailed diagnostics
+ELARA_LOG_TIMESTAMPS=true elara --run
+
+# Enable source locations for debugging
+ELARA_LOG_SOURCE_LOC=true elara --run
+
+# Full diagnostic mode with all metadata
+ELARA_LOG_TIMESTAMPS=true ELARA_LOG_SOURCE_LOC=true elara --run
 
 # Filter to only show type inference logs
 ELARA_LOG_NAMESPACE=TypeInfer elara --run
@@ -110,7 +118,29 @@ debugWithNS ["Module"] "Message" action
 
 ## Example Output
 
-With timestamps and source location enabled:
+**Default output** (clean and readable for simple debugging):
+
+```
+[INFO] Starting compilation
+[DEBUG] [TypeInfer] Generating constraints
+│ [DEBUG] [TypeInfer] Processing expression
+│ │ [DEBUG] [TypeInfer.Unification] Unifying types
+│ │ [DEBUG] [TypeInfer.Unification] Result: Int -> Bool
+[INFO] Compilation successful
+```
+
+**With timestamps enabled** (`ELARA_LOG_TIMESTAMPS=true`):
+
+```
+2025-12-30 13:07:56 [INFO] Starting compilation
+2025-12-30 13:07:56 [DEBUG] [TypeInfer] Generating constraints
+│ 2025-12-30 13:07:56 [DEBUG] [TypeInfer] Processing expression
+│ │ 2025-12-30 13:07:56 [DEBUG] [TypeInfer.Unification] Unifying types
+│ │ 2025-12-30 13:07:56 [DEBUG] [TypeInfer.Unification] Result: Int -> Bool
+2025-12-30 13:07:56 [INFO] Compilation successful
+```
+
+**With all diagnostics enabled** (`ELARA_LOG_TIMESTAMPS=true ELARA_LOG_SOURCE_LOC=true`):
 
 ```
 2025-12-30 13:07:56 [INFO] Main.hs:142 Starting compilation
@@ -120,16 +150,6 @@ With timestamps and source location enabled:
 │ │ 2025-12-30 13:07:56 [DEBUG] TypeInfer.hs:125 [TypeInfer.Unification] Result: Int -> Bool
 2025-12-30 13:07:56 [INFO] Main.hs:180 Compilation successful
 ```
-
-With minimal configuration (timestamps and source location disabled):
-
-```
-[INFO] Starting compilation
-[DEBUG] [TypeInfer] Generating constraints
-│ [DEBUG] [TypeInfer] Processing expression
-│ │ [DEBUG] [TypeInfer.Unification] Unifying types
-│ │ [DEBUG] [TypeInfer.Unification] Result: Int -> Bool
-[INFO] Compilation successful
 ```
 
 ## Implementation Details

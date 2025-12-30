@@ -68,10 +68,17 @@ ELARA_LOG_LEVEL=INFO elara --run
 ELARA_LOG_NAMESPACE=TypeInfer elara --run
 ```
 
-### Minimal Output (No Timestamps/Locations)
+### Enable Detailed Diagnostics
 
 ```bash
-ELARA_LOG_TIMESTAMPS=false ELARA_LOG_SOURCE_LOC=false elara --run
+# Enable timestamps
+ELARA_LOG_TIMESTAMPS=true elara --run
+
+# Enable source locations
+ELARA_LOG_SOURCE_LOC=true elara --run
+
+# Enable both for full diagnostics
+ELARA_LOG_TIMESTAMPS=true ELARA_LOG_SOURCE_LOC=true elara --run
 ```
 
 ## Example Output
@@ -82,15 +89,22 @@ Before:
 │ │ Result: Int
 ```
 
-After (with all features enabled):
+After (default - clean and readable):
+```
+[DEBUG] generateConstraints: Int 42
+│ [DEBUG] Result: Int
+```
+
+After (with timestamps enabled):
+```
+2025-12-30 13:07:56 [DEBUG] generateConstraints: Int 42
+│ 2025-12-30 13:07:56 [DEBUG] Result: Int
+```
+
+After (with all diagnostics enabled):
 ```
 2025-12-30 13:07:56 [DEBUG] ConstraintGeneration.hs:65 generateConstraints: Int 42
 │ 2025-12-30 13:07:56 [DEBUG] ConstraintGeneration.hs:68 Result: Int
-```
-
-After (info level only):
-```
-[INFO] Type checking completed successfully
 ```
 
 ## Implementation

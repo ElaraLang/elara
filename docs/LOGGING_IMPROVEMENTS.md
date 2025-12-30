@@ -33,16 +33,23 @@ Control logging without changing code:
 
 Every log message can now include:
 
-- **Timestamp**: When the message was logged
-- **Log Level**: Visual indicator of importance
-- **Source Location**: File name and line number where the log was called
-- **Namespace**: Component or module that generated the log
+- **Timestamp**: When the message was logged (optional, disabled by default)
+- **Log Level**: Visual indicator of importance (always shown)
+- **Source Location**: File name and line number where the log was called (optional, disabled by default)
+- **Namespace**: Component or module that generated the log (optional)
 - **Hierarchical Indentation**: Shows call depth and structure (preserved from original)
 
-Example:
+**Default (clean output for simple debugging):**
+```
+[DEBUG] [TypeInfer.Unification] Unifying types
+```
+
+**With all metadata enabled:**
 ```
 2025-12-30 13:07:56 [DEBUG] TypeInfer.hs:45 [TypeInfer.Unification] Unifying types
 ```
+
+**Note**: Timestamps and source locations are disabled by default to keep output readable. Enable them with environment variables when you need detailed diagnostics.
 
 ### 4. Namespace Filtering 🎯
 
@@ -84,10 +91,11 @@ All existing `debug`, `debugWith`, `debugNS`, and `debugWithNS` functions contin
 
 ## Usage Examples
 
-### Development: See Everything
+### Development: Clean Debug Output (Default)
 
 ```bash
 ELARA_DEBUG=1 elara --run
+# Shows: [DEBUG] Message here
 ```
 
 ### Production: Important Messages Only
@@ -96,16 +104,30 @@ ELARA_DEBUG=1 elara --run
 ELARA_LOG_LEVEL=INFO elara --run
 ```
 
+### Debugging with Timestamps
+
+```bash
+ELARA_DEBUG=1 ELARA_LOG_TIMESTAMPS=true elara --run
+# Shows: 2025-12-30 13:07:56 [DEBUG] Message here
+```
+
+### Debugging with Full Diagnostics
+
+```bash
+ELARA_DEBUG=1 ELARA_LOG_TIMESTAMPS=true ELARA_LOG_SOURCE_LOC=true elara --run
+# Shows: 2025-12-30 13:07:56 [DEBUG] File.hs:123 Message here
+```
+
 ### Debugging Specific Component
 
 ```bash
 ELARA_LOG_LEVEL=DEBUG ELARA_LOG_NAMESPACE=TypeInfer elara --run
 ```
 
-### Minimal Output
+### Minimal Output (Errors Only)
 
 ```bash
-ELARA_LOG_LEVEL=WARN ELARA_LOG_TIMESTAMPS=false ELARA_LOG_SOURCE_LOC=false elara --run
+ELARA_LOG_LEVEL=ERROR elara --run
 ```
 
 ## Benefits
