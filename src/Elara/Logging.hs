@@ -1,6 +1,59 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Elara.Logging where
+module Elara.Logging (
+    -- * Log Levels
+    LogLevel (..),
+
+    -- * Configuration
+    LogConfig (..),
+    defaultLogConfig,
+    getLogConfigFromEnv,
+
+    -- * Structured Debug Effect
+    StructuredDebug,
+
+    -- * Basic Logging Functions
+    logDebug,
+    logInfo,
+    logWarning,
+    logError,
+
+    -- * Namespaced Logging Functions
+    logDebugNS,
+    logInfoNS,
+    logWarningNS,
+    logErrorNS,
+
+    -- * Scoped Logging Functions
+    logDebugWith,
+    logInfoWith,
+    logDebugWithNS,
+    logInfoWithNS,
+
+    -- * Namespace Context
+    withNamespace,
+
+    -- * Legacy Functions (for backward compatibility)
+    debug,
+    debugWith,
+    debugWithResult,
+    debugNS,
+    debugWithNS,
+
+    -- * Interpreters
+    structuredDebugToLog,
+    structuredDebugToLogWith,
+    ignoreStructuredDebug,
+
+    -- * Traceable Functions
+    TraceableFn (..),
+    runTraceable,
+    traceFn,
+    fib,
+
+    -- * Internal (exported for testing)
+    shouldLog,
+) where
 
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust)
@@ -57,12 +110,23 @@ defaultLogConfig =
         , namespaceFilter = Nothing
         }
 
+-- | Parse a boolean value from environment variable
+-- Accepts: "true", "True", "TRUE", "1", "yes", "Yes", "YES"
+-- Anything else (including Nothing) is treated as False
+parseBool :: Maybe String -> Bool
+parseBool Nothing = False
+parseBool (Just s) = map toLower s `elem` ["true", "1", "yes"]
+  where
+    toLower c
+        | c >= 'A' && c <= 'Z' = toEnum (fromEnum c + 32)
+        | otherwise = c
+
 -- | Get log configuration from environment variables
 -- Environment variables:
 --   - ELARA_DEBUG: If set, enables debug level logging
 --   - ELARA_LOG_LEVEL: Set to DEBUG, INFO, WARN, or ERROR
---   - ELARA_LOG_TIMESTAMPS: Set to "true" to enable timestamps (default: false)
---   - ELARA_LOG_SOURCE_LOC: Set to "true" to enable source locations (default: false)
+--   - ELARA_LOG_TIMESTAMPS: Set to "true"/"1"/"yes" (case-insensitive) to enable timestamps (default: false)
+--   - ELARA_LOG_SOURCE_LOC: Set to "true"/"1"/"yes" (case-insensitive) to enable source locations (default: false)
 --   - ELARA_LOG_NAMESPACE: Filter logs to only show messages from this namespace (dot-separated)
 getLogConfigFromEnv :: IO LogConfig
 getLogConfigFromEnv = do
@@ -82,8 +146,8 @@ getLogConfigFromEnv = do
     pure $
         LogConfig
             { minLogLevel = minLevel
-            , showTimestamps = maybe False (== "true") showTimestamps
-            , showSourceLoc = maybe False (== "true") showSourceLoc
+            , showTimestamps = parseBool showTimestamps
+            , showSourceLoc = parseBool showSourceLoc
             , namespaceFilter = fmap (T.split (== '.') . T.pack) namespaceFilter
             }
 
