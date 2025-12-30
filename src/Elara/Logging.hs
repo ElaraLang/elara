@@ -3,10 +3,11 @@
 module Elara.Logging where
 
 import Data.List (isPrefixOf)
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
-import Effectful (Dispatch (..), DispatchOf, Eff, Effect, (:>))
+import Effectful (Dispatch (..), DispatchOf, Eff, Effect, IOE, liftIO, (:>))
 import Effectful.Colog qualified as Log
 import Effectful.Dispatch.Dynamic (interpret, localSeqUnlift, reinterpret, send)
 import Effectful.State.Static.Local qualified as S
@@ -81,7 +82,7 @@ getLogConfigFromEnv = do
             { minLogLevel = minLevel
             , showTimestamps = maybe True (== "true") showTimestamps
             , showSourceLoc = maybe True (== "true") showSourceLoc
-            , namespaceFilter = fmap (T.split (== '.') . toText) namespaceFilter
+            , namespaceFilter = fmap (T.split (== '.') . T.pack) namespaceFilter
             }
 
 data StructuredDebug :: Effect where
@@ -211,11 +212,11 @@ shouldLog config level ns =
             Nothing -> True
             Just filterNs -> filterNs `isPrefixOf` ns
 
-structuredDebugToLog :: forall r a. HasCallStack => Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
+structuredDebugToLog :: forall r a. (HasCallStack, IOE :> r) => Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLog = structuredDebugToLogWith defaultLogConfig
 
 -- | Interpret StructuredDebug with custom configuration
-structuredDebugToLogWith :: forall r a. HasCallStack => LogConfig -> Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
+structuredDebugToLogWith :: forall r a. (HasCallStack, IOE :> r) => LogConfig -> Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLogWith config = reinterpret (S.evalState ([] :: [T.Text]) . S.evalState (0 :: Int)) $ \env -> \case
     -- Legacy operations (treated as Debug level)
     DebugOld msg -> logHelper Debug [] msg getSourceLoc
