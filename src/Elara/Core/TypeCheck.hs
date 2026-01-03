@@ -31,7 +31,7 @@ import Print (prettyToString, showPretty)
 import TODO (todo)
 
 data TypeCheckError
-    = UnknownVariable Var (Set.Set (UnlocatedVarRef Text))
+    = UnknownVariable {unknownVariable :: Var, unknownVariableScope :: Set.Set (UnlocatedVarRef Text)}
     | CoreTypeMismatch
         { expected :: Core.Type
         , actual :: Core.Type
@@ -73,7 +73,7 @@ isInScope (Id name@(Local _) _ _) s = Set.member name (scope s)
 isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
 isInScope _ _ = False
 
-typeCheckCoreModule :: (Error TypeCheckError :> r, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
+typeCheckCoreModule :: (Error TypeCheckError :> r, HasCallStack, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
 typeCheckCoreModule (CoreModule n m) = do
     let initialState = TcState{scope = mempty}
 
@@ -97,7 +97,7 @@ varType (Id _ t _) = t
 
 typeCheck :: (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.Expr Var -> Eff r Core.Type
 typeCheck (ANF.Let bind in') = case bind of
-    NonRecursive (v, e) -> debugWith ("typeCheck NonRecursive Let: " <> pretty v) $ do
+    NonRecursive (v, e) -> do
         eType <- typeCheckC e
         locally (addToScope v) $
             typeCheck in'
@@ -109,11 +109,11 @@ typeCheck (ANF.Let bind in') = case bind of
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
 typeCheckC :: (HasCallStack, Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.CExpr Var -> Eff r Core.Type
-typeCheckC (ANF.App f x) = debugWith ("App " <> pretty (fromANFAtom f) <+> pretty (fromANFAtom x)) $ do
+typeCheckC (ANF.App f x) = do
     fType <- typeCheckA f
-    debug $ "fType: " <> pretty fType
+    -- debug $ "fType: " <> pretty fType
     xType <- typeCheckA x
-    debug $ "xType: " <> pretty xType
+    -- debug $ "xType: " <> pretty xType
     case fType of
         Core.FuncTy argType retType -> do
             if generalize argType `equalUnderSubst` generalize xType
@@ -137,19 +137,19 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                     else throwError $ CoreTypeMismatch litType eType (fromANFCExpr match, fromANF e) callStack
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
-                debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
+                -- debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
                 when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $ do
-                    debug $ "bs: " <> pretty bs
-                    debug $ "functionTypeArgs: " <> pretty (Core.functionTypeArgs con'.dataConType)
+                    -- debug $ "bs: " <> pretty bs
+                    -- debug $ "functionTypeArgs: " <> pretty (Core.functionTypeArgs con'.dataConType)
                     throwError $
                         PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
                 eType' <- typeCheck e
                 -- TODO more robust type checking here with the binders and stuff
-                debug $ "eType': " <> pretty eType'
+                -- debug $ "eType': " <> pretty eType'
                 let generalizedEType = generalize eType
                 let generalizedConType = generalize conType
-                debug $ "generalized:" <+> pretty generalizedEType <+> "and" <+> pretty generalizedConType
-                debug $ "equal?" <+> pretty (generalizedEType `equalUnderSubst` generalizedConType)
+                -- debug $ "generalized:" <+> pretty generalizedEType <+> "and" <+> pretty generalizedConType
+                -- debug $ "equal?" <+> pretty (generalizedEType `equalUnderSubst` generalizedConType)
                 if generalizedEType `equalUnderSubst` generalizedConType
                     then pure eType'
                     else
@@ -173,11 +173,11 @@ typeCheckLit lit = case lit of
     Core.Unit -> Core.ConTy unitCon
 
 typeCheckA ::
-    (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r) =>
+    (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) =>
     ANF.AExpr Var -> Eff r Core.Type
 typeCheckA (ANF.Lit lit) = pure $ typeCheckLit lit
 -- Globally qualified vars are always in scope
-typeCheckA (ANF.Var v) = debugWith ("typeCheckA: " <> pretty v) $ do
+typeCheckA (ANF.Var v) = do
     env <- get
     ( if isInScope v env
             then
