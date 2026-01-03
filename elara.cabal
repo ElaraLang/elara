@@ -51,6 +51,8 @@ library
       Elara.Core.ANF
       Elara.Core.Generic
       Elara.Core.LiftClosures
+      Elara.Core.LiftClosures.Error
+      Elara.Core.LiftClosures.Util
       Elara.Core.Module
       Elara.Core.Pretty
       Elara.Core.ToANF

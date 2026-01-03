@@ -1,6 +1,7 @@
 import Golden qualified
 import Infer qualified
 import Lex qualified
+import LiftClosures qualified
 import Parse qualified
 import Shunt qualified
 import Test.Syd (Spec, describe, sydTest)
@@ -15,5 +16,6 @@ spec = do
     describe "Parsing Test" Parse.spec
     describe "Infer Test" Infer.spec
     describe "Shunt Test" Shunt.spec
+    describe "Closure Lifting Test" LiftClosures.spec
 
     describe "Golden Test" Golden.spec
