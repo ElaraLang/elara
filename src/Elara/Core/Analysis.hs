@@ -90,7 +90,9 @@ instance FreeCoreVars Core.Expr where
     freeCoreVars (Core.Let bind body) = do
         let bound = binders bind
         freeCoreVars body `Set.difference` Set.fromList bound
-    freeCoreVars (Core.Match e _ alts) = freeCoreVars e <> foldMap (\(_, bs, e) -> freeCoreVars e `Set.difference` Set.fromList bs) alts
+    freeCoreVars (Core.Match e _ alts) =
+        freeCoreVars e
+            <> foldMap (\(_, bs, e) -> freeCoreVars e `Set.difference` Set.fromList bs) alts
 
 instance FreeCoreVars ANF.AExpr where
     freeCoreVars (ANF.Var v) = one v
@@ -105,12 +107,16 @@ instance FreeCoreVars ANF.CExpr where
     freeCoreVars (ANF.Match e _ alts) = freeCoreVars e <> foldMap (\(_, bs, e) -> freeCoreVars e `Set.difference` Set.fromList bs) alts
 
 instance FreeCoreVars ANF.Expr where
-    freeCoreVars (ANF.Let bind body) = freeCoreVarsBind bind `Set.difference` freeCoreVars body
+    freeCoreVars (ANF.Let bind body) =
+        freeCoreVarsBind bind <> (freeCoreVars body `Set.difference` Set.fromList (binders bind))
     freeCoreVars (ANF.CExpr e) = freeCoreVars e
 
 freeCoreVarsBind :: (FreeCoreVars ast, Ord a) => Bind a ast -> Set a
 freeCoreVarsBind (NonRecursive (_, e)) = freeCoreVars e
-freeCoreVarsBind (Recursive bs) = foldMap (freeCoreVars . snd) bs
+freeCoreVarsBind (Recursive bs) =
+    let bounds = Set.fromList (map fst bs)
+        allFree = foldMap (freeCoreVars . snd) bs
+     in allFree `Set.difference` bounds
 
 freeTypeVars :: Core.Type -> Set Core.TypeVariable
 freeTypeVars (Core.TyVarTy tv) = one tv
