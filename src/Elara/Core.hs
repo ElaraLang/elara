@@ -17,7 +17,22 @@ data TypeVariable = TypeVariable
 data Var
     = TyVar TypeVariable
     | Id (UnlocatedVarRef Text) Type (Maybe DataCon)
-    deriving (Show, Data, Eq, Ord, Generic)
+    deriving (Show, Data, Generic)
+
+instance Eq Var where
+    (TyVar a) == (TyVar b) = a == b
+    (Id a _ _) == (Id b _ _) = a == b
+    _ == _ = False
+
+instance Ord Var where
+    compare (TyVar a) (TyVar b) = compare a b
+    compare (Id a _ _) (Id b _ _) = compare a b
+    compare (TyVar _) (Id{}) = LT
+    compare (Id{}) (TyVar _) = GT
+
+instance Hashable Var where
+    hashWithSalt s (TyVar t) = hashWithSalt s t
+    hashWithSalt s (Id v _ _) = hashWithSalt s v
 
 data Expr b
     = Var b
@@ -175,5 +190,3 @@ instance Hashable TyCon
 instance Hashable TyConDetails
 
 instance Hashable TypeVariable
-
-instance Hashable Var
