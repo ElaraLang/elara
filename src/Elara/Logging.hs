@@ -110,13 +110,3 @@ traceFn (TraceableFn f) a = do
         f (traceFn @name (TraceableFn f)) a
     debug $ pretty res
     pure res
-
-fib :: TraceableFn "fib" Int Int
-fib = TraceableFn $ \f n ->
-    case n of
-        0 -> pure 0
-        1 -> pure 1
-        _ -> do
-            a <- f (n - 1)
-            b <- f (n - 2)
-            pure $ a + b
