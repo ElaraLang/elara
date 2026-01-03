@@ -8,14 +8,12 @@
 
 module Elara.Shunt where
 
-import Control.Applicative.Combinators (sepBy)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Map qualified as Map
-import Effectful (Eff, IOE, inject, (:>))
+import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static qualified as Eff
-import Effectful.Exception (throwIO)
-import Effectful.State.Static.Local (execState, modify)
+import Effectful.State.Static.Local (execState)
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
@@ -32,7 +30,6 @@ import Elara.ConstExpr
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
 import Elara.Error (ReportableError (report), runErrorOrReport)
-import Elara.Error.Internal
 import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
 import Elara.Query (Query (..), QueryType (..), SupportsQueries, SupportsQuery (..))
 import Elara.Query.Effects
@@ -41,9 +38,7 @@ import Elara.Rename.Error (RenameError)
 import Elara.Rules.Generic ()
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
-import GHC.Exts (the)
-import Optics (Field4 (_4), Field5 (_5), filtered)
-import Print (debugPretty, showPretty)
+import Print (debugPretty)
 import Rock (Rock, fetch)
 import TODO (todo)
 import Prelude hiding (modify')
