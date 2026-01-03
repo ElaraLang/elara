@@ -40,6 +40,7 @@ import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
+import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
 import Elara.Data.Pretty
@@ -169,7 +170,7 @@ data Query (es :: [Effect]) a where
     -- \* Core To Core
     GetOptimisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
-    GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
+    GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ClosureLiftError])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetFinalisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
 
 -- | List of query kinds at the type level
