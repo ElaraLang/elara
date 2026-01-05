@@ -68,14 +68,27 @@ library
       Elara.Data.Unwrap
       Elara.Desugar
       Elara.Desugar.Error
-      Elara.Emit
-      Elara.Emit.Lambda
-      Elara.Emit.Utils
       Elara.Error
       Elara.Error.Codes
       Elara.Error.Effect
       Elara.Error.Internal
       Elara.Interpreter
+      Elara.JVM.Emit
+      Elara.JVM.Emit.Lambda
+      Elara.JVM.Emit.Operator
+      Elara.JVM.Emit.State
+      Elara.JVM.Emit.Types
+      Elara.JVM.Emit.Utils
+      Elara.JVM.Error
+      Elara.JVM.IR
+      Elara.JVM.Lower
+      Elara.JVM.Lower.ADT
+      Elara.JVM.Lower.Expr
+      Elara.JVM.Lower.Function
+      Elara.JVM.Lower.Match
+      Elara.JVM.Lower.Monad
+      Elara.JVM.Lower.Type
+      Elara.JVM.Lower.Util
       Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer
@@ -281,6 +294,7 @@ test-suite elara-test
       Lex
       Lex.Common
       Lex.Indents
+      LiftClosures
       Orphans
       Parse
       Parse.Common

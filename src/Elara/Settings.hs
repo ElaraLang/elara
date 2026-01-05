@@ -14,6 +14,8 @@ data DumpSettings = DumpSettings
     , dumpShunted :: Bool
     , dumpTyped :: Bool
     , dumpCore :: Bool
+    , dumpIR :: Bool
+    , dumpJVM :: Bool
     }
 
 defaultDumpSettings :: DumpSettings
@@ -26,6 +28,8 @@ defaultDumpSettings =
         , dumpShunted = False
         , dumpTyped = False
         , dumpCore = False
+        , dumpIR = False
+        , dumpJVM = False
         }
 
 data RunWithOption

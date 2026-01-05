@@ -28,11 +28,15 @@ import Effectful.Error.Static (Error, runError)
 import Elara.AST.Module
 import Elara.AST.Name (nameText)
 import Elara.AST.Region
+import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
-import Elara.Emit qualified as Emit
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
+import Elara.JVM.Emit qualified as Emit
+import Elara.JVM.Error (JVMLoweringError)
+import Elara.JVM.IR (moduleName)
+import Elara.JVM.Lower
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (debug, ignoreStructuredDebug, structuredDebugToLog)
 import Elara.Parse.Error (WParseErrorBundle)
@@ -88,6 +92,8 @@ main = run `finally` cleanup
         let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
         let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
         let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
+        let dumpIR = "--dump-ir" `elem` args || "ELARA_DUMP_IR" `elem` fmap fst env
+        let dumpJVM = "--dump-jvm" `elem` args || "ELARA_DUMP_JVM" `elem` fmap fst env
         let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
         let runJVM = "--run-jvm" `elem` args || "ELARA_RUN_JVM" `elem` fmap fst env
 
@@ -187,16 +193,21 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                     inject $ dumpGraph typed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".typed.elr"
                                     debug "Dumped typed modules"
 
-                                -- when dumpCore $ do
-                                --     core <- for moduleNames $ \m -> do
-                                --         Rock.fetch $ Elara.Query.GetCoreModule m
+                                when dumpCore $ do
+                                    core <- for moduleNames $ \m -> do
+                                        Rock.fetch $ Elara.Query.GetCoreModule m
 
-                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
+                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
 
-                                -- when dumpCore $ do
-                                --     core <- for moduleNames $ \m -> do
-                                --         Rock.fetch $ Elara.Query.GetANFCoreModule m
-                                --     inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText ) ".core.anf.elr"
+                                when dumpCore $ do
+                                    core <- for moduleNames $ \m -> do
+                                        Rock.fetch $ Elara.Query.GetANFCoreModule m
+                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.anf.elr"
+
+                                when dumpCore $ do
+                                    core <- for moduleNames $ \m -> do
+                                        runErrorOrReport @ClosureLiftError $ Rock.fetch $ Elara.Query.GetClosureLiftedModule m
+                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.closure_lifted.elr"
 
                                 when dumpCore $ do
                                     core <- for moduleNames $ \m -> do
@@ -212,13 +223,27 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                                 cores <- for moduleNames $ \m -> do
                                                     Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
                                                 classFiles <- for cores $ \coreMod -> do
-                                                    Emit.emitCoreModule coreMod
-                                                for_ (zip moduleNames classFiles) $ \(modName, classFile) -> do
-                                                    x <- runErrorOrReport $ fromEither $ convert classFile
-                                                    let bs = runPut (writeBinary x)
-                                                    let fp = "build/" <> suitableFilePath classFile.name
-                                                    liftIO $ createAndWriteFile fp bs
-                                                    putTextLn ("Compiled " <> showPretty modName <> " to " <> toText fp <> "!")
+                                                    lowered <- runErrorOrReport @JVMLoweringError $ lowerModule coreMod
+                                                    Emit.emitIRModule lowered
+
+                                                when dumpIR $ do
+                                                    lowered <- for cores $ \coreMod -> do
+                                                        runErrorOrReport @JVMLoweringError $ lowerModule coreMod
+                                                    inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
+                                                    debug "Dumped JVM IR modules"
+
+                                                when dumpJVM $ do
+                                                    inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
+
+                                                for_ (zip moduleNames classFiles) $ \(modName, classes) -> do
+                                                    fps <- for classes $ \classFile -> do
+                                                        x <- runErrorOrReport $ fromEither $ convert classFile
+                                                        let bs = runPut (writeBinary x)
+                                                        let fp = "build/" <> suitableFilePath classFile.name
+                                                        liftIO $ createAndWriteFile fp bs
+                                                        pure fp
+
+                                                    putTextLn ("Compiled " <> showPretty modName <> " to " <> showPretty fps <> "!")
 
                                                 debug "Emitted JVM class files"
                                             else printPretty (Style.warning "Warning: " <> "nothing to do.")

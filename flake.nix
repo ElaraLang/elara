@@ -10,7 +10,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    h2jvm.url = "github:ElaraLang/h2jvm";
+    h2jvm.url = "git+file:///Users/alex/workspace/h2jvm/";
     diagnose = {
       url = "github:bristermitten/diagnose";
       flake = false;
@@ -101,7 +101,7 @@
                 ...
               }:
               {
-                h2jvm = source.root h2jvm;
+                h2jvm = notest (source.root h2jvm);
                 unix = enable "os-string";
                 directory = enable "os-string";
                 diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
@@ -260,6 +260,7 @@
                       "Lex"
                       "Lex.Common"
                       "Lex.Indents"
+                      "LiftClosures"
                       "Orphans"
                       "Parse"
                       "Parse.Common"

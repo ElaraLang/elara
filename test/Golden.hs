@@ -52,5 +52,5 @@ runGolden settings goldenName = do
                                             -- intercept the output from the test runner
                                             -- adding a small delay here seems to mostly mitigate the issue
                                             -- albeit in a stupid way
-                                            threadDelay 5000
+                                            threadDelay 10000
                                             Interpreter.runInterpreter Interpreter.run

@@ -434,7 +434,6 @@ emitLiftedRecBinding captures allBindings info = do
 
     tell [(rbiLiftedVar info, finalCExpr)]
 
-
 -- | Build closure chains for recursive bindings with shared captures
 buildChains ::
     LiftClosures r =>

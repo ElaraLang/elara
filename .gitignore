@@ -23,10 +23,6 @@ cabal.project.local
 .HTF/
 .hie/
 haddocks/
-# Stack
-.stack-work/
-.stack-work-profile/
-stack.yaml.lock
 
 ### IDE/support
 # Vim

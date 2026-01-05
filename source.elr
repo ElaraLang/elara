@@ -65,6 +65,9 @@ let (<|>) (Parser p1) (Parser p2) = Parser ( \s -> match p1 s with
                                             None -> p2 s
                                             Some a -> Some a )
 
+def lazy : (() -> Parser a) -> Parser a
+let lazy f = Parser ( \s -> runParser (f ()) s )
+
 def char : Char -> Parser Char 
 let char c = Parser ( \charS -> match stringToList charS with
                             [] -> None
@@ -115,13 +118,13 @@ let jsonString =
 
 def jsonArray : Parser Json
 let jsonArray = 
-    let jsonElements = sepBy json (lexeme (char ','))
+    let jsonElements = sepBy (lazy (\_ -> json)) (lexeme (char ','))
     in lexeme (char '[') *> (jsonElements |> map JsonArray) <* lexeme (char ']')
 
 def jsonObject : Parser Json
 let jsonObject = 
     let jsonPair = 
-            jsonString `bind` ( \key -> lexeme (char ':') *> json |> map (Tuple2 key) )
+            jsonString `bind` ( \key -> lexeme (char ':') *> (lazy (\_ -> json)) |> map (Tuple2 key) )
     let jsonPairs =  sepBy jsonPair (lexeme (char ','))
     in lexeme (char '{') *> (jsonPairs |> map JsonObject) <* lexeme (char '}')
 
@@ -134,4 +137,3 @@ let main =
     match runParser json "[{\"a\": 1}, 12345, null, []]" with
             None -> println "Failed to parse"
             Some (result, _) -> println (toString result)
-
