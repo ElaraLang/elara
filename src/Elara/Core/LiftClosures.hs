@@ -16,7 +16,7 @@ import Elara.AST.VarRef
 import Elara.Core qualified as Core
 import Elara.Core.ANF as ANF
 import Elara.Core.Analysis
-import Elara.Core.Generic (Bind (..), traverseBind)
+import Elara.Core.Generic (Bind (..))
 import Elara.Core.Generic qualified as G
 import Elara.Core.LiftClosures.Error
 import Elara.Core.LiftClosures.Util
@@ -25,7 +25,7 @@ import Elara.Core.ToANF (fromANF)
 import Elara.Data.Pretty
 import Elara.Data.Unique (uniqueToText, uniqueVal)
 import Elara.Data.Unique.Effect (UniqueGen, makeUnique)
-import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
+import Elara.Logging (StructuredDebug, traceFn)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Rock qualified

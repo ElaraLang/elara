@@ -11,8 +11,6 @@ import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
 import JVM.Data.Abstract.Type qualified as JVM
 
-import Effectful.Dispatch.Dynamic (localSeqUnlift)
-import Effectful.Writer.Static.Local (runWriter)
 import Elara.Core.Analysis
 import Elara.Data.Unique.Effect
 import Elara.Logging
@@ -54,7 +52,7 @@ lowerMatch ::
     Maybe Core.Var ->
     [Core.Alt Core.Var] ->
     Eff r IR.Expr
-lowerMatch lowerExpr matchType scrutinee binder alts = do
+lowerMatch lowerExpr matchType scrutinee _binder alts = do
     scrutVar <- lowerExpr scrutinee
     resultVarName <- freshVar
     let matchType' = lowerType matchType

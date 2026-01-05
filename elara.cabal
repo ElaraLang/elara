@@ -87,7 +87,6 @@ library
       Elara.JVM.Lower.Function
       Elara.JVM.Lower.Match
       Elara.JVM.Lower.Monad
-      Elara.JVM.Lower.Type
       Elara.JVM.Lower.Util
       Elara.Lexer.Action
       Elara.Lexer.Char

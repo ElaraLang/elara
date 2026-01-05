@@ -8,8 +8,7 @@ import Elara.Data.Unique
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, newLabel)
 import JVM.Data.Abstract.Builder.Label
 import JVM.Data.Abstract.Name (QualifiedClassName)
-import JVM.Data.Abstract.Type qualified as JVM
-import JVM.Data.Raw.Types (U1, U2)
+import JVM.Data.Raw.Types (U2)
 
 data MethodCreationState = MethodCreationState
     { localVariables :: !(Map LVKey U2)
@@ -66,10 +65,6 @@ findLocalVariable v = do
             let newLvs = Map.insert (KnownName v) new lvs
             put $ s{localVariables = newLvs, maxLocalVariables = fromIntegral (length newLvs)}
             pure new
-  where
-    isWide (JVM.PrimitiveFieldType JVM.Long) = True
-    isWide (JVM.PrimitiveFieldType JVM.Double) = True
-    isWide _ = False
 
 getLabel :: (State MethodCreationState :> r, CodeBuilder :> r) => Unique Text -> Eff r Label
 getLabel labelName = do

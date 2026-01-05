@@ -6,7 +6,6 @@ import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Error (ReportableError)
 import JVM.Data.Abstract.Descriptor (MethodDescriptor)
-import JVM.Data.Abstract.Name (QualifiedClassName)
 
 -- | Errors that can occur during JVM lowering and code generation
 data JVMLoweringError
