@@ -88,18 +88,18 @@ data Query (es :: [Effect]) a where
     -- | Query to get the lexed tokens of a specific file
     LexedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error LexerError])) [Lexeme]
     -- | Query to get the parsed module from a file's contents and lexed tokens
-    ParsedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)])) (Module 'Frontend)
+    ParsedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)])) (Module Frontend)
     -- | Query to get a parsed module by module name
     ParsedModule ::
         ModuleName ->
         Query
             (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]))
-            (Module 'Frontend)
+            (Module Frontend)
     -- \* Desugaring and Renaming Queries
     DesugaredModule ::
         ModuleName ->
-        Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module 'Desugared)
-    RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module 'Renamed)
+        Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module Desugared)
+    RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module Renamed)
     -- | Lookup a module by name
     ModuleByName ::
         forall (ast :: LocatedAST).
@@ -158,7 +158,7 @@ data Query (es :: [Effect]) a where
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
     -- \* Type and Kind Inference Queries
-    TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module 'Typed)
+    TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module Typed)
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
     TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))

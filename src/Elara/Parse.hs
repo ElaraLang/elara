@@ -20,10 +20,10 @@ import Elara.ReadFile (FileContents (FileContents))
 import Rock (Rock, fetch)
 import Text.Megaparsec (MonadParsec (eof), runParser)
 
-parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module 'Frontend)
+parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
 parseModule y = first WParseErrorBundle . runParser (module' <* eof) y
 
-moduleParser :: Parser (Module 'Frontend)
+moduleParser :: Parser (Module Frontend)
 moduleParser = module' <* eof
 
 parse :: ParsePipelineEffects r => Parser a -> FilePath -> TokenStream -> Eff r a
@@ -43,7 +43,7 @@ getParsedFileQuery ::
              , Rock.Rock Elara.Query.Query
              ]
         )
-        (Module 'Frontend)
+        (Module Frontend)
 getParsedFileQuery fp = do
     (FileContents filePath contents) <- fetch (GetFileContents fp)
     lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
@@ -62,7 +62,7 @@ getParsedModuleQuery ::
              , Rock.Rock Elara.Query.Query
              ]
         )
-        (Module 'Frontend)
+        (Module Frontend)
 getParsedModuleQuery mn = do
     fp <- fetch (ModulePath mn)
     getParsedFileQuery fp

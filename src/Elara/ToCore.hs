@@ -211,7 +211,7 @@ sccToCore scc = case scc of
             pure $ CoreValue $ Recursive binds'
 
 -- Build module-level SCCs once (no duplicates)
-buildModuleSCCs :: ToCoreC r => Module 'Typed -> Eff r [SCC (Qualified VarName)]
+buildModuleSCCs :: ToCoreC r => Module Typed -> Eff r [SCC (Qualified VarName)]
 buildModuleSCCs (Module (Located _ m)) = do
     let modName = m ^. field' @"name" % unlocated
     let tops =
@@ -232,7 +232,7 @@ buildModuleSCCs (Module (Located _ m)) = do
         pure (v, v, deps)
     pure (stronglyConnComp nodes)
 
-moduleToCore :: HasCallStack => ToCoreC r => Module 'Typed -> Eff r (CoreModule CoreBind)
+moduleToCore :: HasCallStack => ToCoreC r => Module Typed -> Eff r (CoreModule CoreBind)
 moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
 
@@ -282,7 +282,7 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
         sccToCore members
     pure $ CoreModule name (decls <> valueDecls)
 
-mkTypeVar :: Select ASTTypeVar 'Typed -> Core.TypeVariable
+mkTypeVar :: Select ASTTypeVar Typed -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type

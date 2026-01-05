@@ -113,11 +113,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1767446562,
-        "narHash": "sha256-I1+lJHYuyxp4T3uheaxzHjCA1wN8FN3ESRueSkOGADI=",
+        "lastModified": 1767649340,
+        "narHash": "sha256-1fQIgRzLvRJMX7S5p8IuN1SE5dR7ft5xZpHQ/4OpdW4=",
         "ref": "refs/heads/master",
-        "rev": "ba3ffc8e05779820153bd38225187158fc90d2b7",
-        "revCount": 242,
+        "rev": "ce426a0d4eddc9af6ab7df3a9ba5e846167c8fc4",
+        "revCount": 231,
         "type": "git",
         "url": "file:///Users/alex/workspace/h2jvm/"
       },

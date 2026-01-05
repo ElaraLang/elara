@@ -30,7 +30,7 @@ data RenameError
         -- | The name that was unknown
         (Located Name)
         -- | The module we're renaming that the unknown name was referenced in
-        (Maybe (Module 'Desugared))
+        (Maybe (Module Desugared))
         -- | All known names
         (Map name (NonEmpty (VarRef name)))
     | AmbiguousVarName (Located Name) (NonEmpty (VarRef VarName))

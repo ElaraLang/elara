@@ -60,19 +60,19 @@ getDesugaredModule ::
     ModuleName ->
     Eff
         (ConsQueryEffects '[Eff.Error DesugarError, Rock.Rock Elara.Query.Query])
-        (Module 'Desugared)
+        (Module Desugared)
 getDesugaredModule mn = do
     parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
 
     inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 
 desugar ::
-    Module 'Frontend ->
-    Desugar (Module 'Desugared)
+    Module Frontend ->
+    Desugar (Module Desugared)
 desugar =
     traverseOf
         (_Unwrapped % unlocated)
-        ( \(m' :: Module' 'Frontend) -> do
+        ( \(m' :: Module' Frontend) -> do
             let decls = m' ^. field' @"declarations" :: [FrontendDeclaration]
             decls' <- desugarDeclarations (m' ^. the @(Located ModuleName)) decls
 

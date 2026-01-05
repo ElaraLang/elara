@@ -21,61 +21,61 @@ import Elara.Data.Unique (Unique)
 import Elara.Query
 import Elara.Query.Errors
 
-type instance ASTLocate' 'Shunted = Located
+type instance ASTLocate' Shunted = Located
 
-type instance ASTQual 'Shunted = Qualified
+type instance ASTQual Shunted = Qualified
 
 -- Selections for 'Expr'
-type instance Select (ASTType ForExpr) 'Shunted = Maybe ShuntedType
+type instance Select (ASTType ForExpr) Shunted = Maybe ShuntedType
 
-type instance Select LambdaPattern 'Shunted = TypedLambdaParam (Unique VarName) 'Shunted
+type instance Select LambdaPattern Shunted = TypedLambdaParam (Unique VarName) Shunted
 
-type instance Select LetPattern 'Shunted = NoFieldValue
+type instance Select LetPattern Shunted = NoFieldValue
 
-type instance Select ASTVarRef 'Shunted = VarRef VarName
+type instance Select ASTVarRef Shunted = VarRef VarName
 
-type instance Select ConRef 'Shunted = Qualified TypeName
+type instance Select ConRef Shunted = Qualified TypeName
 
-type instance Select SymOp 'Shunted = VarRef OpName
+type instance Select SymOp Shunted = VarRef OpName
 
-type instance Select Infixed 'Shunted = VarRef VarName
+type instance Select Infixed Shunted = VarRef VarName
 
-type instance Select LetParamName 'Shunted = Unique VarName
+type instance Select LetParamName Shunted = Unique VarName
 
-type instance Select InParens 'Shunted = DataConCantHappen
+type instance Select InParens Shunted = DataConCantHappen
 
-type instance Select List 'Shunted = DataConCantHappen
+type instance Select List Shunted = DataConCantHappen
 
-type instance Select Tuple 'Shunted = DataConCantHappen
+type instance Select Tuple Shunted = DataConCantHappen
 
-type instance Select ASTBinaryOperator 'Shunted = DataConCantHappen
+type instance Select ASTBinaryOperator Shunted = DataConCantHappen
 
-type instance Select PatternType 'Shunted = Maybe ShuntedType
+type instance Select PatternType Shunted = Maybe ShuntedType
 
-type instance Select VarPat 'Shunted = Unique LowerAlphaName
+type instance Select VarPat Shunted = Unique LowerAlphaName
 
-type instance Select ConPat 'Shunted = Qualified TypeName
+type instance Select ConPat Shunted = Qualified TypeName
 
-type instance Select ConsPattern 'Shunted = DataConCantHappen
+type instance Select ConsPattern Shunted = DataConCantHappen
 
-type instance Select ListPattern 'Shunted = DataConCantHappen
+type instance Select ListPattern Shunted = DataConCantHappen
 
-type instance Select TuplePattern 'Shunted = DataConCantHappen
+type instance Select TuplePattern Shunted = DataConCantHappen
 
-type instance Select TypeApplication 'Shunted = ShuntedType
+type instance Select TypeApplication Shunted = ShuntedType
 
 -- Selections for 'DeclarationBody'
-type instance Select (Patterns ForValueDecl) 'Shunted = NoFieldValue
+type instance Select (Patterns ForValueDecl) Shunted = NoFieldValue
 
-type instance Select (ASTType ForValueDecl) 'Shunted = Maybe ShuntedType
+type instance Select (ASTType ForValueDecl) Shunted = Maybe ShuntedType
 
-type instance Select ValueTypeDef 'Shunted = DataConCantHappen
+type instance Select ValueTypeDef Shunted = DataConCantHappen
 
-type instance Select KindAnnotation 'Shunted = NoFieldValue
+type instance Select KindAnnotation Shunted = NoFieldValue
 
-type instance Select Alias 'Shunted = ShuntedType
+type instance Select Alias Shunted = ShuntedType
 
-type instance Select ADTParam 'Shunted = ShuntedType
+type instance Select ADTParam Shunted = ShuntedType
 
 -- Selections for 'Declaration'
 
@@ -85,39 +85,39 @@ type instance Select (ASTName ForExpr) Shunted = Qualified VarName
 type instance Select (ASTName ForValueDecl) Shunted = Qualified VarName
 
 -- Selections for 'Type'
-type instance Select TypeKind 'Shunted = NoFieldValue
+type instance Select TypeKind Shunted = NoFieldValue
 
-type instance Select ASTTypeVar 'Shunted = Unique LowerAlphaName
+type instance Select ASTTypeVar Shunted = Unique LowerAlphaName
 
-type instance Select UserDefinedType 'Shunted = Qualified TypeName
+type instance Select UserDefinedType Shunted = Qualified TypeName
 
-type instance Select ConstructorName 'Shunted = Qualified TypeName
+type instance Select ConstructorName Shunted = Qualified TypeName
 
-type instance Select AnnotationName 'Shunted = Qualified TypeName
-type instance Select (Annotations a) 'Shunted = [Annotation Shunted]
+type instance Select AnnotationName Shunted = Qualified TypeName
+type instance Select (Annotations a) Shunted = [Annotation Shunted]
 
-type ShuntedExpr = Expr 'Shunted
+type ShuntedExpr = Expr Shunted
 
-type ShuntedExpr' = Expr' 'Shunted
+type ShuntedExpr' = Expr' Shunted
 
-type ShuntedPattern = Pattern 'Shunted
+type ShuntedPattern = Pattern Shunted
 
-type ShuntedPattern' = Pattern' 'Shunted
+type ShuntedPattern' = Pattern' Shunted
 
-type ShuntedBinaryOperator = BinaryOperator 'Shunted
+type ShuntedBinaryOperator = BinaryOperator Shunted
 
-type ShuntedBinaryOperator' = BinaryOperator' 'Shunted
+type ShuntedBinaryOperator' = BinaryOperator' Shunted
 
-type ShuntedType = Type 'Shunted
+type ShuntedType = Type Shunted
 
-type ShuntedType' = Type' 'Shunted
+type ShuntedType' = Type' Shunted
 
-type ShuntedDeclaration = Declaration 'Shunted
+type ShuntedDeclaration = Declaration Shunted
 
-type ShuntedDeclaration' = Declaration' 'Shunted
+type ShuntedDeclaration' = Declaration' Shunted
 
-type ShuntedDeclarationBody = DeclarationBody 'Shunted
+type ShuntedDeclarationBody = DeclarationBody Shunted
 
-type ShuntedDeclarationBody' = DeclarationBody' 'Shunted
+type ShuntedDeclarationBody' = DeclarationBody' Shunted
 
-type ShuntedTypeDeclaration = TypeDeclaration 'Shunted
+type ShuntedTypeDeclaration = TypeDeclaration Shunted

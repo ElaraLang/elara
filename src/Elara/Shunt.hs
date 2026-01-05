@@ -86,7 +86,7 @@ runGetShuntedModuleQuery ::
              , Rock Elara.Query.Query
              ]
         )
-        (Module 'Shunted)
+        (Module Shunted)
 runGetShuntedModuleQuery mn = do
     renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
     shuntWith opLookupQueries renamed
@@ -230,8 +230,8 @@ shuntWith ::
     forall es.
     ShuntPipelineEffects es =>
     OpLookup es ->
-    Module 'Renamed ->
-    Eff es (Module 'Shunted)
+    Module Renamed ->
+    Eff es (Module Shunted)
 shuntWith opL = traverseModule (shuntWithDeclaration opL)
 
 shuntWithDeclaration ::

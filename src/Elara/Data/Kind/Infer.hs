@@ -281,7 +281,7 @@ newEqualityConstraint :: State InferState :> r => ElaraKind -> ElaraKind -> Eff 
 newEqualityConstraint a b = modify (over #constraints ((a, b) :))
 
 elaborateType :: KindInfer r => ShuntedType -> Eff r MidKindedType
-elaborateType (Type (t :: Located (Type' 'Shunted), NoFieldValue)) = do
+elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
     case t ^. unlocated of
         TypeVar var -> do
             kv <- lookupVarKindVar (var ^. unlocated)

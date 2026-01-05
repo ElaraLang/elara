@@ -73,7 +73,7 @@ let a = 5
 is legal, and the 2 parts of the declaration need to be merged
 
 Firstly, we create a 'JustDef' after seeing the @def@ line, then we merge this with a 'JustLet' after seeing the @let@ line
-to create a 'Both' declaration, which is then resolved to a 'Desugared.Declaration'
+to create a 'Both' declaration, which is then resolved to a Desugared.Declaration'
 -}
 data PartialDeclaration
     = -- | A partial declaration with just a def line

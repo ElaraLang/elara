@@ -14,7 +14,7 @@ import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
 import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
 
-module' :: Parser (Module 'Frontend)
+module' :: Parser (Module Frontend)
 module' = fmapLocated Module $ do
     mHeader <- optional (header <* optional lineSeparator)
     thisFile <- sourceName . pstateSourcePos . statePosState <$> getParserState
@@ -32,7 +32,7 @@ module' = fmapLocated Module $ do
             }
 
 -- | module Name exposing (..)
-header :: Parser (Located ModuleName, Exposing 'Frontend)
+header :: Parser (Located ModuleName, Exposing Frontend)
 header = do
     token_ TokenModule
 
@@ -40,7 +40,7 @@ header = do
     mExposing <- exposing'
     pure (moduleName', mExposing)
 
-exposing' :: Parser (Exposing 'Frontend)
+exposing' :: Parser (Exposing Frontend)
 exposing' =
     fromMaybe ExposingAll
         <$> optional
@@ -49,14 +49,14 @@ exposing' =
                 ExposingSome <$> oneOrCommaSeparatedInParens exposition
             )
 
-exposition :: Parser (Exposition 'Frontend)
+exposition :: Parser (Exposition Frontend)
 exposition = exposedValue <|> exposedOp
   where
-    exposedValue, exposedOp :: Parser (Exposition 'Frontend)
+    exposedValue, exposedOp :: Parser (Exposition Frontend)
     exposedValue = ExposedValue <$> located varName
     exposedOp = ExposedOp <$> located (inParens opName)
 
-import' :: Parser (Import 'Frontend)
+import' :: Parser (Import Frontend)
 import' = fmapLocated Import $ do
     token_ TokenImport
 

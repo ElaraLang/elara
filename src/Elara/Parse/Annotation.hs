@@ -12,10 +12,10 @@ import Elara.Parse.Names (conName)
 import Elara.Parse.Primitives
 import Text.Megaparsec (customFailure)
 
-annotations :: Parser [Annotation 'Frontend]
+annotations :: Parser [Annotation Frontend]
 annotations = many annotation
 
-annotation :: Parser (Annotation 'Frontend)
+annotation :: Parser (Annotation Frontend)
 annotation = do
     token_ TokenHash
     annName <- located conName

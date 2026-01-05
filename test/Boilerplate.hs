@@ -62,7 +62,7 @@ loadRenamedExpr' ::
     , IOE :> w
     , Error SomeReportableError :> w
     ) =>
-    Text -> Eff w (Expr 'Renamed)
+    Text -> Eff w (Expr Renamed)
 loadRenamedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
@@ -71,7 +71,7 @@ loadRenamedExpr' source = runQueryEffects $ do
     desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
     runReader Nothing $
-        runReader (Nothing @(Module 'Desugared)) $
+        runReader (Nothing @(Module Desugared)) $
             evalState operatorRenameState $
                 runErrorOrReport @RenameError $
                     renameExpr desugared
@@ -108,7 +108,7 @@ reportableErrorToMaybe (Left error) = runPureEff $ runDiagnosticWriter $ do
     Elara.Error.report error
     pure Nothing
 
-loadShuntedExpr :: _ => Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr 'Shunted))
+loadShuntedExpr :: _ => Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr Shunted))
 loadShuntedExpr source = finaliseEffects $ runQueryEffects $ do
     renamed <- loadRenamedExpr' source
     runErrorOrReport @ShuntError $

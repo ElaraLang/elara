@@ -49,7 +49,7 @@ import Rock qualified
 type RenamePipelineEffects =
     '[ Eff.State RenameState
      , Eff.Error RenameError
-     , Eff.Reader (TopologicalGraph (Module 'Desugared))
+     , Eff.Reader (TopologicalGraph (Module Desugared))
      , UniqueGen
      , StructuredDebug
      ]
@@ -69,7 +69,7 @@ type InnerRename r =
     , UniqueGen :> r
     , QueryEffects r
     , StructuredDebug :> r
-    , Eff.Reader (Maybe (Module 'Desugared)) :> r -- the module we're renaming
+    , Eff.Reader (Maybe (Module Desugared)) :> r -- the module we're renaming
     )
 
 instance SupportsQuery QueryModuleByName Renamed where
@@ -80,14 +80,14 @@ getRenamedModule ::
     ModuleName ->
     Eff
         (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState, Rock.Rock Elara.Query.Query])
-        (Module 'Renamed)
+        (Module Renamed)
 getRenamedModule mn = do
     m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
     rename m
 
 -- runRenamePipeline ::
 --     IsPipeline r =>
---     TopologicalGraph (Module 'Desugared) ->
+--     TopologicalGraph (Module Desugared) ->
 --     RenameState ->
 --     Eff (EffectsAsPrefixOf RenamePipelineEffects r) a ->
 --     Eff r a
@@ -117,7 +117,7 @@ qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
         Just ((Local _) :| []) -> error "can't have local type names"
         Just many -> throwError $ AmbiguousTypeName (Located sr (NTypeName n)) many
 
-askCurrentModule :: InnerRename r => Eff r (Module 'Desugared)
+askCurrentModule :: InnerRename r => Eff r (Module Desugared)
 askCurrentModule = do
     m <- Eff.ask
     case m of
@@ -169,7 +169,7 @@ uniquify (Located sr n) = Located sr <$> makeUnique n
 sortDeclarations :: [RenamedDeclaration] -> Eff r [RenamedDeclaration]
 sortDeclarations = pure
 
-rename :: Rename r => Module 'Desugared -> Eff r (Module 'Renamed)
+rename :: Rename r => Module Desugared -> Eff r (Module Renamed)
 rename m = do
     -- debug $ "Renaming module " <> pretty (m ^. _Unwrapped % unlocated % field' @"name")
     traverseOf
@@ -185,28 +185,28 @@ rename m = do
         )
         m
   where
-    renameExposing :: Rename r => ModuleName -> Exposing 'Desugared -> Eff r (Exposing 'Renamed)
+    renameExposing :: Rename r => ModuleName -> Exposing Desugared -> Eff r (Exposing Renamed)
     renameExposing _ ExposingAll = pure ExposingAll
     renameExposing mn (ExposingSome es) = ExposingSome <$> traverse (renameExposition mn) es
 
-    renameExposition :: Rename r => ModuleName -> Exposition 'Desugared -> Eff r (Exposition 'Renamed)
+    renameExposition :: Rename r => ModuleName -> Exposition Desugared -> Eff r (Exposition Renamed)
     renameExposition mn (ExposedValue vn) = ExposedValue <$> traverse (qualifyIn mn) vn
     renameExposition mn (ExposedOp opn) = ExposedOp <$> traverse (qualifyIn mn) opn
     renameExposition mn (ExposedType tn) = ExposedType <$> traverse (qualifyIn mn) tn
     renameExposition mn (ExposedTypeAndAllConstructors tn) = ExposedTypeAndAllConstructors <$> traverse (qualifyIn mn) tn
 
-    renameImport :: Rename r => Import 'Desugared -> Eff r (Import 'Renamed)
+    renameImport :: Rename r => Import Desugared -> Eff r (Import Renamed)
     renameImport = traverseOf (_Unwrapped % unlocated) renameImport'
 
-    renameImport' :: Rename r => Import' 'Desugared -> Eff r (Import' 'Renamed)
+    renameImport' :: Rename r => Import' Desugared -> Eff r (Import' Renamed)
     renameImport' imp = do
         exposing' <- renameExposing (imp ^. field' @"importing" % unlocated) (imp ^. field' @"exposing")
         pure $ Import' (imp ^. field' @"importing") (imp ^. field' @"as") (imp ^. field' @"qualified") exposing'
 
-addImportsToContext :: Rename r => [Import 'Desugared] -> Eff r ()
+addImportsToContext :: Rename r => [Import Desugared] -> Eff r ()
 addImportsToContext = traverse_ addImportToContext
 
-addImportToContext :: Rename r => Import 'Desugared -> Eff r ()
+addImportToContext :: Rename r => Import Desugared -> Eff r ()
 addImportToContext imp =
     addModuleToContext
         (imp ^. _Unwrapped % unlocated % field' @"importing" % unlocated)
@@ -216,7 +216,7 @@ getModuleFromName mn = do
     runErrorOrReport @DesugarError $
         Rock.fetch (Elara.Query.DesugaredModule mn)
 
-addModuleToContext :: Rename r => ModuleName -> Exposing 'Desugared -> Eff r ()
+addModuleToContext :: Rename r => ModuleName -> Exposing Desugared -> Eff r ()
 addModuleToContext mn exposing = do
     imported <- getModuleFromName mn
     let isExposingL =
@@ -258,7 +258,7 @@ ensureExistsAndExposed mn n = do
     unless (elementExistsInModule m (n ^. unlocated)) $ throwError $ NonExistentModuleDeclaration mn n
     unless (isExposingAndExists m (n ^. unlocated)) $ throwError $ UnknownName @Name n thisMod mempty
 
-elementExistsInModule :: Module 'Desugared -> Name -> Bool
+elementExistsInModule :: Module Desugared -> Name -> Bool
 elementExistsInModule m' n' =
     any
         ( \d ->
@@ -272,14 +272,14 @@ elementExistsInModule m' n' =
 {- | Tests that n is exposed in m
 I.e. that it is in the exposing list, or that the module is exposing everything
 -}
-isExposingAndExists :: Module 'Desugared -> Name -> Bool
+isExposingAndExists :: Module Desugared -> Name -> Bool
 isExposingAndExists m n =
     let mn = m ^. _Unwrapped % unlocated % field' @"name" % unlocated
      in case m ^. _Unwrapped % unlocated % field' @"exposing" of
             ExposingAll -> elementExistsInModule m n
             ExposingSome es -> elementExistsInModule m n && any (isExposition mn n) es
   where
-    isExposition :: ModuleName -> Name -> Exposition 'Desugared -> Bool
+    isExposition :: ModuleName -> Name -> Exposition Desugared -> Bool
     isExposition mn (NVarName vn) (ExposedValue vn') = MaybeQualified vn (Just mn) == vn' ^. unlocated
     isExposition mn (NTypeName tn) (ExposedType tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
     isExposition mn (NTypeName tn) (ExposedTypeAndAllConstructors tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
@@ -515,7 +515,7 @@ renamePattern (Pattern fp@(Located loc _, _)) =
                     , Nothing
                     )
         let cons x y = Pattern (ConstructorPattern (Located loc consCtorName) [x, y] `withLocationOf` x, Nothing)
-        let createConses :: [Pattern 'Renamed] -> Pattern 'Renamed
+        let createConses :: [Pattern Renamed] -> Pattern Renamed
             createConses [] = lastCons
             createConses (x' : xs') = cons x' (createConses xs')
         pure (createConses (init xs') ^. _Unwrapped % _1 % unlocated)

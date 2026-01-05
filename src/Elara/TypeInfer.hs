@@ -78,7 +78,7 @@ runGetTypeCheckedModuleQuery ::
             '[ Rock.Rock Elara.Query.Query
              ]
         )
-        (Module 'Typed)
+        (Module Typed)
 runGetTypeCheckedModuleQuery mn = do
     shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
     r <- runInferEffects $ evalState initialInferState (inferModule shunted)
@@ -230,8 +230,8 @@ runTypeCheckedExprQuery name = debugWithResult ("runTypeCheckedExprQuery: " <> p
 inferModule ::
     forall r.
     (InferPipelineEffects r, Infer SourceRegion r) =>
-    Module 'Shunted ->
-    Eff r (Module 'Typed)
+    Module Shunted ->
+    Eff r (Module Typed)
 inferModule m = do
     traverseModule inferDeclaration m
 

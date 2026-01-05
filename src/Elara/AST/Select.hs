@@ -4,23 +4,23 @@
 
 module Elara.AST.Select where
 
-data LocatedAST = Frontend | Desugared | Renamed | Shunted | MidKinded | Kinded | Typed | Core
+type data LocatedAST = Frontend | Desugared | Renamed | Shunted | MidKinded | Kinded | Typed | Core
 
-data UnlocatedAST = UnlocatedFrontend | UnlocatedDesugared | UnlocatedRenamed | UnlocatedShunted | UnlocatedTyped
+type data UnlocatedAST = UnlocatedFrontend | UnlocatedDesugared | UnlocatedRenamed | UnlocatedShunted | UnlocatedTyped
 
 type family LocatedToUnlocated (ast :: LocatedAST) :: UnlocatedAST where
-    LocatedToUnlocated 'Frontend = 'UnlocatedFrontend
-    LocatedToUnlocated 'Desugared = 'UnlocatedDesugared
-    LocatedToUnlocated 'Renamed = 'UnlocatedRenamed
-    LocatedToUnlocated 'Shunted = 'UnlocatedShunted
-    LocatedToUnlocated 'Typed = 'UnlocatedTyped
+    LocatedToUnlocated Frontend = UnlocatedFrontend
+    LocatedToUnlocated Desugared = UnlocatedDesugared
+    LocatedToUnlocated Renamed = UnlocatedRenamed
+    LocatedToUnlocated Shunted = UnlocatedShunted
+    LocatedToUnlocated Typed = UnlocatedTyped
 
 type family UnlocatedToLocated (ast :: UnlocatedAST) :: LocatedAST where
-    UnlocatedToLocated 'UnlocatedFrontend = 'Frontend
-    UnlocatedToLocated 'UnlocatedDesugared = 'Desugared
-    UnlocatedToLocated 'UnlocatedRenamed = 'Renamed
-    UnlocatedToLocated 'UnlocatedShunted = 'Shunted
-    UnlocatedToLocated 'UnlocatedTyped = 'Typed
+    UnlocatedToLocated UnlocatedFrontend = Frontend
+    UnlocatedToLocated UnlocatedDesugared = Desugared
+    UnlocatedToLocated UnlocatedRenamed = Renamed
+    UnlocatedToLocated UnlocatedShunted = Shunted
+    UnlocatedToLocated UnlocatedTyped = Typed
 
 {- | Elements of the AST that are parametric by their AST stage
 This type acts as a selector for the 'Select' type family for these elements

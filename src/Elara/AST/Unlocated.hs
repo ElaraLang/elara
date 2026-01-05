@@ -10,25 +10,25 @@ import Elara.AST.Select (LocatedAST (..), UnlocatedAST (..), UnlocatedToLocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
 import Elara.Data.Unique (Unique)
 
-type instance ASTLocate' 'UnlocatedFrontend = Unlocated
+type instance ASTLocate' UnlocatedFrontend = Unlocated
 
-type instance ASTLocate' 'UnlocatedDesugared = Unlocated
+type instance ASTLocate' UnlocatedDesugared = Unlocated
 
-type instance ASTLocate' 'UnlocatedRenamed = Unlocated
+type instance ASTLocate' UnlocatedRenamed = Unlocated
 
-type instance ASTLocate' 'UnlocatedShunted = Unlocated
+type instance ASTLocate' UnlocatedShunted = Unlocated
 
-type instance ASTLocate' 'UnlocatedTyped = Unlocated
+type instance ASTLocate' UnlocatedTyped = Unlocated
 
 type instance Select any ast = Replace (UnlocatedToLocated ast) ast (Select any (UnlocatedToLocated ast))
 
 -- type instance Select any 'UnlocatedFrontend = Replace 'Frontend 'UnlocatedFrontend (Select any 'Frontend)
 
--- type instance Select any 'UnlocatedDesugared = Replace 'Desugared 'UnlocatedDesugared (Select any 'Desugared)
+-- type instance Select any 'UnlocatedDesugared = Replace Desugared 'UnlocatedDesugared (Select any Desugared)
 
--- type instance Select any 'UnlocatedRenamed = Replace 'Renamed 'UnlocatedRenamed (Select any 'Renamed)
+-- type instance Select any 'UnlocatedRenamed = Replace Renamed 'UnlocatedRenamed (Select any Renamed)
 
--- type instance Select any 'UnlocatedShunted = Replace 'Shunted 'UnlocatedShunted (Select any 'Shunted)
+-- type instance Select any 'UnlocatedShunted = Replace Shunted 'UnlocatedShunted (Select any Shunted)
 
 -- type instance Select any 'UnlocatedTyped = Replace 'Typed 'UnlocatedTyped (Select any 'Typed)
 

@@ -25,7 +25,7 @@ declaration n = do
         , typeDeclaration n annotations
         ]
 
-defDec :: Located ModuleName -> [Annotation 'Frontend] -> Parser FrontendDeclaration
+defDec :: Located ModuleName -> [Annotation Frontend] -> Parser FrontendDeclaration
 defDec modName annotations = fmapLocated Declaration $ do
     try (token_ TokenDef)
 
@@ -43,7 +43,7 @@ defDec modName annotations = fmapLocated Declaration $ do
             (DeclarationBody declBody)
         )
 
-letDec :: Located ModuleName -> [Annotation 'Frontend] -> Parser FrontendDeclaration
+letDec :: Located ModuleName -> [Annotation Frontend] -> Parser FrontendDeclaration
 letDec modName annotations = fmapLocated Declaration $ do
     (name, patterns, e) <- letPreamble
     let valueLocation = sconcat (e ^. _Unwrapped % _1 % sourceRegion :| (view (_Unwrapped % _1 % sourceRegion) <$> patterns))
@@ -51,7 +51,7 @@ letDec modName annotations = fmapLocated Declaration $ do
         value = DeclarationBody (Located valueLocation (Value name e patterns NoFieldValue annotations'))
     pure (Declaration' modName value)
 
-typeDeclaration :: Located ModuleName -> [Annotation 'Frontend] -> Parser FrontendDeclaration
+typeDeclaration :: Located ModuleName -> [Annotation Frontend] -> Parser FrontendDeclaration
 typeDeclaration modName annotations = fmapLocated Declaration $ ignoringIndents $ do
     try (token_ TokenType)
 
