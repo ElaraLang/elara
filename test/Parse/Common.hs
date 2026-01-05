@@ -6,13 +6,11 @@ import Elara.AST.Generic (Expr, Pattern)
 import Elara.AST.Select (UnlocatedAST (..))
 import Elara.AST.StripLocation
 import Elara.AST.Unlocated ()
-import Elara.Data.Pretty (pretty, (<+>))
 import Elara.Lexer.Reader (readTokensWith)
-import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse
 import Elara.Parse.Error
-import Elara.Parse.Expression (element, exprParser)
+import Elara.Parse.Expression (element)
 import Elara.Parse.Indents
 import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives
@@ -20,7 +18,7 @@ import Elara.Parse.Stream
 import Elara.ReadFile (FileContents (..))
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
-import Print (printPretty, showPretty)
+import Print (showPretty)
 import Test.QuickCheck
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty)
 
@@ -39,12 +37,12 @@ lexAndParse parser source = do
     let x = runError $ parseWith parser fp (toText source, tokens)
     pure $ first snd $ runPureEff x
 
-shouldParsePattern :: MonadTest m => Text -> Pattern 'UnlocatedFrontend -> m ()
+shouldParsePattern :: MonadTest m => Text -> Pattern UnlocatedFrontend -> m ()
 shouldParsePattern source expected = withFrozenCallStack $ do
     parsed <- lexAndParse patParser source >>= evalEitherParseError
     diff (stripLocation parsed) (==) expected
 
-shouldParseExpr :: MonadTest m => Text -> Expr 'UnlocatedFrontend -> m ()
+shouldParseExpr :: MonadTest m => Text -> Expr UnlocatedFrontend -> m ()
 shouldParseExpr source expected = withFrozenCallStack $ do
     parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError
     diff (stripLocation parsed) (==) expected

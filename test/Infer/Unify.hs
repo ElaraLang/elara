@@ -3,16 +3,15 @@
 module Infer.Unify where
 
 import Arbitrary.Type (genMonotype, genUniqueTypeVar)
-import Effectful (Eff, IOE, runEff, runPureEff)
-import Effectful.Error.Static (Error, runError, runErrorNoCallStack)
+import Effectful (Eff, runPureEff)
+import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Reader.Static (Reader, runReader)
-import Elara.Logging (StructuredDebug, ignoreStructuredDebug, structuredDebugToLog)
+import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Type
 import Elara.TypeInfer.Unique (UniqueTyVar)
-import Hedgehog (Gen, Property, evalEither, forAll, property, (===))
+import Hedgehog (Property, evalEither, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
 import Test.Syd
 import Test.Syd.Hedgehog ()
 

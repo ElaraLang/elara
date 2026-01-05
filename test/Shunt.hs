@@ -14,10 +14,10 @@ import Orphans ()
 import Test.Syd (Spec, describe, it)
 import Test.Syd.Hedgehog ()
 
-shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr 'UnlocatedShunted -> m ()
+shouldShuntTo :: (MonadTest m, MonadIO m, HasCallStack) => Text -> Expr UnlocatedShunted -> m ()
 code `shouldShuntTo` x = withFrozenCallStack $ do
     y <- liftIO (loadShuntedExpr code) >>= diagShouldSucceed
-    let z :: Expr 'UnlocatedShunted = stripLocation y
+    let z = stripLocation y
     z === x
 
 spec :: Spec

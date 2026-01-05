@@ -14,13 +14,13 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Prelude hiding (Op)
 
-mkPat :: Pattern' 'UnlocatedFrontend -> Pattern 'UnlocatedFrontend
+mkPat :: Pattern' UnlocatedFrontend -> Pattern UnlocatedFrontend
 mkPat p = Pattern (p, Nothing)
 
-mkExpr :: Applicative m => Expr' 'UnlocatedFrontend -> m (Expr 'UnlocatedFrontend)
+mkExpr :: Applicative m => Expr' UnlocatedFrontend -> m (Expr UnlocatedFrontend)
 mkExpr e = pure (Expr (e, Nothing))
 
-genPattern :: Gen (Pattern 'UnlocatedFrontend)
+genPattern :: Gen (Pattern UnlocatedFrontend)
 genPattern =
     Gen.recursive
         Gen.choice
@@ -39,7 +39,7 @@ genPattern =
             <*> Gen.list (Range.linear 0 5) genPattern
         ]
 
-genBinaryOperator :: Gen (BinaryOperator 'UnlocatedFrontend)
+genBinaryOperator :: Gen (BinaryOperator UnlocatedFrontend)
 genBinaryOperator =
     MkBinaryOperator
         <$> Gen.choice
@@ -47,10 +47,10 @@ genBinaryOperator =
             , Infixed <$> genMaybeQualified (VarName <$> genNormalVarName)
             ]
 
-genExpr :: Gen (Expr 'UnlocatedFrontend)
+genExpr :: Gen (Expr UnlocatedFrontend)
 genExpr = genExpr' >>= mkExpr
 
-genExpr' :: Gen (Expr' 'UnlocatedFrontend)
+genExpr' :: Gen (Expr' UnlocatedFrontend)
 genExpr' =
     Gen.recursive
         Gen.choice
@@ -71,7 +71,7 @@ genExpr' =
         , Tuple <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 
-genStatement' :: Gen (Expr' 'UnlocatedFrontend)
+genStatement' :: Gen (Expr' UnlocatedFrontend)
 genStatement' =
     Gen.recursive
         Gen.choice
@@ -80,5 +80,5 @@ genStatement' =
         , Block <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 
-genStatement :: Gen (Expr 'UnlocatedFrontend)
+genStatement :: Gen (Expr UnlocatedFrontend)
 genStatement = genStatement' >>= mkExpr
