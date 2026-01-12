@@ -38,7 +38,7 @@ import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR (moduleName)
 import Elara.JVM.Lower
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (debug, ignoreStructuredDebug, structuredDebugToLog)
+import Elara.Logging (debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith, LogLevel(Info), LogConfig(..))
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
@@ -139,9 +139,12 @@ runElara ::
     ) =>
     CompilerSettings -> Eff es ()
 runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) = do
+    -- Get logging configuration from environment variables
+    logConfig <- liftIO getLogConfigFromEnv
+    let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
     runFileSystem $
         uniqueGenToGlobalIO $
-            (if elaraDebug then structuredDebugToLog else ignoreStructuredDebug) $
+            (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
                 runConcurrent $
                     memoiseRunIO @Elara.Query.Query $
                         Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules settings)) $
