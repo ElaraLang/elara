@@ -208,6 +208,7 @@ library
     , template-haskell
     , terminal-size
     , text-metrics
+    , time
     , utf8-string
   mixins:
       base hiding (Prelude)
@@ -271,6 +272,7 @@ executable elara
     , template-haskell
     , terminal-size
     , text-metrics
+    , time
     , utf8-string
   mixins:
       base hiding (Prelude)
@@ -367,6 +369,7 @@ test-suite elara-test
     , template-haskell
     , terminal-size
     , text-metrics
+    , time
     , utf8-string
   mixins:
       base hiding (Prelude)

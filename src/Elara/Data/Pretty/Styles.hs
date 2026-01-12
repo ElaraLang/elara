@@ -36,5 +36,8 @@ constructor = annotate (underlined <> colorDull Yellow)
 warning :: Doc AnsiStyle -> Doc AnsiStyle
 warning = annotate (Prettyprinter.Render.Terminal.bold <> color Yellow)
 
+error :: Doc AnsiStyle -> Doc AnsiStyle
+error = annotate (Prettyprinter.Render.Terminal.bold <> color Red)
+
 bold :: Doc AnsiStyle -> Doc AnsiStyle
 bold = annotate Prettyprinter.Render.Terminal.bold

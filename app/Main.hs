@@ -38,7 +38,7 @@ import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR (moduleName)
 import Elara.JVM.Lower
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith, LogLevel(Info), LogConfig(..))
+import Elara.Logging (LogConfig (..), LogLevel (Info), debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified

@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LoggingSpec where
@@ -53,8 +54,7 @@ spec = do
             -- This test would need environment setup
             -- For now, just verify the function exists
             _ <- getLogConfigFromEnv
-            pure ()
+            pass
 
--- Helper to run tests
 main :: IO ()
 main = hspec spec

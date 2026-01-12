@@ -195,6 +195,7 @@
                     "template-haskell"
                     "terminal-size"
                     "text-metrics"
+                    "time"
                     "utf8-string"
                   ];
                   ghc-options = [
