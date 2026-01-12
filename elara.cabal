@@ -284,9 +284,11 @@ test-suite elara-test
       Arbitrary.Literals
       Arbitrary.Names
       Arbitrary.Type
+      ASTRegion
       Boilerplate
       Common
       ConstExpr
+      DataUnique
       DataUnwrap
       HedgehogSyd
       Golden
@@ -304,6 +306,7 @@ test-suite elara-test
       Region
       Rules
       Shunt
+      ShuntOperator
       TopologicalGraph
       Utils
       Width
