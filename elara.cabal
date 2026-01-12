@@ -286,6 +286,8 @@ test-suite elara-test
       Arbitrary.Type
       Boilerplate
       Common
+      ConstExpr
+      DataUnwrap
       HedgehogSyd
       Golden
       Infer
@@ -302,6 +304,9 @@ test-suite elara-test
       Region
       Rules
       Shunt
+      TopologicalGraph
+      Utils
+      Width
   hs-source-dirs:
       test
   default-extensions:
