@@ -1,7 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Elara.Logging (
-    -- * Log Levels
+    -- * Co-log RichMessage Integration
+    ElaraMessage (..),
     LogLevel (..),
 
     -- * Configuration
@@ -51,15 +53,17 @@ module Elara.Logging (
     traceFn,
     fib,
 
-    -- * Internal (exported for testing)
-    shouldLog,
+    -- * Co-log utilities
+    formatRichMessage,
+    filterByLevel,
+    filterByNamespace,
 ) where
 
+import Colog.Core.Action (LogAction (..), cmap, cmapM)
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust)
 import Data.Text qualified as T
-import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format (defaultTimeLocale, formatTime)
+import Data.Time.Clock (UTCTime, getCurrentTime)
 import Effectful (Dispatch (..), DispatchOf, Eff, Effect, IOE, liftIO, (:>))
 import Effectful.Colog qualified as Log
 import Effectful.Dispatch.Dynamic (interpret, localSeqUnlift, reinterpret, send)
@@ -67,23 +71,43 @@ import Effectful.State.Static.Local qualified as S
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import GHC.Exts
-import GHC.Stack (callStack, getCallStack, srcLocFile, srcLocStartLine)
+import GHC.Generics (Generic)
+import GHC.Stack (CallStack, SrcLoc, callStack, getCallStack, srcLocFile, srcLocStartLine)
 import GHC.TypeLits (KnownSymbol (..), symbolVal)
 import System.Environment (lookupEnv)
 
 -- | Log levels for structured debug messages
+-- Using our own type instead of co-log's Severity for better integration with Pretty
 data LogLevel
     = Debug
     | Info
     | Warning
     | Error
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
 
 instance Pretty LogLevel where
     pretty Debug = Style.keyword "DEBUG"
     pretty Info = Style.varName "INFO"
     pretty Warning = Style.warning "WARN"
     pretty Error = Style.errorCode "ERROR"
+
+-- | Rich message type for Elara logging - extends co-log's RichMessage pattern
+-- This contains all the context we need for structured logging
+data ElaraMessage = ElaraMessage
+    { emLevel :: !LogLevel
+    -- ^ Log severity level
+    , emMessage :: !(Doc AnsiStyle)
+    -- ^ The actual log message
+    , emNamespace :: ![T.Text]
+    -- ^ Namespace hierarchy
+    , emDepth :: !Int
+    -- ^ Indentation depth for hierarchical logging
+    , emStack :: !(Maybe CallStack)
+    -- ^ Call stack for source location
+    , emTime :: !(Maybe UTCTime)
+    -- ^ Timestamp (populated by enrichment)
+    }
+    deriving (Generic)
 
 -- | Configuration for the structured debug system
 data LogConfig = LogConfig
@@ -150,6 +174,63 @@ getLogConfigFromEnv = do
             , showSourceLoc = parseBool showSourceLoc
             , namespaceFilter = fmap (T.split (== '.') . T.pack) namespaceFilter
             }
+
+-- | Co-log filter by log level
+-- Uses co-log's pattern of filtering messages based on severity
+filterByLevel :: LogConfig -> LogAction m ElaraMessage -> LogAction m ElaraMessage
+filterByLevel config (LogAction action) = LogAction $ \msg ->
+    when (emLevel msg >= minLogLevel config) $ action msg
+
+-- | Co-log filter by namespace
+-- Uses co-log's pattern of filtering messages based on custom fields
+filterByNamespace :: LogConfig -> LogAction m ElaraMessage -> LogAction m ElaraMessage
+filterByNamespace config (LogAction action) = LogAction $ \msg ->
+    let shouldLog = case namespaceFilter config of
+            Nothing -> True
+            Just filterNs -> filterNs `isPrefixOf` emNamespace msg
+     in when shouldLog $ action msg
+
+-- | Enrich ElaraMessage with timestamp (co-log enrichment pattern)
+enrichWithTime :: IOE :> r => LogAction (Eff r) ElaraMessage -> LogAction (Eff r) ElaraMessage
+enrichWithTime = cmapM $ \msg -> do
+    time <- liftIO getCurrentTime
+    pure msg{emTime = Just time}
+
+-- | Enrich ElaraMessage with call stack (co-log enrichment pattern)
+enrichWithStack :: HasCallStack => LogAction m ElaraMessage -> LogAction m ElaraMessage
+enrichWithStack = cmap $ \msg ->
+    msg{emStack = Just callStack}
+
+-- | Format ElaraMessage to Doc AnsiStyle using co-log's cmap pattern
+-- This is where we convert our structured message to the final output format
+formatRichMessage :: LogConfig -> ElaraMessage -> Doc AnsiStyle
+formatRichMessage config msg =
+    let timestampDoc =
+            case emTime msg of
+                Just time | showTimestamps config ->
+                    let timeStr = show time -- Simple formatting for now
+                     in Style.punctuation (pretty (take 19 timeStr)) <> " "
+                _ -> mempty
+
+        levelDoc = "[" <> pretty (emLevel msg) <> "]" <> " "
+
+        nsDoc =
+            if null (emNamespace msg)
+                then mempty
+                else pretty ("[" <> T.intercalate "." (emNamespace msg) <> "] ")
+
+        locDoc =
+            case emStack msg of
+                Just stack | showSourceLoc config ->
+                    case getCallStack stack of
+                        ((_, loc) : _) ->
+                            Style.punctuation (pretty (srcLocFile loc) <> ":" <> pretty (srcLocStartLine loc)) <> " "
+                        [] -> mempty
+                _ -> mempty
+
+        prefix = stimes (emDepth msg) "│ "
+        indentedMsg = prefix <> hang (2 * emDepth msg) (emMessage msg)
+     in timestampDoc <> levelDoc <> locDoc <> nsDoc <> indentedMsg
 
 data StructuredDebug :: Effect where
     -- Legacy debug operations (maintained for backwards compatibility)
@@ -250,92 +331,94 @@ logInfoWithNS ns msg = send . LogWithNS Info ns msg
 withNamespace :: HasCallStack => StructuredDebug :> r => [T.Text] -> Eff r a -> Eff r a
 withNamespace ns act = send $ WithNamespace ns act
 
--- | Extract source location from HasCallStack
-getSourceLoc :: HasCallStack => Maybe (String, Int)
-getSourceLoc = case getCallStack callStack of
-    [] -> Nothing
-    ((_, loc) : _) -> Just (srcLocFile loc, srcLocStartLine loc)
+-- | Build a co-log LogAction that applies configuration-based filtering and formatting
+buildLogAction :: forall r. (IOE :> r, Log.Log (Doc AnsiStyle) :> r) => LogConfig -> LogAction (Eff r) ElaraMessage
+buildLogAction config =
+    let -- Start with the base action that logs the formatted message
+        baseAction = LogAction $ \msg ->
+            Log.logMsg (formatRichMessage config msg)
 
--- | Format a log message with optional timestamp and source location
-formatLogMessage ::
-    LogConfig ->
-    LogLevel ->
-    [T.Text] ->
-    Int ->
-    Doc AnsiStyle ->
-    Maybe (String, Int) ->
-    IO (Doc AnsiStyle)
-formatLogMessage config level ns depth msg srcLoc = do
-    timestamp <-
-        if showTimestamps config
-            then do
-                now <- getCurrentTime
-                let timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" now
-                pure $ Style.punctuation (pretty timeStr) <> " "
-            else pure mempty
+        -- Apply enrichment if timestamps are enabled
+        enriched =
+            if showTimestamps config
+                then enrichWithTime baseAction
+                else baseAction
 
-    let levelDoc = "[" <> pretty level <> "]" <> " "
-        nsDoc = if null ns then mempty else pretty ("[" <> T.intercalate "." ns <> "] ")
-        locDoc = case srcLoc of
-            Just (file, line) | showSourceLoc config ->
-                Style.punctuation (pretty file <> ":" <> pretty line) <> " "
-            _ -> mempty
-        prefix = stimes depth "│ "
-        indentedMsg = prefix <> hang (2 * depth) msg
-
-    pure $ timestamp <> levelDoc <> locDoc <> nsDoc <> indentedMsg
-
--- | Check if a message should be logged based on configuration
-shouldLog :: LogConfig -> LogLevel -> [T.Text] -> Bool
-shouldLog config level ns =
-    level >= minLogLevel config
-        && case namespaceFilter config of
-            Nothing -> True
-            Just filterNs -> filterNs `isPrefixOf` ns
+        -- Apply filters using co-log's composable pattern
+        filtered =
+            filterByLevel config $
+                filterByNamespace config enriched
+     in filtered
 
 structuredDebugToLog :: forall r a. (HasCallStack, IOE :> r) => Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLog = structuredDebugToLogWith defaultLogConfig
 
--- | Interpret StructuredDebug with custom configuration
+-- | Interpret StructuredDebug using co-log's RichMessage pattern
+-- This leverages co-log's LogAction combinators for filtering and enrichment
 structuredDebugToLogWith :: forall r a. (HasCallStack, IOE :> r) => LogConfig -> Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLogWith config = reinterpret (S.evalState ([] :: [T.Text]) . S.evalState (0 :: Int)) $ \env -> \case
     -- Legacy operations (treated as Debug level)
-    DebugOld msg -> logHelper Debug [] msg getSourceLoc
-    DebugNS names msg -> logHelper Debug names msg getSourceLoc
-    DebugWith msg act -> logWithHelper Debug [] msg act
-    DebugWithNS names msg act -> logWithHelper Debug names msg act
+    DebugOld msg -> logMessage Debug [] msg
+    DebugNS names msg -> logMessage Debug names msg
+    DebugWith msg act -> logWithScope Debug [] msg act
+    DebugWithNS names msg act -> logWithScope Debug names msg act
     -- New operations with explicit log levels
-    LogMsg level msg -> logHelper level [] msg getSourceLoc
-    LogMsgNS level names msg -> logHelper level names msg getSourceLoc
-    LogWith level msg act -> logWithHelper level [] msg act
-    LogWithNS level names msg act -> logWithHelper level names msg act
+    LogMsg level msg -> logMessage level [] msg
+    LogMsgNS level names msg -> logMessage level names msg
+    LogWith level msg act -> logWithScope level [] msg act
+    LogWithNS level names msg act -> logWithScope level names msg act
+    -- Namespace context operation
     -- Namespace context operation
     WithNamespace names act -> withNamespaceHelper names act
   where
-    logHelper :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Maybe (String, Int) -> Eff (StructuredDebug : r) ()
-    logHelper level names msg srcLoc = do
-        depth <- S.get @Int
-        ns <- S.get @[T.Text]
-        let fullNs = ns <> names
-        when (shouldLog config level fullNs) $ do
-            formatted <- liftIO $ formatLogMessage config level fullNs depth msg srcLoc
-            Log.logMsg formatted
+    -- Get the co-log LogAction with all filters and enrichments applied
+    logAction = buildLogAction config
 
-    logWithHelper :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff (StructuredDebug : r) a -> Eff (StructuredDebug : r) a
-    logWithHelper level names msg act = do
+    -- Helper to create and log an ElaraMessage
+    logMessage :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff (StructuredDebug : r) ()
+    logMessage level names msg = do
         depth <- S.get @Int
         ns <- S.get @[T.Text]
         let fullNs = ns <> names
-        when (shouldLog config level fullNs) $ do
-            formatted <- liftIO $ formatLogMessage config level fullNs depth msg getSourceLoc
-            Log.logMsg formatted
+            elaraMsg =
+                ElaraMessage
+                    { emLevel = level
+                    , emMessage = msg
+                    , emNamespace = fullNs
+                    , emDepth = depth
+                    , emStack = if showSourceLoc config then Just callStack else Nothing
+                    , emTime = Nothing -- Will be enriched by LogAction if needed
+                    }
+        -- Use co-log's LogAction to handle filtering, enrichment, and formatting
+        unLogAction logAction elaraMsg
+
+    -- Helper for scoped logging with indentation
+    logWithScope :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff (StructuredDebug : r) a -> Eff (StructuredDebug : r) a
+    logWithScope level names msg act = do
+        depth <- S.get @Int
+        ns <- S.get @[T.Text]
+        let fullNs = ns <> names
+            elaraMsg =
+                ElaraMessage
+                    { emLevel = level
+                    , emMessage = msg
+                    , emNamespace = fullNs
+                    , emDepth = depth
+                    , emStack = if showSourceLoc config then Just callStack else Nothing
+                    , emTime = Nothing
+                    }
+        -- Log the entry message
+        unLogAction logAction elaraMsg
+        -- Increase depth and update namespace for nested logs
         S.put (depth + 1)
         S.put fullNs
         res <- localSeqUnlift env $ \unlift -> unlift act
+        -- Restore depth and namespace
         S.put depth
         S.put ns
         pure res
 
+    -- Helper for namespace context
     withNamespaceHelper :: [T.Text] -> Eff (StructuredDebug : r) a -> Eff (StructuredDebug : r) a
     withNamespaceHelper names act = do
         ns <- S.get @[T.Text]
@@ -344,6 +427,9 @@ structuredDebugToLogWith config = reinterpret (S.evalState ([] :: [T.Text]) . S.
         res <- localSeqUnlift env $ \unlift -> unlift act
         S.put ns
         pure res
+
+    -- Extract the action from LogAction
+    unLogAction (LogAction action) = action
 
 ignoreStructuredDebug :: Eff (StructuredDebug : r) a -> Eff r a
 ignoreStructuredDebug = interpret $ \env -> \case
