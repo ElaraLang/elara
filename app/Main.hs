@@ -38,7 +38,7 @@ import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR (moduleName)
 import Elara.JVM.Lower
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (LogConfig (..), LogLevel (Info), debug, getLogConfigFromEnv, ignoreStructuredDebug, minLogLevel, structuredDebugToLogWith)
+import Elara.Logging (LogConfig (..), LogLevel (Info), debug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, logWarning, minLogLevel, structuredDebugToLogWith)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
@@ -160,7 +160,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                         fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
 
                                     inject $ dumpGraph lexed (toText . takeBaseName . fst) ".lexed.elr"
-                                    debug "Dumped lexed files"
+                                    logDebug "Dumped lexed files"
 
                                 moduleNames <- for files $ \file -> do
                                     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
@@ -170,31 +170,31 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                     parsed <- for moduleNames $ \m -> do
                                         runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule m
                                     inject $ dumpGraph parsed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".parsed.elr"
-                                    debug "Dumped parsed modules"
+                                    logDebug "Dumped parsed modules"
 
                                 when dumpDesugared $ do
                                     desugared <- for moduleNames $ \m -> do
                                         runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule m
                                     inject $ dumpGraph desugared (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".desugared.elr"
-                                    debug "Dumped desugared modules"
+                                    logDebug "Dumped desugared modules"
 
                                 when dumpRenamed $ do
                                     renamed <- for moduleNames $ \m -> do
                                         runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule m
                                     inject $ dumpGraph renamed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".renamed.elr"
-                                    debug "Dumped renamed modules"
+                                    logDebug "Dumped renamed modules"
 
                                 when dumpShunted $ do
                                     shunted <- for moduleNames $ \m -> do
                                         runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted m
                                     inject $ dumpGraph shunted (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".shunted.elr"
-                                    debug "Dumped shunted modules"
+                                    logDebug "Dumped shunted modules"
 
                                 when dumpTyped $ do
                                     typed <- for moduleNames $ \m -> do
                                         Rock.fetch $ Elara.Query.TypeCheckedModule m
                                     inject $ dumpGraph typed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".typed.elr"
-                                    debug "Dumped typed modules"
+                                    logDebug "Dumped typed modules"
 
                                 when dumpCore $ do
                                     core <- for moduleNames $ \m -> do
@@ -233,7 +233,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                                     lowered <- for cores $ \coreMod -> do
                                                         runErrorOrReport @JVMLoweringError $ lowerModule coreMod
                                                     inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
-                                                    debug "Dumped JVM IR modules"
+                                                    logDebug "Dumped JVM IR modules"
 
                                                 when dumpJVM $ do
                                                     inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
@@ -246,16 +246,15 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                                         liftIO $ createAndWriteFile fp bs
                                                         pure fp
 
-                                                    putTextLn ("Compiled " <> showPretty modName <> " to " <> showPretty fps <> "!")
+                                                    logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
 
-                                                debug "Emitted JVM class files"
-                                            else printPretty (Style.warning "Warning: " <> "nothing to do.")
+                                                logDebug "Emitted JVM class files"
+                                            else logWarning "Nothing to do. Use --run or --run-jvm to execute the compiled code."
 
-                                -- printPretty loadedModules
                                 end <- liftIO getCPUTime
                                 let t :: Double
                                     t = fromIntegral (end - start) * 1e-9
-                                printPretty
+                                logInfo
                                     ( Style.varName "Successfully" <+> "compiled "
                                         <> Style.punctuation (pretty (length files))
                                         <> " classes in "
