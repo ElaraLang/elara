@@ -44,7 +44,11 @@ constraintLoc (EmptyConstraint loc) = loc
 constraintLoc (Conjunction loc _ _) = loc
 constraintLoc (Equality loc _ _) = loc
 
-instance Plated (Constraint loc)
+instance Plated (Constraint loc) where
+    plate = traversalVL $ \f -> \case
+        EmptyConstraint loc -> pure (EmptyConstraint loc)
+        Conjunction loc c1 c2 -> Conjunction loc <$> f c1 <*> f c2
+        Equality loc m1 m2 -> pure (Equality loc m1 m2)
 
 emptyLocation :: SourceRegion
 emptyLocation = generatedSourceRegion Nothing

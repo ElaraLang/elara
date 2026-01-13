@@ -125,10 +125,23 @@ insertWithM f k v m = case M.lookup k m of
 identity :: a -> a
 identity = Relude.id
 
+-- | A type class for recursive types that can be traversed.
+--
+-- __WARNING__: The default implementation using 'GPlate' can silently skip fields
+-- that do not have a 'Generic' instance. This is dangerous and can lead to incomplete
+-- traversals. For production code, __always provide an explicit implementation__ of 'plate'
+-- that manually specifies which fields should be traversed.
+--
+-- The default implementation is provided for convenience in prototyping and for types
+-- that are known to have 'Generic' instances for all their recursive components.
 class Plated a where
     plate :: Traversal' a a
-    -- TODO: this is a dangerous function if any component doesn't have Generic instance
-    -- it'll just be silently ignored. is there a fix?
+
+    -- | Default implementation using GHC Generics.
+    --
+    -- __DANGER__: This will silently ignore any field that doesn't have a 'Generic' instance.
+    -- If you rely on this default, ensure all components of your data type derive 'Generic',
+    -- or provide an explicit implementation instead.
     default plate :: GPlate a a => Traversal' a a
     plate = gplate
 
