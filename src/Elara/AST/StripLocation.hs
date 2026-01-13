@@ -4,6 +4,7 @@
 module Elara.AST.StripLocation where
 
 import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.Data.AtLeast2List
 import GHC.Generics
 
 class StripLocation a b where
@@ -15,9 +16,8 @@ instance {-# INCOHERENT #-} StripLocation a a where
 instance StripLocation s () where
     stripLocation _ = ()
 
-instance StripLocation (Located a) a where
-    stripLocation :: Located a -> a
-    stripLocation (Located _ a) = a
+instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (Located a) a' where
+    stripLocation (Located _ a) = stripLocation a
 
 instance {-# INCOHERENT #-} StripLocation SourceRegion () where
     stripLocation _ = ()
@@ -27,10 +27,16 @@ instance {-# INCOHERENT #-} StripLocation SourceRegion () where
 instance {-# OVERLAPPABLE #-} (StripLocation a a', StripLocation b b') => StripLocation (a, b) (a', b') where
     stripLocation (a, b) = (stripLocation a, stripLocation b)
 
+instance {-# OVERLAPPABLE #-} (StripLocation a a', StripLocation b b', StripLocation c c') => StripLocation (a, b, c) (a', b', c') where
+    stripLocation (a, b, c) = (stripLocation a, stripLocation b, stripLocation c)
+
 instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (Maybe a) (Maybe a') where
     stripLocation = fmap stripLocation
 
 instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation [a] [a'] where
+    stripLocation = fmap stripLocation
+
+instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (AtLeast2List a) (AtLeast2List a') where
     stripLocation = fmap stripLocation
 
 instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (NonEmpty a) (NonEmpty a') where

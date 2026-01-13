@@ -16,7 +16,6 @@ Description: This module defines the queries used in the Elara compiler.
 -}
 module Elara.Query where
 
-import Data.GADT.Show.TH
 import Data.Hashable (hash)
 import Effectful
 import Effectful.FileSystem (FileSystem)
@@ -30,7 +29,6 @@ import Data.Typeable (eqT, typeRep)
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local
 import Elara.AST.Generic (Annotation, Declaration, Select)
-import Elara.AST.Introspection
 import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion)

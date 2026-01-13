@@ -8,6 +8,7 @@ import Elara.AST.Generic
 import Elara.AST.Name (VarOrConName (VarName))
 import Elara.AST.Select
 import Elara.AST.Unlocated ()
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Utils
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
@@ -68,7 +69,7 @@ genExpr' =
         , List <$> Gen.list (Range.linear 0 10) genExpr
         , Gen.subtermM genExpr' (\x -> Match <$> mkExpr x <*> Gen.list (Range.linear 0 5) (liftA2 (,) genPattern genExpr))
         , LetIn <$> genVarName <*> Gen.list (Range.linear 0 5) genPattern <*> genStatement <*> genStatement
-        , Tuple <$> Gen.nonEmpty (Range.linear 2 10) genExpr
+        , Tuple . AtLeast2List.fromNonEmptyUnsafe <$> Gen.nonEmpty (Range.linear 2 10) genExpr
         ]
 
 genStatement' :: Gen (Expr' UnlocatedFrontend)

@@ -8,6 +8,7 @@ import Elara.AST.Generic
 import Elara.AST.Region (Located)
 import Elara.AST.Select (LocatedAST (..), UnlocatedAST (..), UnlocatedToLocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef)
+import Elara.Data.AtLeast2List (AtLeast2List)
 import Elara.Data.Unique (Unique)
 
 type instance ASTLocate' UnlocatedFrontend = Unlocated
@@ -49,6 +50,7 @@ type family Replace (needle :: LocatedAST) (replacement :: UnlocatedAST) (haysta
     Replace needle replacement (DeclarationBody' needle) = DeclarationBody' replacement
     Replace needle replacement [list] = [Replace needle replacement list]
     Replace needle replacement (NonEmpty list) = NonEmpty (Replace needle replacement list)
+    Replace needle replacement (AtLeast2List list) = AtLeast2List (Replace needle replacement list)
     Replace needle replacement (a, b) = (Replace needle replacement a, Replace needle replacement b)
     Replace needle replacement (a, b, c) = (Replace needle replacement a, Replace needle replacement b, Replace needle replacement c)
     Replace needle replacement (Maybe maybe) = Maybe (Replace needle replacement maybe)
