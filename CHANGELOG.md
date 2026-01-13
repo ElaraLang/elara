@@ -27,12 +27,14 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Large interpreter improvements and bugfixes - ([c6747ca](https://github.com/ElaraLang/elara/commit/c6747ca1c683b5d1b7e073fb120ea36cc9c551a0)) 
 - *(interpreter)* Add a nice print output for tuple and list - ([0e94eca](https://github.com/ElaraLang/elara/commit/0e94ecab8b4146b50d3dd35a84b807096a401610)) 
 - *(lexer)* Improve lexer's robustness wrt indentation and closing parentheses - ([4748cc7](https://github.com/ElaraLang/elara/commit/4748cc7a8b978bde97631dc6d5bf56a9a7bc1fdb)) 
+- *(lexer)* Support comments properly - ([d08bf58](https://github.com/ElaraLang/elara/commit/d08bf58000efc51c2fbf01a4c331678ceba0baec)) 
 - *(logging)* Write logs to a file because they're getting big! And properly use terminal width now - ([3fe538c](https://github.com/ElaraLang/elara/commit/3fe538c928aa795d65e2e006bce390382df927c6)) 
 - *(logging)* Improve pretty output of some elements - ([7e17b22](https://github.com/ElaraLang/elara/commit/7e17b228cca625043d7671e8c88d1f41585fd8cc)) 
 - *(main)* Make debug output toggleable again - ([267e7a8](https://github.com/ElaraLang/elara/commit/267e7a8634e8a1c29de86c3db33535defbfb5a7a)) 
 - *(nix)* Enable actionlint in treefmt configuration - ([ce014f6](https://github.com/ElaraLang/elara/commit/ce014f63a4beb4f0a45abe819fb94f33f18944a8)) 
 - *(parser)* Start work parsing annotations - ([a4bcbc6](https://github.com/ElaraLang/elara/commit/a4bcbc6961d813b7b1424d4ca66ccd3187f37ed5)) 
 - *(parser)* Parse tuple types - ([8fea9ca](https://github.com/ElaraLang/elara/commit/8fea9ca5e0a2d10f365b5fc1a9eaebfc42da92fb)) 
+- *(parser)* Allow infix patterns in declarations, eg `let x + y = ...` - ([81dad53](https://github.com/ElaraLang/elara/commit/81dad531db85ba8e6cb581c995569111ac1c99e5)) 
 - *(pattern-matching)* Make pattern matching compilation work... - ([b15cc93](https://github.com/ElaraLang/elara/commit/b15cc937f2c580ede3ad40c8f2f4ddcb4e4e6b86)) 
 - *(pretty)* Add Pretty CallStack instance - ([5644720](https://github.com/ElaraLang/elara/commit/56447201839ba9c9c340e4f23d8fa56d687bc595)) 
 - *(pretty)* Highlight `def` as a keyword - ([d9e552f](https://github.com/ElaraLang/elara/commit/d9e552f25b0f0176a2abbdfe810845feba56d489)) 
@@ -101,6 +103,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(tests)* :bug: Fix tests failing due to logging not working in parallel - ([33032d6](https://github.com/ElaraLang/elara/commit/33032d67c6c1364b717a8717d8716fc4952f922c)) 
 - *(tests)* Fix compile issues and adjust golden timeout - ([58b25af](https://github.com/ElaraLang/elara/commit/58b25af65fc50615d2eca50f8f70915c3ab2e22e)) 
 - *(tests)* Fix round trip test - ([83e888a](https://github.com/ElaraLang/elara/commit/83e888a70152435066eee93ddd504fba6497e004)) 
+- *(tests)* Comments being treated as operators - ([ed24e41](https://github.com/ElaraLang/elara/commit/ed24e415474a9d1446147f16a6951c9b35b389e9)) 
 - *(to-core)* :bug: Fix ANF conversion in core not correctly handling match expressions - ([6cc25cd](https://github.com/ElaraLang/elara/commit/6cc25cdafde330f383ecbdbcc9b0e639ba3fcc28)) 
 - *(to-core)* :bug: Fix global recursive bindings not being created as recursive - ([ad3216f](https://github.com/ElaraLang/elara/commit/ad3216f2b2a9f6dd1dd44967d44c34ecb635d1bb)) 
 - *(to-core)* :label: Fix ANF Core type mismatch errors - ([7e39c4e](https://github.com/ElaraLang/elara/commit/7e39c4e44b57d58e63876070411bd211915a8746)) 
@@ -173,6 +176,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :mute: Remove debug logging from parser - ([61b6c3c](https://github.com/ElaraLang/elara/commit/61b6c3c1d514a837952c7ab73489c6177a01f382)) 
 - *(parser)* Small refactor to parser code - ([0cd07e0](https://github.com/ElaraLang/elara/commit/0cd07e0b9222b22d000bf00382ed9ae91f42dd86)) 
 - *(parser)* :mute: Remove dbgPretty call - ([845382e](https://github.com/ElaraLang/elara/commit/845382e2d3afaca6964e88df76110e89c47c8ef0)) 
+- *(parser)* Improve expression parsing and code quality - ([9b68e35](https://github.com/ElaraLang/elara/commit/9b68e3550e9454df8b87e68a47fca961a8fe227a)) 
 - *(query)* Refactor query system to support queries parameterised by the AST stage - ([df903d3](https://github.com/ElaraLang/elara/commit/df903d32b2ceb8f5162c1c82aea9380357a1e6c3)) 
 - *(renamer)* :recycle: Desugar tuple literals into normal data constructors - ([9452cc7](https://github.com/ElaraLang/elara/commit/9452cc7e5bd7fc762be6c932621f2b1bafcc30e0)) 
 - *(renamer)* Move renamer to query based system. This means the entire compiler can be lazy! - ([65c1d7a](https://github.com/ElaraLang/elara/commit/65c1d7ac8276f445be264acc82d66213a0e73cd8)) 
@@ -235,6 +239,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add an introduction and clearly link to haddock docs - ([2299963](https://github.com/ElaraLang/elara/commit/2299963430791eaf357d27e02e136a53c534ddbe)) 
 - Begin language reference for syntax and annotations - ([25f870a](https://github.com/ElaraLang/elara/commit/25f870a8003b208f6bc46034549ce42bc89c8c1e)) 
 - Flesh out annotation documentation - ([2b28890](https://github.com/ElaraLang/elara/commit/2b28890969e5d3d31549ad291f5840e607e39b86)) 
+- Add docs on comments - ([4c5d694](https://github.com/ElaraLang/elara/commit/4c5d69494e9590bb04404e3b8db837dc5d027ed9)) 
 
 ### ⚡ Performance
 
