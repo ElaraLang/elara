@@ -13,7 +13,7 @@ import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
-import Text.Megaparsec (MonadParsec (try), choice, customFailure)
+import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
 
 type' :: Parser FrontendType
 type' =
@@ -22,6 +22,7 @@ type' =
         [ [InfixL constructorApplication]
         , [InfixR functionType]
         ]
+        <?> "type"
 
 typeNotApplication :: Parser FrontendType
 typeNotApplication =
@@ -48,15 +49,15 @@ liftedBinaryType op f = do
 
 typeTerm :: Parser FrontendType
 typeTerm =
-    choice @[]
-        [ typeVar
-        , unit
-        , try tupleType
-        , try (inParens type')
-        , namedType
-        , emptyRecordError
-        , recordType
-        , listType
+    choice
+        [ typeVar <?> "type variable"
+        , namedType <?> "type constructor"
+        , try tupleType <?> "tuple type"
+        , try (inParens type') <?> "parenthesised type"
+        , unit <?> "unit type"
+        , emptyRecordError <?> "empty record type"
+        , recordType <?> "record type"
+        , listType <?> "list type"
         ]
 
 typeVar :: Parser FrontendType
