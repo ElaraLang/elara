@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Main (
     main,
@@ -8,7 +10,7 @@ module Main (
 where
 
 import Control.Exception as E
-import Effectful (Eff, IOE, inject, runEff, (:>))
+import Effectful (Eff, IOE, Subset, inject, runEff, (:>))
 import Effectful.FileSystem (runFileSystem)
 import Elara.AST.Select
 import Elara.Data.Pretty
@@ -25,10 +27,12 @@ import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
 import Effectful.Error.Extra (fromEither)
 import Effectful.Error.Static (Error, runError)
+import Elara.AST.Generic
 import Elara.AST.Module
-import Elara.AST.Name (nameText)
+import Elara.AST.Name (ModuleName, NameLike, nameText)
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
+import Elara.Core.Module (CoreModule)
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
@@ -38,7 +42,7 @@ import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR (moduleName)
 import Elara.JVM.Lower
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (LogConfig (..), LogLevel (Info), debug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, logWarning, minLogLevel, structuredDebugToLogWith)
+import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, logWarning, minLogLevel, structuredDebugToLogWith)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
@@ -166,56 +170,31 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                     (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
                                     pure (m.name ^. unlocated)
 
-                                when dumpParsed $ do
-                                    parsed <- for moduleNames $ \m -> do
-                                        runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule m
-                                    inject $ dumpGraph parsed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".parsed.elr"
-                                    logDebug "Dumped parsed modules"
+                                runErrorOrReport @(WParseErrorBundle _ _) $
+                                    dumpGraphInfo Elara.Query.ParsedModule dumpParsed moduleNames "parsed" ".parsed.elr"
 
-                                when dumpDesugared $ do
-                                    desugared <- for moduleNames $ \m -> do
-                                        runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule m
-                                    inject $ dumpGraph desugared (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".desugared.elr"
-                                    logDebug "Dumped desugared modules"
+                                runErrorOrReport @DesugarError $
+                                    dumpGraphInfo Elara.Query.DesugaredModule dumpDesugared moduleNames "desugared" ".desugared.elr"
 
-                                when dumpRenamed $ do
-                                    renamed <- for moduleNames $ \m -> do
-                                        runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule m
-                                    inject $ dumpGraph renamed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".renamed.elr"
-                                    logDebug "Dumped renamed modules"
+                                runErrorOrReport @RenameError $
+                                    dumpGraphInfo Elara.Query.RenamedModule dumpRenamed moduleNames "renamed" ".renamed.elr"
 
-                                when dumpShunted $ do
-                                    shunted <- for moduleNames $ \m -> do
-                                        runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted m
-                                    inject $ dumpGraph shunted (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".shunted.elr"
-                                    logDebug "Dumped shunted modules"
+                                runErrorOrReport @ShuntError $
+                                    dumpGraphInfo (Elara.Query.ModuleByName @Shunted) dumpShunted moduleNames "shunted" ".shunted.elr"
 
-                                when dumpTyped $ do
-                                    typed <- for moduleNames $ \m -> do
-                                        Rock.fetch $ Elara.Query.TypeCheckedModule m
-                                    inject $ dumpGraph typed (\x -> x ^. _Unwrapped % unlocated % field' @"name" % to nameText) ".typed.elr"
-                                    logDebug "Dumped typed modules"
+                                runErrorOrReport @ShuntError $
+                                    dumpGraphInfo Elara.Query.TypeCheckedModule dumpTyped moduleNames "typed" ".typed.elr"
 
-                                when dumpCore $ do
-                                    core <- for moduleNames $ \m -> do
-                                        Rock.fetch $ Elara.Query.GetCoreModule m
+                                runErrorOrReport @ShuntError $
+                                    dumpGraphInfo Elara.Query.GetCoreModule dumpCore moduleNames "core" ".core.elr"
 
-                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.elr"
+                                runErrorOrReport @ShuntError $
+                                    dumpGraphInfo Elara.Query.GetANFCoreModule dumpCore moduleNames "core.anf" ".core.anf.elr"
 
-                                when dumpCore $ do
-                                    core <- for moduleNames $ \m -> do
-                                        Rock.fetch $ Elara.Query.GetANFCoreModule m
-                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.anf.elr"
+                                runErrorOrReport @ClosureLiftError $
+                                    dumpGraphInfo Elara.Query.GetClosureLiftedModule dumpCore moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
 
-                                when dumpCore $ do
-                                    core <- for moduleNames $ \m -> do
-                                        runErrorOrReport @ClosureLiftError $ Rock.fetch $ Elara.Query.GetClosureLiftedModule m
-                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.closure_lifted.elr"
-
-                                when dumpCore $ do
-                                    core <- for moduleNames $ \m -> do
-                                        Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
-                                    inject $ dumpGraph core (\x -> x ^. field' @"name" % to nameText) ".core.final.elr"
+                                dumpGraphInfo Elara.Query.GetFinalisedCoreModule dumpCore moduleNames "core.final" ".core.final.elr"
 
                                 if runWith == RunWithInterpreter
                                     then
@@ -264,9 +243,36 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                             )
                                     )
 
+dumpGraphInfo ::
+    ( Subset xs es
+    , Rock.Rock Elara.Query.Query :> es
+    , HasCallStack
+    , StructuredDebug :> es
+    , IOE :> es
+    , Pretty module'
+    , Dumpable module'
+    ) =>
+    (ModuleName -> Elara.Query.Query xs module') -> Bool -> [ModuleName] -> Text -> Text -> Eff es ()
+dumpGraphInfo query when' moduleNames stage suffix = do
+    when when' $ do
+        modules <- for moduleNames $ \m -> do
+            Rock.fetch $ query m
+        inject $ dumpGraph modules dumpName suffix
+        logDebug ("Dumped " <> pretty (length modules) <> " " <> pretty stage <> " modules")
+
+class Dumpable a where
+    dumpName :: a -> Text
+
+instance (ASTLocate ast (Module' ast) ~ Located (Module' ast), NameLike (ASTLocate ast ModuleName)) => Dumpable (Module ast) where
+    dumpName m = m ^. _Unwrapped % unlocated % field' @"name" % to nameText
+
+instance Dumpable (CoreModule bind) where
+    dumpName m = m ^. field' @"name" % to nameText
+
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
 
+createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do
     createDirectoryIfMissing True $ takeDirectory path
     writeFileLBS path content
