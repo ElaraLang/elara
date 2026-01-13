@@ -8,6 +8,8 @@ import Elara.AST.Generic (Type (..), Type' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Name (LowerAlphaName)
 import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
+import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
@@ -96,7 +98,7 @@ tupleType = locatedType $ inParens $ do
     t <- type'
     token_ TokenComma
     ts <- sepBy1' type' (token_ TokenComma)
-    pure $ TupleType (t <| ts)
+    pure $ TupleType (AtLeast2List.fromHeadAndTail t ts)
 
 listType :: Parser FrontendType
 listType = locatedType $ do

@@ -84,6 +84,7 @@ type instance Select (ASTName ForExpr) Renamed = Qualified VarName
 
 -- Selections for 'Type'
 type instance Select ASTTypeVar Renamed = Unique LowerAlphaName
+type instance Select TupleType Renamed = DataConCantHappen
 
 type instance Select UserDefinedType Renamed = Qualified TypeName
 

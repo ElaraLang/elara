@@ -88,6 +88,8 @@ type data ASTSelector
       SymOp
     | -- | The name of the "operator" in an infix (e.g. @a `f` b@) expression
       Infixed
+    | -- | The type of a tuple type expression
+      TupleType
 
 type data ForSelector
     = ForType

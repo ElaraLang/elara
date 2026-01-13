@@ -307,6 +307,7 @@ instance
     , Pretty (ASTLocate ast (Select ASTTypeVar ast))
     , Pretty (ASTLocate ast (Select UserDefinedType ast))
     , ToMaybe (Select TypeKind ast) (Maybe typeKind)
+    , ToList (Select TupleType ast) [Type ast]
     , typeKind ~ UnwrapMaybe (Select TypeKind ast)
     , Pretty typeKind
     ) =>
@@ -319,7 +320,7 @@ instance
         TypeConstructorApplication a b -> pretty a <+> pretty b
         UserDefinedType name -> pretty name
         RecordType fields -> "{" <+> prettyFields fields <+> "}"
-        TupleType fields -> tupled (map pretty (toList fields))
+        TupleType fields -> tupled (map pretty (fieldToList @_ @[Type ast] fields))
         ListType a -> "[" <+> pretty a <+> "]"
       where
         prettyFields = hsep . punctuate "," . map (\(name, value) -> pretty name <+> ":" <+> pretty value) . toList

@@ -88,6 +88,7 @@ type instance Select (ASTName ForValueDecl) Shunted = Qualified VarName
 type instance Select TypeKind Shunted = NoFieldValue
 
 type instance Select ASTTypeVar Shunted = Unique LowerAlphaName
+type instance Select TupleType Shunted = DataConCantHappen
 
 type instance Select UserDefinedType Shunted = Qualified TypeName
 

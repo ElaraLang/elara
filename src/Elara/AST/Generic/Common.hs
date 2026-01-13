@@ -2,7 +2,6 @@ module Elara.AST.Generic.Common where
 
 import Data.Data
 import Elara.Data.Pretty
-import GHC.TypeError
 
 data DataConCantHappen deriving (Generic, Data, Show, Eq, Ord)
 

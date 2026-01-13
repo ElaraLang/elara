@@ -312,11 +312,6 @@ elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
             newEqualityConstraint (VarKind res) TypeKind
 
             pure $ Type (FunctionType a' b' <$ t, res)
-        TupleType ts -> do
-            ts' <- for ts elaborateType
-            tupleKindVar <- makeUniqueId
-            traverseOf_ (each % _Unwrapped % _2) (newEqualityConstraint (VarKind tupleKindVar) . VarKind) ts'
-            pure $ Type (TupleType ts' <$ t, tupleKindVar)
         ListType t' -> do
             t'' <- elaborateType t'
             listKindVar <- makeUniqueId
@@ -347,9 +342,6 @@ solveType (Type (t, kindVar)) = do
             a' <- solveType a
             b' <- solveType b
             pure $ Type (FunctionType a' b' <$ t, kind')
-        TupleType ts -> do
-            ts' <- traverse solveType ts
-            pure $ Type (TupleType ts' <$ t, kind')
         ListType t' -> do
             t'' <- solveType t'
             pure $ Type (ListType t'' <$ t, kind')

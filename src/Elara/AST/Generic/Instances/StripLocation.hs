@@ -1,3 +1,4 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -8,6 +9,7 @@ import Elara.AST.Generic.Utils
 import Elara.AST.Region
 import Elara.AST.Select
 import Elara.AST.StripLocation
+import Elara.Data.AtLeast2List
 import Relude.Extra (bimapF)
 
 instance
@@ -38,8 +40,31 @@ instance
     , (DataConAs (Select List ast2) [Expr ast2])
     , (DataConAs (Select InParens ast2) (Expr ast2))
     , StripLocation (Select TypeKind ast1) (Select TypeKind ast2)
-    , DataConAs (Select Tuple ast1) (NonEmpty (Expr ast1))
-    , DataConAs (Select Tuple ast2) (NonEmpty (Expr ast2))
+    , DataConAs (Select Tuple ast1) (AtLeast2List (Expr ast1))
+    , DataConAs (Select Tuple ast2) (AtLeast2List (Expr ast2))
+    , ApplyAsFunctorish
+        (Select TuplePattern ast1)
+        (Select TuplePattern ast2)
+        (Pattern ast1)
+        (Pattern ast2)
+    , StripLocation
+        (Select TupleType ast1)
+        (Select TupleType ast2)
+    , StripLocation
+        (CleanupLocated (Located (Select TupleType ast1)))
+        (Select TupleType ast1)
+    , DataConAs
+        (Select Tuple ast1)
+        (NonEmpty (Expr ast1))
+    , DataConAs
+        (Select TupleType ast1)
+        (AtLeast2List (Type ast1))
+    , DataConAs
+        (Select Tuple ast2)
+        (NonEmpty (Expr ast2))
+    , DataConAs
+        (Select TupleType ast2)
+        (AtLeast2List (Type ast2))
     ) =>
     StripLocation (Expr ast1) (Expr ast2)
     where
@@ -134,6 +159,14 @@ instance
         (Select ListPattern ast2)
         (Pattern ast1)
         (Pattern ast2)
+    , ApplyAsFunctorish
+        (Select TuplePattern ast1)
+        (Select TuplePattern ast2)
+        (Pattern ast1)
+        (Pattern ast2)
+    , StripLocation
+        (CleanupLocated (Located (Select TupleType ast1)))
+        (Select TupleType ast1)
     , ( StripLocation
             (CleanupLocated (Located (Select ASTTypeVar ast1)))
             (Select ASTTypeVar ast2)
@@ -148,6 +181,16 @@ instance
       )
     , (StripLocation (CleanupLocated (Located (Select UserDefinedType ast1))) (Select UserDefinedType ast2))
     , StripLocation (Select TypeKind ast1) (Select TypeKind ast2)
+    , StripLocation (Type ast1) (Type ast2)
+    , DataConAs
+        (Select TupleType ast1)
+        (AtLeast2List (Type ast1))
+    , DataConAs
+        (Select TupleType ast2)
+        (AtLeast2List (Type ast2))
+    , StripLocation
+        (Select TupleType ast1)
+        (Select TupleType ast2)
     ) =>
     StripLocation (Pattern ast1) (Pattern ast2)
     where
@@ -157,6 +200,7 @@ stripPatternLocation ::
     forall (ast1 :: LocatedAST) (ast2 :: UnlocatedAST).
     ( ASTLocate' ast1 ~ Located
     , ASTLocate' ast2 ~ Unlocated
+    , StripLocation (Type ast1) (Type ast2)
     , _
     ) =>
     Pattern ast1 ->
@@ -188,6 +232,13 @@ stripPatternLocation (Pattern (p :: ASTLocate ast1 (Pattern' ast1), t)) =
                 @(Pattern ast2)
                 stripPatternLocation
                 p1
+            )
+    stripPatternLocation' (TuplePattern ps) =
+        TuplePattern
+            ( applyAsFunctorish @(Select TuplePattern ast1) @(Select TuplePattern ast2) @(Pattern ast1)
+                @(Pattern ast2)
+                stripPatternLocation
+                ps
             )
     stripPatternLocation' WildcardPattern = WildcardPattern
     stripPatternLocation' (IntegerPattern i) = IntegerPattern i
@@ -234,6 +285,16 @@ instance
     , StripLocation (CleanupLocated (Located (Select ASTTypeVar ast1))) (Select ASTTypeVar ast2)
     , StripLocation (CleanupLocated (Located (Select UserDefinedType ast1))) (Select UserDefinedType ast2)
     , StripLocation (Select TypeKind ast1) (Select TypeKind ast2)
+    , StripLocation (Select TupleType ast1) (Select TupleType ast2)
+    , StripLocation
+        (CleanupLocated (Located (Select TupleType ast1)))
+        (Select TupleType ast1)
+    , DataConAs
+        (Select TupleType ast1)
+        (AtLeast2List (Type ast1))
+    , DataConAs
+        (Select TupleType ast2)
+        (AtLeast2List (Type ast2))
     ) =>
     StripLocation (Type ast1) (Type ast2)
     where
@@ -245,7 +306,10 @@ stripTypeLocation ::
     , ASTLocate' ast2 ~ Unlocated
     , StripLocation (CleanupLocated (Located (Select ASTTypeVar ast1))) (Select ASTTypeVar ast2)
     , StripLocation (CleanupLocated (Located (Select UserDefinedType ast1))) (Select UserDefinedType ast2)
+    , StripLocation (CleanupLocated (Located (Select TupleType ast1))) (Select TupleType ast1)
     , StripLocation (Select TypeKind ast1) (Select TypeKind ast2)
+    , DataConAs (Select TupleType ast1) (AtLeast2List (Type ast1))
+    , DataConAs (Select TupleType ast2) (AtLeast2List (Type ast2))
     ) =>
     Type ast1 ->
     Type ast2
@@ -259,6 +323,8 @@ stripTypeLocation (Type (t :: ASTLocate ast1 (Type' ast1), kind)) =
     stripTypeLocation' UnitType = UnitType
     stripTypeLocation' (TypeConstructorApplication a b) = TypeConstructorApplication (stripTypeLocation a) (stripTypeLocation b)
     stripTypeLocation' (ListType a) = ListType (stripTypeLocation a)
-    stripTypeLocation' (TupleType a) = TupleType (stripTypeLocation <$> a)
+    stripTypeLocation' (TupleType a) =
+        let t' = dataConAs @(Select TupleType ast1) @(AtLeast2List (Type ast1)) a
+         in TupleType $ asDataCon ((stripTypeLocation <$> t') :: AtLeast2List (Type ast2))
     stripTypeLocation' (UserDefinedType n) = UserDefinedType (stripLocation n)
     stripTypeLocation' (RecordType r) = RecordType (bimapF stripLocation stripTypeLocation r)

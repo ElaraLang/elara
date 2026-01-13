@@ -379,7 +379,17 @@ renameType _ UnitType = pure UnitType
 renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
 renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % _1 % unlocated) (renameType antv)) ln
-renameType antv (TupleType ts) = TupleType <$> traverse (traverseOf (_Unwrapped % _1 % unlocated) (renameType antv)) ts
+renameType antv (TupleType (AtLeast2List fst snd [])) = do
+    -- turn it into Elara.Prim.Tuple2 type
+    fst' <- renameSimpleType fst
+    snd' <- renameSimpleType snd
+    let tupleCtorName = TypeName <$> tuple2CtorName -- TODO: get the source region right
+    let loc = enclosingRegion' (fst ^. _Unwrapped % _1 % sourceRegion) (snd ^. _Unwrapped % _1 % sourceRegion)
+    let tupleCtor = Type @Renamed (Located loc (UserDefinedType (Located loc tupleCtorName)), NoFieldValue)
+    let base = TypeConstructorApplication tupleCtor fst'
+
+    pure $ TypeConstructorApplication (Type (Located loc base, NoFieldValue)) snd'
+renameType antv (TupleType bigger) = error "renameType: Tuple more than length 2"
 renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t
 
 renameExpr :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr

@@ -6,8 +6,7 @@ import Tuple
 import String
 import Char
 
-type Parser a = Parser (String -> Option (Tuple2 a String))
-
+type Parser a = Parser (String -> Option (a, String))
 
 let runParser (Parser a) input = a input
 

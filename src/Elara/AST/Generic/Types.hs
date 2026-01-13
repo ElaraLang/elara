@@ -64,8 +64,8 @@ import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
-import Elara.AST.Generic.Utils
-import Elara.AST.Name (ContainsName (..), LowerAlphaName, ModuleName, Name, ToName (..))
+import Elara.AST.Generic.Common (dataConCantHappen)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name, ToName (..))
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST, UnlocatedAST)
 import GHC.Generics
@@ -268,7 +268,7 @@ data Type' ast
     | TypeConstructorApplication (Type ast) (Type ast)
     | UserDefinedType (ASTLocate ast (Select UserDefinedType ast))
     | RecordType (NonEmpty (ASTLocate ast LowerAlphaName, Type ast))
-    | TupleType (NonEmpty (Type ast))
+    | TupleType !(Select TupleType ast)
     | ListType (Type ast)
     deriving (Generic)
 
@@ -381,7 +381,7 @@ coerceType' UnitType = UnitType
 coerceType' (TypeConstructorApplication a b) = TypeConstructorApplication (coerceType a) (coerceType b)
 coerceType' (UserDefinedType a) = UserDefinedType a
 coerceType' (RecordType a) = RecordType (fmap coerceType <$> a)
-coerceType' (TupleType a) = TupleType (coerceType <$> a)
+coerceType' (TupleType a) = dataConCantHappen a
 coerceType' (ListType a) = ListType (coerceType a)
 
 traverseValueDeclAnnotations ::

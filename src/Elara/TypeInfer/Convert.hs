@@ -44,9 +44,6 @@ astTypeToInferType' loc (Generic.FunctionType i o) = do
     pure $ Function loc i' o'
 astTypeToInferType' loc Generic.UnitType = do
     pure $ Scalar loc ScalarUnit
-astTypeToInferType' _ (Generic.TupleType ts) = do
-    ts' <- traverse astTypeToInferType ts
-    throwError $ NotSupported "Tuple types are not supported yet"
 astTypeToInferType' _ (Generic.ListType t) = do
     t' <- astTypeToInferType t
     throwError $ NotSupported "List types are not supported yet"

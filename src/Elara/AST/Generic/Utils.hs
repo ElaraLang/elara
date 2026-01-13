@@ -6,6 +6,7 @@ module Elara.AST.Generic.Utils where
 import Data.Kind qualified as Kind
 import Elara.AST.Generic.Common
 import Elara.AST.Region
+import Elara.Data.AtLeast2List (AtLeast2List)
 
 {- | When fields may be optional, we need a way of representing that generally. This class does that.
 In short, it converts a type to a 'Maybe'. If the type is already a 'Maybe', it is left alone.
@@ -41,6 +42,9 @@ instance ToList [a] [a] where
 
 instance {-# INCOHERENT #-} ToList a [a] where
     fieldToList = pure
+
+instance ToList (AtLeast2List a) [a] where
+    fieldToList = toList
 
 instance ToList a b => ToList (Located a) b where
     fieldToList = fieldToList . view unlocated

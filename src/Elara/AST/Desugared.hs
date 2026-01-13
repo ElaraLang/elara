@@ -12,7 +12,7 @@ module Elara.AST.Desugared where
 
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Desugared))
 import Elara.Data.AtLeast2List
@@ -89,6 +89,8 @@ type instance Select (Annotations any) Desugared = [Annotation Desugared]
 
 -- Selections for 'Type'
 type instance Select ASTTypeVar Desugared = LowerAlphaName
+
+type instance Select TupleType Desugared = AtLeast2List DesugaredType
 
 type instance Select TypeKind Desugared = NoFieldValue
 
