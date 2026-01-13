@@ -1,26 +1,26 @@
 {-# LANGUAGE DataKinds #-}
 
-module Elara.Parse.Expression where
+module Elara.Parse.Expression (exprParser, locatedExpr, letPreamble, element, reservedWords) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
-import Elara.AST.Name (VarName (..), VarOrConName (VarName), nameText)
-import Elara.AST.Region (Located (..), sourceRegion, spanningRegion', withLocationOf)
+import Elara.AST.Name (VarName (..), nameText)
+import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
 import Elara.AST.Select (LocatedAST (Frontend))
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
+import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
-import Elara.Parse.Names (conName, normalVarName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
+import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
 import Elara.Prim qualified as Prim
 import Elara.Utils (curry3)
-import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy, try, (<?>))
+import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
 
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
@@ -52,27 +52,43 @@ statement :: Parser FrontendExpr
 statement =
     letStatement <?> "let statement"
 
-unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
-unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
-
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
-binOp = liftedBinary operator (curry3 BinaryOperator) unannotatedExpr
-cons = liftedBinary consName (curry3 BinaryOperator) unannotatedExpr
+
+-- | Parser for binary operators like (+), (-), (&&), etc.
+binOp = infixOp operator (curry3 BinaryOperator)
+
+-- | Parser for the list constructor (::)
+cons = infixOp consName (curry3 BinaryOperator)
   where
     consName :: Parser FrontendBinaryOperator
     consName = do
         l <- located (token_ TokenDoubleColon)
         let y = Infixed (Prim.cons `withLocationOf` l) :: BinaryOperator' Frontend
         pure $ MkBinaryOperator (y `withLocationOf` l)
-functionCall = liftedBinary pass (const FunctionCall) unannotatedExpr
+
+-- | Parser for function application (treated as an infix operator with no operator)
+functionCall = infixOp pass (\_ f x -> FunctionCall f x)
+
+-- | Creates an infix operator parser that parses the operator, merges the regions, and wraps the result in `Expr`
+infixOp ::
+    -- | Parser that parses the operator
+    Parser op ->
+    -- | Function that creates the expression given the operator and two expressions
+    (op -> FrontendExpr -> FrontendExpr -> FrontendExpr') ->
+    -- | The lifted parser
+    Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
+infixOp opParser mkExpr = do
+    op <- opParser
+    pure $ \l r ->
+        let region = enclosingRegion' (l ^. sourceRegion) (r ^. sourceRegion)
+         in Expr (Located region (mkExpr op l r), Nothing)
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: Parser FrontendBinaryOperator
 operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
   where
     asciiOp :: Parser (Located FrontendBinaryOperator')
-    asciiOp = located $ do
-        SymOp <$> located opName
+    asciiOp = located $ SymOp <$> located opName
     infixOp = located $ do
         token_ TokenBacktick
         op <- located varOrConName
@@ -81,20 +97,22 @@ operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
 
 expression :: Parser FrontendExpr
 expression =
-    try unit
-        <|> (try tuple <?> "tuple expression")
-        <|> (try parensExpr <?> "parenthesized expression")
-        <|> (list <?> "list")
-        <|> (ifElse <?> "if expression")
-        <|> (letInExpression <?> "let-in expression")
-        <|> (lambda <?> "lambda expression")
-        <|> (match <?> "match expression")
-        <|> (float <?> "float")
-        <|> (int <?> "int")
-        <|> (charL <?> "char")
-        <|> (string <?> "string")
-        <|> (variable <?> "variable")
-        <|> (constructor <?> "constructor")
+    choice
+        [ try unit
+        , try tuple <?> "tuple expression"
+        , try parensExpr <?> "parenthesized expression"
+        , list <?> "list"
+        , ifElse <?> "if expression"
+        , letInExpression <?> "let-in expression"
+        , lambda <?> "lambda expression"
+        , match <?> "match expression"
+        , float <?> "float"
+        , int <?> "int"
+        , charL <?> "char"
+        , string <?> "string"
+        , variable <?> "variable"
+        , constructor <?> "constructor"
+        ]
         <?> "expression"
 
 -- | Reserved words, used to backtrack accordingly
