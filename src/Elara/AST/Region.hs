@@ -54,6 +54,9 @@ makeLenses ''RealSourceRegion
 class HasPath a where
     path :: Lens' a (Maybe FilePath)
 
+instance HasPath (Located a) where
+    path = sourceRegion % path
+
 instance HasPath SourceRegion where
     path = lens getter setter
       where
