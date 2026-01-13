@@ -8,7 +8,6 @@ import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Data.Pretty
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
-import Elara.Parse.Debug (dbgPretty)
 import Elara.Parse.Primitives (Parser, token_)
 import Text.Megaparsec (MonadParsec (..))
 
@@ -23,17 +22,16 @@ dedentToken =
     token_ TokenDedent
         <|> token_ TokenRightBrace
 
-blockExpr :: Pretty a => Parser a -> Parser (NonEmpty a)
+blockExpr :: Parser a -> Parser (NonEmpty a)
 blockExpr p = do
     indentToken
     xs <- sepEndBy1' p lineSeparator
     dedentToken
     pure xs
 
-block :: Pretty a => Pretty b => (NonEmpty a -> b) -> (a -> b) -> Parser a -> Parser b
+block :: (NonEmpty a -> b) -> (a -> b) -> Parser a -> Parser b
 block mergeFunction single exprParser =
-    wholeBlock
-        <|> singleBlock
+    wholeBlock <|> singleBlock
   where
     singleBlock = single <$> exprParser
     wholeBlock = do

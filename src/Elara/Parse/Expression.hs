@@ -3,13 +3,13 @@
 module Elara.Parse.Expression where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
-import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
 import Elara.AST.Name (VarName, nameText)
 import Elara.AST.Region (Located (..), sourceRegion, spanningRegion', withLocationOf)
 import Elara.AST.Select (LocatedAST (Frontend))
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
@@ -224,7 +224,7 @@ tuple = locatedExpr $ do
     token_ TokenComma
     otherElements <- sepEndBy1' exprParser (token_ TokenComma)
     token_ TokenRightParen
-    pure $ Tuple (firstElement `NE.cons` otherElements)
+    pure $ Tuple (AtLeast2List.fromHeadAndTail firstElement otherElements)
 
 list :: Parser FrontendExpr
 list = locatedExpr $ do

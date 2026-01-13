@@ -10,6 +10,7 @@ import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Frontend))
+import Elara.Data.AtLeast2List (AtLeast2List)
 
 -- Generic location and qualification types
 type instance ASTLocate' Frontend = Located
@@ -26,7 +27,7 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     SelectFrontend LetParamName = VarName
     SelectFrontend InParens = FrontendExpr
     SelectFrontend List = [FrontendExpr]
-    SelectFrontend Tuple = NonEmpty FrontendExpr
+    SelectFrontend Tuple = AtLeast2List FrontendExpr
     SelectFrontend ASTBinaryOperator = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
     SelectFrontend TypeApplication = FrontendType
     -- Selections for 'BinaryOperator'

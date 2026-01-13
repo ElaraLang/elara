@@ -58,6 +58,7 @@ library
       Elara.Core.ToANF
       Elara.Core.TypeCheck
       Elara.CoreToCore
+      Elara.Data.AtLeast2List
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty

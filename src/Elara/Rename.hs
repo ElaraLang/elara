@@ -29,6 +29,7 @@ import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, span
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
+import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.TopologicalGraph
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
@@ -452,13 +453,13 @@ renameExpr (Expr le@(Located loc _, _)) =
         e' <- renameExpr e
         cases' <- traverse (bitraverse renamePattern renameExpr) cases
         pure $ Match e' cases'
-    renameExpr' (Tuple (x :| [x2])) = do
+    renameExpr' (Tuple (AtLeast2List fst snd [])) = do
         -- turn it into Elara.Prim.Tuple2
 
         let tupleCtorName = TypeName <$> tuple2CtorName
-        x' <- renameExpr x
-        x2' <- renameExpr x2
-        let base = Expr (FunctionCall (Expr (Located loc (Constructor (Located loc tupleCtorName)), Nothing)) x' `withLocationOf` x, Nothing)
+        fst' <- renameExpr fst
+        x2' <- renameExpr snd
+        let base = Expr (FunctionCall (Expr (Located loc (Constructor (Located loc tupleCtorName)), Nothing)) fst' `withLocationOf` fst, Nothing)
         pure $ FunctionCall base x2'
     renameExpr' (Tuple bigger) = error "renameExpr': Tuple more than length 2"
     renameExpr' (InParens e) = InParens <$> renameExpr e

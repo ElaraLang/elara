@@ -71,6 +71,7 @@ instance ApplyAsFunctorish DataConCantHappen DataConCantHappen a b where
 instance ApplyAsFunctorish a b c d => ApplyAsFunctorish (a, a) (b, b) c d where
     applyAsFunctorish f (a, b) = (applyAsFunctorish f a, applyAsFunctorish f b)
 
+-- | A class for converting between a data constructor and a type, useful for types that may be 'DataConCantHappen'
 class DataConAs a b where
     dataConAs :: a -> b
     asDataCon :: b -> a

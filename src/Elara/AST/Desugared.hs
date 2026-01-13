@@ -15,6 +15,7 @@ import Elara.AST.Generic.Common
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Desugared))
+import Elara.Data.AtLeast2List
 
 -- Generic location and qualification types
 type instance ASTLocate' Desugared = Located
@@ -38,7 +39,7 @@ type instance Select InParens Desugared = DesugaredExpr
 
 type instance Select List Desugared = [DesugaredExpr]
 
-type instance Select Tuple Desugared = NonEmpty DesugaredExpr
+type instance Select Tuple Desugared = AtLeast2List DesugaredExpr
 
 type instance Select ASTBinaryOperator Desugared = (DesugaredBinaryOperator, DesugaredExpr, DesugaredExpr)
 
