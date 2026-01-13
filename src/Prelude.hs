@@ -137,11 +137,21 @@ identity = Relude.id
 class Plated a where
     plate :: Traversal' a a
 
-    -- | Default implementation using GHC Generics.
+    -- | Default implementation using GHC Generics (via 'GPlate' from @optics@).
     --
-    -- __DANGER__: This will silently ignore any field that doesn't have a 'Generic' instance.
-    -- If you rely on this default, ensure all components of your data type derive 'Generic',
-    -- or provide an explicit implementation instead.
+    -- __DANGER__: This will silently ignore any field that doesn't have a 
+    -- @GHC.Generics.Generic@ instance. If you rely on this default, ensure all 
+    -- components of your data type derive @Generic@, or provide an explicit 
+    -- implementation instead.
+    --
+    -- Example of a problematic case:
+    --
+    -- @
+    -- data Foo = Foo Bar Baz deriving Generic
+    -- data Bar = Bar Foo deriving Generic  -- OK: has Generic
+    -- data Baz = Baz Foo                   -- PROBLEM: no Generic, silently skipped!
+    -- instance Plated Foo  -- uses default, won't traverse into Baz
+    -- @
     default plate :: GPlate a a => Traversal' a a
     plate = gplate
 
