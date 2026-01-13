@@ -3,6 +3,11 @@
 # Elara Documentation
 - [Introduction](./compiler/introduction.md)
 
+# Language Reference
+- [Syntax](./language/syntax.md)
+  - [Annotations](./language/syntax/annotations.md)
+  - [Comments](./language/syntax/comments.md)
+
 # Compiler Usage
 - [Flags](./compiler/usage/flags.md)
 
@@ -15,7 +20,3 @@
 - [Stages](./compiler/internals/stages.md)
   - [Lexing](./compiler/internals/stages/lexing.md)
   - [ToCore](./compiler/internals/stages/to-core.md)
-
-# Language Reference
-- [Syntax](./language/syntax.md)
-  - [Annotations](./language/syntax/annotations.md)
