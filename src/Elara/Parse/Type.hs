@@ -50,9 +50,9 @@ typeTerm :: Parser FrontendType
 typeTerm =
     choice @[]
         [ typeVar
-        , try (inParens type')
         , unit
-        , tupleType
+        , try tupleType
+        , try (inParens type')
         , namedType
         , emptyRecordError
         , recordType
