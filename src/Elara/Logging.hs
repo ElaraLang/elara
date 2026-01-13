@@ -463,11 +463,17 @@ runTraceable (TraceableFn f) a = runIdentity $ do
 -- | Run a traceable function with structured debug tracing
 traceFn ::
     forall (name :: Symbol) a b r.
-    (Pretty a, Pretty b, StructuredDebug :> r, KnownSymbol name) =>
+    ( Pretty a
+    , Pretty b
+    , StructuredDebug :> r
+    , KnownSymbol name
+    , HasCallStack
+    ) =>
     TraceableFn name a b -> (a -> Eff r b)
-traceFn (TraceableFn f) a = do
+traceFn (TraceableFn f) a = withFrozenCallStack $ do
+    let stack = callStack
     let p = symbolVal (Proxy @name)
-    res <- debugWith (pretty p <> ":" <+> pretty a) $ do
+    res <- send $ DebugWith stack (pretty p <> ":" <+> pretty a) $ do
         f (traceFn @name (TraceableFn f)) a
-    debug $ pretty res
+    send $ DebugOld stack (pretty res)
     pure res
