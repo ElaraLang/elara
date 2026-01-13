@@ -33,7 +33,7 @@ let (<*) (Parser p1) (Parser p2) = Parser ( \s ->
 
 
 def filter : (a -> Bool) -> Parser a -> Parser a
-let filter pred (Parser p) = Parser ( \s -> match p s with
+let filter pred p = Parser ( \s -> match runParser p s with
                                         None -> None
                                         Some (a, xs) -> if pred a then Some (a, xs) else None )
 
@@ -63,7 +63,7 @@ def (<|>) : Parser a -> Parser a -> Parser a
 let (<|>) (Parser p1) (Parser p2) = Parser ( \s -> match p1 s with
                                             None -> p2 s
                                             Some a -> Some a )
-
+-- make a parser lazy
 def lazy : (() -> Parser a) -> Parser a
 let lazy f = Parser ( \s -> runParser (f ()) s )
 

@@ -57,6 +57,8 @@ data ParseState = ParseState
     -- ^ did the previous token end an expression? (used for offside rule
     , _delimDepth :: Int
     -- ^ current depth of open delimiters ((), [], {
+    , _commentDepth :: Int
+    -- ^ nested comment depth
     }
     deriving (Show)
 
@@ -154,6 +156,7 @@ initialState fp s =
         , _pendingPosition = Position 1 1
         , _prevEndsExpr = True
         , _delimDepth = 0
+        , _commentDepth = 0
         }
 
 pushFront :: Lexeme -> LexMonad ()
@@ -185,8 +188,9 @@ popPending = do
         (x : xs) -> put s{_pendingTokens = xs} >> pure (Just x)
         [] -> pure Nothing
 
--- Emit DEDENTs for layout opened inside current delimiter depth, then the closer.
--- Return the first pending token (typically a DEDENT) so stream becomes “… <DEDENT> ) …”
+{- | Emit DEDENTs for layout opened inside current delimiter depth, then the closer.
+Return the first pending token (typically a DEDENT) so stream becomes "… <DEDENT> ) …"
+-}
 emitCloser :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
 emitCloser closerTok closerReg = do
     flushLayoutBeforeCloser
@@ -200,7 +204,7 @@ emitCloser closerTok closerReg = do
         Nothing -> setPrevEndsExpr (tokenEndsExpr closerTok)
     pure m
 
--- Close only layout started at or inside current delimiter depth
+-- | Close only layout started at or inside current delimiter depth
 flushLayoutBeforeCloser :: LexMonad ()
 flushLayoutBeforeCloser = do
     d <- use' delimDepth
@@ -250,6 +254,8 @@ startWhite _ str = do
             fakeLb <- emitIndentAt curPos
             indentInfo <- mkIndentInfo indentation
             let push = maybe identity (:) fakeLb
+            -- Indent starts a block, usually shouldn't immediately end expr
+            setPrevEndsExpr False
             put s{_indentStack = indentInfo <| indents, _pendingTokens = push (_pendingTokens s)}
             pure Nothing
         LT -> do
@@ -262,6 +268,7 @@ startWhite _ str = do
                     dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) closingLevels
                     -- emit at most one layout line separator for this line
                     sep <- emitLineSepAt eofPos
+                    setPrevEndsExpr False
                     let closings = dedents <> maybeToList sep
                     if top ^. indent == indentation
                         then
@@ -276,7 +283,11 @@ startWhite _ str = do
         EQ -> do
             ends <- getPrevEndsExpr
             pos <- use' (input % position)
-            if ends then emitLineSepAt pos else pure Nothing
+            if ends
+                then do
+                    setPrevEndsExpr False
+                    emitLineSepAt pos
+                else pure Nothing
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]

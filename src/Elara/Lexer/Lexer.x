@@ -66,11 +66,18 @@ tokens :-
       @escape                { appendToStringWith translateEscapedChar }
       .                      { appendToString }
   }
+  <commentSC> {
+      \/\-                   { nestedBlockComment }
+      \-\/                   { endBlockComment }
+      .                      { commentChar }
+      \n                     { commentChar }
+  }
   <0> {
       \;                     { simpleTok TokenSemicolon }
       $white_no_nl+          ;
       \n$white*              { startWhite }
-      "--" [\ ] .*  			   ;
+      \-\-[^\n]*             { singleLineComment }
+      \/\-                   { beginBlockComment commentSC }
 
       -- Qualified identifiers have higher precedence than the symbol tokens
       @qVariableIdentifier    { parametrizedTok TokenQVariableIdentifier splitQualName }
