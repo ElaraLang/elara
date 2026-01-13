@@ -67,7 +67,7 @@ genOpText =
         Gen.filter notComment $
             Gen.text (Range.linear 1 4) (Gen.choice opChars)
   where
-    notReservedOp = (`Set.notMember` ["@", "#", "=", ".", "\\", "=>", "->", "<-", "|"])
+    notReservedOp = (`Set.notMember` ["@", "#", "=", ".", "\\", "=>", "->", "<-", "|", "--", "/-"])
     notComment = not . Text.isPrefixOf "--"
     opChars = pure <$> ['!', '#', '$', '%', '&', '*', '+', '.', '/', '\\', '<', '>', '=', '?', '@', '^', '|', '-', '~']
 
