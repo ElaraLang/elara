@@ -41,7 +41,7 @@ Note that top level let declarations are not parsed here, but in the "Elara.Pars
 -}
 element :: Parser FrontendExpr
 element =
-    (try exprParser <|> statement) <?> "element"
+    try exprParser <|> statement
 
 {- | This is not a "statement" in an imperative sense, but is used to parse let expressions that are not at the top level.
 | The reason for having this distinction is that if let's were considered a normal expression, then something like
