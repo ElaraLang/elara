@@ -17,6 +17,7 @@ instance
     ( RUnlocate ast
     , DataConAs (Select ListPattern ast) [Pattern ast]
     , DataConAs (Select ConsPattern ast) (Pattern ast, Pattern ast)
+    , DataConAs (Select TuplePattern ast) (NonEmpty (Pattern ast))
     ) =>
     Plated (Pattern' ast)
     where
@@ -33,6 +34,9 @@ instance
                     a1' <- traverseOf traversePattern f a1
                     a2' <- traverseOf traversePattern f a2
                     pure $ ConsPattern . asDataCon $ (a1', a2')
+                TuplePattern a ->
+                    let a' = dataConAs @(Select TuplePattern ast) @(NonEmpty (Pattern ast)) a
+                     in TuplePattern . asDataCon <$> traverseOf (each % traversePattern) f a'
                 WildcardPattern -> pure WildcardPattern
                 IntegerPattern a -> pure (IntegerPattern a)
                 FloatPattern a -> pure (FloatPattern a)

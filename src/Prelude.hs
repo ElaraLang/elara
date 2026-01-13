@@ -125,10 +125,10 @@ insertWithM f k v m = case M.lookup k m of
 identity :: a -> a
 identity = Relude.id
 
--- traversed1 :: Traversable1 f => IndexedTraversal1 Int (f a) (f b) a b
-
 class Plated a where
     plate :: Traversal' a a
+    -- TODO: this is a dangerous function if any component doesn't have Generic instance
+    -- it'll just be silently ignored. is there a fix?
     default plate :: GPlate a a => Traversal' a a
     plate = gplate
 

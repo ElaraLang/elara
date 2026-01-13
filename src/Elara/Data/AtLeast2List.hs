@@ -2,7 +2,7 @@
 module Elara.Data.AtLeast2List where
 
 data AtLeast2List a = AtLeast2List a a [a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Generic)
 
 toList :: AtLeast2List a -> [a]
 toList (AtLeast2List x y xs) = x : y : xs
