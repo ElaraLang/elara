@@ -235,89 +235,89 @@ formatRichMessage config msg =
 
 data StructuredDebug :: Effect where
     -- Legacy debug operations (maintained for backwards compatibility)
-    DebugOld :: HasCallStack => Doc AnsiStyle -> StructuredDebug m ()
-    DebugWith :: HasCallStack => Doc AnsiStyle -> m a -> StructuredDebug m a
-    DebugNS :: HasCallStack => [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
-    DebugWithNS :: HasCallStack => [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
+    DebugOld :: CallStack -> Doc AnsiStyle -> StructuredDebug m ()
+    DebugWith :: CallStack -> Doc AnsiStyle -> m a -> StructuredDebug m a
+    DebugNS :: CallStack -> [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
+    DebugWithNS :: CallStack -> [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
     -- New operations with log levels
-    LogMsg :: HasCallStack => LogLevel -> Doc AnsiStyle -> StructuredDebug m ()
-    LogMsgNS :: HasCallStack => LogLevel -> [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
-    LogWith :: HasCallStack => LogLevel -> Doc AnsiStyle -> m a -> StructuredDebug m a
-    LogWithNS :: HasCallStack => LogLevel -> [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
+    LogMsg :: CallStack -> LogLevel -> Doc AnsiStyle -> StructuredDebug m ()
+    LogMsgNS :: CallStack -> LogLevel -> [T.Text] -> Doc AnsiStyle -> StructuredDebug m ()
+    LogWith :: CallStack -> LogLevel -> Doc AnsiStyle -> m a -> StructuredDebug m a
+    LogWithNS :: CallStack -> LogLevel -> [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
     -- Namespace context operation
-    WithNamespace :: HasCallStack => [T.Text] -> m a -> StructuredDebug m a
+    WithNamespace :: CallStack -> [T.Text] -> m a -> StructuredDebug m a
 
 type instance DispatchOf StructuredDebug = 'Dynamic
 
 -- | Legacy debug function (maps to Debug level)
 debug :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
-debug msg = send $ DebugOld msg
+debug msg = withFrozenCallStack $ send $ DebugOld callStack msg
 
 debugWith :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r a -> Eff r a
-debugWith msg act = send $ DebugWith msg act
+debugWith msg act = withFrozenCallStack $ send $ DebugWith callStack msg act
 
 debugWithResult :: (StructuredDebug :> r, Pretty a) => Doc AnsiStyle -> Eff r a -> Eff r a
-debugWithResult msg act = debugWith msg $ do
+debugWithResult msg act = withFrozenCallStack $ debugWith msg $ do
     res <- act
     debug ("Result: " <> pretty res)
     pure res
 
 -- namespaced helpers
 debugNS :: (StructuredDebug :> r, HasCallStack) => [T.Text] -> Doc AnsiStyle -> Eff r ()
-debugNS ns msg = send $ DebugNS ns msg
+debugNS ns msg = withFrozenCallStack $ send $ DebugNS callStack ns msg
 
 debugWithNS :: (StructuredDebug :> r, HasCallStack) => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
-debugWithNS ns msg act = send $ DebugWithNS ns msg act
+debugWithNS ns msg act = withFrozenCallStack $ send $ DebugWithNS callStack ns msg act
 
 -- | New logging functions with explicit log levels
 
 -- | Log a message at Debug level
 logDebug :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
-logDebug = send . LogMsg Debug
+logDebug = withFrozenCallStack $ send . LogMsg callStack Debug
 
 -- | Log a message at Info level
 logInfo :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
-logInfo = send . LogMsg Info
+logInfo = withFrozenCallStack $ send . LogMsg callStack Info
 
 -- | Log a message at Warning level
 logWarning :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
-logWarning = send . LogMsg Warning
+logWarning = withFrozenCallStack $ send . LogMsg callStack Warning
 
 -- | Log a message at Error level
 logError :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
-logError = send . LogMsg Error
+logError = withFrozenCallStack $ send . LogMsg callStack Error
 
 -- | Log a message at Debug level with namespace
 logDebugNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r ()
-logDebugNS ns = send . LogMsgNS Debug ns
+logDebugNS ns = withFrozenCallStack $ send . LogMsgNS callStack Debug ns
 
 -- | Log a message at Info level with namespace
 logInfoNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r ()
-logInfoNS ns = send . LogMsgNS Info ns
+logInfoNS ns = withFrozenCallStack $ send . LogMsgNS callStack Info ns
 
 -- | Log a message at Warning level with namespace
 logWarningNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r ()
-logWarningNS ns = send . LogMsgNS Warning ns
+logWarningNS ns = withFrozenCallStack $ send . LogMsgNS callStack Warning ns
 
 -- | Log a message at Error level with namespace
 logErrorNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r ()
-logErrorNS ns = send . LogMsgNS Error ns
+logErrorNS ns = withFrozenCallStack $ send . LogMsgNS callStack Error ns
 
 -- | Execute an action with a debug log message showing entry/exit
 logDebugWith :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r a -> Eff r a
-logDebugWith msg = send . LogWith Debug msg
+logDebugWith msg = withFrozenCallStack $ send . LogWith callStack Debug msg
 
 -- | Execute an action with an info log message showing entry/exit
 logInfoWith :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r a -> Eff r a
-logInfoWith msg = send . LogWith Info msg
+logInfoWith msg = withFrozenCallStack $ send . LogWith callStack Info msg
 
 -- | Execute an action with a debug log message and namespace
 logDebugWithNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
-logDebugWithNS ns msg = send . LogWithNS Debug ns msg
+logDebugWithNS ns msg = withFrozenCallStack $ send . LogWithNS callStack Debug ns msg
 
 -- | Execute an action with an info log message and namespace
 logInfoWithNS :: HasCallStack => StructuredDebug :> r => [T.Text] -> Doc AnsiStyle -> Eff r a -> Eff r a
-logInfoWithNS ns msg = send . LogWithNS Info ns msg
+logInfoWithNS ns msg = withFrozenCallStack $ send . LogWithNS callStack Info ns msg
 
 {- | Set a namespace context for a block of code
 All log messages within this block will automatically include the namespace
@@ -331,7 +331,7 @@ withNamespace ["TypeInfer", "Unification"] $ do
 @
 -}
 withNamespace :: HasCallStack => StructuredDebug :> r => [T.Text] -> Eff r a -> Eff r a
-withNamespace ns act = send $ WithNamespace ns act
+withNamespace ns act = withFrozenCallStack $ send $ WithNamespace callStack ns act
 
 -- | Build a co-log LogAction that applies configuration-based filtering and formatting
 buildLogAction :: forall r. (IOE :> r, Log.Log (Doc AnsiStyle) :> r) => LogConfig -> LogAction (Eff r) ElaraMessage
@@ -343,7 +343,7 @@ buildLogAction config =
 
         -- Apply enrichment if timestamps are enabled
         enriched =
-            if showTimestamps config
+            if config.showTimestamps
                 then enrichWithTime baseAction
                 else baseAction
 
@@ -363,25 +363,25 @@ This leverages co-log's LogAction combinators for filtering and enrichment
 structuredDebugToLogWith :: forall r a. (HasCallStack, IOE :> r) => LogConfig -> Log.Log (Doc AnsiStyle) :> r => Eff (StructuredDebug : r) a -> Eff r a
 structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) . S.evalState (0 :: Int)) $ \env -> \case
     -- Legacy operations (treated as Debug level)
-    DebugOld msg -> logMessage Debug [] msg
-    DebugNS names msg -> logMessage Debug names msg
-    DebugWith msg act -> logWithScope env Debug [] msg act
-    DebugWithNS names msg act -> logWithScope env Debug names msg act
+    DebugOld stack msg -> logMessage stack Debug [] msg
+    DebugNS stack names msg -> logMessage stack Debug names msg
+    DebugWith stack msg act -> logWithScope env stack Debug [] msg act
+    DebugWithNS stack names msg act -> logWithScope env stack Debug names msg act
     -- New operations with explicit log levels
-    LogMsg level msg -> logMessage level [] msg
-    LogMsgNS level names msg -> logMessage level names msg
-    LogWith level msg act -> logWithScope env level [] msg act
-    LogWithNS level names msg act -> logWithScope env level names msg act
+    LogMsg stack level msg -> logMessage stack level [] msg
+    LogMsgNS stack level names msg -> logMessage stack level names msg
+    LogWith stack level msg act -> logWithScope env stack level [] msg act
+    LogWithNS stack level names msg act -> logWithScope env stack level names msg act
     -- Namespace context operation
-    WithNamespace names act -> withNamespaceHelper env names act
+    WithNamespace stack names act -> withNamespaceHelper env names act
   where
     -- Get the co-log LogAction with all filters and enrichments applied
     logAction :: LogAction (Eff (S.State Int : S.State [T.Text] : r)) ElaraMessage
     logAction = buildLogAction config
 
     -- Helper to create and log an ElaraMessage
-    logMessage :: LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff (S.State Int : S.State [T.Text] : r) ()
-    logMessage level names msg = do
+    logMessage :: CallStack -> LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff (S.State Int : S.State [T.Text] : r) ()
+    logMessage stack level names msg = do
         depth <- S.get @Int
         ns <- S.get @[T.Text]
         let fullNs = ns <> names
@@ -391,15 +391,15 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
                     , emMessage = msg
                     , emNamespace = fullNs
                     , emDepth = depth
-                    , emStack = if showSourceLoc config then Just callStack else Nothing
+                    , emStack = if config.showSourceLoc then Just stack else Nothing
                     , emTime = Nothing -- Will be enriched by LogAction if needed
                     }
         -- Use co-log's LogAction to handle filtering, enrichment, and formatting
         unLogAction logAction elaraMsg
 
     -- Helper for scoped logging with indentation
-    logWithScope :: LocalEnv localEs (S.State Int : S.State [T.Text] : r) -> LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff localEs b -> Eff (S.State Int : S.State [T.Text] : r) b
-    logWithScope env level names msg act = do
+    logWithScope :: LocalEnv localEs (S.State Int : S.State [T.Text] : r) -> CallStack -> LogLevel -> [T.Text] -> Doc AnsiStyle -> Eff localEs b -> Eff (S.State Int : S.State [T.Text] : r) b
+    logWithScope env stack level names msg act = do
         depth <- S.get @Int
         ns <- S.get @[T.Text]
         let fullNs = ns <> names
@@ -409,7 +409,7 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
                     , emMessage = msg
                     , emNamespace = fullNs
                     , emDepth = depth
-                    , emStack = if showSourceLoc config then Just callStack else Nothing
+                    , emStack = if showSourceLoc config then Just stack else Nothing
                     , emTime = Nothing
                     }
         -- Log the entry message
@@ -439,15 +439,15 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
 
 ignoreStructuredDebug :: Eff (StructuredDebug : r) a -> Eff r a
 ignoreStructuredDebug = interpret $ \env -> \case
-    DebugOld _ -> pass
-    DebugWith _ act -> localSeqUnlift env $ \unlift -> unlift act
-    DebugNS _ _ -> pass
-    DebugWithNS _ _ act -> localSeqUnlift env $ \unlift -> unlift act
-    LogMsg _ _ -> pass
+    DebugOld{} -> pass
+    DebugWith _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    DebugNS{} -> pass
+    DebugWithNS _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    LogMsg{} -> pass
     LogMsgNS{} -> pass
-    LogWith _ _ act -> localSeqUnlift env $ \unlift -> unlift act
-    LogWithNS _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
-    WithNamespace _ act -> localSeqUnlift env $ \unlift -> unlift act
+    LogWith _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    LogWithNS _ _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    WithNamespace _ _ act -> localSeqUnlift env $ \unlift -> unlift act
 
 {- | Inspired by https://x.com/Quelklef/status/1860188828876583146 !
 A recursive, pure function, which can be traced with a monadic effect.
