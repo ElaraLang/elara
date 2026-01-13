@@ -6,7 +6,7 @@ import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
-import Elara.AST.Name (VarName, nameText)
+import Elara.AST.Name (VarName (..), VarOrConName (VarName), nameText)
 import Elara.AST.Region (Located (..), sourceRegion, spanningRegion', withLocationOf)
 import Elara.AST.Select (LocatedAST (Frontend))
 import Elara.Data.AtLeast2List qualified as AtLeast2List
@@ -15,7 +15,7 @@ import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
-import Elara.Parse.Names (conName, opName, unqualifiedVarName, varName, varOrConName)
+import Elara.Parse.Names (conName, normalVarName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
 import Elara.Prim qualified as Prim
@@ -196,12 +196,32 @@ ifElse = locatedExpr $ do
 letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
 letPreamble = do
     token_ TokenLet
-    name <- located unqualifiedVarName
-    patterns <- many patParser
+    (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
     e <- exprBlock element
     pure (name, patterns, e)
+  where
+    prefixDef :: Parser (Located VarName, [FrontendPattern])
+    prefixDef = do
+        name <- located unqualifiedVarName
+        patterns <- many patParser
+        pure (name, patterns)
+
+    infixDef :: Parser (Located VarName, [FrontendPattern])
+    infixDef = do
+        p1 <- patParser
+        op <- located (opName' <|> backTickedName)
+        p2 <- patParser
+        pure (op, [p1, p2])
+      where
+        opName' = fmap OperatorVarName opId <?> "operator name"
+        backTickedName =
+            ( token_ TokenBacktick
+                *> fmap NormalVarName varId
+                <* token_ TokenBacktick
+            )
+                <?> "backticked name"
 
 letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do

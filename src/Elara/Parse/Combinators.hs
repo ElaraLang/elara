@@ -21,7 +21,6 @@ sepEndBy1' p sep = do
         <* optional (try sep) -- optional ending
 
 -- Lift a binary operator to work on `Expr` instead of `FrontendExpr`. Probably not the best way to do this, but it works
-
 liftedBinary op f _Expr = do
     op' <- op
     let create l r =

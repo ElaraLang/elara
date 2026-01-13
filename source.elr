@@ -19,7 +19,7 @@ let map f p = Parser ( \s -> match runParser p s with
                                 Some (a, xs) -> Some (f a, xs) )
 
 def (*>) : Parser a -> Parser b -> Parser b
-let (*>) p q =
+let p *> q =
   bind p (\_ -> q)
 
 def (<*) : Parser a -> Parser b -> Parser a
