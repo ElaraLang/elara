@@ -4,72 +4,56 @@ This document summarizes the test coverage improvements made to the Elara compil
 
 ## Overview
 
-The Elara compiler previously had tests for core functionality (lexing, parsing, type inference, operator shunting, and closure lifting), but many utility modules and data structures were completely untested. This PR adds comprehensive test coverage for 8 additional modules.
+The Elara compiler previously had tests for core functionality (lexing, parsing, type inference, operator shunting, and closure lifting), but some complex algorithms and edge cases were not thoroughly tested. This PR adds focused test coverage for components with non-trivial behavior that benefits from automated testing.
 
 ## Newly Tested Modules
 
-### Pure Utility Modules
+### Complex Data Structures and Algorithms
 
-#### 1. `Elara.Utils` (test/Utils.hs)
-- Tests for `curry3` and `uncurry3` functions
-- Property-based tests verifying round-trip conversion
-- Coverage: 100% of module functionality
-
-#### 2. `Elara.Width` (test/Width.hs)
-- Tests for terminal width detection
-- Tests for default width constant
-- Coverage: 100% of module functionality
-
-#### 3. `Elara.Data.Unwrap` (test/DataUnwrap.hs)
-- Tests for `Unwrap` typeclass instances
-- Coverage of `Identity`, `Located`, and `IgnoreLocation` instances
-- Property-based tests with various types
-- Coverage: 100% of module functionality
-
-#### 4. `Elara.Data.Unique` (test/DataUnique.hs)
-- Tests for `Unique` data type and its instances
-- Tests for `Eq`, `Ord`, `Functor`, `Foldable`, and `Traversable` instances
-- Tests for lenses (`uniqueVal` and `uniqueId`)
-- Property-based tests for ordering and equality behavior
-- Coverage: ~95% of module functionality (excluding global state)
-
-#### 5. `Elara.ConstExpr` (test/ConstExpr.hs)
-- Tests for constant expression interpreter
-- Coverage of integer, string, char, and unit constant evaluation
-- Property-based tests with arbitrary constants
-- Coverage: 100% of exported functionality
-
-### Data Structures
-
-#### 6. `Elara.Data.TopologicalGraph` (test/TopologicalGraph.hs)
-- Tests for graph creation and topological traversal
+#### 1. `Elara.Data.TopologicalGraph` (test/TopologicalGraph.hs)
+- Tests for graph creation with various dependency patterns
+- Tests for topological traversal order verification
 - Tests for handling cyclic and acyclic dependencies
 - Tests for independent nodes
 - Tests for graph transformations
-- Coverage: ~80% of module functionality
+- **Why this matters**: Topological sorting is complex and getting the order wrong can break compilation
 
-### AST Modules
-
-#### 7. `Elara.AST.Region` (test/ASTRegion.hs)
-- Tests for `Located` wrapper and its instances
-- Tests for generated regions
-- Tests for `IgnoreLocation` equality semantics
-- Tests for region combination operations
-- Tests for `Semigroup` and `Monoid` instances
-- Coverage: ~70% of module functionality
-
-#### 8. `Elara.Shunt.Operator` (test/ShuntOperator.hs)
-- Tests for precedence validation and construction
+#### 2. `Elara.Shunt.Operator` (test/ShuntOperator.hs)
+- Tests for precedence validation (must be 0-9)
+- Tests for error cases (negative precedence, precedence >= 10)
 - Tests for `OpInfo` data type
-- Tests for precedence and associativity handling
-- Coverage: ~90% of module functionality
+- Tests for precedence and associativity ordering
+- **Why this matters**: Error boundaries need explicit testing; the precedence bounds are business logic, not just type safety
 
 ## Test Statistics
 
-- **New test modules**: 8
-- **New test cases**: ~80+
+- **New test modules**: 2
+- **New test cases**: ~25
 - **Test types**: Unit tests and property-based tests (using Hedgehog)
 - **Testing framework**: sydtest + hedgehog (consistent with existing tests)
+
+## Why Not Test Everything?
+
+Many utility functions and simple data structures were considered but not tested because:
+
+1. **Referential transparency**: Pure functions with simple, obvious implementations don't benefit from tests
+2. **Type safety**: Haskell's type system already guarantees much of the behavior
+3. **Trivial implementations**: Functions like `curry3` and `uncurry3` are so simple that tests would just restate the definition
+4. **Maintenance burden**: Tests that don't catch real bugs add maintenance cost without value
+
+### Examples of What We Don't Test
+
+- **Simple utility functions** (`Elara.Utils.curry3`, `Elara.Utils.uncurry3`)
+  - These are one-liners that are obvious from their types
+  
+- **Typeclass instances** (`Elara.Data.Unwrap`)
+  - Testing `unwrap (Identity x) === x` is just testing the definition
+  
+- **Constants** (`Elara.Width.defaultWidth`)
+  - A test that `defaultWidth == 80` adds no value
+  
+- **Trivial interpreters** (`Elara.ConstExpr`)
+  - When the interpreter just returns what you pass in, tests are redundant
 
 ## Untested Components
 
@@ -110,9 +94,9 @@ The following components remain untested, primarily because they have complex de
 ## Recommendations for Future Testing
 
 ### Short-term
-1. Add more property-based tests for existing modules
-2. Increase coverage of edge cases in `TopologicalGraph`
-3. Add golden tests for serialization formats
+1. Add more edge cases for topological graph algorithms
+2. Add tests for operator precedence conflicts
+3. Expand golden tests for end-to-end behavior
 
 ### Medium-term
 1. Refactor `Elara.Query` to support dependency injection
@@ -121,17 +105,18 @@ The following components remain untested, primarily because they have complex de
 
 ### Long-term
 1. Implement mock Query system for testing complex modules
-2. Add mutation testing to verify test quality
-3. Set up continuous test coverage tracking
+2. Consider property-based testing for type checker invariants
+3. Set up continuous test coverage tracking (for test quality, not quantity)
 
-## Testing Patterns Used
+## Testing Philosophy
 
-All new tests follow the existing patterns in the codebase:
+We follow these principles:
 
-1. **Property-based testing** with Hedgehog for testing invariants
-2. **Example-based testing** with sydtest for specific scenarios
-3. **Type-level testing** where applicable (e.g., Functor laws)
-4. **Test organization** mirroring source module structure
+1. **Test behavior, not implementation**: Focus on observable behavior and edge cases
+2. **Test what can fail**: Don't test trivial functions or type-guaranteed properties
+3. **Value over coverage**: 100% test coverage is not the goal; catching real bugs is
+4. **Property-based where appropriate**: Use Hedgehog for testing invariants and algorithms
+5. **Keep tests maintainable**: Tests should be easy to understand and update
 
 ## Build and Test
 

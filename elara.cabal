@@ -284,12 +284,8 @@ test-suite elara-test
       Arbitrary.Literals
       Arbitrary.Names
       Arbitrary.Type
-      ASTRegion
       Boilerplate
       Common
-      ConstExpr
-      DataUnique
-      DataUnwrap
       HedgehogSyd
       Golden
       Infer
@@ -308,8 +304,6 @@ test-suite elara-test
       Shunt
       ShuntOperator
       TopologicalGraph
-      Utils
-      Width
   hs-source-dirs:
       test
   default-extensions:
