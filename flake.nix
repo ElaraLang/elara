@@ -10,7 +10,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    h2jvm.url = "git+file:///Users/alex/workspace/h2jvm/";
+    h2jvm.url = "github:ElaraLang/h2jvm";
     diagnose = {
       url = "github:bristermitten/diagnose";
       flake = false;
@@ -119,6 +119,8 @@
                 effectful-core = jailbreak;
                 effectful-plugin = jailbreak;
                 co-log-effectful = jailbreak (unbreak);
+
+                iris = jailbreak (unbreak (notest));
               };
             packages = {
               elara = {
@@ -227,7 +229,10 @@
                 };
                 executables.elara = {
                   source-dirs = "app";
-
+                  dependencies = [
+                    "iris"
+                    "opt-env-conf"
+                  ];
                 };
                 tests.elara-test = {
                   main = "Spec.hs";
