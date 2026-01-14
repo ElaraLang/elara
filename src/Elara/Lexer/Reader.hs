@@ -1,6 +1,6 @@
 module Elara.Lexer.Reader where
 
-import Elara.AST.Region (Located (Located), SourceRegion (..), line, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion (..), unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
@@ -8,7 +8,6 @@ import Elara.Lexer.Utils
 import Data.Text qualified as Text
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
-import Effectful.FileSystem (FileSystem)
 import Effectful.State.Extra (use', (.=))
 import Effectful.State.Static.Local
 import Elara.Logging (StructuredDebug)
@@ -17,11 +16,6 @@ import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
 import Rock qualified
 
--- TODO: maybe also define empty Constructor for TokPosition
--- use it when constructing and here compute position and update it and return complete and correct Token
--- TODO2: I may actually not need to store position in the Token at all
--- thanks to monadic parsing I have the state at every moment of parsing --> just need to find out
--- how to use the state for better parse-error messages
 readToken :: LexMonad Lexeme
 readToken = do
     s <- get
@@ -39,7 +33,7 @@ readToken = do
                     let eofToken = Located (RealSourceRegion region) TokenEOF
                     modify (over pendingTokens (<> (closeIndents <> [eofToken])))
                     readToken
-                AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
+                AlexError token -> throwError (GenericAlexError token)
                 AlexSkip inp _ -> do
                     input .= inp
 

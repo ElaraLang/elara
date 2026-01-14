@@ -31,11 +31,14 @@ fileReadError = "E0001"
 tooMuchIndentation :: ErrorCode
 tooMuchIndentation = "E0002"
 
-genericParseError :: ErrorCode
-genericParseError = "E0003"
+genericLexicalError :: ErrorCode
+genericLexicalError = "E0003"
 
 unterminatedStringLiteral :: ErrorCode
 unterminatedStringLiteral = "E0004"
+
+genericParseError :: ErrorCode
+genericParseError = "E0005"
 
 unknownName :: ErrorCode
 unknownName = "E1001"

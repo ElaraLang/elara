@@ -1,3 +1,4 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OrPatterns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
@@ -46,6 +47,7 @@ import Effectful (Eff)
 import Effectful.Error.Static
 import Effectful.State.Extra (use', (%=), (.=))
 import Effectful.State.Static.Local
+import Elara.Data.Pretty (Pretty)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
 
@@ -56,7 +58,8 @@ data AlexInput = AlexInput
     , _rest :: Text
     , _position :: RealPosition
     }
-    deriving (Show)
+    deriving (Show, Generic)
+instance Pretty AlexInput
 
 data IndentInfo = IndentInfo
     { _indent :: Int
@@ -64,7 +67,9 @@ data IndentInfo = IndentInfo
     , _openedAtDepth :: Int
     -- ^ the delimDepth when this indent was opened
     }
-    deriving (Show)
+    deriving (Show, Generic)
+
+instance Pretty IndentInfo
 
 data ParseState = ParseState
     { _input :: AlexInput
@@ -87,14 +92,17 @@ data ParseState = ParseState
     , _layoutExpected :: Maybe LayoutExpectation
     -- ^ Tracks if the previous token triggers a layout block
     }
-    deriving (Show)
+    deriving (Show, Generic)
+
+instance Pretty ParseState
 
 data LayoutExpectation
     = -- | Just checks alignment (like match/with)
       ExpectIndent
     | -- | Starts a new block at the next token (let/where/do)
       ExpectBlock
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
+instance Pretty LayoutExpectation
 
 makeLenses ''AlexInput
 makeLenses ''IndentInfo
@@ -127,10 +135,17 @@ data LexerError
         -- | The current state of the lexer
         ParseState
     | UnterminatedStringLiteral ParseState
-    deriving (Show)
+    | GenericAlexError AlexInput
+    deriving (Show, Generic)
+
+instance Pretty LexerError
 
 instance ReportableError LexerError where
-    report (TooMuchIndentation expected further actual s) = do
+    errorCode (TooMuchIndentation{}) = Just Codes.tooMuchIndentation
+    errorCode (UnterminatedStringLiteral _) = Just Codes.unterminatedStringLiteral
+    errorCode (GenericAlexError _) = Just Codes.genericLexicalError
+
+    getReport (TooMuchIndentation expected further actual s) = do
         let fp = view (input % filePath) s
         let pos = view (input % position) s
         let msg = "Unexpected change in indentation. Expected " <> show (expected ^. indent) <> " spaces, but got " <> show actual <> " spaces."
@@ -145,7 +160,8 @@ instance ReportableError LexerError where
         let furtherHints = case further of
                 Nothing -> baseHints
                 Just f -> (positionToDiagnosePosition fp (f ^. indentPos), Maybe ("an offside rule begins here (column " <> show (f ^. indent) <> "). If you think the problematic line is \"related\" to this line, make sure they line up.")) : baseHints
-        writeReport $
+
+        pure $
             Err
                 (Just Codes.tooMuchIndentation)
                 msg
@@ -153,12 +169,24 @@ instance ReportableError LexerError where
                 [ Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
                 , Hint hint
                 ]
-    report (UnterminatedStringLiteral s) = do
+    getReport (GenericAlexError ai) = do
+        let fp = view filePath ai
+        let pos = view position ai
+        let msg = "Lexical error"
+
+        pure $
+            Err
+                (Just Codes.genericLexicalError)
+                msg
+                [(positionToDiagnosePosition fp pos, This "lexical error occurred here")]
+                [ Note "The lexer encountered an invalid character or sequence of characters that it could not process."
+                ]
+    getReport (UnterminatedStringLiteral s) = do
         let fp = view (input % filePath) s
         let pos = view (input % position) s
         let msg = "Unterminated string literal."
         let hint = "Make sure that the string literal is terminated with a double quote (\")."
-        writeReport $
+        pure $
             Err
                 (Just Codes.unterminatedStringLiteral)
                 msg
