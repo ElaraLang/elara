@@ -9,7 +9,7 @@ import Data.Text qualified as Text
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
 import Effectful.FileSystem (FileSystem)
-import Effectful.State.Extra (use')
+import Effectful.State.Extra (use', (.=))
 import Effectful.State.Static.Local
 import Elara.Logging (StructuredDebug)
 import Elara.Query (Query (GetFileContents))
@@ -41,11 +41,13 @@ readToken = do
                     readToken
                 AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
                 AlexSkip inp _ -> do
-                    put s{_input = inp}
+                    input .= inp
+
                     readToken
                 AlexToken inp n act -> do
                     let buf = s ^. input % rest
-                    put s{_input = inp}
+                    input .= inp
+
                     res <- act n (Text.take n buf)
                     maybe readToken pure res
 
@@ -62,7 +64,7 @@ readTokensWith ::
     (Error LexerError :> es, StructuredDebug :> es) =>
     FileContents -> Eff es [Lexeme]
 readTokensWith (FileContents fp s) = do
-    evalState (initialState fp s) (inject readTokens)
+    evalState (initialLexState fp s) (inject readTokens)
 
 getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
 getLexedFile fp = do

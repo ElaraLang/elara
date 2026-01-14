@@ -19,7 +19,7 @@ let map f p = Parser ( \s -> match runParser p s with
                                 Some (a, xs) -> Some (f a, xs) )
 
 def (*>) : Parser a -> Parser b -> Parser b
-let p *> q =,
+let p *> q =
   bind p (\_ -> q)
 
 def (<*) : Parser a -> Parser b -> Parser a
@@ -46,10 +46,11 @@ let bind p f =
       Some (a, s1) -> runParser (f a) s1)
 
 def many : Parser a -> Parser (List a)
-let many p = Parser ( \manyS -> let go acc manyS_ = match (runParser p manyS_) with
-                                        None -> Some (reverse acc, manyS_)
-                                        Some (a, rest) -> go (a::acc) rest
-in go [] manyS )
+let many p = Parser ( \manyS -> 
+    let go acc manyS_ = match (runParser p manyS_) with
+                            None -> Some (reverse acc, manyS_)
+                            Some (a, rest) -> go (a::acc) rest
+        in go [] manyS )
 
 def sepBy : Parser a -> Parser sep -> Parser (List a)
 let sepBy p sep = sepBy1 p sep <|> pure []

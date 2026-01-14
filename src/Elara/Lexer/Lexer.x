@@ -102,12 +102,12 @@ tokens :-
       -- Keywords
       let					 { simpleTok TokenLet }
       def                    { simpleTok TokenDef }
-      if                     { simpleTok TokenIf }
-      then                   { simpleTok TokenThen }
-      else                   { simpleTok TokenElse }
+      if                     { indentLayoutTok TokenIf }
+      then                   { indentLayoutTok TokenThen }
+      else                   { indentLayoutTok TokenElse }
       in					 { simpleTok TokenIn }
       match                  { simpleTok TokenMatch }
-      with                   { simpleTok TokenWith }
+      with                   { indentLayoutTok TokenWith }
       data                   { simpleTok TokenData }
       class                  { simpleTok TokenClass }
       type                   { simpleTok TokenType }
@@ -122,7 +122,7 @@ tokens :-
       \:                     { simpleTok TokenColon }
       \:\:                   { simpleTok TokenDoubleColon }
       \\                     { simpleTok TokenBackslash }
-      \-\>                   { simpleTok TokenRightArrow }
+      \-\>                   { indentLayoutTok TokenRightArrow }
       \<\-                   { simpleTok TokenLeftArrow }
       \=\>                   { simpleTok TokenDoubleRightArrow }
       \#                     { simpleTok TokenHash }
@@ -136,7 +136,7 @@ tokens :-
       \`                     { simpleTok TokenBacktick }
       \|                     { simpleTok TokenPipe }
       $underscore            { simpleTok TokenUnderscore }
-      \=                     { simpleTok TokenEquals }
+      \=                     { indentLayoutTok TokenEquals }
      
 
       \"                     { beginString stringSC }

@@ -7,11 +7,23 @@ Particularly useful with the optics functions that operate on @Monad[Reader/Stat
 module Effectful.State.Extra where
 
 import Effectful
-import Effectful.State.Static.Local as P (State, get, put)
+import Effectful.State.Static.Local as P (State, get, modify, put)
 import Optics (A_Getter)
 
 use' :: (Is k A_Getter, State a :> r) => Optic' k is a b -> Eff r b
 use' lens = view lens <$> P.get
+
+modifying :: (Is k A_Setter, State s :> r) => Optic k is s s a b -> (a -> b) -> Eff r ()
+modifying lens = modify . over lens
+
+assign :: (Is k A_Setter, State s :> r) => Optic k is s s a b -> b -> Eff r ()
+assign lens = modifying lens . const
+
+(.=) :: (Is k A_Setter, State s :> r) => Optic k is s s a b -> b -> Eff r ()
+(.=) = assign
+
+(%=) :: (Is k A_Setter, State s :> r) => Optic k is s s a b -> (a -> b) -> Eff r ()
+(%=) = modifying
 
 locally :: State s :> r => (s -> s) -> Eff r a -> Eff r a
 locally f comp = do
