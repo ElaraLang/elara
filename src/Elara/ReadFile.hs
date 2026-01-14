@@ -1,8 +1,5 @@
-module Elara.ReadFile where
+module Elara.ReadFile (FileContents (FileContents), runGetFileContentsQuery, getInputFiles) where
 
-import Data.ByteString qualified as B
-import Data.ByteString.Lazy qualified as L
-import Data.ByteString.Lazy.Search qualified as S
 import Data.HashSet qualified as HashSet
 import Effectful (Eff, (:>))
 import Effectful.FileSystem (FileSystem, createDirectoryIfMissing, listDirectory)
@@ -11,23 +8,6 @@ import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Error.Diagnose hiding (addFile)
-import System.IO
-
--- https://stackoverflow.com/a/6860159
-nativeCallsForConversion :: Bool
-nativeCallsForConversion = System.IO.nativeNewline == System.IO.CRLF
-
-readFileUniversalNewlineConversion :: FilePath -> IO L.ByteString
-readFileUniversalNewlineConversion =
-    let str_LF = B.pack [10]
-        str_CRLF = B.pack [13, 10]
-     in fmap (S.replace str_CRLF str_LF) . readFileLBS
-
-readFileNativeNewlineConversion :: FilePath -> IO L.ByteString
-readFileNativeNewlineConversion =
-    if nativeCallsForConversion
-        then readFileUniversalNewlineConversion
-        else readFileLBS
 
 data ReadFileError = DecodeError !FilePath !UnicodeException
 
@@ -56,8 +36,8 @@ runGetFileContentsQuery fp = do
     pure $ FileContents fp contentsText
 
 data FileContents = FileContents
-    { filePath :: FilePath
-    , fileContents :: Text
+    { filePath :: !FilePath
+    , fileContents :: !Text
     }
     deriving (Eq, Show, Ord, Generic)
 instance Hashable FileContents

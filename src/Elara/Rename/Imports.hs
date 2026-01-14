@@ -1,5 +1,5 @@
 -- | This module mostly just exists to be a circuit breaker :)
-module Elara.Rename.Imports where
+module Elara.Rename.Imports (isImportedBy) where
 
 import Data.Generics.Product
 import Data.Generics.Wrapped

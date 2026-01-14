@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeAbstractions #-}
 
 -- | Defines useful classes and functions for introspecting ASTs
-module Elara.AST.Introspection where
+module Elara.AST.Introspection (IntrospectableAnnotations (..)) where
 
 import Elara.AST.Generic.Types
 import Elara.AST.Renamed ()

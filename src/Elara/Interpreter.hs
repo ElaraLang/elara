@@ -6,7 +6,6 @@ import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (scoped)
 import Effectful.State.Static.Local
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef

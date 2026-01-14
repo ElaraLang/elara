@@ -17,14 +17,14 @@ Key points:
 - Constructor alternatives extend the scrutinee list with freshly bound
   field variables and push their argument patterns into the matrix.
 -}
-module Elara.ToCore.Match where
+module Elara.ToCore.Match (buildMatrix1, compileMatrix) where
 
 import Data.Map.Strict qualified as M
 import Data.Matrix qualified as Mat
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
 import Elara.AST.Generic.Types qualified as AST
-import Elara.AST.Name (ModuleName (..), NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (NameLike (..), Qualified (..), TypeName, VarName)
 import Elara.AST.Region
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))

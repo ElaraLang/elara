@@ -6,7 +6,7 @@ of the program to form an invalid program
 
 It doesn't do any inference! As Core is already typed, it just checks that the types are consistent
 -}
-module Elara.Core.TypeCheck where
+module Elara.Core.TypeCheck (typeCheckCoreModule, TypeCheckError (..)) where
 
 import Data.Set qualified as Set
 import Effectful
@@ -17,17 +17,15 @@ import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
-import Elara.Core.Analysis (freeCoreVars, freeTypeVars)
+import Elara.Core.Analysis (freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module
 import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Logging (StructuredDebug, debug, debugWith)
+import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core
-import Elara.TypeInfer.Type (Polytype (Forall), functionMonotypeResult)
-import Print (prettyToString, showPretty)
 import TODO (todo)
 
 data TypeCheckError
@@ -74,19 +72,19 @@ isInScope (Id (Global _) _ _) _ = True -- Global vars are always in scope
 isInScope _ _ = False
 
 typeCheckCoreModule :: (Error TypeCheckError :> r, HasCallStack, StructuredDebug :> r) => CoreModule (Bind Var ANF.Expr) -> Eff r ()
-typeCheckCoreModule (CoreModule n m) = do
+typeCheckCoreModule (CoreModule _moduleName m) = do
     let initialState = TcState{scope = mempty}
 
     _ <- evalState initialState $ for_ m $ \case
         CoreValue (NonRecursive (v, e)) -> scoped $ do
             modify (addToScope v)
-            eType <- typeCheck e
+            typeCheck e
             pass
         CoreValue (Recursive bs) -> scoped $ do
-            for_ bs $ \(v, e) -> do
+            for_ bs $ \(v, _e) -> do
                 modify (addToScope v)
 
-            for_ bs $ \(v, e) -> typeCheck e
+            for_ bs $ \(_v, e) -> typeCheck e
         CoreType _ -> pass
 
     pass
@@ -98,7 +96,7 @@ varType (Id _ t _) = t
 typeCheck :: (Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.Expr Var -> Eff r Core.Type
 typeCheck (ANF.Let bind in') = case bind of
     NonRecursive (v, e) -> do
-        eType <- typeCheckC e
+        typeCheckC e
         locally (addToScope v) $
             typeCheck in'
     Recursive binds -> scoped $ do
@@ -224,9 +222,7 @@ equalUnderSubst' (Core.FuncTy a1 b1) (Core.FuncTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
 equalUnderSubst' (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
     equalUnderSubst a1 a2 && equalUnderSubst b1 b2
-equalUnderSubst' (Core.ConTy c1) (Core.ConTy c2) =
-    trace (toString ("Comparing constructors: " <> show c1 <> " and " <> show c2)) $
-        c1 == c2
+equalUnderSubst' (Core.ConTy c1) (Core.ConTy c2) = c1 == c2
 -- At this point (after substituting foralls), a type variable should match anything
 equalUnderSubst' (Core.TyVarTy _) _ = True
 equalUnderSubst' x y = False --

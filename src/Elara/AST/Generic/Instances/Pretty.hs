@@ -12,7 +12,7 @@ import Elara.AST.Name
 import Elara.AST.Pretty
 import Elara.AST.Select
 import Elara.AST.StripLocation
-import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
+import Elara.Data.AtLeast2List (AtLeast2List)
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
@@ -153,7 +153,7 @@ instance
     , (Pretty (Select (ASTType ForExpr) ast))
     , (DataConAs (Select ASTBinaryOperator ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (DataConAs (Select InParens ast) (Expr ast))
-    , DataConAs (Select Tuple ast) (AtLeast2List (Expr ast))
+    , DataConAs (Select Tuple ast) (Elara.Data.AtLeast2List.AtLeast2List (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr ast)
@@ -204,7 +204,7 @@ instance
     , (Pretty (Select (ASTType ForExpr) ast))
     , (DataConAs (Select ASTBinaryOperator ast) (BinaryOperator ast, Expr ast, Expr ast))
     , (DataConAs (Select InParens ast) (Expr ast))
-    , DataConAs (Select Tuple ast) (AtLeast2List (Expr ast))
+    , DataConAs (Select Tuple ast) (Elara.Data.AtLeast2List.AtLeast2List (Expr ast))
     , RUnlocate ast
     ) =>
     Pretty (Expr' ast)
@@ -245,7 +245,7 @@ prettyExpr' (LetIn v p e1 e2) = prettyLetInExpr v (fieldToList @(Select LetPatte
 prettyExpr' (Let v p e) = prettyLetExpr v (fieldToList @(Select LetPattern ast) p :: [letPatterns]) e
 prettyExpr' (Block b) = prettyBlockExpr (prettyExpr <$> b)
 prettyExpr' (Tuple t) =
-    let t' = dataConAs @(Select Tuple ast) @(AtLeast2List (Expr ast)) t
+    let t' = dataConAs @(Select Tuple ast) @(Elara.Data.AtLeast2List.AtLeast2List (Expr ast)) t
      in prettyTupleExpr (AtLeast2List.toNonEmpty $ prettyExpr <$> t')
 prettyExpr' (BinaryOperator b) =
     let (op, e1, e2) = dataConAs @(Select ASTBinaryOperator ast) @(BinaryOperator ast, Expr ast, Expr ast) b

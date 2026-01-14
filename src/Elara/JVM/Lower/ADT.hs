@@ -1,4 +1,4 @@
-module Elara.JVM.Lower.ADT where
+module Elara.JVM.Lower.ADT (lowerDataCon) where
 
 import Data.List (zipWith3)
 import Effectful

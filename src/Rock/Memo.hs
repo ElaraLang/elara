@@ -7,7 +7,6 @@ import Control.Exception.Lifted
 
 import Data.Dependent.HashMap (DHashMap)
 import Data.Dependent.HashMap qualified as DHashMap
-import Data.Foldable
 import Data.GADT.Compare (GEq)
 import Data.GADT.Show (GShow)
 import Data.HashMap.Lazy qualified as HashMap
@@ -16,9 +15,8 @@ import Data.IORef.Lifted
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
-import Effectful (Eff, Effect, IOE, raise, (:>))
+import Effectful (Eff, IOE, raise, (:>))
 import Effectful.Concurrent.MVar.Strict (Concurrent, newEmptyMVar', putMVar', readMVar')
-import Effectful.TH (makeEffect)
 import Rock
 import Rock.MemoE
 import Prelude hiding (atomicModifyIORef, newEmptyMVar, newMVar, putMVar, readIORef, readMVar)

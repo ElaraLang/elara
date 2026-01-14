@@ -1,10 +1,10 @@
 -- | Converts typed AST to Core
-module Elara.ToCore where
+module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
 
 import Data.Generics.Product
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped
-import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
+import Data.Graph (SCC (..), stronglyConnComp)
 import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
@@ -154,12 +154,6 @@ runGetTyConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
     let r = matchingDataCon ^? _Just % field @"typeBody" % _As @"CoreDataDecl" % _1
     pure r
 
-type VariableTable = Map (Qualified Name) (Type.Type SourceRegion)
-
-type ToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
-
-type InnerToCoreEffects = [State CtorSymbolTable, Error ToCoreError, UniqueGen, StructuredDebug]
-
 type ToCoreC r =
     ( State CtorSymbolTable :> r
     , Error ToCoreError :> r
@@ -177,13 +171,6 @@ type InnerToCoreC r =
     , QueryEffects r
     , Rock.Rock Elara.Query.Query :> r
     )
-
--- runToCorePipeline :: IsPipeline r => Eff (EffectsAsPrefixOf ToCoreEffects r) a -> Eff r a
--- runToCorePipeline =
---     inject
---         . uniqueGenToGlobalIO
---         . runErrorOrReport
---         . evalState primCtorSymbolTable
 
 runGetCoreModuleQuery ::
     ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)

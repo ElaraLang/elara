@@ -3,7 +3,6 @@ module Elara.ConstExpr where
 
 import Effectful
 import Elara.AST.Generic (AnnotationArg (..), Expr (..), Expr' (..), RUnlocate (..))
-import Elara.AST.Region
 
 data ConstVal
     = ConstInt Integer
