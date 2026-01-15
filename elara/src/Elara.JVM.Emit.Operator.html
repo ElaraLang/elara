@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.Operator.html"><span class="hs-identifier">Elara.JVM.Emit.Operator</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">type</span><span> </span><span id="OpTranslation"><span class="annot"><a href="Elara.JVM.Emit.Operator.html#OpTranslation"><span class="hs-identifier hs-var">OpTranslation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="annot"><a href="Elara.JVM.Emit.Operator.html#translations"><span class="hs-identifier hs-type">translations</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.Emit.Operator.html#OpTranslation"><span class="hs-identifier hs-type">OpTranslation</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-8"></span><span id="translations"><span class="annot"><span class="annottext">translations :: [OpTranslation]
+</span><a href="Elara.JVM.Emit.Operator.html#translations"><span class="hs-identifier hs-var hs-var">translations</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><span class="annottext">(OpTranslation -&gt; OpTranslation)
+-&gt; [OpTranslation] -&gt; [OpTranslation]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span>
+</span><span id="line-10"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680061958"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061958"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680061959"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061959"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061958"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061959"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;_&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;+&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;plus&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;-&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;minus&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;*&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;times&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;/&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;divide&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;%&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;mod&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;==&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;eq&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;=&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;equals&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;!=&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;neq&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;|&gt;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;pipe&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&lt;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;lt&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&gt;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;gt&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&lt;=&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;lte&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&gt;=&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;gte&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&amp;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;bitand&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&amp;&amp;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;and&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;|&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;bitor&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;^&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;bitxor&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;||&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;or&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;!&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;not&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&gt;&gt;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;then&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&gt;&gt;=&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;bind&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Elara.JVM.Emit.Operator.html#translateOperatorName"><span class="hs-identifier hs-type">translateOperatorName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-35"></span><span id="translateOperatorName"><span class="annot"><span class="annottext">translateOperatorName :: Text -&gt; Text
+</span><a href="Elara.JVM.Emit.Operator.html#translateOperatorName"><span class="hs-identifier hs-var hs-var">translateOperatorName</span></a></span></span><span> </span><span id="local-6989586621680061968"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061968"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061968"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;&lt;init&gt;&quot;</span></span><span>
+</span><span id="line-37"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061968"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-38"></span><span>        </span><span class="hs-keyword">else</span><span>
+</span><span id="line-39"></span><span>            </span><span class="annot"><span class="annottext">(OpTranslation -&gt; Text -&gt; Text) -&gt; Text -&gt; [OpTranslation] -&gt; Text
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Text -&gt; Text -&gt; Text -&gt; Text) -&gt; OpTranslation -&gt; Text -&gt; Text
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Text -&gt; Text -&gt; Text -&gt; Text
+Text -&gt; Text -&gt; Text -&gt; Text
+</span><span class="hs-identifier hs-var">T.replace</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680061968"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[OpTranslation]
+</span><a href="Elara.JVM.Emit.Operator.html#translations"><span class="hs-identifier hs-var">translations</span></a></span><span>
+</span><span id="line-40"></span></pre></body></html>

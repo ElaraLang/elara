@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.Utils.html"><span class="hs-identifier">Elara.JVM.Emit.Utils</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Name</span></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="annot"><a href="Elara.JVM.Emit.Utils.html#createModuleName"><span class="hs-identifier hs-type">createModuleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">QualifiedClassName</span></span><span>
+</span><span id="line-7"></span><span id="createModuleName"><span class="annot"><span class="annottext">createModuleName :: ModuleName -&gt; QualifiedClassName
+</span><a href="Elara.JVM.Emit.Utils.html#createModuleName"><span class="hs-identifier hs-var hs-var">createModuleName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680084700"><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680084700"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PackageName -&gt; ClassName -&gt; QualifiedClassName
+</span><span class="hs-identifier hs-var">QualifiedClassName</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Text] -&gt; PackageName
+</span><span class="hs-identifier hs-var">PackageName</span></span><span> </span><span class="annot"><span class="annottext">([Text] -&gt; PackageName) -&gt; [Text] -&gt; PackageName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; [Text]
+forall (f :: * -&gt; *) a. IsNonEmpty f a [a] &quot;init&quot; =&gt; f a -&gt; [a]
+</span><span class="hs-identifier hs-var">init</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680084700"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ClassName
+</span><span class="hs-identifier hs-var">ClassName</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; ClassName) -&gt; Text -&gt; ClassName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; Text
+forall (f :: * -&gt; *) a. IsNonEmpty f a a &quot;last&quot; =&gt; f a -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680084700"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="Elara.JVM.Emit.Utils.html#createQualifiedClassName"><span class="hs-identifier hs-type">createQualifiedClassName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">QualifiedClassName</span></span><span>
+</span><span id="line-10"></span><span id="createQualifiedClassName"><span class="annot"><span class="annottext">createQualifiedClassName :: Qualified Text -&gt; QualifiedClassName
+</span><a href="Elara.JVM.Emit.Utils.html#createQualifiedClassName"><span class="hs-identifier hs-var hs-var">createQualifiedClassName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680084710"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680084710"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680084711"><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680084711"><span class="hs-identifier hs-var">mn</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><span class="annottext">PackageName -&gt; ClassName -&gt; QualifiedClassName
+</span><span class="hs-identifier hs-var">QualifiedClassName</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Text] -&gt; PackageName
+</span><span class="hs-identifier hs-var">PackageName</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty Text -&gt; [Text]
+forall a. NonEmpty a -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
+</span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680084711"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ClassName
+</span><span class="hs-identifier hs-var">ClassName</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680084710"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span></pre></body></html>

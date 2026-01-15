@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | A list that contains at least two elements, used for tuples</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html"><span class="hs-identifier">Elara.Data.AtLeast2List</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">data</span><span> </span><span id="AtLeast2List"><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span></span><span> </span><span id="local-6989586621680069507"><span class="annot"><a href="#local-6989586621680069507"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="AtLeast2List"><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680069507"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069507"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680069507"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069588"><span id="local-6989586621680069594"><span class="annot"><span class="annottext">AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+(AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; Eq (AtLeast2List a)
+forall a. Eq a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+== :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+/= :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680069600"><span id="local-6989586621680069608"><span id="local-6989586621680069612"><span class="annot"><span class="annottext">Int -&gt; AtLeast2List a -&gt; ShowS
+[AtLeast2List a] -&gt; ShowS
+AtLeast2List a -&gt; String
+(Int -&gt; AtLeast2List a -&gt; ShowS)
+-&gt; (AtLeast2List a -&gt; String)
+-&gt; ([AtLeast2List a] -&gt; ShowS)
+-&gt; Show (AtLeast2List a)
+forall a. Show a =&gt; Int -&gt; AtLeast2List a -&gt; ShowS
+forall a. Show a =&gt; [AtLeast2List a] -&gt; ShowS
+forall a. Show a =&gt; AtLeast2List a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; AtLeast2List a -&gt; ShowS
+showsPrec :: Int -&gt; AtLeast2List a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; AtLeast2List a -&gt; String
+show :: AtLeast2List a -&gt; String
+$cshowList :: forall a. Show a =&gt; [AtLeast2List a] -&gt; ShowS
+showList :: [AtLeast2List a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680069621"><span id="local-6989586621680069627"><span id="local-6989586621680069632"><span id="local-6989586621680069636"><span id="local-6989586621680069639"><span id="local-6989586621680069642"><span id="local-6989586621680069645"><span class="annot"><span class="annottext">Eq (AtLeast2List a)
+Eq (AtLeast2List a) =&gt;
+(AtLeast2List a -&gt; AtLeast2List a -&gt; Ordering)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; Bool)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a)
+-&gt; (AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a)
+-&gt; Ord (AtLeast2List a)
+AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+AtLeast2List a -&gt; AtLeast2List a -&gt; Ordering
+AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (AtLeast2List a)
+forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Ordering
+forall a.
+Ord a =&gt;
+AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+$ccompare :: forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Ordering
+compare :: AtLeast2List a -&gt; AtLeast2List a -&gt; Ordering
+$c&lt; :: forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+&lt; :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+&lt;= :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+&gt; :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+&gt;= :: AtLeast2List a -&gt; AtLeast2List a -&gt; Bool
+$cmax :: forall a.
+Ord a =&gt;
+AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+max :: AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+$cmin :: forall a.
+Ord a =&gt;
+AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+min :: AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680069654"><span id="local-6989586621680069656"><span class="annot"><span class="annottext">(forall x. AtLeast2List a -&gt; Rep (AtLeast2List a) x)
+-&gt; (forall x. Rep (AtLeast2List a) x -&gt; AtLeast2List a)
+-&gt; Generic (AtLeast2List a)
+forall x. Rep (AtLeast2List a) x -&gt; AtLeast2List a
+forall x. AtLeast2List a -&gt; Rep (AtLeast2List a) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall a x. Rep (AtLeast2List a) x -&gt; AtLeast2List a
+forall a x. AtLeast2List a -&gt; Rep (AtLeast2List a) x
+$cfrom :: forall a x. AtLeast2List a -&gt; Rep (AtLeast2List a) x
+from :: forall x. AtLeast2List a -&gt; Rep (AtLeast2List a) x
+$cto :: forall a x. Rep (AtLeast2List a) x -&gt; AtLeast2List a
+to :: forall x. Rep (AtLeast2List a) x -&gt; AtLeast2List a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span id="local-6989586621680069495"><span class="annot"><a href="Elara.Data.AtLeast2List.html#toList"><span class="hs-identifier hs-type">toList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069495"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680069495"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-8"></span><span id="toList"><span class="annot"><span class="annottext">toList :: forall a. AtLeast2List a -&gt; [a]
+</span><a href="Elara.Data.AtLeast2List.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069662"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069662"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680069663"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069663"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680069664"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069664"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069662"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069663"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069664"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span id="local-6989586621680069498"><span class="annot"><a href="Elara.Data.AtLeast2List.html#toNonEmpty"><span class="hs-identifier hs-type">toNonEmpty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069498"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680069498"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-11"></span><span id="toNonEmpty"><span class="annot"><span class="annottext">toNonEmpty :: forall a. AtLeast2List a -&gt; NonEmpty a
+</span><a href="Elara.Data.AtLeast2List.html#toNonEmpty"><span class="hs-identifier hs-var hs-var">toNonEmpty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069666"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069666"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680069667"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069667"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680069668"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069668"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069666"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; NonEmpty a
+forall a. a -&gt; [a] -&gt; NonEmpty a
+</span><span class="hs-operator hs-var">:|</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069667"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069668"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span id="local-6989586621680069501"><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromList"><span class="hs-identifier hs-type">fromList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680069501"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069501"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-14"></span><span id="fromList"><span class="annot"><span class="annottext">fromList :: forall a. [a] -&gt; Maybe (AtLeast2List a)
+</span><a href="Elara.Data.AtLeast2List.html#fromList"><span class="hs-identifier hs-var hs-var">fromList</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069671"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069671"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680069672"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069672"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680069673"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069673"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AtLeast2List a -&gt; Maybe (AtLeast2List a)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(AtLeast2List a -&gt; Maybe (AtLeast2List a))
+-&gt; AtLeast2List a -&gt; Maybe (AtLeast2List a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069671"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069672"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069673"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromList"><span class="hs-identifier hs-var">fromList</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (AtLeast2List a)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621680069508"><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromNonEmpty"><span class="hs-identifier hs-type">fromNonEmpty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680069508"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069508"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-18"></span><span id="fromNonEmpty"><span class="annot"><span class="annottext">fromNonEmpty :: forall a. NonEmpty a -&gt; Maybe (AtLeast2List a)
+</span><a href="Elara.Data.AtLeast2List.html#fromNonEmpty"><span class="hs-identifier hs-var hs-var">fromNonEmpty</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069675"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069675"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:|</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069676"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069676"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680069677"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069677"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AtLeast2List a -&gt; Maybe (AtLeast2List a)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(AtLeast2List a -&gt; Maybe (AtLeast2List a))
+-&gt; AtLeast2List a -&gt; Maybe (AtLeast2List a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069675"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069676"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069677"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromNonEmpty"><span class="hs-identifier hs-var">fromNonEmpty</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (AtLeast2List a)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span id="local-6989586621680069511"><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromNonEmptyUnsafe"><span class="hs-identifier hs-type">fromNonEmptyUnsafe</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680069511"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069511"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-22"></span><span id="fromNonEmptyUnsafe"><span class="annot"><span class="annottext">fromNonEmptyUnsafe :: forall a. HasCallStack =&gt; NonEmpty a -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#fromNonEmptyUnsafe"><span class="hs-identifier hs-var hs-var">fromNonEmptyUnsafe</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069688"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069688"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:|</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069689"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069689"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680069690"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069690"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069688"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069689"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069690"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromNonEmptyUnsafe"><span class="hs-identifier hs-var">fromNonEmptyUnsafe</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AtLeast2List a
+forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;fromNonEmptyUnsafe: NonEmpty list has less than 2 elements&quot;</span></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span id="local-6989586621680069522"><span class="annot"><a href="Elara.Data.AtLeast2List.html#fromHeadAndTail"><span class="hs-identifier hs-type">fromHeadAndTail</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680069522"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680069522"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069522"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-26"></span><span id="fromHeadAndTail"><span class="annot"><span class="annottext">fromHeadAndTail :: forall a. a -&gt; NonEmpty a -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#fromHeadAndTail"><span class="hs-identifier hs-var hs-var">fromHeadAndTail</span></a></span></span><span> </span><span id="local-6989586621680069693"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069693"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680069694"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069694"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:|</span></span><span> </span><span id="local-6989586621680069695"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069695"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069693"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069694"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069695"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680069698"><span class="annot"><span class="hs-identifier hs-type">Functor</span></span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621680069704"><span class="annot"><span class="annottext">fmap :: forall a b. (a -&gt; b) -&gt; AtLeast2List a -&gt; AtLeast2List b
+</span><span class="hs-identifier hs-var hs-var hs-var">fmap</span></span></span><span> </span><span id="local-6989586621680069705"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621680069705"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069706"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069706"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680069707"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069707"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680069708"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069708"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; [b] -&gt; AtLeast2List b
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621680069705"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069706"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621680069705"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069707"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; b) -&gt; [a] -&gt; [b]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621680069705"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069708"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680069710"><span id="local-6989586621680069717"><span id="local-6989586621680069722"><span id="local-6989586621680069725"><span id="local-6989586621680069728"><span id="local-6989586621680069731"><span id="local-6989586621680069734"><span id="local-6989586621680069737"><span id="local-6989586621680069740"><span id="local-6989586621680069743"><span id="local-6989586621680069746"><span id="local-6989586621680069749"><span id="local-6989586621680069754"><span id="local-6989586621680069759"><span id="local-6989586621680069764"><span id="local-6989586621680069769"><span class="annot"><span class="hs-identifier hs-type">Foldable</span></span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>    </span><span id="local-6989586621680069782"><span class="annot"><span class="annottext">foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AtLeast2List a -&gt; m
+</span><a href="#local-6989586621680069782"><span class="hs-identifier hs-var hs-var hs-var">foldMap</span></a></span></span><span> </span><span id="local-6989586621680069784"><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680069784"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069785"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069785"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680069786"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069786"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680069787"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069787"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680069784"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069785"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">m -&gt; m -&gt; m
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680069784"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069786"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">m -&gt; m -&gt; m
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m) -&gt; [a] -&gt; m
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m
+</span><a href="#local-6989586621680069784"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069787"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680069794"><span id="local-6989586621680069800"><span id="local-6989586621680069805"><span class="annot"><span class="hs-identifier hs-type">Traversable</span></span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680069819"><span class="annot"><span class="annottext">traverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; AtLeast2List a -&gt; f (AtLeast2List b)
+</span><a href="#local-6989586621680069819"><span class="hs-identifier hs-var hs-var hs-var">traverse</span></a></span></span><span> </span><span id="local-6989586621680069821"><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680069821"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069822"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069822"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680069823"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069823"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680069824"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069824"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; [b] -&gt; AtLeast2List b
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; b -&gt; [b] -&gt; AtLeast2List b)
+-&gt; f b -&gt; f (b -&gt; [b] -&gt; AtLeast2List b)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680069821"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069822"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">f (b -&gt; [b] -&gt; AtLeast2List b) -&gt; f b -&gt; f ([b] -&gt; AtLeast2List b)
+forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680069821"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069823"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">f ([b] -&gt; AtLeast2List b) -&gt; f [b] -&gt; f (AtLeast2List b)
+forall a b. f (a -&gt; b) -&gt; f a -&gt; f b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; f b) -&gt; [a] -&gt; f [b]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; [a] -&gt; f [b]
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680069821"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069824"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680069583"><span id="local-6989586621680069828"><span id="local-6989586621680069832"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680069583"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069839"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069839"><span class="hs-identifier hs-var">x1</span></a></span></span><span> </span><span id="local-6989586621680069840"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069840"><span class="hs-identifier hs-var">y1</span></a></span></span><span> </span><span id="local-6989586621680069841"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069841"><span class="hs-identifier hs-var">xs1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680069842"><span class="annot"><span class="annottext">&lt;&gt; :: AtLeast2List a -&gt; AtLeast2List a -&gt; AtLeast2List a
+</span><span class="hs-operator hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span id="local-6989586621680069843"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069843"><span class="hs-identifier hs-var">x2</span></a></span></span><span> </span><span id="local-6989586621680069844"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069844"><span class="hs-identifier hs-var">y2</span></a></span></span><span> </span><span id="local-6989586621680069845"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069845"><span class="hs-identifier hs-var">xs2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+forall a. a -&gt; a -&gt; [a] -&gt; AtLeast2List a
+</span><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-var">AtLeast2List</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069839"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069840"><span class="hs-identifier hs-var">y1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069841"><span class="hs-identifier hs-var">xs1</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069843"><span class="hs-identifier hs-var">x2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680069844"><span class="hs-identifier hs-var">y2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680069845"><span class="hs-identifier hs-var">xs2</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span></pre></body></html>

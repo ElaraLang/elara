@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html"><span class="hs-identifier">Elara.Core.LiftClosures.Util</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.html"><span class="hs-identifier">Elara.Core</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Core</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html"><span class="hs-identifier">Elara.Core.ANF</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ANF</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Core.Analysis.html"><span class="hs-identifier">Elara.Core.Analysis</span></a></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | Get the type from a Var, or Nothing for TyVar</span></span><span>
+</span><span id="line-10"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#varTermType"><span class="hs-identifier hs-type">varTermType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Core.Type</span></a></span><span>
+</span><span id="line-11"></span><span id="varTermType"><span class="annot"><span class="annottext">varTermType :: Var -&gt; Maybe Type
+</span><a href="Elara.Core.LiftClosures.Util.html#varTermType"><span class="hs-identifier hs-var hs-var">varTermType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="annot"><span class="annottext">UnlocatedVarRef Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680105018"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680105018"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Maybe Type
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680105018"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-12"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#varTermType"><span class="hs-identifier hs-var">varTermType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#TyVar"><span class="hs-identifier hs-type">Core.TyVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Type
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><span class="hs-comment">-- | Check if a variable is global</span></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isGlobal"><span class="hs-identifier hs-type">isGlobal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-16"></span><span id="isGlobal"><span class="annot"><span class="annottext">isGlobal :: Var -&gt; Bool
+</span><a href="Elara.Core.LiftClosures.Util.html#isGlobal"><span class="hs-identifier hs-var hs-var">isGlobal</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span> </span><span class="annot"><span class="annottext">VarRefImpl UnlocatedVarRefKind (Qualified Text)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-17"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isGlobal"><span class="hs-identifier hs-var">isGlobal</span></a></span><span> </span><span class="annot"><span class="annottext">Var
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="annot"><span class="hs-comment">-- | Check if a variable is local</span></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isLocal"><span class="hs-identifier hs-type">isLocal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-21"></span><span id="isLocal"><span class="annot"><span class="annottext">isLocal :: Var -&gt; Bool
+</span><a href="Elara.Core.LiftClosures.Util.html#isLocal"><span class="hs-identifier hs-var hs-var">isLocal</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Local"><span class="hs-identifier hs-type">Local</span></a></span><span> </span><span class="annot"><span class="annottext">VarRefImpl UnlocatedVarRefKind (Unique Text)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isLocal"><span class="hs-identifier hs-var">isLocal</span></a></span><span> </span><span class="annot"><span class="annottext">Var
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="annot"><span class="hs-comment">-- | Filter to only local variables</span></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#filterLocals"><span class="hs-identifier hs-type">filterLocals</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span>
+</span><span id="line-26"></span><span id="filterLocals"><span class="annot"><span class="annottext">filterLocals :: Set Var -&gt; Set Var
+</span><a href="Elara.Core.LiftClosures.Util.html#filterLocals"><span class="hs-identifier hs-var hs-var">filterLocals</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Var -&gt; Bool) -&gt; Set Var -&gt; Set Var
+forall a. (a -&gt; Bool) -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.filter</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Bool
+</span><a href="Elara.Core.LiftClosures.Util.html#isLocal"><span class="hs-identifier hs-var">isLocal</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><span class="hs-comment">-- | Compute captured variables (free locals minus the binding itself)</span></span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#computeCaptures"><span class="hs-identifier hs-type">computeCaptures</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-30"></span><span id="computeCaptures"><span class="annot"><span class="annottext">computeCaptures :: Var -&gt; Set Var -&gt; [Var]
+</span><a href="Elara.Core.LiftClosures.Util.html#computeCaptures"><span class="hs-identifier hs-var hs-var">computeCaptures</span></a></span></span><span> </span><span id="local-6989586621680105029"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680105029"><span class="hs-identifier hs-var">bound</span></a></span></span><span> </span><span id="local-6989586621680105030"><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680105030"><span class="hs-identifier hs-var">freeVars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="annottext">Set Var -&gt; [Var]
+forall a. Set a -&gt; [a]
+</span><span class="hs-identifier hs-var">Set.toList</span></span><span> </span><span class="annot"><span class="annottext">(Set Var -&gt; [Var]) -&gt; Set Var -&gt; [Var]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Set Var
+</span><a href="Elara.Core.LiftClosures.Util.html#filterLocals"><span class="hs-identifier hs-var">filterLocals</span></a></span><span> </span><span class="annot"><span class="annottext">(Set Var -&gt; Set Var) -&gt; Set Var -&gt; Set Var
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Set Var -&gt; Set Var
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.delete</span></span><span> </span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680105029"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="annot"><span class="annottext">Set Var
+</span><a href="#local-6989586621680105030"><span class="hs-identifier hs-var">freeVars</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><span class="hs-comment">-- | Check if an atom is a lambda</span></span><span>
+</span><span id="line-34"></span><span id="local-6989586621680104991"><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isLam"><span class="hs-identifier hs-type">isLam</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">ANF.AExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680104991"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-35"></span><span id="isLam"><span class="annot"><span class="annottext">isLam :: forall b. AExpr b -&gt; Bool
+</span><a href="Elara.Core.LiftClosures.Util.html#isLam"><span class="hs-identifier hs-var hs-var">isLam</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-type">ANF.Lam</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#isLam"><span class="hs-identifier hs-var">isLam</span></a></span><span> </span><span class="annot"><span class="annottext">AExpr b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | Peel arguments from nested lambdas</span></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#peelLam"><span class="hs-identifier hs-type">peelLam</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">CExpr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span id="peelLam"><span class="annot"><span class="annottext">peelLam :: CExpr Var -&gt; ([Var], Expr Var)
+</span><a href="Elara.Core.LiftClosures.Util.html#peelLam"><span class="hs-identifier hs-var hs-var">peelLam</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-type">ANF.AExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-type">ANF.Lam</span></a></span><span> </span><span id="local-6989586621680105037"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680105037"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680105038"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105038"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105038"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-42"></span><span>        </span><span class="annot"><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-type">ANF.CExpr</span></a></span><span> </span><span id="local-6989586621680105040"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680105040"><span class="hs-identifier hs-var">nested</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-43"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680105041"><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680105041"><span class="hs-identifier hs-var">vs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680105042"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105042"><span class="hs-identifier hs-var">final</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CExpr Var -&gt; ([Var], Expr Var)
+</span><a href="Elara.Core.LiftClosures.Util.html#peelLam"><span class="hs-identifier hs-var">peelLam</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680105040"><span class="hs-identifier hs-var">nested</span></a></span><span>
+</span><span id="line-44"></span><span>             </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680105037"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Var -&gt; [Var] -&gt; [Var]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680105041"><span class="hs-identifier hs-var">vs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105042"><span class="hs-identifier hs-var">final</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621680105043"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105043"><span class="hs-identifier hs-var">letExpr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680105037"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105043"><span class="hs-identifier hs-var">letExpr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#peelLam"><span class="hs-identifier hs-var">peelLam</span></a></span><span> </span><span id="local-6989586621680105044"><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680105044"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CExpr Var -&gt; Expr Var
+forall b. CExpr b -&gt; Expr b
+</span><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">ANF.CExpr</span></a></span><span> </span><span class="annot"><span class="annottext">CExpr Var
+</span><a href="#local-6989586621680105044"><span class="hs-identifier hs-var">other</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | Build a nested lambda from a list of arguments and a body</span></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#mkNestedLam"><span class="hs-identifier hs-type">mkNestedLam</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.ANF.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span>
+</span><span id="line-50"></span><span id="mkNestedLam"><span class="annot"><span class="annottext">mkNestedLam :: [Var] -&gt; Expr Var -&gt; Expr Var
+</span><a href="Elara.Core.LiftClosures.Util.html#mkNestedLam"><span class="hs-identifier hs-var hs-var">mkNestedLam</span></a></span></span><span> </span><span id="local-6989586621680105048"><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680105048"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621680105049"><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105049"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Var -&gt; Expr Var -&gt; Expr Var) -&gt; Expr Var -&gt; [Var] -&gt; Expr Var
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Expr Var -&gt; Expr Var
+forall {b}. b -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680105051"><span class="hs-identifier hs-var">mkLam</span></a></span><span> </span><span class="annot"><span class="annottext">Expr Var
+</span><a href="#local-6989586621680105049"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">[Var]
+</span><a href="#local-6989586621680105048"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621680105051"><span class="annot"><span class="annottext">mkLam :: b -&gt; Expr b -&gt; Expr b
+</span><a href="#local-6989586621680105051"><span class="hs-identifier hs-var hs-var">mkLam</span></a></span></span><span> </span><span id="local-6989586621680105052"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680105052"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680105053"><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680105053"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CExpr b -&gt; Expr b
+forall b. CExpr b -&gt; Expr b
+</span><a href="Elara.Core.ANF.html#CExpr"><span class="hs-identifier hs-var">ANF.CExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(CExpr b -&gt; Expr b) -&gt; CExpr b -&gt; Expr b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AExpr b -&gt; CExpr b
+forall b. AExpr b -&gt; CExpr b
+</span><a href="Elara.Core.ANF.html#AExpr"><span class="hs-identifier hs-var">ANF.AExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(AExpr b -&gt; CExpr b) -&gt; AExpr b -&gt; CExpr b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; Expr b -&gt; AExpr b
+forall b. b -&gt; Expr b -&gt; AExpr b
+</span><a href="Elara.Core.ANF.html#Lam"><span class="hs-identifier hs-var">ANF.Lam</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680105052"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Expr b
+</span><a href="#local-6989586621680105053"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><span class="hs-comment">{- | Create the lifted type for a function given its captures and original type.
+That is, if the original type is `a -&gt; b` and the captures are of types `c1, c2`,
+the lifted type will be `c1 -&gt; c2 -&gt; a -&gt; b`.
+-}</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621680105003"><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#liftedType"><span class="hs-identifier hs-type">liftedType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Traversable</span></span><span> </span><span class="annot"><a href="#local-6989586621680105003"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680105003"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Core.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Core.Type</span></a></span></span><span>
+</span><span id="line-59"></span><span id="liftedType"><span class="annot"><span class="annottext">liftedType :: forall (f :: * -&gt; *). Traversable f =&gt; f Var -&gt; Type -&gt; Maybe Type
+</span><a href="Elara.Core.LiftClosures.Util.html#liftedType"><span class="hs-identifier hs-var hs-var">liftedType</span></a></span></span><span> </span><span id="local-6989586621680105065"><span class="annot"><span class="annottext">f Var
+</span><a href="#local-6989586621680105065"><span class="hs-identifier hs-var">captures</span></a></span></span><span> </span><span id="local-6989586621680105066"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680105066"><span class="hs-identifier hs-var">originalType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-60"></span><span>    </span><span id="local-6989586621680105067"><span class="annot"><a href="#local-6989586621680105067"><span class="hs-identifier hs-var">captureTypes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Var -&gt; Maybe Type) -&gt; f Var -&gt; Maybe (f Type)
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; f a -&gt; f (f b)
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Maybe Type
+</span><a href="Elara.Core.LiftClosures.Util.html#varTermType"><span class="hs-identifier hs-var">varTermType</span></a></span><span> </span><span class="annot"><span class="annottext">f Var
+</span><a href="#local-6989586621680105065"><span class="hs-identifier hs-var">captures</span></a></span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">foldr</span></span><span> </span><span class="annot"><a href="Elara.Core.html#FuncTy"><span class="hs-identifier hs-type">Core.FuncTy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105066"><span class="hs-identifier hs-type">originalType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105067"><span class="hs-identifier hs-type">captureTypes</span></a></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="annot"><span class="hs-comment">-- | Get the closed local variables in an expression</span></span><span>
+</span><span id="line-64"></span><span id="local-6989586621680105011"><span class="annot"><a href="Elara.Core.LiftClosures.Util.html#closedVariables"><span class="hs-identifier hs-type">closedVariables</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Core.Analysis.html#FreeCoreVars"><span class="hs-identifier hs-type">FreeCoreVars</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105011"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680105011"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span></span><span>
+</span><span id="line-65"></span><span id="closedVariables"><span class="annot"><span class="annottext">closedVariables :: forall (ast :: * -&gt; *). FreeCoreVars ast =&gt; ast Var -&gt; Set Var
+</span><a href="Elara.Core.LiftClosures.Util.html#closedVariables"><span class="hs-identifier hs-var hs-var">closedVariables</span></a></span></span><span> </span><span id="local-6989586621680105074"><span class="annot"><span class="annottext">ast Var
+</span><a href="#local-6989586621680105074"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Var -&gt; Set Var
+</span><a href="#local-6989586621680105075"><span class="hs-identifier hs-var">filerLocal</span></a></span><span> </span><span class="annot"><span class="annottext">(Set Var -&gt; Set Var) -&gt; Set Var -&gt; Set Var
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ast Var -&gt; Set Var
+forall b. Ord b =&gt; ast b -&gt; Set b
+forall (ast :: * -&gt; *) b.
+(FreeCoreVars ast, Ord b) =&gt;
+ast b -&gt; Set b
+</span><a href="Elara.Core.Analysis.html#freeCoreVars"><span class="hs-identifier hs-var">freeCoreVars</span></a></span><span> </span><span class="annot"><span class="annottext">ast Var
+</span><a href="#local-6989586621680105074"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>    </span><span id="local-6989586621680105075"><span class="annot"><span class="annottext">filerLocal :: Set Var -&gt; Set Var
+</span><a href="#local-6989586621680105075"><span class="hs-identifier hs-var hs-var">filerLocal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-68"></span><span>        </span><span class="annot"><span class="annottext">(Var -&gt; Bool) -&gt; Set Var -&gt; Set Var
+forall a. (a -&gt; Bool) -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.filter</span></span><span>
+</span><span id="line-69"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-70"></span><span>                </span><span class="annot"><a href="Elara.Core.html#Id"><span class="hs-identifier hs-type">Core.Id</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Local"><span class="hs-identifier hs-type">Local</span></a></span><span> </span><span class="annot"><span class="annottext">VarRefImpl UnlocatedVarRefKind (Unique Text)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe DataCon
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-71"></span><span>                </span><span class="annot"><span class="annottext">Var
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-72"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span></pre></body></html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html"><span class="hs-identifier">Elara.JVM.Emit.State</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.State.Static.Local</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Builder.Code</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">CodeBuilder</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newLabel</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Builder.Label</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Abstract.Name</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">QualifiedClassName</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">JVM.Data.Raw.Types</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">U2</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="MethodCreationState"><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-var">MethodCreationState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MethodCreationState"><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-var">MethodCreationState</span></a></span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="localVariables"><span class="annot"><span class="annottext">MethodCreationState -&gt; Map LVKey U2
+</span><a href="Elara.JVM.Emit.State.html#localVariables"><span class="hs-identifier hs-var hs-var">localVariables</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#LVKey"><span class="hs-identifier hs-type">LVKey</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U2</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="maxLocalVariables"><span class="annot"><span class="annottext">MethodCreationState -&gt; U2
+</span><a href="Elara.JVM.Emit.State.html#maxLocalVariables"><span class="hs-identifier hs-var hs-var">maxLocalVariables</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">U2</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="thisClassName"><span class="annot"><span class="annottext">MethodCreationState -&gt; QualifiedClassName
+</span><a href="Elara.JVM.Emit.State.html#thisClassName"><span class="hs-identifier hs-var hs-var">thisClassName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">QualifiedClassName</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ The name of the class this method belongs to</span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="labels"><span class="annot"><span class="annottext">MethodCreationState -&gt; Map (Unique Text) Label
+</span><a href="Elara.JVM.Emit.State.html#labels"><span class="hs-identifier hs-var hs-var">labels</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Label</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Map from IR block labels to JVM labels</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680066952"><span id="local-6989586621680066966"><span id="local-6989586621680066970"><span class="annot"><span class="annottext">Int -&gt; MethodCreationState -&gt; ShowS
+[MethodCreationState] -&gt; ShowS
+MethodCreationState -&gt; String
+(Int -&gt; MethodCreationState -&gt; ShowS)
+-&gt; (MethodCreationState -&gt; String)
+-&gt; ([MethodCreationState] -&gt; ShowS)
+-&gt; Show MethodCreationState
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; MethodCreationState -&gt; ShowS
+showsPrec :: Int -&gt; MethodCreationState -&gt; ShowS
+$cshow :: MethodCreationState -&gt; String
+show :: MethodCreationState -&gt; String
+$cshowList :: [MethodCreationState] -&gt; ShowS
+showList :: [MethodCreationState] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621680067002"><span class="annot"><span class="annottext">pretty :: MethodCreationState -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680067002"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span class="hs-special">{</span><span id="local-6989586621680067004"><span class="annot"><span class="annottext">Map LVKey U2
+localVariables :: MethodCreationState -&gt; Map LVKey U2
+localVariables :: Map LVKey U2
+</span><a href="Elara.JVM.Emit.State.html#localVariables"><span class="hs-identifier hs-var hs-var">localVariables</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680067005"><span class="annot"><span class="annottext">U2
+maxLocalVariables :: MethodCreationState -&gt; U2
+maxLocalVariables :: U2
+</span><a href="Elara.JVM.Emit.State.html#maxLocalVariables"><span class="hs-identifier hs-var hs-var">maxLocalVariables</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680067006"><span class="annot"><span class="annottext">QualifiedClassName
+thisClassName :: MethodCreationState -&gt; QualifiedClassName
+thisClassName :: QualifiedClassName
+</span><a href="Elara.JVM.Emit.State.html#thisClassName"><span class="hs-identifier hs-var hs-var">thisClassName</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-25"></span><span>        </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">vcat</span></span><span>
+</span><span id="line-26"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;MethodCreationState&quot;</span></span><span>
+</span><span id="line-27"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; [a] -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#bracedBlock"><span class="hs-identifier hs-var">bracedBlock</span></a></span><span>
+</span><span id="line-28"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;localVariables:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map LVKey U2 -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Map LVKey U2
+</span><a href="#local-6989586621680067004"><span class="hs-identifier hs-var">localVariables</span></a></span><span>
+</span><span id="line-29"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;maxLocalVariables:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">U2 -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">U2
+</span><a href="#local-6989586621680067005"><span class="hs-identifier hs-var">maxLocalVariables</span></a></span><span>
+</span><span id="line-30"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;thisClassName:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680067006"><span class="hs-identifier hs-var">thisClassName</span></a></span><span>
+</span><span id="line-31"></span><span>                </span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">data</span><span> </span><span id="LVKey"><span class="annot"><a href="Elara.JVM.Emit.State.html#LVKey"><span class="hs-identifier hs-var">LVKey</span></a></span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | A method argument that we don't know the name of</span></span><span>
+</span><span id="line-36"></span><span>      </span><span id="UnknownName"><span class="annot"><a href="Elara.JVM.Emit.State.html#UnknownName"><span class="hs-identifier hs-var">UnknownName</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A local variable that we do know the name of</span></span><span>
+</span><span id="line-38"></span><span>      </span><span id="KnownName"><span class="annot"><a href="Elara.JVM.Emit.State.html#KnownName"><span class="hs-identifier hs-var">KnownName</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680067013"><span id="local-6989586621680067023"><span class="annot"><span class="annottext">LVKey -&gt; LVKey -&gt; Bool
+(LVKey -&gt; LVKey -&gt; Bool) -&gt; (LVKey -&gt; LVKey -&gt; Bool) -&gt; Eq LVKey
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LVKey -&gt; LVKey -&gt; Bool
+== :: LVKey -&gt; LVKey -&gt; Bool
+$c/= :: LVKey -&gt; LVKey -&gt; Bool
+/= :: LVKey -&gt; LVKey -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680067029"><span id="local-6989586621680067037"><span id="local-6989586621680067040"><span class="annot"><span class="annottext">Int -&gt; LVKey -&gt; ShowS
+[LVKey] -&gt; ShowS
+LVKey -&gt; String
+(Int -&gt; LVKey -&gt; ShowS)
+-&gt; (LVKey -&gt; String) -&gt; ([LVKey] -&gt; ShowS) -&gt; Show LVKey
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LVKey -&gt; ShowS
+showsPrec :: Int -&gt; LVKey -&gt; ShowS
+$cshow :: LVKey -&gt; String
+show :: LVKey -&gt; String
+$cshowList :: [LVKey] -&gt; ShowS
+showList :: [LVKey] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680067045"><span id="local-6989586621680067051"><span id="local-6989586621680067056"><span id="local-6989586621680067060"><span id="local-6989586621680067063"><span id="local-6989586621680067066"><span id="local-6989586621680067069"><span class="annot"><span class="annottext">Eq LVKey
+Eq LVKey =&gt;
+(LVKey -&gt; LVKey -&gt; Ordering)
+-&gt; (LVKey -&gt; LVKey -&gt; Bool)
+-&gt; (LVKey -&gt; LVKey -&gt; Bool)
+-&gt; (LVKey -&gt; LVKey -&gt; Bool)
+-&gt; (LVKey -&gt; LVKey -&gt; Bool)
+-&gt; (LVKey -&gt; LVKey -&gt; LVKey)
+-&gt; (LVKey -&gt; LVKey -&gt; LVKey)
+-&gt; Ord LVKey
+LVKey -&gt; LVKey -&gt; Bool
+LVKey -&gt; LVKey -&gt; Ordering
+LVKey -&gt; LVKey -&gt; LVKey
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: LVKey -&gt; LVKey -&gt; Ordering
+compare :: LVKey -&gt; LVKey -&gt; Ordering
+$c&lt; :: LVKey -&gt; LVKey -&gt; Bool
+&lt; :: LVKey -&gt; LVKey -&gt; Bool
+$c&lt;= :: LVKey -&gt; LVKey -&gt; Bool
+&lt;= :: LVKey -&gt; LVKey -&gt; Bool
+$c&gt; :: LVKey -&gt; LVKey -&gt; Bool
+&gt; :: LVKey -&gt; LVKey -&gt; Bool
+$c&gt;= :: LVKey -&gt; LVKey -&gt; Bool
+&gt;= :: LVKey -&gt; LVKey -&gt; Bool
+$cmax :: LVKey -&gt; LVKey -&gt; LVKey
+max :: LVKey -&gt; LVKey -&gt; LVKey
+$cmin :: LVKey -&gt; LVKey -&gt; LVKey
+min :: LVKey -&gt; LVKey -&gt; LVKey
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#LVKey"><span class="hs-identifier hs-type">LVKey</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621680067086"><span class="annot"><span class="annottext">pretty :: LVKey -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><a href="Elara.JVM.Emit.State.html#UnknownName"><span class="hs-identifier hs-type">UnknownName</span></a></span><span> </span><span id="local-6989586621680067087"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680067087"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;UnknownName&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680067087"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><a href="Elara.JVM.Emit.State.html#KnownName"><span class="hs-identifier hs-type">KnownName</span></a></span><span> </span><span id="local-6989586621680067088"><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680067088"><span class="hs-identifier hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;KnownName&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Unique Text -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680067088"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Elara.JVM.Emit.State.html#initialMethodCreationState"><span class="hs-identifier hs-type">initialMethodCreationState</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">QualifiedClassName</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span>
+</span><span id="line-47"></span><span id="initialMethodCreationState"><span class="annot"><span class="annottext">initialMethodCreationState :: QualifiedClassName -&gt; MethodCreationState
+</span><a href="Elara.JVM.Emit.State.html#initialMethodCreationState"><span class="hs-identifier hs-var hs-var">initialMethodCreationState</span></a></span></span><span> </span><span id="local-6989586621680067092"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680067092"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map LVKey U2
+-&gt; U2
+-&gt; QualifiedClassName
+-&gt; Map (Unique Text) Label
+-&gt; MethodCreationState
+</span><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-var">MethodCreationState</span></a></span><span> </span><span class="annot"><span class="annottext">Map LVKey U2
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="annot"><span class="annottext">U2
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680067092"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Unique Text) Label
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Elara.JVM.Emit.State.html#createMethodCreationState"><span class="hs-identifier hs-type">createMethodCreationState</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">QualifiedClassName</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span>
+</span><span id="line-50"></span><span id="createMethodCreationState"><span class="annot"><span class="annottext">createMethodCreationState :: [Unique Text] -&gt; QualifiedClassName -&gt; MethodCreationState
+</span><a href="Elara.JVM.Emit.State.html#createMethodCreationState"><span class="hs-identifier hs-var hs-var">createMethodCreationState</span></a></span></span><span> </span><span id="local-6989586621680067110"><span class="annot"><span class="annottext">[Unique Text]
+</span><a href="#local-6989586621680067110"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621680067111"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680067111"><span class="hs-identifier hs-var">thisName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><span class="annottext">Map LVKey U2
+-&gt; U2
+-&gt; QualifiedClassName
+-&gt; Map (Unique Text) Label
+-&gt; MethodCreationState
+</span><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-var">MethodCreationState</span></a></span><span>
+</span><span id="line-52"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(LVKey, U2)] -&gt; Map LVKey U2
+forall k a. Ord k =&gt; [(k, a)] -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.fromList</span></span><span> </span><span class="annot"><span class="annottext">([(LVKey, U2)] -&gt; Map LVKey U2) -&gt; [(LVKey, U2)] -&gt; Map LVKey U2
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[LVKey] -&gt; [U2] -&gt; [(LVKey, U2)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Unique Text -&gt; LVKey
+</span><a href="Elara.JVM.Emit.State.html#KnownName"><span class="hs-identifier hs-var">KnownName</span></a></span><span> </span><span class="annot"><span class="annottext">(Unique Text -&gt; LVKey) -&gt; [Unique Text] -&gt; [LVKey]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Unique Text]
+</span><a href="#local-6989586621680067110"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">U2
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; U2
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; U2) -&gt; Int -&gt; U2
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Unique Text] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Unique Text]
+</span><a href="#local-6989586621680067110"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680067111"><span class="hs-identifier hs-var">thisName</span></a></span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><span class="annottext">Map (Unique Text) Label
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span id="local-6989586621680066922"><span class="annot"><a href="Elara.JVM.Emit.State.html#findLocalVariable"><span class="hs-identifier hs-type">findLocalVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066922"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680066922"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">U2</span></span></span><span>
+</span><span id="line-58"></span><span id="findLocalVariable"><span class="annot"><span class="annottext">findLocalVariable :: forall (r :: [Effect]).
+(State MethodCreationState :&gt; r) =&gt;
+Unique Text -&gt; Eff r U2
+</span><a href="Elara.JVM.Emit.State.html#findLocalVariable"><span class="hs-identifier hs-var hs-var">findLocalVariable</span></a></span></span><span> </span><span id="local-6989586621680067136"><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680067136"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>    </span><span id="local-6989586621680067137"><span class="annot"><a href="#local-6989586621680067137"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff r MethodCreationState
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+Eff es s
+</span><span class="hs-identifier hs-var">get</span></span><span>
+</span><span id="line-60"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680067139"><span class="annot"><a href="#local-6989586621680067139"><span class="hs-identifier hs-var hs-var">lvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MethodCreationState
+</span><a href="#local-6989586621680067137"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">localVariables</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Emit.State.html#KnownName"><span class="hs-identifier hs-type">KnownName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680067136"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680067139"><span class="hs-identifier hs-type">lvs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-62"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680067141"><span class="annot"><span class="annottext">U2
+</span><a href="#local-6989586621680067141"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">U2 -&gt; Eff r U2
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">U2
+</span><a href="#local-6989586621680067141"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-63"></span><span>        </span><span class="annot"><span class="annottext">Maybe U2
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-64"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680067142"><span class="annot"><span class="annottext">new :: U2
+</span><a href="#local-6989586621680067142"><span class="hs-identifier hs-var hs-var hs-var">new</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MethodCreationState -&gt; U2
+</span><a href="Elara.JVM.Emit.State.html#maxLocalVariables"><span class="hs-identifier hs-var">maxLocalVariables</span></a></span><span> </span><span class="annot"><span class="annottext">MethodCreationState
+</span><a href="#local-6989586621680067137"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-65"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680067143"><span class="annot"><span class="annottext">newLvs :: Map LVKey U2
+</span><a href="#local-6989586621680067143"><span class="hs-identifier hs-var hs-var hs-var">newLvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LVKey -&gt; U2 -&gt; Map LVKey U2 -&gt; Map LVKey U2
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Unique Text -&gt; LVKey
+</span><a href="Elara.JVM.Emit.State.html#KnownName"><span class="hs-identifier hs-var">KnownName</span></a></span><span> </span><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680067136"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">U2
+</span><a href="#local-6989586621680067142"><span class="hs-identifier hs-var">new</span></a></span><span> </span><span class="annot"><span class="annottext">Map LVKey U2
+</span><a href="#local-6989586621680067139"><span class="hs-identifier hs-var">lvs</span></a></span><span>
+</span><span id="line-66"></span><span>            </span><span class="annot"><span class="annottext">MethodCreationState -&gt; Eff r ()
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+s -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">put</span></span><span> </span><span class="annot"><span class="annottext">(MethodCreationState -&gt; Eff r ())
+-&gt; MethodCreationState -&gt; Eff r ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">MethodCreationState
+</span><a href="#local-6989586621680067137"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Elara.JVM.Emit.State.html#localVariables"><span class="hs-identifier hs-var">localVariables</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621680067143"><span class="hs-identifier hs-type">newLvs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#maxLocalVariables"><span class="hs-identifier hs-var">maxLocalVariables</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">fromIntegral</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">length</span></span><span> </span><span class="annot"><a href="#local-6989586621680067143"><span class="hs-identifier hs-type">newLvs</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-67"></span><span>            </span><span class="annot"><span class="annottext">U2 -&gt; Eff r U2
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">U2
+</span><a href="#local-6989586621680067142"><span class="hs-identifier hs-var">new</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span id="local-6989586621680066940"><span class="annot"><a href="Elara.JVM.Emit.State.html#getLabel"><span class="hs-identifier hs-type">getLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">State</span></span><span> </span><span class="annot"><a href="Elara.JVM.Emit.State.html#MethodCreationState"><span class="hs-identifier hs-type">MethodCreationState</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066940"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">CodeBuilder</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066940"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680066940"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Label</span></span></span><span>
+</span><span id="line-70"></span><span id="getLabel"><span class="annot"><span class="annottext">getLabel :: forall (r :: [Effect]).
+(State MethodCreationState :&gt; r, CodeBuilder :&gt; r) =&gt;
+Unique Text -&gt; Eff r Label
+</span><a href="Elara.JVM.Emit.State.html#getLabel"><span class="hs-identifier hs-var hs-var">getLabel</span></a></span></span><span> </span><span id="local-6989586621680067168"><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680067168"><span class="hs-identifier hs-var">labelName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621680067169"><span class="annot"><a href="#local-6989586621680067169"><span class="hs-identifier hs-var">emitState</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff r MethodCreationState
+forall s (es :: [Effect]).
+(HasCallStack, State s :&gt; es) =&gt;
+Eff es s
+</span><span class="hs-identifier hs-var">get</span></span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.lookup</span></span><span> </span><span class="annot"><a href="#local-6989586621680067168"><span class="hs-identifier hs-type">labelName</span></a></span><span> </span><span class="annot"><span class="hs-identifier">emitState</span></span><span class="hs-operator">.</span><span class="hs-identifier">labels</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-73"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680067170"><span class="annot"><span class="annottext">Label
+</span><a href="#local-6989586621680067170"><span class="hs-identifier hs-var">lbl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Eff r Label
+forall a. a -&gt; Eff r a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Label
+</span><a href="#local-6989586621680067170"><span class="hs-identifier hs-var">lbl</span></a></span><span>
+</span><span id="line-74"></span><span>        </span><span class="annot"><span class="annottext">Maybe Label
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-75"></span><span>            </span><span id="local-6989586621680067171"><span class="annot"><a href="#local-6989586621680067171"><span class="hs-keyword hs-var">label</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff r Label
+forall {k} (es :: [Effect]).
+(HasCallStack, CodeBuilder :&gt; es) =&gt;
+Eff es Label
+</span><span class="hs-identifier hs-var">newLabel</span></span><span>
+</span><span id="line-76"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">put</span></span><span> </span><span class="annot"><a href="#local-6989586621680067169"><span class="hs-identifier hs-type">emitState</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Elara.JVM.Emit.State.html#labels"><span class="hs-identifier hs-var">labels</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map.insert</span></span><span> </span><span class="annot"><a href="#local-6989586621680067168"><span class="hs-identifier hs-type">labelName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680067171"><span class="hs-keyword hs-type">label</span></a></span><span> </span><span class="annot"><span class="hs-identifier">emitState</span></span><span class="hs-operator">.</span><span class="hs-identifier">labels</span><span class="hs-special">}</span><span>
+</span><span id="line-77"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680067171"><span class="hs-keyword hs-type">label</span></a></span><span>
+</span><span id="line-78"></span></pre></body></html>
