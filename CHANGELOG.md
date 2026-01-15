@@ -84,6 +84,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Allow interpreting thunk functions - ([5d23bd9](https://github.com/ElaraLang/elara/commit/5d23bd9f60316ae2b45931df7bb16994f4ddc50f)) 
 - *(lexer)* Make lexer much more robust and flexible about the indentation levels it accepts - ([ac594d3](https://github.com/ElaraLang/elara/commit/ac594d3557ccede823221de511ba80b2372913b7)) 
 - *(lexer)* Improve location information of fake lexer tokens - ([7ad7db2](https://github.com/ElaraLang/elara/commit/7ad7db2fa437c64f92ea8d76deb4652deeed176c)) 
+- *(lexer)* Improve lexing of explicit layout - ([cabc5ad](https://github.com/ElaraLang/elara/commit/cabc5adca63b2a19f371f49af45cc2c21e1d6482)) 
 - *(logging)* :bug: Fix call stacks in logging - ([d3e4620](https://github.com/ElaraLang/elara/commit/d3e4620b9bfc069972393c8a31e3b773002b7d04)) 
 - *(logging)* Fix logging code - ([2c6677c](https://github.com/ElaraLang/elara/commit/2c6677c157bed8912964da2086f4a03c4ed47b1b)) 
 - *(logging)* Fix callstack logging - ([d4d2532](https://github.com/ElaraLang/elara/commit/d4d25329132bc63dcd88eb7961bc4a07b30a762f)) 
@@ -183,6 +184,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :mute: Remove dbgPretty call - ([845382e](https://github.com/ElaraLang/elara/commit/845382e2d3afaca6964e88df76110e89c47c8ef0)) 
 - *(parser)* Improve expression parsing and code quality - ([9b68e35](https://github.com/ElaraLang/elara/commit/9b68e3550e9454df8b87e68a47fca961a8fe227a)) 
 - *(parser)* Change `element` definition for more informative error hints - ([39111ef](https://github.com/ElaraLang/elara/commit/39111ef87ae4dcc7545db72ecda81e460ee948ec)) 
+- *(parser)* Improve indentation + parens interaction - ([c06055a](https://github.com/ElaraLang/elara/commit/c06055af4a1d020b54c61f1d689707b531463d00)) 
 - *(query)* Refactor query system to support queries parameterised by the AST stage - ([df903d3](https://github.com/ElaraLang/elara/commit/df903d32b2ceb8f5162c1c82aea9380357a1e6c3)) 
 - *(renamer)* :recycle: Desugar tuple literals into normal data constructors - ([9452cc7](https://github.com/ElaraLang/elara/commit/9452cc7e5bd7fc762be6c932621f2b1bafcc30e0)) 
 - *(renamer)* Move renamer to query based system. This means the entire compiler can be lazy! - ([65c1d7a](https://github.com/ElaraLang/elara/commit/65c1d7ac8276f445be264acc82d66213a0e73cd8)) 
@@ -248,6 +250,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Begin language reference for syntax and annotations - ([25f870a](https://github.com/ElaraLang/elara/commit/25f870a8003b208f6bc46034549ce42bc89c8c1e)) 
 - Flesh out annotation documentation - ([2b28890](https://github.com/ElaraLang/elara/commit/2b28890969e5d3d31549ad291f5840e607e39b86)) 
 - Add docs on comments - ([4c5d694](https://github.com/ElaraLang/elara/commit/4c5d69494e9590bb04404e3b8db837dc5d027ed9)) 
+- Add CLI info to docs - ([5743b7d](https://github.com/ElaraLang/elara/commit/5743b7da309e503e77c58254fcb751db5f601170)) 
+- Add more syntax documentation - ([a85c35f](https://github.com/ElaraLang/elara/commit/a85c35fdeeafb61d3d0e69a5e7e06d0f3670829b)) 
 
 ### ⚡ Performance
 
