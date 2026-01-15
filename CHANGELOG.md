@@ -235,6 +235,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Introduce dedicated type for tuple containers - ([ac5b740](https://github.com/ElaraLang/elara/commit/ac5b740874561227b0fb45cd9e8ee3c8381a6997)) 
 - Generic code cleanup of various components - ([7acc864](https://github.com/ElaraLang/elara/commit/7acc86479184e1ac6dcb57fcafdbfd9e72462ff7)) 
 - Improve errors if file not found - ([651e0eb](https://github.com/ElaraLang/elara/commit/651e0eb7e8b8ae9e1d0facb08bd846d2b9ce6e13)) 
+- Remove use of `unsafeCoerce` - ([a571999](https://github.com/ElaraLang/elara/commit/a5719994519c2ecd896a3b7a3e52fe06588cdb2f)) 
+- Document a lot of code and tidy up a lot of code - ([d30bd6e](https://github.com/ElaraLang/elara/commit/d30bd6ef604dad2cdac176e38878e67ec0b7d754)) 
 
 ### 📚 Documentation
 
@@ -253,6 +255,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add docs on comments - ([4c5d694](https://github.com/ElaraLang/elara/commit/4c5d69494e9590bb04404e3b8db837dc5d027ed9)) 
 - Add CLI info to docs - ([5743b7d](https://github.com/ElaraLang/elara/commit/5743b7da309e503e77c58254fcb751db5f601170)) 
 - Add more syntax documentation - ([a85c35f](https://github.com/ElaraLang/elara/commit/a85c35fdeeafb61d3d0e69a5e7e06d0f3670829b)) 
+- Improve Desugared AST documentation - ([99209dd](https://github.com/ElaraLang/elara/commit/99209ddc91ca7c601fc75f59d962bff164d6c1a7)) 
 
 ### ⚡ Performance
 
@@ -304,6 +307,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Only build with Ubuntu - ([7aae66b](https://github.com/ElaraLang/elara/commit/7aae66b112f23ae6513613c0f68ddff9dce8f530)) 
 - Run cabal update - ([7776593](https://github.com/ElaraLang/elara/commit/77765933779047287df59ced94cdfb973cf764d5)) 
 - Fix Ci(?) - ([de1615a](https://github.com/ElaraLang/elara/commit/de1615a2446fe12cf4cd21a67f55f366c4d27fca)) 
+- Remove stupid useless stan warning - ([caba225](https://github.com/ElaraLang/elara/commit/caba2254c24b81cf17d26bcbff358e728fcc2d91)) 
 
 ### ◀️ Revert
 
