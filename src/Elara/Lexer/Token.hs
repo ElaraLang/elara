@@ -2,7 +2,6 @@
 
 module Elara.Lexer.Token where
 
-import Data.Set qualified as Set
 import Elara.AST.Name (ModuleName, nameText)
 import Elara.AST.Region (Located, RealPosition)
 import Elara.Data.Pretty
@@ -203,6 +202,7 @@ tokenEndsExpr = \case
     TokenDoubleColon -> False
     TokenDot -> False
     TokenIndent -> False
+    TokenSemicolon -> False
     -- important: dedent does end an expression because it closes a block
     TokenDedent -> True
     -- everything else ends an expression:
