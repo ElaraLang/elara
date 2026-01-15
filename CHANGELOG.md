@@ -79,6 +79,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :bug: Fix recursive let binds not being converted to ANF correctly - ([d6ffdee](https://github.com/ElaraLang/elara/commit/d6ffdee9bcff8039d2d8e969ed1f17007c6f298b)) 
 - *(core)* Correct implementation of equalUnderSubst function and tidy up code - ([b96b7fc](https://github.com/ElaraLang/elara/commit/b96b7fc329e405a1b47a0d80713f91dec276c2ab)) 
 - *(core)* Fix bug in `FreeCoreVars` implementation for ANF - ([2f7af58](https://github.com/ElaraLang/elara/commit/2f7af588312fac37f684ea651605ec383edfc6eb)) 
+- *(docs)* Fix readthedocs confgi - ([c26df0e](https://github.com/ElaraLang/elara/commit/c26df0ed9f22a00ad59aa0f875233156e10da7a6)) 
 - *(flake)* :bug: Update flake.lock and flake.nix for dependency resolution (NO MORE DEPENDENCY HELL) - ([3762c6d](https://github.com/ElaraLang/elara/commit/3762c6d0e8f830b450699353ce27f9c975b2ff63)) 
 - *(flake)* Tidy up nix and fix various dependency bugs - ([65bd7d4](https://github.com/ElaraLang/elara/commit/65bd7d4e8c130dd631df5aca4a3c6294855fb20b)) 
 - *(interpreter)* Allow interpreting thunk functions - ([5d23bd9](https://github.com/ElaraLang/elara/commit/5d23bd9f60316ae2b45931df7bb16994f4ddc50f)) 
