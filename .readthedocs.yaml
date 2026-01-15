@@ -9,4 +9,4 @@ build:
     build:
       html:
         - cargo install mdbook mdbook-d2
-        - PATH=/home/docs/.asdf/installs/rust/1.86.0/bin:PATH mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
+        - PATH=/home/docs/.asdf/installs/rust/1.91.1/bin:PATH mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
