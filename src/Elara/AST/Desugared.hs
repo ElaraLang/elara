@@ -1,8 +1,5 @@
--- Since when was there a warning for orphan type families?
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 {- |
-This is the second main AST stage, which is very similar to the `Elara.AST.Desugared.Expr` AST, with a few key differences:
+This is the second main AST stage, which is very similar to the `Elara.AST.Select.Frontend` AST, with a few key differences:
 
   * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
   * Let bindings have no patterns, they are desugared into lambdas

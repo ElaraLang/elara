@@ -4,7 +4,15 @@
 
 module Elara.AST.Select where
 
-type data LocatedAST = Frontend | Desugared | Renamed | Shunted | MidKinded | Kinded | Typed | Core
+type data LocatedAST
+    = Frontend
+    | Desugared
+    | Renamed
+    | Shunted
+    | MidKinded
+    | Kinded
+    | Typed
+    | Core
 
 type data UnlocatedAST = UnlocatedFrontend | UnlocatedDesugared | UnlocatedRenamed | UnlocatedShunted | UnlocatedTyped
 
