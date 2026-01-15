@@ -82,6 +82,12 @@ tuplePatternTooShort = "E10012"
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
 
+unknownOperator :: ErrorCode
+unknownOperator = "E2002"
+
+localOperatorInfoNotSupported :: ErrorCode
+localOperatorInfoNotSupported = "E2003"
+
 unknownPrecedence :: ErrorCode
 unknownPrecedence = "W2001"
 

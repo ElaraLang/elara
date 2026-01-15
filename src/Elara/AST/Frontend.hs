@@ -1,7 +1,15 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
--- Since when was there a warning for orphan type families?
-{-# OPTIONS_GHC -Wno-orphans #-}
 
+{- | The Frontend AST stage, which is the initial AST produced by the parser.
+It's as close to the source code as possible so is quite hard to work with directly.
+Notably, this AST stage includes:
+
+  * Let and Def declarations are separate entities
+  * Lambdas can have multiple parameters
+  * Let bindings can have patterns
+
+Values of these types are produced by "Elara.Parse".
+-}
 module Elara.AST.Frontend where
 
 import Data.Kind qualified as Kind
@@ -17,6 +25,12 @@ type instance ASTLocate' Frontend = Located
 
 type instance ASTQual Frontend = MaybeQualified
 
+{- | Used as a helper type family to reduce boilerplate in the type instances below.
+@'SelectFrontend' sel = 'Select' 'Frontend' sel@.
+As an explanation of some of the decisions:
+- Value declarations do not have a type annotation, because it's handled as the separate 'Elara.AST.Generic.Types.ValueTypeDef' / 'ValueTypeDef'
+- Patterns in lambdas and let bindings are lists, since they can have multiple parameters
+-}
 type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     SelectFrontend (ASTType ForValueDecl) = NoFieldValue
     SelectFrontend (ASTType ForExpr) = Maybe FrontendType
@@ -54,7 +68,6 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     SelectFrontend Alias = FrontendType
     SelectFrontend ADTParam = FrontendType
     SelectFrontend ValueTypeDef = FrontendType
-    -- SelectFrontend (Annotations ForExpr) = NoFieldValue
     SelectFrontend AnnotationName = MaybeQualified TypeName
     SelectFrontend (Annotations _) = [Annotation Frontend]
     SelectFrontend KindAnnotation = NoFieldValue
@@ -62,76 +75,6 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
 -- Selections for 'Expr'
 
 type instance Select selector Frontend = SelectFrontend selector
-
--- type instance Select LambdaPattern Frontend = [FrontendPattern]
-
--- type instance Select LetPattern Frontend = [FrontendPattern]
-
--- type instance Select ASTVarRef Frontend = MaybeQualified VarName
-
--- type instance Select ConRef Frontend = MaybeQualified TypeName
-
--- type instance Select LetParamName Frontend = VarName
-
--- type instance Select InParens Frontend = FrontendExpr
-
--- type instance Select List Frontend = [FrontendExpr]
-
--- type instance Select Tuple Frontend = NonEmpty FrontendExpr
-
--- type instance Select ASTBinaryOperator Frontend = (FrontendBinaryOperator, FrontendExpr, FrontendExpr)
-
--- type instance Select TypeApplication Frontend = FrontendType
-
--- -- Selections for 'BinaryOperator'
--- type instance Select SymOp Frontend = MaybeQualified OpName
-
--- type instance Select Infixed Frontend = Located (MaybeQualified VarOrConName)
-
--- -- Selections for 'Pattern'
--- type instance Select PatternType Frontend = Maybe FrontendType
--- type instance Select VarPat Frontend = LowerAlphaName
--- type instance Select ConPat Frontend = MaybeQualified TypeName
--- type instance Select ListPattern Frontend = [FrontendPattern]
--- type instance Select TuplePattern Frontend = NonEmpty FrontendPattern
--- type instance Select ConsPattern Frontend = (FrontendPattern, FrontendPattern)
-
--- -- Selections for 'DeclarationBody'
--- type instance Select (Patterns ForValueDecl) Frontend = [FrontendPattern]
-
--- type instance Select (ASTType ForExpr) Frontend = NoFieldValue
-
--- type instance Select ValueTypeDef Frontend = FrontendType
-
--- type instance Select Alias Frontend = FrontendType
-
--- type instance Select ADTParam Frontend = FrontendType
-
--- type instance Select (Annotations ForExpr) Frontend = NoFieldValue
-
--- type instance Select (Annotations ForType) Frontend = NoFieldValue
-
--- type instance Select KindAnnotation Frontend = NoFieldValue
-
--- type instance Select InfixDecl Frontend = InfixDeclaration Frontend
-
--- -- Selections for 'Declaration'
--- -- type instance Select DeclarationName Frontend = Name
-
--- type instance Select AnyName Frontend = Name
-
--- type instance Select (ASTName ForType) Frontend = TypeName
-
--- type instance Select (ASTName ForValueDecl) Frontend = VarName
-
--- -- Selections for 'Type'
--- type instance Select TypeVar Frontend = LowerAlphaName
-
--- type instance Select TypeKind Frontend = NoFieldValue
-
--- type instance Select UserDefinedType Frontend = MaybeQualified TypeName
-
--- type instance Select ConstructorName Frontend = TypeName
 
 type FrontendExpr = Expr Frontend
 

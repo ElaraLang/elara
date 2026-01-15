@@ -124,6 +124,7 @@ library
       Elara.Rename
       Elara.Rename.Error
       Elara.Rename.Imports
+      Elara.Rename.State
       Elara.Rules
       Elara.Rules.Generic
       Elara.SCC

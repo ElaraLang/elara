@@ -13,7 +13,7 @@ import Elara.AST.Region
 import Elara.AST.Select
 import Elara.AST.VarRef
 import Elara.Data.Pretty
-import Elara.Data.Unique
+
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Rename.Imports (isImportedBy)
@@ -179,18 +179,3 @@ instance ReportableError RenameError where
                 "Unknown current module (internal error!)"
                 []
                 []
-
--- TODO THIS DOES NOT BELONG HERE
-data RenameState = RenameState
-    { varNames :: Map VarName (NonEmpty (VarRef VarName))
-    , typeNames :: Map TypeName (NonEmpty (VarRef TypeName))
-    , typeVars :: Map LowerAlphaName (Unique LowerAlphaName)
-    -- ^ All the type variables in scope
-    }
-    deriving (Show, Generic)
-
-instance Semigroup RenameState where
-    RenameState v1 t1 tv1 <> RenameState v2 t2 tv2 = RenameState (v1 <> v2) (t1 <> t2) (tv1 <> tv2)
-
-instance Monoid RenameState where
-    mempty = RenameState mempty mempty mempty

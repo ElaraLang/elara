@@ -8,13 +8,13 @@ This stage handles:
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
    Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
-module Elara.Rename where
+module Elara.Rename (getRenamedModule) where
 
 import Data.Generics.Product hiding (list)
 import Data.Generics.Wrapped
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, IOE, inject, (:>))
+import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
@@ -30,7 +30,6 @@ import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
-import Elara.Data.TopologicalGraph
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
@@ -44,16 +43,9 @@ import Elara.Query.Effects
 import Elara.Query.Errors
 import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
+import Elara.Rename.State
 import Optics (anyOf, filteredBy, traverseOf_)
 import Rock qualified
-
-type RenamePipelineEffects =
-    '[ Eff.State RenameState
-     , Eff.Error RenameError
-     , Eff.Reader (TopologicalGraph (Module Desugared))
-     , UniqueGen
-     , StructuredDebug
-     ]
 
 type Rename r =
     ( Eff.State RenameState :> r
@@ -77,6 +69,7 @@ instance SupportsQuery QueryModuleByName Renamed where
     type QuerySpecificEffectsOf QueryModuleByName Renamed = StandardQueryError Renamed
     query mn = Eff.evalState primitiveRenameState $ inject $ getRenamedModule mn
 
+-- | Run the @'Elara.Query.QueryModuleByName' 'Renamed'@ query, renaming a module by its name
 getRenamedModule ::
     ModuleName ->
     Eff
@@ -85,19 +78,6 @@ getRenamedModule ::
 getRenamedModule mn = do
     m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
     rename m
-
--- runRenamePipeline ::
---     IsPipeline r =>
---     TopologicalGraph (Module Desugared) ->
---     RenameState ->
---     Eff (EffectsAsPrefixOf RenamePipelineEffects r) a ->
---     Eff r a
--- runRenamePipeline graph st =
---     subsume
---         . uniqueGenToIO
---         . runReader graph
---         . runErrorOrReport @RenameError
---         . evalState st
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Eff r (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
@@ -170,6 +150,9 @@ uniquify (Located sr n) = Located sr <$> makeUnique n
 sortDeclarations :: [RenamedDeclaration] -> Eff r [RenamedDeclaration]
 sortDeclarations = pure
 
+{- | Rename a module. This involves a few steps:
+1. Add all imports to
+-}
 rename :: Rename r => Module Desugared -> Eff r (Module Renamed)
 rename m = do
     -- debug $ "Renaming module " <> pretty (m ^. _Unwrapped % unlocated % field' @"name")
@@ -177,7 +160,7 @@ rename m = do
         (_Unwrapped % unlocated)
         ( \m' -> do
             addImportsToContext (m' ^. field' @"imports")
-            traverseOf_ (field' @"declarations" % each) (addDeclarationToContext False) m' -- add our own declarations to field' context
+            traverseOf_ (field' @"declarations" % each) addDeclarationToContext m' -- add our own declarations to field' context
             exposing' <- renameExposing (m' ^. field' @"name" % unlocated) (m' ^. field' @"exposing")
             imports' <- traverse renameImport (m' ^. field' @"imports")
             declarations' <- Eff.runReader (Just m) (traverse renameDeclaration (m' ^. field' @"declarations"))
@@ -217,6 +200,7 @@ getModuleFromName mn = do
     runErrorOrReport @DesugarError $
         Rock.fetch (Elara.Query.DesugaredModule mn)
 
+-- | Add all exposed declarations from a module to the renaming context,
 addModuleToContext :: Rename r => ModuleName -> Exposing Desugared -> Eff r ()
 addModuleToContext mn exposing = do
     imported <- getModuleFromName mn
@@ -227,27 +211,30 @@ addModuleToContext mn exposing = do
     let exposed = case exposing of
             ExposingAll -> imported ^. _Unwrapped % unlocated % field' @"declarations"
             ExposingSome _ -> imported ^.. _Unwrapped % unlocated % field' @"declarations" % folded % filteredBy isExposingL
-    traverse_ (addDeclarationToContext False) exposed
+    traverse_ addDeclarationToContext exposed
 
-addDeclarationToContext :: Rename r => Bool -> DesugaredDeclaration -> Eff r ()
-addDeclarationToContext _ decl = do
-    -- for global declarations we can have many with the same name, so we need to merge them
-    let insertMerging :: (Ord k, Eq a) => k -> a -> Map k (NonEmpty a) -> Map k (NonEmpty a)
-        insertMerging k x = Map.insertWith ((NonEmpty.nub .) . (<>)) k (one x)
-
+-- | Add a declaration to the renaming state.
+addDeclarationToContext ::
+    Rename r =>
+    DesugaredDeclaration ->
+    Eff r ()
+addDeclarationToContext decl = do
+    -- Create a global VarRef for the name based on
     let global :: name -> VarRef name
         global vn =
-            Global
-                ( Qualified vn (decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated)
-                    <$ decl ^. _Unwrapped
-                )
+            let declModuleName = decl ^. _Unwrapped % unlocated % field' @"moduleName" % unlocated
+                locatedDecl = decl ^. _Unwrapped
+             in Global
+                    ( Qualified vn declModuleName
+                        `withLocationOf` locatedDecl
+                    )
     case decl ^. declarationName % unlocated of
         NVarName vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> Eff.modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 
     case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
-        TypeDeclaration name _ (Located _ (ADT ctors)) _ -> do
+        TypeDeclaration _ _ (Located _ (ADT ctors)) _ -> do
             traverseOf_ (each % _1 % unlocated) (\tn -> Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)) ctors
         _ -> pass
 
@@ -265,7 +252,7 @@ elementExistsInModule m' n' =
         ( \d ->
             d ^. declarationName % unlocated == n'
                 || case d ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
-                    TypeDeclaration name _ (Located _ (ADT ctors)) _ -> anyOf (each % _1 % unlocated) (\n -> NTypeName n == n') ctors
+                    TypeDeclaration _ _ (Located _ (ADT ctors)) _ -> anyOf (each % _1 % unlocated) (\n -> NTypeName n == n') ctors
                     _ -> False
         )
         (m' ^. _Unwrapped % unlocated % field' @"declarations")
@@ -291,13 +278,6 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
   where
     renameDeclaration' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredDeclaration' -> Eff r RenamedDeclaration'
     renameDeclaration' fd = do
-        -- qualify the name with the module name
-        -- let name' =
-        --         -- sequenceA @Qualified @Located
-        --         over
-        --             unlocated
-        --             (\n -> Qualified n (fd ^. field' @"moduleName" % unlocated))
-        --             (fd ^. declaration'Name)
         body' <- Eff.runReader (Just decl) $ renameDeclarationBody (fd ^. field' @"body")
 
         pure $ Declaration' (fd ^. field' @"moduleName") body'
@@ -363,9 +343,9 @@ renameSimpleType = traverseOf (_Unwrapped % _1 % unlocated) (renameType False)
 -- | Renames a type, qualifying type constructors and type variables where necessary
 renameType ::
     (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
-    {- | If new type variables are allowed - if False, this will throw an error if a type variable is not in scope
+    {- | If new type variables are allowed - if 'False', this will throw an error if a type variable is not in scope.
     This is useful for type declarations, where something like @type Invalid a = b@ would clearly be invalid
-    But for local type annotations, we want to allow this, as it may be valid
+    But for local type annotations, we want to allow this, as it may be valid to have new type variables there - eg @\x -> (x : a)@
     -}
     Bool ->
     DesugaredType' ->
@@ -386,7 +366,7 @@ renameType _ UnitType = pure UnitType
 renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
 renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % _1 % unlocated) (renameType antv)) ln
-renameType antv (TupleType (AtLeast2List fst snd [])) = do
+renameType _ (TupleType (AtLeast2List fst snd [])) = do
     -- turn it into Elara.Prim.Tuple2 type
     fst' <- renameSimpleType fst
     snd' <- renameSimpleType snd
@@ -396,7 +376,7 @@ renameType antv (TupleType (AtLeast2List fst snd [])) = do
     let base = TypeConstructorApplication tupleCtor fst'
 
     pure $ TypeConstructorApplication (Type (Located loc base, NoFieldValue)) snd'
-renameType antv (TupleType bigger) = error "renameType: Tuple more than length 2"
+renameType _ (TupleType{}) = error "renameType: Tuple more than length 2"
 renameType antv (ListType t) = ListType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t
 
 renameExpr :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr
@@ -478,7 +458,7 @@ renameExpr (Expr le@(Located loc _, _)) =
         x2' <- renameExpr snd
         let base = Expr (FunctionCall (Expr (Located loc (Constructor (Located loc tupleCtorName)), Nothing)) fst' `withLocationOf` fst, Nothing)
         pure $ FunctionCall base x2'
-    renameExpr' (Tuple bigger) = error "renameExpr': Tuple more than length 2"
+    renameExpr' (Tuple _) = error "renameExpr': Tuple more than length 2"
     renameExpr' (InParens e) = InParens <$> renameExpr e
     renameExpr' (Let{}) = error "renameExpr': Let should be handled by renameExpr"
     renameExpr' (Block{}) = error "renameExpr': Block should be handled by renameExpr"
@@ -576,10 +556,18 @@ patternToVarName (Pattern (Located _ p, _)) =
             UnitPattern -> "unit"
             TuplePattern _ -> mn "tuple"
 
-patternToMatch :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (Located (Unique VarName), RenamedExpr)
--- Special case, no match needed
--- We can just turn \x -> x into \x -> x
+-- | Turn a pattern and a body into a variable and a match expression. Used for renaming lambdas who use patterns as binders.
+patternToMatch ::
+    (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) =>
+    -- | Pattern to turn into a match
+    DesugaredPattern ->
+    -- | Body of the lambda
+    DesugaredExpr ->
+    -- | The variable to bind the match to, and the match expression
+    Eff r (Located (Unique VarName), RenamedExpr)
 patternToMatch (Pattern (Located _ (VarPattern vn), _)) body = do
+    -- Special case, no match needed
+    -- We can just turn \x -> x into \x -> x
     uniqueVn <- uniquify (NormalVarName <$> vn)
     body' <- locally (the @"varNames" %~ Map.insert (vn ^. unlocated % to NormalVarName) (one $ Local uniqueVn)) $ renameExpr body
     pure (uniqueVn, body')
@@ -598,8 +586,8 @@ patternToMatch pat body = do
 
     pure (uniqueVn, Expr (Located (enclosingRegion' patLocation bodyLocation) match, Nothing))
 
-{- | Rename a lambda expression
-This is a little bit special because patterns have to be converted to match expressions
+{- | Rename a lambda expression.
+This is a little bit special because patterns have to be converted to match expressions.
 
 For example,
 @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@

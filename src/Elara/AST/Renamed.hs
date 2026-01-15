@@ -2,13 +2,17 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Renamed AST Type
-This is very similar to 'Elara.AST.Desugared.Expr'' except everything is renamed to be unambiguous.
+This is very similar to "Elara.AST.Desugared.Expr" except everything is renamed to be unambiguous,
+ i.e. all local variables are 'Elara.Data.Unique.Unique'ed and all names are fully 'Elara.AST.Name.Qualified'.
+
+
+Values of these types are produced by "Elara.Rename".
 -}
 module Elara.AST.Renamed where
 
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Name (LowerAlphaName, Name, OpName, Qualified, TypeName, VarName, VarOrConName)
+import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName, VarOrConName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Renamed))
 import Elara.AST.VarRef (VarRef)

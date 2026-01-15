@@ -4,18 +4,36 @@
 
 module Elara.AST.Select where
 
+{- | Main type family used to select types for different AST stages.
+This type in particular represents the main different primary AST stages and is used as a parameter to 'Elara.AST.Generic.Types.Select'.
+-}
 type data LocatedAST
-    = Frontend
-    | Desugared
-    | Renamed
-    | Shunted
-    | MidKinded
-    | Kinded
-    | Typed
-    | Core
+    = -- | The AST as produced by the parser. Main types in "Elara.AST.Frontend".
+      Frontend
+    | -- | The AST after basic desugaring. Main types in "Elara.AST.Desugared".
+      Desugared
+    | -- | The AST after name resolution. Main types in "Elara.AST.Renamed".
+      Renamed
+    | -- | The AST after shunting (fixing operator precedence). Main types in "Elara.AST.Shunted".
+      Shunted
+    | -- | The AST while kind inference is being performed. Done as a separate stage for better type safety. Main types in "Elara.AST.Kinded".
+      MidKinded
+    | -- | The AST after kind inference, i.e. all types have their kinds known. Main types in "Elara.AST.Kinded".
+      Kinded
+    | -- | The AST after full type inference. Main types in "Elara.AST.Typed".
+      Typed
 
-type data UnlocatedAST = UnlocatedFrontend | UnlocatedDesugared | UnlocatedRenamed | UnlocatedShunted | UnlocatedTyped
+{- | Unlocated counterpart to 'LocatedAST'.
+Somewhat underutilised at the moment, but intended for testing.
+-}
+type data UnlocatedAST
+    = UnlocatedFrontend
+    | UnlocatedDesugared
+    | UnlocatedRenamed
+    | UnlocatedShunted
+    | UnlocatedTyped
 
+-- | Type family to convert between located and unlocated AST selectors
 type family LocatedToUnlocated (ast :: LocatedAST) :: UnlocatedAST where
     LocatedToUnlocated Frontend = UnlocatedFrontend
     LocatedToUnlocated Desugared = UnlocatedDesugared
@@ -23,6 +41,7 @@ type family LocatedToUnlocated (ast :: LocatedAST) :: UnlocatedAST where
     LocatedToUnlocated Shunted = UnlocatedShunted
     LocatedToUnlocated Typed = UnlocatedTyped
 
+-- | Type family to convert between unlocated and located AST selectors
 type family UnlocatedToLocated (ast :: UnlocatedAST) :: LocatedAST where
     UnlocatedToLocated UnlocatedFrontend = Frontend
     UnlocatedToLocated UnlocatedDesugared = Desugared
@@ -31,7 +50,7 @@ type family UnlocatedToLocated (ast :: UnlocatedAST) :: LocatedAST where
     UnlocatedToLocated UnlocatedTyped = Typed
 
 {- | Elements of the AST that are parametric by their AST stage
-This type acts as a selector for the 'Select' type family for these elements
+This type acts as a selector for the 'Elara.AST.Generic.Types.Select' type family for these elements
 -}
 type data ASTSelector
     = -- | The type used for references to variables
@@ -99,8 +118,16 @@ type data ASTSelector
     | -- | The type of a tuple type expression
       TupleType
 
+{- | Selector to indicate which part of an AST the 'ASTSelector' is being used for.
+For example, the 'ASTName' selector can be used for type names, value names, or declaration names,
+which may have different types at different AST stages. A motivating example is that type names may be qualified at use sites, but not at declaration sites.
+-}
 type data ForSelector
-    = ForType
-    | ForTypeDecl
-    | ForValueDecl
-    | ForExpr
+    = -- | For a use of a type name
+      ForType
+    | -- | For the declaration of a type name
+      ForTypeDecl
+    | -- | For the declaration of a value name
+      ForValueDecl
+    | -- | For a use of a value name
+      ForExpr

@@ -174,6 +174,7 @@ generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 unlocated :: Lens (Located a) (Located b) a b
 unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
 
+-- | Attach the location of the second argument to the first argument
 withLocationOf :: HasSourceRegion b => a -> b -> Located a
 withLocationOf a b = Located (b ^. sourceRegion) a
 

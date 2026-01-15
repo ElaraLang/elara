@@ -4,8 +4,9 @@ module Elara.Prim.Rename where
 
 import Elara.AST.VarRef (VarRef' (Global))
 import Elara.Prim (ioName, mkPrimVarRef, primitiveTypes)
-import Elara.Rename.Error (RenameState (RenameState))
+import Elara.Rename.State
 
+-- | The initial renaming state containing all primitive types and their references.
 primitiveRenameState :: RenameState
 primitiveRenameState =
     let vars =

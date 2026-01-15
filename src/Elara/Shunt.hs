@@ -6,11 +6,16 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Elara.Shunt where
+{- | This module performs "shunting", the process of rearranging binary operators in expressions to match their defined precedence and associativity.
+The main meat of this module is 'fixOperators', which does the actual rearranging of operators in expressions.
+The logic for this is based on https://stackoverflow.com/a/67992584/6272977, which was very helpful :).
+
+Most of the other functions in this module are less interesting and mainly plumbing into the compiler, particularly a lot of boilerplate on traversing the AST.
+-}
+module Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery) where
 
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
-import Data.Map qualified as Map
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.State.Static.Local (execState)
@@ -29,7 +34,7 @@ import Elara.AST.VarRef
 import Elara.ConstExpr
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (ReportableError (report), runErrorOrReport)
+import Elara.Error (DiagnosticWriter, ReportableError (report), runErrorOrReport)
 import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
 import Elara.Query (Query (..), QueryType (..), SupportsQueries, SupportsQuery (..))
 import Elara.Query.Effects
@@ -43,9 +48,17 @@ import Rock (Rock, fetch)
 import TODO (todo)
 import Prelude hiding (modify')
 
+{- | The default precedence for an operator if none is specified
+>>> defaultPrecedence
+Precedence 9
+-}
 defaultPrecedence :: Precedence
 defaultPrecedence = mkPrecedence 9
 
+{- | The default associativity for an operator if none is specified
+>>> defaultAssociativity
+LeftAssociative
+-}
 defaultAssociativity :: Associativity
 defaultAssociativity = LeftAssociative
 
@@ -59,17 +72,11 @@ instance SupportsQuery QueryModuleByName Shunted where
 instance IntrospectableAnnotations Shunted where
     getAnnotations a = a
 
--- effects the shunter itself needs
-type ShuntEffects es =
-    ( Eff.Error ShuntError :> es
-    , Eff.Writer (Set ShuntWarning) :> es
-    )
-
--- | A function that can lookup operator info
+{- | A function that can lookup operator info.
+This module only instantiates this function with a value that looks up operator info from the AST, but
+other implementations are possible, e.g. a hardcoded table, which may be useful for primitives or testing.
+-}
 type OpLookup es = IgnoreLocVarRef Name -> Eff es (Maybe OpInfo)
-
-lookupFromOpTable :: OpTable -> OpLookup es
-lookupFromOpTable table name = pure (Map.lookup name table)
 
 pattern InExpr :: RenamedExpr' -> RenamedExpr
 pattern InExpr y <- Expr (Located _ y, _)
@@ -77,6 +84,7 @@ pattern InExpr y <- Expr (Located _ y, _)
 pattern InExpr' :: SourceRegion -> RenamedExpr' -> RenamedExpr
 pattern InExpr' loc y <- Expr (Located loc y, _)
 
+-- | Run the @'Elara.Query.QueryModuleByName' 'Shunted'@ query, which shunts a renamed module
 runGetShuntedModuleQuery ::
     ModuleName ->
     Eff
@@ -90,12 +98,29 @@ runGetShuntedModuleQuery ::
 runGetShuntedModuleQuery mn = do
     renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
     shuntWith opLookupQueries renamed
-  where
-    opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
+-- | An 'OpLookup' that uses the 'Elara.Query.GetOpInfo' query to get operator info, i.e. derives it from the AST annotations.
+opLookupQueries ::
+    ( Eff.Error ShuntError :> es
+    , Rock Query :> es
+    , Eff.Writer (Set ShuntWarning) :> es
+    , QueryEffects es
+    ) =>
+    OpLookup es
+opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
+
+-- | Run the @'Elara.Query.GetOpInfo'@ query to get operator info for a given operator
 runGetOpInfoQuery ::
     SupportsQueries [QueryDeclarationByName, DeclarationAnnotations, QueryConstructorDeclaration] Renamed =>
-    IgnoreLocVarRef Name -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
+    IgnoreLocVarRef Name ->
+    Eff
+        ( ConsQueryEffects
+            '[ Eff.Writer (Set ShuntWarning)
+             , Eff.Error ShuntError
+             , Rock Elara.Query.Query
+             ]
+        )
+        (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
     fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, fixityAnnotationName)
     assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @Renamed (declName, associativityAnnotationName)
@@ -125,18 +150,25 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
         (Nothing, Just a) -> Just (OpInfo defaultPrecedence a)
         (Just f, Nothing) -> Just (OpInfo f defaultAssociativity)
         (Nothing, Nothing) -> Just (OpInfo defaultPrecedence defaultAssociativity)
-runGetOpInfoQuery (Local{}) = do
-    pure Nothing -- TODO there must be a way of getting local operator info
+runGetOpInfoQuery (Local i) = do
+    Eff.throwError $ LocalOperatorInfoNotSupported (i ^. _Unwrapped)
 
+-- | Run the @'Elara.Query.GetOpTableIn'@ query to get the operator table for a module
 runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) OpTable
 runGetOpTableInQuery moduleName = do
     mod <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule moduleName
     createOpTable mod
 
+{- | Create a operator table from a renamed module.
+This scans all declarations in the module for fixity and associativity annotations.
+-}
 createOpTable :: Module Renamed -> Eff es OpTable
 createOpTable = execState mempty . traverseModule_ addDeclsToOpTable'
 
-addDeclsToOpTable' :: _ => Declaration Renamed -> Eff r ()
+{- | Add declarations to an operator table.
+This function is incomplete and does not do anything useful yet.
+-}
+addDeclsToOpTable' :: Declaration Renamed -> Eff r ()
 addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" % _Unwrapped % unlocated of
     Value{_valueName, _valueAnnotations = (ValueDeclAnnotations a)} -> do
         debugPretty $ "No fixity for value declaration: " <> pretty _valueName
@@ -145,7 +177,7 @@ addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" 
         --  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
         todo
 
--- Convert operator to its qualified name for lookup
+-- | Convert an operator to its qualified 'Name' for lookup
 opNameOf :: RenamedBinaryOperator -> IgnoreLocVarRef Name
 opNameOf operator =
     case operator ^. _Unwrapped % unlocated of
@@ -155,11 +187,9 @@ opNameOf operator =
             toName (VarName n) = NVarName (NormalVarName n)
             toName (ConName n) = NTypeName n
 
-{-
- | Fix the operators in an expression to the correct precedence.
- | For example given @((+) = 1l) and ((*) = 2r)@,
- | @1 + 2 * 3 * 4 + 5 + 6@ should be parsed as @(((1 + (2 * 3)) * 4) + 5) + 6@.
- | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
+{- | Fix the operators in an expression to the correct precedence.
+For example given @((+) = 1l) and ((*) = 2r)@,
+@1 + 2 * 3 * 4 + 5 + 6@ should be parsed as @(((1 + (2 * 3)) * 4) + 5) + 6@.
 -}
 fixOperators :: forall r. (ShuntPipelineEffects r, ?lookup :: OpLookup r) => RenamedExpr -> Eff r RenamedExpr
 fixOperators = reassoc
@@ -206,11 +236,7 @@ fixOperators = reassoc
                     pure (OpInfo (mkPrecedence 9) LeftAssociative)
     reassoc' _ operator l r = pure (BinaryOperator (operator, l, r))
 
-opInfo :: RenamedBinaryOperator -> Eff (ConsQueryEffects '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Rock Elara.Query.Query]) (Maybe OpInfo)
-opInfo operator = do
-    let name = opNameOf operator
-    Rock.fetch (Elara.Query.GetOpInfo name)
-
+-- | Effects needed for the shunt pipeline
 type ShuntPipelineEffects es =
     ( QueryEffects es
     , Eff.Error ShuntError :> es
@@ -218,18 +244,27 @@ type ShuntPipelineEffects es =
     , Rock Elara.Query.Query :> es
     )
 
+-- | Constraint synonym for having an operator lookup in the effects (as an implicit parameter)
+type HasOpLookup es = (?lookup :: OpLookup es)
+
+-- | Shunt a renamed module using the given operator lookup function
 shuntWith ::
     forall es.
     ShuntPipelineEffects es =>
+    -- | Operator lookup function
     OpLookup es ->
+    -- | Renamed module to shunt
     Module Renamed ->
     Eff es (Module Shunted)
 shuntWith opL = traverseModule (shuntWithDeclaration opL)
 
+-- | Shunt a renamed declaration using the given operator lookup function
 shuntWithDeclaration ::
     forall es.
     ShuntPipelineEffects es =>
+    -- | Operator lookup function
     OpLookup es ->
+    -- | Renamed declaration to shunt
     RenamedDeclaration ->
     Eff es ShuntedDeclaration
 shuntWithDeclaration opL (Declaration decl) =
@@ -242,6 +277,7 @@ shuntWithDeclaration opL (Declaration decl) =
             )
             decl
 
+-- | Shunt a renamed declaration body using the given operator lookup function
 shuntDeclarationBody ::
     forall es.
     ShuntPipelineEffects es =>
@@ -261,24 +297,32 @@ shuntDeclarationBody opL (DeclarationBody rdb) = DeclarationBody <$> traverseOf 
         pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) annotations)
 
 shuntTypeDeclAnnotations ::
-    (ShuntPipelineEffects r, (?lookup :: OpLookup r)) =>
+    (ShuntPipelineEffects r, HasOpLookup r) =>
     TypeDeclAnnotations Renamed ->
     Eff r (TypeDeclAnnotations Shunted)
 shuntTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k <$> traverse shuntAnnotation a
 
-shuntAnnotation :: (ShuntPipelineEffects r, (?lookup :: OpLookup r)) => Annotation Renamed -> Eff r (Annotation Shunted)
+-- | Shunt a renamed annotation using the given operator lookup function
+shuntAnnotation :: (ShuntPipelineEffects r, HasOpLookup r) => Annotation Renamed -> Eff r (Annotation Shunted)
 shuntAnnotation (Annotation name args) = do
     args' <- traverseOf (each % _Unwrapped) fixExpr args
     pure $ Annotation name args'
 
-fixExpr :: ShuntPipelineEffects r => (?lookup :: OpLookup r) => RenamedExpr -> Eff r ShuntedExpr
+{- | Fix the operators in an expression to the correct precedence and shunt it
+The main entry point for this module that simply combines 'fixOperators' and 'shuntExpr'
+-}
+fixExpr :: (ShuntPipelineEffects r, HasOpLookup r) => RenamedExpr -> Eff r ShuntedExpr
 fixExpr e = do
     fixed <- fixOperators e
     shuntExpr fixed
 
+{- | Shunt a renamed expression into a shunted expression.
+This doesn't actually do much other than traverse the AST and convert types.
+However, it does also convert binary operators into function calls.
+-}
 shuntExpr ::
     forall r.
-    (ShuntPipelineEffects r, (?lookup :: OpLookup r)) =>
+    (ShuntPipelineEffects r, HasOpLookup r) =>
     RenamedExpr ->
     Eff r ShuntedExpr
 shuntExpr (Expr (le, t)) = (\x -> Expr (x, coerceType <$> t)) <$> traverseOf unlocated shuntExpr' le

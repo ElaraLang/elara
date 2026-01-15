@@ -1,9 +1,11 @@
 {- |
-This is the second main AST stage, which is very similar to the `Elara.AST.Select.Frontend` AST, with a few key differences:
+This is the second main AST stage, which is very similar to the "Elara.AST.Frontend" AST, with a few key differences:
 
   * Lambdas only have 1 argument (ones with multiple arguments are desugared into nested lambdas)
   * Let bindings have no patterns, they are desugared into lambdas
   * Def and Let declarations are merged into a single entity
+
+Values of these types are produced by "Elara.Desugar".
 -}
 module Elara.AST.Desugared where
 

@@ -6,20 +6,19 @@ This is very similar to 'Elara.AST.Renamed.Expr' except:
 
 - Operators are re-shunted to match their defined precedence and associativity
 - This means there's no need for an 'InParens' token anymore so that's also gone :D
-- The confusing 'VarName'/'Elara.AST.Name.OpName' bs is also gone. Binary operator invocations are replaced with prefix function calls. This always uses VarName
+- The confusing 'VarName'/'Elara.AST.Name.OpName' mess is also gone. Binary operator invocations are replaced with prefix function calls. This always uses 'VarName'
+
+Values of these types are produced by "Elara.Shunt".
 -}
 module Elara.AST.Shunted where
 
 import Elara.AST.Generic
 import Elara.AST.Generic.Common
-import Elara.AST.Introspection
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified (..), TypeName, VarName)
 import Elara.AST.Region (Located (..))
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST (Shunted))
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Unique (Unique)
-import Elara.Query
-import Elara.Query.Errors
 
 type instance ASTLocate' Shunted = Located
 
