@@ -28,6 +28,9 @@ type ErrorCode = forall ann. Doc ann
 fileReadError :: ErrorCode
 fileReadError = "E0001"
 
+fileNotFound :: ErrorCode
+fileNotFound = "E0001A"
+
 tooMuchIndentation :: ErrorCode
 tooMuchIndentation = "E0002"
 

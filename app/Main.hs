@@ -223,6 +223,7 @@ runElara ::
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , IOE :> es
     , Log (Doc AnsiStyle) :> es
+    , HasCallStack
     ) =>
     CompilerSettings -> Eff es ()
 runElara settings@(CompilerSettings{dumpTargets, runWith}) = do

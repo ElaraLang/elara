@@ -50,7 +50,7 @@ import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
 import Elara.Query.Effects
 import Elara.Query.Errors
-import Elara.ReadFile (FileContents)
+import Elara.ReadFile (FileContents, ReadFileError)
 import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
 import Elara.Settings (CompilerSettings)
@@ -78,7 +78,7 @@ data Query (es :: [Effect]) a where
     -- | Query to get all the required input files to be passed to the compiler
     InputFiles :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) (HashSet FilePath)
     -- | Query to get the contents of a specific file
-    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, DiagnosticWriter (Doc AnsiStyle)])) FileContents
+    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, Error ReadFileError, DiagnosticWriter (Doc AnsiStyle)])) FileContents
     -- | Query to get the file path of a module
     ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
     -- \* Lexing and Parsing Queries
