@@ -9,25 +9,25 @@
 </span><span id="line-9"></span><span class="annot"><a href="Elara.Width.html#getWidth"><span class="hs-identifier hs-type">getWidth</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-10"></span><span id="getWidth"><span class="annot"><span class="annottext">getWidth :: IO Int
 </span><a href="Elara.Width.html#getWidth"><span class="hs-identifier hs-var hs-var">getWidth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-11"></span><span>    </span><span id="local-6989586621680062919"><span class="annot"><a href="#local-6989586621680062919"><span class="hs-identifier hs-var">maybeWindow</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Window Int))
+</span><span id="line-11"></span><span>    </span><span id="local-6989586621680062940"><span class="annot"><a href="#local-6989586621680062940"><span class="hs-identifier hs-var">maybeWindow</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Window Int))
 forall n. Integral n =&gt; IO (Maybe (Window n))
 </span><span class="hs-identifier hs-var">Size.size</span></span><span>
 </span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680062921"><span class="annot"><a href="#local-6989586621680062921"><span class="hs-identifier hs-var hs-var">renderWidth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680062942"><span class="annot"><a href="#local-6989586621680062942"><span class="hs-identifier hs-var hs-var">renderWidth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-14"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe (Window Int)
-</span><a href="#local-6989586621680062919"><span class="hs-identifier hs-var">maybeWindow</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680062940"><span class="hs-identifier hs-var">maybeWindow</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-15"></span><span>                </span><span class="annot"><span class="annottext">Maybe (Window Int)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="Elara.Width.html#defaultWidth"><span class="hs-identifier hs-var">defaultWidth</span></a></span><span>
-</span><span id="line-16"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Window</span></span><span class="hs-special">{</span><span id="local-6989586621680062924"><span id="local-6989586621680062925"><span class="annot"><span class="annottext">Int
+</span><span id="line-16"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Window</span></span><span class="hs-special">{</span><span id="local-6989586621680062945"><span id="local-6989586621680062946"><span class="annot"><span class="annottext">Int
 height :: Int
 width :: Int
 height :: forall a. Window a -&gt; a
 width :: forall a. Window a -&gt; a
-</span><a href="#local-6989586621680062924"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680062925"><span class="hs-identifier hs-var">width</span></a></span><span>
+</span><a href="#local-6989586621680062945"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680062946"><span class="hs-identifier hs-var">width</span></a></span><span>
 </span><span id="line-17"></span><span>
-</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680062921"><span class="hs-identifier hs-type">renderWidth</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680062942"><span class="hs-identifier hs-type">renderWidth</span></a></span><span>
 </span><span id="line-19"></span><span>
 </span><span id="line-20"></span><span class="annot"><span class="hs-comment">-- | The default width to use</span></span><span>
 </span><span id="line-21"></span><span class="annot"><a href="Elara.Width.html#defaultWidth"><span class="hs-identifier hs-type">defaultWidth</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>

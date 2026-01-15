@@ -16,7 +16,7 @@
 </span><span id="line-16"></span><span class="hs-keyword">data</span><span> </span><span id="ReadFileError"><span class="annot"><a href="Elara.ReadFile.html#ReadFileError"><span class="hs-identifier hs-var">ReadFileError</span></a></span></span><span>
 </span><span id="line-17"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="DecodeError"><span class="annot"><a href="Elara.ReadFile.html#DecodeError"><span class="hs-identifier hs-var">DecodeError</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">UnicodeException</span></span><span>
 </span><span id="line-18"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="FileNotFound"><span class="annot"><a href="Elara.ReadFile.html#FileNotFound"><span class="hs-identifier hs-var">FileNotFound</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
-</span><span id="line-19"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680066106"><span id="local-6989586621680066117"><span id="local-6989586621680066121"><span class="annot"><span class="annottext">Int -&gt; ReadFileError -&gt; ShowS
+</span><span id="line-19"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680066127"><span id="local-6989586621680066138"><span id="local-6989586621680066142"><span class="annot"><span class="annottext">Int -&gt; ReadFileError -&gt; ShowS
 [ReadFileError] -&gt; ShowS
 ReadFileError -&gt; String
 (Int -&gt; ReadFileError -&gt; ShowS)
@@ -33,12 +33,12 @@ $cshowList :: [ReadFileError] -&gt; ShowS
 showList :: [ReadFileError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-20"></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680066127"><span id="local-6989586621680066131"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#ReadFileError"><span class="hs-identifier hs-type">ReadFileError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-22"></span><span>    </span><span id="local-6989586621680066151"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
+</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680066148"><span id="local-6989586621680066152"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#ReadFileError"><span class="hs-identifier hs-type">ReadFileError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-22"></span><span>    </span><span id="local-6989586621680066172"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
 (DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
 ReadFileError -&gt; Eff r ()
-</span><a href="#local-6989586621680066151"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#DecodeError"><span class="hs-identifier hs-type">DecodeError</span></a></span><span> </span><span id="local-6989586621680066153"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066153"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="annot"><span class="annottext">UnicodeException
+</span><a href="#local-6989586621680066172"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#DecodeError"><span class="hs-identifier hs-type">DecodeError</span></a></span><span> </span><span id="local-6989586621680066174"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680066174"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="annot"><span class="annottext">UnicodeException
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-23"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
 forall t (es :: [Effect]).
@@ -68,11 +68,11 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066153"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680066174"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-27"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-28"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-var">report</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#FileNotFound"><span class="hs-identifier hs-type">FileNotFound</span></a></span><span> </span><span id="local-6989586621680066158"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066158"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-var">report</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#FileNotFound"><span class="hs-identifier hs-type">FileNotFound</span></a></span><span> </span><span id="local-6989586621680066179"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680066179"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-30"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
 forall t (es :: [Effect]).
 (HasCallStack, DiagnosticWriter t :&gt; es) =&gt;
@@ -103,14 +103,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="Elara.Data.Pretty.Styles.html#moduleName"><span class="hs-identifier hs-var">Style.moduleName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066158"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680066179"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-35"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="annot"><a href="Elara.ReadFile.html#getInputFiles"><span class="hs-identifier hs-type">getInputFiles</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-type">CompilerSettings</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HashSet</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">)</span><span>
 </span><span id="line-38"></span><span id="getInputFiles"><span class="annot"><span class="annottext">getInputFiles :: CompilerSettings -&gt; Eff '[FileSystem] (HashSet String)
-</span><a href="Elara.ReadFile.html#getInputFiles"><span class="hs-identifier hs-var hs-var">getInputFiles</span></a></span></span><span> </span><span id="local-6989586621680066190"><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680066190"><span class="hs-identifier hs-var">settings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Elara.ReadFile.html#getInputFiles"><span class="hs-identifier hs-var hs-var">getInputFiles</span></a></span></span><span> </span><span id="local-6989586621680066211"><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680066211"><span class="hs-identifier hs-var">settings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-39"></span><span>    </span><span class="annot"><span class="annottext">Bool -&gt; String -&gt; Eff '[FileSystem] ()
 forall (es :: [Effect]).
 (FileSystem :&gt; es) =&gt;
@@ -118,7 +118,7 @@ Bool -&gt; String -&gt; Eff es ()
 </span><span class="hs-identifier hs-var">createDirectoryIfMissing</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;stdlib&quot;</span></span><span>
-</span><span id="line-40"></span><span>    </span><span id="local-6989586621680066191"><span class="annot"><a href="#local-6989586621680066191"><span class="hs-identifier hs-var">stdlib</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ShowS -&gt; [String] -&gt; [String]
+</span><span id="line-40"></span><span>    </span><span id="local-6989586621680066212"><span class="annot"><a href="#local-6989586621680066212"><span class="hs-identifier hs-var">stdlib</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ShowS -&gt; [String] -&gt; [String]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
@@ -133,27 +133,27 @@ forall (es :: [Effect]).
 String -&gt; Eff es [String]
 </span><span class="hs-identifier hs-var">listDirectory</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;stdlib&quot;</span></span><span>
-</span><span id="line-41"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680066193"><span class="annot"><a href="#local-6989586621680066193"><span class="hs-identifier hs-var hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe String -&gt; String
+</span><span id="line-41"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680066214"><span class="annot"><a href="#local-6989586621680066214"><span class="hs-identifier hs-var hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe String -&gt; String
 forall a. a -&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;source.elr&quot;</span></span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680066190"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span>
+</span><a href="#local-6989586621680066211"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span>
 </span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">HashSet.fromList</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680066191"><span class="hs-identifier hs-type">stdlib</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;&gt;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680066193"><span class="hs-identifier hs-type">source</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">HashSet.fromList</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680066212"><span class="hs-identifier hs-type">stdlib</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;&gt;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680066214"><span class="hs-identifier hs-type">source</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-44"></span><span>
-</span><span id="line-45"></span><span id="local-6989586621680066056"><span class="annot"><a href="Elara.ReadFile.html#runGetFileContentsQuery"><span class="hs-identifier hs-type">runGetFileContentsQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066056"><span class="hs-identifier hs-type">es</span></a></span><span>
-</span><span id="line-47"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066056"><span class="hs-identifier hs-type">es</span></a></span><span>
-</span><span id="line-48"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#ReadFileError"><span class="hs-identifier hs-type">ReadFileError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066056"><span class="hs-identifier hs-type">es</span></a></span><span>
+</span><span id="line-45"></span><span id="local-6989586621680066077"><span class="annot"><a href="Elara.ReadFile.html#runGetFileContentsQuery"><span class="hs-identifier hs-type">runGetFileContentsQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066077"><span class="hs-identifier hs-type">es</span></a></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066077"><span class="hs-identifier hs-type">es</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#ReadFileError"><span class="hs-identifier hs-type">ReadFileError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680066077"><span class="hs-identifier hs-type">es</span></a></span><span>
 </span><span id="line-49"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span>
 </span><span id="line-50"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680066056"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680066077"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span></span><span>
 </span><span id="line-52"></span><span id="runGetFileContentsQuery"><span class="annot"><span class="annottext">runGetFileContentsQuery :: forall (es :: [Effect]).
 (DiagnosticWriter (Doc AnsiStyle) :&gt; es, FileSystem :&gt; es,
  Error ReadFileError :&gt; es, HasCallStack) =&gt;
 String -&gt; Eff es FileContents
-</span><a href="Elara.ReadFile.html#runGetFileContentsQuery"><span class="hs-identifier hs-var hs-var">runGetFileContentsQuery</span></a></span></span><span> </span><span id="local-6989586621680066218"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066218"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Elara.ReadFile.html#runGetFileContentsQuery"><span class="hs-identifier hs-var hs-var">runGetFileContentsQuery</span></a></span></span><span> </span><span id="local-6989586621680066239"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680066239"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-53"></span><span>    </span><span class="annot"><span class="annottext">Eff es Bool -&gt; Eff es () -&gt; Eff es ()
 forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
 </span><span class="hs-identifier hs-var">unlessM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Eff es Bool
@@ -161,7 +161,7 @@ forall (es :: [Effect]).
 (FileSystem :&gt; es) =&gt;
 String -&gt; Eff es Bool
 </span><span class="hs-identifier hs-var">Eff.doesFileExist</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066218"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Eff es () -&gt; Eff es ()) -&gt; Eff es () -&gt; Eff es ()
+</span><a href="#local-6989586621680066239"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Eff es () -&gt; Eff es ()) -&gt; Eff es () -&gt; Eff es ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">ReadFileError -&gt; Eff es ()
@@ -173,19 +173,19 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-55"></span><span>            </span><span class="annot"><span class="annottext">String -&gt; ReadFileError
 </span><a href="Elara.ReadFile.html#FileNotFound"><span class="hs-identifier hs-var">FileNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066218"><span class="hs-identifier hs-var">fp</span></a></span><span>
-</span><span id="line-56"></span><span>    </span><span id="local-6989586621680066221"><span class="annot"><a href="#local-6989586621680066221"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Eff es ByteString
+</span><a href="#local-6989586621680066239"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-56"></span><span>    </span><span id="local-6989586621680066242"><span class="annot"><a href="#local-6989586621680066242"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Eff es ByteString
 forall (es :: [Effect]).
 (FileSystem :&gt; es) =&gt;
 String -&gt; Eff es ByteString
 </span><span class="hs-identifier hs-var">Eff.readFile</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680066218"><span class="hs-identifier hs-var">fp</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680066223"><span class="annot"><a href="#local-6989586621680066223"><span class="hs-identifier hs-var hs-var">contentsText</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Text
+</span><a href="#local-6989586621680066239"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680066244"><span class="annot"><a href="#local-6989586621680066244"><span class="hs-identifier hs-var hs-var">contentsText</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Text
 forall a b. ConvertUtf8 a b =&gt; b -&gt; a
 </span><span class="hs-identifier hs-var">decodeUtf8</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621680066221"><span class="hs-identifier hs-var">contents</span></a></span><span>
-</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Elara.Error.Effect.html#addFile"><span class="hs-identifier hs-type">addFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066218"><span class="hs-identifier hs-type">fp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">toString</span></span><span> </span><span class="annot"><a href="#local-6989586621680066223"><span class="hs-identifier hs-type">contentsText</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066218"><span class="hs-identifier hs-type">fp</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066223"><span class="hs-identifier hs-type">contentsText</span></a></span><span>
+</span><a href="#local-6989586621680066242"><span class="hs-identifier hs-var">contents</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Elara.Error.Effect.html#addFile"><span class="hs-identifier hs-type">addFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066239"><span class="hs-identifier hs-type">fp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">toString</span></span><span> </span><span class="annot"><a href="#local-6989586621680066244"><span class="hs-identifier hs-type">contentsText</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066239"><span class="hs-identifier hs-type">fp</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680066244"><span class="hs-identifier hs-type">contentsText</span></a></span><span>
 </span><span id="line-60"></span><span>
 </span><span id="line-61"></span><span class="hs-keyword">data</span><span> </span><span id="FileContents"><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-var">FileContents</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="FileContents"><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-var">FileContents</span></a></span></span><span>
 </span><span id="line-62"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="filePath"><span class="annot"><span class="annottext">FileContents -&gt; String
@@ -193,7 +193,7 @@ forall a b. ConvertUtf8 a b =&gt; b -&gt; a
 </span><span id="line-63"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="fileContents"><span class="annot"><span class="annottext">FileContents -&gt; Text
 </span><a href="Elara.ReadFile.html#fileContents"><span class="hs-identifier hs-var hs-var">fileContents</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-64"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-65"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680066230"><span id="local-6989586621680066236"><span class="annot"><span class="annottext">FileContents -&gt; FileContents -&gt; Bool
+</span><span id="line-65"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680066251"><span id="local-6989586621680066257"><span class="annot"><span class="annottext">FileContents -&gt; FileContents -&gt; Bool
 (FileContents -&gt; FileContents -&gt; Bool)
 -&gt; (FileContents -&gt; FileContents -&gt; Bool) -&gt; Eq FileContents
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -201,7 +201,7 @@ $c== :: FileContents -&gt; FileContents -&gt; Bool
 == :: FileContents -&gt; FileContents -&gt; Bool
 $c/= :: FileContents -&gt; FileContents -&gt; Bool
 /= :: FileContents -&gt; FileContents -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066241"><span id="local-6989586621680066248"><span id="local-6989586621680066252"><span class="annot"><span class="annottext">Int -&gt; FileContents -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066262"><span id="local-6989586621680066269"><span id="local-6989586621680066273"><span class="annot"><span class="annottext">Int -&gt; FileContents -&gt; ShowS
 [FileContents] -&gt; ShowS
 FileContents -&gt; String
 (Int -&gt; FileContents -&gt; ShowS)
@@ -216,7 +216,7 @@ $cshow :: FileContents -&gt; String
 show :: FileContents -&gt; String
 $cshowList :: [FileContents] -&gt; ShowS
 showList :: [FileContents] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066257"><span id="local-6989586621680066264"><span id="local-6989586621680066269"><span id="local-6989586621680066273"><span id="local-6989586621680066276"><span id="local-6989586621680066279"><span id="local-6989586621680066282"><span class="annot"><span class="annottext">Eq FileContents
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066278"><span id="local-6989586621680066285"><span id="local-6989586621680066290"><span id="local-6989586621680066294"><span id="local-6989586621680066297"><span id="local-6989586621680066300"><span id="local-6989586621680066303"><span class="annot"><span class="annottext">Eq FileContents
 Eq FileContents =&gt;
 (FileContents -&gt; FileContents -&gt; Ordering)
 -&gt; (FileContents -&gt; FileContents -&gt; Bool)
@@ -253,7 +253,7 @@ $cmax :: FileContents -&gt; FileContents -&gt; FileContents
 max :: FileContents -&gt; FileContents -&gt; FileContents
 $cmin :: FileContents -&gt; FileContents -&gt; FileContents
 min :: FileContents -&gt; FileContents -&gt; FileContents
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066291"><span id="local-6989586621680066293"><span class="annot"><span class="annottext">(forall x. FileContents -&gt; Rep FileContents x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066312"><span id="local-6989586621680066314"><span class="annot"><span class="annottext">(forall x. FileContents -&gt; Rep FileContents x)
 -&gt; (forall x. Rep FileContents x -&gt; FileContents)
 -&gt; Generic FileContents
 forall x. Rep FileContents x -&gt; FileContents
@@ -266,5 +266,5 @@ $cto :: forall x. Rep FileContents x -&gt; FileContents
 to :: forall x. Rep FileContents x -&gt; FileContents
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-66"></span><span>
-</span><span id="line-67"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680066301"><span id="local-6989586621680066308"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span></span></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680066322"><span id="local-6989586621680066329"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span></span></span><span>
 </span><span id="line-68"></span></pre></body></html>
