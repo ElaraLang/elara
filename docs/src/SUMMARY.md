@@ -9,7 +9,7 @@
   - [Comments](./language/syntax/comments.md)
 
 # Compiler Usage
-- [Flags](./compiler/usage/flags.md)
+- [CLI](./compiler/usage/cli.md)
 
 # Compiler Internals
 - [Setup](./compiler/internals/setup.md)
