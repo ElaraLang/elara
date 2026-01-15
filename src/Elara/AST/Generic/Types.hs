@@ -50,7 +50,6 @@ module Elara.AST.Generic.Types (
     pattern Expr',
     exprLocation,
     patternLocation,
-    coerceTypeDeclAnnotations,
     traverseValueDeclAnnotations,
     traverseTypeDeclAnnotations,
     declarationBody'Name,
@@ -64,12 +63,11 @@ import Data.Containers.ListUtils (nubOrdOn)
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped
 import Data.Kind qualified as Kind
-import Elara.AST.Generic.Common (dataConCantHappen)
+import Elara.AST.Generic.Common (DataConCantHappen)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name, ToName (..))
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, unlocated)
 import Elara.AST.Select (ASTSelector (..), ForSelector (..), LocatedAST, UnlocatedAST)
 import GHC.Generics
-import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (group)
 
 {- | Used to select a field type for a given AST.
@@ -374,14 +372,15 @@ coerceTypeDeclaration (ADT a) = ADT (fmap coerceType <<$>> a)
 coerceType :: _ => Type ast1 -> Type ast2
 coerceType (Type (a, kind)) = Type (coerceType' <$> a, kind)
 
-coerceType' :: _ => Type' ast1 -> Type' ast2
+coerceType' ::
+    (Select TupleType ast1 ~ DataConCantHappen, _) =>
+    Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
 coerceType' (FunctionType a b) = FunctionType (coerceType a) (coerceType b)
 coerceType' UnitType = UnitType
 coerceType' (TypeConstructorApplication a b) = TypeConstructorApplication (coerceType a) (coerceType b)
 coerceType' (UserDefinedType a) = UserDefinedType a
 coerceType' (RecordType a) = RecordType (fmap coerceType <$> a)
-coerceType' (TupleType a) = dataConCantHappen a
 coerceType' (ListType a) = ListType (coerceType a)
 
 traverseValueDeclAnnotations ::
@@ -405,11 +404,3 @@ traverseTypeDeclAnnotations ::
     TypeDeclAnnotations ast1 ->
     f (TypeDeclAnnotations ast2)
 traverseTypeDeclAnnotations f (TypeDeclAnnotations k a) = TypeDeclAnnotations k <$> traverse f a
-
-coerceTypeDeclAnnotations ::
-    ( Select (Annotations ForTypeDecl) ast1 ~ [Annotation ast1]
-    , Select (Annotations ForTypeDecl) ast2 ~ [Annotation ast2]
-    , _
-    ) =>
-    TypeDeclAnnotations ast1 -> TypeDeclAnnotations ast2
-coerceTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k (unsafeCoerce a)

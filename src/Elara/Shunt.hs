@@ -144,7 +144,6 @@ addDeclsToOpTable' (Declaration (Located _ decl)) = case decl ^. field' @"body" 
         -- let nameRef = Global $ IgnoreLocation (NTypeName <<$>> name)
         --  in modify $ Map.insert nameRef (infixDeclToOpInfo fixity)
         todo
-    _ -> pass
 
 -- Convert operator to its qualified name for lookup
 opNameOf :: RenamedBinaryOperator -> IgnoreLocVarRef Name
@@ -157,9 +156,9 @@ opNameOf operator =
             toName (ConName n) = NTypeName n
 
 {-
- | Fix the operators in an expression to the correct precedence
- | For example given ((+) = 1l) and ((*) = 2r)
- | 1 + 2 * 3 * 4 + 5 + 6 should be parsed as (((1 + (2 * 3)) * 4) + 5) + 6
+ | Fix the operators in an expression to the correct precedence.
+ | For example given @((+) = 1l) and ((*) = 2r)@,
+ | @1 + 2 * 3 * 4 + 5 + 6@ should be parsed as @(((1 + (2 * 3)) * 4) + 5) + 6@.
  | https://stackoverflow.com/a/67992584/6272977 This answer was a huge help in designing this
 -}
 fixOperators :: forall r. (ShuntPipelineEffects r, ?lookup :: OpLookup r) => RenamedExpr -> Eff r RenamedExpr
@@ -257,8 +256,15 @@ shuntDeclarationBody opL (DeclarationBody rdb) = DeclarationBody <$> traverseOf 
         let ty' = fmap coerceType ty
         ann <- traverseValueDeclAnnotations (let ?lookup = opL in shuntAnnotation) ann
         pure (Value name shunted NoFieldValue ty' ann)
-    go (TypeDeclaration name vars ty ann) =
-        pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) (coerceTypeDeclAnnotations ann))
+    go (TypeDeclaration name vars ty ann) = do
+        annotations <- let ?lookup = opL in shuntTypeDeclAnnotations ann
+        pure (TypeDeclaration name vars (coerceTypeDeclaration <$> ty) annotations)
+
+shuntTypeDeclAnnotations ::
+    (ShuntPipelineEffects r, (?lookup :: OpLookup r)) =>
+    TypeDeclAnnotations Renamed ->
+    Eff r (TypeDeclAnnotations Shunted)
+shuntTypeDeclAnnotations (TypeDeclAnnotations k a) = TypeDeclAnnotations k <$> traverse shuntAnnotation a
 
 shuntAnnotation :: (ShuntPipelineEffects r, (?lookup :: OpLookup r)) => Annotation Renamed -> Eff r (Annotation Shunted)
 shuntAnnotation (Annotation name args) = do

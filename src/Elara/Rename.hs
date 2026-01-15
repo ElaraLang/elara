@@ -326,12 +326,19 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
         let declModuleName = ld ^. unlocated % field' @"moduleName" % unlocated
         locally addAllVarAliases $ do
             ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
-            let ann' = coerceTypeDeclAnnotations ann
+            ann' <- renameTypeDeclAnnotations ann
             thisModule <- askCurrentModule
             let qualifiedName =
                     sequenceA $
                         Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
             pure $ TypeDeclaration qualifiedName vars' ty' ann'
+
+renameTypeDeclAnnotations ::
+    (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) =>
+    TypeDeclAnnotations Desugared -> Eff r (TypeDeclAnnotations Renamed)
+renameTypeDeclAnnotations (TypeDeclAnnotations k a) =
+    TypeDeclAnnotations k
+        <$> traverse renameAnnotation a
 
 renameAnnotation :: (InnerRename r, Eff.Reader (Maybe DesugaredDeclaration) :> r, Rock.Rock Elara.Query.Query :> r) => Annotation Desugared -> Eff r (Annotation Renamed)
 renameAnnotation (Annotation name args) = do

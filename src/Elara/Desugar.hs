@@ -18,16 +18,15 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
-import Elara.Data.Pretty (Pretty (pretty))
+import Elara.Data.Pretty (Pretty)
 import Elara.Desugar.Error
 import Elara.Error (runErrorOrReport)
-import Elara.Parse.Error (WParseErrorBundle (WParseErrorBundle))
+import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.Utils (curry3)
 import Optics (traverseOf_)
 import Rock qualified
-import Rock.Memo (MemoQuery (MemoQuery))
 import TODO (todo)
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)

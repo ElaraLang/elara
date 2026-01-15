@@ -58,7 +58,6 @@ import Optics (forOf_)
 import Relude.Extra (fmapToSnd)
 import Rock qualified
 import TODO
-import Unsafe.Coerce (unsafeCoerce)
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r
