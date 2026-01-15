@@ -121,7 +121,7 @@ reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
 parensExpr :: Parser FrontendExpr
 parensExpr = do
-    Located loc e <- located (inParens exprParser)
+    Located loc e <- located (inParens (exprParser <* optional lineSeparator))
     pure $ Expr (Located loc (InParens e), Nothing)
 
 variable :: Parser FrontendExpr
