@@ -231,6 +231,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Use -XTypeData to tidy up AST stages - ([c70e0c0](https://github.com/ElaraLang/elara/commit/c70e0c0bd854d2c87a35639c284fb9ad1634d292)) 
 - Introduce dedicated type for tuple containers - ([ac5b740](https://github.com/ElaraLang/elara/commit/ac5b740874561227b0fb45cd9e8ee3c8381a6997)) 
 - Generic code cleanup of various components - ([7acc864](https://github.com/ElaraLang/elara/commit/7acc86479184e1ac6dcb57fcafdbfd9e72462ff7)) 
+- Improve errors if file not found - ([651e0eb](https://github.com/ElaraLang/elara/commit/651e0eb7e8b8ae9e1d0facb08bd846d2b9ce6e13)) 
 
 ### 📚 Documentation
 
