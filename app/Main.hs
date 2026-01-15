@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE QuantifiedConstraints #-}
@@ -19,10 +20,12 @@ import Elara.Data.Unique (
     resetGlobalUniqueSupply,
  )
 
+import Autodocodec
 import Data.Binary.Put
 import Data.Binary.Write
 import Data.Generics.Product (field')
 import Data.Generics.Wrapped (_Unwrapped)
+import Data.Set qualified as Set
 import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
 import Effectful.Error.Extra (fromEither)
@@ -48,13 +51,15 @@ import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.Rename.Error (RenameError)
 import Elara.Rules qualified
-import Elara.Settings (CompilerSettings (..), DumpSettings (..), RunWithOption (..))
+import Elara.Settings (CompilerSettings (..), DumpTarget (..), RunWithOption (..))
 import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Abstract.ClassFile
 import JVM.Data.Abstract.Name
 import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad
+import OptEnvConf
+import Paths_elara qualified as Elara
 import Prettyprinter.Render.Text
 import Print
 import Rock qualified
@@ -62,10 +67,10 @@ import Rock.Memo qualified
 import Rock.MemoE (memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
-import System.Environment (getEnvironment)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (hSetEncoding, utf8)
 import Text.Printf
+import Prelude hiding (reader)
 
 outDirName :: IsString s => s
 outDirName = "build"
@@ -79,34 +84,112 @@ instance ReportableError CodeConverterError where
                 []
                 []
 
-main :: IO ()
-main = run `finally` cleanup
-  where
-    run :: IO ()
-    run = do
-        hSetBuffering stdout NoBuffering
-        hSetEncoding stdout utf8
-        putTextLn "\n"
-        args <- getArgs
-        env <- getEnvironment
-        let dumpLexed = "--dump-lexed" `elem` args || "ELARA_DUMP_LEXED" `elem` fmap fst env
-        let dumpParsed = "--dump-parsed" `elem` args || "ELARA_DUMP_PARSED" `elem` fmap fst env
-        let dumpDesugared = "--dump-desugared" `elem` args || "ELARA_DUMP_DESUGARED" `elem` fmap fst env
-        let dumpRenamed = "--dump-renamed" `elem` args || "ELARA_DUMP_RENAMED" `elem` fmap fst env
-        let dumpShunted = "--dump-shunted" `elem` args || "ELARA_DUMP_SHUNTED" `elem` fmap fst env
-        let dumpTyped = "--dump-typed" `elem` args || "ELARA_DUMP_TYPED" `elem` fmap fst env
-        let dumpCore = "--dump-core" `elem` args || "ELARA_DUMP_CORE" `elem` fmap fst env
-        let dumpIR = "--dump-ir" `elem` args || "ELARA_DUMP_IR" `elem` fmap fst env
-        let dumpJVM = "--dump-jvm" `elem` args || "ELARA_DUMP_JVM" `elem` fmap fst env
-        let run = "--run" `elem` args || "ELARA_RUN" `elem` fmap fst env
-        let runJVM = "--run-jvm" `elem` args || "ELARA_RUN_JVM" `elem` fmap fst env
+newtype Settings = Settings
+    { dumpTargets :: [DumpTarget]
+    }
 
-        let compilerSettings =
-                CompilerSettings
-                    { dumpSettings = DumpSettings{..}
-                    , runWith = if run then RunWithInterpreter else if runJVM then RunWithJVM else RunWithNone
-                    , mainFile = Nothing
-                    }
+data Instructions = Instructions !Dispatch !Settings
+
+instance HasParser Settings where
+    settingsParser = withLocalYamlConfig $ do
+        dumpTargets <-
+            setting
+                [ help "Dump intermediate ASTs/IRs (e.g. --dump=ir,jvm)"
+                , name "dump"
+                , env "ELARA_DUMP"
+                , metavar "DUMP_TARGETS"
+                , OptEnvConf.value []
+                , reader $ commaSeparatedList viaStringCodec
+                ]
+        pure Settings{..}
+
+instance HasParser Instructions where
+    settingsParser = Instructions <$> settingsParser <*> settingsParser
+
+instance HasCodec DumpTarget where
+    codec =
+        stringConstCodec $
+            (DumpLexed, "lexed")
+                :| [ (DumpParsed, "parsed")
+                   , (DumpDesugared, "desugared")
+                   , (DumpRenamed, "renamed")
+                   , (DumpShunted, "shunted")
+                   , (DumpTyped, "typed")
+                   , (DumpCore, "core")
+                   , (DumpIR, "ir")
+                   , (DumpJVM, "jvm")
+                   ]
+
+data Dispatch
+    = DispatchBuild !FilePath
+    | DispatchRun !FilePath !RunTarget
+    deriving (Show, Eq)
+
+data RunTarget = TargetInterpreter | TargetJVM
+    deriving (Show, Eq, Generic)
+
+instance HasParser Dispatch where
+    settingsParser =
+        withoutConfig $
+            commands
+                [ command "build" "Compile the program" $
+                    DispatchBuild
+                        <$> setting
+                            [ help "Main file to compile"
+                            , argument
+                            , reader str
+                            , metavar "MAIN_FILE"
+                            ]
+                , command "run" "Compile and run the program" $
+                    DispatchRun
+                        <$> setting
+                            [ help "Main file to run"
+                            , argument
+                            , reader str
+                            , metavar "MAIN_FILE"
+                            ]
+                        <*> setting
+                            [ help "Execution target (interpreter, jvm)"
+                            , option
+                            , name "target"
+                            , metavar "EXECUTION_TARGET"
+                            , value TargetInterpreter
+                            , reader viaStringCodec
+                            ]
+                ]
+
+instance HasCodec RunTarget where
+    codec = stringConstCodec $ (TargetInterpreter, "interp") :| [(TargetJVM, "jvm")]
+
+toCompilerSettings :: Dispatch -> Settings -> CompilerSettings
+toCompilerSettings dispatch Settings{..} =
+    let
+        dumps = Set.fromList dumpTargets
+
+        (runWith, mainFile) = case dispatch of
+            DispatchBuild fp -> (RunWithNone, Just fp)
+            DispatchRun fp TargetInterpreter -> (RunWithInterpreter, Just fp)
+            DispatchRun fp TargetJVM -> (RunWithJVM, Just fp)
+     in
+        CompilerSettings
+            { dumpTargets = dumps
+            , runWith = runWith
+            , mainFile = mainFile
+            }
+
+main :: IO ()
+main = do
+    hSetBuffering stdout NoBuffering
+    hSetEncoding stdout utf8
+    Instructions dispatch settings <-
+        runSettingsParser Elara.version "Elara Compiler"
+
+    let compilerSettings = toCompilerSettings dispatch settings
+    run compilerSettings `finally` cleanup
+  where
+    run :: CompilerSettings -> IO ()
+    run compilerSettings = do
+        putTextLn "\n"
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
             result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
             case result of
@@ -140,9 +223,10 @@ runElara ::
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , IOE :> es
     , Log (Doc AnsiStyle) :> es
+    , HasCallStack
     ) =>
     CompilerSettings -> Eff es ()
-runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) = do
+runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
     -- Get logging configuration from environment variables
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
@@ -159,7 +243,7 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                 files <-
                                     toList <$> Rock.fetch Elara.Query.InputFiles
 
-                                when dumpLexed $ do
+                                when (DumpLexed `Set.member` dumpTargets) $ do
                                     lexed <- for files $ \file -> do
                                         fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
 
@@ -171,30 +255,29 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                     pure (m.name ^. unlocated)
 
                                 runErrorOrReport @(WParseErrorBundle _ _) $
-                                    dumpGraphInfo Elara.Query.ParsedModule dumpParsed moduleNames "parsed" ".parsed.elr"
+                                    dumpGraphInfo Elara.Query.ParsedModule (DumpParsed `Set.member` dumpTargets) moduleNames "parsed" ".parsed.elr"
 
                                 runErrorOrReport @DesugarError $
-                                    dumpGraphInfo Elara.Query.DesugaredModule dumpDesugared moduleNames "desugared" ".desugared.elr"
+                                    dumpGraphInfo Elara.Query.DesugaredModule (DumpDesugared `Set.member` dumpTargets) moduleNames "desugared" ".desugared.elr"
 
                                 runErrorOrReport @RenameError $
-                                    dumpGraphInfo Elara.Query.RenamedModule dumpRenamed moduleNames "renamed" ".renamed.elr"
+                                    dumpGraphInfo Elara.Query.RenamedModule (DumpRenamed `Set.member` dumpTargets) moduleNames "renamed" ".renamed.elr"
 
                                 runErrorOrReport @ShuntError $
-                                    dumpGraphInfo (Elara.Query.ModuleByName @Shunted) dumpShunted moduleNames "shunted" ".shunted.elr"
+                                    dumpGraphInfo (Elara.Query.ModuleByName @Shunted) (DumpShunted `Set.member` dumpTargets) moduleNames "shunted" ".shunted.elr"
 
                                 runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.TypeCheckedModule dumpTyped moduleNames "typed" ".typed.elr"
+                                    dumpGraphInfo Elara.Query.TypeCheckedModule (DumpTyped `Set.member` dumpTargets) moduleNames "typed" ".typed.elr"
+                                runErrorOrReport @ShuntError $
+                                    dumpGraphInfo Elara.Query.GetCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core" ".core.elr"
 
                                 runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetCoreModule dumpCore moduleNames "core" ".core.elr"
-
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetANFCoreModule dumpCore moduleNames "core.anf" ".core.anf.elr"
+                                    dumpGraphInfo Elara.Query.GetANFCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.anf" ".core.anf.elr"
 
                                 runErrorOrReport @ClosureLiftError $
-                                    dumpGraphInfo Elara.Query.GetClosureLiftedModule dumpCore moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
+                                    dumpGraphInfo Elara.Query.GetClosureLiftedModule (DumpCore `Set.member` dumpTargets) moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
 
-                                dumpGraphInfo Elara.Query.GetFinalisedCoreModule dumpCore moduleNames "core.final" ".core.final.elr"
+                                dumpGraphInfo Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
 
                                 if runWith == RunWithInterpreter
                                     then
@@ -208,13 +291,13 @@ runElara settings@(CompilerSettings{dumpSettings = DumpSettings{..}, runWith}) =
                                                     lowered <- runErrorOrReport @JVMLoweringError $ lowerModule coreMod
                                                     Emit.emitIRModule lowered
 
-                                                when dumpIR $ do
+                                                when (DumpIR `Set.member` dumpTargets) $ do
                                                     lowered <- for cores $ \coreMod -> do
                                                         runErrorOrReport @JVMLoweringError $ lowerModule coreMod
                                                     inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
                                                     logDebug "Dumped JVM IR modules"
 
-                                                when dumpJVM $ do
+                                                when (DumpJVM `Set.member` dumpTargets) $ do
                                                     inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
 
                                                 for_ (zip moduleNames classFiles) $ \(modName, classes) -> do

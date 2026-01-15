@@ -219,13 +219,6 @@ type ShuntPipelineEffects es =
     , Rock Elara.Query.Query :> es
     )
 
--- infixDeclToOpInfo :: InfixDeclaration Renamed -> OpInfo
--- infixDeclToOpInfo (InfixDeclaration _ prec assoc) = OpInfo (Precedence $ prec ^. unlocated) (convAssoc $ assoc ^. unlocated)
---   where
---     convAssoc LeftAssoc = LeftAssociative
---     convAssoc RightAssoc = RightAssociative
---     convAssoc NonAssoc = NonAssociative
-
 shuntWith ::
     forall es.
     ShuntPipelineEffects es =>

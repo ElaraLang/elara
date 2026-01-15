@@ -45,7 +45,7 @@ getParsedFileQuery ::
         )
         (Module Frontend)
 getParsedFileQuery fp = do
-    (FileContents filePath contents) <- fetch (GetFileContents fp)
+    (FileContents filePath contents) <- runErrorOrReport $ fetch (GetFileContents fp)
     lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
     let tokenStream = createTokenStream contents lexemes
     let parseResult = runParser moduleParser filePath tokenStream

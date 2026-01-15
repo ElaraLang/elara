@@ -10,7 +10,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    h2jvm.url = "git+file:///Users/alex/workspace/h2jvm/";
+    h2jvm.url = "github:ElaraLang/h2jvm";
     diagnose = {
       url = "github:bristermitten/diagnose";
       flake = false;
@@ -227,7 +227,11 @@
                 };
                 executables.elara = {
                   source-dirs = "app";
-
+                  dependencies = [
+                    "autodocodec"
+                    "opt-env-conf"
+                  ];
+                  component.other-modules = [ "Paths_elara" ];
                 };
                 tests.elara-test = {
                   main = "Spec.hs";

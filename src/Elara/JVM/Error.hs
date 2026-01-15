@@ -1,4 +1,4 @@
-module Elara.JVM.Error where
+module Elara.JVM.Error (JVMLoweringError (..)) where
 
 import Elara.AST.Name
 import Elara.Core qualified as Core
@@ -12,7 +12,7 @@ data JVMLoweringError
     = -- | Expected a local variable in a lambda, but got something else
       LambdaBinderNotLocal Core.Var
     | -- | A data constructor has more lambda abstractions than type parameters
-      MoreLambasAthanTypeArgs Text Int Int
+      MoreLambdasThanTypeArgs Text Int Int
     | -- | Unknown primitive operation name
       UnknownPrimitiveKey Text
     | -- | Unknown primitive type in type signature
@@ -47,7 +47,7 @@ instance Exception JVMLoweringError
 instance Pretty JVMLoweringError where
     pretty (LambdaBinderNotLocal var) =
         "Lambda binder must be a local identifier, but got:" <+> pretty var
-    pretty (MoreLambasAthanTypeArgs name numLambdas numTypes) =
+    pretty (MoreLambdasThanTypeArgs name numLambdas numTypes) =
         "More lambda abstractions than type parameters for" <+> pretty name
             <> colon
                 <+> pretty numLambdas

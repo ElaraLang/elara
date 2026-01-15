@@ -96,7 +96,7 @@ import Optics (
     _Right,
  )
 import Optics.Operators ((%~), (.~), (?~), (^.), (^..), (^?))
-import Optics.State.Operators ((%=), (?=))
+import Optics.State.Operators ((?=))
 import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
 import Relude qualified (id)
 

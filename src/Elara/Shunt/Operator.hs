@@ -1,8 +1,6 @@
-module Elara.Shunt.Operator where
+module Elara.Shunt.Operator (OpTable, Associativity (..), Precedence, mkPrecedence, OpInfo (..), prettyOp, prettyOpTable) where
 
-import Data.Generics.Wrapped
 import Data.Map qualified as Map
-import Effectful (Eff)
 import Elara.AST.Generic.Types (BinaryOperator (..), BinaryOperator' (..))
 import Elara.AST.Name
 import Elara.AST.Region (unlocated)

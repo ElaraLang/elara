@@ -1,6 +1,6 @@
 module Elara.Lexer.Reader where
 
-import Elara.AST.Region (Located (Located), SourceRegion (..), line, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion (..), unlocated)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
@@ -8,20 +8,15 @@ import Elara.Lexer.Utils
 import Data.Text qualified as Text
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
-import Effectful.FileSystem (FileSystem)
-import Effectful.State.Extra (use')
+import Effectful.State.Extra (use', (.=))
 import Effectful.State.Static.Local
+import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
 import Rock qualified
 
--- TODO: maybe also define empty Constructor for TokPosition
--- use it when constructing and here compute position and update it and return complete and correct Token
--- TODO2: I may actually not need to store position in the Token at all
--- thanks to monadic parsing I have the state at every moment of parsing --> just need to find out
--- how to use the state for better parse-error messages
 readToken :: LexMonad Lexeme
 readToken = do
     s <- get
@@ -39,13 +34,15 @@ readToken = do
                     let eofToken = Located (RealSourceRegion region) TokenEOF
                     modify (over pendingTokens (<> (closeIndents <> [eofToken])))
                     readToken
-                AlexError token -> error $ "Lexical error on line " <> show (token ^. position % line)
+                AlexError token -> throwError (GenericAlexError token)
                 AlexSkip inp _ -> do
-                    put s{_input = inp}
+                    input .= inp
+
                     readToken
                 AlexToken inp n act -> do
                     let buf = s ^. input % rest
-                    put s{_input = inp}
+                    input .= inp
+
                     res <- act n (Text.take n buf)
                     maybe readToken pure res
 
@@ -62,11 +59,11 @@ readTokensWith ::
     (Error LexerError :> es, StructuredDebug :> es) =>
     FileContents -> Eff es [Lexeme]
 readTokensWith (FileContents fp s) = do
-    evalState (initialState fp s) (inject readTokens)
+    evalState (initialLexState fp s) (inject readTokens)
 
 getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
 getLexedFile fp = do
-    fileContents <- Rock.fetch (GetFileContents fp)
+    fileContents <- runErrorOrReport $ Rock.fetch (GetFileContents fp)
     readTokensWith fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a

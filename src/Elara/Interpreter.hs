@@ -6,7 +6,6 @@ import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (scoped)
 import Effectful.State.Static.Local
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
@@ -234,138 +233,142 @@ interpretExpr (Lam (Id (Local v) _ _) e) = do
 interpretExpr (App f a) = do
     f' <- interpretExpr f
     a' <- interpretExpr a
-    case f' of
-        rec@(RecClosure env n p e) -> do
-            -- add the argument to the env
-            let env'' = Map.insert p a' env
+    let apply f' a' = case f' of
+            rec@(RecClosure env n p e) -> do
+                -- add the argument to the env
+                let env'' = Map.insert p a' env
 
-            scopedOverLocals $ do
-                modify
-                    ( \s ->
-                        case n of
-                            Local n' ->
-                                s
-                                    { localBindings = Map.insert n' rec (env'' <> localBindings s) -- add itself to the env
-                                    , stateSource = FromClosure
-                                    }
-                            Global n' ->
-                                s
-                                    { globalBindings = Map.insert n' rec (globalBindings s) -- add itself to the env
-                                    , localBindings = env''
-                                    , stateSource = FromClosure
-                                    }
-                    )
+                scopedOverLocals $ do
+                    modify
+                        ( \s ->
+                            case n of
+                                Local n' ->
+                                    s
+                                        { localBindings = Map.insert n' rec (env'' <> localBindings s) -- add itself to the env
+                                        , stateSource = FromClosure
+                                        }
+                                Global n' ->
+                                    s
+                                        { globalBindings = Map.insert n' rec (globalBindings s) -- add itself to the env
+                                        , localBindings = env''
+                                        , stateSource = FromClosure
+                                        }
+                        )
 
-                interpretExpr e
-        Closure env p e -> do
-            let env' = Map.insert p a' env
-            scopedOverLocals $ do
-                modify (\s -> s{localBindings = env', stateSource = FromClosure})
-                interpretExpr e
-        PrimOp "toString" -> do
-            let asText = case a' of
-                    Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
-                        prettyToText (arg1, arg2)
-                    other -> prettyToText other
-            pure $ String asText
-        PrimOp "error" -> do
-            throwError_ $ CodeThrewError a'
-        PrimOp "println" -> do
-            pure $ IOAction $ do
-                let asString = case a' of
-                        String s -> s
+                    interpretExpr e
+            Closure env p e -> do
+                let env' = Map.insert p a' env
+                scopedOverLocals $ do
+                    modify (\s -> s{localBindings = env', stateSource = FromClosure})
+                    interpretExpr e
+            PrimOp "toString" -> do
+                let asText = case a' of
+                        Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
+                            prettyToText (arg1, arg2)
                         other -> prettyToText other
-                putTextLn asString
-                pure (Ctor unitCtor [])
-        PrimOp "negate" -> do
-            case a' of
-                Int i -> pure $ Int (-i)
-                Double d -> pure $ Double (-d)
-                _ -> throwError_ TypeMismatch{expected = "Int or Double", actual = a'}
-        PrimOp "stringIsEmpty" -> do
-            case a' of
-                String s -> pure $ boolValue (Text.null s)
-                _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
-        PrimOp "stringHead" -> do
-            case a' of
-                String s -> pure $ Char (Text.head s)
-                _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
-        PrimOp "stringTail" -> do
-            case a' of
-                String s -> pure $ String (Text.tail s)
-                _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
+                pure $ String asText
+            PrimOp "error" -> do
+                throwError_ $ CodeThrewError a'
+            PrimOp "println" -> do
+                pure $ IOAction $ do
+                    let asString = case a' of
+                            String s -> s
+                            other -> prettyToText other
+                    putTextLn asString
+                    pure (Ctor unitCtor [])
+            PrimOp "negate" -> do
+                case a' of
+                    Int i -> pure $ Int (-i)
+                    Double d -> pure $ Double (-d)
+                    _ -> throwError_ TypeMismatch{expected = "Int or Double", actual = a'}
+            PrimOp "stringIsEmpty" -> do
+                case a' of
+                    String s -> pure $ boolValue (Text.null s)
+                    _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
+            PrimOp "stringHead" -> do
+                case a' of
+                    String s -> pure $ Char (Text.head s)
+                    _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
+            PrimOp "stringTail" -> do
+                case a' of
+                    String s -> pure $ String (Text.tail s)
+                    _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
 
-        -- stringCons fst a'
-        PartialApplication (PrimOp "stringCons") fst -> do
-            case (fst, a') of
-                (Char c, String s) -> pure $ String (Text.cons c s)
-                _ -> throwError_ TypeMismatch{expected = "Char and String", actual = a'}
-        -- (==) fst a'
-        PartialApplication (PrimOp "==") fst -> do
-            pure (boolValue (a' == fst))
-        PartialApplication (PrimOp "+") fst -> do
-            case (a', fst) of
-                (Int a, Int b) -> pure $ Int (a + b)
-                (Double a, Double b) -> pure $ Double (a + b)
-                _ -> throwError_ TypeMismatch{expected = "(+): Int or Double", actual = a'}
-        PartialApplication (PrimOp "*") fst -> do
-            case (a', fst) of
-                (Int a, Int b) -> pure $ Int (a * b)
-                (Double a, Double b) -> pure $ Double (a * b)
-                _ -> throwError_ TypeMismatch{expected = "(*): Int or Double", actual = a'}
-        PartialApplication (PrimOp "compare") fst -> do
-            let orderingToInt = \case
-                    LT -> -1
-                    EQ -> 0
-                    GT -> 1
-            case (fst, a') of
-                (Int a, Int b) -> pure $ Int (orderingToInt (compare a b))
-                (Double a, Double b) -> pure $ Int (orderingToInt (compare a b))
-                (Char a, Char b) -> pure $ Int (orderingToInt (compare a b))
-                _ -> throwError_ TypeMismatch{expected = "(compare): Int or Double or Char", actual = a'}
-        PartialApplication (PrimOp "debugWithMsg") fst -> do
-            debug $ "Source Code Debug  (" <> pretty fst <> "):  " <> pretty a'
-            pure a'
-        PartialApplication (PrimOp ">>=") fst -> do
-            case fst of
-                IOAction io -> do
-                    pure $ IOAction $ do
-                        val <- io
-                        case a' of -- this sucks
-                            Closure env p e -> do
-                                let env' = Map.insert p val env
-                                scopedOverLocals $ do
-                                    modify (\s -> s{localBindings = env'})
-                                    interpretExpr e
-                            RecClosure env n p e -> do
-                                let env' = Map.insert p val env
+            -- stringCons fst a'
+            PartialApplication (PrimOp "stringCons") fst -> do
+                case (fst, a') of
+                    (Char c, String s) -> pure $ String (Text.cons c s)
+                    _ -> throwError_ TypeMismatch{expected = "Char and String", actual = a'}
+            -- (==) fst a'
+            PartialApplication (PrimOp "==") fst -> do
+                pure (boolValue (a' == fst))
+            PartialApplication (PrimOp "+") fst -> do
+                case (a', fst) of
+                    (Int a, Int b) -> pure $ Int (a + b)
+                    (Double a, Double b) -> pure $ Double (a + b)
+                    _ -> throwError_ TypeMismatch{expected = "(+): Int or Double", actual = a'}
+            PartialApplication (PrimOp "*") fst -> do
+                case (a', fst) of
+                    (Int a, Int b) -> pure $ Int (a * b)
+                    (Double a, Double b) -> pure $ Double (a * b)
+                    _ -> throwError_ TypeMismatch{expected = "(*): Int or Double", actual = a'}
+            PartialApplication (PrimOp "compare") fst -> do
+                let orderingToInt = \case
+                        LT -> -1
+                        EQ -> 0
+                        GT -> 1
+                case (fst, a') of
+                    (Int a, Int b) -> pure $ Int (orderingToInt (compare a b))
+                    (Double a, Double b) -> pure $ Int (orderingToInt (compare a b))
+                    (Char a, Char b) -> pure $ Int (orderingToInt (compare a b))
+                    _ -> throwError_ TypeMismatch{expected = "(compare): Int or Double or Char", actual = a'}
+            PartialApplication (PrimOp "debugWithMsg") fst -> do
+                debug $ "Source Code Debug  (" <> pretty fst <> "):  " <> pretty a'
+                pure a'
+            PartialApplication (PrimOp ">>=") fst -> do
+                case fst of
+                    IOAction io -> do
+                        pure $ IOAction $ do
+                            val <- io
+                            case a' of -- this sucks
+                                Closure env p e -> do
+                                    let env' = Map.insert p val env
+                                    scopedOverLocals $ do
+                                        modify (\s -> s{localBindings = env'})
+                                        interpretExpr e
+                                RecClosure env n p e -> do
+                                    let env' = Map.insert p val env
 
-                                scopedOverLocals $ do
-                                    modify
-                                        ( \s -> case n of
-                                            Global n' ->
-                                                s
-                                                    { globalBindings = Map.insert n' (RecClosure env' n p e) (globalBindings s)
-                                                    , localBindings = env'
-                                                    }
-                                            Local n' ->
-                                                s
-                                                    { localBindings = Map.insert n' (RecClosure env' n p e) (localBindings s)
-                                                    }
-                                        )
-                                    interpretExpr e
-                            _ -> throwError_ $ NotAFunction a'
-                _ -> throwError_ TypeMismatch{expected = "IO", actual = a'}
-        PrimOp primName -> do
-            case Map.lookup primName primOps of
-                Just 1 -> error "1-arg primop Should be handled here"
-                Just _ -> pure $ PartialApplication f' a'
-                Nothing -> throwError_ $ UnknownPrimitive primName
-        Ctor c args | typeArity (c.dataConType) < length args -> do
-            throwError_ $ NotAFunction f'
-        Ctor c args -> do
-            pure $ Ctor c (args <> [a'])
-        other -> throwError_ $ NotAFunction other
+                                    scopedOverLocals $ do
+                                        modify
+                                            ( \s -> case n of
+                                                Global n' ->
+                                                    s
+                                                        { globalBindings = Map.insert n' (RecClosure env' n p e) (globalBindings s)
+                                                        , localBindings = env'
+                                                        }
+                                                Local n' ->
+                                                    s
+                                                        { localBindings = Map.insert n' (RecClosure env' n p e) (localBindings s)
+                                                        }
+                                            )
+                                        interpretExpr e
+                                _ -> throwError_ $ NotAFunction a'
+                    _ -> throwError_ TypeMismatch{expected = "IO", actual = a'}
+            PrimOp primName -> do
+                case Map.lookup primName primOps of
+                    Just 1 -> error "1-arg primop Should be handled here"
+                    Just _ -> pure $ PartialApplication f' a'
+                    Nothing -> throwError_ $ UnknownPrimitive primName
+            Ctor c args | typeArity c.dataConType < length args -> do
+                throwError_ $ NotAFunction f'
+            Ctor c args -> do
+                pure $ Ctor c (args <> [a'])
+            Thunk{} -> do
+                forced <- force f'
+                apply forced a'
+            other -> throwError_ $ NotAFunction other
+    apply f' a'
 interpretExpr (Match e of' alts) = do
     e' <- interpretExpr e >>= force
     debug $ "forced match scrutinee to" <+> pretty e'

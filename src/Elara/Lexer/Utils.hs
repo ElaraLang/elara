@@ -1,9 +1,35 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OrPatterns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Elara.Lexer.Utils where
+module Elara.Lexer.Utils (
+    LexMonad,
+    ParseState (),
+    AlexInput (),
+    LexerError (..),
+    getPosition,
+    stringBuf,
+    lexSC,
+    commentDepth,
+    pendingPosition,
+    input,
+    pendingTokens,
+    position,
+    rest,
+    cleanIndentation,
+    createRegionStartingAt,
+    emitAt,
+    createRegion,
+    splitQualName,
+    startWhite,
+    alexGetByte,
+    initialLexState,
+    triggerIndentLayout,
+    triggerBlockLayout,
+    checkBlockLayout,
+) where
 
 import Codec.Binary.UTF8.String (encodeChar)
 import Data.Char
@@ -11,7 +37,7 @@ import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
 import Data.Text qualified as T
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), column, line, mkSourceRegionIn, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
@@ -19,8 +45,9 @@ import Error.Diagnose (Marker (..), Note (..), Report (Err))
 
 import Effectful (Eff)
 import Effectful.Error.Static
-import Effectful.State.Extra (use')
+import Effectful.State.Extra (use', (%=), (.=))
 import Effectful.State.Static.Local
+import Elara.Data.Pretty (Pretty)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
 
@@ -31,7 +58,8 @@ data AlexInput = AlexInput
     , _rest :: Text
     , _position :: RealPosition
     }
-    deriving (Show)
+    deriving (Show, Generic)
+instance Pretty AlexInput
 
 data IndentInfo = IndentInfo
     { _indent :: Int
@@ -39,7 +67,9 @@ data IndentInfo = IndentInfo
     , _openedAtDepth :: Int
     -- ^ the delimDepth when this indent was opened
     }
-    deriving (Show)
+    deriving (Show, Generic)
+
+instance Pretty IndentInfo
 
 data ParseState = ParseState
     { _input :: AlexInput
@@ -54,11 +84,25 @@ data ParseState = ParseState
     , _pendingPosition :: TokPosition
     -- ^ needed when parsing strings, chars, multi-line strings
     , _prevEndsExpr :: Bool
-    -- ^ did the previous token end an expression? (used for offside rule
+    -- ^ did the previous token end an expression? (used for offside rule)
     , _delimDepth :: Int
     -- ^ current depth of open delimiters ((), [], {
+    , _commentDepth :: Int
+    -- ^ nested comment depth
+    , _layoutExpected :: Maybe LayoutExpectation
+    -- ^ Tracks if the previous token triggers a layout block
     }
-    deriving (Show)
+    deriving (Show, Generic)
+
+instance Pretty ParseState
+
+data LayoutExpectation
+    = -- | Just checks alignment (like match/with)
+      ExpectIndent
+    | -- | Starts a new block at the next token (let/where/do)
+      ExpectBlock
+    deriving (Eq, Show, Generic)
+instance Pretty LayoutExpectation
 
 makeLenses ''AlexInput
 makeLenses ''IndentInfo
@@ -91,10 +135,17 @@ data LexerError
         -- | The current state of the lexer
         ParseState
     | UnterminatedStringLiteral ParseState
-    deriving (Show)
+    | GenericAlexError AlexInput
+    deriving (Show, Generic)
+
+instance Pretty LexerError
 
 instance ReportableError LexerError where
-    report (TooMuchIndentation expected further actual s) = do
+    errorCode (TooMuchIndentation{}) = Just Codes.tooMuchIndentation
+    errorCode (UnterminatedStringLiteral _) = Just Codes.unterminatedStringLiteral
+    errorCode (GenericAlexError _) = Just Codes.genericLexicalError
+
+    getReport (TooMuchIndentation expected further actual s) = do
         let fp = view (input % filePath) s
         let pos = view (input % position) s
         let msg = "Unexpected change in indentation. Expected " <> show (expected ^. indent) <> " spaces, but got " <> show actual <> " spaces."
@@ -109,7 +160,8 @@ instance ReportableError LexerError where
         let furtherHints = case further of
                 Nothing -> baseHints
                 Just f -> (positionToDiagnosePosition fp (f ^. indentPos), Maybe ("an offside rule begins here (column " <> show (f ^. indent) <> "). If you think the problematic line is \"related\" to this line, make sure they line up.")) : baseHints
-        writeReport $
+
+        pure $
             Err
                 (Just Codes.tooMuchIndentation)
                 msg
@@ -117,12 +169,24 @@ instance ReportableError LexerError where
                 [ Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
                 , Hint hint
                 ]
-    report (UnterminatedStringLiteral s) = do
+    getReport (GenericAlexError ai) = do
+        let fp = view filePath ai
+        let pos = view position ai
+        let msg = "Lexical error"
+
+        pure $
+            Err
+                (Just Codes.genericLexicalError)
+                msg
+                [(positionToDiagnosePosition fp pos, This "lexical error occurred here")]
+                [ Note "The lexer encountered an invalid character or sequence of characters that it could not process."
+                ]
+    getReport (UnterminatedStringLiteral s) = do
         let fp = view (input % filePath) s
         let pos = view (input % position) s
         let msg = "Unterminated string literal."
         let hint = "Make sure that the string literal is terminated with a double quote (\")."
-        writeReport $
+        pure $
             Err
                 (Just Codes.unterminatedStringLiteral)
                 msg
@@ -131,8 +195,8 @@ instance ReportableError LexerError where
                 , Hint hint
                 ]
 
-initialState :: FilePath -> Text -> ParseState
-initialState fp s =
+initialLexState :: FilePath -> Text -> ParseState
+initialLexState fp s =
     ParseState
         { _input =
             AlexInput
@@ -154,6 +218,8 @@ initialState fp s =
         , _pendingPosition = Position 1 1
         , _prevEndsExpr = True
         , _delimDepth = 0
+        , _commentDepth = 0
+        , _layoutExpected = Nothing
         }
 
 pushFront :: Lexeme -> LexMonad ()
@@ -162,9 +228,38 @@ pushFront lex = modify (over pendingTokens (lex :))
 pushBack :: Lexeme -> LexMonad ()
 pushBack lex = modify (over pendingTokens (\toks -> toks <> [lex]))
 
+triggerIndentLayout :: LexMonad ()
+triggerIndentLayout =
+    layoutExpected .= Just ExpectIndent
+
+triggerBlockLayout :: LexMonad ()
+triggerBlockLayout = layoutExpected .= Just ExpectBlock
+
+{- | If a (block) layout is expected, check the current token's indentation against the top of the stack,
+and insert an INDENT token if necessary
+-}
+checkBlockLayout :: Int -> LexMonad ()
+checkBlockLayout tokenLen = do
+    m <- use' layoutExpected
+    case m of
+        Just ExpectBlock -> do
+            pos@(Position _ col) <- getPosition tokenLen
+
+            indentInfo <- mkIndentInfo (col - 1)
+            indentStack %= (indentInfo <|)
+
+            -- push a virtual indent token before the current token
+            r <- createRegion pos pos
+            pushFront (Located (RealSourceRegion r) TokenIndent)
+
+            -- reset
+            layoutExpected .= Nothing
+        _ -> pass
+
 -- Emits a token, updating the prevEndsExpr state if necessary
 emitAt :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
 emitAt t region = do
+    layoutExpected .= Nothing -- reset layout expectation
     prevEnds <- getPrevEndsExpr
     -- Suppress LINESEP if previous token cannot end an expression
     case t of
@@ -176,7 +271,13 @@ emitAt t region = do
   where
     emit = do
         setPrevEndsExpr (tokenEndsExpr t)
-        pure (Just (Located region t))
+        let lex = Located region t
+        pending <- use' pendingTokens
+        if null pending
+            then pure (Just lex)
+            else do
+                pushBack lex
+                pure Nothing
 
 popPending :: LexMonad (Maybe Lexeme)
 popPending = do
@@ -185,8 +286,9 @@ popPending = do
         (x : xs) -> put s{_pendingTokens = xs} >> pure (Just x)
         [] -> pure Nothing
 
--- Emit DEDENTs for layout opened inside current delimiter depth, then the closer.
--- Return the first pending token (typically a DEDENT) so stream becomes “… <DEDENT> ) …”
+{- | Emit DEDENTs for layout opened inside current delimiter depth, then the closer.
+Return the first pending token (typically a DEDENT) so stream becomes "… <DEDENT> ) …"
+-}
 emitCloser :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
 emitCloser closerTok closerReg = do
     flushLayoutBeforeCloser
@@ -200,7 +302,7 @@ emitCloser closerTok closerReg = do
         Nothing -> setPrevEndsExpr (tokenEndsExpr closerTok)
     pure m
 
--- Close only layout started at or inside current delimiter depth
+-- | Close only layout started at or inside current delimiter depth
 flushLayoutBeforeCloser :: LexMonad ()
 flushLayoutBeforeCloser = do
     d <- use' delimDepth
@@ -233,11 +335,6 @@ emitLineSepAt pos = do
     r <- createRegion pos pos
     emitLayoutAt TokenLineSeparator r
 
-fake :: Token -> LexMonad (Maybe Lexeme)
-fake t = do
-    region <- getPosition 0 >>= createRegionStartingAt
-    emitAt t (RealSourceRegion region)
-
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
     let indentation = T.length $ T.dropWhile (== '\n') str
@@ -245,38 +342,64 @@ startWhite _ str = do
     let indents@(cur :| _) = s ^. indentStack
 
     curPos <- use' (input % position)
+    let expectingLayout = isJust (s ^. layoutExpected)
+    layoutExpected .= Nothing
+
     case indentation `compare` (cur ^. indent) of
-        GT -> do
+        GT | expectingLayout -> do
             fakeLb <- emitIndentAt curPos
             indentInfo <- mkIndentInfo indentation
             let push = maybe identity (:) fakeLb
+            -- Indent starts a block, usually shouldn't immediately end expr
+            setPrevEndsExpr False
             put s{_indentStack = indentInfo <| indents, _pendingTokens = push (_pendingTokens s)}
             pure Nothing
+        GT -> pure Nothing -- ignore indentation increases that don't follow layout triggers
         LT -> do
-            -- If the indentation is less than the current indentation, we need to close the current block
+            -- Pop all levels strictly greater than current indentation
             let (closingLevels, topAndRest) = span (view (indent % to (> indentation))) indents
+
             case topAndRest of
                 (top : xs) -> do
                     eofPos <- use' (input % position)
 
+                    -- emit DEDENTs for everything we popped
                     dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) closingLevels
-                    -- emit at most one layout line separator for this line
-                    sep <- emitLineSepAt eofPos
-                    let closings = dedents <> maybeToList sep
-                    if top ^. indent == indentation
-                        then
-                            put
-                                s
-                                    { _indentStack = top :| xs
-                                    , _pendingTokens = closings <> _pendingTokens s
-                                    }
-                        else throwError (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
+
+                    -- check validity against the new top of stack
+                    -- a valid continuation is one that is >= top indent
+                    let validContinuation = indentation >= top ^. indent
+
+                    if validContinuation
+                        then do
+                            -- emit separator _only_ if we match exactly, i.e. it's a new statement
+                            -- if indentation > top, it's a continuation, so no separator
+                            let isNewStmt = indentation == top ^. indent
+
+                            sep <-
+                                if isNewStmt
+                                    then emitLineSepAt eofPos
+                                    else pure Nothing -- no separator for continuations
+                            setPrevEndsExpr False
+
+                            let closings = dedents <> maybeToList sep
+
+                            indentStack .= (top :| xs)
+                            pendingTokens %= (closings <>)
+
+                            pure Nothing
+                        else
+                            throwError (TooMuchIndentation top (viaNonEmpty last $ init indents) indentation s)
                 [] -> error (" Indent stack contains nothing greater than " <> show indentation)
             pure Nothing
         EQ -> do
             ends <- getPrevEndsExpr
             pos <- use' (input % position)
-            if ends then emitLineSepAt pos else pure Nothing
+            if ends
+                then do
+                    setPrevEndsExpr False
+                    emitLineSepAt pos
+                else pure Nothing
 
 -- Insert dedent for any leftover unclosed indents
 cleanIndentation :: LexMonad [Lexeme]
@@ -289,12 +412,12 @@ cleanIndentation = do
                 base = last indentStack'
             eofPos <- use' (input % position)
             dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) toClose
-            modify $ \s -> s{_indentStack = base :| []}
+            indentStack .= (base :| [])
             pure dedents
 
 -- The functions that must be provided to Alex's basic interface
 
--- The input: last character, unused bytes, remaining string
+-- | Read a byte from the input
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
 alexGetByte ai@AlexInput{..} =
     case _bytes of
@@ -318,12 +441,6 @@ alexGetByte ai@AlexInput{..} =
                                 }
                             )
 
-getLineNo :: LexMonad Int
-getLineNo = use' (input % position % line)
-
-getColNo :: LexMonad Int
-getColNo = use' (input % position % column)
-
 getPosition :: Int -> LexMonad TokPosition
 getPosition tokenLength = do
     ParseState{_input = AlexInput{_position = (Position ln cn)}} <- get
@@ -339,7 +456,7 @@ createRegionStartingAt start = do
     end <- getPosition 0
     createRegion start end
 
-{- | splits a qualified name into the qualifier and the name.
+{- | Splits a qualified name into the qualifier and the name.
 Throws an error if the name is not qualified.
 
 Examples:

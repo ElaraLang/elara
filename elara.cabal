@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.38.2.
+-- This file has been generated from package.yaml by hpack version 0.38.3.
 --
 -- see: https://github.com/sol/hpack
 
@@ -217,6 +217,10 @@ library
 
 executable elara
   main-is: Main.hs
+  other-modules:
+      Paths_elara
+  autogen-modules:
+      Paths_elara
   hs-source-dirs:
       app
   default-extensions:
@@ -235,6 +239,7 @@ executable elara
       aeson
     , algebraic-graphs
     , array
+    , autodocodec
     , base ==4.*
     , binary
     , bytestring
@@ -260,6 +265,7 @@ executable elara
     , matrix
     , megaparsec
     , mtl
+    , opt-env-conf
     , optics
     , parser-combinators
     , pretty-simple

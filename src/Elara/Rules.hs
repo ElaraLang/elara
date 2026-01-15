@@ -31,7 +31,7 @@ import System.FilePath (takeFileName)
 rules :: HasCallStack => CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = case key of
     GetCompilerSettings -> pure compilerSettings
-    InputFiles -> inject getInputFiles
+    InputFiles -> inject (getInputFiles compilerSettings)
     GetFileContents fp -> runGetFileContentsQuery fp
     LexedFile fp -> inject $ getLexedFile fp
     ParsedFile fp -> inject $ getParsedFileQuery fp

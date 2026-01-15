@@ -1,26 +1,26 @@
 {-# LANGUAGE DataKinds #-}
 
-module Elara.Parse.Expression where
+module Elara.Parse.Expression (exprParser, locatedExpr, letPreamble, element, reservedWords) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Frontend
 import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
-import Elara.AST.Name (VarName, nameText)
-import Elara.AST.Region (Located (..), sourceRegion, spanningRegion', withLocationOf)
+import Elara.AST.Name (VarName (..), nameText)
+import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
 import Elara.AST.Select (LocatedAST (Frontend))
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (liftedBinary, sepEndBy1')
+import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Error
 import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
-import Elara.Parse.Names (conName, opName, unqualifiedVarName, varName, varOrConName)
+import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
 import Elara.Prim qualified as Prim
 import Elara.Utils (curry3)
-import Text.Megaparsec (MonadParsec (eof), customFailure, sepEndBy, try, (<?>))
+import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
 
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
@@ -41,7 +41,7 @@ Note that top level let declarations are not parsed here, but in the "Elara.Pars
 -}
 element :: Parser FrontendExpr
 element =
-    (try exprParser <|> statement) <?> "element"
+    try exprParser <|> statement
 
 {- | This is not a "statement" in an imperative sense, but is used to parse let expressions that are not at the top level.
 | The reason for having this distinction is that if let's were considered a normal expression, then something like
@@ -52,27 +52,43 @@ statement :: Parser FrontendExpr
 statement =
     letStatement <?> "let statement"
 
-unannotatedExpr :: Iso' FrontendExpr (Located FrontendExpr')
-unannotatedExpr = iso (\(Expr (e, _)) -> e) (\x -> Expr (x, Nothing))
-
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
-binOp = liftedBinary operator (curry3 BinaryOperator) unannotatedExpr
-cons = liftedBinary consName (curry3 BinaryOperator) unannotatedExpr
+
+-- | Parser for binary operators like (+), (-), (&&), etc.
+binOp = infixOp operator (curry3 BinaryOperator)
+
+-- | Parser for the list constructor (::)
+cons = infixOp consName (curry3 BinaryOperator)
   where
     consName :: Parser FrontendBinaryOperator
     consName = do
         l <- located (token_ TokenDoubleColon)
         let y = Infixed (Prim.cons `withLocationOf` l) :: BinaryOperator' Frontend
         pure $ MkBinaryOperator (y `withLocationOf` l)
-functionCall = liftedBinary pass (const FunctionCall) unannotatedExpr
+
+-- | Parser for function application (treated as an infix operator with no operator)
+functionCall = infixOp pass (\_ f x -> FunctionCall f x)
+
+-- | Creates an infix operator parser that parses the operator, merges the regions, and wraps the result in `Expr`
+infixOp ::
+    -- | Parser that parses the operator
+    Parser op ->
+    -- | Function that creates the expression given the operator and two expressions
+    (op -> FrontendExpr -> FrontendExpr -> FrontendExpr') ->
+    -- | The lifted parser
+    Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
+infixOp opParser mkExpr = do
+    op <- opParser
+    pure $ \l r ->
+        let region = enclosingRegion' (l ^. sourceRegion) (r ^. sourceRegion)
+         in Expr (Located region (mkExpr op l r), Nothing)
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: Parser FrontendBinaryOperator
 operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
   where
     asciiOp :: Parser (Located FrontendBinaryOperator')
-    asciiOp = located $ do
-        SymOp <$> located opName
+    asciiOp = located $ SymOp <$> located opName
     infixOp = located $ do
         token_ TokenBacktick
         op <- located varOrConName
@@ -81,20 +97,22 @@ operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
 
 expression :: Parser FrontendExpr
 expression =
-    try unit
-        <|> (try tuple <?> "tuple expression")
-        <|> (try parensExpr <?> "parenthesized expression")
-        <|> (list <?> "list")
-        <|> (ifElse <?> "if expression")
-        <|> (letInExpression <?> "let-in expression")
-        <|> (lambda <?> "lambda expression")
-        <|> (match <?> "match expression")
-        <|> (float <?> "float")
-        <|> (int <?> "int")
-        <|> (charL <?> "char")
-        <|> (string <?> "string")
-        <|> (variable <?> "variable")
-        <|> (constructor <?> "constructor")
+    choice
+        [ try unit
+        , try tuple <?> "tuple expression"
+        , try parensExpr <?> "parenthesized expression"
+        , list <?> "list"
+        , ifElse <?> "if expression"
+        , letInExpression <?> "let-in expression"
+        , lambda <?> "lambda expression"
+        , match <?> "match expression"
+        , float <?> "float"
+        , int <?> "int"
+        , charL <?> "char"
+        , string <?> "string"
+        , variable <?> "variable"
+        , constructor <?> "constructor"
+        ]
         <?> "expression"
 
 -- | Reserved words, used to backtrack accordingly
@@ -103,7 +121,7 @@ reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
 parensExpr :: Parser FrontendExpr
 parensExpr = do
-    Located loc e <- located (inParens exprParser)
+    Located loc e <- located (inParens (exprParser <* optional lineSeparator))
     pure $ Expr (Located loc (InParens e), Nothing)
 
 variable :: Parser FrontendExpr
@@ -196,12 +214,32 @@ ifElse = locatedExpr $ do
 letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
 letPreamble = do
     token_ TokenLet
-    name <- located unqualifiedVarName
-    patterns <- many patParser
+    (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
     e <- exprBlock element
     pure (name, patterns, e)
+  where
+    prefixDef :: Parser (Located VarName, [FrontendPattern])
+    prefixDef = do
+        name <- located unqualifiedVarName
+        patterns <- many patParser
+        pure (name, patterns)
+
+    infixDef :: Parser (Located VarName, [FrontendPattern])
+    infixDef = do
+        p1 <- patParser
+        op <- located (opName' <|> backTickedName)
+        p2 <- patParser
+        pure (op, [p1, p2])
+      where
+        opName' = fmap OperatorVarName opId <?> "operator name"
+        backTickedName =
+            ( token_ TokenBacktick
+                *> fmap NormalVarName varId
+                <* token_ TokenBacktick
+            )
+                <?> "backticked name"
 
 letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
 letInExpression = locatedExpr $ do

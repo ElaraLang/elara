@@ -2,13 +2,11 @@ module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
 import Data.Generics.Wrapped
-import Data.List.NonEmpty ((<|))
 import Elara.AST.Frontend (FrontendType, FrontendType')
 import Elara.AST.Generic (Type (..), Type' (..))
 import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Name (LowerAlphaName)
 import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
-import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')

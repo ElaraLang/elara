@@ -6,7 +6,7 @@ import Elara.AST.Region (Located (..))
 import Elara.AST.Select
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error (ElaraParseError (..))
-import Elara.Parse.Expression (expression)
+import Elara.Parse.Expression (exprParser)
 import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (conName)
 import Elara.Parse.Primitives
@@ -27,7 +27,7 @@ annotation = do
 
 constExpr :: Parser (AnnotationArg Frontend)
 constExpr = do
-    e <- expression
+    e <- exprParser
     validateConstExpr e
 
 validateConstExpr :: FrontendExpr -> Parser (AnnotationArg Frontend)

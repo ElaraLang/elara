@@ -5,14 +5,17 @@
 module Elara.Parse.Stream where
 
 import Data.Text qualified as T
-import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), RealSourceRegion, generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
+import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
 import Text.Megaparsec
 
 data TokenStream = TokenStream
     { tokenStreamInput :: !Text
+    -- ^ The full, original input text. This never changes throughout parsing.
     , tokenStreamTokens :: ![Lexeme]
+    -- ^ The list of tokens remaining to be parsed
     , skipIndents :: Bool
+    -- ^ Whether to skip Indent tokens encountered during parsing
     }
     deriving (Show, Eq)
 
@@ -27,16 +30,19 @@ instance Stream TokenStream where
     chunkToTokens Proxy = identity
     chunkLength Proxy = length
     chunkEmpty Proxy = null
-    take1_ :: TokenStream -> Maybe (Text.Megaparsec.Token TokenStream, TokenStream)
-    take1_ (TokenStream _ [] _) = Nothing
-    take1_ (TokenStream str (Located _ t : ts) skipIndents@True) | isIndent t = take1_ (TokenStream str ts skipIndents)
-    take1_ (TokenStream str (t : ts) skipIndents) =
-        Just (t, TokenStream (T.drop (tokensLength (Proxy @TokenStream) (t :| [])) str) ts skipIndents)
+
+    take1_ stream@(TokenStream _str tokens skip)
+        | skip = case dropWhile (isIndent . view unlocated) tokens of
+            [] -> Nothing
+            (t : ts) -> Just (t, stream{tokenStreamTokens = ts})
+        | otherwise = case tokens of
+            [] -> Nothing
+            (t : ts) -> Just (t, stream{tokenStreamTokens = ts})
+
     takeN_ n (TokenStream str s skipIndents)
         | n <= 0 = Just ([], TokenStream str s skipIndents)
         | null s = Nothing
-        | otherwise -- repeatedly call take1_ until it returns Nothing
-            =
+        | otherwise =
             let (x, s') = takeWhile_ (const True) (TokenStream str s skipIndents)
              in case takeN_ (n - length x) s' of
                     Nothing -> Nothing
@@ -44,9 +50,7 @@ instance Stream TokenStream where
 
     takeWhile_ f (TokenStream str s skipIndents) =
         let (x, s') = span f s
-         in case nonEmpty x of
-                Nothing -> (x, TokenStream str s' skipIndents)
-                Just nex -> (x, TokenStream (T.drop (tokensLength (Proxy @TokenStream) nex) str) s' skipIndents)
+         in (x, TokenStream str s' skipIndents) -- Again, preserve 'str'
 
 instance VisualStream TokenStream where
     showTokens Proxy =
@@ -57,46 +61,50 @@ instance VisualStream TokenStream where
     tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 instance TraversableStream TokenStream where
+    -- Since we have the full text and tokens with absolute positions,
+    -- we can implement reachOffset by simple lookup rather than incremental slicing.
     reachOffset o PosState{..} =
-        ( Just (toString (prefix <> restOfLine))
+        ( Just (toString lineStr)
         , PosState
             { pstateInput =
                 TokenStream
-                    { tokenStreamInput = postStr
+                    { tokenStreamInput = fullText
                     , tokenStreamTokens = postLexemes
                     , skipIndents = pstateInput.skipIndents
                     }
             , pstateOffset = max pstateOffset o
             , pstateSourcePos = newSourcePos
             , pstateTabWidth = pstateTabWidth
-            , pstateLinePrefix = toString prefix
+            , pstateLinePrefix = toString prefixStr
             }
         )
       where
-        prefix =
-            if sameLine
-                then fromString pstateLinePrefix <> preLine
-                else preLine
-        sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
-        newSourcePos =
-            case postLexemes of
-                [] -> pstateSourcePos
-                (x : _) -> sourceRegionToSourcePos x sourceRegion startPos
+        -- split into tokens before and after offset o
         (preLexemes, postLexemes) = splitAt (o - pstateOffset) (tokenStreamTokens pstateInput)
-        (preStr, postStr) = T.splitAt tokensConsumed (tokenStreamInput pstateInput)
-        preLine = T.reverse . T.takeWhile (/= '\n') . T.reverse $ preStr
-        tokensConsumed =
-            case nonEmpty preLexemes of
-                Nothing -> 0
-                Just nePre -> tokensLength (Proxy @TokenStream) nePre
-        restOfLine = T.takeWhile (/= '\n') postStr
 
-sourceRegionToSourcePos :: HasPath a1 => Located a2 -> Lens' (Located a2) a1 -> Lens' RealSourceRegion RealPosition -> SourcePos
-sourceRegionToSourcePos sr l which = do
-    let fp = view (l % path) sr
-    case preview (sourceRegion % _RealSourceRegion % which) sr of
-        Just pos -> realPositionToSourcePos fp pos
-        Nothing -> generatedSourcePos fp
+        -- determine new source position, based on first token after offset,
+        newSourcePos = case postLexemes of
+            (x : _) -> sourceRegionToSourcePos x -- first token after offset
+            [] -> case viaNonEmpty last preLexemes of
+                Just lastTok -> sourceRegionToSourcePos lastTok -- fallback to last token
+                Nothing -> pstateSourcePos
+
+        fullText = tokenStreamInput pstateInput
+        lineIndex = unPos (sourceLine newSourcePos) - 1
+        allLines = lines fullText
+
+        lineStr = fromMaybe "" (allLines !!? lineIndex)
+
+        col = unPos (sourceColumn newSourcePos)
+        prefixStr = T.take (col - 1) lineStr
+
+sourceRegionToSourcePos :: Located a -> SourcePos
+sourceRegionToSourcePos loc =
+    let fp = view path loc
+        pos = loc ^? sourceRegion % _RealSourceRegion % startPos
+     in case pos of
+            Just p -> realPositionToSourcePos fp p
+            Nothing -> generatedSourcePos fp
 
 realPositionToSourcePos :: Maybe FilePath -> RealPosition -> SourcePos
 realPositionToSourcePos fp (Position line column) =
@@ -105,6 +113,5 @@ realPositionToSourcePos fp (Position line column) =
         , sourceLine = mkPos line
         , sourceColumn = mkPos column
         }
-
 tokenLength :: Lexeme -> Int
 tokenLength = T.length . tokenRepr . view unlocated

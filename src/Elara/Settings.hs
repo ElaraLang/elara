@@ -1,35 +1,34 @@
 module Elara.Settings where
 
 data CompilerSettings = CompilerSettings
-    { dumpSettings :: DumpSettings
+    { dumpTargets :: Set DumpTarget
+    -- ^ Which compilation stages to dump
     , runWith :: RunWithOption
+    -- ^ How to run the compiled program
     , mainFile :: Maybe FilePath
+    -- ^ The main file to compile/run
     }
+    deriving (Show, Eq)
 
-data DumpSettings = DumpSettings
-    { dumpLexed :: Bool
-    , dumpParsed :: Bool
-    , dumpDesugared :: Bool
-    , dumpRenamed :: Bool
-    , dumpShunted :: Bool
-    , dumpTyped :: Bool
-    , dumpCore :: Bool
-    , dumpIR :: Bool
-    , dumpJVM :: Bool
-    }
+data DumpTarget
+    = DumpLexed
+    | DumpParsed
+    | DumpDesugared
+    | DumpRenamed
+    | DumpShunted
+    | DumpTyped
+    | DumpCore
+    | DumpIR
+    | DumpJVM
+    deriving (Show, Eq, Ord, Enum, Bounded, Generic)
 
-defaultDumpSettings :: DumpSettings
-defaultDumpSettings =
-    DumpSettings
-        { dumpLexed = False
-        , dumpParsed = False
-        , dumpDesugared = False
-        , dumpRenamed = False
-        , dumpShunted = False
-        , dumpTyped = False
-        , dumpCore = False
-        , dumpIR = False
-        , dumpJVM = False
+-- | Default is simply an empty set
+defaultSettings :: CompilerSettings
+defaultSettings =
+    CompilerSettings
+        { dumpTargets = mempty
+        , runWith = RunWithNone
+        , mainFile = Nothing
         }
 
 data RunWithOption

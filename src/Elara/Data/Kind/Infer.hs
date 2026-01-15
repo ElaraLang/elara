@@ -18,7 +18,15 @@ k -> Type
 
 TODO: this is extremely basic and needs some nicer error messages, no support for polykinds or higher-kinded types yet
 -}
-module Elara.Data.Kind.Infer where
+module Elara.Data.Kind.Infer (
+    KindInferError (..),
+    inferKind,
+    inferTypeKind,
+    initialInferState,
+    lookupKindVarMaybe,
+    lookupNameKindVar,
+    InferState,
+) where
 
 import Control.Monad (foldM)
 import Data.Data (Data)
@@ -36,14 +44,13 @@ import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.Data.Kind
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique, UniqueId)
+import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Logging (debug, debugWith)
+import Elara.Logging (debugWith)
 import Elara.Prim (primKindCheckContext)
 import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
-import Elara.Utils (uncurry3)
 import Error.Diagnose
 import Optics (set, traverseOf_, universeOf)
 import Rock qualified
@@ -175,30 +182,6 @@ elaborate tName tvs t = debugWith ("elaborate: " <> pretty tName) $ do
     newEqualityConstraint (VarKind datatypeKindVar) kind
 
     pure (datatypeKindVar, t')
-
-infer :: KindInfer r => Map (Qualified TypeName) ElaraKind -> [(Qualified TypeName, [Located TypeVar], ShuntedTypeDeclaration)] -> Eff r [(ElaraKind, KindedTypeDeclaration)]
-infer kindEnv decls = do
-    modify (set #kindEnv kindEnv)
-    for_ decls $ \(name, _, _) -> do
-        kindvar <- makeUniqueId
-        declareNamedType name kindvar
-
-    decls' <- traverse (uncurry3 elaborate) decls
-    solveConstraints
-
-    for decls' $ \(kindVar, body) -> do
-        kind <- lookupKindVarInSubstitution kindVar
-        body' <- case body of
-            ADT constructors -> do
-                constructors' <- for constructors $ \(n, conArgs) -> do
-                    conArgs' <- for conArgs $ \(arg :: MidKindedType) -> do
-                        solveType arg
-
-                    pure (n, conArgs')
-                pure (ADT @Kinded constructors')
-            Alias a -> do
-                todo
-        pure (kind, body')
 
 inferKind ::
     _ =>
@@ -348,9 +331,6 @@ solveType (Type (t, kindVar)) = do
         RecordType fields -> do
             fields' <- traverseOf (each % _2) solveType fields
             pure $ Type (RecordType fields' <$ t, kind')
-
-getAnn :: KindedType -> ElaraKind
-getAnn (Type (_, b)) = b
 
 getAnn' :: MidKindedType -> ElaraKind
 getAnn' (Type (_, b)) = VarKind b
