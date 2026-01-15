@@ -25,8 +25,8 @@
 -&gt; TokenStream
 -&gt; Either
      (WParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
-</span><a href="Elara.Parse.html#parseModule"><span class="hs-identifier hs-var hs-var">parseModule</span></a></span></span><span> </span><span id="local-6989586621680143001"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143001"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseErrorBundle TokenStream ElaraParseError
+</span><a href="Elara.Parse.html#parseModule"><span class="hs-identifier hs-var hs-var">parseModule</span></a></span></span><span> </span><span id="local-6989586621680144494"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144494"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseErrorBundle TokenStream ElaraParseError
  -&gt; WParseErrorBundle TokenStream ElaraParseError)
 -&gt; Either
      (ParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
@@ -69,7 +69,7 @@ forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f a
 </span><span class="hs-operator hs-var">&lt;*</span></span><span> </span><span class="annot"><span class="annottext">ParsecT ElaraParseError TokenStream Identity ()
 forall e s (m :: * -&gt; *). MonadParsec e s m =&gt; m ()
 </span><span class="hs-identifier hs-var">eof</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143001"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><a href="#local-6989586621680144494"><span class="hs-identifier hs-var">y</span></a></span><span>
 </span><span id="line-25"></span><span>
 </span><span id="line-26"></span><span class="annot"><a href="Elara.Parse.html#moduleParser"><span class="hs-identifier hs-type">moduleParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-27"></span><span id="moduleParser"><span class="annot"><span class="annottext">moduleParser :: Parsec ElaraParseError TokenStream (Module Frontend)
@@ -86,13 +86,13 @@ forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f a
 forall e s (m :: * -&gt; *). MonadParsec e s m =&gt; m ()
 </span><span class="hs-identifier hs-var">eof</span></span><span>
 </span><span id="line-28"></span><span>
-</span><span id="line-29"></span><span id="local-6989586621680142906"><span id="local-6989586621680142908"><span class="annot"><a href="Elara.Parse.html#parse"><span class="hs-identifier hs-type">parse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-type">ParsePipelineEffects</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142906"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142908"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680142906"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142908"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-29"></span><span id="local-6989586621680144398"><span id="local-6989586621680144400"><span class="annot"><a href="Elara.Parse.html#parse"><span class="hs-identifier hs-type">parse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-type">ParsePipelineEffects</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144398"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144400"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680144398"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144400"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
 </span><span id="line-30"></span><span id="parse"><span class="annot"><span class="annottext">parse :: forall (r :: [Effect]) a.
 ParsePipelineEffects r =&gt;
 Parser a -&gt; FilePath -&gt; TokenStream -&gt; Eff r a
-</span><a href="Elara.Parse.html#parse"><span class="hs-identifier hs-var hs-var">parse</span></a></span></span><span> </span><span id="local-6989586621680143028"><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621680143028"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680143029"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143029"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Either (WParseErrorBundle TokenStream ElaraParseError) a -&gt; Eff r a
+</span><a href="Elara.Parse.html#parse"><span class="hs-identifier hs-var hs-var">parse</span></a></span></span><span> </span><span id="local-6989586621680144521"><span class="annot"><span class="annottext">Parser a
+</span><a href="#local-6989586621680144521"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680144522"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144522"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Either (WParseErrorBundle TokenStream ElaraParseError) a -&gt; Eff r a
 forall e (r :: [Effect]) a.
 (HasCallStack, Error e :&gt; r, Show e) =&gt;
 Either e a -&gt; Eff r a
@@ -128,31 +128,31 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall e s a.
 Parsec e s a -&gt; FilePath -&gt; s -&gt; Either (ParseErrorBundle s e) a
 </span><span class="hs-identifier hs-var">runParser</span></span><span> </span><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621680143028"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143029"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><a href="#local-6989586621680144521"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144522"><span class="hs-identifier hs-var">path</span></a></span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span id="local-6989586621680142926"><span id="local-6989586621680142927"><span class="annot"><a href="Elara.Parse.html#parseWith"><span class="hs-identifier hs-type">parseWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-type">ParsePipelineEffects</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142926"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680142926"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680142927"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-32"></span><span id="local-6989586621680144418"><span id="local-6989586621680144419"><span class="annot"><a href="Elara.Parse.html#parseWith"><span class="hs-identifier hs-type">parseWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-type">ParsePipelineEffects</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144418"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144419"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680144418"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144419"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
 </span><span id="line-33"></span><span id="parseWith"><span class="annot"><span class="annottext">parseWith :: forall (r :: [Effect]) a.
 ParsePipelineEffects r =&gt;
 Parser a -&gt; FilePath -&gt; (Text, [Lexeme]) -&gt; Eff r a
-</span><a href="Elara.Parse.html#parseWith"><span class="hs-identifier hs-var hs-var">parseWith</span></a></span></span><span> </span><span id="local-6989586621680143033"><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621680143033"><span class="hs-identifier hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621680143034"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143034"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680143035"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680143035"><span class="hs-identifier hs-var">source</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680143036"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680143036"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-34"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680143037"><span class="annot"><span class="annottext">tokenStream :: TokenStream
-</span><a href="#local-6989586621680143037"><span class="hs-identifier hs-var hs-var">tokenStream</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; TokenStream
+</span><a href="Elara.Parse.html#parseWith"><span class="hs-identifier hs-var hs-var">parseWith</span></a></span></span><span> </span><span id="local-6989586621680144526"><span class="annot"><span class="annottext">Parser a
+</span><a href="#local-6989586621680144526"><span class="hs-identifier hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621680144527"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144527"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144528"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680144528"><span class="hs-identifier hs-var">source</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144529"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680144529"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144530"><span class="annot"><span class="annottext">tokenStream :: TokenStream
+</span><a href="#local-6989586621680144530"><span class="hs-identifier hs-var hs-var">tokenStream</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; TokenStream
 </span><a href="Elara.Parse.html#createTokenStream"><span class="hs-identifier hs-var">createTokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680143035"><span class="hs-identifier hs-var">source</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680143036"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><a href="#local-6989586621680144528"><span class="hs-identifier hs-var">source</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680144529"><span class="hs-identifier hs-var">tokens</span></a></span><span>
 </span><span id="line-35"></span><span>    </span><span class="annot"><span class="annottext">Parser a -&gt; FilePath -&gt; TokenStream -&gt; Eff r a
 forall (r :: [Effect]) a.
 ParsePipelineEffects r =&gt;
 Parser a -&gt; FilePath -&gt; TokenStream -&gt; Eff r a
 </span><a href="Elara.Parse.html#parse"><span class="hs-identifier hs-var">parse</span></a></span><span> </span><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621680143033"><span class="hs-identifier hs-var">parser</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143034"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680143037"><span class="hs-identifier hs-var">tokenStream</span></a></span><span>
+</span><a href="#local-6989586621680144526"><span class="hs-identifier hs-var">parser</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144527"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680144530"><span class="hs-identifier hs-var">tokenStream</span></a></span><span>
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="annot"><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-type">getParsedFileQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span> </span><span class="hs-glyph">=&gt;</span><span>
@@ -171,17 +171,57 @@ FilePath
         '[Error (WParseErrorBundle TokenStream ElaraParseError),
           Rock Query])
      (Module Frontend)
-</span><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-var hs-var">getParsedFileQuery</span></a></span></span><span> </span><span id="local-6989586621680143151"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143151"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-48"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span><span> </span><span id="local-6989586621680143152"><span class="annot"><a href="#local-6989586621680143152"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span id="local-6989586621680143153"><span class="annot"><a href="#local-6989586621680143153"><span class="hs-identifier hs-var">contents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
-  (Rock Query
-     : ConsMinimumQueryEffects
-         '[FileSystem, DiagnosticWriter (Doc AnsiStyle)])
+</span><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-var hs-var">getParsedFileQuery</span></a></span></span><span> </span><span id="local-6989586621680144655"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680144655"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ReadFile.html#FileContents"><span class="hs-identifier hs-type">FileContents</span></a></span><span> </span><span id="local-6989586621680144656"><span class="annot"><a href="#local-6989586621680144656"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span id="local-6989586621680144657"><span class="annot"><a href="#local-6989586621680144657"><span class="hs-identifier hs-var">contents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff
+  (Error ReadFileError
+     : ConsQueryEffects
+         '[Error (WParseErrorBundle TokenStream ElaraParseError),
+           Rock Query])
   FileContents
 -&gt; Eff
      (ConsQueryEffects
         '[Error (WParseErrorBundle TokenStream ElaraParseError),
           Rock Query])
+     FileContents
+forall e (r :: [Effect]) a.
+(DiagnosticWriter (Doc AnsiStyle) :&gt; r,
+ Error SomeReportableError :&gt; r, ReportableError e) =&gt;
+Eff (Error e : r) a -&gt; Eff r a
+</span><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier hs-var">runErrorOrReport</span></a></span><span> </span><span class="annot"><span class="annottext">(Eff
+   (Error ReadFileError
+      : ConsQueryEffects
+          '[Error (WParseErrorBundle TokenStream ElaraParseError),
+            Rock Query])
+   FileContents
+ -&gt; Eff
+      (ConsQueryEffects
+         '[Error (WParseErrorBundle TokenStream ElaraParseError),
+           Rock Query])
+      FileContents)
+-&gt; Eff
+     (Error ReadFileError
+        : ConsQueryEffects
+            '[Error (WParseErrorBundle TokenStream ElaraParseError),
+              Rock Query])
+     FileContents
+-&gt; Eff
+     (ConsQueryEffects
+        '[Error (WParseErrorBundle TokenStream ElaraParseError),
+          Rock Query])
+     FileContents
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Query
+  (Rock Query
+     : ConsMinimumQueryEffects
+         '[FileSystem, Error ReadFileError,
+           DiagnosticWriter (Doc AnsiStyle)])
+  FileContents
+-&gt; Eff
+     (Error ReadFileError
+        : ConsQueryEffects
+            '[Error (WParseErrorBundle TokenStream ElaraParseError),
+              Rock Query])
      FileContents
 forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
        a.
@@ -191,16 +231,17 @@ f xs a -&gt; Eff es a
 -&gt; Query
      (Rock Query
         : ConsMinimumQueryEffects
-            '[FileSystem, DiagnosticWriter (Doc AnsiStyle)])
+            '[FileSystem, Error ReadFileError,
+              DiagnosticWriter (Doc AnsiStyle)])
      FileContents
 </span><a href="Elara.Query.html#GetFileContents"><span class="hs-identifier hs-var">GetFileContents</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143151"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>    </span><span id="local-6989586621680143154"><span class="annot"><a href="#local-6989586621680143154"><span class="hs-identifier hs-var">lexemes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier hs-type">runErrorOrReport</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.Lexer.Utils.html#LexerError"><span class="hs-identifier hs-type">LexerError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Rock.html#fetch"><span class="hs-identifier hs-type">fetch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#LexedFile"><span class="hs-identifier hs-type">LexedFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680143151"><span class="hs-identifier hs-type">fp</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-50"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680143155"><span class="annot"><a href="#local-6989586621680143155"><span class="hs-identifier hs-var hs-var">tokenStream</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; TokenStream
+</span><a href="#local-6989586621680144655"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span id="local-6989586621680144658"><span class="annot"><a href="#local-6989586621680144658"><span class="hs-identifier hs-var">lexemes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier hs-type">runErrorOrReport</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.Lexer.Utils.html#LexerError"><span class="hs-identifier hs-type">LexerError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Rock.html#fetch"><span class="hs-identifier hs-type">fetch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Query.html#LexedFile"><span class="hs-identifier hs-type">LexedFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144655"><span class="hs-identifier hs-type">fp</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144659"><span class="annot"><a href="#local-6989586621680144659"><span class="hs-identifier hs-var hs-var">tokenStream</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; TokenStream
 </span><a href="Elara.Parse.html#createTokenStream"><span class="hs-identifier hs-var">createTokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680143153"><span class="hs-identifier hs-var">contents</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680143154"><span class="hs-identifier hs-var">lexemes</span></a></span><span>
-</span><span id="line-51"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680143156"><span class="annot"><a href="#local-6989586621680143156"><span class="hs-identifier hs-var hs-var">parseResult</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parsec ElaraParseError TokenStream (Module Frontend)
+</span><a href="#local-6989586621680144657"><span class="hs-identifier hs-var">contents</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680144658"><span class="hs-identifier hs-var">lexemes</span></a></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144660"><span class="annot"><a href="#local-6989586621680144660"><span class="hs-identifier hs-var hs-var">parseResult</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parsec ElaraParseError TokenStream (Module Frontend)
 -&gt; FilePath
 -&gt; TokenStream
 -&gt; Either
@@ -209,9 +250,9 @@ forall e s a.
 Parsec e s a -&gt; FilePath -&gt; s -&gt; Either (ParseErrorBundle s e) a
 </span><span class="hs-identifier hs-var">runParser</span></span><span> </span><span class="annot"><span class="annottext">Parsec ElaraParseError TokenStream (Module Frontend)
 </span><a href="Elara.Parse.html#moduleParser"><span class="hs-identifier hs-var">moduleParser</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680143152"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
-</span><a href="#local-6989586621680143155"><span class="hs-identifier hs-var">tokenStream</span></a></span><span>
-</span><span id="line-52"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680143157"><span class="annot"><a href="#local-6989586621680143157"><span class="hs-identifier hs-var hs-var">firstError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseErrorBundle TokenStream ElaraParseError
+</span><a href="#local-6989586621680144656"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="annot"><span class="annottext">TokenStream
+</span><a href="#local-6989586621680144659"><span class="hs-identifier hs-var">tokenStream</span></a></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144661"><span class="annot"><a href="#local-6989586621680144661"><span class="hs-identifier hs-var hs-var">firstError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseErrorBundle TokenStream ElaraParseError
  -&gt; WParseErrorBundle TokenStream ElaraParseError)
 -&gt; Either
      (ParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
@@ -226,10 +267,10 @@ Bifunctor p =&gt;
 forall e m. ParseErrorBundle e m -&gt; WParseErrorBundle e m
 </span><a href="Elara.Parse.Error.html#WParseErrorBundle"><span class="hs-identifier hs-var">WParseErrorBundle</span></a></span><span> </span><span class="annot"><span class="annottext">Either
   (ParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
-</span><a href="#local-6989586621680143156"><span class="hs-identifier hs-var">parseResult</span></a></span><span>
-</span><span id="line-53"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680143157"><span class="hs-identifier hs-type">firstError</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-54"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621680143158"><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
-</span><a href="#local-6989586621680143158"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
+</span><a href="#local-6989586621680144660"><span class="hs-identifier hs-var">parseResult</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680144661"><span class="hs-identifier hs-type">firstError</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-54"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621680144662"><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
+</span><a href="#local-6989586621680144662"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
 -&gt; Eff
      (ConsQueryEffects
         '[Error (WParseErrorBundle TokenStream ElaraParseError),
@@ -239,9 +280,9 @@ forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
 </span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
-</span><a href="#local-6989586621680143158"><span class="hs-identifier hs-var">err</span></a></span><span>
-</span><span id="line-55"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621680143159"><span class="annot"><span class="annottext">Module Frontend
-</span><a href="#local-6989586621680143159"><span class="hs-identifier hs-var">mod</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Module Frontend
+</span><a href="#local-6989586621680144662"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621680144663"><span class="annot"><span class="annottext">Module Frontend
+</span><a href="#local-6989586621680144663"><span class="hs-identifier hs-var">mod</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Module Frontend
 -&gt; Eff
      (ConsQueryEffects
         '[Error (WParseErrorBundle TokenStream ElaraParseError),
@@ -256,7 +297,7 @@ a
      a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Module Frontend
-</span><a href="#local-6989586621680143159"><span class="hs-identifier hs-var">mod</span></a></span><span>
+</span><a href="#local-6989586621680144663"><span class="hs-identifier hs-var">mod</span></a></span><span>
 </span><span id="line-56"></span><span>
 </span><span id="line-57"></span><span class="annot"><a href="Elara.Parse.html#getParsedModuleQuery"><span class="hs-identifier hs-type">getParsedModuleQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-58"></span><span>    </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
@@ -273,9 +314,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
         '[Error (WParseErrorBundle TokenStream ElaraParseError),
           Rock Query])
      (Module Frontend)
-</span><a href="Elara.Parse.html#getParsedModuleQuery"><span class="hs-identifier hs-var hs-var">getParsedModuleQuery</span></a></span></span><span> </span><span id="local-6989586621680143206"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680143206"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-67"></span><span>    </span><span id="local-6989586621680143207"><span class="annot"><a href="#local-6989586621680143207"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+</span><a href="Elara.Parse.html#getParsedModuleQuery"><span class="hs-identifier hs-var hs-var">getParsedModuleQuery</span></a></span></span><span> </span><span id="local-6989586621680144710"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680144710"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>    </span><span id="local-6989586621680144711"><span class="annot"><a href="#local-6989586621680144711"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
   (Rock Query : ConsMinimumQueryEffects '[Rock Query, FileSystem])
   FilePath
 -&gt; Eff
@@ -292,18 +333,18 @@ f xs a -&gt; Eff es a
      (Rock Query : ConsMinimumQueryEffects '[Rock Query, FileSystem])
      FilePath
 </span><a href="Elara.Query.html#ModulePath"><span class="hs-identifier hs-var">ModulePath</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680143206"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-type">getParsedFileQuery</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680143207"><span class="hs-identifier hs-type">fp</span></a></span><span>
+</span><a href="#local-6989586621680144710"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-type">getParsedFileQuery</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144711"><span class="hs-identifier hs-type">fp</span></a></span><span>
 </span><span id="line-69"></span><span>
-</span><span id="line-70"></span><span class="hs-keyword">type</span><span> </span><span id="ParsePipelineEffects"><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-var">ParsePipelineEffects</span></a></span></span><span> </span><span id="local-6989586621680143208"><span class="annot"><a href="#local-6989586621680143208"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Error.html#WParseErrorBundle"><span class="hs-identifier hs-type">WParseErrorBundle</span></a></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="annot"><a href="Elara.Parse.Error.html#ElaraParseError"><span class="hs-identifier hs-type">ElaraParseError</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680143208"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span class="hs-keyword">type</span><span> </span><span id="ParsePipelineEffects"><span class="annot"><a href="Elara.Parse.html#ParsePipelineEffects"><span class="hs-identifier hs-var">ParsePipelineEffects</span></a></span></span><span> </span><span id="local-6989586621680144712"><span class="annot"><a href="#local-6989586621680144712"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Parse.Error.html#WParseErrorBundle"><span class="hs-identifier hs-type">WParseErrorBundle</span></a></span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span> </span><span class="annot"><a href="Elara.Parse.Error.html#ElaraParseError"><span class="hs-identifier hs-type">ElaraParseError</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680144712"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-71"></span><span>
 </span><span id="line-72"></span><span class="annot"><a href="Elara.Parse.html#createTokenStream"><span class="hs-identifier hs-type">createTokenStream</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Lexer.Token.html#Lexeme"><span class="hs-identifier hs-type">Lexeme</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-type">TokenStream</span></a></span><span>
 </span><span id="line-73"></span><span id="createTokenStream"><span class="annot"><span class="annottext">createTokenStream :: Text -&gt; [Lexeme] -&gt; TokenStream
-</span><a href="Elara.Parse.html#createTokenStream"><span class="hs-identifier hs-var hs-var">createTokenStream</span></a></span></span><span> </span><span id="local-6989586621680143209"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680143209"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621680143210"><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680143210"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
+</span><a href="Elara.Parse.html#createTokenStream"><span class="hs-identifier hs-var hs-var">createTokenStream</span></a></span></span><span> </span><span id="local-6989586621680144713"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680144713"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621680144714"><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680144714"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Lexeme] -&gt; Bool -&gt; TokenStream
 </span><a href="Elara.Parse.Stream.html#TokenStream"><span class="hs-identifier hs-var">TokenStream</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680143209"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
-</span><a href="#local-6989586621680143210"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680144713"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">[Lexeme]
+</span><a href="#local-6989586621680144714"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-74"></span></pre></body></html>

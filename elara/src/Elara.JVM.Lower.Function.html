@@ -25,7 +25,7 @@
 </span><span id="line-22"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="StaticMethod"><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-var">StaticMethod</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.QualifiedClassName</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span>
 </span><span id="line-23"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="InstanceMethod"><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-var">InstanceMethod</span></a></span></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span>
 </span><span id="line-24"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Constructor"><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-var">Constructor</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.QualifiedClassName</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span>
-</span><span id="line-25"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680105812"><span id="local-6989586621680105814"><span class="annot"><span class="annottext">(forall x. CallableTarget -&gt; Rep CallableTarget x)
+</span><span id="line-25"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680107281"><span id="local-6989586621680107283"><span class="annot"><span class="annottext">(forall x. CallableTarget -&gt; Rep CallableTarget x)
 -&gt; (forall x. Rep CallableTarget x -&gt; CallableTarget)
 -&gt; Generic CallableTarget
 forall x. Rep CallableTarget x -&gt; CallableTarget
@@ -37,7 +37,7 @@ from :: forall x. CallableTarget -&gt; Rep CallableTarget x
 $cto :: forall x. Rep CallableTarget x -&gt; CallableTarget
 to :: forall x. Rep CallableTarget x -&gt; CallableTarget
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-26"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680105820"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680107289"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span></span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="annot"><span class="hs-comment">-- | How to handle a call based on arity analysis</span></span><span>
 </span><span id="line-29"></span><span class="hs-keyword">data</span><span> </span><span id="CallStrategy"><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallStrategy"><span class="hs-identifier hs-var">CallStrategy</span></a></span></span><span>
@@ -47,7 +47,7 @@ to :: forall x. Rep CallableTarget x -&gt; CallableTarget
 </span><span id="line-33"></span><span>      </span><span id="CreateClosure"><span class="annot"><a href="Elara.JVM.Lower.Function.html#CreateClosure"><span class="hs-identifier hs-var">CreateClosure</span></a></span></span><span>
 </span><span id="line-34"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Over-saturated (usually an error)</span></span><span>
 </span><span id="line-35"></span><span>      </span><span id="OverApplication"><span class="annot"><a href="Elara.JVM.Lower.Function.html#OverApplication"><span class="hs-identifier hs-var">OverApplication</span></a></span></span><span>
-</span><span id="line-36"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680105886"><span id="local-6989586621680105888"><span class="annot"><span class="annottext">(forall x. CallStrategy -&gt; Rep CallStrategy x)
+</span><span id="line-36"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680107355"><span id="local-6989586621680107357"><span class="annot"><span class="annottext">(forall x. CallStrategy -&gt; Rep CallStrategy x)
 -&gt; (forall x. Rep CallStrategy x -&gt; CallStrategy)
 -&gt; Generic CallStrategy
 forall x. Rep CallStrategy x -&gt; CallStrategy
@@ -60,7 +60,7 @@ $cto :: forall x. Rep CallStrategy x -&gt; CallStrategy
 to :: forall x. Rep CallStrategy x -&gt; CallStrategy
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680105891"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallStrategy"><span class="hs-identifier hs-type">CallStrategy</span></a></span></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680107360"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallStrategy"><span class="hs-identifier hs-type">CallStrategy</span></a></span></span><span>
 </span><span id="line-39"></span><span>
 </span><span id="line-40"></span><span class="annot"><span class="hs-comment">-- | Context for lowering a callable: method declaration vs call site</span></span><span>
 </span><span id="line-41"></span><span class="hs-keyword">data</span><span> </span><span id="CallMode"><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallMode"><span class="hs-identifier hs-var">CallMode</span></a></span></span><span>
@@ -72,13 +72,13 @@ to :: forall x. Rep CallStrategy x -&gt; CallStrategy
 </span><span id="line-47"></span><span class="annot"><span class="hs-comment">-- | Determine the call strategy based on actual vs expected arguments</span></span><span>
 </span><span id="line-48"></span><span class="annot"><a href="Elara.JVM.Lower.Function.html#analyzeCallStrategy"><span class="hs-identifier hs-type">analyzeCallStrategy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallStrategy"><span class="hs-identifier hs-type">CallStrategy</span></a></span><span>
 </span><span id="line-49"></span><span id="analyzeCallStrategy"><span class="annot"><span class="annottext">analyzeCallStrategy :: Int -&gt; Int -&gt; CallStrategy
-</span><a href="Elara.JVM.Lower.Function.html#analyzeCallStrategy"><span class="hs-identifier hs-var hs-var">analyzeCallStrategy</span></a></span></span><span> </span><span id="local-6989586621680105916"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105916"><span class="hs-identifier hs-var">actual</span></a></span></span><span> </span><span id="local-6989586621680105917"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105917"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
+</span><a href="Elara.JVM.Lower.Function.html#analyzeCallStrategy"><span class="hs-identifier hs-var hs-var">analyzeCallStrategy</span></a></span></span><span> </span><span id="local-6989586621680107385"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107385"><span class="hs-identifier hs-var">actual</span></a></span></span><span> </span><span id="local-6989586621680107386"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107386"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Ordering
 forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105916"><span class="hs-identifier hs-var">actual</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105917"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680107385"><span class="hs-identifier hs-var">actual</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107386"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-50"></span><span>    </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#DirectCall"><span class="hs-identifier hs-var">DirectCall</span></a></span><span>
@@ -89,45 +89,45 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#OverApplication"><span class="hs-identifier hs-var">OverApplication</span></a></span><span>
 </span><span id="line-53"></span><span>
-</span><span id="line-54"></span><span id="local-6989586621680105759"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerCallable"><span class="hs-identifier hs-type">lowerCallable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105759"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableInfo"><span class="hs-identifier hs-type">CallableInfo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallMode"><span class="hs-identifier hs-type">CallMode</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680105759"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
+</span><span id="line-54"></span><span id="local-6989586621680107228"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerCallable"><span class="hs-identifier hs-type">lowerCallable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680107228"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableInfo"><span class="hs-identifier hs-type">CallableInfo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallMode"><span class="hs-identifier hs-type">CallMode</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680107228"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
 </span><span id="line-55"></span><span id="lowerCallable"><span class="annot"><span class="annottext">lowerCallable :: forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableInfo -&gt; [Expr] -&gt; CallMode -&gt; Eff r Expr
-</span><a href="Elara.JVM.Lower.Function.html#lowerCallable"><span class="hs-identifier hs-var hs-var">lowerCallable</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableInfo"><span class="hs-identifier hs-type">CallableInfo</span></a></span><span> </span><span id="local-6989586621680105947"><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105947"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680105948"><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680105948"><span class="hs-identifier hs-var">retTy</span></a></span></span><span> </span><span id="local-6989586621680105949"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105949"><span class="hs-identifier hs-var">arity</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680105950"><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105950"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621680105951"><span class="annot"><span class="annottext">CallMode
-</span><a href="#local-6989586621680105951"><span class="hs-identifier hs-var">mode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-56"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680105952"><span class="annot"><span class="annottext">actualArity :: Int
-</span><a href="#local-6989586621680105952"><span class="hs-identifier hs-var hs-var hs-var">actualArity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
+</span><a href="Elara.JVM.Lower.Function.html#lowerCallable"><span class="hs-identifier hs-var hs-var">lowerCallable</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableInfo"><span class="hs-identifier hs-type">CallableInfo</span></a></span><span> </span><span id="local-6989586621680107416"><span class="annot"><span class="annottext">CallableTarget
+</span><a href="#local-6989586621680107416"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680107417"><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107417"><span class="hs-identifier hs-var">retTy</span></a></span></span><span> </span><span id="local-6989586621680107418"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107418"><span class="hs-identifier hs-var">arity</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680107419"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107419"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621680107420"><span class="annot"><span class="annottext">CallMode
+</span><a href="#local-6989586621680107420"><span class="hs-identifier hs-var">mode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107421"><span class="annot"><span class="annottext">actualArity :: Int
+</span><a href="#local-6989586621680107421"><span class="hs-identifier hs-var hs-var hs-var">actualArity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105950"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680105954"><span class="annot"><span class="annottext">strategy :: CallStrategy
-</span><a href="#local-6989586621680105954"><span class="hs-identifier hs-var hs-var">strategy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; CallStrategy
+</span><a href="#local-6989586621680107419"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107423"><span class="annot"><span class="annottext">strategy :: CallStrategy
+</span><a href="#local-6989586621680107423"><span class="hs-identifier hs-var hs-var">strategy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#analyzeCallStrategy"><span class="hs-identifier hs-var">analyzeCallStrategy</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105952"><span class="hs-identifier hs-var">actualArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105949"><span class="hs-identifier hs-var">arity</span></a></span><span>
+</span><a href="#local-6989586621680107421"><span class="hs-identifier hs-var">actualArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107418"><span class="hs-identifier hs-var">arity</span></a></span><span>
 </span><span id="line-58"></span><span>
 </span><span id="line-59"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
-</span><a href="#local-6989586621680105954"><span class="hs-identifier hs-var">strategy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
-</span><a href="#local-6989586621680105951"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105947"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680107423"><span class="hs-identifier hs-var">strategy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
+</span><a href="#local-6989586621680107420"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
+</span><a href="#local-6989586621680107416"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-60"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#DirectCall"><span class="hs-identifier hs-var">DirectCall</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
-</span><a href="Elara.JVM.Lower.Function.html#AsCall"><span class="hs-identifier hs-var">AsCall</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680105955"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680105955"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="Elara.JVM.Lower.Function.html#AsCall"><span class="hs-identifier hs-var">AsCall</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680107424"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680107424"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105949"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621680107418"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680105955"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621680107424"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-61"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#DirectCall"><span class="hs-identifier hs-var">DirectCall</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
@@ -136,9 +136,9 @@ forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableTarget -&gt; FieldType -&gt; [Expr] -&gt; Eff r Expr
 </span><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-var">lowerDirectCall</span></a></span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105947"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680105948"><span class="hs-identifier hs-var">retTy</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105950"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><a href="#local-6989586621680107416"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107417"><span class="hs-identifier hs-var">retTy</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107419"><span class="hs-identifier hs-var">args</span></a></span><span>
 </span><span id="line-62"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#CreateClosure"><span class="hs-identifier hs-var">CreateClosure</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
 </span><a href="Elara.JVM.Lower.Function.html#AsCall"><span class="hs-identifier hs-var">AsCall</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
@@ -147,10 +147,10 @@ forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableTarget -&gt; FieldType -&gt; Int -&gt; [Expr] -&gt; Eff r Expr
 </span><a href="Elara.JVM.Lower.Function.html#lowerPartialApplication"><span class="hs-identifier hs-var">lowerPartialApplication</span></a></span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105947"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680105948"><span class="hs-identifier hs-var">retTy</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105949"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105950"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><a href="#local-6989586621680107416"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107417"><span class="hs-identifier hs-var">retTy</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107418"><span class="hs-identifier hs-var">arity</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107419"><span class="hs-identifier hs-var">args</span></a></span><span>
 </span><span id="line-63"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#OverApplication"><span class="hs-identifier hs-var">OverApplication</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
@@ -165,28 +165,28 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span id="line-65"></span><span>                </span><span class="annot"><span class="annottext">(Text, MethodDescriptor) -&gt; Int -&gt; Int -&gt; JVMLoweringError
 </span><a href="Elara.JVM.Error.html#OverApplicationOf"><span class="hs-identifier hs-var">OverApplicationOf</span></a></span><span>
 </span><span id="line-66"></span><span>                    </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105947"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680107416"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-67"></span><span>                        </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680105960"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680105960"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680105961"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105961"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680105960"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105961"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680107429"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107429"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680107430"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107430"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107429"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107430"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-68"></span><span>                        </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680105962"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105962"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680107431"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107431"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;run&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105962"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680107431"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-69"></span><span>                        </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680105963"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105963"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680107432"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107432"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;constructor&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105963"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680107432"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-70"></span><span>                    </span><span class="hs-special">)</span><span>
 </span><span id="line-71"></span><span>                    </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105952"><span class="hs-identifier hs-var">actualArity</span></a></span><span>
+</span><a href="#local-6989586621680107421"><span class="hs-identifier hs-var">actualArity</span></a></span><span>
 </span><span id="line-72"></span><span>                    </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105949"><span class="hs-identifier hs-var">arity</span></a></span><span>
+</span><a href="#local-6989586621680107418"><span class="hs-identifier hs-var">arity</span></a></span><span>
 </span><span id="line-73"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallStrategy
 </span><a href="Elara.JVM.Lower.Function.html#CreateClosure"><span class="hs-identifier hs-var">CreateClosure</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallMode
 </span><a href="Elara.JVM.Lower.Function.html#AsDeclaration"><span class="hs-identifier hs-var">AsDeclaration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CallableTarget
@@ -197,19 +197,19 @@ forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-string">&quot;Internal error: declaration mode should handle eta expansion separately&quot;</span></span><span>
 </span><span id="line-75"></span><span>
 </span><span id="line-76"></span><span class="annot"><span class="hs-comment">-- | Lower a fully saturated call</span></span><span>
-</span><span id="line-77"></span><span id="local-6989586621680105781"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-type">lowerDirectCall</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105781"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.FieldType</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680105781"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
+</span><span id="line-77"></span><span id="local-6989586621680107250"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-type">lowerDirectCall</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680107250"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.FieldType</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680107250"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
 </span><span id="line-78"></span><span id="lowerDirectCall"><span class="annot"><span class="annottext">lowerDirectCall :: forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableTarget -&gt; FieldType -&gt; [Expr] -&gt; Eff r Expr
-</span><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-var hs-var">lowerDirectCall</span></a></span></span><span> </span><span id="local-6989586621680105971"><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105971"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680105972"><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680105972"><span class="hs-identifier hs-var">retTy</span></a></span></span><span> </span><span id="local-6989586621680105973"><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105973"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680105971"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-79"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span id="local-6989586621680105974"><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680105974"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680105975"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680105975"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680105976"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105976"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-var hs-var">lowerDirectCall</span></a></span></span><span> </span><span id="local-6989586621680107440"><span class="annot"><span class="annottext">CallableTarget
+</span><a href="#local-6989586621680107440"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680107441"><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107441"><span class="hs-identifier hs-var">retTy</span></a></span></span><span> </span><span id="local-6989586621680107442"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107442"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CallableTarget
+</span><a href="#local-6989586621680107440"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span id="local-6989586621680107443"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107443"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680107444"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107444"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680107445"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107445"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -218,13 +218,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">CallType -&gt; [Expr] -&gt; Expr
 </span><a href="Elara.JVM.IR.html#Call"><span class="hs-identifier hs-var">IR.Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">QualifiedClassName -&gt; Text -&gt; MethodDescriptor -&gt; CallType
 </span><a href="Elara.JVM.IR.html#InvokeStatic"><span class="hs-identifier hs-var">IR.InvokeStatic</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680105974"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680105975"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105976"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105973"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-81"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span id="local-6989586621680105979"><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680105979"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680105981"><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105981"><span class="hs-identifier hs-var">argTypes</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
+</span><a href="#local-6989586621680107443"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107444"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107445"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107442"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span id="local-6989586621680107448"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107448"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680107450"><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107450"><span class="hs-identifier hs-var">argTypes</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-82"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
@@ -233,28 +233,28 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName -&gt; [(Expr, FieldType)] -&gt; Expr
 </span><a href="Elara.JVM.IR.html#New"><span class="hs-identifier hs-var">IR.New</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680105979"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Expr] -&gt; [FieldType] -&gt; [(Expr, FieldType)]
+</span><a href="#local-6989586621680107448"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Expr] -&gt; [FieldType] -&gt; [(Expr, FieldType)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105973"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105981"><span class="hs-identifier hs-var">argTypes</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-83"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680105983"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680105983"><span class="hs-identifier hs-var">callee</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107442"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107450"><span class="hs-identifier hs-var">argTypes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680107452"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680107452"><span class="hs-identifier hs-var">callee</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-84"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680105984"><span class="annot"><span class="annottext">arity :: Int
-</span><a href="#local-6989586621680105984"><span class="hs-identifier hs-var hs-var hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
+</span><span id="line-84"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107453"><span class="annot"><span class="annottext">arity :: Int
+</span><a href="#local-6989586621680107453"><span class="hs-identifier hs-var hs-var hs-var">arity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105973"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-85"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680105985"><span class="annot"><span class="annottext">iface :: QualifiedClassName
-</span><a href="#local-6989586621680105985"><span class="hs-identifier hs-var hs-var hs-var">iface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
+</span><a href="#local-6989586621680107442"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-85"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107454"><span class="annot"><span class="annottext">iface :: QualifiedClassName
+</span><a href="#local-6989586621680107454"><span class="hs-identifier hs-var hs-var hs-var">iface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
 </span><a href="Elara.JVM.Lower.Util.html#funcInterfaceName"><span class="hs-identifier hs-var">funcInterfaceName</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105984"><span class="hs-identifier hs-var">arity</span></a></span><span>
-</span><span id="line-86"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680105987"><span class="annot"><span class="annottext">desc :: MethodDescriptor
-</span><a href="#local-6989586621680105987"><span class="hs-identifier hs-var hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MethodDescriptor
+</span><a href="#local-6989586621680107453"><span class="hs-identifier hs-var">arity</span></a></span><span>
+</span><span id="line-86"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107456"><span class="annot"><span class="annottext">desc :: MethodDescriptor
+</span><a href="#local-6989586621680107456"><span class="hs-identifier hs-var hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MethodDescriptor
 </span><a href="Elara.JVM.Lower.Util.html#erasedMethodDescriptor"><span class="hs-identifier hs-var">erasedMethodDescriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680105984"><span class="hs-identifier hs-var">arity</span></a></span><span>
+</span><a href="#local-6989586621680107453"><span class="hs-identifier hs-var">arity</span></a></span><span>
 </span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -264,12 +264,12 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="Elara.JVM.IR.html#Cast"><span class="hs-identifier hs-var">IR.Cast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallType -&gt; [Expr] -&gt; Expr
 </span><a href="Elara.JVM.IR.html#Call"><span class="hs-identifier hs-var">IR.Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; QualifiedClassName -&gt; Text -&gt; MethodDescriptor -&gt; CallType
 </span><a href="Elara.JVM.IR.html#InvokeInterface"><span class="hs-identifier hs-var">IR.InvokeInterface</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680105983"><span class="hs-identifier hs-var">callee</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680105985"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107452"><span class="hs-identifier hs-var">callee</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107454"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;run&quot;</span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680105987"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680105973"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680105972"><span class="hs-identifier hs-var">retTy</span></a></span><span>
+</span><a href="#local-6989586621680107456"><span class="hs-identifier hs-var">desc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107442"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107441"><span class="hs-identifier hs-var">retTy</span></a></span><span>
 </span><span id="line-88"></span><span>
 </span><span id="line-89"></span><span class="annot"><span class="hs-comment">-- | Extract argument types from a callable target</span></span><span>
 </span><span id="line-90"></span><span class="annot"><a href="Elara.JVM.Lower.Function.html#targetArgTypes"><span class="hs-identifier hs-type">targetArgTypes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">JVM.FieldType</span></span><span class="hs-special">]</span><span>
@@ -277,46 +277,46 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="Elara.JVM.Lower.Function.html#targetArgTypes"><span class="hs-identifier hs-var hs-var">targetArgTypes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-92"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680105992"><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105992"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680107461"><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107461"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105992"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><a href="#local-6989586621680107461"><span class="hs-keyword hs-var">as</span></a></span><span>
 </span><span id="line-93"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680105993"><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105993"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680107462"><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107462"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105993"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><a href="#local-6989586621680107462"><span class="hs-keyword hs-var">as</span></a></span><span>
 </span><span id="line-94"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680105994"><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105994"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">JVM.MethodDescriptor</span></span><span> </span><span id="local-6989586621680107463"><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107463"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="annot"><span class="annottext">ReturnDescriptor
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680105994"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><a href="#local-6989586621680107463"><span class="hs-keyword hs-var">as</span></a></span><span>
 </span><span id="line-95"></span><span>
 </span><span id="line-96"></span><span class="annot"><span class="hs-comment">-- | Lower a partial application into a closure</span></span><span>
-</span><span id="line-97"></span><span id="local-6989586621680105782"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerPartialApplication"><span class="hs-identifier hs-type">lowerPartialApplication</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105782"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.FieldType</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680105782"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680107251"><span class="annot"><a href="Elara.JVM.Lower.Function.html#lowerPartialApplication"><span class="hs-identifier hs-type">lowerPartialApplication</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Monad.html#InnerLower"><span class="hs-identifier hs-type">InnerLower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680107251"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#CallableTarget"><span class="hs-identifier hs-type">CallableTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">JVM.FieldType</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680107251"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.IR.html#Expr"><span class="hs-identifier hs-type">IR.Expr</span></a></span></span><span>
 </span><span id="line-98"></span><span id="lowerPartialApplication"><span class="annot"><span class="annottext">lowerPartialApplication :: forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableTarget -&gt; FieldType -&gt; Int -&gt; [Expr] -&gt; Eff r Expr
-</span><a href="Elara.JVM.Lower.Function.html#lowerPartialApplication"><span class="hs-identifier hs-var hs-var">lowerPartialApplication</span></a></span></span><span> </span><span id="local-6989586621680106005"><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680106005"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680106006"><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680106006"><span class="hs-identifier hs-var">_retTy</span></a></span></span><span> </span><span id="local-6989586621680106007"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106007"><span class="hs-identifier hs-var">fullArity</span></a></span></span><span> </span><span id="local-6989586621680106008"><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680106008"><span class="hs-identifier hs-var">capturedArgs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-99"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106009"><span class="annot"><span class="annottext">capturedCount :: Int
-</span><a href="#local-6989586621680106009"><span class="hs-identifier hs-var hs-var hs-var">capturedCount</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
+</span><a href="Elara.JVM.Lower.Function.html#lowerPartialApplication"><span class="hs-identifier hs-var hs-var">lowerPartialApplication</span></a></span></span><span> </span><span id="local-6989586621680107474"><span class="annot"><span class="annottext">CallableTarget
+</span><a href="#local-6989586621680107474"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621680107475"><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107475"><span class="hs-identifier hs-var">_retTy</span></a></span></span><span> </span><span id="local-6989586621680107476"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107476"><span class="hs-identifier hs-var">fullArity</span></a></span></span><span> </span><span id="local-6989586621680107477"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107477"><span class="hs-identifier hs-var">capturedArgs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-99"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107478"><span class="annot"><span class="annottext">capturedCount :: Int
+</span><a href="#local-6989586621680107478"><span class="hs-identifier hs-var hs-var hs-var">capturedCount</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680106008"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span>
-</span><span id="line-100"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106010"><span class="annot"><span class="annottext">remainingArity :: Int
-</span><a href="#local-6989586621680106010"><span class="hs-identifier hs-var hs-var">remainingArity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106007"><span class="hs-identifier hs-var">fullArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621680107477"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107479"><span class="annot"><span class="annottext">remainingArity :: Int
+</span><a href="#local-6989586621680107479"><span class="hs-identifier hs-var hs-var">remainingArity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680107476"><span class="hs-identifier hs-var">fullArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106009"><span class="hs-identifier hs-var">capturedCount</span></a></span><span>
+</span><a href="#local-6989586621680107478"><span class="hs-identifier hs-var">capturedCount</span></a></span><span>
 </span><span id="line-101"></span><span>
 </span><span id="line-102"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106010"><span class="hs-identifier hs-var">remainingArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621680107479"><span class="hs-identifier hs-var">remainingArity</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
@@ -325,34 +325,34 @@ forall (r :: [Effect]).
 InnerLower r =&gt;
 CallableTarget -&gt; FieldType -&gt; [Expr] -&gt; Eff r Expr
 </span><a href="Elara.JVM.Lower.Function.html#lowerDirectCall"><span class="hs-identifier hs-var">lowerDirectCall</span></a></span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680106005"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680106006"><span class="hs-identifier hs-var">_retTy</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680106008"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span>
+</span><a href="#local-6989586621680107474"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107475"><span class="hs-identifier hs-var">_retTy</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107477"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span>
 </span><span id="line-104"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-105"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106011"><span class="annot"><span class="annottext">iface :: QualifiedClassName
-</span><a href="#local-6989586621680106011"><span class="hs-identifier hs-var hs-var hs-var">iface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
+</span><span id="line-105"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107480"><span class="annot"><span class="annottext">iface :: QualifiedClassName
+</span><a href="#local-6989586621680107480"><span class="hs-identifier hs-var hs-var hs-var">iface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
 </span><a href="Elara.JVM.Lower.Util.html#funcInterfaceName"><span class="hs-identifier hs-var">funcInterfaceName</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106010"><span class="hs-identifier hs-var">remainingArity</span></a></span><span>
-</span><span id="line-106"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106012"><span class="annot"><span class="annottext">capturedTypes :: [FieldType]
-</span><a href="#local-6989586621680106012"><span class="hs-identifier hs-var hs-var hs-var">capturedTypes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [FieldType] -&gt; [FieldType]
+</span><a href="#local-6989586621680107479"><span class="hs-identifier hs-var">remainingArity</span></a></span><span>
+</span><span id="line-106"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107481"><span class="annot"><span class="annottext">capturedTypes :: [FieldType]
+</span><a href="#local-6989586621680107481"><span class="hs-identifier hs-var hs-var hs-var">capturedTypes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [FieldType] -&gt; [FieldType]
 forall a. Int -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">take</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106009"><span class="hs-identifier hs-var">capturedCount</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallableTarget -&gt; [FieldType]
+</span><a href="#local-6989586621680107478"><span class="hs-identifier hs-var">capturedCount</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallableTarget -&gt; [FieldType]
 </span><a href="Elara.JVM.Lower.Function.html#targetArgTypes"><span class="hs-identifier hs-var">targetArgTypes</span></a></span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680106005"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-107"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106014"><span class="annot"><span class="annottext">captures :: [(Expr, FieldType)]
-</span><a href="#local-6989586621680106014"><span class="hs-identifier hs-var hs-var">captures</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [FieldType] -&gt; [(Expr, FieldType)]
+</span><a href="#local-6989586621680107474"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107483"><span class="annot"><span class="annottext">captures :: [(Expr, FieldType)]
+</span><a href="#local-6989586621680107483"><span class="hs-identifier hs-var hs-var">captures</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [FieldType] -&gt; [(Expr, FieldType)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680106008"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span> </span><span class="annot"><span class="annottext">[FieldType]
-</span><a href="#local-6989586621680106012"><span class="hs-identifier hs-var">capturedTypes</span></a></span><span>
+</span><a href="#local-6989586621680107477"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span> </span><span class="annot"><span class="annottext">[FieldType]
+</span><a href="#local-6989586621680107481"><span class="hs-identifier hs-var">capturedTypes</span></a></span><span>
 </span><span id="line-108"></span><span>
 </span><span id="line-109"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CallableTarget
-</span><a href="#local-6989586621680106005"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-110"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span id="local-6989586621680106015"><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106015"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680106016"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680106016"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680106017"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680106017"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680107474"><span class="hs-identifier hs-var">target</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-110"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#StaticMethod"><span class="hs-identifier hs-type">StaticMethod</span></a></span><span> </span><span id="local-6989586621680107484"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107484"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680107485"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107485"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680107486"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107486"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-111"></span><span>                    </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -365,14 +365,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; [(Expr, FieldType)]
 -&gt; Expr
 </span><a href="Elara.JVM.IR.html#MakeClosure"><span class="hs-identifier hs-var">IR.MakeClosure</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106015"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680106016"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680106017"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106011"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr, FieldType)]
-</span><a href="#local-6989586621680106014"><span class="hs-identifier hs-var">captures</span></a></span><span>
-</span><span id="line-112"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span id="local-6989586621680106019"><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106019"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680106020"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680106020"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680107484"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107485"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107486"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107480"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr, FieldType)]
+</span><a href="#local-6989586621680107483"><span class="hs-identifier hs-var">captures</span></a></span><span>
+</span><span id="line-112"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#Constructor"><span class="hs-identifier hs-type">Constructor</span></a></span><span> </span><span id="local-6989586621680107488"><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107488"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680107489"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107489"><span class="hs-identifier hs-var">desc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-113"></span><span>                    </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -384,26 +384,26 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; [(Expr, FieldType)]
 -&gt; Expr
 </span><a href="Elara.JVM.IR.html#MakeConstructorClosure"><span class="hs-identifier hs-var">IR.MakeConstructorClosure</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106019"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680106020"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106011"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr, FieldType)]
-</span><a href="#local-6989586621680106014"><span class="hs-identifier hs-var">captures</span></a></span><span>
-</span><span id="line-114"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680106022"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680106022"><span class="hs-identifier hs-var">callee</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107488"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680107489"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107480"><span class="hs-identifier hs-var">iface</span></a></span><span> </span><span class="annot"><span class="annottext">[(Expr, FieldType)]
+</span><a href="#local-6989586621680107483"><span class="hs-identifier hs-var">captures</span></a></span><span>
+</span><span id="line-114"></span><span>                </span><span class="annot"><a href="Elara.JVM.Lower.Function.html#InstanceMethod"><span class="hs-identifier hs-type">InstanceMethod</span></a></span><span> </span><span id="local-6989586621680107491"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680107491"><span class="hs-identifier hs-var">callee</span></a></span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-115"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106023"><span class="annot"><span class="annottext">callIface :: QualifiedClassName
-</span><a href="#local-6989586621680106023"><span class="hs-identifier hs-var hs-var hs-var">callIface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
+</span><span id="line-115"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107492"><span class="annot"><span class="annottext">callIface :: QualifiedClassName
+</span><a href="#local-6989586621680107492"><span class="hs-identifier hs-var hs-var hs-var">callIface</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
 </span><a href="Elara.JVM.Lower.Util.html#funcInterfaceName"><span class="hs-identifier hs-var">funcInterfaceName</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106007"><span class="hs-identifier hs-var">fullArity</span></a></span><span>
-</span><span id="line-116"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106024"><span class="annot"><span class="annottext">callDesc :: MethodDescriptor
-</span><a href="#local-6989586621680106024"><span class="hs-identifier hs-var hs-var hs-var">callDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MethodDescriptor
+</span><a href="#local-6989586621680107476"><span class="hs-identifier hs-var">fullArity</span></a></span><span>
+</span><span id="line-116"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107493"><span class="annot"><span class="annottext">callDesc :: MethodDescriptor
+</span><a href="#local-6989586621680107493"><span class="hs-identifier hs-var hs-var hs-var">callDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; MethodDescriptor
 </span><a href="Elara.JVM.Lower.Util.html#erasedMethodDescriptor"><span class="hs-identifier hs-var">erasedMethodDescriptor</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106009"><span class="hs-identifier hs-var">capturedCount</span></a></span><span>
-</span><span id="line-117"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680106025"><span class="annot"><span class="annottext">retTy' :: FieldType
-</span><a href="#local-6989586621680106025"><span class="hs-identifier hs-var hs-var">retTy'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">QualifiedClassName -&gt; FieldType
+</span><a href="#local-6989586621680107478"><span class="hs-identifier hs-var">capturedCount</span></a></span><span>
+</span><span id="line-117"></span><span>                    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680107494"><span class="annot"><span class="annottext">retTy' :: FieldType
+</span><a href="#local-6989586621680107494"><span class="hs-identifier hs-var hs-var">retTy'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">QualifiedClassName -&gt; FieldType
 </span><span class="hs-identifier hs-var">JVM.ObjectFieldType</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; QualifiedClassName
 </span><a href="Elara.JVM.Lower.Util.html#funcInterfaceName"><span class="hs-identifier hs-var">funcInterfaceName</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680106010"><span class="hs-identifier hs-var">remainingArity</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680107479"><span class="hs-identifier hs-var">remainingArity</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-118"></span><span>                    </span><span class="annot"><span class="annottext">Expr -&gt; Eff r Expr
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -413,10 +413,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="Elara.JVM.IR.html#Cast"><span class="hs-identifier hs-var">IR.Cast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CallType -&gt; [Expr] -&gt; Expr
 </span><a href="Elara.JVM.IR.html#Call"><span class="hs-identifier hs-var">IR.Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; QualifiedClassName -&gt; Text -&gt; MethodDescriptor -&gt; CallType
 </span><a href="Elara.JVM.IR.html#InvokeInterface"><span class="hs-identifier hs-var">IR.InvokeInterface</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621680106022"><span class="hs-identifier hs-var">callee</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
-</span><a href="#local-6989586621680106023"><span class="hs-identifier hs-var">callIface</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680107491"><span class="hs-identifier hs-var">callee</span></a></span><span> </span><span class="annot"><span class="annottext">QualifiedClassName
+</span><a href="#local-6989586621680107492"><span class="hs-identifier hs-var">callIface</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;run&quot;</span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680106024"><span class="hs-identifier hs-var">callDesc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621680106008"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FieldType
-</span><a href="#local-6989586621680106025"><span class="hs-identifier hs-var">retTy'</span></a></span><span>
+</span><a href="#local-6989586621680107493"><span class="hs-identifier hs-var">callDesc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621680107477"><span class="hs-identifier hs-var">capturedArgs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FieldType
+</span><a href="#local-6989586621680107494"><span class="hs-identifier hs-var">retTy'</span></a></span><span>
 </span><span id="line-119"></span></pre></body></html>
