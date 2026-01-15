@@ -119,8 +119,6 @@
                 effectful-core = jailbreak;
                 effectful-plugin = jailbreak;
                 co-log-effectful = jailbreak (unbreak);
-
-                iris = jailbreak (unbreak (notest));
               };
             packages = {
               elara = {
@@ -230,9 +228,10 @@
                 executables.elara = {
                   source-dirs = "app";
                   dependencies = [
-                    "iris"
+                    "autodocodec"
                     "opt-env-conf"
                   ];
+                  component.other-modules = [ "Paths_elara" ];
                 };
                 tests.elara-test = {
                   main = "Spec.hs";
