@@ -6,4 +6,4 @@ type TODO = Void
 
 {-# WARNING todo "TODO" #-}
 todo :: HasCallStack => a
-todo = error "TODO"
+todo = withFrozenCallStack (error "TODO")
