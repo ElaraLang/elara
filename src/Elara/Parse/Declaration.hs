@@ -14,7 +14,7 @@ import Elara.Parse.Expression (letPreamble)
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, fmapLocated, ignoringIndents, located, token_)
 import Elara.Parse.Type (type', typeNotApplication)
-import Text.Megaparsec (choice, try)
+import Text.Megaparsec (MonadParsec (notFollowedBy), choice, try)
 
 declaration :: Located ModuleName -> Parser FrontendDeclaration
 declaration n = do
@@ -55,11 +55,10 @@ typeDeclaration :: Located ModuleName -> [Annotation Frontend] -> Parser Fronten
 typeDeclaration modName annotations = fmapLocated Declaration $ ignoringIndents $ do
     try (token_ TokenType)
 
-    isAlias <- isJust <$> optional (token_ TokenAlias)
     name <- located conId
     args <- many (located varId)
     token_ TokenEquals
-    body <- located (if isAlias then alias else adt)
+    body <- located (try (alias <* notFollowedBy (token_ TokenPipe)) <|> adt) -- Alias must come first, as otherwise ADT would consume it
     let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
         annotations' = TypeDeclAnnotations NoFieldValue annotations
         value = DeclarationBody $ Located valueLocation (TypeDeclaration name args body annotations')
