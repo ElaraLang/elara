@@ -28,7 +28,6 @@ import Elara.Utils (curry3)
 import Optics (traverseOf_)
 import Rock qualified
 import TODO (todo)
-import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (Op)
 
 type Desugar a = Eff DesugarPipelineEffects a
@@ -126,13 +125,13 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
 
             pure (JustLet n wholeDeclRegion body (Just ann))
         genPartial'' (ValueTypeDef n ty annotations) = do
-            ty' <- traverseOf (_Unwrapped % _1 % unlocated) desugarType ty
+            ty' <- desugarType ty
             ann <- traverseValueDeclAnnotations desugarAnnotation annotations
             pure (JustDef n wholeDeclRegion ty' (Just ann))
         genPartial'' (TypeDeclaration n vars typeDecl typeAnnotations) = do
             let traverseDecl :: FrontendTypeDeclaration -> Desugar DesugaredTypeDeclaration
-                traverseDecl (Alias t) = Alias <$> traverseOf (_Unwrapped % _1 % unlocated) desugarType t
-                traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each % _Unwrapped % _1 % unlocated) desugarType constructors
+                traverseDecl (Alias t) = Alias <$> desugarType t
+                traverseDecl (ADT constructors) = ADT <$> traverseOf (each % _2 % each) desugarType constructors
             typeDecl' <- traverseOf unlocated traverseDecl typeDecl
             ann <- traverseTypeDeclAnnotations desugarAnnotation typeAnnotations
             let decl' = TypeDeclaration n vars typeDecl' ann
@@ -145,8 +144,18 @@ desugarAnnotation (Annotation n args) = Annotation n <$> traverse desugarAnnotat
 desugarAnnotationArg :: AnnotationArg Frontend -> Desugar (AnnotationArg Desugared)
 desugarAnnotationArg (AnnotationArg e) = AnnotationArg <$> desugarExpr e
 
-desugarType :: FrontendType' -> Desugar DesugaredType'
-desugarType x = pure (unsafeCoerce x)
+desugarType :: FrontendType -> Desugar DesugaredType
+desugarType (Type lt) = curry Type <$> traverseOf unlocated desugarType' (lt ^. _1) <*> pure NoFieldValue
+  where
+    desugarType' :: FrontendType' -> Desugar DesugaredType'
+    desugarType' (TypeVar n) = pure (TypeVar n)
+    desugarType' (FunctionType t1 t2) = liftA2 FunctionType (desugarType t1) (desugarType t2)
+    desugarType' (TupleType ts) = TupleType <$> traverse desugarType ts
+    desugarType' (TypeConstructorApplication t ts) = TypeConstructorApplication <$> desugarType t <*> desugarType ts
+    desugarType' (UserDefinedType n) = pure (UserDefinedType n)
+    desugarType' (RecordType fields) = RecordType <$> traverseOf (each % _2) desugarType fields
+    desugarType' (ListType t) = ListType <$> desugarType t
+    desugarType' UnitType = pure UnitType
 
 completePartials :: Located ModuleName -> Desugar [DesugaredDeclaration]
 completePartials mn = do
@@ -180,7 +189,7 @@ desugarExpr (Expr fe) = (\x -> Expr (x, Nothing)) <$> traverseOf unlocated desug
 
         pure (foldLambda (pats' ^. unlocated) e' ^. _Unwrapped % _1 % unlocated) -- Somewhat cursed but it works
     desugarExpr' (FunctionCall e1 e2) = liftA2 FunctionCall (desugarExpr e1) (desugarExpr e2)
-    desugarExpr' (TypeApplication e1 e2) = liftA2 TypeApplication (desugarExpr e1) (traverseOf (_Unwrapped % _1 % unlocated) desugarType e2)
+    desugarExpr' (TypeApplication e1 e2) = liftA2 TypeApplication (desugarExpr e1) (desugarType e2)
     desugarExpr' (If a b c) = liftA3 If (desugarExpr a) (desugarExpr b) (desugarExpr c)
     desugarExpr' (BinaryOperator (o, a, b)) = liftA3 (curry3 BinaryOperator) (desugarBinaryOperator o) (desugarExpr a) (desugarExpr b)
     desugarExpr' (List e) = List <$> traverse desugarExpr e
@@ -213,7 +222,7 @@ desugarPattern p@(Pattern lp) =
     Pattern
         <$> bitraverse
             (traverseOf unlocated desugarPattern')
-            (traverse (traverseOf (_Unwrapped % _1 % unlocated) desugarType))
+            (traverse desugarType)
             lp
   where
     desugarPattern' :: FrontendPattern' -> Desugar DesugaredPattern'
