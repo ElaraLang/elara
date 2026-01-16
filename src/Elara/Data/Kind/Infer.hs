@@ -39,7 +39,7 @@ import Elara.AST.Generic
 import Elara.AST.Generic.Common
 import Elara.AST.Kinded
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
-import Elara.AST.Region (Located, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, sourceRegionToDiagnosePosition, unlocated)
 import Elara.AST.Select
 import Elara.AST.Shunted
 import Elara.Data.Kind
@@ -47,21 +47,63 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Logging (debugWith)
+import Elara.Logging (debugWith, logDebug)
 import Elara.Prim (primKindCheckContext)
 import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
 import Error.Diagnose
 import Optics (set, traverseOf_, universeOf)
 import Rock qualified
-import TODO (todo)
+
+{- | Tracks the origin of a kind constraint for better error messages.
+This represents the "why" of why a constraint was added.
+-}
+data ConstraintOrigin
+    = -- | A (type-level) function was applied to an argument
+      FunctionApplication
+        { functionType :: Located ShuntedType'
+        -- ^ The function being applied
+        , functionArg :: (ShuntedType, MidKindedType)
+        -- ^ The argument type
+        }
+    | -- | The result of a function application must be of kind Type
+      FunctionResult
+    | -- | Elements of a list must be of kind Type
+      ListElement
+    | -- | Field of a record must be of kind Type
+      RecordField LowerAlphaName
+    | -- | Input to a function -> must be of kind Type
+      FunctionParameter
+    | -- | The inferred kind of a definition must match its signature
+      DefinitionKind (Qualified TypeName)
+    | -- | Generic primitive constraint, e.g. "Unit must be of kind Type". This should be replaced with more specific origins where possible.
+      PrimitiveConstraint Text
+    | -- | The declaration of a user defined type
+      UserDefinedTypeConstraint (Located (Qualified TypeName))
+    deriving (Show, Eq, Data, Generic)
+
+instance Pretty ConstraintOrigin where
+    pretty = \case
+        FunctionApplication f arg -> "Application of type" <+> pretty (f ^. unlocated) <+> "to argument of kind" <+> pretty (getAnn' (snd arg))
+        FunctionResult -> "Result of function application"
+        ListElement -> "List element"
+        RecordField f -> "Record field" <+> pretty f
+        FunctionParameter -> "Function parameter"
+        DefinitionKind n -> "Definition of" <+> pretty n
+        PrimitiveConstraint s -> pretty s
+        UserDefinedTypeConstraint n -> "User defined type" <+> pretty (n ^. unlocated)
+
+originPositions :: ConstraintOrigin -> [(Position, Marker (Doc AnsiStyle))]
+originPositions = \case
+    FunctionApplication f _ -> [(sourceRegionToDiagnosePosition (f ^. sourceRegion), This "Function application")]
+    _ -> []
 
 data InferState = InferState
     { env :: Map (Either (Qualified TypeName) TypeVar) KindVar
     -- ^ a mapping from type variables and named types to their kind variables
     , kindEnv :: Map (Qualified TypeName) ElaraKind
     -- ^ predefined kinds for named types
-    , constraints :: [(ElaraKind, ElaraKind)]
+    , constraints :: [(ElaraKind, ElaraKind, ConstraintOrigin)]
     , substitution :: Map KindVar ElaraKind
     }
     deriving (Eq, Show, Generic, Data)
@@ -87,7 +129,7 @@ initialInferState =
 data KindInferError
     = UnknownKind (Qualified TypeName) (Map (Qualified TypeName) ElaraKind)
     | UnboundVar TypeVar (Map (Either (Qualified TypeName) TypeVar) KindVar)
-    | CannotUnify ElaraKind ElaraKind
+    | CannotUnify ElaraKind ElaraKind ConstraintOrigin
     | NotFunctionKind ElaraKind
     | OccursCheckFailed KindVar ElaraKind
     deriving (Generic, Show)
@@ -107,12 +149,12 @@ instance ReportableError KindInferError where
                 )
                 []
                 []
-    report (CannotUnify a b) =
+    report (CannotUnify a b origin) =
         writeReport $
             Err
                 (Just "Cannot Unify Kinds")
-                (vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b])
-                []
+                (vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b, "Origin:" <+> pretty origin])
+                (originPositions origin)
                 []
     report (NotFunctionKind k) =
         writeReport $
@@ -161,35 +203,41 @@ elaborate tName tvs t = debugWith ("elaborate: " <> pretty tName) $ do
 
     t' <- case t of
         Alias a -> do
-            todo
+            a' <- elaborateType a
+            newEqualityConstraint (getAnn' a') TypeKind (DefinitionKind tName)
+            pure (Alias a')
         ADT constructors -> do
             x <- for constructors $ \(n, conArgs) -> do
                 conArgs' <- for conArgs $ \arg -> do
                     arg' <- elaborateType arg
-                    newEqualityConstraint (getAnn' arg') TypeKind
+                    newEqualityConstraint (getAnn' arg') TypeKind (DefinitionKind tName)
                     pure arg'
                 pure (n, conArgs')
             pure (ADT @MidKinded x)
 
     -- We grab the kind variable of the data type
     -- so we can add a constraint on it.
-    datatypeKindVar <- lookupNameKindVar tName
+    datatypeKindVar <- lookupNameKindVar tName (DefinitionKind tName)
 
     -- A type of the form `T a b c ... =` has the kind:
     -- `aKind -> bKind -> cKind -> ... -> Type`.
     -- We add that as a constraint.
     let kind = foldr (FunctionKind . VarKind) TypeKind varKinds
-    newEqualityConstraint (VarKind datatypeKindVar) kind
+    newEqualityConstraint (VarKind datatypeKindVar) kind (DefinitionKind tName)
 
     pure (datatypeKindVar, t')
 
 inferKind ::
-    _ =>
+    (HasCallStack, _) =>
+    -- | The name of the type being inferred
     Qualified TypeName ->
+    -- | The type variables of the type being inferred
     [Located TypeVar] ->
+    -- | The type declaration to infer the kind of
     ShuntedTypeDeclaration ->
     Eff r (ElaraKind, KindedTypeDeclaration)
 inferKind name tvs t = do
+    logDebug ("Inferring kind for type " <> pretty name)
     kindVar <- makeUniqueId
     declareNamedType name kindVar
 
@@ -197,9 +245,12 @@ inferKind name tvs t = do
     solveConstraints
 
     kind <- lookupKindVarInSubstitution kv
+    logDebug ("Inferred kind for type " <> pretty name <> ": " <> pretty kind)
     body <- case decl' of
         Alias a -> do
-            todo
+            a' <- solveType a
+            logDebug ("Inferred kind for alias " <> pretty name <> ": " <> pretty kind)
+            pure (Alias a')
         ADT constructors -> do
             constructors' <- for constructors $ \(n, conArgs) -> do
                 conArgs' <- for conArgs $ \(arg :: MidKindedType) -> do
@@ -233,8 +284,8 @@ lookupNameKindVar ::
     , QueryEffects r
     , Rock.Rock Elara.Query.Query :> r
     ) =>
-    Qualified TypeName -> Eff r KindVar
-lookupNameKindVar name = do
+    Qualified TypeName -> ConstraintOrigin -> Eff r KindVar
+lookupNameKindVar name origin = do
     InferState{..} <- get
     case Map.lookup (Left name) env of
         Just kv -> pure kv
@@ -242,7 +293,7 @@ lookupNameKindVar name = do
             case Map.lookup name kindEnv of
                 Just kindVar -> do
                     newKindVar <- makeUniqueId
-                    newEqualityConstraint (VarKind newKindVar) kindVar
+                    newEqualityConstraint (VarKind newKindVar) kindVar origin
                     pure newKindVar
                 Nothing -> do
                     Rock.fetch (Elara.Query.KindOf name) ?:! throwError (UnknownKind name kindEnv)
@@ -260,8 +311,8 @@ lookupKindVarMaybe key = do
     InferState{..} <- get
     pure $ Map.lookup key env
 
-newEqualityConstraint :: State InferState :> r => ElaraKind -> ElaraKind -> Eff r ()
-newEqualityConstraint a b = modify (over #constraints ((a, b) :))
+newEqualityConstraint :: State InferState :> r => ElaraKind -> ElaraKind -> ConstraintOrigin -> Eff r ()
+newEqualityConstraint a b origin = modify (over #constraints ((a, b, origin) :))
 
 elaborateType :: KindInfer r => ShuntedType -> Eff r MidKindedType
 elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
@@ -271,10 +322,10 @@ elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
             pure $ Type (TypeVar var <$ t, kv)
         UnitType -> do
             kv <- makeUniqueId
-            newEqualityConstraint (VarKind kv) TypeKind
+            newEqualityConstraint (VarKind kv) TypeKind (PrimitiveConstraint "Unit must be of kind Type")
             pure $ Type (UnitType <$ t, kv)
         UserDefinedType name -> do
-            kv <- lookupNameKindVar (name ^. unlocated)
+            kv <- lookupNameKindVar (name ^. unlocated) (UserDefinedTypeConstraint name)
             pure $ Type (UserDefinedType name <$ t, kv)
         TypeConstructorApplication f arg -> do
             f' <- elaborateType f
@@ -284,29 +335,33 @@ elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
             newEqualityConstraint
                 (getAnn' f')
                 (FunctionKind (getAnn' arg') (VarKind typeAppKindVar))
+                (FunctionApplication t (arg, arg'))
 
             pure $ Type (TypeConstructorApplication f' arg' <$ t, typeAppKindVar)
         FunctionType a b -> do
             a' <- elaborateType a
             b' <- elaborateType b
             res <- makeUniqueId
-            newEqualityConstraint (getAnn' a') TypeKind
-            newEqualityConstraint (getAnn' b') TypeKind
-            newEqualityConstraint (VarKind res) TypeKind
+            newEqualityConstraint (getAnn' a') TypeKind FunctionParameter
+            newEqualityConstraint (getAnn' b') TypeKind FunctionResult
+            newEqualityConstraint (VarKind res) TypeKind FunctionResult
 
             pure $ Type (FunctionType a' b' <$ t, res)
         ListType t' -> do
             t'' <- elaborateType t'
             listKindVar <- makeUniqueId
-            newEqualityConstraint (getAnn' t'') TypeKind
-            newEqualityConstraint (VarKind listKindVar) TypeKind
+            newEqualityConstraint (getAnn' t'') TypeKind ListElement
+            newEqualityConstraint (VarKind listKindVar) TypeKind (PrimitiveConstraint "List is a Type")
             pure $ Type (ListType t'' <$ t, listKindVar)
         RecordType fields -> do
             fields' <- for fields $ \(name, t') -> do
                 t'' <- elaborateType t'
                 pure (name, t'')
             recordKindVar <- makeUniqueId
-            traverseOf_ (each % _2 % _Unwrapped % _2) (newEqualityConstraint (VarKind recordKindVar) . VarKind) fields'
+            traverseOf_
+                (each % _2 % _Unwrapped % _2)
+                (\k -> newEqualityConstraint (VarKind recordKindVar) (VarKind k) (PrimitiveConstraint "Record is a Type"))
+                fields'
             pure $ Type (RecordType fields' <$ t, recordKindVar)
 
 solveType :: KindInfer r => MidKindedType -> Eff r KindedType
@@ -349,42 +404,42 @@ solveConstraints = do
         InferState{..} <- get
         case constraints of
             [] -> pure Nothing
-            (a, b) : rest -> do
+            (a, b, origin) : rest -> do
                 modify (set #constraints rest)
-                pure $ Just (a, b)
+                pure $ Just (a, b, origin)
 
     case constraint of
         -- If there are no constraints left, we're done
         Nothing -> pass
         -- If we have 2 kinds that are the same, we can remove the constraint
-        Just (TypeKind, TypeKind) -> solveConstraints
+        Just (TypeKind, TypeKind, _) -> solveConstraints
         -- If we have 2 function kinds, we solve the constraints for the arguments and the result
-        Just (FunctionKind k1 k2, FunctionKind k1' k2') -> do
-            newEqualityConstraint k1 k1'
-            newEqualityConstraint k2 k2'
+        Just (FunctionKind k1 k2, FunctionKind k1' k2', origin) -> do
+            newEqualityConstraint k1 k1' origin
+            newEqualityConstraint k2 k2' origin
             solveConstraints
 
         -- instantiate a kind scheme
-        Just (KindScheme vars kind, k) -> do
+        Just (KindScheme vars kind, k, origin) -> do
             kind' <- instantiate kind vars
-            newEqualityConstraint kind' k
+            newEqualityConstraint kind' k origin
 
             solveConstraints
 
         -- instantiate a kind scheme (reversed)
-        Just (k, KindScheme vars kind) -> do
+        Just (k, KindScheme vars kind, origin) -> do
             kind' <- instantiate kind vars
-            newEqualityConstraint k kind'
+            newEqualityConstraint k kind' origin
 
             solveConstraints
-        Just (VarKind v, k) -> do
+        Just (VarKind v, k, _) -> do
             replaceInState v k
             solveConstraints
-        Just (k, VarKind v) -> do
+        Just (k, VarKind v, _) -> do
             replaceInState v k
             solveConstraints
-        Just (k1@TypeKind, k2@FunctionKind{}) -> throwError (CannotUnify k1 k2)
-        Just (k1@FunctionKind{}, k2@TypeKind) -> throwError (CannotUnify k1 k2)
+        Just (k1@TypeKind, k2@FunctionKind{}, origin) -> throwError (CannotUnify k1 k2 origin)
+        Just (k1@FunctionKind{}, k2@TypeKind, origin) -> throwError (CannotUnify k1 k2 origin)
 
 instantiate :: UniqueGen :> r => ElaraKind -> [KindVar] -> Eff r ElaraKind
 instantiate = foldM replaceKindVarWithFreshKindVar
