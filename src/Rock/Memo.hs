@@ -1,6 +1,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-module Rock.Memo where
+module Rock.Memo (memoise, memoiseWithCycleDetection, withoutMemoisation, memoiseExplicit) where
 
 import Control.Concurrent.Lifted
 import Control.Exception.Lifted
@@ -8,27 +9,21 @@ import Control.Exception.Lifted
 import Data.Dependent.HashMap (DHashMap)
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.GADT.Compare (GEq)
-import Data.GADT.Show (GShow)
 import Data.HashMap.Lazy qualified as HashMap
 import Data.Hashable
 import Data.IORef.Lifted
-import Data.Kind (Type)
+import Data.List (isSuffixOf)
 import Data.Some
 import Data.Typeable
 import Effectful (Eff, IOE, raise, (:>))
-import Effectful.Concurrent.MVar.Strict (Concurrent, newEmptyMVar', putMVar', readMVar')
+import Effectful.Internal.Monad (unEff, unsafeEff, unsafeEff_)
+import Elara.Data.Pretty
+import Elara.Logging (StructuredDebug, logDebugNS)
 import Rock
-import Rock.MemoE
-import Prelude hiding (atomicModifyIORef, newEmptyMVar, newMVar, putMVar, readIORef, readMVar)
+import Text.Show (Show (..))
+import Prelude hiding (atomicModifyIORef, atomicModifyIORef', newEmptyMVar, newMVar, putMVar, readIORef, readMVar)
 
 -- * Implicit memoisation-
-
--- | Proof that every key permits IO
-class HasIOE f where
-    withIOE :: f es a -> (IOE :> es => Eff es a) -> Eff es a
-
-class HasMemoiseE f where
-    withMemoiseE :: f es a -> ((Memoise :> es, Concurrent :> es) => Eff es a) -> Eff es a
 
 {- | Remember what @f@ queries have already been performed and their results in
 a 'DHashMap', and reuse them if a query is performed again a second time.
@@ -38,32 +33,36 @@ might make a query return a different result.
 -}
 memoise ::
     forall f.
-    (forall es. GEq (f es), forall es a. Hashable (f es a), HasMemoiseE f, HasCallStack) =>
+    ( forall es. GEq (f es)
+    , forall es a. Hashable (f es a)
+    , HasCallStack
+    ) =>
+    IORef (DHashMap (HideEffects f) MVar) ->
     Rules f ->
     Rules f
-memoise rules (key :: f es a) = withMemoiseE key $ do
-    maybeValueVar <- DHashMap.lookup (HideEffects key) <$> getStartedVar
+memoise startedVar rules (key :: f es a) = do
+    maybeValueVar <- unsafeEff_ (DHashMap.lookup (HideEffects key) <$> readIORef startedVar)
     case maybeValueVar of
         Nothing -> do
-            valueVar <- newEmptyMVar'
-            join $ modifyStartedVar $ \started ->
+            valueVar <- unsafeEff_ newEmptyMVar
+            join $ unsafeEff_ $ atomicModifyIORef' startedVar $ \started ->
                 case DHashMap.alterLookup (Just . fromMaybe valueVar) (HideEffects key) started of
                     (Nothing, started') ->
                         ( started'
                         , do
                             value <- rules key
-                            putMVar' valueVar value
+                            unsafeEff_ (putMVar valueVar value)
                             pure value
                         )
                     (Just valueVar', _started') ->
-                        (started, readMVar' valueVar')
+                        (started, unsafeEff_ (readMVar valueVar'))
         Just valueVar ->
-            readMVar' valueVar
+            unsafeEff_ (readMVar valueVar)
 
 -- * Explicit memoisation
 
 data MemoQuery f es a where
-    MemoQuery :: f es a -> MemoQuery f (IOE : es) a
+    MemoQuery :: StructuredDebug :> es => f es a -> MemoQuery f (IOE : es) a
 
 -- Don't actually memoise anything
 withoutMemoisation :: Rules f -> Rules (MemoQuery f)
@@ -100,10 +99,34 @@ memoiseExplicit startedVar rules (MemoQuery (key :: f es a)) = do
         Just valueVar ->
             readMVar valueVar
 
-newtype Cyclic f = Cyclic (Some f)
-    deriving (Show)
+-- | Holds the list of keys involved in the cycle, i.e. a call stack of queries
+newtype Cyclic f = Cyclic (NonEmpty (Some (HideEffects f)))
 
-instance (GShow f, Typeable f) => Exception (Cyclic (f :: Type -> Type))
+instance (Typeable f, forall es a. Show (f es a)) => Exception (Cyclic f)
+
+instance (forall es a. Show (f es a)) => Show (Cyclic f) where
+    show (Cyclic chain) =
+        "Cyclic dependency detected:\n"
+            <> toString (unlines $ toText <$> zipWith formatItem (True : repeat False) (toList chainWithLoop))
+      where
+        -- Repeat the first element at the end to visually close the loop
+        chainWithLoop = chain <> pure (head chain)
+
+        showInner :: (forall es a. Show (f es a)) => Some (HideEffects f) -> String
+        showInner (Some (HideEffects k)) = Prelude.show k
+
+        formatItem isFirst item =
+            let
+                raw :: String = showInner item
+
+                clean =
+                    if "HideEffects (" `isPrefixOf` raw && ")" `isSuffixOf` raw
+                        then take (length raw - 14) (drop 13 raw)
+                        else raw
+
+                prefix = if isFirst then "     " else "  -> "
+             in
+                prefix <> clean
 
 data MemoEntry a
     = Started !ThreadId !(MVar (Maybe a)) !(MVar (Maybe [ThreadId]))
@@ -118,61 +141,69 @@ reused between invocations.
 memoiseWithCycleDetection ::
     forall f.
     ( Typeable f
-    , forall es a. Show (f es a)
+    , forall es a. (Show (f es a))
     , forall es. GEq (f es)
     , forall es a. Hashable (f es a)
+    , forall es a. Show (f es a)
+    , HasCallStack
     ) =>
+    -- | started queries
     IORef (DHashMap (HideEffects f) MemoEntry) ->
+    -- | dependencies between threads
     IORef (HashMap ThreadId ThreadId) ->
     Rules f ->
-    Rules (MemoQuery f)
+    Rules f
 memoiseWithCycleDetection startedVar depsVar rules = rules'
   where
-    rules' (MemoQuery (key :: f es a)) = do
-        maybeEntry <- DHashMap.lookup (HideEffects key) <$> readIORef startedVar
+    rules' key = do
+        logDebugNS ["Query"] $ "MemoiseWithCycleDetection: querying " <> pretty (Text.Show.show key)
+        maybeEntry <- DHashMap.lookup (HideEffects key) <$> unsafeEff_ (readIORef startedVar)
         case maybeEntry of
             Nothing -> do
-                threadId <- myThreadId
-                valueVar <- newEmptyMVar
-                waitVar <- newMVar $ Just []
-                join $ atomicModifyIORef startedVar $ \started ->
+                threadId <- unsafeEff_ myThreadId
+                valueVar <- unsafeEff_ newEmptyMVar
+                waitVar <- unsafeEff_ (newMVar $ Just [])
+                join $ unsafeEff_ $ atomicModifyIORef startedVar $ \started ->
                     case DHashMap.alterLookup (Just . fromMaybe (Started threadId valueVar waitVar)) (HideEffects key) started of
                         (Nothing, started') ->
                             ( started'
-                            , ( do
-                                    value <- raise $ rules key
-                                    join $ modifyMVar waitVar $ \maybeWaitingThreads -> do
-                                        case maybeWaitingThreads of
-                                            Nothing ->
-                                                error "impossible"
-                                            Just waitingThreads ->
-                                                pure
-                                                    ( Nothing
-                                                    , atomicModifyIORef depsVar $ \deps ->
-                                                        ( flipfoldl' HashMap.delete deps waitingThreads
-                                                        , ()
-                                                        )
-                                                    )
-                                    atomicModifyIORef startedVar $ \started'' ->
-                                        (DHashMap.insert (HideEffects key) (Done value) started'', ())
-                                    putMVar valueVar $ Just value
-                                    pure value
-                              )
-                                `catch` \(e :: Cyclic (HideEffects f)) -> do
-                                    atomicModifyIORef startedVar $ \started'' ->
-                                        (DHashMap.delete (HideEffects key) started'', ())
-                                    putMVar valueVar Nothing
-                                    throwIO e
+                            , runNewComputation threadId valueVar waitVar
                             )
                         (Just entry, _started') ->
                             (started, waitFor entry)
             Just entry -> waitFor entry
       where
-        waitFor entry =
+        runNewComputation _threadId valueVar waitVar = withFrozenCallStack $ do
+            value <-
+                unsafeCatch (rules key) $ \(e :: Cyclic f) -> do
+                    unsafeEff_ $ do
+                        atomicModifyIORef' startedVar $ \started'' ->
+                            (DHashMap.delete (HideEffects key) started'', ())
+                        putMVar valueVar Nothing
+                        throwIO e
+
+            -- Cleanup waiting threads
+            unsafeEff_ $ do
+                modifyMVar_ waitVar $ \case
+                    Nothing -> error "impossible: waitVar empty"
+                    Just waitingThreads -> do
+                        -- Remove dependencies for all waiting threads
+                        atomicModifyIORef' depsVar $ \deps ->
+                            (flipfoldl' HashMap.delete deps waitingThreads, ())
+                        pure Nothing
+
+                -- Mark as Done
+                atomicModifyIORef' startedVar $ \started'' ->
+                    (DHashMap.insert (HideEffects key) (Done value) started'', ())
+
+                putMVar valueVar $ Just value
+
+            pure value
+        waitFor entry = do
             case entry of
                 Started onThread valueVar waitVar -> do
-                    threadId <- myThreadId
-                    modifyMVar_ waitVar $ \maybeWaitingThreads -> do
+                    threadId <- unsafeEff_ myThreadId
+                    unsafeEff_ $ modifyMVar_ waitVar $ \maybeWaitingThreads -> do
                         case maybeWaitingThreads of
                             Nothing ->
                                 pure maybeWaitingThreads
@@ -182,17 +213,45 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                                     if detectCycle threadId deps'
                                         then
                                             ( deps
-                                            , throwIO $ Cyclic $ Some (HideEffects key)
+                                            , do
+                                                let cycleThreads = recoverCyclePath threadId deps'
+                                                started <- readIORef startedVar
+                                                let threadToKeys = buildThreadKeyMap started
+                                                let cycleKeys =
+                                                        concatMap
+                                                            (\t -> fromMaybe [] (HashMap.lookup t threadToKeys))
+                                                            cycleThreads
+                                                case nonEmpty cycleKeys of
+                                                    Nothing -> error "Impossible: Cycle detected but no keys found in map"
+                                                    Just neKeys -> throwIO $ Cyclic neKeys
                                             )
                                         else
                                             ( deps'
                                             , pass
                                             )
                                 pure $ Just $ threadId : waitingThreads
-                    maybeValue <- readMVar valueVar
-                    maybe (rules' (MemoQuery key)) pure maybeValue
+                    maybeValue <- unsafeEff_ (readMVar valueVar)
+                    maybe (rules' key) pure maybeValue
                 Done value ->
                     pure value
+
+    recoverCyclePath :: ThreadId -> HashMap.HashMap ThreadId ThreadId -> [ThreadId]
+    recoverCyclePath start deps = go start []
+      where
+        go curr visited
+            | curr `elem` visited = reverse (curr : takeWhile (/= curr) visited)
+            | otherwise = case HashMap.lookup curr deps of
+                Nothing -> [] -- should be impossible
+                Just next -> go next (curr : visited)
+
+    buildThreadKeyMap :: DHashMap (HideEffects f) MemoEntry -> HashMap.HashMap ThreadId [Some (HideEffects f)]
+    buildThreadKeyMap =
+        DHashMap.foldrWithKey
+            ( \k v acc -> case v of
+                Started tid _ _ -> HashMap.insertWith (<>) tid [Some k] acc
+                _ -> acc
+            )
+            HashMap.empty
 
     detectCycle threadId deps =
         go threadId
@@ -203,3 +262,12 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                 Just dep
                     | dep == threadId -> True
                     | otherwise -> go dep
+
+{- | Internal helper to catch exceptions without requiring 'IOE'.
+This is safe here because we are building infrastructure that we know runs in IO,
+but we don't want to leak that implementation detail to the type signature, as then
+every query could perform IO actions.
+-}
+unsafeCatch :: Exception e => Eff es a -> (e -> Eff es a) -> Eff es a
+unsafeCatch m handler = unsafeEff $ \env ->
+    unEff m env `catch` \e -> unEff (handler e) env

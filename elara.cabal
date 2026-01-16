@@ -151,7 +151,6 @@ library
       Print
       Rock
       Rock.Memo
-      Rock.MemoE
       TODO
   hs-source-dirs:
       src

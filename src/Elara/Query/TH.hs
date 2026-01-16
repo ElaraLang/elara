@@ -3,12 +3,9 @@
 
 {-# HLINT ignore "Use id" #-}
 
-module Elara.Query.TH where
+module Elara.Query.TH (makeTag) where
 
-import Effectful (Eff, (:>))
-import Effectful.Concurrent
 import Language.Haskell.TH as TH
-import Rock.MemoE (Memoise)
 
 toNames :: Con -> [(Name, Int)]
 toNames = \case
@@ -32,19 +29,4 @@ makeTag tyName = do
         mkClause i na = clause [mkPat na] (normalB (litE (IntegerL (fromIntegral i)))) []
     sig <- sigD (mkName "tagQuery") [t|forall es a. $(conT tyName) es a -> Int|]
     fun <- funD (mkName "tagQuery") (zipWith mkClause [0 ..] names)
-    pure [sig, fun]
-
-makeWithMemoiseE :: Name -> TH.Q [TH.Dec]
-makeWithMemoiseE tyName = do
-    info <- reify tyName
-    cons <- case info of
-        TH.TyConI (TH.DataD _ _ _ _ cs _) -> pure cs
-        TH.TyConI (TH.NewtypeD _ _ _ _ c _) -> pure [c]
-        _ -> fail "makeWithMemoiseE: expected data/newtype"
-    -- withMemoiseE :: f es a -> ((Memoise :> es, Concurrent :> es) => Eff es a) -> Eff es a
-    let names = fst <$> concatMap toNames cons
-    let mkClause con = clause [recP con []] (normalB [|\k -> k|]) []
-    let fName = mkName ("withMemoiseE" <> nameBase tyName)
-    sig <- sigD fName [t|forall es a. $(conT tyName) es a -> ((Memoise :> es, Concurrent :> es) => Eff es a) -> Eff es a|]
-    fun <- funD fName $ map mkClause names
     pure [sig, fun]

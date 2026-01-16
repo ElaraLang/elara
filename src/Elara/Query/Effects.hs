@@ -13,7 +13,6 @@ import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Logging
-import Rock.MemoE
 
 type MinimumQueryEffects = ConsMinimumQueryEffects '[]
 
@@ -22,11 +21,11 @@ even a "pure" one
 -}
 type ConsMinimumQueryEffects :: [Effect] -> [Effect]
 type ConsMinimumQueryEffects es =
-    Memoise ': Concurrent ': es
+    Concurrent ': StructuredDebug ': es
 
 type HasMinimumQueryEffects es =
-    ( Memoise :> es
-    , Concurrent :> es
+    ( Concurrent :> es
+    , StructuredDebug :> es
     )
 
 type StandardQueryEffects = ConsQueryEffects '[]
@@ -44,7 +43,6 @@ type ConsQueryEffects es =
 type QueryEffects :: [Effect] -> Constraint
 type QueryEffects es =
     ( FileSystem :> es
-    , Memoise :> es
     , Concurrent :> es
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es

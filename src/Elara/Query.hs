@@ -58,8 +58,8 @@ import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator (OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
 import Elara.TypeInfer.Type (Polytype, Type)
+import Elara.TypeInfer.Unique
 import Rock (Rock)
-import Rock.Memo (HasMemoiseE (..))
 
 type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
@@ -129,7 +129,7 @@ data Query (es :: [Effect]) a where
     -- | Looks up the declaration for a data constructor
     ConstructorDeclaration ::
         forall (ast :: LocatedAST).
-        (Typeable ast, Ord (Select ConRef ast), Hashable (Select ConRef ast), SupportsQuery QueryConstructorDeclaration ast) =>
+        (Typeable ast, Show (Select ConRef ast), Ord (Select ConRef ast), Hashable (Select ConRef ast), SupportsQuery QueryConstructorDeclaration ast) =>
         QueryArgsOf QueryConstructorDeclaration ast ->
         Query (QueryEffectsOf QueryConstructorDeclaration ast) (QueryReturnTypeOf QueryConstructorDeclaration ast)
     DeclarationAnnotations ::
@@ -161,7 +161,14 @@ data Query (es :: [Effect]) a where
     TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
-    -- \* To Core Queries
+    -- | Get Information about a type alias
+    GetTypeAlias ::
+        -- | The name of the type alias
+        Qualified TypeName ->
+        {- | The type alias's type variables and body, if it exists
+        \* To Core Queries
+        -}
+        Query (WithRock (ConsQueryEffects '[])) (Maybe ([UniqueTyVar], Type SourceRegion))
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
     GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
@@ -227,15 +234,15 @@ instance GEq (Query es) => Eq (Query es a) where
         Just Refl -> True
         Nothing -> False
 
--- deriving instance Show (Select ConRef ast) => Show (Query es a)
-
 $(makeTag ''Query)
-$(makeWithMemoiseE ''Query)
+
+deriving instance Show (Query es a)
 
 instance GCompare (Query es) => GEq (Query es) where
     geq x y = case gcompare x y of
         GEQ -> Just Refl
         _ -> Nothing
+
 instance GCompare (Query es) where
     gcompare a b =
         case compare (tag a) (tag b) of -- first compare tags (i.e. constructors)
@@ -283,6 +290,8 @@ instance GCompare (Query es) where
         sameCtor (InferSCC k1) (InferSCC k2) =
             ord k1 k2
         sameCtor (KindOf t1) (KindOf t2) =
+            ord t1 t2
+        sameCtor (GetTypeAlias t1) (GetTypeAlias t2) =
             ord t1 t2
         sameCtor (GetCoreModule m1) (GetCoreModule m2) =
             ord m1 m2
@@ -404,6 +413,7 @@ instance Eq (Query es a) => Hashable (Query es a) where
         TypeOf loc -> h loc
         InferSCC key -> h key
         KindOf qtn -> h qtn
+        GetTypeAlias qtn -> h qtn
         GetCoreModule mn -> h mn
         GetTyCon qn -> h qn
         GetDataCon qn -> h qn
@@ -416,6 +426,3 @@ instance Eq (Query es a) => Hashable (Query es a) where
         t = tagQuery q
         h :: forall b. Hashable b => b -> Int
         h payload = hash t `hashWithSalt` payload `hashWithSalt` salt
-
-instance HasMemoiseE Query where
-    withMemoiseE = withMemoiseEQuery

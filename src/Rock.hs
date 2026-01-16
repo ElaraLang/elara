@@ -19,35 +19,36 @@ import Data.Typeable
 import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, raise, (:>))
 import Effectful.Dispatch.Static (SideEffects (NoSideEffects), StaticRep, evalStaticRep, getStaticRep)
 import Effectful.Timeout (Timeout, timeout)
+import Elara.Logging
 import GHC.Show (Show (..), showChar, showParen, showString)
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (atomicModifyIORef, newIORef, readIORef)
 
 -- * Types
 
-type Rules f = forall a es. (HasCallStack => f es a -> Eff es a)
+type Rules f = forall a es. ((HasCallStack, StructuredDebug :> es) => f es a -> Eff es a)
 
 data Rock (f :: [Effect] -> Type -> Type) :: Effect
 type instance DispatchOf (Rock f) = Static NoSideEffects
-newtype instance StaticRep (Rock f) = Rock (forall a es. HasCallStack => f es a -> Eff es a)
+newtype instance StaticRep (Rock f) = Rock (forall a es. (HasCallStack, StructuredDebug :> es) => f es a -> Eff es a)
 
 runRock :: Rules f -> Eff (Rock f : es) a -> Eff es a
 runRock r = evalStaticRep (Rock r)
 
-fetch :: (Subset xs es, Rock f :> es, HasCallStack) => f xs a -> Eff es a
+fetch :: (Subset xs es, Rock f :> es, HasCallStack, StructuredDebug :> xs) => f xs a -> Eff es a
 fetch key = do
     Rock f <- getStaticRep
     inject (f key)
 
 -- * Running tasks
 
-data TimeoutQuery f es a where
-    TimeoutQuery :: f es a -> TimeoutQuery f (Timeout : es) (Maybe a)
+-- data TimeoutQuery f es a where
+--     TimeoutQuery :: f es a -> TimeoutQuery f (Timeout : es) (Maybe a)
 
-timeoutRules :: Rules f -> Rules (TimeoutQuery f)
-timeoutRules r (TimeoutQuery k) = do
-    let a = r k
-    timeout 1000000 (inject a)
+-- timeoutRules :: Rules f -> Rules (TimeoutQuery f)
+-- timeoutRules r (TimeoutQuery k) = do
+--     let a = r k
+--     timeout 1000000 (inject a)
 
 -------------------------------------------------------------------------------
 
@@ -57,7 +58,7 @@ timeoutRules r (TimeoutQuery k) = do
 data IOQuery f es a where
     IOQuery :: f es a -> IOQuery f (IOE : es) a
 
--- | Track the query dependencies of a 'Task' in a 'DHashMap'.
+{- | Track the query dependencies of a 'Task' in a 'DHashMap'.
 track ::
     forall f es k g a.
     (GEq k, Hashable (Some k), IOE :> es, Rock f :> es) =>
@@ -65,40 +66,41 @@ track ::
     Eff es a ->
     Eff es (a, DHashMap k g)
 track f = trackM $ \key value -> pure (f key value)
+-}
 
-trackM ::
-    forall f es k g a.
-    (GEq k, Hashable (Some k), IOE :> es, Rock f :> es) =>
-    (forall es' a'. f es' a' -> a' -> Eff es' (k a', g a')) ->
-    Eff es a ->
-    Eff es (a, DHashMap k g)
-trackM f task = do
-    depsVar <- newIORef mempty
-    let
-        record' ::
-            ( (forall a' es'. f es' a' -> Eff es' a') ->
-              (forall a' es'. (IOQuery f) es' a' -> Eff es' a')
-            )
-        record' fetch' (IOQuery key) = do
-            value <- raise $ fetch' key
-            (k, g) <- raise $ f key value
-            atomicModifyIORef depsVar $ (,()) . DHashMap.insert k g
-            pure value
-    result <- transRock record' (raise task)
-    deps <- readIORef depsVar
-    pure (result, deps)
+-- trackM ::
+--     forall f es k g a.
+--     (GEq k, Hashable (Some k), IOE :> es, Rock f :> es) =>
+--     (forall es' a'. f es' a' -> a' -> Eff es' (k a', g a')) ->
+--     Eff es a ->
+--     Eff es (a, DHashMap k g)
+-- trackM f task = do
+--     depsVar <- newIORef mempty
+--     let
+--         record' ::
+--             ( (forall a' es'. f es' a' -> Eff es' a') ->
+--               (forall a' es'. (IOQuery f) es' a' -> Eff es' a')
+--             )
+--         record' fetch' (IOQuery key) = do
+--             value <- raise $ fetch' key
+--             (k, g) <- raise $ f key value
+--             atomicModifyIORef depsVar $ (,()) . DHashMap.insert k g
+--             pure value
+--     result <- transRock record' (raise task)
+--     deps <- readIORef depsVar
+--     pure (result, deps)
 
-transRock ::
-    forall f g es a.
-    Rock f :> es =>
-    ( (forall a' es'. f es' a' -> Eff es' a') ->
-      (forall a' es'. g es' a' -> Eff es' a')
-    ) ->
-    Eff (Rock g : es) a ->
-    Eff es a
-transRock f m = do
-    Rock r <- getStaticRep @(Rock f)
-    evalStaticRep (Rock (f r)) m
+-- transRock ::
+--     forall f g es a.
+--     Rock f :> es =>
+--     ( (forall a' es'. f es' a' -> Eff es' a') ->
+--       (forall a' es'. g es' a' -> Eff es' a')
+--     ) ->
+--     Eff (Rock g : es) a ->
+--     Eff es a
+-- transRock f m = do
+--     Rock r <- getStaticRep @(Rock f)
+--     evalStaticRep (Rock (f r)) m
 
 -- * Utils
 
@@ -106,7 +108,7 @@ transRock f m = do
 The GEq and Eq instances will unsafeCoerce away information on the Effects,
 please don't rely on it.
 
-This is used for using query keys as map keps
+This is used for using query keys as map keys
 -}
 type HideEffects :: ([Effect] -> Type -> Type) -> Type -> Type
 data HideEffects f a where
