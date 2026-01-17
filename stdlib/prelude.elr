@@ -5,3 +5,7 @@ import List
 
 def (|>) : a -> (a -> b) -> b
 let (|>) x f = f x
+
+#RightAssociative #Fixity 1
+def (>>) : IO a -> IO b -> IO b
+let (>>) m1 m2 = m1 >>= (\_ -> m2)
