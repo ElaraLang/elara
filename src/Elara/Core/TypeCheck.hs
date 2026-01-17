@@ -9,7 +9,6 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 module Elara.Core.TypeCheck (typeCheckCoreModule, TypeCheckError (..)) where
 
 import Data.Set qualified as Set
-import Debug.Trace (traceWith)
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Extra (locally, scoped)
@@ -27,9 +26,6 @@ import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core
-import Elara.Query qualified
-import Print (prettyToString)
-import Rock qualified
 import TODO (todo)
 
 data TypeCheckError
