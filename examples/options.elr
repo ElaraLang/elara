@@ -1,0 +1,23 @@
+import Prelude
+import Elara.Prim
+import Option
+import String
+
+def safeDiv : Int -> Int -> Option Int
+let safeDiv x y =
+    if y == 0 then
+        None
+    else
+        Some (x / y)
+
+def describe : Option Int -> String
+let describe opt =
+    match opt with
+        Some val -> "Got value: " ++ toString val
+        None -> "Got nothing"
+
+let main =
+    let res1 = safeDiv 10 2
+    let res2 = safeDiv 10 0
+    println ("10 / 2: " ++ describe res1) >>
+    println ("10 / 0: " ++ describe res2)
