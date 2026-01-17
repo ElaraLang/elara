@@ -459,6 +459,16 @@ unify a b = do
                 (Just a', _) -> unify' a' t2
                 (_, Just b') -> unify' t1 b'
                 (Nothing, Nothing) -> throwError $ TypeConstructorMismatch (l1, a) (l2, b)
+    unify' t1@(TypeConstructor _ a as) t2 = do
+        expanded <- expandAlias a as
+        case expanded of
+            Just t1' -> unify' t1' t2
+            Nothing -> throwError $ UnificationFailed ?constraint (t1, t2)
+    unify' t1 t2@(TypeConstructor _ b bs) = do
+        expanded <- expandAlias b bs
+        case expanded of
+            Just t2' -> unify' t1 t2'
+            Nothing -> throwError $ UnificationFailed ?constraint (t1, t2)
     unify' (Function _ a b) (Function _ c d) = unifyMany [a, b] [c, d]
     unify' a b = throwError $ UnificationFailed ?constraint (a, b)
 
