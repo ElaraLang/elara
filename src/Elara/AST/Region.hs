@@ -143,6 +143,9 @@ instance Hashable a => Hashable (Located a)
 class HasSourceRegion a where
     sourceRegion :: Lens' a SourceRegion
 
+instance HasSourceRegion SourceRegion where
+    sourceRegion = lensVL $ \f sr -> f sr
+
 instance HasSourceRegion (Located a) where
     sourceRegion = lensVL $ \f (Located region x) -> fmap (`Located` x) (f region)
 

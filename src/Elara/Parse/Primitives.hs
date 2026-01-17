@@ -19,15 +19,17 @@ module Elara.Parse.Primitives (
 )
 where
 
+import Effectful
 import Elara.AST.Region
 import Elara.Lexer.Token
+import Elara.Logging (StructuredDebug)
 import Elara.Parse.Error (ElaraParseError)
 import Elara.Parse.Stream (TokenStream (..))
 import Text.Megaparsec hiding (Token, token)
 import Text.Megaparsec qualified as MP (token)
 import Prelude hiding (many, some)
 
-type Parser = Parsec ElaraParseError TokenStream
+type Parser = ParsecT ElaraParseError TokenStream (Eff '[StructuredDebug])
 
 {- | Temporarily puts the parser in a state where it ignores indents
 this is useful for parsing things that are truly context-free, such as type declarations

@@ -185,8 +185,8 @@ instance ReportableError RenameError where
             Err
                 Nothing
                 ("Recursive type alias detected: " <> pretty n)
-                [ -- (n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "defined here")
-                  (usePoint ^. sourceRegion % to sourceRegionToDiagnosePosition, This "used here")
+                [ (n ^. sourceRegion % to sourceRegionToDiagnosePosition, Where "defined here")
+                , (usePoint ^. sourceRegion % to sourceRegionToDiagnosePosition, This "refers to itself here")
                 ]
                 [ Note "Type aliases cannot be recursive."
                 , Hint "Did you mean to define a data type instead? Use `|` to define an ADT with a single constructor."

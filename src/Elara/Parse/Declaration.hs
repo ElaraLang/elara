@@ -7,7 +7,9 @@ import Elara.AST.Generic.Common
 import Elara.AST.Name (ModuleName)
 import Elara.AST.Region
 import Elara.AST.Select
+import Elara.Data.Pretty (Pretty (..))
 import Elara.Lexer.Token (Token (..))
+import Elara.Logging (logDebug)
 import Elara.Parse.Annotation (annotations)
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Expression (letPreamble)
@@ -59,9 +61,26 @@ typeDeclaration modName annotations = fmapLocated Declaration $ ignoringIndents 
     args <- many (located varId)
     token_ TokenEquals
     body <- located (try (alias <* notFollowedBy (token_ TokenPipe)) <|> adt) -- Alias must come first, as otherwise ADT would consume it
-    let valueLocation = name ^. sourceRegion <> body ^. sourceRegion
+    let valueLocation =
+            name ^. sourceRegion
+                <> body ^. sourceRegion
+
         annotations' = TypeDeclAnnotations NoFieldValue annotations
-        value = DeclarationBody $ Located valueLocation (TypeDeclaration name args body annotations')
+        value =
+            DeclarationBody $
+                Located
+                    valueLocation
+                    (TypeDeclaration name args body annotations')
+    lift $
+        logDebug $
+            "Body location for type declaration "
+                <> pretty (name ^. unlocated)
+                <> " at "
+                <> pretty (body ^. sourceRegion)
+                <> " with name location at "
+                <> pretty (name ^. sourceRegion)
+                <> " so valueLocation = "
+                <> pretty valueLocation
     pure (Declaration' modName value)
 
 -- | ADT declarations

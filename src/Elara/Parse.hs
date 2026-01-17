@@ -1,7 +1,6 @@
-module Elara.Parse where
+module Elara.Parse (getParsedModuleQuery, getParsedFileQuery) where
 
-import Effectful (Eff, (:>))
-import Effectful.Error.Extra (fromEither)
+import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Elara.AST.Module (Module)
@@ -18,21 +17,10 @@ import Elara.Query (Query (GetFileContents, LexedFile, ModulePath))
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.ReadFile (FileContents (FileContents))
 import Rock (Rock, fetch)
-import Text.Megaparsec (MonadParsec (eof), runParser)
-
-parseModule :: FilePath -> TokenStream -> Either (WParseErrorBundle TokenStream ElaraParseError) (Module Frontend)
-parseModule y = first WParseErrorBundle . runParser (module' <* eof) y
+import Text.Megaparsec (MonadParsec (eof), runParserT)
 
 moduleParser :: Parser (Module Frontend)
 moduleParser = module' <* eof
-
-parse :: ParsePipelineEffects r => Parser a -> FilePath -> TokenStream -> Eff r a
-parse p path = fromEither . first WParseErrorBundle . runParser p path
-
-parseWith :: ParsePipelineEffects r => Parser a -> FilePath -> (Text, [Lexeme]) -> Eff r a
-parseWith parser fp (source, tokens) = do
-    let tokenStream = createTokenStream source tokens
-    parse parser fp tokenStream
 
 getParsedFileQuery ::
     HasCallStack =>
@@ -48,7 +36,7 @@ getParsedFileQuery fp = do
     (FileContents filePath contents) <- runErrorOrReport $ fetch (GetFileContents fp)
     lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
     let tokenStream = createTokenStream contents lexemes
-    let parseResult = runParser moduleParser filePath tokenStream
+    parseResult <- inject $ runParserT moduleParser filePath tokenStream
     let firstError = first WParseErrorBundle parseResult
     case firstError of
         Left err -> throwError err
@@ -66,8 +54,6 @@ getParsedModuleQuery ::
 getParsedModuleQuery mn = do
     fp <- fetch (ModulePath mn)
     getParsedFileQuery fp
-
-type ParsePipelineEffects r = (Eff.Error (WParseErrorBundle TokenStream ElaraParseError) :> r)
 
 createTokenStream :: Text -> [Lexeme] -> TokenStream
 createTokenStream i tokens = TokenStream i tokens False

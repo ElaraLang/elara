@@ -336,11 +336,17 @@ renameTypeDeclaration :: _ => ModuleName -> Located (Qualified TypeName) -> Desu
 renameTypeDeclaration _ declarationName (Alias aliasedType) = do
     t' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) aliasedType
     let isRecursive = typeIsRecursive (declarationName ^. unlocated) t'
-    whenJust isRecursive $ \r ->
+    whenJust isRecursive $ \r -> do
+        logDebug
+            ( "Detected recursive type alias: "
+                <> pretty (showColored r)
+                <> " at "
+                <> pretty (r ^. sourceRegion)
+            )
         throwError $ RecursiveTypeAlias declarationName r
 
     pure $ Alias t'
-renameTypeDeclaration thisMod declarationName (ADT constructors) = do
+renameTypeDeclaration thisMod _declarationName (ADT constructors) = do
     constructors' <-
         traverse
             (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % _1 % unlocated) (renameType False) y)
@@ -629,11 +635,14 @@ desugarBlock xs = do
 
 -- | Checks if a type is recursive with respect to a target type, returning the use of the target type if so
 typeIsRecursive :: Qualified TypeName -> RenamedType -> Maybe (Located (Qualified TypeName))
-typeIsRecursive targetType (Type (Located _ t, _)) = case t of
+typeIsRecursive targetType (Type (Located useSiteLocation t, _)) = case t of
     TypeVar _ -> Nothing
     FunctionType a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
     UnitType -> Nothing
     TypeConstructorApplication a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
-    UserDefinedType ln@(Located _ n) -> if n == targetType then Just ln else Nothing
+    UserDefinedType (Located _ n) ->
+        if n == targetType
+            then Just (n `withLocationOf` useSiteLocation)
+            else Nothing
     RecordType fields -> asum (fmap (typeIsRecursive targetType . snd) fields)
     ListType t' -> typeIsRecursive targetType t'

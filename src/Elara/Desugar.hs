@@ -18,9 +18,10 @@ import Elara.AST.Module
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region
 import Elara.AST.Select
-import Elara.Data.Pretty (Pretty)
+import Elara.Data.Pretty (Pretty (..))
 import Elara.Desugar.Error
 import Elara.Error (runErrorOrReport)
+import Elara.Logging
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
@@ -32,7 +33,7 @@ import Prelude hiding (Op)
 
 type Desugar a = Eff DesugarPipelineEffects a
 
-type DesugarPipelineEffects = '[Eff.State DesugarState, Eff.Error DesugarError]
+type DesugarPipelineEffects = '[Eff.State DesugarState, Eff.Error DesugarError, StructuredDebug]
 
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map (IgnoreLocation Name) PartialDeclaration
@@ -45,7 +46,7 @@ resolvePartialDeclaration :: PartialDeclaration -> Desugar DesugaredDeclarationB
 resolvePartialDeclaration (Immediate _ a) = pure a
 resolvePartialDeclaration ((JustDef _ _ ty _)) = throwError (DefWithoutLet ty)
 resolvePartialDeclaration ((JustLet n sr e ann)) = pure (DeclarationBody (Located sr (Value n e NoFieldValue Nothing (resolveAnn ann))))
-resolvePartialDeclaration ((AllDecl n sr ty e ann)) =
+resolvePartialDeclaration (AllDecl n sr ty e ann) =
     pure
         ( DeclarationBody
             (Located sr (Value n e NoFieldValue (Just ty) ann))
@@ -136,6 +137,11 @@ genPartials = traverseOf_ (each % _Unwrapped) genPartial
             ann <- traverseTypeDeclAnnotations desugarAnnotation typeAnnotations
             let decl' = TypeDeclaration n vars typeDecl' ann
             let bodyLoc = decl ^. the @"body" % _Unwrapped % sourceRegion
+            logDebug $
+                "Desugared type declaration at "
+                    <> pretty bodyLoc
+                    <> " for type "
+                    <> pretty (n ^. unlocated)
             pure (Immediate (n ^. unlocated % to NTypeName) (DeclarationBody (Located bodyLoc decl')))
 
 desugarAnnotation :: Annotation Frontend -> Desugar (Annotation Desugared)
@@ -166,6 +172,14 @@ completePartials mn = do
                 body <- resolvePartialDeclaration partial
                 let locatedName = declName ^. _IgnoreLocation
                 let declaration' = Declaration' mn body
+                logDebug $
+                    "Merging locations:"
+                        <> pretty (locatedName ^. sourceRegion)
+                        <> " and "
+                        <> pretty (body ^. _Unwrapped % sourceRegion)
+                        <> "for declaration "
+                        <> pretty (locatedName ^. unlocated)
+
                 let overallLocation = locatedName ^. sourceRegion <> body ^. _Unwrapped % sourceRegion
                 pure (Declaration (Located overallLocation declaration'))
             )
