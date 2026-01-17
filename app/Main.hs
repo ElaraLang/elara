@@ -23,6 +23,7 @@ import Elara.Data.Unique (
 import Autodocodec
 import Data.Binary.Put
 import Data.Binary.Write
+import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Set qualified as Set
@@ -64,7 +65,6 @@ import Prettyprinter.Render.Text
 import Print
 import Rock qualified
 import Rock.Memo qualified
-import Rock.MemoE (memoiseRunIO)
 import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeBaseName, takeDirectory)
@@ -230,101 +230,102 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
     -- Get logging configuration from environment variables
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
+    startedVar <- liftIO $ newIORef DHashMap.empty
+    depsVar <- liftIO $ newIORef mempty
     runFileSystem $
         uniqueGenToGlobalIO $
             (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
                 runConcurrent $
-                    memoiseRunIO @Elara.Query.Query $
-                        Rock.runRock (Rock.Memo.memoise (Elara.Rules.rules settings)) $
-                            do
-                                start <- liftIO getCPUTime
-                                liftIO (createDirectoryIfMissing True outDirName)
+                    Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)) $
+                        do
+                            start <- liftIO getCPUTime
+                            liftIO (createDirectoryIfMissing True outDirName)
 
-                                files <-
-                                    toList <$> Rock.fetch Elara.Query.InputFiles
+                            files <-
+                                toList <$> Rock.fetch Elara.Query.InputFiles
 
-                                when (DumpLexed `Set.member` dumpTargets) $ do
-                                    lexed <- for files $ \file -> do
-                                        fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
+                            when (DumpLexed `Set.member` dumpTargets) $ do
+                                lexed <- for files $ \file -> do
+                                    fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
 
-                                    inject $ dumpGraph lexed (toText . takeBaseName . fst) ".lexed.elr"
-                                    logDebug "Dumped lexed files"
+                                inject $ dumpGraph lexed (toText . takeBaseName . fst) ".lexed.elr"
+                                logDebug "Dumped lexed files"
 
-                                moduleNames <- for files $ \file -> do
-                                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                    pure (m.name ^. unlocated)
+                            moduleNames <- for files $ \file -> do
+                                (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
+                                pure (m.name ^. unlocated)
 
-                                runErrorOrReport @(WParseErrorBundle _ _) $
-                                    dumpGraphInfo Elara.Query.ParsedModule (DumpParsed `Set.member` dumpTargets) moduleNames "parsed" ".parsed.elr"
+                            runErrorOrReport @(WParseErrorBundle _ _) $
+                                dumpGraphInfo Elara.Query.ParsedModule (DumpParsed `Set.member` dumpTargets) moduleNames "parsed" ".parsed.elr"
 
-                                runErrorOrReport @DesugarError $
-                                    dumpGraphInfo Elara.Query.DesugaredModule (DumpDesugared `Set.member` dumpTargets) moduleNames "desugared" ".desugared.elr"
+                            runErrorOrReport @DesugarError $
+                                dumpGraphInfo Elara.Query.DesugaredModule (DumpDesugared `Set.member` dumpTargets) moduleNames "desugared" ".desugared.elr"
 
-                                runErrorOrReport @RenameError $
-                                    dumpGraphInfo Elara.Query.RenamedModule (DumpRenamed `Set.member` dumpTargets) moduleNames "renamed" ".renamed.elr"
+                            runErrorOrReport @RenameError $
+                                dumpGraphInfo Elara.Query.RenamedModule (DumpRenamed `Set.member` dumpTargets) moduleNames "renamed" ".renamed.elr"
 
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo (Elara.Query.ModuleByName @Shunted) (DumpShunted `Set.member` dumpTargets) moduleNames "shunted" ".shunted.elr"
+                            runErrorOrReport @ShuntError $
+                                dumpGraphInfo (Elara.Query.ModuleByName @Shunted) (DumpShunted `Set.member` dumpTargets) moduleNames "shunted" ".shunted.elr"
 
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.TypeCheckedModule (DumpTyped `Set.member` dumpTargets) moduleNames "typed" ".typed.elr"
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core" ".core.elr"
+                            runErrorOrReport @ShuntError $
+                                dumpGraphInfo Elara.Query.TypeCheckedModule (DumpTyped `Set.member` dumpTargets) moduleNames "typed" ".typed.elr"
+                            runErrorOrReport @ShuntError $
+                                dumpGraphInfo Elara.Query.GetCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core" ".core.elr"
 
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetANFCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.anf" ".core.anf.elr"
+                            runErrorOrReport @ShuntError $
+                                dumpGraphInfo Elara.Query.GetANFCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.anf" ".core.anf.elr"
 
-                                runErrorOrReport @ClosureLiftError $
-                                    dumpGraphInfo Elara.Query.GetClosureLiftedModule (DumpCore `Set.member` dumpTargets) moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
+                            runErrorOrReport @ClosureLiftError $
+                                dumpGraphInfo Elara.Query.GetClosureLiftedModule (DumpCore `Set.member` dumpTargets) moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
 
-                                dumpGraphInfo Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
+                            dumpGraphInfo Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
 
-                                if runWith == RunWithInterpreter
-                                    then
-                                        Interpreter.runInterpreter Interpreter.run
-                                    else
-                                        if runWith == RunWithJVM
-                                            then do
-                                                cores <- for moduleNames $ \m -> do
-                                                    Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
-                                                classFiles <- for cores $ \coreMod -> do
-                                                    lowered <- runErrorOrReport @JVMLoweringError $ lowerModule coreMod
-                                                    Emit.emitIRModule lowered
+                            if runWith == RunWithInterpreter
+                                then
+                                    Interpreter.runInterpreter Interpreter.run
+                                else
+                                    if runWith == RunWithJVM
+                                        then do
+                                            cores <- for moduleNames $ \m -> do
+                                                Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
+                                            classFiles <- for cores $ \coreMod -> do
+                                                lowered <- runErrorOrReport @JVMLoweringError $ lowerModule coreMod
+                                                Emit.emitIRModule lowered
 
-                                                when (DumpIR `Set.member` dumpTargets) $ do
-                                                    lowered <- for cores $ \coreMod -> do
-                                                        runErrorOrReport @JVMLoweringError $ lowerModule coreMod
-                                                    inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
-                                                    logDebug "Dumped JVM IR modules"
+                                            when (DumpIR `Set.member` dumpTargets) $ do
+                                                lowered <- for cores $ \coreMod -> do
+                                                    runErrorOrReport @JVMLoweringError $ lowerModule coreMod
+                                                inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
+                                                logDebug "Dumped JVM IR modules"
 
-                                                when (DumpJVM `Set.member` dumpTargets) $ do
-                                                    inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
+                                            when (DumpJVM `Set.member` dumpTargets) $ do
+                                                inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
 
-                                                for_ (zip moduleNames classFiles) $ \(modName, classes) -> do
-                                                    fps <- for classes $ \classFile -> do
-                                                        x <- runErrorOrReport $ fromEither $ convert classFile
-                                                        let bs = runPut (writeBinary x)
-                                                        let fp = "build/" <> suitableFilePath classFile.name
-                                                        liftIO $ createAndWriteFile fp bs
-                                                        pure fp
+                                            for_ (zip moduleNames classFiles) $ \(modName, classes) -> do
+                                                fps <- for classes $ \classFile -> do
+                                                    x <- runErrorOrReport $ fromEither $ convert classFile
+                                                    let bs = runPut (writeBinary x)
+                                                    let fp = "build/" <> suitableFilePath classFile.name
+                                                    liftIO $ createAndWriteFile fp bs
+                                                    pure fp
 
-                                                    logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
+                                                logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
 
-                                                logDebug "Emitted JVM class files"
-                                            else logWarning "Nothing to do. Use --run or --run-jvm to execute the compiled code."
+                                            logDebug "Emitted JVM class files"
+                                        else logWarning "Nothing to do. Use --run or --run-jvm to execute the compiled code."
 
-                                end <- liftIO getCPUTime
-                                let t :: Double
-                                    t = fromIntegral (end - start) * 1e-9
-                                logInfo
-                                    ( Style.varName "Successfully" <+> "compiled "
-                                        <> Style.punctuation (pretty (length files))
-                                        <> " classes in "
-                                        <> Style.punctuation
-                                            ( fromString (printf "%.2f" t)
-                                                <> "ms!"
-                                            )
-                                    )
+                            end <- liftIO getCPUTime
+                            let t :: Double
+                                t = fromIntegral (end - start) * 1e-9
+                            logInfo
+                                ( Style.varName "Successfully" <+> "compiled "
+                                    <> Style.punctuation (pretty (length files))
+                                    <> " classes in "
+                                    <> Style.punctuation
+                                        ( fromString (printf "%.2f" t)
+                                            <> "ms!"
+                                        )
+                                )
 
 dumpGraphInfo ::
     ( Subset xs es
@@ -334,6 +335,7 @@ dumpGraphInfo ::
     , IOE :> es
     , Pretty module'
     , Dumpable module'
+    , StructuredDebug :> xs
     ) =>
     (ModuleName -> Elara.Query.Query xs module') -> Bool -> [ModuleName] -> Text -> Text -> Eff es ()
 dumpGraphInfo query when' moduleNames stage suffix = do

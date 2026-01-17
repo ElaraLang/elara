@@ -67,7 +67,10 @@ typeDeclaration modName annotations = fmapLocated Declaration $ ignoringIndents 
 -- | ADT declarations
 adt :: Parser FrontendTypeDeclaration
 adt =
-    ADT <$> (constructor `sepBy1'` token_ TokenPipe)
+    ADT
+        <$> ( optional (token_ TokenPipe) -- allow leading pipe
+                *> constructor `sepBy1'` token_ TokenPipe
+            )
   where
     constructor = do
         name <- located conId

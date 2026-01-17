@@ -13,7 +13,7 @@ import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuer
 import Elara.Data.Pretty
 import Elara.Desugar (getDesugaredModule)
 import Elara.Lexer.Reader (getLexedFile)
-import Elara.Logging (debug, logDebug)
+import Elara.Logging (debug, logDebug, withNamespace, withOverriddenNamespace)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
@@ -23,7 +23,7 @@ import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings, mainFile)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
-import Elara.TypeInfer (runGetTypeAliasQuery, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedExprQuery, runTypeOfQuery)
+import Elara.TypeInfer (runGetTypeAliasQuery, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedDeclarationQuery, runTypeCheckedExprQuery, runTypeOfQuery)
 import Print (showPretty)
 import Rock qualified
 import System.FilePath (takeFileName)
@@ -53,7 +53,11 @@ rules compilerSettings key = do
                 _ -> error $ "Ambiguous module name: " <> showPretty mn
         ParsedModule mn -> inject $ getParsedModuleQuery mn
         DesugaredModule mn -> inject $ getDesugaredModule mn
-        RenamedModule mn -> Local.evalState primitiveRenameState $ inject $ getRenamedModule mn
+        RenamedModule mn ->
+            Local.evalState primitiveRenameState $
+                inject $
+                    withOverriddenNamespace ["Rename"] $
+                        getRenamedModule mn
         ModuleByName @ast mn -> query @QueryModuleByName @ast mn
         DeclarationByName @ast name -> query @QueryDeclarationByName @ast name
         RequiredDeclarationByName @ast name -> query @QueryRequiredDeclarationByName @ast name
@@ -72,20 +76,15 @@ rules compilerSettings key = do
             error "SCCKeyOf not implemented"
         TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
         TypeCheckedExpr exprId -> inject $ runTypeCheckedExprQuery exprId
+        TypeCheckedDeclaration name -> inject $ runTypeCheckedDeclarationQuery name
         InferSCC sccKey -> inject $ runInferSCCQuery sccKey
-        TypeOf key -> inject $ runTypeOfQuery key
-        KindOf qtn -> inject $ runKindOfQuery qtn
-        GetTypeAlias qtn -> inject $ runGetTypeAliasQuery qtn
-        GetCoreModule mn -> inject $ runGetCoreModuleQuery mn
-        GetTyCon qn -> inject $ runGetTyConQuery qn
-        GetDataCon qn -> inject $ runGetDataConQuery qn
-        GetOptimisedCoreModule mn -> inject $ runGetOptimisedCoreModuleQuery mn
-        GetANFCoreModule mn -> inject $ runGetANFCoreModuleQuery mn
-        GetClosureLiftedModule mn -> inject $ runGetClosureLiftedModuleQuery mn
-        GetFinalisedCoreModule mn -> inject $ runGetFinalisedCoreModuleQuery mn
-
-instance SupportsQuery QueryConstructorDeclaration Shunted where
-    query qn@(Qualified typeName modName) = do
-        decl <- Rock.fetch $ ModuleByName @Shunted modName
-
-        error (showPretty decl)
+        TypeOf key -> inject $ withOverriddenNamespace ["TypeInfer"] $ runTypeOfQuery key
+        KindOf qtn -> inject $ withOverriddenNamespace ["TypeInfer", "Kind"] $ runKindOfQuery qtn
+        GetTypeAlias qtn -> inject $ withOverriddenNamespace ["TypeInfer"] $ runGetTypeAliasQuery qtn
+        GetCoreModule mn -> inject $ withOverriddenNamespace ["ToCore"] $ runGetCoreModuleQuery mn
+        GetTyCon qn -> inject $ withOverriddenNamespace ["ToCore"] $ runGetTyConQuery qn
+        GetDataCon qn -> inject $ withOverriddenNamespace ["ToCore"] $ runGetDataConQuery qn
+        GetOptimisedCoreModule mn -> inject $ withOverriddenNamespace ["ToCore", "Optimised"] $ runGetOptimisedCoreModuleQuery mn
+        GetANFCoreModule mn -> inject $ withOverriddenNamespace ["ToCore", "ANF"] $ runGetANFCoreModuleQuery mn
+        GetClosureLiftedModule mn -> inject $ withOverriddenNamespace ["ToCore", "ClosureLifted"] $ runGetClosureLiftedModuleQuery mn
+        GetFinalisedCoreModule mn -> inject $ withOverriddenNamespace ["ToCore", "TypeCheck"] $ runGetFinalisedCoreModuleQuery mn

@@ -96,8 +96,6 @@ data AxiomScheme loc
 data Monotype (loc :: Kind.Type)
     = -- | A type variable tv
       TypeVar loc TypeVariable
-    | -- | A scalar
-      Scalar loc Scalar
     | -- | A type constructor
       TypeConstructor loc (Qualified TypeName) [Monotype loc]
     | -- | A function type τ₁ → τ₂
@@ -106,7 +104,6 @@ data Monotype (loc :: Kind.Type)
 
 monotypeLoc :: Monotype loc -> loc
 monotypeLoc (TypeVar loc _) = loc
-monotypeLoc (Scalar loc _) = loc
 monotypeLoc (TypeConstructor loc _ _) = loc
 monotypeLoc (Function loc _ _) = loc
 
@@ -119,15 +116,6 @@ functionMonotypeArgs :: Monotype loc -> [Monotype loc]
 functionMonotypeArgs = \case
     Function _ a b -> a : functionMonotypeArgs b
     _ -> []
-
--- | A scalar type
-data Scalar
-    = ScalarInt
-    | ScalarFloat
-    | ScalarString
-    | ScalarChar
-    | ScalarUnit
-    deriving (Generic, Show, Eq, Ord, Enum, Bounded)
 
 type DataCon = Qualified TypeName
 
@@ -167,7 +155,6 @@ instance Substitutable Monotype loc where
     substitute _ _ (TypeVar loc (SkolemVar v)) = TypeVar loc (SkolemVar v)
     substitute tv t (TypeVar _ (UnificationVar v)) | tv == v = t
     substitute _ _ (TypeVar loc tv) = TypeVar loc tv
-    substitute _ _ (Scalar loc s) = Scalar loc s
     substitute tv t (TypeConstructor loc dc ts) = TypeConstructor loc dc (substitute tv t <$> ts)
     substitute tv t (Function loc t1 t2) = Function loc (substitute tv t t1) (substitute tv t t2)
 
@@ -179,19 +166,11 @@ instance Substitutable Monotype loc where
                     Just t' -> t'
                     Nothing -> TypeVar loc (UnificationVar v)
              in if r == t then t else substituteAll (Substitution m) r
-    substituteAll _ (Scalar loc sc) = Scalar loc sc
     substituteAll s (TypeConstructor loc dc ts) = TypeConstructor loc dc (substituteAll s <$> ts)
     substituteAll s (Function loc t1 t2) = Function loc (substituteAll s t1) (substituteAll s t2)
 
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
-
-instance Pretty Scalar where
-    pretty ScalarInt = Style.scalar "Int"
-    pretty ScalarFloat = Style.scalar "Float"
-    pretty ScalarString = Style.scalar "String"
-    pretty ScalarChar = Style.scalar "Char"
-    pretty ScalarUnit = Style.scalar "Unit"
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Polytype poly) = pretty poly
@@ -209,7 +188,6 @@ instance Pretty loc => Pretty (Constraint loc) where
 
 instance Pretty (Monotype loc) where
     pretty (TypeVar _ tv) = Style.varName (pretty tv)
-    pretty (Scalar _ s) = pretty s
     pretty (TypeConstructor _ dc ts) = Style.typeName (pretty dc) <> " " <> hsep (pretty <$> ts)
     pretty (Function _ f@(Function{}) t3) = parens (pretty f) <> Style.operator " → " <> pretty t3
     pretty (Function _ t1 t2) = pretty t1 <> Style.operator " → " <> pretty t2

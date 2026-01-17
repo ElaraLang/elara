@@ -30,11 +30,12 @@ import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug)
+import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query (QueryModuleByName, SupportsQuery)
@@ -45,6 +46,7 @@ import Elara.Rename.Error
 import Elara.Rename.Imports (isImportedBy)
 import Elara.Rename.State
 import Optics (anyOf, filteredBy, traverseOf_)
+import Print (showColored, showPretty)
 import Rock qualified
 
 type Rename r =
@@ -54,6 +56,7 @@ type Rename r =
     , QueryEffects r
     , StructuredDebug :> r
     , Rock.Rock Elara.Query.Query :> r
+    , HasCallStack
     )
 
 type InnerRename r =
@@ -63,6 +66,7 @@ type InnerRename r =
     , QueryEffects r
     , StructuredDebug :> r
     , Eff.Reader (Maybe (Module Desugared)) :> r -- the module we're renaming
+    , HasCallStack
     )
 
 instance SupportsQuery QueryModuleByName Renamed where
@@ -232,6 +236,8 @@ addDeclarationToContext decl = do
         NVarName vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
         NTypeName vn -> Eff.modify $ over (the @"typeNames") $ insertMerging vn (global vn)
 
+    logDebug $ "Added declaration to context: " <> pretty (showPretty decl)
+
     case decl ^. _Unwrapped % unlocated % field @"body" % _Unwrapped % unlocated of
         -- Add all the constructor names to field' context
         TypeDeclaration _ _ (Located _ (ADT ctors)) _ -> do
@@ -305,12 +311,12 @@ renameDeclaration decl@(Declaration ld) = Declaration <$> traverseOf unlocated r
                     varAliases
         let declModuleName = ld ^. unlocated % field' @"moduleName" % unlocated
         locally addAllVarAliases $ do
-            ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName) ty
-            ann' <- renameTypeDeclAnnotations ann
             thisModule <- askCurrentModule
             let qualifiedName =
                     sequenceA $
                         Qualified name (thisModule ^. _Unwrapped % unlocated % field' @"name" % unlocated)
+            ty' <- traverseOf unlocated (renameTypeDeclaration declModuleName qualifiedName) ty
+            ann' <- renameTypeDeclAnnotations ann
             pure $ TypeDeclaration qualifiedName vars' ty' ann'
 
 renameTypeDeclAnnotations ::
@@ -326,11 +332,15 @@ renameAnnotation (Annotation name args) = do
     args' <- traverseOf (each % _Unwrapped) renameExpr args
     pure $ Annotation name' args'
 
-renameTypeDeclaration :: _ => ModuleName -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
-renameTypeDeclaration _ (Alias t) = do
-    t' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) t
+renameTypeDeclaration :: _ => ModuleName -> Located (Qualified TypeName) -> DesugaredTypeDeclaration -> Eff r RenamedTypeDeclaration
+renameTypeDeclaration _ declarationName (Alias aliasedType) = do
+    t' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType False) aliasedType
+    let isRecursive = typeIsRecursive (declarationName ^. unlocated) t'
+    whenJust isRecursive $ \r ->
+        throwError $ RecursiveTypeAlias declarationName r
+
     pure $ Alias t'
-renameTypeDeclaration thisMod (ADT constructors) = do
+renameTypeDeclaration thisMod declarationName (ADT constructors) = do
     constructors' <-
         traverse
             (\(n, y) -> (over unlocated (`Qualified` thisMod) n,) <$> traverseOf (each % _Unwrapped % _1 % unlocated) (renameType False) y)
@@ -616,3 +626,14 @@ desugarBlock xs = do
     let loc = spanningRegion' (xs <&> (^. _Unwrapped % _1 % sourceRegion))
     xs' <- traverse renameExpr xs
     pure $ Expr (Located loc (Block xs'), Nothing)
+
+-- | Checks if a type is recursive with respect to a target type, returning the use of the target type if so
+typeIsRecursive :: Qualified TypeName -> RenamedType -> Maybe (Located (Qualified TypeName))
+typeIsRecursive targetType (Type (Located _ t, _)) = case t of
+    TypeVar _ -> Nothing
+    FunctionType a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
+    UnitType -> Nothing
+    TypeConstructorApplication a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
+    UserDefinedType ln@(Located _ n) -> if n == targetType then Just ln else Nothing
+    RecordType fields -> asum (fmap (typeIsRecursive targetType . snd) fields)
+    ListType t' -> typeIsRecursive targetType t'

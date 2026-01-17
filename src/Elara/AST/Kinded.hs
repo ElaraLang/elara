@@ -31,9 +31,11 @@ type family ReplaceKinded x r where
     ReplaceKinded Alias r = KindedType
     ReplaceKinded x r = r
 
-type family ReplaceMidKinded x r where
+-- | Replace 'Shunted' selections with the 'MidKinded' equivalents
+type family ReplaceMidKinded (x :: ASTSelector) r where
     ReplaceMidKinded TypeKind r = UniqueId
     ReplaceMidKinded ADTParam r = MidKindedType
+    ReplaceMidKinded Alias r = MidKindedType
     ReplaceMidKinded x r = r
 
 type KindedTypeDeclaration = TypeDeclaration Kinded

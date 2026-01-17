@@ -38,6 +38,7 @@ data RenameError
     | NativeDefUnsupported (Located DesugaredDeclaration')
     | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
     | UnknownCurrentModule
+    | RecursiveTypeAlias (Located (Qualified TypeName)) (Located (Qualified TypeName))
 
 deriving instance Show RenameError
 
@@ -179,3 +180,14 @@ instance ReportableError RenameError where
                 "Unknown current module (internal error!)"
                 []
                 []
+    report (RecursiveTypeAlias n usePoint) =
+        writeReport $
+            Err
+                Nothing
+                ("Recursive type alias detected: " <> pretty n)
+                [ -- (n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "defined here")
+                  (usePoint ^. sourceRegion % to sourceRegionToDiagnosePosition, This "used here")
+                ]
+                [ Note "Type aliases cannot be recursive."
+                , Hint "Did you mean to define a data type instead? Use `|` to define an ADT with a single constructor."
+                ]

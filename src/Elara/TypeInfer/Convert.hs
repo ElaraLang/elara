@@ -43,7 +43,7 @@ astTypeToInferType' loc (Generic.FunctionType i o) = do
     o' <- astTypeToInferType o
     pure $ Function loc i' o'
 astTypeToInferType' loc Generic.UnitType = do
-    pure $ Scalar loc ScalarUnit
+    pure $ TypeConstructor loc (mkPrimQual "Unit") []
 astTypeToInferType' _ (Generic.ListType t) = do
     t' <- astTypeToInferType t
     throwError $ NotSupported "List types are not supported yet"
@@ -56,15 +56,6 @@ astTypeToInferType' loc (Generic.TypeConstructorApplication ctor arg) = do
         TypeConstructor _ name args -> do
             pure $ TypeConstructor loc name (args ++ [arg'])
         other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
--- primitive types
--- this will be removed soon as we remove primitives from the typechecker
-astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual stringName = do
-    pure $ Scalar loc ScalarString
-astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual intName = do
-    pure $ Scalar loc ScalarInt
-astTypeToInferType' _ (Generic.UserDefinedType (Located loc name)) | name == mkPrimQual charName = do
-    pure $ Scalar loc ScalarChar
-
 -- custom types
 astTypeToInferType' loc (Generic.UserDefinedType name) = do
     pure $ TypeConstructor loc (name ^. unlocated) []

@@ -24,10 +24,13 @@ fetchPrimitive :: (VarRef VarName)
 fetchPrimitive = Global (mkPrimVarRef fetchPrimitiveName)
 
 stringName :: TypeName
-stringName = TypeName "String"
+stringName = TypeName "Prim_String"
 
 intName :: TypeName
-intName = TypeName "Int"
+intName = TypeName "Prim_Int"
+
+floatName :: TypeName
+floatName = TypeName "Prim_Float"
 
 boolName :: TypeName
 boolName = TypeName "Bool"
@@ -39,10 +42,13 @@ falseName :: TypeName
 falseName = TypeName "False"
 
 charName :: TypeName
-charName = TypeName "Char"
+charName = TypeName "Prim_Char"
+
+doubleName :: TypeName
+doubleName = TypeName "Prim_Double"
 
 ioName :: TypeName
-ioName = TypeName "IO"
+ioName = TypeName "Prim_IO"
 
 fullListName :: IsString a => Qualified a
 fullListName = mkPrimQual "List"
@@ -88,13 +94,3 @@ primKindCheckContext =
         <> fromList
             [ (Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)
             ] -- Except for IO which is kind Type -> Type
-
-primOpTable :: OpTable
-primOpTable =
-    fromList
-        [ (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "|>"), OpInfo (mkPrecedence 0) LeftAssociative)
-        , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "+"), OpInfo (mkPrecedence 6) LeftAssociative)
-        , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "-"), OpInfo (mkPrecedence 6) LeftAssociative)
-        , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "*"), OpInfo (mkPrecedence 7) LeftAssociative)
-        , (ignoreLocation $ Global (mkPrimVarRef $ NVarName $ OperatorVarName "/"), OpInfo (mkPrecedence 7) LeftAssociative)
-        ]

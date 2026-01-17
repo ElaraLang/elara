@@ -32,4 +32,5 @@ type Infer loc r =
     , Error (InferError loc) :> r
     , Rock.Rock Elara.Query.Query :> r
     , QueryEffects r
+    , HasCallStack
     )

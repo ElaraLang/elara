@@ -4,8 +4,10 @@
 module Elara.TypeInfer where
 
 import Data.Generics.Product
+import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Graph (SCC, flattenSCC)
+import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
@@ -22,8 +24,8 @@ import Elara.AST.Generic.Types (
  )
 import Elara.AST.Kinded
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), TypeName, VarName)
-import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated)
+import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), TypeName, VarName, unqualified)
+import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated, withLocationOf)
 import Elara.AST.Select (
     LocatedAST (
         Shunted,
@@ -33,13 +35,13 @@ import Elara.AST.Select (
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
 import Elara.Data.Kind (ElaraKind, KindVar)
-import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe, lookupNameKindVar)
+import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
 import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult)
+import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, logDebug, logDebugWith)
 import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
 import Elara.Rules.Generic ()
@@ -83,6 +85,7 @@ runGetTypeCheckedModuleQuery mn = do
     r <- runInferEffects $ evalState initialInferState (inferModule shunted)
     pure (fst r)
 
+-- | Run the 'TypeOf' query to get the type of a term or data constructor
 runTypeOfQuery ::
     forall loc.
     loc ~ SourceRegion =>
@@ -101,9 +104,9 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
                     evalState initialInferState $
                         evalState emptyTypeEnvironment $
                             case key of
-                                TermVarKey varName -> debugWith ("TypeOf: " <> pretty varName) $ do
+                                TermVarKey varName -> logDebugWith ("TypeOf: " <> pretty varName) $ do
                                     sccs <- Rock.fetch $ GetSCCsOf varName
-                                    debug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
+                                    logDebug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
                                     -- Infer dependencies first to populate the environment
                                     for_ sccs seedSCC
                                     for_ sccs inferSCC
@@ -116,12 +119,57 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
 
 runKindOfQuery :: SupportsQuery QueryModuleByName Shunted => Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
-    seedConstructorsFor (qualifier qtn)
+    logDebug $ "runKindOfQuery: " <> pretty qtn
+    -- First, try to look up the kind variable directly
+    -- it might be a primitive type or already inferred
+    lookupKindVarMaybe (Left qtn) >>= \case
+        Just kindVar -> pure (Just kindVar)
+        Nothing -> do
+            logDebug $ "Kind not found for " <> pretty qtn <> ", seeding whole module"
+            -- if we can't find it, seed the whole module and try again
+            seedConstructorsFor (qualifier qtn)
 
-    -- in theory it should be here now...
-    lookupKindVarMaybe (Left qtn)
+            -- in theory it should be here now...
+            lookupKindVarMaybe (Left qtn)
 
-seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, _) => ModuleName -> Eff r ()
+runGetTypeAliasQuery ::
+    forall r.
+    SupportsQuery QueryModuleByName Shunted =>
+    Qualified TypeName ->
+    Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe ([UniqueTyVar], Type SourceRegion))
+runGetTypeAliasQuery name = do
+    let modName = qualifier name
+    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted modName
+
+    let declarations = mod ^.. _Unwrapped % unlocated % field' @"declarations" % each
+    let targetTypeName = name ^. unqualified
+    let found = find (\d -> d ^? Generic.declarationName % unlocated % _As @"NTypeName" == Just targetTypeName) declarations
+
+    case found of
+        Just (Declaration decl) -> do
+            res <- runInferEffects $ evalState initialInferState $ do
+                let decl' = decl ^. unlocated
+
+                case decl' ^. field' @"body" % _Unwrapped % unlocated of
+                    TypeDeclaration _ typeVars (Located _ (Generic.Alias body)) _ -> do
+                        -- infer the kind of the alias
+                        (_, typedDeclBody) <- inferKind name typeVars (Generic.Alias body)
+
+                        case typedDeclBody of
+                            Generic.Alias typedBody -> do
+                                inferBody <- astTypeToInferType typedBody
+
+                                let uVars = fmap createTypeVar typeVars
+
+                                pure (Just (uVars, Lifted inferBody))
+                            _ -> pure Nothing
+                    _ -> pure Nothing
+
+            -- Extract the result from the inference pipeline
+            pure (fst res)
+        Nothing -> pure Nothing
+
+seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, HasCallStack, _) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
     mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
@@ -138,11 +186,15 @@ seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty mo
                 % unlocated
                 % _Ctor' @"TypeDeclaration"
 
+    for_ declarations $ \(name, _, _, _) -> do
+        Kind.preRegisterType (name ^. unlocated)
+
     -- For each type declaration, add its constructors to the environment
     for_ declarations $ \(name, typeVars, declBody, _) -> debugWith ("Seeding declaration: " <> pretty name) $ do
         (_, decl') <- inferKind (name ^. unlocated) typeVars (declBody ^. unlocated)
         case decl' of
             Generic.Alias t -> do
+                logDebug $ "Seeding alias type: " <> pretty name
                 _ <- astTypeToInferType t
                 pass -- we don't need to do anything with an alias i think
             Generic.ADT ctors -> do
@@ -184,7 +236,7 @@ runInferEffects =
         . runErrorOrReport @TypeConvertError
         . evalState emptyTypeEnvironment
         . evalState emptyLocalTypeEnvironment
-        . runWriter @(Constraint _)
+        . runWriter @(Constraint SourceRegion)
         . inject
 
 runInferSCCQuery ::
@@ -198,11 +250,16 @@ runInferSCCQuery key = do
 
 seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r ()
 seedSCC scc = do
+    logDebug $ "Seeding SCC: " <> pretty (flattenSCC scc)
     for_ scc $ \component -> do
         decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         seedDeclaration decl
 
-inferSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
+inferSCC ::
+    ( SupportsQuery QueryRequiredDeclarationByName Shunted
+    , _
+    ) =>
+    SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     debug $ "Seeding SCC complete. Environment:\n" <> prettyState
@@ -225,6 +282,58 @@ runTypeCheckedExprQuery name = debugWithResult ("runTypeCheckedExprQuery: " <> p
             Value _ e _ _ _ -> pure e
             _ -> error "expected value declaration"
         Nothing -> error $ "could not find declaration for " <> show name
+
+runTypeCheckedDeclarationQuery :: Qualified Name -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedDeclaration
+runTypeCheckedDeclarationQuery name = do
+    shuntedDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted name)
+    (typedDecl, _) <- runInferEffects $ evalState initialInferState $ do
+        case shuntedDecl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+            Value valueName expr _ _ _ -> do
+                let varName = valueName ^. unlocated
+
+                deps <- Rock.fetch (Elara.Query.FreeVarsOf varName)
+                sccKey <- Rock.fetch (Elara.Query.SCCKeyOf varName)
+                let scc = sccKeyToSCC sccKey
+                let sccSet = Set.fromList (flattenSCC scc)
+
+                for_ deps $ \dep -> do
+                    -- Only seed if it's not part of the current recursive cycle
+                    unless (dep `Set.member` sccSet) $ do
+                        -- Fetch the type from Rock (cached)
+                        t <- Rock.fetch (Elara.Query.TypeOf (TermVarKey dep))
+                        -- Add to the local inference state
+                        addType' (TermVarKey dep) t
+
+                -- Values might use constructors,
+                -- so wee need to ensure their types are in the environment.
+                let usedConstructors =
+                        expr
+                            ^.. cosmosOf gplate
+                            % _Unwrapped
+                            % _1
+                            % unlocated
+                            % _Ctor' @"Constructor"
+                            % unlocated
+
+                for_ usedConstructors $ \ctorName -> do
+                    -- This helper fetches the module defining the Ctor and registers types
+                    seedConstructorsFor (qualifier ctorName)
+
+                -- infer the entire SCC together to solve mutual recursion constraints.
+                inferredDecls <- for scc $ \sccMemberName -> do
+                    -- Fetch member source
+                    memberDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> sccMemberName))
+                    inferDeclaration memberDecl
+
+                case find (\d -> (d ^. Generic.declarationName % unlocated) == (name ^. unqualified)) inferredDecls of
+                    Just d -> pure d
+                    Nothing -> error $ "Impossible: Declaration " <> show name <> " not found in its own SCC"
+            TypeDeclaration{} -> do
+                seedConstructorsFor (qualifier name)
+
+                inferDeclaration shuntedDecl
+
+    pure typedDecl
 
 inferModule ::
     forall r.
@@ -304,9 +413,25 @@ inferDeclaration (Declaration ld) = do
             (kind, decl') <- inferKind (name ^. unlocated) tyVars (body ^. unlocated)
             case decl' of
                 Generic.Alias t -> do
-                    _ <- astTypeToInferType t
-                    -- addType' (TypeVarKey (name ^. unlocated)) t'
-                    todo
+                    typedBody <- astTypeToInferTypeWithKind t
+                    let tyVars' = fmapToSnd createTypeVar tyVars
+
+                    ann' <- case anns of
+                        Generic.TypeDeclAnnotations kind_ anns' -> do
+                            anns <- traverse inferAnnotation anns'
+                            pure
+                                Generic.TypeDeclAnnotations
+                                    { kindAnn = kind
+                                    , typeDeclAnnotations = anns
+                                    }
+
+                    pure
+                        ( TypeDeclaration
+                            name
+                            (zipWith (<$) (snd <$> tyVars') tyVars)
+                            (Generic.Alias (over _1 Lifted typedBody) `withLocationOf` body)
+                            ann'
+                        )
                 Generic.ADT ctors -> do
                     let tyVars' = fmapToSnd createTypeVar tyVars
                     let typeConstructorType = TypeConstructor (name ^. sourceRegion) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (tyVarLocation ^. sourceRegion) $ UnificationVar tyVar) tyVars')
@@ -333,7 +458,7 @@ inferDeclaration (Declaration ld) = do
                         ( TypeDeclaration
                             name
                             (zipWith (<$) (snd <$> tyVars') tyVars)
-                            (Generic.ADT ctors' <$ body)
+                            (Generic.ADT ctors' `withLocationOf` body)
                             ann'
                         )
 
@@ -365,9 +490,7 @@ inferAnnotationArg (Generic.AnnotationArg e) = do
 
 inferValue ::
     forall r.
-    ( Error (UnifyError SourceRegion) :> r
-    , _
-    ) =>
+    (Error (UnifyError SourceRegion) :> r, _) =>
     Qualified VarName ->
     ShuntedExpr ->
     Maybe (Type SourceRegion) ->

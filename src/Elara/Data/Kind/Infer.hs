@@ -25,6 +25,7 @@ module Elara.Data.Kind.Infer (
     initialInferState,
     lookupKindVarMaybe,
     lookupNameKindVar,
+    preRegisterType,
     InferState,
 ) where
 
@@ -188,6 +189,18 @@ declareTypeVar var kindVar = modify (over #env (Map.insert (Right var) kindVar))
 
 declareNamedType :: State InferState :> r => Qualified TypeName -> KindVar -> Eff r ()
 declareNamedType name kindVar = modify (over #env (Map.insert (Left name) kindVar))
+
+-- | Pass 1: Register a type name with a fresh kind variable (the "hole").
+preRegisterType ::
+    ( State InferState :> r
+    , UniqueGen :> r
+    , HasCallStack
+    ) =>
+    Qualified TypeName -> Eff r ()
+preRegisterType name = do
+    kindVar <- makeUniqueId
+
+    declareNamedType name kindVar
 
 elaborate ::
     KindInfer r =>

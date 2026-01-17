@@ -2,12 +2,12 @@
 module Elara.Prim.Core where
 
 import Effectful
-import Elara.AST.Name (ModuleName (..), Qualified (..))
+import Elara.AST.Name (ModuleName (..), NameLike (nameText), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Unique.Effect
-import Elara.Prim (mkPrimQual)
+import Elara.Prim (charName, doubleName, floatName, intName, ioName, mkPrimQual, stringName)
 
 trueCtorName :: Qualified Text
 trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
@@ -39,25 +39,25 @@ boolCon :: TyCon
 boolCon = TyCon (mkPrimQual "Bool") (TyADT [trueCtorName, falseCtorName])
 
 intCon :: TyCon
-intCon = TyCon (mkPrimQual "Int") Prim
+intCon = TyCon (mkPrimQual $ nameText intName) Prim
 
 floatCon :: TyCon
-floatCon = TyCon (mkPrimQual "Float") Prim
+floatCon = TyCon (mkPrimQual $ nameText floatName) Prim
 
 stringCon :: TyCon
-stringCon = TyCon (mkPrimQual "String") Prim
+stringCon = TyCon (mkPrimQual $ nameText stringName) Prim
+
+charCon :: TyCon
+charCon = TyCon (mkPrimQual $ nameText charName) Prim
+
+doubleCon :: TyCon
+doubleCon = TyCon (mkPrimQual $ nameText doubleName) Prim
+
+ioCon :: TyCon
+ioCon = TyCon (mkPrimQual $ nameText ioName) Prim
 
 unitCon :: TyCon
 unitCon = TyCon (mkPrimQual "()") Prim
-
-charCon :: TyCon
-charCon = TyCon (mkPrimQual "Char") Prim
-
-doubleCon :: TyCon
-doubleCon = TyCon (mkPrimQual "Double") Prim
-
-ioCon :: TyCon
-ioCon = TyCon (mkPrimQual "IO") Prim
 
 trueCtor :: DataCon
 trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon

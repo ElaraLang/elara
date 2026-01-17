@@ -1,10 +1,13 @@
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedLabels #-}
+
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
 
 import Data.Generics.Product
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped
-import Data.Graph (SCC (..), stronglyConnComp)
+import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
 import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
@@ -28,7 +31,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Prim (mkPrimQual)
+import Elara.Prim (charName, intName, ioName, mkPrimQual, stringName)
 import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -133,11 +136,13 @@ lookupTyCon qn = debugWithResult ("lookupTyCon: " <> pretty qn) $ do
     case M.lookup qn table.tyCons of
         Just ctor -> pure ctor
         Nothing -> do
+            logDebug $ "lookupTyCon failed for: " <> pretty qn
+            logDebug $ "Available TyCons: " <> pretty (M.keys table.tyCons)
             Rock.fetch (Elara.Query.GetTyCon qn) ?:! throwError (UnknownTypeConstructor qn table)
 
 runGetDataConQuery ::
     Qualified TypeName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe DataCon)
-runGetDataConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
+runGetDataConQuery qn = debugWith ("runGetDataConQuery: " <> pretty qn) $ do
     coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
     let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody" % _As @"CoreDataDecl" % _2 % each
     let matchingDataCon = find (\(DataCon name _ _) -> name == fmap nameText qn) decls
@@ -145,14 +150,34 @@ runGetDataConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
 
 runGetTyConQuery ::
     Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
-runGetTyConQuery qn = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
-    coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
-    let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType"
-    let matchingDataCon = find (\decl -> decl.ctdName == qn) decls
-    debug $ "Found TyCon: " <> pretty matchingDataCon <> " from decls: " <> pretty decls
-    debug $ "Module: " <> pretty (coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody")
-    let r = matchingDataCon ^? _Just % field @"typeBody" % _As @"CoreDataDecl" % _1
-    pure r
+runGetTyConQuery qn
+    | qn == mkPrimQual (nameText intName) = pure $ Just intCon
+    | qn == mkPrimQual (nameText charName) = pure $ Just charCon
+    | qn == mkPrimQual (nameText stringName) = pure $ Just stringCon
+    | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
+    | otherwise = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
+        let name = NTypeName . TypeName <$> qn
+        typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
+        Just
+            <$> ( runErrorOrReport @ToCoreError $
+                    evalState primCtorSymbolTable $
+                        createTyConFromTyped typedDecl
+                )
+
+createTyConFromTyped :: InnerToCoreC r => Declaration Typed -> Eff r TyCon
+createTyConFromTyped decl = logDebugWith ("createTyConFromTyped: " <> pretty (decl ^. _Unwrapped % unlocated % #body % declarationBodyName)) $ do
+    case decl ^. _Unwrapped % unlocated % #body % _Unwrapped % unlocated of
+        TypeDeclaration n _ (Located _ (ADT ctors)) _ -> do
+            let name = nameText <$> (n ^. unlocated)
+            -- Extract just the names of the constructors
+            let ctorNames = ctors ^.. each % _1 % unlocated % to (fmap nameText)
+            pure $ Core.TyCon name (TyADT ctorNames)
+        TypeDeclaration n _ (Located _ (Alias (t, _))) _ -> do
+            let name = nameText <$> (n ^. unlocated)
+            logDebug ("Creating type alias TyCon for: " <> pretty name)
+            coreType <- eitherTypeToCore t
+            pure $ Core.TyCon name (TyAlias coreType)
+        body -> error $ "createTyConFromTyped: Expected TypeDeclaration but got " <> show body
 
 type ToCoreC r =
     ( State CtorSymbolTable :> r
@@ -220,8 +245,22 @@ buildModuleSCCs (Module (Located _ m)) = do
     pure (stronglyConnComp nodes)
 
 moduleToCore :: HasCallStack => ToCoreC r => Module Typed -> Eff r (CoreModule CoreBind)
-moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " <> pretty (m ^. field' @"name")) $ do
+moduleToCore m'@(Module (Located _ m)) = logDebugWith ("Converting module: " <> pretty (m ^. field' @"name")) $ do
     let name = m ^. field' @"name" % unlocated
+
+    -- add all tycons first
+    for_ (m ^. field' @"declarations") $ \decl -> do
+        case decl ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated of
+            TypeDeclaration n _Ctor (Located _ (ADT ctors)) _ -> do
+                let tyCon =
+                        TyCon
+                            (nameText <$> n ^. unlocated)
+                            (TyADT (ctors ^.. each % _1 % unlocated % to (fmap nameText)))
+                registerTyCon tyCon
+            TypeDeclaration n _ (Located _ (Alias (t, _))) _ -> do
+                tCore <- eitherTypeToCore t
+                registerTyCon (TyCon (nameText <$> n ^. unlocated) (TyAlias tCore))
+            _ -> pass
 
     let declGraph = createGraph (m ^. field' @"declarations")
     decls <- fmap concat $ for (allEntriesRevTopologically declGraph) $ \decl -> do
@@ -260,10 +299,22 @@ moduleToCore m'@(Module (Located _ m)) = debugWithResult ("Converting module: " 
                             (tvs ^.. each % unlocated % to mkTypeVar)
                             (CoreDataDecl tyCon (toList ctors''))
                     ]
-            TypeDeclaration n tvs (Located _ (Alias (t, _))) (TypeDeclAnnotations kind _) -> do
-                todo
+            TypeDeclaration n tvs (Located _ (Alias (t, _aliasKind))) (TypeDeclAnnotations kind _) -> do
+                let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
+                t' <- eitherTypeToCore t
+                let tyCon = TyCon cleanedTypeDeclName (TyAlias t')
+                registerTyCon tyCon
+                pure
+                    [ CoreType $
+                        CoreTypeDecl
+                            cleanedTypeDeclName
+                            kind
+                            (tvs ^.. each % unlocated % to mkTypeVar)
+                            (CoreDataDecl tyCon [])
+                    ]
 
     sccs <- buildModuleSCCs m'
+    logDebug ("Module SCCs: " <> pretty (fmap flattenSCC sccs))
     valueDecls <- for sccs $ \scc -> do
         members <- for scc $ \n -> (n,) <$> Rock.fetch (Elara.Query.TypeCheckedExpr n)
         sccToCore members
@@ -285,16 +336,19 @@ eitherTypeToCore (Type.Lifted t) = typeToCore t
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
 typeToCore (Type.TypeVar _ (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
 typeToCore (Type.TypeVar _ (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore (Type.Scalar _ Type.ScalarInt) = pure $ Core.ConTy intCon
-typeToCore (Type.Scalar _ Type.ScalarFloat) = pure $ Core.ConTy floatCon
-typeToCore (Type.Scalar _ Type.ScalarString) = pure $ Core.ConTy stringCon
-typeToCore (Type.Scalar _ Type.ScalarChar) = pure $ Core.ConTy charCon
-typeToCore (Type.Scalar _ Type.ScalarUnit) = pure $ Core.ConTy unitCon
 typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
-typeToCore (Type.TypeConstructor _ qn ts) = debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
-    tyCon <- lookupTyCon (fmap (view _Unwrapped) qn)
+typeToCore (Type.TypeConstructor _ qn ts) = do
+    let name = fmap (view _Unwrapped) qn
     ts' <- traverse typeToCore ts
-    pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
+
+    if
+        | name == mkPrimQual (nameText intName) -> pure $ foldl' Core.AppTy (Core.ConTy intCon) ts'
+        | name == mkPrimQual (nameText charName) -> pure $ foldl' Core.AppTy (Core.ConTy charCon) ts'
+        | name == mkPrimQual (nameText stringName) -> pure $ foldl' Core.AppTy (Core.ConTy stringCon) ts'
+        | name == mkPrimQual (nameText ioName) -> pure $ foldl' Core.AppTy (Core.ConTy ioCon) ts'
+        | otherwise -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+            tyCon <- lookupTyCon name
+            pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
 
 conToVar :: DataCon -> Core.Var
 conToVar dc@(Core.DataCon n t _) = Core.Id (Global n) t (Just dc)

@@ -34,6 +34,7 @@ module Elara.Logging (
 
     -- * Namespace Context
     withNamespace,
+    withOverriddenNamespace,
 
     -- * Legacy Functions (for backward compatibility)
     debug,
@@ -70,7 +71,6 @@ import Elara.Data.Pretty.Styles qualified as Style
 import GHC.Exts
 import GHC.Stack (srcLocFile, srcLocStartLine)
 import GHC.TypeLits (KnownSymbol (..), symbolVal)
-import Relude.Extra (safeToEnum)
 
 {- | Log levels for structured debug messages
 Using our own type instead of co-log's Severity for better integration with Pretty
@@ -189,7 +189,7 @@ filterByNamespace config (LogAction action) = LogAction $ \msg ->
             Just filterNs -> filterNs `isPrefixOf` emNamespace msg
      in when shouldLog $ action msg
 
--- | Enrich ElaraMessage with timestamp (co-log enrichment pattern)
+-- | Enrich ElaraMessage with timestamp
 enrichWithTime :: IOE :> r => LogAction (Eff r) ElaraMessage -> LogAction (Eff r) ElaraMessage
 enrichWithTime = cmapM $ \msg -> do
     time <- liftIO getCurrentTime
@@ -245,11 +245,13 @@ data StructuredDebug :: Effect where
     LogWith :: CallStack -> LogLevel -> Doc AnsiStyle -> m a -> StructuredDebug m a
     LogWithNS :: CallStack -> LogLevel -> [T.Text] -> Doc AnsiStyle -> m a -> StructuredDebug m a
     -- Namespace context operation
-    WithNamespace :: CallStack -> [T.Text] -> m a -> StructuredDebug m a
+    WithAppendedNamespace :: CallStack -> [T.Text] -> m a -> StructuredDebug m a
+    WithNewNamespace :: CallStack -> [T.Text] -> m a -> StructuredDebug m a
 
 type instance DispatchOf StructuredDebug = 'Dynamic
 
 -- | Legacy debug function (maps to Debug level)
+{-# WARNING debug "Use logDebug" #-}
 debug :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
 debug msg = withFrozenCallStack $ send $ DebugOld callStack msg
 
@@ -331,7 +333,12 @@ withNamespace ["TypeInfer", "Unification"] $ do
 @
 -}
 withNamespace :: HasCallStack => StructuredDebug :> r => [T.Text] -> Eff r a -> Eff r a
-withNamespace ns act = withFrozenCallStack $ send $ WithNamespace callStack ns act
+withNamespace ns act = withFrozenCallStack $ send $ WithAppendedNamespace callStack ns act
+
+-- | Fully override the current namespace for a block of code. The provided namespace will replace any existing namespace context.
+withOverriddenNamespace :: HasCallStack => StructuredDebug :> r => [T.Text] -> Eff r a -> Eff r a
+withOverriddenNamespace ns act = withFrozenCallStack $ do
+    send $ WithNewNamespace callStack ns act
 
 -- | Build a co-log LogAction that applies configuration-based filtering and formatting
 buildLogAction :: forall r. (IOE :> r, Log.Log (Doc AnsiStyle) :> r) => LogConfig -> LogAction (Eff r) ElaraMessage
@@ -373,7 +380,8 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
     LogWith stack level msg act -> logWithScope env stack level [] msg act
     LogWithNS stack level names msg act -> logWithScope env stack level names msg act
     -- Namespace context operation
-    WithNamespace stack names act -> withNamespaceHelper env names act
+    WithAppendedNamespace stack names act -> withNamespaceHelper env names act False
+    WithNewNamespace stack names act -> withNamespaceHelper env names act True
   where
     -- Get the co-log LogAction with all filters and enrichments applied
     logAction :: LogAction (Eff (S.State Int : S.State [T.Text] : r)) ElaraMessage
@@ -424,10 +432,15 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
         pure res
 
     -- Helper for namespace context
-    withNamespaceHelper :: LocalEnv localEs (S.State Int : S.State [T.Text] : r) -> [T.Text] -> Eff localEs b -> Eff (S.State Int : S.State [T.Text] : r) b
-    withNamespaceHelper env names act = do
+    withNamespaceHelper ::
+        LocalEnv localEs (S.State Int : S.State [T.Text] : r) ->
+        [T.Text] ->
+        Eff localEs b ->
+        Bool ->
+        Eff (S.State Int : S.State [T.Text] : r) b
+    withNamespaceHelper env names act override = do
         ns <- S.get @[T.Text]
-        let fullNs = ns <> names
+        let fullNs = if override then names else ns <> names
         S.put fullNs
         res <- localSeqUnlift env $ \unlift -> unlift act
         S.put ns
@@ -447,7 +460,8 @@ ignoreStructuredDebug = interpret $ \env -> \case
     LogMsgNS{} -> pass
     LogWith _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
     LogWithNS _ _ _ _ act -> localSeqUnlift env $ \unlift -> unlift act
-    WithNamespace _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    WithAppendedNamespace _ _ act -> localSeqUnlift env $ \unlift -> unlift act
+    WithNewNamespace _ _ act -> localSeqUnlift env $ \unlift -> unlift act
 
 {- | Inspired by https://x.com/Quelklef/status/1860188828876583146 !
 A recursive, pure function, which can be traced with a monadic effect.

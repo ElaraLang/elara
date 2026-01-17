@@ -9,6 +9,7 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 module Elara.Core.TypeCheck (typeCheckCoreModule, TypeCheckError (..)) where
 
 import Data.Set qualified as Set
+import Debug.Trace (traceWith)
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Extra (locally, scoped)
@@ -26,6 +27,9 @@ import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Logging (StructuredDebug)
 import Elara.Prim.Core
+import Elara.Query qualified
+import Print (prettyToString)
+import Rock qualified
 import TODO (todo)
 
 data TypeCheckError
@@ -206,12 +210,14 @@ For example @forall a. a@ and @forall b. b@ are equal in this relation,
 but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
 -}
 equalUnderSubst :: Core.Type -> Core.Type -> Bool
-equalUnderSubst
-    x
-    y = equalUnderSubst' x y || equalUnderSubst' y x -- reflexive
+equalUnderSubst x y =
+    let result = equalUnderSubst' x y || equalUnderSubst' y x -- reflexive
+     in trace ("equalUnderSubst: " <> prettyToString x <> " and " <> prettyToString y) $
+            traceWith (\b -> "result: " <> show b) result
 
 equalUnderSubst' :: Core.Type -> Core.Type -> Bool
 equalUnderSubst' x y | x == y = True
+equalUnderSubst' x y | x == unalias y = True
 -- forall a. T and forall b. U are equal if T/[a=b] == U
 equalUnderSubst' (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
     equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)
@@ -225,7 +231,14 @@ equalUnderSubst' (Core.AppTy a1 b1) (Core.AppTy a2 b2) =
 equalUnderSubst' (Core.ConTy c1) (Core.ConTy c2) = c1 == c2
 -- At this point (after substituting foralls), a type variable should match anything
 equalUnderSubst' (Core.TyVarTy _) _ = True
-equalUnderSubst' x y = False --
+equalUnderSubst' x y = False
+
+unalias :: Core.Type -> Core.Type
+unalias (Core.ConTy (Core.TyCon _ (Core.TyAlias underlying))) = unalias underlying
+unalias (Core.AppTy f x) = Core.AppTy (unalias f) (unalias x)
+unalias (Core.FuncTy a b) = Core.FuncTy (unalias a) (unalias b)
+unalias (Core.ForAllTy tv t) = Core.ForAllTy tv (unalias t)
+unalias other = other
 
 generalize :: Core.Type -> Core.Type
 generalize t = let ftv = freeTypeVars t in foldr Core.ForAllTy t ftv

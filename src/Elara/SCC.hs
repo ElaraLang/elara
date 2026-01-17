@@ -38,11 +38,26 @@ runFreeVarsQuery name = do
 
     let x = case body of
             Value _ e NoFieldValue _ _ ->
-                patternDependencies e
-                    <> valueDependencies e
-            _ -> mempty
+                patternDependencies e <> valueDependencies e
+            TypeDeclaration{} -> mempty
 
     pure x
+
+-- runFreeTypesQuery ::
+--     SupportsQuery QueryRequiredDeclarationByName Shunted =>
+--     Qualified VarName ->
+--     Eff
+--         (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
+--         (HashSet (Qualified TypeName))
+-- runFreeTypesQuery name = do
+--     declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
+--     let body = declaration ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated
+--     let x = case body of
+--             Value _ e NoFieldValue _ _ -> typeDependencies e
+--             TypeDeclaration name tvs typeDecl annotations ->
+--                 case typeDecl ^. unlocated  of
+--                     Alias t -> typeDependencies t
+--     pure x
 
 runReachableSubgraphQuery :: Qualified VarName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) ReachableSubgraph
 runReachableSubgraphQuery name = do

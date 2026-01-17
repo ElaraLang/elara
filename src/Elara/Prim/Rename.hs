@@ -6,7 +6,7 @@ import Elara.AST.VarRef (VarRef' (Global))
 import Elara.Prim (ioName, mkPrimVarRef, primitiveTypes)
 import Elara.Rename.State
 
--- | The initial renaming state containing all primitive types and their references.
+-- | The renaming state containing all primitive types and values.
 primitiveRenameState :: RenameState
 primitiveRenameState =
     let vars =

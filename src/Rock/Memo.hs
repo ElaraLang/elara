@@ -13,6 +13,7 @@ import Data.HashMap.Lazy qualified as HashMap
 import Data.Hashable
 import Data.IORef.Lifted
 import Data.List (isSuffixOf)
+import Data.List.NonEmpty ((<|))
 import Data.Some
 import Data.Typeable
 import Effectful (Eff, IOE, raise, (:>))
@@ -21,6 +22,7 @@ import Elara.Data.Pretty
 import Elara.Logging (StructuredDebug, logDebugNS)
 import Rock
 import Text.Show (Show (..))
+import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (atomicModifyIORef, atomicModifyIORef', newEmptyMVar, newMVar, putMVar, readIORef, readMVar)
 
 -- * Implicit memoisation-
@@ -102,31 +104,51 @@ memoiseExplicit startedVar rules (MemoQuery (key :: f es a)) = do
 -- | Holds the list of keys involved in the cycle, i.e. a call stack of queries
 newtype Cyclic f = Cyclic (NonEmpty (Some (HideEffects f)))
 
-instance (Typeable f, forall es a. Show (f es a)) => Exception (Cyclic f)
+instance (Typeable f, forall es a. Show (f es a), forall es. GEq (f es)) => Exception (Cyclic f)
 
-instance (forall es a. Show (f es a)) => Show (Cyclic f) where
+instance (forall es a. Show (f es a), forall es. GEq (f es)) => Show (Cyclic f) where
     show (Cyclic chain) =
-        "Cyclic dependency detected:\n"
-            <> toString (unlines $ toText <$> zipWith formatItem (True : repeat False) (toList chainWithLoop))
-      where
-        -- Repeat the first element at the end to visually close the loop
-        chainWithLoop = chain <> pure (head chain)
+        let
+            traceList = toList chain
+            lastItem = last chain
 
+            -- find the knot by looking for the first occurrence of the last item in the rest of the chain
+            knotIndex = case break (== lastItem) (init chain) of
+                (_, []) -> Nothing -- presumably impossible if there's a cycle
+                (prefix, _) -> Just (length prefix)
+         in
+            case knotIndex of
+                Nothing ->
+                    "Cyclic dependency detected:\n" <> toString (unlines (map (formatItem "  -> ") traceList))
+                Just idx ->
+                    let
+                        (stem, cyclePart) = splitAt idx (init chain)
+                     in
+                        "Cyclic dependency detected:\n"
+                            <> (if null stem then "" else "Path to cycle:\n")
+                            <> toString (unlines (map (formatItem "     ") stem))
+                            <> "The Cycle:\n"
+                            <> toString (unlines (zipWith formatCycleItem (True : repeat False) (cyclePart ++ [lastItem])))
+      where
         showInner :: (forall es a. Show (f es a)) => Some (HideEffects f) -> String
         showInner (Some (HideEffects k)) = Prelude.show k
 
-        formatItem isFirst item =
-            let
-                raw :: String = showInner item
+        cleanStr :: String -> String
+        cleanStr raw =
+            toString
+                ( if "HideEffects (" `isPrefixOf` raw && ")" `isSuffixOf` raw
+                    then take (length raw - 14) (drop 13 raw)
+                    else raw
+                )
 
-                clean =
-                    if "HideEffects (" `isPrefixOf` raw && ")" `isSuffixOf` raw
-                        then take (length raw - 14) (drop 13 raw)
-                        else raw
+        formatItem :: Text -> Some (HideEffects f) -> Text
+        formatItem prefix item =
+            prefix <> toText (cleanStr (showInner item))
 
-                prefix = if isFirst then "     " else "  -> "
-             in
-                prefix <> clean
+        formatCycleItem :: Bool -> Some (HideEffects f) -> Text
+        formatCycleItem isFirst item =
+            let prefix = if isFirst then "  ┌> " else "  │  "
+             in prefix <> toText (cleanStr (showInner item))
 
 data MemoEntry a
     = Started !ThreadId !(MVar (Maybe a)) !(MVar (Maybe [ThreadId]))
@@ -173,32 +195,31 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                             (started, waitFor entry)
             Just entry -> waitFor entry
       where
-        runNewComputation _threadId valueVar waitVar = withFrozenCallStack $ do
+        runNewComputation _threadId valueVar waitVar = do
             value <-
-                unsafeCatch (rules key) $ \(e :: Cyclic f) -> do
+                unsafeCatch (rules key) $ \(Cyclic childTrace) -> do
                     unsafeEff_ $ do
                         atomicModifyIORef' startedVar $ \started'' ->
                             (DHashMap.delete (HideEffects key) started'', ())
                         putMVar valueVar Nothing
-                        throwIO e
 
-            -- Cleanup waiting threads
+                        throwIO $ Cyclic (Some (HideEffects key) <| childTrace)
+
             unsafeEff_ $ do
                 modifyMVar_ waitVar $ \case
                     Nothing -> error "impossible: waitVar empty"
                     Just waitingThreads -> do
-                        -- Remove dependencies for all waiting threads
                         atomicModifyIORef' depsVar $ \deps ->
                             (flipfoldl' HashMap.delete deps waitingThreads, ())
                         pure Nothing
 
-                -- Mark as Done
                 atomicModifyIORef' startedVar $ \started'' ->
                     (DHashMap.insert (HideEffects key) (Done value) started'', ())
 
                 putMVar valueVar $ Just value
 
             pure value
+
         waitFor entry = do
             case entry of
                 Started onThread valueVar waitVar -> do
@@ -212,18 +233,18 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                                     let deps' = HashMap.insert threadId onThread deps
                                     if detectCycle threadId deps'
                                         then
-                                            ( deps
+                                            ( deps -- crashing, so don't care about updated deps
                                             , do
-                                                let cycleThreads = recoverCyclePath threadId deps'
+                                                -- find the cycle chain
                                                 started <- readIORef startedVar
-                                                let threadToKeys = buildThreadKeyMap started
-                                                let cycleKeys =
-                                                        concatMap
-                                                            (\t -> fromMaybe [] (HashMap.lookup t threadToKeys))
-                                                            cycleThreads
-                                                case nonEmpty cycleKeys of
-                                                    Nothing -> error "Impossible: Cycle detected but no keys found in map"
-                                                    Just neKeys -> throwIO $ Cyclic neKeys
+                                                -- find the key corresponding to the 'entry' we are stuck on
+                                                let targetKey = findKeyByEntry entry started
+
+                                                case targetKey of
+                                                    Just k ->
+                                                        throwIO $ Cyclic (Some (HideEffects key) :| [k])
+                                                    Nothing ->
+                                                        error "Cycle detected but target key disappeared"
                                             )
                                         else
                                             ( deps'
@@ -235,23 +256,17 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                 Done value ->
                     pure value
 
-    recoverCyclePath :: ThreadId -> HashMap.HashMap ThreadId ThreadId -> [ThreadId]
-    recoverCyclePath start deps = go start []
-      where
-        go curr visited
-            | curr `elem` visited = reverse (curr : takeWhile (/= curr) visited)
-            | otherwise = case HashMap.lookup curr deps of
-                Nothing -> [] -- should be impossible
-                Just next -> go next (curr : visited)
-
-    buildThreadKeyMap :: DHashMap (HideEffects f) MemoEntry -> HashMap.HashMap ThreadId [Some (HideEffects f)]
-    buildThreadKeyMap =
+    -- Helper to reverse lookup the key for a specific entry
+    findKeyByEntry :: MemoEntry a -> DHashMap (HideEffects f) MemoEntry -> Maybe (Some (HideEffects f))
+    findKeyByEntry targetEntry =
         DHashMap.foldrWithKey
-            ( \k v acc -> case v of
-                Started tid _ _ -> HashMap.insertWith (<>) tid [Some k] acc
-                _ -> acc
+            ( \k v acc ->
+                case (v, targetEntry) of
+                    (Started _ vVar1 _, Started _ vVar2 _)
+                        | unsafeCoerce vVar1 == vVar2 -> Just (Some k)
+                    _ -> acc
             )
-            HashMap.empty
+            Nothing
 
     detectCycle threadId deps =
         go threadId

@@ -10,7 +10,6 @@ class Ftv a where
 
 instance Ftv (Monotype loc) where
     ftv (TypeVar _ tv) = one tv
-    ftv (Scalar _ _) = mempty
     ftv (TypeConstructor _ _ ts) = foldMap ftv ts
     ftv (Function _ t1 t2) = ftv t1 <> ftv t2
 
@@ -36,7 +35,6 @@ class Fuv a where
 instance Fuv (Monotype loc) where
     fuv (TypeVar _ (SkolemVar _)) = mempty
     fuv (TypeVar _ (UnificationVar tv)) = one tv
-    fuv (Scalar _ _) = mempty
     fuv (TypeConstructor _ _ ts) = foldMap fuv ts
     fuv (Function _ t1 t2) = fuv t1 <> fuv t2
 
