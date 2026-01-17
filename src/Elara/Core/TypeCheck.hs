@@ -211,9 +211,7 @@ but @forall a b. a -> b@ and @forall a b. b -> a@ are not equal
 -}
 equalUnderSubst :: Core.Type -> Core.Type -> Bool
 equalUnderSubst x y =
-    let result = equalUnderSubst' x y || equalUnderSubst' y x -- reflexive
-     in trace ("equalUnderSubst: " <> prettyToString x <> " and " <> prettyToString y) $
-            traceWith (\b -> "result: " <> show b) result
+    equalUnderSubst' x y || equalUnderSubst' y x -- reflexive
 
 equalUnderSubst' :: Core.Type -> Core.Type -> Bool
 equalUnderSubst' x y | x == y = True
