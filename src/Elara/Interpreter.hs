@@ -156,6 +156,8 @@ primOps =
         [ ("==", 2)
         , ("+", 2)
         , ("*", 2)
+        , ("/", 2)
+        , ("%", 2)
         , (">>=", 2)
         , ("stringCons", 2)
         , ("compare", 2)
@@ -312,6 +314,15 @@ interpretExpr (App f a) = do
                     (Int a, Int b) -> pure $ Int (a * b)
                     (Double a, Double b) -> pure $ Double (a * b)
                     _ -> throwError_ TypeMismatch{expected = "(*): Int or Double", actual = a'}
+            PartialApplication (PrimOp "/") fst -> do
+                case (fst, a') of
+                    (Int a, Int b) -> pure $ Int (a `div` b)
+                    (Double a, Double b) -> pure $ Double (a / b)
+                    _ -> throwError_ TypeMismatch{expected = "(/): Int or Double", actual = a'}
+            PartialApplication (PrimOp "%") fst -> do
+                case (fst, a') of
+                    (Int a, Int b) -> pure $ Int (a `mod` b)
+                    _ -> throwError_ TypeMismatch{expected = "(%): Int", actual = a'}
             PartialApplication (PrimOp "compare") fst -> do
                 let orderingToInt = \case
                         LT -> -1

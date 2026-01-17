@@ -34,6 +34,12 @@ let (+) = elaraPrimitive "+"
 def (*) : Int -> Int -> Int
 let (*) = elaraPrimitive "*"
 
+def (/) : Int -> Int -> Int
+let (/) = elaraPrimitive "/"
+
+def (%) : Int -> Int -> Int
+let (%) = elaraPrimitive "%"
+
 def negate : Int -> Int
 let negate = elaraPrimitive "negate"
 
