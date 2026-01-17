@@ -1,0 +1,15 @@
+import Prelude
+import Elara.Prim
+import String
+
+def add : Int -> Int -> Int
+let add x y = x + y
+
+def multiply : Int -> Int -> Int
+let multiply x y = x * y
+
+let main =
+    let addFive = add 5
+    let double = multiply 2
+    let result = addFive (double 10) 
+    println ("(10 * 2) + 5 = " ++ toString result)

@@ -1,0 +1,28 @@
+import Prelude
+import Elara.Prim
+import List
+import String
+
+def map : (a -> b) -> List a -> List b
+let map f list =
+    match list with
+        Nil -> Nil
+        Cons x xs -> Cons (f x) (map f xs)
+
+def filter : (a -> Bool) -> List a -> List a
+let filter p list =
+    match list with
+        Nil -> Nil
+        Cons x xs ->
+            if p x then
+                Cons x (filter p xs)
+            else
+                filter p xs
+
+let main =
+    let numbers = [1, 2, 3, 4, 5]
+    let squared = map (\x -> x * x) numbers
+    let large = filter (\x -> x > 3) squared
+    println ("Original: " ++ listToString numbers) >>
+    println ("Squared: " ++ listToString squared) >>
+    println ("> 3: " ++ listToString large)

@@ -1,0 +1,14 @@
+import Prelude
+import Elara.Prim
+import String
+
+-- Calculates the nth Fibonacci number
+def fib : Int -> Int
+let fib n =
+    if n <= 1 then n
+    else fib (n - 1) + fib (n - 2)
+
+let main =
+    let n = 10
+    let res = fib n
+    println ("Fibonacci of " ++ toString n ++ " is: " ++ toString res)

@@ -1,0 +1,26 @@
+import Prelude
+import Elara.Prim
+import String
+
+-- Define a custom Algebraic Data Type (ADT) for Shapes
+-- Note: Using Int for dimensions as Float is not yet fully exposed in stdlib
+type Shape =
+    | Circle Int
+    | Rectangle Int Int
+    | Square Int
+
+-- Calculate area (approximate for Circle)
+def area : Shape -> Int
+let area shape =
+    match shape with
+        Circle r -> 3 * r * r
+        Rectangle w h -> w * h
+        Square s -> s * s
+
+let main =
+    let c = Circle 5
+    let r = Rectangle 4 6
+    let s = Square 3
+    println ("Area of Circle (radius 5): " ++ toString (area c)) >>
+    println ("Area of Rectangle (4x6): " ++ toString (area r)) >>
+    println ("Area of Square (side 3): " ++ toString (area s))
