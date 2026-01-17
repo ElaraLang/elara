@@ -1,0 +1,22 @@
+import Prelude
+import Elara.Prim
+
+-- We can define Number as an alias for Int
+type Number = Int
+
+-- TODO: type ascriptions please!
+-- This function would be like writing (n : Number), but we don't have that syntax yet :')
+def assertNumber : Int -> Number
+let assertNumber n = n
+
+-- Type aliases can contain type parameters too, and are identical to the original type
+type Identity s = s
+
+def makeIdentity : a -> Identity a
+let makeIdentity x = x
+
+let main = 
+    let i = assertNumber 42
+    -- i can be used as a normal Int
+    let identity = makeIdentity i
+    toString (identity + 1) |> println
