@@ -382,10 +382,10 @@ renameType _ UnitType = pure UnitType
 renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
 renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % _1 % unlocated) (renameType antv)) ln
-renameType _ (TupleType (AtLeast2List fst snd [])) = do
+renameType antv (TupleType (AtLeast2List fst snd [])) = do
     -- turn it into Elara.Prim.Tuple2 type
-    fst' <- renameSimpleType fst
-    snd' <- renameSimpleType snd
+    fst' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) fst
+    snd' <- traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) snd
     let tupleCtorName = TypeName <$> tuple2CtorName -- TODO: get the source region right
     let loc = enclosingRegion' (fst ^. _Unwrapped % _1 % sourceRegion) (snd ^. _Unwrapped % _1 % sourceRegion)
     let tupleCtor = Type @Renamed (Located loc (UserDefinedType (Located loc tupleCtorName)), NoFieldValue)

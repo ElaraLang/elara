@@ -8,13 +8,13 @@ def divMod : Int -> Int -> (Int, Int)
 let divMod x y = (x / y, x % y)
 
 -- Function taking a tuple
-def swap : (Int, Int) -> (Int, Int)
+def swap : (a, b) -> (b, a)
 let swap pair =
     match pair with
         (a, b) -> (b, a)
 
 -- Using the Tuple2 constructor pattern explicitly
-def first : (Int, Int) -> Int
+def first : (a, b) -> a
 let first p =
     match p with
         Tuple2 a b -> a
