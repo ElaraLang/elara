@@ -2,11 +2,10 @@ import Prelude
 import Elara.Prim
 import String
 
--- Calculates the nth Fibonacci number
+-- Standard recursive definition of Fibonacci
 -- Demonstrates:
--- 1. Recursive function definition
--- 2. Explicit type signatures (Int -> Int)
--- 3. If-else expressions
+-- * Recursive functions
+-- * If-else expressions
 def fib : Int -> Int
 let fib n =
     if n <= 1 then n

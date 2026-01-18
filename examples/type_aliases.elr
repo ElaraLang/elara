@@ -1,9 +1,7 @@
 import Prelude
 import Elara.Prim
 
--- We can define Number as an alias for Int
--- Demonstrates:
--- 1. Type Aliases to provide more semantic names for types
+-- Demonstrates: Simple type aliases
 type Number = Int
 
 -- TODO: type ascriptions please!
@@ -11,9 +9,7 @@ type Number = Int
 def assertNumber : Int -> Number
 let assertNumber n = n
 
--- Type aliases can contain type parameters too, and are identical to the original type
--- Demonstrates:
--- 1. Parameterized type aliases
+-- Demonstrates: Parameterized type aliases
 type Identity s = s
 
 def makeIdentity : a -> Identity a

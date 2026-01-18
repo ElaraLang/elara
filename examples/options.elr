@@ -3,9 +3,7 @@ import Elara.Prim
 import Option
 import String
 
--- Performs integer division safely, returning 'None' if the divisor is 0, or 'Some result' otherwise
--- Demonstrates:
--- 1. The 'Option' type for safe error handling (avoiding exceptions)
+-- Demonstrates: Using Option for safe error handling
 def safeDiv : Int -> Int -> Option Int
 let safeDiv x y =
     if y == 0 then
@@ -13,7 +11,6 @@ let safeDiv x y =
     else
         Some (x / y)
 
--- Takes an Option Int and returns a descriptive string based on whether it contains a value
 -- Demonstrates: Pattern matching on Option
 def describe : Option Int -> String
 let describe opt =
@@ -22,12 +19,7 @@ let describe opt =
         None -> "Got nothing"
 
 let main =
-    -- Attempt a valid division
     let res1 = safeDiv 10 2
-    
-    -- Attempt division by zero
     let res2 = safeDiv 10 0
-    
-    -- Print the results of describing the outcomes
     println ("10 / 2: " ++ describe res1) >>
     println ("10 / 0: " ++ describe res2)

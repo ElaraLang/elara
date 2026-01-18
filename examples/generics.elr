@@ -2,22 +2,15 @@ import Prelude
 import Elara.Prim
 import String
 
--- Identity function works on any type 'a'
--- Demonstrates:
--- 1. Parametric polymorphism (type variable 'a')
+-- Demonstrates: Parametric polymorphism via type variables
 def identity : a -> a
 let identity x = x
 
--- Const function ignores second argument
--- Demonstrates:
--- 1. Multiple type parameters ('a' and 'b')
+-- Demonstrates: Multiple type parameters
 def const : a -> b -> a
 let const x y = x
 
--- Flip swaps the arguments of a function
--- Demonstrates:
--- 1. Higher-order functions taking other functions as arguments
--- 2. Complex polymorphic types
+-- Demonstrates: Higher-order functions with polymorphic types
 def flip : (a -> b -> c) -> b -> a -> c
 let flip f x y = f y x
 

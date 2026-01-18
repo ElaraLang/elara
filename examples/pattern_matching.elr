@@ -2,20 +2,14 @@ import Prelude
 import Elara.Prim
 import String
 
--- Define a custom Algebraic Data Type (ADT) for Shapes
--- Demonstrates:
--- 1. Custom Algebraic Data Types (Sum Types)
--- 2. Constructors with different parameters
+-- Demonstrates: Algebraic Data Types (Sum Types)
 -- Note: Using Int for dimensions as Float is not yet fully exposed in stdlib
 type Shape =
     | Circle Int
     | Rectangle Int Int
     | Square Int
 
--- Calculate area (approximate for Circle)
--- Demonstrates:
--- 1. Pattern matching on ADTs
--- 2. Destructuring constructor arguments
+-- Demonstrates: Pattern matching on ADTs with data destructuring
 def area : Shape -> Int
 let area shape =
     match shape with
