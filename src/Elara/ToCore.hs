@@ -31,7 +31,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Prim (charName, intName, ioName, mkPrimQual, stringName)
+import Elara.Prim (charName, floatName, intName, ioName, mkPrimQual, stringName)
 import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -154,6 +154,7 @@ runGetTyConQuery qn
     | qn == mkPrimQual (nameText intName) = pure $ Just intCon
     | qn == mkPrimQual (nameText charName) = pure $ Just charCon
     | qn == mkPrimQual (nameText stringName) = pure $ Just stringCon
+    | qn == mkPrimQual (nameText floatName) = pure $ Just floatCon
     | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
     | otherwise = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
         let name = NTypeName . TypeName <$> qn

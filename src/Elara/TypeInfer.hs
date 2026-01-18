@@ -34,7 +34,7 @@ import Elara.AST.Select (
  )
 import Elara.AST.Shunted as Shunted
 import Elara.AST.Typed as Typed
-import Elara.Data.Kind (ElaraKind, KindVar)
+import Elara.Data.Kind (KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
 import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Data.Pretty
@@ -59,7 +59,6 @@ import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Optics (forOf_)
 import Relude.Extra (fmapToSnd)
 import Rock qualified
-import TODO
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r

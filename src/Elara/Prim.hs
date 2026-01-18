@@ -5,11 +5,10 @@ The compiler will then replace these with the actual primitive functions.
 -}
 module Elara.Prim where
 
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (..), Qualified (..), TypeName (..), VarName (..), VarOrConName (..))
+import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Qualified (..), TypeName (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
-import Elara.AST.VarRef (VarRef, VarRef' (Global), ignoreLocation)
+import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
-import Elara.Shunt.Operator
 
 consName :: TypeName
 consName = "::"
@@ -72,7 +71,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, consName]
+primitiveTypes = [stringName, charName, intName, floatName, consName]
 
 fixityAnnotationName :: Qualified TypeName
 fixityAnnotationName = mkPrimQual (TypeName "Fixity")
