@@ -3,6 +3,8 @@ import Elara.Prim
 import String
 
 -- A simple addition function taking two arguments
+-- Demonstrates:
+-- 1. Curried functions (all multi-argument functions are curried by default)
 def add : Int -> Int -> Int
 let add x y = x + y
 
@@ -11,10 +13,11 @@ def multiply : Int -> Int -> Int
 let multiply x y = x * y
 
 let main =
-    -- Partially apply 'add' with 5, creating a new function that adds 5 to its argument
+    -- Partially apply `add` with 5, creating a new function that adds 5 to its argument
+    -- Demonstrates: Partial Application
     let addFive = add 5
     
-    -- Partially apply 'multiply' with 2, creating a function that doubles its argument
+    -- Partially apply `multiply` with 2, creating a function that doubles its argument
     let double = multiply 2
     
     -- Chain the partially applied functions: first double 10 (giving 20), then add 5 (giving 25)

@@ -4,6 +4,8 @@ import Option
 import String
 
 -- Performs integer division safely, returning 'None' if the divisor is 0, or 'Some result' otherwise
+-- Demonstrates:
+-- 1. The 'Option' type for safe error handling (avoiding exceptions)
 def safeDiv : Int -> Int -> Option Int
 let safeDiv x y =
     if y == 0 then
@@ -12,6 +14,7 @@ let safeDiv x y =
         Some (x / y)
 
 -- Takes an Option Int and returns a descriptive string based on whether it contains a value
+-- Demonstrates: Pattern matching on Option
 def describe : Option Int -> String
 let describe opt =
     match opt with

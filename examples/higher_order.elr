@@ -4,6 +4,10 @@ import List
 import String
 
 -- Applies a function to every element in a list, returning a new list with the results
+-- Demonstrates:
+-- 1. Recursive Data Structures (List)
+-- 2. Pattern matching on Lists
+-- 3. Higher-order functions (taking a function as an argument)
 def map : (a -> b) -> List a -> List b
 let map f list =
     match list with
@@ -25,6 +29,7 @@ let main =
     let numbers = [1, 2, 3, 4, 5]
     
     -- Use 'map' with a lambda function to square each number in the list
+    -- Demonstrates: Lambda expressions (\x -> ...)
     let squared = map (\x -> x * x) numbers
     
     -- Use 'filter' with a lambda function to keep only numbers greater than 3

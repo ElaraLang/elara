@@ -4,10 +4,16 @@ import Tuple
 import String
 
 -- Function returning a tuple
+-- Demonstrates:
+-- 1. Tuple creation
+-- 2. Tuple return types
 def divMod : Int -> Int -> (Int, Int)
 let divMod x y = (x / y, x % y)
 
 -- Function taking a tuple
+-- Demonstrates:
+-- 1. Polymorphic tuples
+-- 2. Pattern matching on tuples
 def swap : (a, b) -> (b, a)
 let swap pair =
     match pair with
