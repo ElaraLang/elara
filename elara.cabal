@@ -311,6 +311,8 @@ test-suite elara-test
       Region
       Rules
       Shunt
+      ShuntOperator
+      TopologicalGraph
   hs-source-dirs:
       test
   default-extensions:

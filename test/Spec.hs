@@ -4,6 +4,8 @@ import Lex qualified
 import LiftClosures qualified
 import Parse qualified
 import Shunt qualified
+import ShuntOperator qualified
+import TopologicalGraph qualified
 import Test.Syd (Spec, describe, sydTest)
 
 main :: IO ()
@@ -19,3 +21,7 @@ spec = do
     describe "Closure Lifting Test" LiftClosures.spec
 
     describe "Golden Test" Golden.spec
+
+    -- Tests for non-trivial behavior
+    describe "TopologicalGraph Test" TopologicalGraph.spec
+    describe "Shunt.Operator Test" ShuntOperator.spec
