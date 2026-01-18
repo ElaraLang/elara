@@ -2,14 +2,14 @@ import Prelude
 import Elara.Prim
 import String
 
--- Demonstrates: Algebraic Data Types (Sum Types)
--- Note: Using Int for dimensions as Float is not yet fully exposed in stdlib
+-- Defines a simple algebraic data type (ADT) for shapes
 type Shape =
-    | Circle Int
+    Circle Int
     | Rectangle Int Int
     | Square Int
 
--- Demonstrates: Pattern matching on ADTs with data destructuring
+-- Calculates the approximate area of a shape using pattern matching
+-- We are using Ints for simplicity as Floats are not very well supported yet
 def area : Shape -> Int
 let area shape =
     match shape with
@@ -18,6 +18,7 @@ let area shape =
         Square s -> s * s
 
 let main =
+    -- Instantiate the shapes
     let c = Circle 5
     let r = Rectangle 4 6
     let s = Square 3

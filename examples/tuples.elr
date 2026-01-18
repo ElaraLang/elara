@@ -3,21 +3,22 @@ import Elara.Prim
 import Tuple
 import String
 
--- Demonstrates: Tuple construction and return
 def divMod : Int -> Int -> (Int, Int)
 let divMod x y = (x / y, x % y)
 
--- Demonstrates: Polymorphic tuples and pattern matching
+-- Swaps the elements of a tuple
 def swap : (a, b) -> (b, a)
 let swap pair =
     match pair with
         (a, b) -> (b, a)
 
--- Demonstrates: Pattern matching with explicit Tuple constructor
+
+-- Returns the first element of a tuple
 def first : (a, b) -> a
 let first p =
     match p with
         Tuple2 a b -> a
+
 
 let main =
     let pair = divMod 10 3

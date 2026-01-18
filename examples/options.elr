@@ -3,7 +3,7 @@ import Elara.Prim
 import Option
 import String
 
--- Demonstrates: Using Option for safe error handling
+
 def safeDiv : Int -> Int -> Option Int
 let safeDiv x y =
     if y == 0 then
@@ -11,7 +11,7 @@ let safeDiv x y =
     else
         Some (x / y)
 
--- Demonstrates: Pattern matching on Option
+
 def describe : Option Int -> String
 let describe opt =
     match opt with

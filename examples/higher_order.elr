@@ -3,9 +3,7 @@ import Elara.Prim
 import List
 import String
 
--- Demonstrates: 
--- * Pattern matching on Linked Lists (Cons/Nil)
--- * Higher-order functions
+-- We can pattern match on recursive data structures like lists
 def map : (a -> b) -> List a -> List b
 let map f list =
     match list with
@@ -25,7 +23,7 @@ let filter p list =
 let main =
     let numbers = [1, 2, 3, 4, 5]
     
-    -- Demonstrates: Lambda expressions
+    
     let squared = map (\x -> x * x) numbers
     let large = filter (\x -> x > 3) squared
     

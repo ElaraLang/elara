@@ -1,7 +1,6 @@
 import Prelude
 import Elara.Prim
 
--- Demonstrates: Simple type aliases
 type Number = Int
 
 -- TODO: type ascriptions please!
@@ -9,7 +8,7 @@ type Number = Int
 def assertNumber : Int -> Number
 let assertNumber n = n
 
--- Demonstrates: Parameterized type aliases
+-- Type aliases can contain type parameters too
 type Identity s = s
 
 def makeIdentity : a -> Identity a

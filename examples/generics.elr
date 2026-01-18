@@ -2,15 +2,15 @@ import Prelude
 import Elara.Prim
 import String
 
--- Demonstrates: Parametric polymorphism via type variables
+
 def identity : a -> a
 let identity x = x
 
--- Demonstrates: Multiple type parameters
+
 def const : a -> b -> a
 let const x y = x
 
--- Demonstrates: Higher-order functions with polymorphic types
+
 def flip : (a -> b -> c) -> b -> a -> c
 let flip f x y = f y x
 

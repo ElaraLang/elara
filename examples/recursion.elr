@@ -2,10 +2,6 @@ import Prelude
 import Elara.Prim
 import String
 
--- Standard recursive definition of Fibonacci
--- Demonstrates:
--- * Recursive functions
--- * If-else expressions
 def fib : Int -> Int
 let fib n =
     if n <= 1 then n
