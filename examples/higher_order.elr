@@ -3,12 +3,14 @@ import Elara.Prim
 import List
 import String
 
+-- Applies a function to every element in a list, returning a new list with the results
 def map : (a -> b) -> List a -> List b
 let map f list =
     match list with
         Nil -> Nil
         Cons x xs -> Cons (f x) (map f xs)
 
+-- Filters a list based on a predicate function, keeping only elements for which the predicate returns True
 def filter : (a -> Bool) -> List a -> List a
 let filter p list =
     match list with
@@ -21,8 +23,13 @@ let filter p list =
 
 let main =
     let numbers = [1, 2, 3, 4, 5]
+    
+    -- Use 'map' with a lambda function to square each number in the list
     let squared = map (\x -> x * x) numbers
+    
+    -- Use 'filter' with a lambda function to keep only numbers greater than 3
     let large = filter (\x -> x > 3) squared
+    
     println ("Original: " ++ listToString numbers) >>
     println ("Squared: " ++ listToString squared) >>
     println ("> 3: " ++ listToString large)
