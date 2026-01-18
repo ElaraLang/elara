@@ -10,6 +10,7 @@ import Data.Graph (SCC, flattenSCC)
 import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
+import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Generic (
@@ -49,12 +50,14 @@ import Elara.SCC.Type (SCCKey, sccKeyToSCC)
 import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
 import Elara.TypeInfer.ConstraintGeneration
+import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
 import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
+import Elara.TypeInfer.Error (UnifyError (..))
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, typeLoc)
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, simpleEquality, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Optics (forOf_)
 import Relude.Extra (fmapToSnd)
@@ -102,19 +105,20 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
                 evalState emptyLocalTypeEnvironment $
                     evalState initialInferState $
                         evalState emptyTypeEnvironment $
-                            case key of
-                                TermVarKey varName -> logDebugWith ("TypeOf: " <> pretty varName) $ do
-                                    sccs <- Rock.fetch $ GetSCCsOf varName
-                                    logDebug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
-                                    -- Infer dependencies first to populate the environment
-                                    for_ sccs seedSCC
-                                    for_ sccs inferSCC
-                                    -- Read from the environment (now populated) without re-querying
-                                    lookupType (TermVarKey varName)
-                                DataConKey con -> do
-                                    seedConstructorsFor (qualifier con)
-                                    -- Read from the environment (now populated) without re-querying
-                                    lookupType (DataConKey con)
+                            runReader emptyContextStack $
+                                case key of
+                                    TermVarKey varName -> logDebugWith ("TypeOf: " <> pretty varName) $ do
+                                        sccs <- Rock.fetch $ GetSCCsOf varName
+                                        logDebug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
+                                        -- Infer dependencies first to populate the environment
+                                        for_ sccs seedSCC
+                                        for_ sccs inferSCC
+                                        -- Read from the environment (now populated) without re-querying
+                                        lookupType (TermVarKey varName)
+                                    DataConKey con -> do
+                                        seedConstructorsFor (qualifier con)
+                                        -- Read from the environment (now populated) without re-querying
+                                        lookupType (DataConKey con)
 
 runKindOfQuery :: SupportsQuery QueryModuleByName Shunted => Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
@@ -236,6 +240,7 @@ runInferEffects =
         . evalState emptyTypeEnvironment
         . evalState emptyLocalTypeEnvironment
         . runWriter @(Constraint SourceRegion)
+        . runReader emptyContextStack
         . inject
 
 runInferSCCQuery ::
@@ -506,7 +511,7 @@ inferValue valueName valueExpr expectedType = do
     addType' (TermVarKey valueName) expected
     ((typedExpr, t), constraint) <- runWriter $ generateConstraints valueExpr
 
-    let constraint' = constraint <> Equality (typeLoc expected) expectedAsMono t
+    let constraint' = constraint <> simpleEquality (typeLoc expected) expectedAsMono t
     let tch = fuv t <> fuv constraint'
     debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
     debug $ "Type: " <> pretty t

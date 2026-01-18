@@ -1,5 +1,40 @@
+{-# LANGUAGE RecordWildCards #-}
+
 -- | Types used by the type inference engine
-module Elara.TypeInfer.Type where
+module Elara.TypeInfer.Type (
+    -- * Type Variables
+    TypeVariable (..),
+    UniqueTyVar,
+
+    -- * Types
+    Type (..),
+    Polytype (..),
+    Monotype (..),
+    typeLoc,
+    polytypeLoc,
+    monotypeLoc,
+    functionMonotypeResult,
+    functionMonotypeArgs,
+
+    -- * Constraints
+    Constraint (..),
+    constraintLoc,
+    simpleEquality,
+    equalityWithContext,
+    reduce,
+    emptyLocation,
+
+    -- * Data Constructors
+    DataCon,
+
+    -- * Axiom Schemes
+    AxiomScheme (..),
+
+    -- * Substitution
+    Substitution (..),
+    Substitutable (..),
+    substitution,
+) where
 
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
@@ -7,6 +42,7 @@ import Elara.AST.Name
 import Elara.AST.Region (SourceRegion, generatedSourceRegion)
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
 import Elara.Data.Pretty.Styles qualified as Style
+import Elara.TypeInfer.Context (InferenceContext)
 import Elara.TypeInfer.Unique
 
 data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
@@ -35,14 +71,55 @@ data Constraint loc
       EmptyConstraint loc
     | -- | The conjunction of two constraints, Q₁ ∧ Q₂
       Conjunction loc (Constraint loc) (Constraint loc)
-    | -- | An equality constraint, τ₁ ∼ τ₂
-      Equality loc (Monotype loc) (Monotype loc)
+    | {- | An equality constraint, τ₁ ∼ τ₂
+      Now enriched with usage locations and inference context
+      -}
+      Equality
+        { eqLoc :: loc
+        -- ^ Where the constraint was generated
+        , eqLeft :: Monotype loc
+        -- ^ The left-hand side type
+        , eqRight :: Monotype loc
+        -- ^ The right-hand side type
+        , eqLeftUsage :: loc
+        -- ^ Where the left type was used/expected
+        , eqRightUsage :: loc
+        -- ^ Where the right type was found/provided
+        , eqContext :: Maybe InferenceContext
+        -- ^ Why we're comparing these types
+        }
     deriving (Generic, Show, Eq, Ord)
 
 constraintLoc :: Constraint loc -> loc
 constraintLoc (EmptyConstraint loc) = loc
 constraintLoc (Conjunction loc _ _) = loc
-constraintLoc (Equality loc _ _) = loc
+constraintLoc Equality{eqLoc = loc} = loc
+
+{- | Smart constructor for simple equality constraints (no context)
+Uses the monotype locations as usage locations
+-}
+simpleEquality :: loc -> Monotype loc -> Monotype loc -> Constraint loc
+simpleEquality loc left right =
+    Equality
+        { eqLoc = loc
+        , eqLeft = left
+        , eqRight = right
+        , eqLeftUsage = monotypeLoc left
+        , eqRightUsage = monotypeLoc right
+        , eqContext = Nothing
+        }
+
+-- | Smart constructor for equality constraints with context
+equalityWithContext :: loc -> Monotype loc -> Monotype loc -> loc -> loc -> Maybe InferenceContext -> Constraint loc
+equalityWithContext loc left right leftUsage rightUsage ctx =
+    Equality
+        { eqLoc = loc
+        , eqLeft = left
+        , eqRight = right
+        , eqLeftUsage = leftUsage
+        , eqRightUsage = rightUsage
+        , eqContext = ctx
+        }
 
 instance Plated (Constraint loc)
 
@@ -145,11 +222,27 @@ class Substitutable (a :: Kind.Type -> Kind.Type) loc where
 instance Eq loc => Substitutable Constraint loc where
     substitute _ _ (EmptyConstraint l) = EmptyConstraint l
     substitute tv t (Conjunction l c1 c2) = Conjunction l (substitute tv t c1) (substitute tv t c2)
-    substitute tv t (Equality l m1 m2) = Equality l (substitute tv t m1) (substitute tv t m2)
+    substitute tv t Equality{..} =
+        Equality
+            { eqLoc = eqLoc
+            , eqLeft = substitute tv t eqLeft
+            , eqRight = substitute tv t eqRight
+            , eqLeftUsage = eqLeftUsage
+            , eqRightUsage = eqRightUsage
+            , eqContext = eqContext
+            }
 
     substituteAll _ (EmptyConstraint l) = EmptyConstraint l
     substituteAll s (Conjunction l c1 c2) = Conjunction l (substituteAll s c1) (substituteAll s c2)
-    substituteAll s (Equality l m1 m2) = Equality l (substituteAll s m1) (substituteAll s m2)
+    substituteAll s Equality{..} =
+        Equality
+            { eqLoc = eqLoc
+            , eqLeft = substituteAll s eqLeft
+            , eqRight = substituteAll s eqRight
+            , eqLeftUsage = eqLeftUsage
+            , eqRightUsage = eqRightUsage
+            , eqContext = eqContext
+            }
 
 instance Substitutable Monotype loc where
     substitute _ _ (TypeVar loc (SkolemVar v)) = TypeVar loc (SkolemVar v)
@@ -184,7 +277,7 @@ instance Pretty loc => Pretty (Constraint loc) where
     pretty (Conjunction _ EmptyConstraint{} c) = pretty c
     pretty (Conjunction _ c EmptyConstraint{}) = pretty c
     pretty (Conjunction _ c1 c2) = parens (pretty c1) <> " ∧ " <> parens (pretty c2)
-    pretty (Equality _ m1 m2) = pretty m1 <> " ∼ " <> pretty m2
+    pretty Equality{eqLeft = m1, eqRight = m2} = pretty m1 <> " ∼ " <> pretty m2
 
 instance Pretty (Monotype loc) where
     pretty (TypeVar _ tv) = Style.varName (pretty tv)

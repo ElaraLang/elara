@@ -1,4 +1,4 @@
 packages: elara.cabal
 package *
-    profiling: True
+    profiling: False
     profiling-detail: late

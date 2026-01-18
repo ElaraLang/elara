@@ -98,6 +98,15 @@ unknownVariableTC = "E3001"
 coreTypeMismatch :: ErrorCode
 coreTypeMismatch = "E3002"
 
+typeMismatch :: ErrorCode
+typeMismatch = "E3010"
+
+typeConstructorMismatch :: ErrorCode
+typeConstructorMismatch = "E3011"
+
+occursCheckFailed :: ErrorCode
+occursCheckFailed = "E3012"
+
 invokeStaticLocal :: ErrorCode
 invokeStaticLocal = "E4001"
 

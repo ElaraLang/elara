@@ -137,11 +137,14 @@ library
       Elara.ToCore.Match
       Elara.TypeInfer
       Elara.TypeInfer.ConstraintGeneration
+      Elara.TypeInfer.Context
       Elara.TypeInfer.Convert
       Elara.TypeInfer.Environment
+      Elara.TypeInfer.Error
       Elara.TypeInfer.Ftv
       Elara.TypeInfer.Generalise
       Elara.TypeInfer.Monad
+      Elara.TypeInfer.Render
       Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique

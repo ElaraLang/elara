@@ -39,6 +39,6 @@ instance Fuv (Monotype loc) where
     fuv (Function _ t1 t2) = fuv t1 <> fuv t2
 
 instance Fuv (Constraint loc) where
-    fuv (Equality _ t1 t2) = fuv t1 <> fuv t2
+    fuv Equality{eqLeft = t1, eqRight = t2} = fuv t1 <> fuv t2
     fuv EmptyConstraint{} = mempty
     fuv (Conjunction _ a b) = fuv a <> fuv b
