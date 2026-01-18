@@ -34,7 +34,6 @@ data TypeCheckError
         { expected :: Core.Type
         , actual :: Core.Type
         , source :: (CoreExpr, CoreExpr)
-        , errorCallStack :: CallStack
         }
     | CoreTypeMismatchIncompleteExpected
         { incompleteExpected :: Text
@@ -106,7 +105,14 @@ typeCheck (ANF.Let bind in') = case bind of
         typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
 
-typeCheckC :: (HasCallStack, Error TypeCheckError :> r, State TcState :> r, StructuredDebug :> r, HasCallStack) => ANF.CExpr Var -> Eff r Core.Type
+typeCheckC ::
+    ( HasCallStack
+    , Error TypeCheckError :> r
+    , State TcState :> r
+    , StructuredDebug :> r
+    , HasCallStack
+    ) =>
+    ANF.CExpr Var -> Eff r Core.Type
 typeCheckC (ANF.App f x) = do
     fType <- typeCheckA f
     -- debug $ "fType: " <> pretty fType
@@ -116,7 +122,7 @@ typeCheckC (ANF.App f x) = do
         Core.FuncTy argType retType -> do
             if generalize argType `equalUnderSubst` generalize xType
                 then pure retType
-                else throwError $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x) callStack
+                else throwError $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x)
         other -> throwError $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
 typeCheckC match@(ANF.Match e of' alts) = scoped $ do
@@ -132,7 +138,7 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                 eType' <- typeCheck e
                 if litType == eType
                     then pure eType'
-                    else throwError $ CoreTypeMismatch litType eType (fromANFCExpr match, fromANF e) callStack
+                    else throwError $ CoreTypeMismatch litType eType (fromANFCExpr match, fromANF e)
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
                 -- debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
@@ -156,7 +162,6 @@ typeCheckC match@(ANF.Match e of' alts) = scoped $ do
                                 (generalize conType)
                                 (generalize eType)
                                 (fromANF e, fromANF e)
-                                callStack
 
     case altTypes of
         [] -> error "empty match? how do we handle this"

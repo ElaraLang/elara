@@ -2,7 +2,7 @@ module Prelude
 import Elara.Prim
 import List
 
-
+#LeftAssociative #Fixity 0
 def (|>) : a -> (a -> b) -> b
 let (|>) x f = f x
 

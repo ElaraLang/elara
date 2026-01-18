@@ -6,7 +6,7 @@ type Float = Prim_Float
 type Char = Prim_Char
 type String = Prim_String
 type IO a = Prim_IO a
-type Unit = | Unit
+type Unit = ()
 
 type Bool = True | False
 

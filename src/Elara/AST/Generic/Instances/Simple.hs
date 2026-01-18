@@ -92,6 +92,7 @@ deriving instance
     , Eq (ASTLocate ast LowerAlphaName)
     , Eq (Type ast)
     , Eq (Select TupleType ast)
+    , Eq (Select UnitTypeInfo ast)
     ) =>
     Eq (Type' ast)
 
@@ -104,6 +105,7 @@ deriving instance
     , Ord (ASTLocate ast LowerAlphaName)
     , Ord (Type ast)
     , Ord (Select TupleType ast)
+    , Ord (Select UnitTypeInfo ast)
     ) =>
     Ord (Type' ast)
 
@@ -247,6 +249,7 @@ deriving instance
     , Show (ASTLocate ast LowerAlphaName)
     , Show (Type ast)
     , Show (Select TupleType ast)
+    , Show (Select UnitTypeInfo ast)
     ) =>
     Show (Type' ast)
 
@@ -372,6 +375,7 @@ deriving instance
     , Data (Select UserDefinedType ast)
     , Data (Select TypeKind ast)
     , Data (Select TupleType ast)
+    , Data (Select UnitTypeInfo ast)
     , Typeable ast
     , Typeable a
     ) =>

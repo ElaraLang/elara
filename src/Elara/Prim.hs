@@ -31,6 +31,9 @@ intName = TypeName "Prim_Int"
 floatName :: TypeName
 floatName = TypeName "Prim_Float"
 
+unitName :: TypeName
+unitName = TypeName "()"
+
 boolName :: TypeName
 boolName = TypeName "Bool"
 
@@ -71,7 +74,7 @@ primitiveVars :: [VarName]
 primitiveVars = [fetchPrimitiveName]
 
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, floatName, consName]
+primitiveTypes = [stringName, charName, intName, floatName, unitName, consName]
 
 fixityAnnotationName :: Qualified TypeName
 fixityAnnotationName = mkPrimQual (TypeName "Fixity")

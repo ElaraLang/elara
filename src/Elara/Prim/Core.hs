@@ -7,7 +7,7 @@ import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Unique.Effect
-import Elara.Prim (charName, doubleName, floatName, intName, ioName, mkPrimQual, stringName)
+import Elara.Prim (charName, doubleName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
 
 trueCtorName :: Qualified Text
 trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
@@ -57,7 +57,7 @@ ioCon :: TyCon
 ioCon = TyCon (mkPrimQual $ nameText ioName) Prim
 
 unitCon :: TyCon
-unitCon = TyCon (mkPrimQual "()") Prim
+unitCon = TyCon (mkPrimQual $ nameText unitName) Prim
 
 trueCtor :: DataCon
 trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon

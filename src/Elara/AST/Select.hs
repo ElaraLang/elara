@@ -83,6 +83,8 @@ type data ASTSelector
       KindAnnotation
     | -- | Type of type variables used in any way
       ASTTypeVar
+    | -- | Type for the unit type. Typically doesn't store any information, but lets ASTs make it 'Elara.AST.Generic.DataConCantHappen' if desired
+      UnitTypeInfo
     | -- | Type for the actual kind of a type stored within the 'Type', i.e. at use sites. Will probably be merged with 'KindAnnotation' as they aren't clearly distinguishable
       TypeKind
     | -- | Type for a reference to a user defined type, i.e. a named type that is not a primitive. Usually similar/identical to 'ConRef'

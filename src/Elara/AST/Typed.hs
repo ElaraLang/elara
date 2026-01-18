@@ -86,6 +86,7 @@ type instance Select (ASTName ForValueDecl) Typed = Qualified VarName
 
 -- Selections for 'Type'
 type instance Select ASTTypeVar Typed = UniqueTyVar
+type instance Select UnitTypeInfo Typed = DataConCantHappen
 type instance Select TupleType Typed = DataConCantHappen
 
 type instance Select TypeKind Typed = ElaraKind

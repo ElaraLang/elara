@@ -18,6 +18,7 @@ type TypeDeps :: (Kind.Type -> Kind.Type -> Constraint) -> LocatedAST -> Unlocat
 type TypeDeps cls ast1 ast2 =
     ( cls (Select TypeKind ast1) (Select TypeKind ast2)
     , cls (Select TupleType ast1) (Select TupleType ast2)
+    , cls (Select UnitTypeInfo ast1) (Select UnitTypeInfo ast2)
     , cls (CleanupLocated (Located (Select ASTTypeVar ast1))) (Select ASTTypeVar ast2)
     , cls (CleanupLocated (Located (Select UserDefinedType ast1))) (Select UserDefinedType ast2)
     )

@@ -42,8 +42,8 @@ astTypeToInferType' loc (Generic.FunctionType i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
     pure $ Function loc i' o'
-astTypeToInferType' loc Generic.UnitType = do
-    pure $ TypeConstructor loc (mkPrimQual "Unit") []
+astTypeToInferType' loc (Generic.UnitType x) = do
+    pure $ TypeConstructor loc (mkPrimQual "()") []
 astTypeToInferType' _ (Generic.ListType t) = do
     t' <- astTypeToInferType t
     throwError $ NotSupported "List types are not supported yet"

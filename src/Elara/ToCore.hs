@@ -31,7 +31,7 @@ import Elara.Data.TopologicalGraph
 import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Prim (charName, floatName, intName, ioName, mkPrimQual, stringName)
+import Elara.Prim (charName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
 import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -155,6 +155,7 @@ runGetTyConQuery qn
     | qn == mkPrimQual (nameText charName) = pure $ Just charCon
     | qn == mkPrimQual (nameText stringName) = pure $ Just stringCon
     | qn == mkPrimQual (nameText floatName) = pure $ Just floatCon
+    | qn == mkPrimQual (nameText unitName) = pure $ Just unitCon
     | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
     | otherwise = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
         let name = NTypeName . TypeName <$> qn
@@ -346,6 +347,7 @@ typeToCore (Type.TypeConstructor _ qn ts) = do
         | name == mkPrimQual (nameText intName) -> pure $ foldl' Core.AppTy (Core.ConTy intCon) ts'
         | name == mkPrimQual (nameText charName) -> pure $ foldl' Core.AppTy (Core.ConTy charCon) ts'
         | name == mkPrimQual (nameText stringName) -> pure $ foldl' Core.AppTy (Core.ConTy stringCon) ts'
+        | name == mkPrimQual (nameText unitName) -> pure $ foldl' Core.AppTy (Core.ConTy unitCon) ts'
         | name == mkPrimQual (nameText ioName) -> pure $ foldl' Core.AppTy (Core.ConTy ioCon) ts'
         | otherwise -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
             tyCon <- lookupTyCon name

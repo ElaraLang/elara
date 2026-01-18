@@ -88,6 +88,7 @@ type instance Select (Annotations any) Desugared = [Annotation Desugared]
 
 -- Selections for 'Type'
 type instance Select ASTTypeVar Desugared = LowerAlphaName
+type instance Select UnitTypeInfo Desugared = Located ()
 
 type instance Select TupleType Desugared = AtLeast2List DesugaredType
 

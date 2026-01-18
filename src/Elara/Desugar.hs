@@ -161,7 +161,7 @@ desugarType (Type lt) = curry Type <$> traverseOf unlocated desugarType' (lt ^. 
     desugarType' (UserDefinedType n) = pure (UserDefinedType n)
     desugarType' (RecordType fields) = RecordType <$> traverseOf (each % _2) desugarType fields
     desugarType' (ListType t) = ListType <$> desugarType t
-    desugarType' UnitType = pure UnitType
+    desugarType' (UnitType x) = pure (UnitType x)
 
 completePartials :: Located ModuleName -> Desugar [DesugaredDeclaration]
 completePartials mn = do

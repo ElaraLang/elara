@@ -333,10 +333,10 @@ elaborateType (Type (t :: Located (Type' Shunted), NoFieldValue)) = do
         TypeVar var -> do
             kv <- lookupVarKindVar (var ^. unlocated)
             pure $ Type (TypeVar var <$ t, kv)
-        UnitType -> do
+        UnitType x -> do
             kv <- makeUniqueId
             newEqualityConstraint (VarKind kv) TypeKind (PrimitiveConstraint "Unit must be of kind Type")
-            pure $ Type (UnitType <$ t, kv)
+            pure $ Type (UnitType x <$ t, kv)
         UserDefinedType name -> do
             kv <- lookupNameKindVar (name ^. unlocated) (UserDefinedTypeConstraint name)
             pure $ Type (UserDefinedType name <$ t, kv)
@@ -383,7 +383,7 @@ solveType (Type (t, kindVar)) = do
     case t ^. unlocated of
         TypeVar v -> do
             pure $ Type (TypeVar v <$ t, kind')
-        UnitType -> pure $ Type (UnitType <$ t, kind')
+        UnitType x -> pure $ Type (UnitType x <$ t, kind')
         UserDefinedType name -> pure $ Type (UserDefinedType name <$ t, kind')
         TypeConstructorApplication f arg -> do
             f' <- solveType f

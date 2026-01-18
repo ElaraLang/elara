@@ -316,7 +316,7 @@ instance
     pretty = \case
         TypeVar name -> pretty name
         FunctionType a b -> parens (pretty a <+> "->" <+> pretty b)
-        UnitType -> "()"
+        UnitType _ -> "()"
         TypeConstructorApplication a b -> pretty a <+> pretty b
         UserDefinedType name -> pretty name
         RecordType fields -> "{" <+> prettyFields fields <+> "}"

@@ -5,7 +5,6 @@ import Elara.AST.Frontend
 import Elara.AST.Generic (Expr (Expr), Expr' (..))
 import Elara.AST.Region (Located (..), sourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
-import Elara.Data.Pretty
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (Parser, token_)

@@ -61,6 +61,7 @@ type family SelectFrontend (selector :: ASTSelector) = (v :: Kind.Type) where
     SelectFrontend (ASTName ForValueDecl) = VarName
     -- Selections for 'Type'
     SelectFrontend ASTTypeVar = LowerAlphaName
+    SelectFrontend UnitTypeInfo = Located ()
     SelectFrontend TupleType = AtLeast2List FrontendType
     SelectFrontend TypeKind = NoFieldValue
     SelectFrontend UserDefinedType = MaybeQualified TypeName

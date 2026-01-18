@@ -262,7 +262,7 @@ newtype Type ast = Type (ASTLocate ast (Type' ast), Select TypeKind ast)
 data Type' ast
     = TypeVar (ASTLocate ast (Select ASTTypeVar ast))
     | FunctionType (Type ast) (Type ast)
-    | UnitType
+    | UnitType (Select UnitTypeInfo ast)
     | TypeConstructorApplication (Type ast) (Type ast)
     | UserDefinedType (ASTLocate ast (Select UserDefinedType ast))
     | RecordType (NonEmpty (ASTLocate ast LowerAlphaName, Type ast))
@@ -377,7 +377,7 @@ coerceType' ::
     Type' ast1 -> Type' ast2
 coerceType' (TypeVar a) = TypeVar a
 coerceType' (FunctionType a b) = FunctionType (coerceType a) (coerceType b)
-coerceType' UnitType = UnitType
+coerceType' (UnitType x) = UnitType x
 coerceType' (TypeConstructorApplication a b) = TypeConstructorApplication (coerceType a) (coerceType b)
 coerceType' (UserDefinedType a) = UserDefinedType a
 coerceType' (RecordType a) = RecordType (fmap coerceType <$> a)

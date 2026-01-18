@@ -67,8 +67,9 @@ typeVar =
 
 unit :: Parser FrontendType
 unit =
-    locatedType $
-        UnitType <$ (token_ TokenLeftParen *> token_ TokenRightParen)
+    locatedType $ do
+        unit <- located (token_ TokenLeftParen *> token_ TokenRightParen)
+        pure (UnitType unit)
 
 namedType :: Parser FrontendType
 namedType =

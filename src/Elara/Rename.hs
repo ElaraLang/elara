@@ -36,6 +36,7 @@ import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, logDebug)
+import Elara.Prim (mkPrimQual, unitName)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query (QueryModuleByName, SupportsQuery)
@@ -378,7 +379,11 @@ renameType allowNewTypeVars (TypeVar (Located sr n)) = do
                 pure (TypeVar $ Located sr uniqueN)
             | otherwise -> throwError $ UnknownTypeVariable n
 renameType antv (FunctionType t1 t2) = FunctionType <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
-renameType _ UnitType = pure UnitType
+renameType _ (UnitType (Located sr ())) = do
+    -- turn it into Elara.Prim.()
+    let unitTypeName = mkPrimQual unitName
+
+    pure $ UserDefinedType (Located sr unitTypeName)
 renameType antv (TypeConstructorApplication t1 t2) = TypeConstructorApplication <$> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t1 <*> traverseOf (_Unwrapped % _1 % unlocated) (renameType antv) t2
 renameType _ (UserDefinedType ln) = UserDefinedType <$> qualifyTypeName ln
 renameType antv (RecordType ln) = RecordType <$> traverse (traverseOf (_2 % _Unwrapped % _1 % unlocated) (renameType antv)) ln
@@ -638,7 +643,7 @@ typeIsRecursive :: Qualified TypeName -> RenamedType -> Maybe (Located (Qualifie
 typeIsRecursive targetType (Type (Located useSiteLocation t, _)) = case t of
     TypeVar _ -> Nothing
     FunctionType a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
-    UnitType -> Nothing
+    UnitType _ -> Nothing
     TypeConstructorApplication a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
     UserDefinedType (Located _ n) ->
         if n == targetType

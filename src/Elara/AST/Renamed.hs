@@ -67,6 +67,8 @@ type instance Select TypeKind Renamed = NoFieldValue
 
 type instance Select (ASTType ForValueDecl) Renamed = Maybe RenamedType
 
+type instance Select UnitTypeInfo Renamed = DataConCantHappen
+
 type instance Select ValueTypeDef Renamed = DataConCantHappen
 
 type instance Select Alias Renamed = RenamedType

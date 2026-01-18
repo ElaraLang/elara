@@ -29,7 +29,7 @@ import Elara.AST.Typed (TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, logDebug, logDebugWith)
-import Elara.Prim (boolName, charName, intName, mkPrimQual, stringName)
+import Elara.Prim (boolName, charName, floatName, intName, mkPrimQual, stringName, unitName)
 import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..))
@@ -108,10 +108,10 @@ generateConstraints' expr' =
         let exprLoc = expr' ^. Syntax.exprLocation
          in case expr' ^. _Unwrapped % _1 % unlocated of
                 Int i -> pure (Int i, TypeConstructor exprLoc (mkPrimQual intName) [])
-                Float f -> pure (Float f, TypeConstructor exprLoc (mkPrimQual "Float") [])
+                Float f -> pure (Float f, TypeConstructor exprLoc (mkPrimQual floatName) [])
                 String s -> pure (String s, TypeConstructor exprLoc (mkPrimQual stringName) [])
                 Char c -> pure (Char c, TypeConstructor exprLoc (mkPrimQual charName) [])
-                Unit -> pure (Unit, TypeConstructor exprLoc (mkPrimQual "Unit") [])
+                Unit -> pure (Unit, TypeConstructor exprLoc (mkPrimQual unitName) [])
                 Constructor ctorValue@(Located loc name) -> do
                     -- (ν:∀a.Q1 ⇒ τ1) ∈ Γ
                     varType <- lookupType (DataConKey $ stripLocation name)
@@ -471,6 +471,7 @@ unify ::
     Monotype loc ->
     Eff r (Constraint loc, Substitution loc)
 unify a b = do
+    logDebug ("unify: " <> pretty (a, b))
     unify' a b
   where
     unify' ::
@@ -491,8 +492,12 @@ unify a b = do
             expandedB <- expandAlias b bs
             logDebug $ "unify: trying to expand aliases: " <> pretty (expandedA, expandedB)
             case (expandedA, expandedB) of
-                (Just a', _) -> unify' a' t2
-                (_, Just b') -> unify' t1 b'
+                (Just a', _) -> do
+                    logDebug $ "unify: expanded alias for " <> pretty a <> ": " <> pretty a'
+                    unify a' t2
+                (_, Just b') -> do
+                    logDebug $ "unify: expanded alias for " <> pretty b <> ": " <> pretty b'
+                    unify t1 b'
                 (Nothing, Nothing) -> do
                     ctx <- ask @ContextStack
                     case ?constraint of
@@ -535,11 +540,10 @@ expandAlias name args = do
 
     case aliasDef of
         Just (params, body) -> do
-            -- Verify arity
             if length params /= length args
-                then pure Nothing -- Or throw ArityMismatch
+                then do
+                    error "TODO: throw an arity mismatch error here"
                 else do
-                    -- Create substitution: params -> args
                     let s = Substitution $ fromList (zip (view typed <$> params) args)
                     case body of
                         Lifted m -> pure (Just $ substituteAll s m)
