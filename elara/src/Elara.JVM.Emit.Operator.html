@@ -11,11 +11,11 @@
 -&gt; [OpTranslation] -&gt; [OpTranslation]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span>
-</span><span id="line-10"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680062396"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062396"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680062397"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062397"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062396"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062397"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><span id="line-10"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680066377"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680066377"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680066378"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680066378"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680066377"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680066378"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;_&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
@@ -86,15 +86,15 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="annot"><a href="Elara.JVM.Emit.Operator.html#translateOperatorName"><span class="hs-identifier hs-type">translateOperatorName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-35"></span><span id="translateOperatorName"><span class="annot"><span class="annottext">translateOperatorName :: Text -&gt; Text
-</span><a href="Elara.JVM.Emit.Operator.html#translateOperatorName"><span class="hs-identifier hs-var hs-var">translateOperatorName</span></a></span></span><span> </span><span id="local-6989586621680062406"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062406"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Elara.JVM.Emit.Operator.html#translateOperatorName"><span class="hs-identifier hs-var hs-var">translateOperatorName</span></a></span></span><span> </span><span id="local-6989586621680066387"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680066387"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-36"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062406"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+</span><a href="#local-6989586621680066387"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;&lt;init&gt;&quot;</span></span><span>
 </span><span id="line-37"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062406"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><a href="#local-6989586621680066387"><span class="hs-identifier hs-var">name</span></a></span><span>
 </span><span id="line-38"></span><span>        </span><span class="hs-keyword">else</span><span>
 </span><span id="line-39"></span><span>            </span><span class="annot"><span class="annottext">(OpTranslation -&gt; Text -&gt; Text) -&gt; Text -&gt; [OpTranslation] -&gt; Text
 forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
@@ -106,6 +106,6 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Text -&gt; Text -&gt; Text -&gt; Text
 Text -&gt; Text -&gt; Text -&gt; Text
 </span><span class="hs-identifier hs-var">T.replace</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680062406"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[OpTranslation]
+</span><a href="#local-6989586621680066387"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[OpTranslation]
 </span><a href="Elara.JVM.Emit.Operator.html#translations"><span class="hs-identifier hs-var">translations</span></a></span><span>
 </span><span id="line-40"></span></pre></body></html>

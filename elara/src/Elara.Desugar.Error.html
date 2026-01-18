@@ -18,7 +18,7 @@
 </span><span id="line-18"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DuplicateDeclaration"><span class="annot"><a href="Elara.Desugar.Error.html#DuplicateDeclaration"><span class="hs-identifier hs-var">DuplicateDeclaration</span></a></span></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span>
 </span><span id="line-19"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="PartialNamesNotEqual"><span class="annot"><a href="Elara.Desugar.Error.html#PartialNamesNotEqual"><span class="hs-identifier hs-var">PartialNamesNotEqual</span></a></span></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span>
 </span><span id="line-20"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TuplePatternTooShort"><span class="annot"><a href="Elara.Desugar.Error.html#TuplePatternTooShort"><span class="hs-identifier hs-var">TuplePatternTooShort</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Frontend.html#FrontendPattern"><span class="hs-identifier hs-type">FrontendPattern</span></a></span><span>
-</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680113562"><span id="local-6989586621680113591"><span id="local-6989586621680113595"><span class="annot"><span class="annottext">Int -&gt; DesugarError -&gt; ShowS
+</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680117270"><span id="local-6989586621680117299"><span id="local-6989586621680117303"><span class="annot"><span class="annottext">Int -&gt; DesugarError -&gt; ShowS
 [DesugarError] -&gt; ShowS
 DesugarError -&gt; String
 (Int -&gt; DesugarError -&gt; ShowS)
@@ -33,7 +33,7 @@ $cshow :: DesugarError -&gt; String
 show :: DesugarError -&gt; String
 $cshowList :: [DesugarError] -&gt; ShowS
 showList :: [DesugarError] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680113717"><span id="local-6989586621680113719"><span class="annot"><span class="annottext">(forall x. DesugarError -&gt; Rep DesugarError x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680117425"><span id="local-6989586621680117427"><span class="annot"><span class="annottext">(forall x. DesugarError -&gt; Rep DesugarError x)
 -&gt; (forall x. Rep DesugarError x -&gt; DesugarError)
 -&gt; Generic DesugarError
 forall x. Rep DesugarError x -&gt; DesugarError
@@ -46,14 +46,14 @@ $cto :: forall x. Rep DesugarError x -&gt; DesugarError
 to :: forall x. Rep DesugarError x -&gt; DesugarError
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680113729"><span id="local-6989586621680113733"><span id="local-6989586621680113736"><span id="local-6989586621680113739"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span></span></span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680117437"><span id="local-6989586621680117441"><span id="local-6989586621680117444"><span id="local-6989586621680117447"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span></span></span></span><span>
 </span><span id="line-24"></span><span>
-</span><span id="line-25"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680113743"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680117451"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span><span>
 </span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680113987"><span id="local-6989586621680113992"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-28"></span><span>    </span><span id="local-6989586621680114170"><span class="annot"><span class="annottext">getReport :: DesugarError -&gt; Maybe (Report (Doc AnsiStyle))
-</span><a href="#local-6989586621680114170"><span class="hs-identifier hs-var hs-var hs-var">getReport</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#DefWithoutLet"><span class="hs-identifier hs-type">DefWithoutLet</span></a></span><span> </span><span id="local-6989586621680114172"><span class="annot"><span class="annottext">DesugaredType
-</span><a href="#local-6989586621680114172"><span class="hs-identifier hs-var">ty</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680117695"><span id="local-6989586621680117700"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#DesugarError"><span class="hs-identifier hs-type">DesugarError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>    </span><span id="local-6989586621680117878"><span class="annot"><span class="annottext">getReport :: DesugarError -&gt; Maybe (Report (Doc AnsiStyle))
+</span><a href="#local-6989586621680117878"><span class="hs-identifier hs-var hs-var hs-var">getReport</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#DefWithoutLet"><span class="hs-identifier hs-type">DefWithoutLet</span></a></span><span> </span><span id="local-6989586621680117880"><span class="annot"><span class="annottext">DesugaredType
+</span><a href="#local-6989586621680117880"><span class="hs-identifier hs-var">ty</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-29"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle)))
@@ -80,7 +80,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">DesugaredType
-</span><a href="#local-6989586621680114172"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680117880"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-33"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
 </span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">(SourceRegion -&gt; Position) -&gt; SourceRegion -&gt; Position
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -154,7 +154,7 @@ Optic k is s t u v -&gt; Optic l js u v a b -&gt; Optic m ks s t a b
   SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">DesugaredType
-</span><a href="#local-6989586621680114172"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680117880"><span class="hs-identifier hs-var">ty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Def without let here&quot;</span></span><span class="hs-special">)</span><span>
@@ -168,9 +168,9 @@ forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Try adding a 'let' binding after the 'def'&quot;</span></span><span>
 </span><span id="line-37"></span><span>                </span><span class="hs-special">]</span><span>
-</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#DuplicateDeclaration"><span class="hs-identifier hs-type">DuplicateDeclaration</span></a></span><span> </span><span id="local-6989586621680114185"><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114185"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680114186"><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114186"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#DuplicateDeclaration"><span class="hs-identifier hs-type">DuplicateDeclaration</span></a></span><span> </span><span id="local-6989586621680117893"><span class="annot"><span class="annottext">PartialDeclaration
+</span><a href="#local-6989586621680117893"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680117894"><span class="annot"><span class="annottext">PartialDeclaration
+</span><a href="#local-6989586621680117894"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle)))
@@ -197,13 +197,13 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114185"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680117893"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-43"></span><span>                </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
 </span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">(SourceRegion -&gt; Position) -&gt; SourceRegion -&gt; Position
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration -&gt; SourceRegion
 </span><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114186"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680117894"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Name is used here&quot;</span></span><span class="hs-special">)</span><span>
@@ -212,7 +212,7 @@ forall msg. msg -&gt; Marker msg
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration -&gt; SourceRegion
 </span><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114185"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680117893"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;And also here&quot;</span></span><span class="hs-special">)</span><span>
@@ -226,9 +226,9 @@ forall msg. msg -&gt; Note msg
 </span><span class="hs-identifier hs-var">Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Rename one of the declarations&quot;</span></span><span>
 </span><span id="line-48"></span><span>                </span><span class="hs-special">]</span><span>
-</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#PartialNamesNotEqual"><span class="hs-identifier hs-type">PartialNamesNotEqual</span></a></span><span> </span><span id="local-6989586621680114189"><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114189"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680114190"><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114190"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#PartialNamesNotEqual"><span class="hs-identifier hs-type">PartialNamesNotEqual</span></a></span><span> </span><span id="local-6989586621680117897"><span class="annot"><span class="annottext">PartialDeclaration
+</span><a href="#local-6989586621680117897"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680117898"><span class="annot"><span class="annottext">PartialDeclaration
+</span><a href="#local-6989586621680117898"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-50"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle)))
@@ -252,7 +252,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114189"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680117897"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;and&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -260,11 +260,11 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
-</span><a href="#local-6989586621680114190"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#InfixWithoutDeclaration"><span class="hs-identifier hs-type">InfixWithoutDeclaration</span></a></span><span> </span><span id="local-6989586621680114192"><span class="annot"><span class="annottext">Located Name
-</span><a href="#local-6989586621680114192"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680114193"><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared
-</span><a href="#local-6989586621680114193"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680117898"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#InfixWithoutDeclaration"><span class="hs-identifier hs-type">InfixWithoutDeclaration</span></a></span><span> </span><span id="local-6989586621680117900"><span class="annot"><span class="annottext">Located Name
+</span><a href="#local-6989586621680117900"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680117901"><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared
+</span><a href="#local-6989586621680117901"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-52"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle)))
@@ -288,7 +288,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Located Name -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Located Name
-</span><a href="#local-6989586621680114192"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680117900"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;,&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -296,9 +296,9 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared -&gt; Doc AnsiStyle
 forall b a. (Show a, IsString b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared
-</span><a href="#local-6989586621680114193"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#TuplePatternTooShort"><span class="hs-identifier hs-type">TuplePatternTooShort</span></a></span><span> </span><span id="local-6989586621680114196"><span class="annot"><span class="annottext">FrontendPattern
-</span><a href="#local-6989586621680114196"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680117901"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#TuplePatternTooShort"><span class="hs-identifier hs-type">TuplePatternTooShort</span></a></span><span> </span><span id="local-6989586621680117904"><span class="annot"><span class="annottext">FrontendPattern
+</span><a href="#local-6989586621680117904"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Report (Doc AnsiStyle) -&gt; Maybe (Report (Doc AnsiStyle)))
@@ -332,7 +332,7 @@ Optic' k is s a -&gt; s -&gt; a
 </span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens '[] FrontendPattern SourceRegion
 forall a. HasSourceRegion a =&gt; Lens' a SourceRegion
 </span><a href="Elara.AST.Region.html#sourceRegion"><span class="hs-identifier hs-var">sourceRegion</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendPattern
-</span><a href="#local-6989586621680114196"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680117904"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
 forall msg. msg -&gt; Marker msg
 </span><span class="hs-identifier hs-var">This</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;This tuple pattern is too short&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
@@ -380,7 +380,7 @@ to create a 'Both' declaration, which is then resolved to a Desugared.Declaratio
 </span><span id="line-91"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ValueDeclAnnotations"><span class="hs-identifier hs-type">ValueDeclAnnotations</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-92"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="AllDecl"><span class="annot"><a href="Elara.Desugar.Error.html#AllDecl"><span class="hs-identifier hs-var">AllDecl</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Desugared.html#DesugaredType"><span class="hs-identifier hs-type">DesugaredType</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Desugared.html#DesugaredExpr"><span class="hs-identifier hs-type">DesugaredExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#ValueDeclAnnotations"><span class="hs-identifier hs-type">ValueDeclAnnotations</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Select.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-93"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Immediate"><span class="annot"><a href="Elara.Desugar.Error.html#Immediate"><span class="hs-identifier hs-var">Immediate</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Desugared.html#DesugaredDeclarationBody"><span class="hs-identifier hs-type">DesugaredDeclarationBody</span></a></span><span>
-</span><span id="line-94"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680114204"><span id="local-6989586621680114232"><span id="local-6989586621680114235"><span class="annot"><span class="annottext">Int -&gt; PartialDeclaration -&gt; ShowS
+</span><span id="line-94"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680117912"><span id="local-6989586621680117940"><span id="local-6989586621680117943"><span class="annot"><span class="annottext">Int -&gt; PartialDeclaration -&gt; ShowS
 [PartialDeclaration] -&gt; ShowS
 PartialDeclaration -&gt; String
 (Int -&gt; PartialDeclaration -&gt; ShowS)
@@ -395,7 +395,7 @@ $cshow :: PartialDeclaration -&gt; String
 show :: PartialDeclaration -&gt; String
 $cshowList :: [PartialDeclaration] -&gt; ShowS
 showList :: [PartialDeclaration] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680114336"><span id="local-6989586621680114338"><span class="annot"><span class="annottext">(forall x. PartialDeclaration -&gt; Rep PartialDeclaration x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680118044"><span id="local-6989586621680118046"><span class="annot"><span class="annottext">(forall x. PartialDeclaration -&gt; Rep PartialDeclaration x)
 -&gt; (forall x. Rep PartialDeclaration x -&gt; PartialDeclaration)
 -&gt; Generic PartialDeclaration
 forall x. Rep PartialDeclaration x -&gt; PartialDeclaration
@@ -411,34 +411,34 @@ to :: forall x. Rep PartialDeclaration x -&gt; PartialDeclaration
 </span><span id="line-96"></span><span class="annot"><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-type">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
 </span><span id="line-97"></span><span id="partialDeclarationSourceRegion"><span class="annot"><span class="annottext">partialDeclarationSourceRegion :: PartialDeclaration -&gt; SourceRegion
 </span><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var hs-var">partialDeclarationSourceRegion</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680114340"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114340"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118048"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118048"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe (ValueDeclAnnotations Desugared)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114340"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><a href="#local-6989586621680118048"><span class="hs-identifier hs-var">sr</span></a></span><span>
 </span><span id="line-98"></span><span class="annot"><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680114341"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114341"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr Desugared
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118049"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118049"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr Desugared
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe (ValueDeclAnnotations Desugared)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114341"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><a href="#local-6989586621680118049"><span class="hs-identifier hs-var">sr</span></a></span><span>
 </span><span id="line-99"></span><span class="annot"><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680114342"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114342"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118050"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118050"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr Desugared
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114342"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><a href="#local-6989586621680118050"><span class="hs-identifier hs-var">sr</span></a></span><span>
 </span><span id="line-100"></span><span class="annot"><a href="Elara.Desugar.Error.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span class="annot"><span class="annottext">Name
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#DeclarationBody"><span class="hs-identifier hs-type">DeclarationBody</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680114345"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114345"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DeclarationBody' Desugared
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#DeclarationBody"><span class="hs-identifier hs-type">DeclarationBody</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680118053"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118053"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DeclarationBody' Desugared
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680114345"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><a href="#local-6989586621680118053"><span class="hs-identifier hs-var">sr</span></a></span><span>
 </span><span id="line-101"></span><span>
 </span><span id="line-102"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Error.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-103"></span><span>    </span><span id="local-6989586621680114356"><span class="annot"><span class="annottext">pretty :: PartialDeclaration -&gt; Doc AnsiStyle
-</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span id="local-6989586621680114357"><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114357"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span id="line-103"></span><span>    </span><span id="local-6989586621680118064"><span class="annot"><span class="annottext">pretty :: PartialDeclaration -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span id="local-6989586621680118065"><span class="annot"><span class="annottext">Located VarName
+</span><a href="#local-6989586621680118065"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe (ValueDeclAnnotations Desugared)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -447,9 +447,9 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Located VarName -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114357"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-104"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span id="local-6989586621680114358"><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114358"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118065"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span id="local-6989586621680118066"><span class="annot"><span class="annottext">Located VarName
+</span><a href="#local-6989586621680118066"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr Desugared
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe (ValueDeclAnnotations Desugared)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -458,9 +458,9 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Located VarName -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114358"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-105"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span id="local-6989586621680114359"><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114359"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680118066"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span id="local-6989586621680118067"><span class="annot"><span class="annottext">Located VarName
+</span><a href="#local-6989586621680118067"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr Desugared
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclAnnotations Desugared
@@ -470,14 +470,14 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Located VarName -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Located VarName
-</span><a href="#local-6989586621680114359"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-106"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span id="local-6989586621680114360"><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680114360"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredDeclarationBody
+</span><a href="#local-6989586621680118067"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Error.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span id="local-6989586621680118068"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680118068"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredDeclarationBody
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Immediate&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680114360"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><a href="#local-6989586621680118068"><span class="hs-identifier hs-var">n</span></a></span><span>
 </span><span id="line-107"></span></pre></body></html>
