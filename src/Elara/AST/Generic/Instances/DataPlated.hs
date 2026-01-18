@@ -44,6 +44,10 @@ instance
                 CharPattern a -> pure (CharPattern a)
                 UnitPattern -> pure UnitPattern
 
+-- | Fallback instance for 'Pattern ast' using GPlate.
+-- This relies on all components of the AST having 'Generic' instances,
+-- which is enforced by the type system for AST types. Use the explicit
+-- 'Pattern' ast' instance above when possible for better type safety.
 instance
     forall a (ast :: a).
     GPlate (Pattern ast) (Pattern ast) =>
@@ -91,16 +95,26 @@ instance
                     let e' = dataConAs @(Select InParens ast) @(Expr ast) e
                      in InParens . asDataCon <$> traverseOf traverseExpr f e'
 
+-- | Fallback instance for 'Expr ast' using GPlate.
+-- This relies on all components of the AST having 'Generic' instances,
+-- which is enforced by the type system for AST types. Use the explicit
+-- 'Expr' ast' instance above when possible for better type safety.
 instance
     forall a (ast :: a).
     GPlate (Expr ast) (Expr ast) =>
     Plated (Expr ast)
 
+-- | Fallback instance for 'Type ast' using GPlate.
+-- This relies on all components of the AST having 'Generic' instances,
+-- which is enforced by the type system for AST types.
 instance
     forall a (ast :: a).
     GPlate (Type ast) (Type ast) =>
     Plated (Type ast)
 
+-- | Fallback instance for 'Type' ast' using GPlate.
+-- This relies on all components of the AST having 'Generic' instances,
+-- which is enforced by the type system for AST types.
 instance
     forall a (ast :: a).
     GPlate (Type' ast) (Type' ast) =>
