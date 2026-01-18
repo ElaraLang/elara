@@ -23,6 +23,7 @@
 
   - [Effects](./compiler/internals/architecture/effects.md)
   - [Queries](./compiler/internals/architecture/queries.md)
+  - [Primitives](./compiler/internals/architecture/primitives.md)
 
 - [Stages](./compiler/internals/stages.md)
   - [Lexing](./compiler/internals/stages/lexing.md)
