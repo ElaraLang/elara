@@ -1,30 +1,55 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Maranget-style pattern match compilation using a compact pattern matrix.
+= Pattern Match Compilation (Maranget's Algorithm)
 
-This module normalises surface patterns into 'NPat' and compiles a matrix
-of such patterns into Core case expressions. We store the rectangular grid
-of patterns in a 'Data.Matrix.Matrix', while per-row metadata (RHS payloads
-and accumulated variable bindings) are kept in parallel lists aligned by
-row index.
+This module compiles high-level pattern matching
+into low-level Core @match@ expressions which only contain a single branch at once.
 
-Key points:
-- We always discriminate on column 0 (the head scrutinee) and recursively
-  refine the matrix.
-- Variable patterns behave as wildcards for decision making, but we record
-  their binds and emit them as nested non-recursive Core lets at leaves.
-- Constructor alternatives extend the scrutinee list with freshly bound
-  field variables and push their argument patterns into the matrix.
+== The Pattern Matrix
+We treat the match expressions as a matrix.
+Given (in pseudo-Elara):
+@
+match x, y with
+    Just a, Right b -> 1
+    _, Left c -> 2
+@
+
+The initial matrix is constructed as:
+@
+       Col 0      Col 1
+Row 1: [ Just a ] [ Right b ] => Body 1
+Row 2: [ _      ] [ Left c  ] => Body 2
+@
+with scrutinees: @[x, y]@
+
+== The Algorithm Step
+We look at **Column 0** (the head) to decide what to do with variable @x@.
+1. We see a constructor @Just@. We must generate a @match x with ...@.
+2. We create a branch for @Just@. Inside this branch, @x@ is unwrapped into @payload@.
+   We transform the matrix for this branch ("Specialization"):
+   - Row 1 matches @Just a@. The pattern @Just a@ becomes @a@.
+   - Row 2 is a wildcard @_@. It matches @Just@ too! We expand @_@ into @wildcard_payload@.
+
+   New Matrix for "Just" branch:
+   @
+          New Col    Old Col 1
+   Row 1: [ a      ] [ Right b ]
+   Row 2: [ _      ] [ Left c  ]
+   @
+   New Scrutinees: [payload, y]
+
+3. We recurse until the matrix is empty.
 -}
 module Elara.ToCore.Match (buildMatrix1, compileMatrix) where
 
 import Data.Map.Strict qualified as M
 import Data.Matrix qualified as Mat
+import Data.Text (toLower)
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
 import Elara.AST.Generic.Types qualified as AST
-import Elara.AST.Name (NameLike (..), Qualified (..), TypeName, VarName)
+import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Region
 import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
@@ -36,70 +61,52 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging
 
-{- Our initial step in compiling pattern matching is to construct a pattern matrix
-of the patterns used in a match
-For example, consider the following code:
-@
-f l = match l with
-    (Nil, _) -> x
-    (_, Nil) -> y
-    (Cons x xs, Cons y ys) -> z
-@
-
-The ultimate goal with this desugaring process is to turn all pattern matching into simple matches upon either:
-- A single value
-- A constructor with its values bound as variables
-
-For example, the above code would be desugared into something like:
-@
-f l = match l with
-    (x, y) -> match x with
-        Nil -> x
-        _ -> match y with
-            Nil -> y
-            _ -> z
-@
-
-however this is difficult to do in a single pass.
-
-Basic pattern-matrix construction
-
-We define a small normalized pattern language (NPat) that abstracts over the
-surface TypedPattern forms but keeps exactly the information a matrix needs:
-
-- Wildcards/variables as default-able cases (we record var names for later binds)
-- Literals as equality-discriminated heads
-- Constructors with their subpatterns (still in NPat form). We keep the
-  constructor as a qualified Text (no DataCon resolution here) to avoid
-  coupling and cycles; resolution can happen later when building Core.
-
-For now we build a single-column matrix since `match` in the current AST
-matches one scrutinee. Product (tuple/record) expansion can be layered on later
-by transforming the first column.
--}
-
--- | Normalized pattern
+-- | Normalized pattern representation for the matrix
 data NPat
-    = PWild
-    | PVar (Unique VarName) -- variable bind; treated like wildcard for the decision tree
-    | PLit Core.Literal -- literal match
-    | PCon (Qualified TypeName) [NPat] -- constructor with subpatterns
+    = -- | wildcard pattern
+      PWild
+    | -- | variable pattern that behaves like a wildcard but binds to a name
+      PVar (Unique VarName)
+    | -- | Literal pattern
+      PLit Core.Literal
+    | -- | constructor with subpatterns
+      PCon (Qualified TypeName) [NPat]
     deriving (Show, Eq, Generic)
 
 instance Pretty NPat
 
-{- | Pattern matrix backed by 'Data.Matrix'. Invariant:
- nrows pmPats == length pmRhs == length pmBinds
+{- | The Pattern Matrix, parametrized over the type of the RHS expressions.
+Invariant: @nrows pmPats == length pmRhs == length pmBinds@
 -}
 data PMatrix a = PMatrix
     { pmPats :: Mat.Matrix NPat
+    {- ^ The grid of patterns.
+    Rows correspond to match alternatives, columns to scrutinees.
+    -}
     , pmRhs :: [a]
+    {- ^ The right hand side (body) associated with each row.
+    when a row is fully matched (i.e. all the columns are cleared), we emit this expression.
+    -}
     , pmBinds :: [[(Unique VarName, Core.Var)]]
+    {- ^ Accumulated variable bindings for each row.
+    As we traverse the matrix we encounter 'PVar' patterns which bind variables.
+    Rather than immediately emitting @let@ bindings, we accumulate them here.
+    If row N ends up matching, we emit @'pmRhs' !! N@ wrapped in @let@ bindings for all @'pmBinds' !! N@.
+    -}
     }
     deriving (Show, Eq)
 
-{- | Build a single-column pattern matrix from branches (pattern, rhs).
-The RHS is left polymorphic so callers can carry either TypedExpr or CoreExpr.
+{- | A row view of the matrix used for convenient iteration.
+Tuple contains:
+The list of patterns in this row (corresponding to the current columns)
+The RHS for this row
+The accumulated bindings for this row
+-}
+type RichRow a = ([NPat], a, [(Unique VarName, Core.Var)])
+
+{- | Initialise a matrix from a list of match arms.
+This matrix typically starts with a single column (the top-level pattern matches).
+As we decompose constructors, the matrix will grow wider.
 -}
 buildMatrix1 :: [(TypedPattern, a)] -> PMatrix a
 buildMatrix1 branches =
@@ -123,230 +130,283 @@ toNPat (AST.Pattern (Located _ pat, _t)) = go pat
         AST.ConstructorPattern (Located _ qn) ps ->
             PCon qn (map toNPat ps)
 
--- No explicit partition/drop helpers are needed with the matrix-based layout.
-
-{-
-  Minimal compiler from a PMatrix to Core.
-  - Single scrutinee to start; after matching a constructor with n fields we
-    extend the scrutinee list with the freshly-bound field variables before the
-    remaining columns. We always discriminate on column 0.
-  - Variable patterns are currently treated as wildcards; binding them to user
-    names can be layered in later by threading a bind-env per row and emitting
-    Let at leaves.
--}
-
+-- | A function that resolves a constructor name to its DataCon.
 type ConResolver m = Qualified TypeName -> m Core.DataCon
 
+-- | A function that generates a fresh local variable given a base name and type.
 type FreshLocal m = T.Text -> Core.Type -> m Core.Var
 
-{- | Compile a pattern matrix to a Core expression. Assumes the first column
-corresponds to the head scrutinee in the provided list of variables.
+{- | Compile a pattern matrix to a Core expression.
+
+Assumes the first column of the matrix corresponds to the first variable in the 'scruts' list.
+This function is recursive:
+1. If the matrix is empty (width 0), we are done, so we emit the RHS of the first valid row.
+2. If we have patterns but no scrutinees, we emit a unit value (which indicates a non-exhaustive match).
+3. Otherwise, we inspect the first column ('processHeadColumn') to decide how to branch, and recurse.
 -}
-compileMatrix :: StructuredDebug :> r => ConResolver (Eff r) -> FreshLocal (Eff r) -> [Core.Var] -> PMatrix Core.CoreExpr -> Eff r Core.CoreExpr
-compileMatrix resolveCon fresh scruts pm =
-    if Mat.ncols pm.pmPats == 0
-        then case (pm.pmRhs, pm.pmBinds) of
+compileMatrix ::
+    StructuredDebug :> r =>
+    -- | Function to resolve constructor names
+    ConResolver (Eff r) ->
+    -- | Function to generate fresh local variables
+    FreshLocal (Eff r) ->
+    -- | The scrutinee variables
+    [Core.Var] ->
+    -- | The pattern matrix
+    PMatrix Core.CoreExpr ->
+    -- | The compiled Core expression
+    Eff r Core.CoreExpr
+compileMatrix resolveCon fresh scruts pm
+    | Mat.ncols pm.pmPats == 0 -- base case: no more columns, so all patterns matched
+        =
+        case (pm.pmRhs, pm.pmBinds) of -- pick the first row that matches
             (rhs0 : _, binds0 : _) -> pure (emitBinds binds0 rhs0)
-            _ -> pure (Core.Lit Core.Unit)
-        else stepOnColumn0 resolveCon fresh scruts pm
+            _ -> pure (Core.Lit Core.Unit) -- this implies the match is not exhaustive. should probably error?
+            -- No scrutinees left (shouldn't happen if cols > 0).
+    | null scruts = pure (Core.Lit Core.Unit)
+    -- Recursively decompose the matrix based on Column 0.
+    | otherwise = processHeadColumn resolveCon fresh scruts pm
 
-stepOnColumn0 :: StructuredDebug :> r => ConResolver (Eff r) -> FreshLocal (Eff r) -> [Core.Var] -> PMatrix Core.CoreExpr -> Eff r Core.CoreExpr
-stepOnColumn0 resolveCon fresh scruts pm = do
-    case scruts of
-        [] ->
-            -- No scrutinee left. If matrix is solved, emit first row; else Unit.
-            if Mat.ncols pm.pmPats == 0
-                then case (pm.pmRhs, pm.pmBinds) of
-                    (rhs0 : _, binds0 : _) -> pure (emitBinds binds0 rhs0)
-                    _ -> pure (Core.Lit Core.Unit)
-                else pure (Core.Lit Core.Unit)
-        s0 : restScruts -> do
-            let rows = Mat.nrows pm.pmPats
-                cols = Mat.ncols pm.pmPats
-                rowInfo i =
-                    if cols == 0
-                        then Nothing
-                        else
-                            let p0 = Mat.getElem i 1 pm.pmPats
-                                ps = [Mat.getElem i j pm.pmPats | j <- [2 .. cols]]
-                             in Just (p0, ps)
-                foldPart ::
-                    Int ->
-                    ( Map (Qualified TypeName) [(Int, [NPat], [NPat])]
-                    , Map Core.Literal [(Int, [NPat])]
-                    , [(Int, NPat, [NPat])]
-                    ) ->
-                    ( Map (Qualified TypeName) [(Int, [NPat], [NPat])]
-                    , Map Core.Literal [(Int, [NPat])]
-                    , [(Int, NPat, [NPat])]
-                    )
-                foldPart i (consM, litM, defs) =
-                    case rowInfo i of
-                        Nothing -> (consM, litM, defs)
-                        Just (p0, ps) -> case p0 of
-                            PCon qn args ->
-                                let entry = (i, args, ps)
-                                 in (M.insertWith (++) qn [entry] consM, litM, defs)
-                            PLit l ->
-                                let entry = (i, ps)
-                                 in (consM, M.insertWith (++) l [entry] litM, defs)
-                            PWild -> (consM, litM, (i, p0, ps) : defs)
-                            PVar _ -> (consM, litM, (i, p0, ps) : defs)
-                (consM, litM, defs) = foldr foldPart (M.empty, M.empty, []) [1 .. rows]
-
-            if not (M.null consM)
-                then do
-                    conAlts <- forM (M.toList consM) $ \(qn, matched) -> do
-                        debug $ "Compiling constructor alt for: " <> pretty (qn, matched)
-                        dc <- resolveCon qn
-                        debug $ "dc: " <> pretty dc
-                        debug $ "varType: " <> pretty (show (Core.varType s0))
-                        let argTys = Core.conTyArgs (Core.varType s0)
-                        let dcArgTys = Core.functionTypeArgs (Core.dataConType dc)
-
-                        let realArgTys =
-                                -- we construct the "real" binders as
-                                take
-                                    (length dcArgTys) -- no more than the amount the constructor has
-                                    (argTys ++ drop (length argTys) dcArgTys) -- then the provided ones from the varType, plus any extras from the constructor to make up the exact length of the constructor
-                        debug $ "argTys: " <> pretty argTys
-                        debug $ "realArgTys: " <> pretty realArgTys
-                        xs <- forM (zip [0 ..] realArgTys) $ \(i, ty) -> fresh ("p" <> show i) ty
-                        let n = length xs
-                            transformMatched (i, args, tailPs) =
-                                let (args', addBinds) = bindImmediate xs args
-                                    newRow = args' ++ tailPs
-                                    rhsRow = at1 i pm.pmRhs
-                                    bindsRow = addBinds ++ at1 i pm.pmBinds
-                                 in (newRow, rhsRow, bindsRow)
-                            transformDefault (i, headPat, tailPs) =
-                                let pad = replicate n PWild
-                                    newRow = pad ++ tailPs
-                                    rhsRow = at1 i pm.pmRhs
-                                    bindsRow = case headPat of
-                                        PVar u -> (u, s0) : at1 i pm.pmBinds
-                                        _ -> at1 i pm.pmBinds
-                                 in (newRow, rhsRow, bindsRow)
-                            rowsForAlt = map transformMatched matched ++ map transformDefault defs
-                        body <-
-                            if null rowsForAlt
-                                then pure (Core.Lit Core.Unit)
-                                else do
-                                    let newPats = Mat.fromLists (map (\(r, _, _) -> r) rowsForAlt)
-                                        newRhs = map (\(_, r, _) -> r) rowsForAlt
-                                        newBs = map (\(_, _, b) -> b) rowsForAlt
-                                    compileMatrix resolveCon fresh (xs ++ restScruts) PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
-                        pure (Core.DataAlt dc, xs, body)
-                    defAlt <- compileDefault resolveCon fresh s0 restScruts pm defs
-                    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybeToList defAlt)
-                else
-                    if not (M.null litM)
-                        then do
-                            litAlts <- forM (M.toList litM) $ \(l, matched) -> do
-                                let transformMatched (i, tailPs) =
-                                        let rhsRow = at1 i pm.pmRhs
-                                            bindsRow = at1 i pm.pmBinds
-                                         in (tailPs, rhsRow, bindsRow)
-                                    transformDefault (i, headPat, tailPs) =
-                                        let rhsRow = at1 i pm.pmRhs
-                                            bindsRow = case headPat of
-                                                PVar u -> (u, s0) : at1 i pm.pmBinds
-                                                _ -> at1 i pm.pmBinds
-                                         in (tailPs, rhsRow, bindsRow)
-                                    rowsForAlt = map transformMatched matched ++ map transformDefault defs
-                                body <-
-                                    if null rowsForAlt
-                                        then pure (Core.Lit Core.Unit)
-                                        else do
-                                            let newPats = Mat.fromLists (map (\(r, _, _) -> r) rowsForAlt)
-                                                newRhs = map (\(_, r, _) -> r) rowsForAlt
-                                                newBs = map (\(_, _, b) -> b) rowsForAlt
-                                            compileMatrix resolveCon fresh restScruts PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
-                                pure (Core.LitAlt l, [], body)
-                            defAlt <- compileDefault resolveCon fresh s0 restScruts pm defs
-                            pure $ Core.Match (Core.Var s0) (Just s0) (litAlts ++ maybeToList defAlt)
-                        else do
-                            -- Only defaults (wild/var). Drop head and continue.
-                            let transformDefault (i, headPat, tailPs) =
-                                    let rhsRow = at1 i pm.pmRhs
-                                        bindsRow = case headPat of
-                                            PVar u -> (u, s0) : at1 i pm.pmBinds
-                                            _ -> at1 i pm.pmBinds
-                                     in (tailPs, rhsRow, bindsRow)
-                                rowsOnlyDef = map transformDefault defs
-                            if null rowsOnlyDef
-                                then pure (Core.Lit Core.Unit)
-                                else do
-                                    let newPats = Mat.fromLists (map (\(r, _, _) -> r) rowsOnlyDef)
-                                        newRhs = map (\(_, r, _) -> r) rowsOnlyDef
-                                        newBs = map (\(_, _, b) -> b) rowsOnlyDef
-                                    compileMatrix resolveCon fresh restScruts PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
-  where
-    -- Bind immediate constructor-argument PVars to the provided xs.
-    bindImmediate :: [Core.Var] -> [NPat] -> ([NPat], [(Unique VarName, Core.Var)])
-    bindImmediate xs args =
-        let step (x, p) = case p of
-                PVar u -> (PWild, Just (u, x))
-                other -> (other, Nothing)
-            (args', newBinds) = unzip (zipWith (curry step) xs args)
-         in (args', catMaybes newBinds)
-
-{- | Build a DEFAULT alternative when default rows exist.
- 'defs' contains triples of (rowIndex, headPat, tailPatterns)
+{- | The core logic: Examine Column 0 and determine the branching strategy.
+We extract Column 0 and split the matrix rows into groups:
+1. Rows matching specific Constructors.
+2. Rows matching specific Literals.
+3. "Default" rows (Wildcards/Vars) that match everything.
 -}
-compileDefault ::
+processHeadColumn ::
+    StructuredDebug :> r =>
+    -- | Function to resolve constructor names
+    ConResolver (Eff r) ->
+    -- | Function to generate fresh local variables
+    FreshLocal (Eff r) ->
+    -- | The scrutinee variables
+    [Core.Var] ->
+    -- | The pattern matrix
+    PMatrix Core.CoreExpr ->
+    -- | The compiled Core expression
+    Eff r Core.CoreExpr
+processHeadColumn resolveCon fresh (s0 : restScruts) pm = do
+    -- Explode Matrix into RichRows for safe iteration without index partiality
+    let rows :: [RichRow Core.CoreExpr] = zip3 (Mat.toLists pm.pmPats) pm.pmRhs pm.pmBinds
+
+    -- partition the rows based on the head pattern in each row
+    -- conMap = mapping constructors to the rows that match them
+    -- litMap = mapping literals to the rows that match them
+    -- defaults = rows that are wildcards/vars at head
+    let (conMap, litMap, defaults) = partitionRows rows
+
+    if not (M.null conMap)
+        then -- we have some constructor cases to compile, so we have to emit a match over s0
+            compileConstructorCases resolveCon fresh s0 restScruts conMap defaults
+        else
+            if not (M.null litMap)
+                then -- we have some literal cases to compile, so we have to emit a match over s0
+                    compileLiteralCases resolveCon fresh s0 restScruts litMap defaults
+                else do
+                    -- the only remaining cases are defaults (wildcards/vars)
+                    -- therefore we don't need any branching, and we can just "consume" s0
+                    -- we effectively treat s0 as matched by all rows, and remove it from the scrutinee list
+                    let newRows = map (expandDefaultRow 0 s0) defaults
+                    compileMatrix resolveCon fresh restScruts (rebuildMatrix newRows)
+processHeadColumn _ _ [] _ = error "processHeadColumn: No scrutinee available"
+
+{- | Compile a match on Constructors (e.g. @match x with { Just y -> ... } @).
+
+For every constructor @C@ that appears in the column:
+1. Generate a @Case C@ branch.
+2. Inside that branch, @x@ is unwrapped into fields @f1, f2...@.
+3. Construct a new sub-matrix for this branch:
+   - For rows matching @C f1 f2@, we replace @C f1 f2@ with @f1, f2@.
+   - For default rows @_@, we expand @_@ into @_ _@ (one wild for each field).
+4. Recurse on the sub-matrix with new scrutinees @[f1, f2, ...rest]@.
+-}
+compileConstructorCases ::
+    StructuredDebug :> r =>
+    -- | Function to resolve constructor names
+    ConResolver (Eff r) ->
+    -- | Function to generate fresh local variables
+    FreshLocal (Eff r) ->
+    -- | The scrutinee variable for this column, e.g. @x@
+    Core.Var ->
+    -- | The remaining scrutinee variables that correspond to later columns
+    [Core.Var] ->
+    -- | Map of constructor names to the rows that match them
+    M.Map (Qualified TypeName) [RichRow Core.CoreExpr] ->
+    -- | The default rows (wildcards/vars)
+    [RichRow Core.CoreExpr] ->
+    Eff r Core.CoreExpr
+compileConstructorCases resolveCon fresh s0 restScruts conMap defaults = do
+    conAlts <- forM (M.toList conMap) $ \(conName, matchedRows) -> do
+        dc <- resolveCon conName
+
+        -- first we need to figure out the types of the constructor fields
+        -- to determine the types of the fields being unwrapped
+        -- as DataCon can be polymorphic, we have to perform type substitution based on the scrutinee type
+
+        -- the type of the scrutinee variable
+        let scrutType = Core.varType s0
+        -- the arguments that the scrutinee's type constructor was applied to
+        let scrutTypeArgs = Core.conTyArgs scrutType
+        -- then we split the DataCon type into its forall'd type variables and the core type
+        let (dcTyVars, dcTau) = Core.splitForAlls (Core.dataConType dc)
+
+        -- now we create a substitution from the DataCon's type variables to the scrutinee's type arguments
+        let subst = M.fromList (zip dcTyVars scrutTypeArgs)
+        -- and apply that substitution to each argument type of the DataCon
+        let dcArgTysRaw = Core.functionTypeArgs dcTau
+        -- this gives us the real types of the constructor fields in this context
+        let realArgTys = map (Core.substType subst) dcArgTysRaw
+
+        -- now we can create a fresh local variable for each of the constructor fields
+        fieldVars <- forM (zip [0 ..] realArgTys) $ do
+            let namePrefix = case conName of
+                    Qualified (TypeName t) _ -> toLower t <> "_field_"
+            \(i, ty) -> fresh (namePrefix <> show i) ty
+
+        -- build the new matrix for this constructor branch
+        let expandedDefaults = map (expandDefaultRow (length fieldVars) s0) defaults
+        let allRows = matchedRows <> expandedDefaults
+
+        -- recurse on the new matrix with the new scrutinees (the constructor fields + the remaining scrutinees)
+        body <- compileMatrix resolveCon fresh (fieldVars <> restScruts) (rebuildMatrix allRows)
+        pure (Core.DataAlt dc, fieldVars, body)
+
+    defAlt <- compileDefaultBranch resolveCon fresh s0 restScruts defaults
+    pure $ Core.Match (Core.Var s0) (Just s0) (conAlts ++ maybeToList defAlt)
+
+-- | Compile a match on Literals (e.g. @match x with { 1 -> ... } @).
+compileLiteralCases ::
     StructuredDebug :> r =>
     ConResolver (Eff r) ->
     FreshLocal (Eff r) ->
+    -- | The scrutinee variable for this column, e.g. @x@
     Core.Var ->
+    -- | The remaining scrutinee variables that correspond to later columns
     [Core.Var] ->
-    PMatrix Core.CoreExpr ->
-    [(Int, NPat, [NPat])] ->
-    (Eff r) (Maybe Core.CoreAlt)
-compileDefault resolveCon fresh s0 restScruts pm defs =
-    case defs of
-        [] -> pure Nothing
-        ds -> do
-            let rows' =
-                    [ ( tailPs
-                      , at1 i pm.pmRhs
-                      , case headPat of
-                            PVar u -> (u, s0) : at1 i pm.pmBinds
-                            _ -> at1 i pm.pmBinds
-                      )
-                    | (i, headPat, tailPs) <- ds
-                    ]
-                newPats = Mat.fromLists (map (\(r, _, _) -> r) rows')
-                newRhs = map (\(_, r, _) -> r) rows'
-                newBs = map (\(_, _, b) -> b) rows'
-            body <-
-                if Mat.nrows newPats == 0
-                    then pure (Core.Lit Core.Unit)
-                    else compileMatrix resolveCon fresh restScruts PMatrix{pmPats = newPats, pmRhs = newRhs, pmBinds = newBs}
-            pure (Just (Core.DEFAULT, [], body))
+    -- | Map of literals to the rows that match them
+    M.Map Core.Literal [RichRow Core.CoreExpr] ->
+    -- | The default rows (wildcards/vars)
+    [RichRow Core.CoreExpr] ->
+    Eff r Core.CoreExpr
+compileLiteralCases resolveCon fresh s0 restScruts litMap defaults = do
+    litAlts <- forM (M.toList litMap) $ \(lit, matchedRows) -> do
+        -- literals have no fields to unwrap, so we just build the new matrix directly
+        -- Matched rows have head column removed.
+        -- Default rows need head column removed (arity 0 expansion).
+        let expandedDefaults = map (expandDefaultRow 0 s0) defaults
+        let allRows = matchedRows <> expandedDefaults
 
--- Emit nested non-recursive lets for collected variable bindings.
-emitBinds :: [(Unique VarName, Core.Var)] -> Core.CoreExpr -> Core.CoreExpr
+        body <- compileMatrix resolveCon fresh restScruts (rebuildMatrix allRows)
+        pure (Core.LitAlt lit, [], body)
+
+    defAlt <- compileDefaultBranch resolveCon fresh s0 restScruts defaults
+    pure $ Core.Match (Core.Var s0) (Just s0) (litAlts ++ maybeToList defAlt)
+
+{- | Compile the default branch for a @Match@ expression.
+This handles rows that didn't match any specific Constructor/Literal in the other branches,
+and generates a 'Core.DEFAULT' branch.
+If there are no default rows, we return 'Nothing'.
+-}
+compileDefaultBranch ::
+    StructuredDebug :> r =>
+    ConResolver (Eff r) ->
+    FreshLocal (Eff r) ->
+    -- | The scrutinee variable for this column, e.g. @x@
+    Core.Var ->
+    -- | The remaining scrutinee variables that correspond to later columns
+    [Core.Var] ->
+    -- | The default rows (wildcards/vars)
+    [RichRow Core.CoreExpr] ->
+    Eff r (Maybe Core.CoreAlt)
+compileDefaultBranch _ _ _ _ [] = pure Nothing
+compileDefaultBranch resolveCon fresh s0 restScruts defaults = do
+    -- Strip the default pattern from head
+    -- If it was a PVar, record the binding to s0.
+    let newRows = map (expandDefaultRow 0 s0) defaults
+    body <- compileMatrix resolveCon fresh restScruts (rebuildMatrix newRows)
+    pure (Just (Core.DEFAULT, [], body))
+
+-- | Converts a list of 'RichRows' back into the 'PMatrix' structure required for recursion
+rebuildMatrix :: [RichRow a] -> PMatrix a
+rebuildMatrix rows =
+    let (pats, rhs, binds) = unzip3 rows
+     in PMatrix
+            { pmPats = Mat.fromLists pats
+            , pmRhs = rhs
+            , pmBinds = binds
+            }
+
+-- | Partition a list of 'RichRow's into constructor cases, literal cases, and default cases.
+partitionRows ::
+    -- | Input rows
+    [RichRow a] ->
+    ( M.Map (Qualified TypeName) [RichRow a]
+    , -- \^ Constructor cases
+      M.Map Core.Literal [RichRow a]
+    , -- \^ Literal cases
+      [RichRow a]
+    )
+-- \^ Default cases
+
+partitionRows = foldr go (M.empty, M.empty, [])
+  where
+    go row@(pats, rhs, binds) (cons, lits, defs) =
+        case pats of
+            [] -> (cons, lits, defs) -- Should be unreachable if cols > 0
+            (headPattern : remainingPatterns) -> case headPattern of
+                PCon name args ->
+                    -- constructor pattern
+                    -- expand the subpatterns into the row
+                    -- the new column 'PCon' gets replaced by its subpatterns 'args'
+                    let newRow = (args <> remainingPatterns, rhs, binds)
+                     in (M.insertWith (<>) name [newRow] cons, lits, defs)
+                PLit l ->
+                    -- literal pattern
+                    -- strip the literal
+                    let newRow = (remainingPatterns, rhs, binds)
+                     in (cons, M.insertWith (<>) l [newRow] lits, defs)
+                PWild -> (cons, lits, row : defs) -- keep the row as-is so that the default branch can expand it later
+                PVar _ -> (cons, lits, row : defs)
+
+{- | Takes a Default row and adapts it to match a Constructor branch.
+
+1. Records the binding if the head was 'PVar' (binds @x = s0@).
+2. Expands the head into @n@ wildcards to match the arity of the constructor.
+   e.g. if matching 'Just' (arity 1), `_` becomes `_` (matching the payload).
+   e.g. if matching 'Either' (arity 2), `_` becomes `_ _`.
+-}
+expandDefaultRow ::
+    Int ->
+    -- | The scrutinee variable being matched against
+    Core.Var ->
+    -- | The input row
+    RichRow a ->
+    RichRow a
+expandDefaultRow numFields s0 (pats, rhs, binds) =
+    case pats of
+        [] -> ([], rhs, binds)
+        (headPat : tailPats) ->
+            let newHead = replicate numFields PWild
+                newBinds = case headPat of
+                    PVar u -> (u, s0) : binds
+                    _ -> binds
+             in (newHead <> tailPats, rhs, newBinds)
+
+{- | Emit let-bindings around a Core expression.
+Bindings are emitted in reverse order (first in list is innermost let).
+-}
+emitBinds ::
+    -- | bindings to emit
+    [(Unique VarName, Core.Var)] ->
+    -- | body expression
+    Core.CoreExpr ->
+    -- | resulting expression with lets
+    Core.CoreExpr
 emitBinds [] body = body
 emitBinds bs body =
-    let mkBinder :: (Unique VarName, Core.Var) -> Maybe Core.Var
-        mkBinder (u, v) = case v of
-            Core.Id _ ty _ ->
-                let uqText = fmap nameText u
-                    b :: UnlocatedVarRef Text
-                    b = Local uqText
-                 in Just (Core.Id b ty Nothing)
-            Core.TyVar _ -> Nothing
-        mkLet (b, v) = Core.Let (G.NonRecursive (b, Core.Var v))
-        pairs = [(b, v) | p <- bs, let (_, v) = p, Just b <- [mkBinder p]]
-     in foldr mkLet body pairs
-
--- 1-based indexing helper aligned with Data.Matrix row indices.
-at1 :: Int -> [a] -> a
-at1 i xs = case drop (i - 1) xs of
-    (y : _) -> y
-    [] -> error "PMatrix row index out of bounds"
-
-coreConstructorTypeArgs = \case
-    Core.ConTy (Core.TyCon name (Core.TyADT adts)) -> []
-    _ -> []
+    let mkLet ((u, v), b) =
+            let uqText = fmap nameText u
+                varRef = Local uqText :: UnlocatedVarRef T.Text
+                binder = Core.Id varRef (Core.varType v) Nothing
+             in Core.Let (G.NonRecursive (binder, Core.Var v)) b
+     in foldr (curry mkLet) body bs

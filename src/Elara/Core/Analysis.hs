@@ -1,6 +1,7 @@
 module Elara.Core.Analysis where
 
 import Data.List (maximum)
+import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
 import Elara.Core qualified as Core
@@ -124,3 +125,28 @@ freeTypeVars (Core.ConTy _) = Set.empty
 freeTypeVars (Core.FuncTy a b) = freeTypeVars a <> freeTypeVars b
 freeTypeVars (Core.ForAllTy tv t) = Set.delete tv (freeTypeVars t)
 freeTypeVars (Core.AppTy a b) = freeTypeVars a <> freeTypeVars b
+
+{- | Splits a @forall@ type into its bound type variables and the body type.
+i.e. @forall a b. T@ becomes @([a, b], T)@
+-}
+splitForAlls :: Core.Type -> ([Core.TypeVariable], Core.Type)
+splitForAlls (Core.ForAllTy tv t) =
+    let (tvs, body) = splitForAlls t
+     in (tv : tvs, body)
+splitForAlls t = ([], t)
+
+-- | Apply a simple type substitution to a type
+substType ::
+    Map.Map Core.TypeVariable Core.Type -> -- The substitution map
+    Core.Type ->
+    Core.Type
+substType subst t = case t of
+    Core.TyVarTy tv -> Map.findWithDefault t tv subst
+    Core.ConTy _ -> t
+    Core.FuncTy a b -> Core.FuncTy (substType subst a) (substType subst b)
+    Core.AppTy a b -> Core.AppTy (substType subst a) (substType subst b)
+    Core.ForAllTy tv body ->
+        -- if tv is in subst, remove it from subst for the body
+        -- to avoid replacing bound type variables
+        let subst' = Map.delete tv subst
+         in Core.ForAllTy tv (substType subst' body)
