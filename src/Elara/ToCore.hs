@@ -437,7 +437,7 @@ desugarMatch :: HasCallStack => InnerToCoreC r => TypedExpr -> [(TypedPattern, T
 desugarMatch e pats = do
     -- Scrutinee to Core and bind it to a fresh local, as Core.Match expects.
     e' <- toCore e
-    debug $ "e': " <> pretty e'
+    logDebug $ "e': " <> pretty e'
     s0 <- mkBindName e
 
     -- Compile RHSs first; build a 1-column matrix from (pattern, rhsCore).
@@ -445,12 +445,12 @@ desugarMatch e pats = do
         rhs' <- toCore rhs
         pure (p, rhs')
 
-    debug $ "Branches: " <> pretty branches
+    logDebug $ "Branches: " <> pretty branches
 
     let matrix = Match.buildMatrix1 branches
 
     -- Fresh locals used for constructor field binders within the matrix compiler.
-    let freshLocal base ty = debugWith ("freshLocal: " <> pretty (base, ty)) $ do
+    let freshLocal base ty = logDebugWith ("freshLocal: " <> pretty (base, ty)) $ do
             u <- makeUnique base
             pure (Core.Id (Local u) ty Nothing)
 

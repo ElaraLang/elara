@@ -24,7 +24,7 @@ import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Elara.Logging (StructuredDebug)
+import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim.Core
 import TODO (todo)
 
@@ -34,6 +34,7 @@ data TypeCheckError
         { expected :: Core.Type
         , actual :: Core.Type
         , source :: (CoreExpr, CoreExpr)
+        -- ^ (the expression that had the expected type, and the expression that had the actual type)
         }
     | CoreTypeMismatchIncompleteExpected
         { incompleteExpected :: Text
@@ -115,9 +116,9 @@ typeCheckC ::
     ANF.CExpr Var -> Eff r Core.Type
 typeCheckC (ANF.App f x) = do
     fType <- typeCheckA f
-    -- debug $ "fType: " <> pretty fType
+    logDebug $ "fType: " <> pretty fType
     xType <- typeCheckA x
-    -- debug $ "xType: " <> pretty xType
+    logDebug $ "xType: " <> pretty xType
     case fType of
         Core.FuncTy argType retType -> do
             if generalize argType `equalUnderSubst` generalize xType
@@ -125,43 +126,45 @@ typeCheckC (ANF.App f x) = do
                 else throwError $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x)
         other -> throwError $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
-typeCheckC match@(ANF.Match e of' alts) = scoped $ do
-    eType <- typeCheckA e
+typeCheckC match@(ANF.Match scrutinee of' alts) = scoped $ do
+    scrutineeType <- typeCheckA scrutinee -- the type of the scrutinee
+    logDebug $ "scrutineeType: " <> pretty scrutineeType
     whenJust of' $ \v -> modify (addToScope v)
-    altTypes <- for alts $ \(con, bs, e) -> do
+    altTypes <- for alts $ \(con, bs, altExpr) -> do
         for_ bs $ \v -> modify (addToScope v)
         case con of
             Core.DEFAULT -> do
-                typeCheck e
+                typeCheck altExpr
             Core.LitAlt lit -> do
                 let litType = typeCheckLit lit
-                eType' <- typeCheck e
-                if litType == eType
-                    then pure eType'
-                    else throwError $ CoreTypeMismatch litType eType (fromANFCExpr match, fromANF e)
+                altExprType <- typeCheck altExpr
+                if litType == scrutineeType
+                    then pure altExprType
+                    else throwError $ CoreTypeMismatch litType scrutineeType (fromANFCExpr match, fromANF altExpr)
             Core.DataAlt con' -> do
                 let conType = Core.functionTypeResult con'.dataConType
-                -- debug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
+                logDebug $ "conType: " <> pretty conType <+> parens (pretty $ generalize con'.dataConType)
                 when (length bs /= length (Core.functionTypeArgs con'.dataConType)) $ do
                     -- debug $ "bs: " <> pretty bs
                     -- debug $ "functionTypeArgs: " <> pretty (Core.functionTypeArgs con'.dataConType)
                     throwError $
                         PatternMatchMissingBinders con con'.dataConType bs (fromANFCExpr match)
-                eType' <- typeCheck e
+                altExprType <- typeCheck altExpr
                 -- TODO more robust type checking here with the binders and stuff
-                -- debug $ "eType': " <> pretty eType'
-                let generalizedEType = generalize eType
+                logDebug $ "altExprType: " <> pretty altExprType
+                let generalizedScrutineeType = generalize scrutineeType
                 let generalizedConType = generalize conType
-                -- debug $ "generalized:" <+> pretty generalizedEType <+> "and" <+> pretty generalizedConType
-                -- debug $ "equal?" <+> pretty (generalizedEType `equalUnderSubst` generalizedConType)
-                if generalizedEType `equalUnderSubst` generalizedConType
-                    then pure eType'
+                logDebug $ "generalized:" <+> pretty generalizedScrutineeType <+> "and" <+> pretty generalizedConType
+                logDebug $ "equal?" <+> pretty (generalizedScrutineeType `equalUnderSubst` generalizedConType)
+                -- the type of the scrutinee must match the type of the constructor
+                if generalizedScrutineeType `equalUnderSubst` generalizedConType
+                    then pure altExprType
                     else
                         throwError $
                             CoreTypeMismatch
-                                (generalize conType)
-                                (generalize eType)
-                                (fromANF e, fromANF e)
+                                generalizedConType
+                                generalizedScrutineeType
+                                (fromANFAtom scrutinee, fromANF altExpr)
 
     case altTypes of
         [] -> error "empty match? how do we handle this"
