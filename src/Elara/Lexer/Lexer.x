@@ -114,6 +114,7 @@ tokens :-
       alias                  { simpleTok TokenAlias }
       module                 { simpleTok TokenModule } 
       import                 { simpleTok TokenImport }
+      qualified              { simpleTok TokenQualified }
 
       -- Symbols
       \;                     { simpleTok TokenSemicolon }

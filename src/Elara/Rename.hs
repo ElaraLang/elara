@@ -190,7 +190,12 @@ rename m = do
     renameImport' :: Rename r => Import' Desugared -> Eff r (Import' Renamed)
     renameImport' imp = do
         exposing' <- renameExposing (imp ^. field' @"importing" % unlocated) (imp ^. field' @"exposing")
-        pure $ Import' (imp ^. field' @"importing") (imp ^. field' @"as") (imp ^. field' @"qualified") exposing'
+        pure $
+            Import'
+                (imp ^. field' @"importing")
+                (imp ^. field' @"as")
+                (imp ^. field' @"qualified")
+                exposing'
 
 addImportsToContext :: Rename r => [Import Desugared] -> Eff r ()
 addImportsToContext = traverse_ addImportToContext
@@ -200,14 +205,21 @@ addImportToContext imp =
     addModuleToContext
         (imp ^. _Unwrapped % unlocated % field' @"importing" % unlocated)
         (imp ^. _Unwrapped % unlocated % field' @"exposing")
+        (imp ^. _Unwrapped % unlocated % field' @"qualified")
 
 getModuleFromName mn = do
     runErrorOrReport @DesugarError $
         Rock.fetch (Elara.Query.DesugaredModule mn)
 
 -- | Add all exposed declarations from a module to the renaming context,
-addModuleToContext :: Rename r => ModuleName -> Exposing Desugared -> Eff r ()
-addModuleToContext mn exposing = do
+addModuleToContext ::
+    Rename r =>
+    ModuleName ->
+    Exposing Desugared ->
+    -- | If the import is qualified
+    Bool ->
+    Eff r ()
+addModuleToContext mn exposing qualified = do
     imported <- getModuleFromName mn
     let isExposingL =
             declarationName
@@ -216,7 +228,8 @@ addModuleToContext mn exposing = do
     let exposed = case exposing of
             ExposingAll -> imported ^. _Unwrapped % unlocated % field' @"declarations"
             ExposingSome _ -> imported ^.. _Unwrapped % unlocated % field' @"declarations" % folded % filteredBy isExposingL
-    traverse_ addDeclarationToContext exposed
+    unless qualified $
+        traverse_ addDeclarationToContext exposed
 
 -- | Add a declaration to the renaming state.
 addDeclarationToContext ::
