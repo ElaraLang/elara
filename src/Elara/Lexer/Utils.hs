@@ -337,7 +337,7 @@ emitLineSepAt pos = do
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
-    let indentation = T.length $ T.dropWhile (== '\n') str
+    let indentation = T.length $ T.takeWhileEnd (/= '\n') str
     s <- get
     let indents@(cur :| _) = s ^. indentStack
 
