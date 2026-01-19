@@ -96,6 +96,7 @@ library
       Elara.Lexer.Token
       Elara.Lexer.Utils
       Elara.Logging
+      Elara.ModuleIndex
       Elara.Parse
       Elara.Parse.Annotation
       Elara.Parse.Combinators

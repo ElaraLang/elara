@@ -7,6 +7,8 @@ data CompilerSettings = CompilerSettings
     -- ^ How to run the compiled program
     , mainFile :: Maybe FilePath
     -- ^ The main file to compile/run
+    , sourceDirs :: [FilePath]
+    -- ^ Directories to search for source files
     }
     deriving (Show, Eq)
 
@@ -29,6 +31,7 @@ defaultSettings =
         { dumpTargets = mempty
         , runWith = RunWithNone
         , mainFile = Nothing
+        , sourceDirs = []
         }
 
 data RunWithOption

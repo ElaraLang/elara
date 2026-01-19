@@ -44,11 +44,12 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error (DiagnosticWriter)
 import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
+import Elara.ModuleIndex (ModuleIndex)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
 import Elara.Query.Effects
 import Elara.Query.Errors
-import Elara.ReadFile (FileContents, ReadFileError)
+import Elara.ReadFile (FileContents, ModulePathError, ReadFileError)
 import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
 import Elara.Settings (CompilerSettings)
@@ -75,10 +76,12 @@ data Query (es :: [Effect]) a where
     GetCompilerSettings :: Query (WithRock MinimumQueryEffects) CompilerSettings
     -- | Query to get all the required input files to be passed to the compiler
     InputFiles :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) (HashSet FilePath)
+    -- | Query to get the module index (bidirectional mapping between file paths and module names)
+    ModuleIndex :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) ModuleIndex
     -- | Query to get the contents of a specific file
     GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, Error ReadFileError, DiagnosticWriter (Doc AnsiStyle)])) FileContents
     -- | Query to get the file path of a module
-    ModulePath :: ModuleName -> Query (WithRock (ConsMinimumQueryEffects '[Rock Query, FileSystem])) FilePath
+    ModulePath :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ModulePathError])) FilePath
     -- \* Lexing and Parsing Queries
 
     -- | Query to get the lexed tokens of a specific file
@@ -150,7 +153,6 @@ data Query (es :: [Effect]) a where
     -- \* Pre-Inference Queries
     -- These are related to preparing SCCs etc for type inference
     FreeVarsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) (HashSet (Qualified VarName))
-    FreeTypesOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) (HashSet (Qualified TypeName))
     ReachableSubgraphOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) ReachableSubgraph
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
@@ -168,7 +170,6 @@ data Query (es :: [Effect]) a where
         \* To Core Queries
         -}
         Query (WithRock (ConsQueryEffects '[])) (Maybe ([UniqueTyVar], Type SourceRegion))
-    TypeCheckedTypeDeclarations :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (HashMap (Qualified TypeName) (Declaration Typed))
     -- \* Core Queries
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)

@@ -1,4 +1,3 @@
-module Char
 import Elara.Prim
 
 def isDigit : Char -> Bool

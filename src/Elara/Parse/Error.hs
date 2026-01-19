@@ -10,7 +10,7 @@ import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
 import Elara.AST.Frontend (FrontendExpr)
-import Elara.AST.Name (MaybeQualified, VarName)
+import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
@@ -31,6 +31,7 @@ data ElaraParseError
     | EmptyLambda SourceRegion
     | InfixPrecTooHigh (Located Integer)
     | InvalidConstantExpression {wholeExpr :: FrontendExpr, offendingSection :: FrontendExpr}
+    | ModuleNameMismatch {expectedName :: ModuleName, declaredName :: Located ModuleName}
     deriving (Eq, Show, Ord)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]
@@ -39,6 +40,7 @@ parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
 parseErrorSources (InvalidConstantExpression a b) = [todo]
+parseErrorSources (ModuleNameMismatch _ declaredLoc) = [view sourceRegion declaredLoc]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
@@ -54,12 +56,21 @@ instance HasHints ElaraParseError (Doc AnsiStyle) where
         [Note "Lambda expressions cannot be empty."]
     hints (InfixPrecTooHigh _) =
         [Note "The precedence of an infix operator must be between 0 and 9."]
+    hints (InvalidConstantExpression _ _) =
+        [Note "This expression cannot be evaluated at compile time."]
+    hints (ModuleNameMismatch expected declared) =
+        [ Note ("Module name" <+> squotes (pretty (view unlocated declared)) <+> "does not match the expected name" <+> squotes (pretty expected) <+> "inferred from the file path.")
+        , Hint ("Either rename the file to match" <+> squotes (pretty (view unlocated declared)) <+> "or update the module declaration to" <+> squotes (pretty expected))
+        , Hint "You can also remove the module declaration entirely, and the name will be inferred from the file path."
+        ]
 
 instance ShowErrorComponent ElaraParseError where
     showErrorComponent (KeywordUsedAsName kw) = "Keyword " <> show kw <> " used as name"
     showErrorComponent (EmptyRecord _) = "Empty record"
     showErrorComponent (EmptyLambda _) = "Empty lambda"
     showErrorComponent (InfixPrecTooHigh l) = "Infix precedence too high: " <> show l
+    showErrorComponent (InvalidConstantExpression _ _) = "Invalid constant expression"
+    showErrorComponent (ModuleNameMismatch expected declared) = "Module name mismatch: expected " <> show expected <> " but found " <> show declared
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 

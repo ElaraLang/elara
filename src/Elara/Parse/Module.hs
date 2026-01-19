@@ -12,15 +12,15 @@ import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (opName, varName)
 import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos (sourceName), State (statePosState), sepEndBy)
+import Text.Megaparsec (getSourcePos, sepEndBy)
 
 module' :: Parser (Module Frontend)
 module' = fmapLocated Module $ do
+    startPos <- getSourcePos
     _ <- optional lineSeparator -- the lexer sometimes emits a leading line separator
     -- especially when there are comments at the top of the file
     mHeader <- optional (header <* optional lineSeparator)
-    thisFile <- sourceName . pstateSourcePos . statePosState <$> getParserState
-    let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
+    let _name = maybe (Located (RealSourceRegion $ mkSourceRegion startPos startPos) (ModuleName ("Main" :| []))) fst mHeader
     imports <- sepEndBy import' lineSeparator
 
     declarations <- sepEndBy (declaration _name) lineSeparator

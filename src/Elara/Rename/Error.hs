@@ -39,10 +39,36 @@ data RenameError
     | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
     | UnknownCurrentModule
     | RecursiveTypeAlias (Located (Qualified TypeName)) (Located (Qualified TypeName))
+    | ModuleNameMismatch (Located ModuleName) (Located ModuleName)
 
 deriving instance Show RenameError
 
 instance ReportableError RenameError where
+    report (ModuleNameMismatch expected actual) =
+        let actualName = actual ^. unlocated
+            isImplicitMain =
+                case actual of
+                    Located (RealSourceRegion r) (ModuleName ("Main" :| [])) -> r ^. startPos == r ^. endPos
+                    Located (GeneratedRegion _) (ModuleName ("Main" :| [])) -> True
+                    _ -> False
+            message =
+                if isImplicitMain
+                    then "Module implicitly declared as Main"
+                    else "Module declared as " <> pretty actualName
+            hint =
+                if isImplicitMain
+                    then Hint "You can define a module name with the `module` keyword at the top of the file."
+                    else Hint "The module name must match the name used to import it."
+         in writeReport $
+                Err
+                    Nothing
+                    "Module name mismatch"
+                    [ (actual ^. sourceRegion % to sourceRegionToDiagnosePosition, This message)
+                    , (expected ^. sourceRegion % to sourceRegionToDiagnosePosition, Where $ "Imported as " <> pretty (expected ^. unlocated))
+                    ]
+                    [ Note $ "Expected module name: " <> pretty (expected ^. unlocated)
+                    , hint
+                    ]
     report (UnknownModule mn) =
         writeReport $
             Err

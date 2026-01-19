@@ -24,8 +24,8 @@ import Elara.AST.Desugared
 import Elara.AST.Generic hiding (moduleName)
 import Elara.AST.Generic.Common
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName, Name (NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion, spanningRegion', unlocated, withLocationOf)
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion', sourceRegion, spanningRegion', unlocated, withLocationOf)
 import Elara.AST.Renamed
 import Elara.AST.Select (LocatedAST (Desugared, Renamed))
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
@@ -82,6 +82,8 @@ getRenamedModule ::
         (Module Renamed)
 getRenamedModule mn = do
     m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+    let actualName = m ^. _Unwrapped % unlocated % field' @"name" % unlocated
+    when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` (m ^. _Unwrapped % unlocated % field' @"name"))
     rename m
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Eff r (Qualified name)
@@ -92,7 +94,7 @@ qualifyIn mn (MaybeQualified n Nothing) = pure $ Qualified n mn
 
 qualifyTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
 qualifyTypeName (Located sr (MaybeQualified n (Just m))) = do
-    ensureExistsAndExposed m (Located sr (NTypeName n))
+    ensureExistsAndExposed (Located sr m) (Located sr (NTypeName n))
     pure $ Located sr (Qualified n m)
 qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
     typeNames' <- use' (field' @"typeNames")
@@ -118,7 +120,7 @@ lookupGenericName ::
     Located (MaybeQualified name) ->
     Eff r (Located (VarRef name))
 lookupGenericName _ _ (Located sr (MaybeQualified n (Just m))) = do
-    ensureExistsAndExposed m (Located sr (toName n))
+    ensureExistsAndExposed (Located sr m) (Located sr (toName n))
     pure $ Located sr $ Global (Located sr (Qualified n m))
 lookupGenericName lens ambiguousError (Located sr (MaybeQualified n Nothing)) = do
     names' <- use' lens
@@ -203,18 +205,27 @@ addImportsToContext = traverse_ addImportToContext
 addImportToContext :: Rename r => Import Desugared -> Eff r ()
 addImportToContext imp =
     addModuleToContext
-        (imp ^. _Unwrapped % unlocated % field' @"importing" % unlocated)
+        (imp ^. _Unwrapped % unlocated % field' @"importing")
         (imp ^. _Unwrapped % unlocated % field' @"exposing")
         (imp ^. _Unwrapped % unlocated % field' @"qualified")
 
+getModuleFromName :: Rename r => Located ModuleName -> Eff r (Module Desugared)
 getModuleFromName mn = do
-    runErrorOrReport @DesugarError $
-        Rock.fetch (Elara.Query.DesugaredModule mn)
+    m <-
+        runErrorOrReport @DesugarError $
+            Rock.fetch (Elara.Query.DesugaredModule (mn ^. unlocated))
+    let actualName = m ^. _Unwrapped % unlocated % field' @"name" % unlocated
+    when (actualName /= mn ^. unlocated) $
+        throwError $
+            ModuleNameMismatch
+                mn
+                (actualName `withLocationOf` (m ^. _Unwrapped % unlocated % field' @"name"))
+    pure m
 
 -- | Add all exposed declarations from a module to the renaming context,
 addModuleToContext ::
     Rename r =>
-    ModuleName ->
+    Located ModuleName ->
     Exposing Desugared ->
     -- | If the import is qualified
     Bool ->
@@ -228,8 +239,20 @@ addModuleToContext mn exposing qualified = do
     let exposed = case exposing of
             ExposingAll -> imported ^. _Unwrapped % unlocated % field' @"declarations"
             ExposingSome _ -> imported ^.. _Unwrapped % unlocated % field' @"declarations" % folded % filteredBy isExposingL
+
     unless qualified $
         traverse_ addDeclarationToContext exposed
+
+    when qualified $ do
+        let (ModuleName parts) = mn ^. unlocated
+        let simpleModuleName = last parts
+        let isPrincipalType decl =
+                case decl ^. declarationName % unlocated of
+                    NTypeName tn -> tn == TypeName simpleModuleName
+                    _ -> False
+
+        let principalTypes = filter isPrincipalType exposed
+        traverse_ addDeclarationToContext principalTypes
 
 -- | Add a declaration to the renaming state.
 addDeclarationToContext ::
@@ -259,11 +282,11 @@ addDeclarationToContext decl = do
         _ -> pass
 
 -- | Ensure that a name exists in the context and is exposed
-ensureExistsAndExposed :: (Rock.Rock Elara.Query.Query :> r, _) => ModuleName -> Located Name -> Eff r ()
+ensureExistsAndExposed :: (Rock.Rock Elara.Query.Query :> r, _) => Located ModuleName -> Located Name -> Eff r ()
 ensureExistsAndExposed mn n = do
     thisMod <- Eff.ask
     m <- getModuleFromName mn
-    unless (elementExistsInModule m (n ^. unlocated)) $ throwError $ NonExistentModuleDeclaration mn n
+    unless (elementExistsInModule m (n ^. unlocated)) $ throwError $ NonExistentModuleDeclaration (mn ^. unlocated) n
     unless (isExposingAndExists m (n ^. unlocated)) $ throwError $ UnknownName @Name n thisMod mempty
 
 elementExistsInModule :: Module Desugared -> Name -> Bool

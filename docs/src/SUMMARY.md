@@ -11,6 +11,7 @@
     - [Layout](./language/syntax/lexical-structure/layout.md)
   - [Annotations](./language/syntax/annotations.md)
   - [Comments](./language/syntax/comments.md)
+- [Modules](./language/modules.md)
 
 # Compiler Usage
 

@@ -31,6 +31,9 @@ fileReadError = "E0001"
 fileNotFound :: ErrorCode
 fileNotFound = "E0001A"
 
+ambiguousModulePath :: ErrorCode
+ambiguousModulePath = "E0001B"
+
 tooMuchIndentation :: ErrorCode
 tooMuchIndentation = "E0002"
 
