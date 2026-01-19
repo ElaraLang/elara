@@ -16,6 +16,8 @@ import Text.Megaparsec (MonadParsec (..), PosState (pstateSourcePos), SourcePos 
 
 module' :: Parser (Module Frontend)
 module' = fmapLocated Module $ do
+    _ <- optional lineSeparator -- the lexer sometimes emits a leading line separator
+    -- especially when there are comments at the top of the file
     mHeader <- optional (header <* optional lineSeparator)
     thisFile <- sourceName . pstateSourcePos . statePosState <$> getParserState
     let _name = maybe (Located (GeneratedRegion thisFile) (ModuleName ("Main" :| []))) fst mHeader
