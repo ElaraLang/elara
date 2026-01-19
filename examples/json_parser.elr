@@ -5,28 +5,27 @@ import List
 import Tuple
 import String
 import Char
+import Result qualified
 
 -- Define a simple Parser Combinator type
--- Accepts a string input and returns an optional tuple of parsed value and remaining string
-type Parser a = | Parser (String -> Option (a, String))
+-- Accepts a string input and returns a result which is either an error message or a tuple of the parsed value and the remaining string
+type Parser a = | Parser (String -> Result.Result String (a, String))
 
 
 -- Run the parser on the given input string
-def runParser : Parser a -> String -> Option (a, String)
+def runParser : Parser a -> String -> Result.Result String (a, String)
 let runParser (Parser a) input = a input
 
 
 -- Lift a pure value into the Parser context
 -- i.e. create a parser that consumes no input and returns the given value
 def pure : a -> Parser a
-let pure a = Parser ( \s -> Some (a, s) )
+let pure a = Parser ( \s -> Result.Ok (a, s) )
 
 
 -- Map a function over the result of a parser
 def map : (a -> b) -> Parser a -> Parser b
-let map f p = Parser ( \s -> match runParser p s with
-                                None -> None
-                                Some (a, xs) -> Some (f a, xs) )
+let map f p = Parser ( \s -> let result = (runParser p s) in Result.map ( \(a, rest) -> (f a, rest) ) result )
 
 -- Sequence two parsers, keeping the result of the second
 #LeftAssociative #Fixity 4
@@ -39,17 +38,17 @@ let p *> q =
 def (<*) : Parser a -> Parser b -> Parser a
 let (<*) (Parser p1) (Parser p2) = Parser ( \s ->
                                 match p1 s with
-                                    None -> None
-                                    Some (a, s) -> match p2 s with
-                                                    None -> None
-                                                    Some (_, s) -> Some (a, s) )
+                                    Result.Err e -> Result.Err e
+                                    Result.Ok (firstResult, firstLeftover) -> let parser2Result = p2 firstLeftover in match parser2Result with
+                                                    Result.Err e -> Result.Err e
+                                                    Result.Ok (_, secondLeftover) -> Result.Ok (firstResult, secondLeftover) )
 
 -- Filter the result of a parser based on a predicate
 -- If the predicate fails, the parser fails
 def filter : (a -> Bool) -> Parser a -> Parser a
 let filter pred p = Parser ( \s -> match runParser p s with
-                                        None -> None
-                                        Some (a, xs) -> if pred a then Some (a, xs) else None )
+                                        Result.Err e -> Result.Err e
+                                        Result.Ok (a, xs) -> if pred a then Result.Ok (a, xs) else Result.Err "Predicate failed" )
 
 
 
@@ -59,16 +58,16 @@ def bind : Parser a -> (a -> Parser b) -> Parser b
 let bind p f =
   Parser (\s ->
     match runParser p s with
-      None -> None
-      Some (a, s1) -> runParser (f a) s1)
+      Result.Err e -> Result.Err e 
+      Result.Ok (a, s1) -> runParser (f a) s1)
 
 
 -- A parser that applies the given parser zero or more times, collecting the results in a list
 def many : Parser a -> Parser (List a)
 let many p = Parser ( \manyS -> 
     let go acc manyS_ = match (runParser p manyS_) with
-                            None -> Some (reverse acc, manyS_)
-                            Some (a, rest) -> go (a::acc) rest
+                            Result.Err _ -> Result.Ok (reverse acc, manyS_)
+                            Result.Ok (a, rest) -> go (a::acc) rest
         in go [] manyS )
 
 -- A parser that applies the first parser one or more times, separated by the second parser
@@ -86,8 +85,10 @@ let sepBy p sep = sepBy1 p sep <|> pure []
 -- Tries the first parser, if it fails, tries the second parser
 def (<|>) : Parser a -> Parser a -> Parser a
 let (<|>) (Parser p1) (Parser p2) = Parser ( \s -> match p1 s with
-                                            None -> p2 s
-                                            Some a -> Some a )
+                                            Result.Err e -> match p2 s with
+                                                                Result.Err e2 -> Result.Err (e ++ " <|> " ++ e2)
+                                                                Result.Ok a2 -> Result.Ok a2
+                                            Result.Ok a -> Result.Ok a )
 
 
 -- Makes a parser lazy.
@@ -101,8 +102,9 @@ let lazy f = Parser ( \s -> runParser (f ()) s )
 -- If the next character in the input does not match, the parser fails
 def char : Char -> Parser Char 
 let char c = Parser ( \charS -> match stringToList charS with
-                            [] -> None
-                            (x::xs) -> if x == c then Some (c, stringFromList xs) else None)
+                            [] -> Result.Err ("Expecting character " ++ toString c ++ " but got end of input")
+                            (x::xs) -> if x == c then Result.Ok (c, stringFromList xs) 
+                                else Result.Err ("Expecting character '" ++ toString c ++ "' but got " ++ toString x))
 
 -- Wraps a parser to skip trailing whitespace
 def lexeme : Parser a -> Parser a
@@ -119,8 +121,8 @@ let string str =
 -- A parser that matches any single character
 def any : Parser Char
 let any = Parser ( \anyChar -> match stringToList anyChar with
-                            [] -> None
-                            (x::xs) -> Some (x, stringFromList xs))
+                            [] -> Result.Err "Expecting any character but got end of input"
+                            (x::xs) -> Result.Ok (x, stringFromList xs))
 
 
 -- A parser that matches a single digit character and returns its integer value
@@ -172,7 +174,7 @@ let jsonString =
 def jsonArray : Parser Json
 let jsonArray = 
     let jsonElements = sepBy (lazy (\_ -> json)) (lexeme (char ','))
-    in lexeme (char '[') *> (jsonElements |> map JsonArray) <* lexeme (char ']')
+    in lexeme (char '[') *> (map JsonArray jsonElements) <* lexeme (char ']')
 
 -- Define a parser for JSON objects, which are lists of key-value pairs
 -- We use the lazy combinator here as well for the same reason as in jsonArray
@@ -195,6 +197,6 @@ let json = jsonNull <|> jsonInt <|> jsonString <|> jsonArray <|> jsonObject
 
 
 let main = 
-    match runParser json "[{\"a\": 1}, 12345, null, []]" with
-            None -> println "Failed to parse"
-            Some (result, _) -> println (toString result)
+    match runParser json "[{\"a\": 1}, 12345, null, ]" with
+            Result.Err e -> println ("Failed to parse: " ++ e)
+            Result.Ok (result, _) -> println (toString result)
