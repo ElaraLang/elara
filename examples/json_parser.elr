@@ -1,3 +1,7 @@
+/- This module defines a very simple parser combinator library and a JSON parser using it.
+Its error messages are quite basic but it demonstrates a "real" application 
+-/
+module Main
 import Prelude
 import Option
 import Elara.Prim
