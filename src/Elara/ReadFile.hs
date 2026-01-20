@@ -1,4 +1,4 @@
-module Elara.ReadFile (FileContents (FileContents), ReadFileError, ModulePathError (..), runGetFileContentsQuery, getInputFiles, findElaraFiles) where
+module Elara.ReadFile (FileContents (FileContents, fileContents), ReadFileError, ModulePathError (..), runGetFileContentsQuery, getInputFiles, findElaraFiles) where
 
 import Data.HashSet qualified as HashSet
 import Effectful (Eff, (:>))

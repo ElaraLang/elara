@@ -83,6 +83,9 @@ let debugWithMsg = elaraPrimitive "debugWithMsg"
 def println : a -> IO ()
 let println = elaraPrimitive "println"
 
+def readFile : String -> IO String
+let readFile = elaraPrimitive "readFile"
+
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) = elaraPrimitive ">>="
 
