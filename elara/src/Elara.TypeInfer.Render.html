@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">{- | User-friendly type rendering for error messages.
+Maps internal primitive names to user-friendly names.
+-}</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Render.html"><span class="hs-identifier">Elara.TypeInfer.Render</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderTypeName"><span class="hs-identifier">renderTypeName</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier">renderMonotype</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderType"><span class="hs-identifier">renderType</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderPolytype"><span class="hs-identifier">renderPolytype</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NameLike"><span class="hs-identifier">NameLike</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier">nameText</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier">TypeName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.Styles.html"><span class="hs-identifier">Elara.Data.Pretty.Styles</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Style</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Prim.html"><span class="hs-identifier">Elara.Prim</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier">primModuleName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html"><span class="hs-identifier">Elara.TypeInfer.Type</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier">Monotype</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier">Polytype</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier">Type</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeVariable"><span class="hs-identifier">TypeVariable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">-- | Map internal primitive names to user-friendly names</span></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderTypeName"><span class="hs-identifier hs-type">renderTypeName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-19"></span><span id="renderTypeName"><span class="annot"><span class="annottext">renderTypeName :: Qualified TypeName -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderTypeName"><span class="hs-identifier hs-var hs-var">renderTypeName</span></a></span></span><span> </span><span id="local-6989586621680132628"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132628"><span class="hs-identifier hs-var">qn</span></a></span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Qualified TypeName -&gt; ModuleName
+forall name. Qualified name -&gt; ModuleName
+</span><a href="Elara.AST.Name.html#qualifier"><span class="hs-identifier hs-var">qualifier</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132628"><span class="hs-identifier hs-var">qn</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="Elara.Prim.html#primModuleName"><span class="hs-identifier hs-var">primModuleName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Text
+forall name. NameLike name =&gt; name -&gt; Text
+</span><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier hs-var">nameText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified TypeName -&gt; TypeName
+forall name. Qualified name -&gt; name
+</span><a href="Elara.AST.Name.html#_qualifiedName"><span class="hs-identifier hs-var">_qualifiedName</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132628"><span class="hs-identifier hs-var">qn</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-21"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_Char&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Char&quot;</span></span><span>
+</span><span id="line-22"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_String&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;String&quot;</span></span><span>
+</span><span id="line-23"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_Int&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Int&quot;</span></span><span>
+</span><span id="line-24"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_Float&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Float&quot;</span></span><span>
+</span><span id="line-25"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_Double&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Double&quot;</span></span><span>
+</span><span id="line-26"></span><span>        </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Prim_IO&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;IO&quot;</span></span><span>
+</span><span id="line-27"></span><span>        </span><span id="local-6989586621680132632"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680132632"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680132632"><span class="hs-identifier hs-var">other</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified TypeName -&gt; TypeName
+forall name. Qualified name -&gt; name
+</span><a href="Elara.AST.Name.html#_qualifiedName"><span class="hs-identifier hs-var">_qualifiedName</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132628"><span class="hs-identifier hs-var">qn</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><span class="hs-comment">-- | Render a monotype with user-friendly names</span></span><span>
+</span><span id="line-31"></span><span id="local-6989586621680132568"><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-type">renderMonotype</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680132568"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span></span><span>
+</span><span id="line-32"></span><span id="renderMonotype"><span class="annot"><span class="annottext">renderMonotype :: forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var hs-var">renderMonotype</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeVar"><span class="hs-identifier hs-type">TypeVar</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680132638"><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680132638"><span class="hs-identifier hs-var">tv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeVariable -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderTypeVariable"><span class="hs-identifier hs-var">renderTypeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">TypeVariable
+</span><a href="#local-6989586621680132638"><span class="hs-identifier hs-var">tv</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-type">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680132641"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132641"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680132642"><span class="annot"><span class="annottext">[Monotype loc]
+</span><a href="#local-6989586621680132642"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-35"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680132643"><span class="annot"><span class="annottext">renderedName :: Doc AnsiStyle
+</span><a href="#local-6989586621680132643"><span class="hs-identifier hs-var hs-var">renderedName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Qualified TypeName -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderTypeName"><span class="hs-identifier hs-var">renderTypeName</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680132641"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-36"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Monotype loc]
+</span><a href="#local-6989586621680132642"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-37"></span><span>                </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680132643"><span class="hs-identifier hs-var">renderedName</span></a></span><span>
+</span><span id="line-38"></span><span>                </span><span class="annot"><span class="annottext">[Monotype loc]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680132643"><span class="hs-identifier hs-var">renderedName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">hsep</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotypeParens"><span class="hs-identifier hs-var">renderMonotypeParens</span></a></span><span> </span><span class="annot"><span class="annottext">(Monotype loc -&gt; Doc AnsiStyle)
+-&gt; [Monotype loc] -&gt; [Doc AnsiStyle]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Monotype loc]
+</span><a href="#local-6989586621680132642"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680132649"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132649"><span class="hs-identifier hs-var">from</span></a></span></span><span> </span><span id="local-6989586621680132650"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132650"><span class="hs-identifier hs-var">to</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-40"></span><span>        </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotypeArrow"><span class="hs-identifier hs-var">renderMonotypeArrow</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132649"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#operator"><span class="hs-identifier hs-var">Style.operator</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;-&gt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132650"><span class="hs-identifier hs-var">to</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><span class="hs-comment">-- | Render a monotype, wrapping function types in parentheses</span></span><span>
+</span><span id="line-43"></span><span id="local-6989586621680132653"><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotypeParens"><span class="hs-identifier hs-type">renderMonotypeParens</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680132653"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span></span><span>
+</span><span id="line-44"></span><span id="renderMonotypeParens"><span class="annot"><span class="annottext">renderMonotypeParens :: forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotypeParens"><span class="hs-identifier hs-var hs-var">renderMonotypeParens</span></a></span></span><span> </span><span id="local-6989586621680132654"><span class="annot"><span class="annottext">m :: Monotype loc
+</span><a href="#local-6989586621680132654"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132654"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotypeParens"><span class="hs-identifier hs-var">renderMonotypeParens</span></a></span><span> </span><span id="local-6989586621680132656"><span class="annot"><span class="annottext">m :: Monotype loc
+</span><a href="#local-6989586621680132656"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-type">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Monotype loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Monotype loc]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132656"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotypeParens"><span class="hs-identifier hs-var">renderMonotypeParens</span></a></span><span> </span><span id="local-6989586621680132657"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132657"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132657"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | Render a monotype on the left of an arrow, wrapping if needed</span></span><span>
+</span><span id="line-49"></span><span id="local-6989586621680132658"><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotypeArrow"><span class="hs-identifier hs-type">renderMonotypeArrow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680132658"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span></span><span>
+</span><span id="line-50"></span><span id="renderMonotypeArrow"><span class="annot"><span class="annottext">renderMonotypeArrow :: forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotypeArrow"><span class="hs-identifier hs-var hs-var">renderMonotypeArrow</span></a></span></span><span> </span><span id="local-6989586621680132659"><span class="annot"><span class="annottext">m :: Monotype loc
+</span><a href="#local-6989586621680132659"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132659"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderMonotypeArrow"><span class="hs-identifier hs-var">renderMonotypeArrow</span></a></span><span> </span><span id="local-6989586621680132660"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132660"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><span class="hs-comment">-- | Render a type variable</span></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderTypeVariable"><span class="hs-identifier hs-type">renderTypeVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeVariable"><span class="hs-identifier hs-type">TypeVariable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-55"></span><span id="renderTypeVariable"><span class="annot"><span class="annottext">renderTypeVariable :: TypeVariable -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderTypeVariable"><span class="hs-identifier hs-var hs-var">renderTypeVariable</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#UnificationVar"><span class="hs-identifier hs-type">UnificationVar</span></a></span><span> </span><span id="local-6989586621680132671"><span class="annot"><span class="annottext">UniqueTyVar
+</span><a href="#local-6989586621680132671"><span class="hs-identifier hs-var">tv</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#varName"><span class="hs-identifier hs-var">Style.varName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UniqueTyVar -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">UniqueTyVar
+</span><a href="#local-6989586621680132671"><span class="hs-identifier hs-var">tv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderTypeVariable"><span class="hs-identifier hs-var">renderTypeVariable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#SkolemVar"><span class="hs-identifier hs-type">SkolemVar</span></a></span><span> </span><span id="local-6989586621680132674"><span class="annot"><span class="annottext">UniqueTyVar
+</span><a href="#local-6989586621680132674"><span class="hs-identifier hs-var">tv</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#varName"><span class="hs-identifier hs-var">Style.varName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;#&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">UniqueTyVar -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">UniqueTyVar
+</span><a href="#local-6989586621680132674"><span class="hs-identifier hs-var">tv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><span class="hs-comment">-- | Render a polytype with user-friendly names</span></span><span>
+</span><span id="line-59"></span><span id="local-6989586621680132586"><span class="annot"><a href="Elara.TypeInfer.Render.html#renderPolytype"><span class="hs-identifier hs-type">renderPolytype</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680132586"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span></span><span>
+</span><span id="line-60"></span><span id="renderPolytype"><span class="annot"><span class="annottext">renderPolytype :: forall loc. Polytype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderPolytype"><span class="hs-identifier hs-var hs-var">renderPolytype</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Forall"><span class="hs-identifier hs-type">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680132683"><span class="annot"><span class="annottext">[UniqueTyVar]
+</span><a href="#local-6989586621680132683"><span class="hs-identifier hs-var">tvs</span></a></span></span><span> </span><span class="annot"><span class="annottext">Constraint loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680132684"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132684"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[UniqueTyVar]
+</span><a href="#local-6989586621680132683"><span class="hs-identifier hs-var">tvs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132684"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">[UniqueTyVar]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;forall&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">hsep</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UniqueTyVar -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">(UniqueTyVar -&gt; Doc AnsiStyle) -&gt; [UniqueTyVar] -&gt; [Doc AnsiStyle]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[UniqueTyVar]
+</span><a href="#local-6989586621680132683"><span class="hs-identifier hs-var">tvs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132684"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">-- | Render a type with user-friendly names</span></span><span>
+</span><span id="line-65"></span><span id="local-6989586621680132590"><span class="annot"><a href="Elara.TypeInfer.Render.html#renderType"><span class="hs-identifier hs-type">renderType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680132590"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span></span><span>
+</span><span id="line-66"></span><span id="renderType"><span class="annot"><span class="annottext">renderType :: forall loc. Type loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderType"><span class="hs-identifier hs-var hs-var">renderType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Lifted"><span class="hs-identifier hs-type">Lifted</span></a></span><span> </span><span id="local-6989586621680132686"><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132686"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Monotype loc -&gt; Doc AnsiStyle
+forall loc. Monotype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderMonotype"><span class="hs-identifier hs-var">renderMonotype</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype loc
+</span><a href="#local-6989586621680132686"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-67"></span><span class="annot"><a href="Elara.TypeInfer.Render.html#renderType"><span class="hs-identifier hs-var">renderType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span id="local-6989586621680132688"><span class="annot"><span class="annottext">Polytype loc
+</span><a href="#local-6989586621680132688"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Polytype loc -&gt; Doc AnsiStyle
+forall loc. Polytype loc -&gt; Doc AnsiStyle
+</span><a href="Elara.TypeInfer.Render.html#renderPolytype"><span class="hs-identifier hs-var">renderPolytype</span></a></span><span> </span><span class="annot"><span class="annottext">Polytype loc
+</span><a href="#local-6989586621680132688"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-68"></span></pre></body></html>

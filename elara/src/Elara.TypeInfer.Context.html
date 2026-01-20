@@ -1,0 +1,341 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Inference context tracking for better error messages</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html"><span class="hs-identifier">Elara.TypeInfer.Context</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="annot"><span class="hs-comment">{- | Describes the context in which type inference is happening.
+This is used to provide better error messages by explaining
+WHY two types are being compared.
+-}</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="InferenceContext"><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-var">InferenceContext</span></a></span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking an argument to a function call</span></span><span>
+</span><span id="line-14"></span><span>      </span><span id="CheckingFunctionArgument"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingFunctionArgument"><span class="hs-identifier hs-var">CheckingFunctionArgument</span></a></span></span><span>
+</span><span id="line-15"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="argPosition"><span class="annot"><span class="annottext">InferenceContext -&gt; Int
+</span><a href="Elara.TypeInfer.Context.html#argPosition"><span class="hs-identifier hs-var hs-var">argPosition</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-16"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="functionName"><span class="annot"><span class="annottext">InferenceContext -&gt; Maybe (Qualified VarName)
+</span><a href="Elara.TypeInfer.Context.html#functionName"><span class="hs-identifier hs-var hs-var">functionName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="callSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#callSite"><span class="hs-identifier hs-var hs-var">callSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-18"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking the result type of a function call</span></span><span>
+</span><span id="line-20"></span><span>      </span><span id="CheckingFunctionResult"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingFunctionResult"><span class="hs-identifier hs-var">CheckingFunctionResult</span></a></span></span><span>
+</span><span id="line-21"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="callSite"><span class="annot"><a href="Elara.TypeInfer.Context.html#callSite"><span class="hs-identifier hs-var">callSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-22"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking the condition of an if expression</span></span><span>
+</span><span id="line-24"></span><span>      </span><span id="CheckingIfCondition"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingIfCondition"><span class="hs-identifier hs-var">CheckingIfCondition</span></a></span></span><span>
+</span><span id="line-25"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="ifSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#ifSite"><span class="hs-identifier hs-var hs-var">ifSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-26"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking that if branches have the same type</span></span><span>
+</span><span id="line-28"></span><span>      </span><span id="CheckingIfBranches"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingIfBranches"><span class="hs-identifier hs-var">CheckingIfBranches</span></a></span></span><span>
+</span><span id="line-29"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="thenSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#thenSite"><span class="hs-identifier hs-var hs-var">thenSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-30"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="elseSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#elseSite"><span class="hs-identifier hs-var hs-var">elseSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking a branch in a match expression</span></span><span>
+</span><span id="line-33"></span><span>      </span><span id="CheckingMatchBranch"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingMatchBranch"><span class="hs-identifier hs-var">CheckingMatchBranch</span></a></span></span><span>
+</span><span id="line-34"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="branchIndex"><span class="annot"><span class="annottext">InferenceContext -&gt; Int
+</span><a href="Elara.TypeInfer.Context.html#branchIndex"><span class="hs-identifier hs-var hs-var">branchIndex</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-35"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="branchSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#branchSite"><span class="hs-identifier hs-var hs-var">branchSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-36"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking a pattern</span></span><span>
+</span><span id="line-38"></span><span>      </span><span id="CheckingPattern"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingPattern"><span class="hs-identifier hs-var">CheckingPattern</span></a></span></span><span>
+</span><span id="line-39"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="patternSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#patternSite"><span class="hs-identifier hs-var hs-var">patternSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking a let binding</span></span><span>
+</span><span id="line-42"></span><span>      </span><span id="CheckingLetBinding"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingLetBinding"><span class="hs-identifier hs-var">CheckingLetBinding</span></a></span></span><span>
+</span><span id="line-43"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="bindingName"><span class="annot"><span class="annottext">InferenceContext -&gt; Qualified VarName
+</span><a href="Elara.TypeInfer.Context.html#bindingName"><span class="hs-identifier hs-var hs-var">bindingName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="bindingSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#bindingSite"><span class="hs-identifier hs-var hs-var">bindingSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Checking against a type annotation</span></span><span>
+</span><span id="line-47"></span><span>      </span><span id="CheckingAnnotation"><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingAnnotation"><span class="hs-identifier hs-var">CheckingAnnotation</span></a></span></span><span>
+</span><span id="line-48"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="annotationSite"><span class="annot"><span class="annottext">InferenceContext -&gt; SourceRegion
+</span><a href="Elara.TypeInfer.Context.html#annotationSite"><span class="hs-identifier hs-var hs-var">annotationSite</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-49"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680122691"><span id="local-6989586621680122693"><span class="annot"><span class="annottext">(forall x. InferenceContext -&gt; Rep InferenceContext x)
+-&gt; (forall x. Rep InferenceContext x -&gt; InferenceContext)
+-&gt; Generic InferenceContext
+forall x. Rep InferenceContext x -&gt; InferenceContext
+forall x. InferenceContext -&gt; Rep InferenceContext x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. InferenceContext -&gt; Rep InferenceContext x
+from :: forall x. InferenceContext -&gt; Rep InferenceContext x
+$cto :: forall x. Rep InferenceContext x -&gt; InferenceContext
+to :: forall x. Rep InferenceContext x -&gt; InferenceContext
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122699"><span id="local-6989586621680122727"><span id="local-6989586621680122731"><span class="annot"><span class="annottext">Int -&gt; InferenceContext -&gt; ShowS
+[InferenceContext] -&gt; ShowS
+InferenceContext -&gt; String
+(Int -&gt; InferenceContext -&gt; ShowS)
+-&gt; (InferenceContext -&gt; String)
+-&gt; ([InferenceContext] -&gt; ShowS)
+-&gt; Show InferenceContext
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; InferenceContext -&gt; ShowS
+showsPrec :: Int -&gt; InferenceContext -&gt; ShowS
+$cshow :: InferenceContext -&gt; String
+show :: InferenceContext -&gt; String
+$cshowList :: [InferenceContext] -&gt; ShowS
+showList :: [InferenceContext] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122739"><span id="local-6989586621680122761"><span class="annot"><span class="annottext">InferenceContext -&gt; InferenceContext -&gt; Bool
+(InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; Eq InferenceContext
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: InferenceContext -&gt; InferenceContext -&gt; Bool
+== :: InferenceContext -&gt; InferenceContext -&gt; Bool
+$c/= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+/= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122771"><span id="local-6989586621680122793"><span id="local-6989586621680122797"><span id="local-6989586621680122800"><span id="local-6989586621680122803"><span id="local-6989586621680122806"><span id="local-6989586621680122809"><span class="annot"><span class="annottext">Eq InferenceContext
+Eq InferenceContext =&gt;
+(InferenceContext -&gt; InferenceContext -&gt; Ordering)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; Bool)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; InferenceContext)
+-&gt; (InferenceContext -&gt; InferenceContext -&gt; InferenceContext)
+-&gt; Ord InferenceContext
+InferenceContext -&gt; InferenceContext -&gt; Bool
+InferenceContext -&gt; InferenceContext -&gt; Ordering
+InferenceContext -&gt; InferenceContext -&gt; InferenceContext
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: InferenceContext -&gt; InferenceContext -&gt; Ordering
+compare :: InferenceContext -&gt; InferenceContext -&gt; Ordering
+$c&lt; :: InferenceContext -&gt; InferenceContext -&gt; Bool
+&lt; :: InferenceContext -&gt; InferenceContext -&gt; Bool
+$c&lt;= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+&lt;= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+$c&gt; :: InferenceContext -&gt; InferenceContext -&gt; Bool
+&gt; :: InferenceContext -&gt; InferenceContext -&gt; Bool
+$c&gt;= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+&gt;= :: InferenceContext -&gt; InferenceContext -&gt; Bool
+$cmax :: InferenceContext -&gt; InferenceContext -&gt; InferenceContext
+max :: InferenceContext -&gt; InferenceContext -&gt; InferenceContext
+$cmin :: InferenceContext -&gt; InferenceContext -&gt; InferenceContext
+min :: InferenceContext -&gt; InferenceContext -&gt; InferenceContext
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><span class="hs-comment">-- | A stack of inference contexts, with the most recent context at the head.</span></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">newtype</span><span> </span><span id="ContextStack"><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-var">ContextStack</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ContextStack"><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-var">ContextStack</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-type">InferenceContext</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680122818"><span id="local-6989586621680122820"><span class="annot"><span class="annottext">(forall x. ContextStack -&gt; Rep ContextStack x)
+-&gt; (forall x. Rep ContextStack x -&gt; ContextStack)
+-&gt; Generic ContextStack
+forall x. Rep ContextStack x -&gt; ContextStack
+forall x. ContextStack -&gt; Rep ContextStack x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. ContextStack -&gt; Rep ContextStack x
+from :: forall x. ContextStack -&gt; Rep ContextStack x
+$cto :: forall x. Rep ContextStack x -&gt; ContextStack
+to :: forall x. Rep ContextStack x -&gt; ContextStack
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122823"><span id="local-6989586621680122829"><span id="local-6989586621680122833"><span class="annot"><span class="annottext">Int -&gt; ContextStack -&gt; ShowS
+[ContextStack] -&gt; ShowS
+ContextStack -&gt; String
+(Int -&gt; ContextStack -&gt; ShowS)
+-&gt; (ContextStack -&gt; String)
+-&gt; ([ContextStack] -&gt; ShowS)
+-&gt; Show ContextStack
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ContextStack -&gt; ShowS
+showsPrec :: Int -&gt; ContextStack -&gt; ShowS
+$cshow :: ContextStack -&gt; String
+show :: ContextStack -&gt; String
+$cshowList :: [ContextStack] -&gt; ShowS
+showList :: [ContextStack] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122836"><span id="local-6989586621680122842"><span class="annot"><span class="annottext">ContextStack -&gt; ContextStack -&gt; Bool
+(ContextStack -&gt; ContextStack -&gt; Bool)
+-&gt; (ContextStack -&gt; ContextStack -&gt; Bool) -&gt; Eq ContextStack
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ContextStack -&gt; ContextStack -&gt; Bool
+== :: ContextStack -&gt; ContextStack -&gt; Bool
+$c/= :: ContextStack -&gt; ContextStack -&gt; Bool
+/= :: ContextStack -&gt; ContextStack -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680122849"><span id="local-6989586621680122854"><span id="local-6989586621680122858"><span class="annot"><span class="annottext">NonEmpty ContextStack -&gt; ContextStack
+ContextStack -&gt; ContextStack -&gt; ContextStack
+(ContextStack -&gt; ContextStack -&gt; ContextStack)
+-&gt; (NonEmpty ContextStack -&gt; ContextStack)
+-&gt; (forall b. Integral b =&gt; b -&gt; ContextStack -&gt; ContextStack)
+-&gt; Semigroup ContextStack
+forall b. Integral b =&gt; b -&gt; ContextStack -&gt; ContextStack
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: ContextStack -&gt; ContextStack -&gt; ContextStack
+&lt;&gt; :: ContextStack -&gt; ContextStack -&gt; ContextStack
+$csconcat :: NonEmpty ContextStack -&gt; ContextStack
+sconcat :: NonEmpty ContextStack -&gt; ContextStack
+$cstimes :: forall b. Integral b =&gt; b -&gt; ContextStack -&gt; ContextStack
+stimes :: forall b. Integral b =&gt; b -&gt; ContextStack -&gt; ContextStack
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680122870"><span id="local-6989586621680122875"><span id="local-6989586621680122879"><span class="annot"><span class="annottext">Semigroup ContextStack
+ContextStack
+Semigroup ContextStack =&gt;
+ContextStack
+-&gt; (ContextStack -&gt; ContextStack -&gt; ContextStack)
+-&gt; ([ContextStack] -&gt; ContextStack)
+-&gt; Monoid ContextStack
+[ContextStack] -&gt; ContextStack
+ContextStack -&gt; ContextStack -&gt; ContextStack
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+$cmempty :: ContextStack
+mempty :: ContextStack
+$cmappend :: ContextStack -&gt; ContextStack -&gt; ContextStack
+mappend :: ContextStack -&gt; ContextStack -&gt; ContextStack
+$cmconcat :: [ContextStack] -&gt; ContextStack
+mconcat :: [ContextStack] -&gt; ContextStack
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | Create an empty context stack</span></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Elara.TypeInfer.Context.html#emptyContextStack"><span class="hs-identifier hs-type">emptyContextStack</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span>
+</span><span id="line-59"></span><span id="emptyContextStack"><span class="annot"><span class="annottext">emptyContextStack :: ContextStack
+</span><a href="Elara.TypeInfer.Context.html#emptyContextStack"><span class="hs-identifier hs-var hs-var">emptyContextStack</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[InferenceContext] -&gt; ContextStack
+</span><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-var">ContextStack</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><span class="hs-comment">-- | Push a context onto the stack</span></span><span>
+</span><span id="line-62"></span><span class="annot"><a href="Elara.TypeInfer.Context.html#pushContext"><span class="hs-identifier hs-type">pushContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-type">InferenceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span>
+</span><span id="line-63"></span><span id="pushContext"><span class="annot"><span class="annottext">pushContext :: InferenceContext -&gt; ContextStack -&gt; ContextStack
+</span><a href="Elara.TypeInfer.Context.html#pushContext"><span class="hs-identifier hs-var hs-var">pushContext</span></a></span></span><span> </span><span id="local-6989586621680122886"><span class="annot"><span class="annottext">InferenceContext
+</span><a href="#local-6989586621680122886"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span id="local-6989586621680122887"><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122887"><span class="hs-identifier hs-var">stack</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[InferenceContext] -&gt; ContextStack
+</span><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-var">ContextStack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">InferenceContext
+</span><a href="#local-6989586621680122886"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">InferenceContext -&gt; [InferenceContext] -&gt; [InferenceContext]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122887"><span class="hs-identifier hs-var">stack</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><span class="hs-comment">-- | Get the current (most recent) context, if any</span></span><span>
+</span><span id="line-66"></span><span class="annot"><a href="Elara.TypeInfer.Context.html#currentContext"><span class="hs-identifier hs-type">currentContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-type">InferenceContext</span></a></span><span>
+</span><span id="line-67"></span><span id="currentContext"><span class="annot"><span class="annottext">currentContext :: ContextStack -&gt; Maybe InferenceContext
+</span><a href="Elara.TypeInfer.Context.html#currentContext"><span class="hs-identifier hs-var hs-var">currentContext</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe InferenceContext
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Elara.TypeInfer.Context.html#currentContext"><span class="hs-identifier hs-var">currentContext</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680122889"><span class="annot"><span class="annottext">InferenceContext
+</span><a href="#local-6989586621680122889"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[InferenceContext]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">InferenceContext -&gt; Maybe InferenceContext
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">InferenceContext
+</span><a href="#local-6989586621680122889"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="annot"><span class="hs-comment">-- | Get all contexts in the stack (most recent first)</span></span><span>
+</span><span id="line-71"></span><span class="annot"><a href="Elara.TypeInfer.Context.html#allContexts"><span class="hs-identifier hs-type">allContexts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-type">InferenceContext</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-72"></span><span id="allContexts"><span class="annot"><span class="annottext">allContexts :: ContextStack -&gt; [InferenceContext]
+</span><a href="Elara.TypeInfer.Context.html#allContexts"><span class="hs-identifier hs-var hs-var">allContexts</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span id="local-6989586621680122891"><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122891"><span class="hs-identifier hs-var">stack</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122891"><span class="hs-identifier hs-var">stack</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#InferenceContext"><span class="hs-identifier hs-type">InferenceContext</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-75"></span><span>    </span><span id="local-6989586621680122915"><span class="annot"><span class="annottext">pretty :: InferenceContext -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680122915"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-76"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingFunctionArgument"><span class="hs-identifier hs-type">CheckingFunctionArgument</span></a></span><span> </span><span id="local-6989586621680122917"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680122917"><span class="hs-identifier hs-var">pos</span></a></span></span><span> </span><span id="local-6989586621680122918"><span class="annot"><span class="annottext">Maybe (Qualified VarName)
+</span><a href="#local-6989586621680122918"><span class="hs-identifier hs-var">mFn</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-77"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking argument&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680122917"><span class="hs-identifier hs-var">pos</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+-&gt; (Qualified VarName -&gt; Doc AnsiStyle)
+-&gt; Maybe (Qualified VarName)
+-&gt; Doc AnsiStyle
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680122921"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680122921"><span class="hs-identifier hs-var">fn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;of&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">squotes</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680122921"><span class="hs-identifier hs-var">fn</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe (Qualified VarName)
+</span><a href="#local-6989586621680122918"><span class="hs-identifier hs-var">mFn</span></a></span><span>
+</span><span id="line-78"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingFunctionResult"><span class="hs-identifier hs-type">CheckingFunctionResult</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-79"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking function result&quot;</span></span><span>
+</span><span id="line-80"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingIfCondition"><span class="hs-identifier hs-type">CheckingIfCondition</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-81"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking if condition&quot;</span></span><span>
+</span><span id="line-82"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingIfBranches"><span class="hs-identifier hs-type">CheckingIfBranches</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-83"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking that if branches have the same type&quot;</span></span><span>
+</span><span id="line-84"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingMatchBranch"><span class="hs-identifier hs-type">CheckingMatchBranch</span></a></span><span> </span><span id="local-6989586621680122923"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680122923"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-85"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking match branch&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680122923"><span class="hs-identifier hs-var">idx</span></a></span><span>
+</span><span id="line-86"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingPattern"><span class="hs-identifier hs-type">CheckingPattern</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-87"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking pattern&quot;</span></span><span>
+</span><span id="line-88"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingLetBinding"><span class="hs-identifier hs-type">CheckingLetBinding</span></a></span><span> </span><span id="local-6989586621680122924"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680122924"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-89"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking let binding&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann
+</span><span class="hs-identifier hs-var">squotes</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680122924"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Context.html#CheckingAnnotation"><span class="hs-identifier hs-type">CheckingAnnotation</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-91"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;while checking type annotation&quot;</span></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-94"></span><span>    </span><span id="local-6989586621680122931"><span class="annot"><span class="annottext">pretty :: ContextStack -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Context.html#ContextStack"><span class="hs-identifier hs-type">ContextStack</span></a></span><span> </span><span id="local-6989586621680122932"><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122932"><span class="hs-identifier hs-var">ctxs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
+forall ann. [Doc ann] -&gt; Doc ann
+</span><span class="hs-identifier hs-var">vsep</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">InferenceContext -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">(InferenceContext -&gt; Doc AnsiStyle)
+-&gt; [InferenceContext] -&gt; [Doc AnsiStyle]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[InferenceContext]
+</span><a href="#local-6989586621680122932"><span class="hs-identifier hs-var">ctxs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span></pre></body></html>
