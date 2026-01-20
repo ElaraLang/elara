@@ -333,6 +333,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
 - Add a basic golden test - ([b97144c](https://github.com/ElaraLang/elara/commit/b97144c4f103b75493f020d7af2caa1f386b1017)) 
 - Fix golden test bug - ([536b93a](https://github.com/ElaraLang/elara/commit/536b93ae6b2f8ea2dea82877808a04bb1f102ffd)) 
+- Tidy up and fix many tests - ([a67709e](https://github.com/ElaraLang/elara/commit/a67709e1aa40c3874e04d22cf3a90aeb6639a30d)) 
 
 ### ⚙️ Miscellaneous Tasks
 
