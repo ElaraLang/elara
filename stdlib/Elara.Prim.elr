@@ -86,6 +86,9 @@ let println = elaraPrimitive "println"
 def readFile : String -> IO String
 let readFile = elaraPrimitive "readFile"
 
+def getArgs : IO (List String)
+let getArgs = elaraPrimitive "getArgs"
+
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) = elaraPrimitive ">>="
 

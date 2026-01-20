@@ -7,8 +7,6 @@ import Data.Text qualified as Text
 import Effectful
 import Effectful.Dispatch.Dynamic
 import Effectful.Error.Static
-import Effectful.FileSystem (runFileSystem)
-
 import Effectful.State.Static.Local
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
@@ -20,7 +18,7 @@ import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Elara.Error (ReportableError, runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, ignoreStructuredDebug, logDebug, logDebugWith)
+import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Prim.Core (consCtorName, emptyListCtorName, falseCtor, fetchPrimitiveName, trueCtor, tuple2CtorName, unitCtor)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -89,6 +87,7 @@ data InterpreterError
         }
     | CodeThrewError Value
     | RecursiveValueDetected (Unique Text)
+    | MissingPrimType (Qualified Text)
     deriving (Generic)
 
 data ThunkState = Unevaluated | Evaluating | Evaluated Value
@@ -242,19 +241,34 @@ lookupVar (Global v) = logDebugWith ("lookupVar: " <> pretty v) $ do
                     Just val -> pure val
                     Nothing -> throwError_ (UnboundVariable (Global v) newS)
 
+evalPrim :: Interpreter r => Text -> Eff r Value
+evalPrim "getArgs" = do
+    -- has to be handled specially because it has 0 args
+    nilCon <-
+        Rock.fetch (Elara.Query.GetDataCon emptyListCtorName)
+            ?:! throwError_ (MissingPrimType emptyListCtorName)
+    consCon <-
+        Rock.fetch (Elara.Query.GetDataCon consCtorName)
+            ?:! throwError_ (MissingPrimType consCtorName)
+
+    pure $ IOAction $ do
+        args <- getArgs
+        let toValueList [] = Ctor nilCon []
+            toValueList (x : xs) = Ctor consCon [String (toText x), toValueList xs]
+        pure $ toValueList args
+evalPrim name = pure $ PrimOp name
+
 interpretExpr :: forall r. Interpreter r => CoreExpr -> Eff r Value
 interpretExpr (Lit (Core.Int i)) = pure $ Int i
 interpretExpr (Lit (Core.String s)) = pure $ String s
 interpretExpr (Lit (Core.Char c)) = pure $ Char c
 interpretExpr (Lit (Core.Double d)) = pure $ Double d
 interpretExpr (Lit Core.Unit) = pure $ Ctor unitCtor []
-interpretExpr (App (Var (Id (Global primName) _ _)) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
-    pure $ PrimOp primArg
+interpretExpr (App (Var (Id (Global primName) _ _)) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = evalPrim primArg
 -- elaraPrimitive should be called with a tyapp - i.e. `elaraPrimitive @T "f"`
-interpretExpr (App (TyApp (Var (Id (Global primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = do
-    pure $ PrimOp primArg
+interpretExpr (App (TyApp (Var (Id (Global primName) _ _)) _) (Lit (Core.String primArg))) | primName == fetchPrimitiveName = evalPrim primArg
 interpretExpr (Var (Id v _ _)) = lookupVar v
-interpretExpr (Let bind in') = debugWith ("interpretExpr: " <+> pretty bind) $ scopedOverLocals $ do
+interpretExpr (Let bind in') = logDebugWith ("interpretExpr: " <+> pretty bind) $ scopedOverLocals $ do
     interpretBinding bind
     interpretExpr in'
 interpretExpr (Lam (Id (Local v) _ _) e) = do
@@ -336,13 +350,26 @@ apply f' a' = do
                         other -> prettyToText other
                 printText asString
                 pure (Ctor unitCtor [])
+        PrimOp "getArgs" -> do
+            nilCon <-
+                Rock.fetch (Elara.Query.GetDataCon emptyListCtorName)
+                    ?:! throwError_ (MissingPrimType emptyListCtorName)
+            consCon <-
+                Rock.fetch (Elara.Query.GetDataCon consCtorName)
+                    ?:! throwError_ (MissingPrimType consCtorName)
+
+            pure $ IOAction $ do
+                args <- getArgs
+                let toValueList [] = Ctor nilCon []
+                    toValueList (x : xs) = Ctor consCon [String (toText x), toValueList xs]
+                pure $ toValueList args
         PrimOp "readFile" -> do
             case a' of
                 String s -> pure $ IOAction $ do
                     contents <-
                         runErrorOrReport @ReadFileError $
                             Rock.fetch (Elara.Query.GetFileContents (toString s))
-                    pure $ String (contents.fileContents)
+                    pure $ String contents.fileContents
                 _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
         PrimOp "negate" -> do
             case a' of
@@ -399,6 +426,11 @@ apply f' a' = do
         PartialApplication (PrimOp "debugWithMsg") fst -> do
             logDebug $ "Source Code Debug  (" <> pretty fst <> "):  " <> pretty a'
             pure a'
+        PrimOp primName -> do
+            case Map.lookup primName primOps of
+                Just 1 -> error "1-arg primop Should be handled here"
+                Just _ -> pure $ PartialApplication f' a'
+                Nothing -> throwError_ $ UnknownPrimitive primName
         PartialApplication (PrimOp ">>=") fst -> do
             case fst of
                 IOAction io -> do
@@ -406,11 +438,6 @@ apply f' a' = do
                         val <- io
                         apply a' val
                 _ -> throwError_ TypeMismatch{expected = "IO", actual = a'}
-        PrimOp primName -> do
-            case Map.lookup primName primOps of
-                Just 1 -> error "1-arg primop Should be handled here"
-                Just _ -> pure $ PartialApplication f' a'
-                Nothing -> throwError_ $ UnknownPrimitive primName
         Ctor c args | typeArity c.dataConType < length args -> do
             throwError_ $ NotAFunction f'
         Ctor c args -> do
@@ -481,10 +508,10 @@ interpretBinding (Recursive bs) = logDebugWith ("interpretBinding Rec: " <> pret
 
 -- | Load a module into the interpreter
 loadModule :: Interpreter r => CoreModule CoreBind -> Eff r ()
-loadModule (CoreModule name decls) = debugWith ("loadModule:" <+> pretty name) $ do
+loadModule (CoreModule name decls) = logDebugWith ("loadModule:" <+> pretty name) $ do
     loaded <- gets loadedModules
     if Set.member name loaded
-        then debug $ "Module" <+> pretty name <+> "already loaded, skipping"
+        then logDebug $ "Module" <+> pretty name <+> "already loaded, skipping"
         else do
             modify (\s -> s{loadedModules = Set.insert name (loadedModules s)})
             oldBindings <- gets globalBindings
@@ -495,7 +522,7 @@ loadModule (CoreModule name decls) = debugWith ("loadModule:" <+> pretty name) $
                     (CoreType decl) -> loadTypeDecl decl
                 )
             newEnv <- gets globalBindings
-            debug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
+            logDebug $ "Loaded module" <+> pretty name <+> "with bindings" <+> pretty (Map.difference newEnv oldBindings)
 
 loadTypeDecl :: Interpreter r => CoreTypeDecl -> Eff r ()
 loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl _ cons)) = do

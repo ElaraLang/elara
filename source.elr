@@ -6,7 +6,6 @@ import Tuple
 import String
 import Char
 
-
 let main = 
-    readFile "source.elr" >>= println
+    getArgs >>= println
     
