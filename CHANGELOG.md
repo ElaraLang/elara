@@ -27,6 +27,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Large interpreter improvements and bugfixes - ([c6747ca](https://github.com/ElaraLang/elara/commit/c6747ca1c683b5d1b7e073fb120ea36cc9c551a0)) 
 - *(interpreter)* Add a nice print output for tuple and list - ([0e94eca](https://github.com/ElaraLang/elara/commit/0e94ecab8b4146b50d3dd35a84b807096a401610)) 
 - *(interpreter)* Implement integer division (/) and modulo (%) - ([e6a8c6f](https://github.com/ElaraLang/elara/commit/e6a8c6f658dbe912356ec772d93005c6ae9c43e7)) 
+- *(interpreter)* Add prim `ReadFile` support - ([38ae34f](https://github.com/ElaraLang/elara/commit/38ae34f5d59a222fa4eeca7394eadddbb6e8e9b4)) 
 - *(lexer)* Improve lexer's robustness wrt indentation and closing parentheses - ([4748cc7](https://github.com/ElaraLang/elara/commit/4748cc7a8b978bde97631dc6d5bf56a9a7bc1fdb)) 
 - *(lexer)* Support comments properly - ([d08bf58](https://github.com/ElaraLang/elara/commit/d08bf58000efc51c2fbf01a4c331678ceba0baec)) 
 - *(lexer)* Improve indentation handling - ([4c3e6eb](https://github.com/ElaraLang/elara/commit/4c3e6ebfe866186d5a085adde82feadfcad10db7)) 
@@ -41,6 +42,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(pattern-matching)* Make pattern matching compilation work... - ([b15cc93](https://github.com/ElaraLang/elara/commit/b15cc937f2c580ede3ad40c8f2f4ddcb4e4e6b86)) 
 - *(pretty)* Add Pretty CallStack instance - ([5644720](https://github.com/ElaraLang/elara/commit/56447201839ba9c9c340e4f23d8fa56d687bc595)) 
 - *(pretty)* Highlight `def` as a keyword - ([d9e552f](https://github.com/ElaraLang/elara/commit/d9e552f25b0f0176a2abbdfe810845feba56d489)) 
+- *(query)* Integrate JVM backend into Rock query system - ([82f9211](https://github.com/ElaraLang/elara/commit/82f9211e4f114c5a44f5535d3fc9caedbb616a93)) 
 - *(stdlib)* General stdlib improvements - ([5acb092](https://github.com/ElaraLang/elara/commit/5acb092f56a8a3a9d6fc401497109babe1f9c26b)) 
 - *(stdlib)* Support (x, y) tuple syntax in patterns - ([6f157ff](https://github.com/ElaraLang/elara/commit/6f157ff194c7650ded1ce1c9e6f94b22d834aa1e)) 
 - *(stdlib)* Lots of stdlib additions! - ([79f6e77](https://github.com/ElaraLang/elara/commit/79f6e776a4cb0282bea23dc623677cbcd105791d)) 
@@ -260,6 +262,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Document a lot of code and tidy up a lot of code - ([d30bd6e](https://github.com/ElaraLang/elara/commit/d30bd6ef604dad2cdac176e38878e67ec0b7d754)) 
 - Improve `todo` error - ([4e6ce4a](https://github.com/ElaraLang/elara/commit/4e6ce4a0aece5cfd1078a8b57be6a662116fcc37)) 
 - Improve handling of unit primitive - ([99147ec](https://github.com/ElaraLang/elara/commit/99147ec0c6bd53f45a1b15c26dc2bedf5af444d9)) 
+- Fix ModuleIndex with main file in source root - ([7091fda](https://github.com/ElaraLang/elara/commit/7091fda0fed9de9118b77c95a0b0e407f1d90afb)) 
 
 ### 📚 Documentation
 
@@ -334,6 +337,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add a basic golden test - ([b97144c](https://github.com/ElaraLang/elara/commit/b97144c4f103b75493f020d7af2caa1f386b1017)) 
 - Fix golden test bug - ([536b93a](https://github.com/ElaraLang/elara/commit/536b93ae6b2f8ea2dea82877808a04bb1f102ffd)) 
 - Tidy up and fix many tests - ([a67709e](https://github.com/ElaraLang/elara/commit/a67709e1aa40c3874e04d22cf3a90aeb6639a30d)) 
+- Fix flaky golden tests by introducing separate output effect - ([6b024d7](https://github.com/ElaraLang/elara/commit/6b024d7e0bfdb407fa84a8fdb006cd49389424a7)) 
+- Speed up test execution - ([6327395](https://github.com/ElaraLang/elara/commit/6327395d60dc76af8d0dbc158a699d56b794da3e)) 
 
 ### ⚙️ Miscellaneous Tasks
 
