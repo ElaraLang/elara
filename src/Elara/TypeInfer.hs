@@ -266,7 +266,7 @@ inferSCC ::
     SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
-    debug $ "Seeding SCC complete. Environment:\n" <> prettyState
+    logDebug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
         decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
         inferred <- inferDeclarationScheme decl
@@ -356,26 +356,26 @@ seedDeclaration (Declaration ld) =
         unlocated
         ld
         $ \d' -> case d' ^. field' @"body" % _Unwrapped % unlocated of
-            Value valueName _ NoFieldValue valueType _ -> debugWith ("seedDeclaration: Value " <> pretty valueName) $ do
+            Value valueName _ NoFieldValue valueType _ -> logDebugWith ("seedDeclaration: Value " <> pretty valueName) $ do
                 expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
-                debug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
+                logDebug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
                 expected <- case expectedType of
                     Just t -> pure t
                     Nothing -> Lifted . TypeVar (valueName ^. sourceRegion) . UnificationVar <$> makeUniqueTyVar
                 -- When we have an expected type (e.g., from a user annotation), skolemise
                 -- its quantified variables so they cannot unify with concrete types.
                 expectedAsMono <- skolemise expected
-                debug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
+                logDebug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
                 addType' (TermVarKey (valueName ^. unlocated)) expected
             _ -> pass -- TODO
 
 inferDeclarationScheme :: _ => ShuntedDeclaration -> Eff r (Polytype SourceRegion)
 inferDeclarationScheme (view (_Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated) -> d) = case d of
-    Value valueName valueExpr NoFieldValue _ _ -> debugWith ("inferDeclarationScheme: " <> pretty valueName) $ do
+    Value valueName valueExpr NoFieldValue _ _ -> logDebugWith ("inferDeclarationScheme: " <> pretty valueName) $ do
         expectedType <- lookupType (TermVarKey (valueName ^. unlocated))
         (_, polytype) <- inferValue (valueName ^. unlocated) valueExpr (Just expectedType)
         addType' (TermVarKey (valueName ^. unlocated)) (Polytype polytype)
-        debug $ "Inferred type for " <> pretty valueName <> ": " <> pretty polytype
+        logDebug $ "Inferred type for " <> pretty valueName <> ": " <> pretty polytype
         pure polytype
     _ -> error "only value declarations are supported currently"
 
@@ -407,9 +407,9 @@ inferDeclaration (Declaration ld) = do
     inferDeclarationBody' declBody = case declBody of
         Value name e NoFieldValue valueType annotations -> do
             expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) valueType
-            debug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
+            logDebug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
-            debug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
+            logDebug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             annotations <- Generic.traverseValueDeclAnnotations inferAnnotation annotations
             pure (Value name typedExpr NoFieldValue (Polytype polytype) annotations)
@@ -421,7 +421,7 @@ inferDeclaration (Declaration ld) = do
                     let tyVars' = fmapToSnd createTypeVar tyVars
 
                     ann' <- case anns of
-                        Generic.TypeDeclAnnotations kind_ anns' -> do
+                        Generic.TypeDeclAnnotations _kind anns' -> do
                             anns <- traverse inferAnnotation anns'
                             pure
                                 Generic.TypeDeclAnnotations
@@ -450,7 +450,7 @@ inferDeclaration (Declaration ld) = do
 
                     ctors' <- traverse inferCtor ctors
                     ann' <- case anns of
-                        Generic.TypeDeclAnnotations kind_ anns' -> do
+                        Generic.TypeDeclAnnotations _kind anns' -> do
                             anns <- traverse inferAnnotation anns'
                             pure
                                 Generic.TypeDeclAnnotations
@@ -513,8 +513,8 @@ inferValue valueName valueExpr expectedType = do
 
     let constraint' = constraint <> simpleEquality (typeLoc expected) expectedAsMono t
     let tch = fuv t <> fuv constraint'
-    debug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
-    debug $ "Type: " <> pretty t
+    logDebug $ "Generated constraints: " <> pretty constraint' <> " for " <> pretty valueName
+    logDebug $ "Type: " <> pretty t
 
     (finalConstraint, subst) <- solveConstraint mempty tch constraint'
 
@@ -524,11 +524,11 @@ inferValue valueName valueExpr expectedType = do
 
     let newType = substituteAll subst t
 
-    debug $ "Substituted type: " <> pretty newType <> " from " <> pretty t <> " with " <> pretty subst
+    logDebug $ "Substituted type: " <> pretty newType <> " from " <> pretty t <> " with " <> pretty subst
 
     generalized <- generalise (removeSkolems newType)
 
-    debug $ "Generalized type: " <> pretty generalized <> " from " <> pretty newType
+    logDebug $ "Generalized type: " <> pretty generalized <> " from " <> pretty newType
 
     pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
 

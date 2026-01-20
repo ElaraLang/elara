@@ -13,6 +13,7 @@ import Data.Text qualified as Text
 import Effectful (Eff)
 import Effectful.FileSystem (FileSystem)
 import Elara.AST.Name (ModuleName (..))
+import Elara.Data.Pretty
 import Elara.ReadFile (findElaraFiles)
 import Elara.Settings (CompilerSettings (..))
 import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
@@ -25,14 +26,18 @@ data ModuleStyle
       RustStyle
     | -- | Flat: A.B.C.elr → A.B.C
       FlatStyle
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Pretty ModuleStyle
 
 -- | An entry in the module index
 data ModuleEntry = ModuleEntry
     { entryPath :: !FilePath
     , entryStyle :: !ModuleStyle
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Pretty ModuleEntry
 
 {- | Bidirectional mapping between module names and file paths.
 Note: 'moduleToFiles' uses lowercase module names as keys
@@ -44,7 +49,9 @@ data ModuleIndex = ModuleIndex
     , fileToModule :: !(Map FilePath ModuleName)
     -- ^ Map from file path to inferred module name (original case)
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+instance Pretty ModuleIndex
 
 instance Semigroup ModuleIndex where
     ModuleIndex m1 f1 <> ModuleIndex m2 f2 =
@@ -63,9 +70,13 @@ normalizeModuleName (ModuleName parts) = ModuleName (fmap Text.toLower parts)
 buildModuleIndex :: CompilerSettings -> Eff '[FileSystem] ModuleIndex
 buildModuleIndex settings = do
     let mainFileDir = case settings.mainFile of
-            Just fp -> [takeDirectory fp]
+            Just fp -> [] -- TODO: if we have a
             Nothing -> []
-    let roots = ordNub $ ["stdlib"] <> settings.sourceDirs <> mainFileDir
+    let roots =
+            ordNub $
+                ["stdlib"]
+                    <> settings.sourceDirs
+                    <> mainFileDir
 
     allFiles <- findElaraFiles roots
     pure $ foldMap (indexFile roots) allFiles

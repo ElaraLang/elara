@@ -255,6 +255,7 @@ type instance DispatchOf StructuredDebug = 'Dynamic
 debug :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r ()
 debug msg = withFrozenCallStack $ send $ DebugOld callStack msg
 
+{-# WARNING debugWith "Use logDebugWith" #-}
 debugWith :: HasCallStack => StructuredDebug :> r => Doc AnsiStyle -> Eff r a -> Eff r a
 debugWith msg act = withFrozenCallStack $ send $ DebugWith callStack msg act
 
