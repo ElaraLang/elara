@@ -74,7 +74,7 @@ arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ property $ do
 
 lets :: Spec
 lets = describe "Parses lets correctly" $ do
-    it "Parses a simple let-in correctly" $ property $ do
+    it "Parses a simple let-in correctly" $ withTests 1 $ property $ do
         "let x = 1 in x"
             `shouldParseExpr` Expr
                 ( LetIn
@@ -85,7 +85,7 @@ lets = describe "Parses lets correctly" $ do
                 , Nothing
                 )
 
-    it "Parses a nested let correctly" $ property $ do
+    it "Parses a nested let correctly" $ withTests 1 $ property $ do
         [text|
         let x =
                 let y = 
