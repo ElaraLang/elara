@@ -295,7 +295,7 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
 
                                 if runWith == RunWithInterpreter
                                     then
-                                        Interpreter.runInterpreter Interpreter.run
+                                        Interpreter.runInterpreterOutput $ Interpreter.runInterpreter Interpreter.run
                                     else
                                         if runWith == RunWithJVM
                                             then do

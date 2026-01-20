@@ -247,7 +247,6 @@
                     "template-haskell"
                     "neat-interpolation"
                     "hspec-megaparsec"
-                    "silently"
                   ];
                   source-dirs = "test";
                   component = {

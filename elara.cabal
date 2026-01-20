@@ -371,7 +371,6 @@ test-suite elara-test
     , process
     , relude
     , safe-exceptions
-    , silently
     , some
     , stringsearch
     , sydtest

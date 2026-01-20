@@ -5,6 +5,7 @@ import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Effectful
+import Effectful.Dispatch.Dynamic
 import Effectful.Error.Static
 import Effectful.State.Static.Local
 import Elara.AST.Name (ModuleName (..), Qualified (..))
@@ -30,10 +31,26 @@ type Interpreter r =
     , QueryEffects r
     , Rock.Rock Elara.Query.Query :> r
     , StructuredDebug :> r
+    , InterpreterOutput :> r
     , IOE :> r
     , HasCallStack
     )
-type InterpreterEffects = ConsQueryEffects '[State ElaraState, Error InterpreterError, StructuredDebug, Rock.Rock Elara.Query.Query, IOE]
+
+data InterpreterOutput :: Effect where
+    Print :: Text -> InterpreterOutput m ()
+
+type instance DispatchOf InterpreterOutput = Dynamic
+
+printText :: InterpreterOutput :> r => Text -> Eff r ()
+printText t = send (Print t)
+
+interpretInterpreterOutput :: (Text -> Eff r ()) -> Eff (InterpreterOutput : r) a -> Eff r a
+interpretInterpreterOutput f = interpret (const $ \case Print t -> f t)
+
+runInterpreterOutput :: IOE :> r => Eff (InterpreterOutput : r) a -> Eff r a
+runInterpreterOutput = interpretInterpreterOutput putTextLn
+
+type InterpreterEffects = ConsQueryEffects '[InterpreterOutput, State ElaraState, Error InterpreterError, StructuredDebug, Rock.Rock Elara.Query.Query, IOE]
 
 data ElaraState = ElaraState
     { globalBindings :: Map (Qualified Text) Value
@@ -276,7 +293,7 @@ interpretExpr (App f a) = do
                     let asString = case a' of
                             String s -> s
                             other -> prettyToText other
-                    putTextLn asString
+                    printText asString
                     pure (Ctor unitCtor [])
             PrimOp "negate" -> do
                 case a' of
