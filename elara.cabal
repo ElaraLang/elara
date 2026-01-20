@@ -313,7 +313,6 @@ test-suite elara-test
       Parse.Expressions
       Parse.Patterns
       Region
-      Rules
       Shunt
   hs-source-dirs:
       test

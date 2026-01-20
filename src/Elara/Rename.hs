@@ -8,7 +8,7 @@ This stage handles:
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
    Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
-module Elara.Rename (getRenamedModule) where
+module Elara.Rename (getRenamedModule, renameExpr, InnerRename) where
 
 import Data.Generics.Product hiding (list)
 import Data.Generics.Wrapped

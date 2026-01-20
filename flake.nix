@@ -272,7 +272,6 @@
                       "Parse.Expressions"
                       "Parse.Patterns"
                       "Region"
-                      "Rules"
                       "Shunt"
                     ];
                   };

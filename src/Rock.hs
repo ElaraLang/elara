@@ -7,18 +7,14 @@
 
 module Rock where
 
-import Data.Dependent.HashMap (DHashMap)
-import Data.Dependent.HashMap qualified as DHashMap
 import Data.GADT.Compare (GEq, geq)
 import Data.GADT.Show (GShow (gshowsPrec))
 
-import Data.IORef.Lifted
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
-import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, raise, (:>))
+import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, (:>))
 import Effectful.Dispatch.Static (SideEffects (NoSideEffects), StaticRep, evalStaticRep, getStaticRep)
-import Effectful.Timeout (Timeout, timeout)
 import Elara.Logging
 import GHC.Show (Show (..), showChar, showParen, showString)
 import Unsafe.Coerce (unsafeCoerce)

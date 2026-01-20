@@ -12,7 +12,18 @@ The logic for this is based on https://stackoverflow.com/a/67992584/6272977, whi
 
 Most of the other functions in this module are less interesting and mainly plumbing into the compiler, particularly a lot of boilerplate on traversing the AST.
 -}
-module Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery) where
+module Elara.Shunt (
+    runGetOpInfoQuery,
+    runGetOpTableInQuery,
+
+    -- * Testing exports
+    fixOperators,
+    shuntExpr,
+    fixExpr,
+    ShuntPipelineEffects,
+    OpLookup,
+    HasOpLookup,
+) where
 
 import Data.Generics.Product (HasField' (field'))
 import Data.Generics.Wrapped

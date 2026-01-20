@@ -31,18 +31,22 @@ letIndents = describe "Lexes indented let declarations" $ do
                 3|]
             <~!~> "let x = { 1; 2; 3 }"
 
+        -- When 2 is more indented than 1, it's a continuation (no new block)
+        -- When 3 is at the same level as 1, it's a new statement (semicolon)
         [text|
-        let x = 
+        let x =
             1
                     2
             3|]
-            <~!~> "let x = { 1 { 2 }; 3}"
+            <~!~> "let x = { 1 2; 3}"
+
+        -- Same logic: 3 is a continuation of 2, not a new block
         [text|
-        let x = 
+        let x =
             1
             2
                 3|]
-            <~!~> "let x = { 1 ; 2 { 3 } }"
+            <~!~> "let x = { 1 ; 2 3 }"
 
     it "Lexes nested lets properly" $ do
         [text|

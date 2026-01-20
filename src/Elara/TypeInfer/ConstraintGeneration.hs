@@ -5,6 +5,8 @@ module Elara.TypeInfer.ConstraintGeneration (
     generateConstraints,
     solveConstraint,
     lookupType,
+    -- Exported for testing
+    unify,
 ) where
 
 import Data.Foldable (foldrM)

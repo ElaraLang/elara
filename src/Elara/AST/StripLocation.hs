@@ -19,6 +19,10 @@ instance StripLocation s () where
 instance {-# OVERLAPPABLE #-} StripLocation a a' => StripLocation (Located a) a' where
     stripLocation (Located _ a) = stripLocation a
 
+-- | Explicit instance for Located () to avoid overlapping with StripLocation s ()
+instance {-# OVERLAPPING #-} StripLocation (Located ()) () where
+    stripLocation (Located _ a) = a
+
 instance {-# INCOHERENT #-} StripLocation SourceRegion () where
     stripLocation _ = ()
 

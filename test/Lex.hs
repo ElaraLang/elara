@@ -1,16 +1,17 @@
-module Lex where
+-- | Lexer tests
+module Lex (spec) where
 
-import Arbitrary.Literals
+import Arbitrary.Literals (genCharLiteral, genFloatLiteral, genIntLiteral, genStringLiteral, unCharLiteral, unFloatLiteral, unIntLiteral, unStringLiteral)
 import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
-import Common
+import Common ((<=>))
 import Elara.AST.Name (ModuleName (..))
-import Elara.Lexer.Token
-import Hedgehog
-import Lex.Common
+import Elara.Lexer.Token (Token (..))
+import Hedgehog (forAll, property, (===))
+import Lex.Common (lexUL)
 import Lex.Indents qualified as Indents
 import NeatInterpolation (text)
 import Relude.Unsafe (read)
-import Test.Syd
+import Test.Syd (Spec, SpecWith, describe, it)
 import Test.Syd.Hedgehog ()
 
 spec :: Spec
