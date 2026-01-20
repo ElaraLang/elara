@@ -42,6 +42,8 @@ import Elara.Data.Kind (KindVar)
 import Elara.Data.Pretty
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error (DiagnosticWriter)
+import Elara.JVM.Error (JVMLoweringError)
+import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
 import Elara.ModuleIndex (ModuleIndex)
@@ -58,6 +60,8 @@ import Elara.Shunt.Operator (OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
 import Elara.TypeInfer.Type (Polytype, Type)
 import Elara.TypeInfer.Unique
+import JVM.Data.Abstract.ClassFile (ClassFile)
+import JVM.Data.Convert.Monad (CodeConverterError)
 import Rock (Rock)
 
 type WithRock effects =
@@ -180,6 +184,14 @@ data Query (es :: [Effect]) a where
     GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetClosureLiftedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ClosureLiftError])) (CoreModule (ANF.TopLevelBind Core.Var))
     GetFinalisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
+    -- \* JVM Backend Queries
+
+    -- | Core → JVM IR (per module)
+    GetJVMIRModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError])) IR.Module
+    -- | JVM IR → ClassFiles (per module)
+    GetJVMClassFiles :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError])) [ClassFile]
+    -- | ClassFiles → Serialized bytes (per module)
+    GetJVMClassBytes :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError, Error CodeConverterError])) [(FilePath, LByteString)]
 
 -- | List of query kinds at the type level
 type data QueryType

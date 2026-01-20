@@ -14,6 +14,7 @@ import Elara.AST.Region (Located (Located), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
+import Elara.JVM.Query qualified
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
 import Elara.ModuleIndex qualified as ModuleIndex
@@ -117,3 +118,7 @@ rules compilerSettings key = case key of
     GetANFCoreModule mn -> inject $ runGetANFCoreModuleQuery mn
     GetClosureLiftedModule mn -> inject $ runGetClosureLiftedModuleQuery mn
     GetFinalisedCoreModule mn -> inject $ runGetFinalisedCoreModuleQuery mn
+    -- JVM Backend Queries
+    GetJVMIRModule mn -> inject $ Elara.JVM.Query.runGetJVMIRModuleQuery mn
+    GetJVMClassFiles mn -> inject $ Elara.JVM.Query.runGetJVMClassFilesQuery mn
+    GetJVMClassBytes mn -> inject $ Elara.JVM.Query.runGetJVMClassBytesQuery mn

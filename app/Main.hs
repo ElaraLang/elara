@@ -21,15 +21,12 @@ import Elara.Data.Unique (
  )
 
 import Autodocodec
-import Data.Binary.Put
-import Data.Binary.Write
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Set qualified as Set
 import Effectful.Colog
 import Effectful.Concurrent (runConcurrent)
-import Effectful.Error.Extra (fromEither)
 import Effectful.Error.Static (Error, runError)
 import Elara.AST.Generic
 import Elara.AST.Module
@@ -41,10 +38,8 @@ import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Interpreter qualified as Interpreter
-import Elara.JVM.Emit qualified as Emit
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR (moduleName)
-import Elara.JVM.Lower
+import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, logWarning, minLogLevel, structuredDebugToLogWith)
 import Elara.Parse.Error (WParseErrorBundle)
@@ -56,10 +51,8 @@ import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), DumpTarget (..), RunWithOption (..))
 import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
-import JVM.Data.Abstract.ClassFile
-import JVM.Data.Abstract.Name
-import JVM.Data.Convert (convert)
-import JVM.Data.Convert.Monad
+import JVM.Data.Abstract.ClassFile (ClassFile (..))
+import JVM.Data.Convert.Monad (CodeConverterError)
 import OptEnvConf
 import Paths_elara qualified as Elara
 import Prettyprinter.Render.Text
@@ -299,29 +292,29 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
                                     else
                                         if runWith == RunWithJVM
                                             then do
-                                                cores <- for moduleNames $ \m -> do
-                                                    Rock.fetch $ Elara.Query.GetFinalisedCoreModule m
-                                                classFiles <- for cores $ \coreMod -> do
-                                                    lowered <- runErrorOrReport @JVMLoweringError $ lowerModule coreMod
-                                                    Emit.emitIRModule lowered
-
+                                                -- Dump JVM IR if requested (using new query, memoized)
                                                 when (DumpIR `Set.member` dumpTargets) $ do
-                                                    lowered <- for cores $ \coreMod -> do
-                                                        runErrorOrReport @JVMLoweringError $ lowerModule coreMod
-                                                    inject $ dumpGraph lowered (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
+                                                    irModules <- for moduleNames $ \m ->
+                                                        runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
+                                                    inject $ dumpGraph irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
                                                     logDebug "Dumped JVM IR modules"
 
+                                                -- Dump ClassFiles if requested (using new query, memoized)
                                                 when (DumpJVM `Set.member` dumpTargets) $ do
-                                                    inject $ dumpGraph (concat classFiles) (\x -> prettyToUnannotatedText x.name) ".classfile.txt"
+                                                    classFiles <- for moduleNames $ \m ->
+                                                        runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
+                                                    inject $ dumpGraph (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
 
-                                                for_ (zip moduleNames classFiles) $ \(modName, classes) -> do
-                                                    fps <- for classes $ \classFile -> do
-                                                        x <- runErrorOrReport $ fromEither $ convert classFile
-                                                        let bs = runPut (writeBinary x)
-                                                        let fp = "build/" <> suitableFilePath classFile.name
-                                                        liftIO $ createAndWriteFile fp bs
-                                                        pure fp
-
+                                                -- Compile and write class files to disk
+                                                for_ moduleNames $ \modName -> do
+                                                    classBytes <-
+                                                        runErrorOrReport @JVMLoweringError $
+                                                            runErrorOrReport @CodeConverterError $
+                                                                Rock.fetch (Elara.Query.GetJVMClassBytes modName)
+                                                    fps <- for classBytes $ \(fp, bytes) -> do
+                                                        let fullPath = "build/" <> fp
+                                                        liftIO $ createAndWriteFile fullPath bytes
+                                                        pure fullPath
                                                     logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
 
                                                 logDebug "Emitted JVM class files"

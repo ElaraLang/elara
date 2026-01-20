@@ -83,6 +83,7 @@ library
       Elara.JVM.Error
       Elara.JVM.IR
       Elara.JVM.Lower
+      Elara.JVM.Query
       Elara.JVM.Lower.ADT
       Elara.JVM.Lower.Expr
       Elara.JVM.Lower.Function
