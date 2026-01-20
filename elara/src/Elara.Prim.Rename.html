@@ -10,17 +10,17 @@
 </span><span id="line-10"></span><span class="annot"><a href="Elara.Prim.Rename.html#primitiveRenameState"><span class="hs-identifier hs-type">primitiveRenameState</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span>
 </span><span id="line-11"></span><span id="primitiveRenameState"><span class="annot"><span class="annottext">primitiveRenameState :: RenameState
 </span><a href="Elara.Prim.Rename.html#primitiveRenameState"><span class="hs-identifier hs-var hs-var">primitiveRenameState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-12"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680133395"><span class="annot"><span class="annottext">vars :: Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680133395"><span class="hs-identifier hs-var hs-var">vars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680133478"><span class="annot"><span class="annottext">vars :: Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680133478"><span class="hs-identifier hs-var hs-var">vars</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-13"></span><span>            </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-14"></span><span>        </span><span id="local-6989586621680133409"><span class="annot"><span class="annottext">types :: Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680133409"><span class="hs-identifier hs-var hs-var">types</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-14"></span><span>        </span><span id="local-6989586621680133492"><span class="annot"><span class="annottext">types :: Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680133492"><span class="hs-identifier hs-var hs-var">types</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-15"></span><span>            </span><span class="annot"><span class="annottext">[Item (Map TypeName (NonEmpty (VarRef TypeName)))]
 -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 forall l. IsList l =&gt; [Item l] -&gt; l
-</span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680133410"><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680133410"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680133410"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">OneItem (NonEmpty (VarRef TypeName)) -&gt; NonEmpty (VarRef TypeName)
+</span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680133493"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680133493"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680133493"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">OneItem (NonEmpty (VarRef TypeName)) -&gt; NonEmpty (VarRef TypeName)
 forall x. One x =&gt; OneItem x -&gt; x
 </span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">(OneItem (NonEmpty (VarRef TypeName))
  -&gt; NonEmpty (VarRef TypeName))
@@ -34,7 +34,7 @@ VarRefImpl c (Qualified n) -&gt; VarRef' c n
 </span><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Located (Qualified TypeName)
 forall c. c -&gt; Located (Qualified c)
 </span><a href="Elara.Prim.html#mkPrimVarRef"><span class="hs-identifier hs-var">mkPrimVarRef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680133410"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; (TypeName, NonEmpty (VarRef TypeName)))
+</span><a href="#local-6989586621680133493"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; (TypeName, NonEmpty (VarRef TypeName)))
 -&gt; [TypeName] -&gt; [(TypeName, NonEmpty (VarRef TypeName))]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[TypeName]
@@ -67,8 +67,8 @@ forall c. c -&gt; Located (Qualified c)
 -&gt; Map LowerAlphaName (Unique LowerAlphaName)
 -&gt; RenameState
 </span><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680133395"><span class="hs-identifier hs-var">vars</span></a></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680133409"><span class="hs-identifier hs-var">types</span></a></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+</span><a href="#local-6989586621680133478"><span class="hs-identifier hs-var">vars</span></a></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680133492"><span class="hs-identifier hs-var">types</span></a></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
 </span><span id="line-18"></span></pre></body></html>
