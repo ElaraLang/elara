@@ -9,6 +9,8 @@ data CompilerSettings = CompilerSettings
     -- ^ The main file to compile/run
     , sourceDirs :: [FilePath]
     -- ^ Directories to search for source files
+    , programArgs :: [String]
+    -- ^ A list of arguments to pass to the program being run
     }
     deriving (Show, Eq)
 
@@ -32,6 +34,7 @@ defaultSettings =
         , runWith = RunWithNone
         , mainFile = Nothing
         , sourceDirs = []
+        , programArgs = []
         }
 
 data RunWithOption

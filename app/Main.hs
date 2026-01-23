@@ -81,6 +81,7 @@ instance ReportableError CodeConverterError where
 data Settings = Settings
     { dumpTargets :: [DumpTarget]
     , sourceDirs :: [FilePath]
+    , programArgs :: [String]
     }
 
 data Instructions = Instructions !Dispatch !Settings
@@ -105,6 +106,9 @@ instance HasParser Settings where
                 , OptEnvConf.value []
                 , reader $ commaSeparatedList str
                 ]
+        programArgs <-
+            many
+                (setting [argument, help "Arguments to pass to the program", metavar "PROGRAM_ARGS", reader str])
         pure Settings{..}
 
 instance HasParser Instructions where
@@ -180,6 +184,7 @@ toCompilerSettings dispatch Settings{..} =
             , runWith = runWith
             , mainFile = mainFile
             , sourceDirs = sourceDirs
+            , programArgs = programArgs
             }
 
 main :: IO ()

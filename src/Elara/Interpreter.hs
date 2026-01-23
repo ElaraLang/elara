@@ -23,6 +23,7 @@ import Elara.Prim.Core (consCtorName, emptyListCtorName, falseCtor, fetchPrimiti
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.ReadFile
+import Elara.Settings
 import Rock qualified
 import Prelude hiding (force)
 
@@ -252,7 +253,7 @@ evalPrim "getArgs" = do
             ?:! throwError_ (MissingPrimType consCtorName)
 
     pure $ IOAction $ do
-        args <- getArgs
+        args <- (.programArgs) <$> Rock.fetch Elara.Query.GetCompilerSettings
         let toValueList [] = Ctor nilCon []
             toValueList (x : xs) = Ctor consCon [String (toText x), toValueList xs]
         pure $ toValueList args
