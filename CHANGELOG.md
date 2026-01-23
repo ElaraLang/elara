@@ -48,6 +48,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(stdlib)* Lots of stdlib additions! - ([79f6e77](https://github.com/ElaraLang/elara/commit/79f6e776a4cb0282bea23dc623677cbcd105791d)) 
 - *(stdlib)* Add (>>) operator for IO sequencing - ([70601d3](https://github.com/ElaraLang/elara/commit/70601d37b85556bd8918795812e4123d06073f3b)) 
 - *(stdlib)* Add a `Result` type to stdlib and improve the json parser example's error messages - ([262e4d8](https://github.com/ElaraLang/elara/commit/262e4d8163952b61779455e50b8ca777c0e7f681)) 
+- *(stdlib)* Add some fun new library functions - ([c216c55](https://github.com/ElaraLang/elara/commit/c216c553282fd9490f1c7f9ca00548106be6f9f5)) 
 - *(to-core)* :zap: Add a core-to-core pass which removes reundant let-in's - ([0d3bc53](https://github.com/ElaraLang/elara/commit/0d3bc5397c8b6754c3ebd2c64373844249d78684)) 
 - *(to-core)* :sparkles: Get very basic (and probably super buggy) conversion to ANF working! - ([2283e6c](https://github.com/ElaraLang/elara/commit/2283e6c089058a6d2a80617a3f4c177b62e772e4)) 
 - *(to-core)* :sparkles: Start to reimplement to-core phase - ([7e46451](https://github.com/ElaraLang/elara/commit/7e46451412cc79c9dba40281d85b8e721923038b)) 
@@ -72,6 +73,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add (barely supported) Float type - ([bf70f56](https://github.com/ElaraLang/elara/commit/bf70f565e7394061ae7e7cd99fa64147d16819ec)) 
 - Support qualified imports - ([1022ba8](https://github.com/ElaraLang/elara/commit/1022ba8a08bb5859b85d2828ed752cd6e3604c39)) 
 - Improve module system significantly making it more flexible - ([3e78ed5](https://github.com/ElaraLang/elara/commit/3e78ed5e43b2e67a9b940ea15683ba2c9f9c5ce6)) 
+- Add a half-finished `getArgs` primitive - ([35c7de6](https://github.com/ElaraLang/elara/commit/35c7de641e9a0ab1638030c81da8cc31d83f6863)) 
+- Allow passing custom program arguments - ([10e7e15](https://github.com/ElaraLang/elara/commit/10e7e1532566554fabcefcf0b0faf2ef28bc0887)) 
 
 ### 🐛 Bug Fixes
 
@@ -197,6 +200,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(logging)* Start to use new logging system - ([4047820](https://github.com/ElaraLang/elara/commit/4047820eb4cb30023bbea462f9d84e0b7c47332b)) 
 - *(main)* Re-implement all --dump-X flags - ([eb6613a](https://github.com/ElaraLang/elara/commit/eb6613a16e34f540effe85397a49356f9d15fedb)) 
 - *(main)* Tidy up dumping logic - ([c175c9c](https://github.com/ElaraLang/elara/commit/c175c9c475710a4603817e6f89b11f2780d0761e)) 
+- *(main)* Improve main output - ([4109106](https://github.com/ElaraLang/elara/commit/4109106c9c796ddaaf26ce44283effcf624469af)) 
 - *(nix)* :building_construction: Move from haskell-flake to hix - ([fe16f77](https://github.com/ElaraLang/elara/commit/fe16f77513eea306bee9673db4e4ed0664e4e3b2)) 
 - *(parser)* :mute: Remove debug logging from parser - ([61b6c3c](https://github.com/ElaraLang/elara/commit/61b6c3c1d514a837952c7ab73489c6177a01f382)) 
 - *(parser)* Small refactor to parser code - ([0cd07e0](https://github.com/ElaraLang/elara/commit/0cd07e0b9222b22d000bf00382ed9ae91f42dd86)) 
