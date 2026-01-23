@@ -199,7 +199,6 @@ main = do
   where
     run :: CompilerSettings -> IO ()
     run compilerSettings = do
-        putTextLn "\n"
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
             result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
             case result of
@@ -207,7 +206,7 @@ main = do
                     report error
                     printPretty callStack
                     pure mempty
-                Right () -> printPretty "Done"
+                Right () -> pass
 
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
 
@@ -329,9 +328,10 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
                                 let t :: Double
                                     t = fromIntegral (end - start) * 1e-9
                                 logInfo
-                                    ( Style.varName "Successfully" <+> "compiled "
-                                        <> Style.punctuation (pretty (length files))
-                                        <> " classes in "
+                                    ( Style.varName "Successfully"
+                                        <+> (if runWith == RunWithNone then "compiled" else "ran")
+                                        <+> Style.punctuation (pretty (length files))
+                                        <> " source files in "
                                         <> Style.punctuation
                                             ( fromString (printf "%.2f" t)
                                                 <> "ms!"
