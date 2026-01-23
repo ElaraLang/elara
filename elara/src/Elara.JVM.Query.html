@@ -34,9 +34,9 @@ and serialization. Each query is atomic and operates on a single module.
 </span><span id="line-34"></span><span id="runGetJVMIRModuleQuery"><span class="annot"><span class="annottext">runGetJVMIRModuleQuery :: ModuleName
 -&gt; Eff
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query]) Module
-</span><a href="Elara.JVM.Query.html#runGetJVMIRModuleQuery"><span class="hs-identifier hs-var hs-var">runGetJVMIRModuleQuery</span></a></span></span><span> </span><span id="local-6989586621680217326"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217326"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680217327"><span class="annot"><a href="#local-6989586621680217327"><span class="hs-identifier hs-var">coreModule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query (Rock Query : ConsQueryEffects '[]) (CoreModule CoreBind)
+</span><a href="Elara.JVM.Query.html#runGetJVMIRModuleQuery"><span class="hs-identifier hs-var hs-var">runGetJVMIRModuleQuery</span></a></span></span><span> </span><span id="local-6989586621680218194"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680218194"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680218195"><span class="annot"><a href="#local-6989586621680218195"><span class="hs-identifier hs-var">coreModule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query (Rock Query : ConsQueryEffects '[]) (CoreModule CoreBind)
 -&gt; Eff
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query])
      (CoreModule CoreBind)
@@ -48,8 +48,8 @@ f xs a -&gt; Eff es a
 </span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName
 -&gt; Query (Rock Query : ConsQueryEffects '[]) (CoreModule CoreBind)
 </span><a href="Elara.Query.html#GetFinalisedCoreModule"><span class="hs-identifier hs-var">GetFinalisedCoreModule</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217326"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.html#lowerModule"><span class="hs-identifier hs-type">lowerModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680217327"><span class="hs-identifier hs-type">coreModule</span></a></span><span>
+</span><a href="#local-6989586621680218194"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Elara.JVM.Lower.html#lowerModule"><span class="hs-identifier hs-type">lowerModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680218195"><span class="hs-identifier hs-type">coreModule</span></a></span><span>
 </span><span id="line-37"></span><span>
 </span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | Emit JVM IR to ClassFiles</span></span><span>
 </span><span id="line-39"></span><span class="annot"><a href="Elara.JVM.Query.html#runGetJVMClassFilesQuery"><span class="hs-identifier hs-type">runGetJVMClassFilesQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
@@ -59,9 +59,9 @@ f xs a -&gt; Eff es a
 -&gt; Eff
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query])
      [ClassFile]
-</span><a href="Elara.JVM.Query.html#runGetJVMClassFilesQuery"><span class="hs-identifier hs-var hs-var">runGetJVMClassFilesQuery</span></a></span></span><span> </span><span id="local-6989586621680217399"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217399"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-43"></span><span>    </span><span id="local-6989586621680217400"><span class="annot"><a href="#local-6989586621680217400"><span class="hs-identifier hs-var">irModule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+</span><a href="Elara.JVM.Query.html#runGetJVMClassFilesQuery"><span class="hs-identifier hs-var hs-var">runGetJVMClassFilesQuery</span></a></span></span><span> </span><span id="local-6989586621680218267"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680218267"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>    </span><span id="local-6989586621680218268"><span class="annot"><a href="#local-6989586621680218268"><span class="hs-identifier hs-var">irModule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
   (Rock Query : ConsQueryEffects '[Error JVMLoweringError]) Module
 -&gt; Eff
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query]) Module
@@ -74,8 +74,8 @@ f xs a -&gt; Eff es a
 -&gt; Query
      (Rock Query : ConsQueryEffects '[Error JVMLoweringError]) Module
 </span><a href="Elara.Query.html#GetJVMIRModule"><span class="hs-identifier hs-var">GetJVMIRModule</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217399"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.JVM.Emit.html#emitIRModule"><span class="hs-identifier hs-type">Emit.emitIRModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680217400"><span class="hs-identifier hs-type">irModule</span></a></span><span>
+</span><a href="#local-6989586621680218267"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.JVM.Emit.html#emitIRModule"><span class="hs-identifier hs-type">Emit.emitIRModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680218268"><span class="hs-identifier hs-type">irModule</span></a></span><span>
 </span><span id="line-45"></span><span>
 </span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | Serialize ClassFiles to bytes with file paths</span></span><span>
 </span><span id="line-47"></span><span class="annot"><a href="Elara.JVM.Query.html#runGetJVMClassBytesQuery"><span class="hs-identifier hs-type">runGetJVMClassBytesQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
@@ -86,9 +86,9 @@ f xs a -&gt; Eff es a
      (ConsQueryEffects
         '[Error JVMLoweringError, Error CodeConverterError, Rock Query])
      [(FilePath, LByteString)]
-</span><a href="Elara.JVM.Query.html#runGetJVMClassBytesQuery"><span class="hs-identifier hs-var hs-var">runGetJVMClassBytesQuery</span></a></span></span><span> </span><span id="local-6989586621680217495"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217495"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-51"></span><span>    </span><span id="local-6989586621680217496"><span class="annot"><a href="#local-6989586621680217496"><span class="hs-identifier hs-var">classFiles</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+</span><a href="Elara.JVM.Query.html#runGetJVMClassBytesQuery"><span class="hs-identifier hs-var hs-var">runGetJVMClassBytesQuery</span></a></span></span><span> </span><span id="local-6989586621680218363"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680218363"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>    </span><span id="local-6989586621680218364"><span class="annot"><a href="#local-6989586621680218364"><span class="hs-identifier hs-var">classFiles</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
   (Rock Query : ConsQueryEffects '[Error JVMLoweringError])
   [ClassFile]
 -&gt; Eff
@@ -105,10 +105,10 @@ f xs a -&gt; Eff es a
      (Rock Query : ConsQueryEffects '[Error JVMLoweringError])
      [ClassFile]
 </span><a href="Elara.Query.html#GetJVMClassFiles"><span class="hs-identifier hs-var">GetJVMClassFiles</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680217495"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-52"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680217496"><span class="hs-identifier hs-type">classFiles</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680217499"><span class="annot"><span class="annottext">ClassFile
-</span><a href="#local-6989586621680217499"><span class="hs-identifier hs-var">cf</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-53"></span><span>        </span><span id="local-6989586621680217500"><span class="annot"><a href="#local-6989586621680217500"><span class="hs-identifier hs-var">converted</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either CodeConverterError ClassFile
+</span><a href="#local-6989586621680218363"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680218364"><span class="hs-identifier hs-type">classFiles</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680218367"><span class="annot"><span class="annottext">ClassFile
+</span><a href="#local-6989586621680218367"><span class="hs-identifier hs-var">cf</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-53"></span><span>        </span><span id="local-6989586621680218368"><span class="annot"><a href="#local-6989586621680218368"><span class="hs-identifier hs-var">converted</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either CodeConverterError ClassFile
 -&gt; Eff
      (ConsQueryEffects
         '[Error JVMLoweringError, Error CodeConverterError, Rock Query])
@@ -129,11 +129,11 @@ Either e a -&gt; Eff r a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ClassFile -&gt; Either CodeConverterError ClassFile
 </span><span class="hs-identifier hs-var">convert</span></span><span> </span><span class="annot"><span class="annottext">ClassFile
-</span><a href="#local-6989586621680217499"><span class="hs-identifier hs-var">cf</span></a></span><span>
-</span><span id="line-54"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680217501"><span class="annot"><a href="#local-6989586621680217501"><span class="hs-identifier hs-var hs-var">bytes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Put -&gt; LByteString
+</span><a href="#local-6989586621680218367"><span class="hs-identifier hs-var">cf</span></a></span><span>
+</span><span id="line-54"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680218369"><span class="annot"><a href="#local-6989586621680218369"><span class="hs-identifier hs-var hs-var">bytes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Put -&gt; LByteString
 </span><span class="hs-identifier hs-var">runPut</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ClassFile -&gt; Put
 forall a. WriteBinary a =&gt; a -&gt; Put
 </span><span class="hs-identifier hs-var">writeBinary</span></span><span> </span><span class="annot"><span class="annottext">ClassFile
-</span><a href="#local-6989586621680217500"><span class="hs-identifier hs-var">converted</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-55"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">suitableFilePath</span></span><span> </span><span class="annot"><span class="hs-identifier">cf</span></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680217501"><span class="hs-identifier hs-type">bytes</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680218368"><span class="hs-identifier hs-var">converted</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">suitableFilePath</span></span><span> </span><span class="annot"><span class="hs-identifier">cf</span></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680218369"><span class="hs-identifier hs-type">bytes</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-56"></span></pre></body></html>
