@@ -1,5 +1,6 @@
 module String
 import Elara.Prim
+
 def (++) : String -> String -> String
 let (++) s1 s2 = 
     match (s1, s2) with
@@ -19,3 +20,13 @@ let stringFromList l =
     match l with
         Nil -> ""
         Cons x xs -> stringCons x (stringFromList xs)
+
+
+def join : String -> List String -> String
+let join sep strings =
+    let joinGo acc strings_ =
+        match strings_ with
+            Nil -> acc
+            Cons x Nil -> acc ++ x
+            Cons x xs -> joinGo (acc ++ x ++ sep) xs
+    joinGo "" strings

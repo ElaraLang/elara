@@ -1,11 +1,6 @@
 import Prelude
-import Option
 import Elara.Prim
-import List
-import Tuple
 import String
-import Char
 
 let main = 
-    getArgs >>= println
-    
+    getArgs >>= (String.join ", " >> println)

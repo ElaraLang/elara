@@ -3,6 +3,16 @@ import Elara.Prim
 import Tuple
 import String
 
+def (<>) : List a -> List a -> List a
+let (<>) = append
+
+def append : List a -> List a -> List a
+let append l1 l2 =
+    match l1 with
+        Nil -> l2
+        Cons x xs -> Cons x (append xs l2)
+        
+
 def zip : List a -> List b -> List (Tuple2 a b)
 let zip l1 l2 =
     match (l1, l2) with
@@ -29,3 +39,30 @@ let reverse l =
             Nil -> acc
             Cons x xs -> reverseGo (Cons x acc) xs
     reverseGo Nil l
+
+
+def intersperse : a -> List a -> List a
+let intersperse sep l =
+    let intersperseGo l_ =
+        match l_ with
+            Nil -> Nil
+            Cons x Nil -> Cons x Nil
+            Cons x xs -> Cons x (Cons sep (intersperseGo xs))
+    intersperseGo l
+
+def intercalate : List a -> List (List a) -> List a
+let intercalate sep lists =
+    let intercalateGo acc lists_ =
+        match lists_ with
+            Nil -> reverse acc
+            Cons x Nil -> reverse (append x acc)
+            Cons x xs -> intercalateGo (append sep (append x acc)) xs
+    intercalateGo Nil lists
+
+def flatten : List (List a) -> List a
+let flatten lists =
+    let flattenGo acc lists_ =
+        match lists_ with
+            Nil -> reverse acc
+            Cons x xs -> flattenGo (append x acc) xs
+    flattenGo Nil lists
