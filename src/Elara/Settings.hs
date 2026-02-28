@@ -9,6 +9,8 @@ data CompilerSettings = CompilerSettings
     -- ^ Directories to search for source files
     , programArgs :: [String]
     -- ^ A list of arguments to pass to the program being run
+    , outputDir :: FilePath
+    -- ^ Directory for build artifacts (e.g. JVM class files, dump output)
     }
     deriving (Show, Eq)
 
@@ -32,4 +34,5 @@ defaultSettings =
         , mainFile = Nothing
         , sourceDirs = []
         , programArgs = []
+        , outputDir = "build"
         }

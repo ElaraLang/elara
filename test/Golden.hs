@@ -2,17 +2,14 @@
 module Golden (spec) where
 
 import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
-import Data.Dependent.HashMap qualified as DHashMap
-import Effectful.Concurrent (runConcurrent)
-import Effectful.FileSystem (runFileSystem)
+import Colog.Core (LogAction (..))
+import Effectful (Eff)
+import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
-import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
+import Elara qualified
+import Elara.Data.Pretty (AnsiStyle, Doc)
 import Elara.Interpreter qualified as Interpreter
-import Elara.Logging (ignoreStructuredDebug)
-import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), defaultSettings)
-import Rock qualified
-import Rock.Memo qualified
 import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it)
 
 spec :: Spec
@@ -31,17 +28,12 @@ runGolden settings goldenName = do
                 { mainFile = Just (inputPrefix <> goldenName <> ".elr")
                 }
     goldenStringFile ("test/test_resources/golden_outputs/" <> goldenName <> ".txt") $ do
-        startedVar <- newIORef DHashMap.empty
-        depsVar <- newIORef mempty
         output <-
             pipelineResShouldSucceed $
                 finaliseEffects $
-                    runFileSystem $
-                        uniqueGenToGlobalIO $
-                            ignoreStructuredDebug $
-                                runConcurrent $
-                                    execState ([] :: [Text]) $
-                                        Interpreter.interpretInterpreterOutput (modify . (:)) $
-                                            Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules compilerSettings)) $ do
-                                                Interpreter.runInterpreter Interpreter.run
+                    runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                        Elara.withCompilerEnv compilerSettings $
+                            execState ([] :: [Text]) $
+                                Interpreter.interpretInterpreterOutput (modify . (:)) $
+                                    Interpreter.runInterpreter Interpreter.run
         pure (toString $ unlines $ reverse output)

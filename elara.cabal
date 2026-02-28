@@ -18,6 +18,7 @@ build-type:     Simple
 
 library
   exposed-modules:
+      Elara
       Effectful.Error.Extra
       Effectful.State.Extra
       Elara.AST.Desugared

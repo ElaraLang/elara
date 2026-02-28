@@ -1,88 +1,41 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Main (
     main,
 )
 where
 
+import Autodocodec
 import Control.Exception as E
-import Effectful (Eff, IOE, Subset, inject, runEff, (:>))
-import Effectful.FileSystem (runFileSystem)
-import Elara.AST.Select
+import Data.Set qualified as Set
+import Effectful (runEff)
+import Effectful.Error.Static (runError)
+import Elara qualified
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Data.Unique (
-    resetGlobalUniqueSupply,
- )
-
-import Autodocodec
-import Data.Dependent.HashMap qualified as DHashMap
-import Data.Generics.Product (field')
-import Data.Generics.Wrapped (_Unwrapped)
-import Data.Set qualified as Set
-import Effectful.Colog
-import Effectful.Concurrent (runConcurrent)
-import Effectful.Error.Static (Error, runError)
-import Elara.AST.Generic
-import Elara.AST.Module
-import Elara.AST.Name (ModuleName, NameLike, nameText)
-import Elara.AST.Region
-import Elara.Core.LiftClosures.Error (ClosureLiftError)
-import Elara.Core.Module (CoreModule)
-import Elara.Data.Unique.Effect
-import Elara.Desugar.Error (DesugarError)
+import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
-import Elara.Interpreter qualified as Interpreter
-import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
-import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, minLogLevel, structuredDebugToLogWith)
-import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
-import Elara.Query qualified
-import Elara.ReadFile (ModulePathError)
-import Elara.Rename.Error (RenameError)
-import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
-import Elara.Shunt.Error (ShuntError)
-import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Convert.Monad (CodeConverterError)
+import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import OptEnvConf
 import Paths_elara qualified as Elara
-import Prettyprinter.Render.Text
-import Print
-import Rock qualified
-import Rock.Memo qualified
+import Print (printPretty)
 import System.CPUTime
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (hSetEncoding, utf8)
 import System.Process (callProcess)
 import Text.Printf
 import Prelude hiding (reader)
 
-outDirName :: IsString s => s
-outDirName = "build"
-
-instance ReportableError CodeConverterError where
-    report x =
-        writeReport $
-            Err
-                Nothing
-                (show x)
-                []
-                []
-
 data Settings = Settings
     { dumpTargets :: [DumpTarget]
     , sourceDirs :: [FilePath]
     , programArgs :: [String]
+    , buildDir :: FilePath
     }
 
 data Instructions = Instructions !Dispatch !Settings
@@ -110,6 +63,16 @@ instance HasParser Settings where
         programArgs <-
             many
                 (setting [argument, help "Arguments to pass to the program", metavar "PROGRAM_ARGS", reader str])
+
+        buildDir <-
+            setting
+                [ help "Output directory for compiled files (default: build/)"
+                , name "output-dir"
+                , env "ELARA_OUTPUT_DIR"
+                , metavar "OUTPUT_DIR"
+                , reader str
+                , value "build"
+                ]
         pure Settings{..}
 
 instance HasParser Instructions where
@@ -188,7 +151,22 @@ toCompilerSettings dispatch Settings{..} =
             , mainFile = mainFile
             , sourceDirs = sourceDirs
             , programArgs = programArgs
+            , outputDir = buildDir
             }
+
+-- | Convert a CLI dispatch command to a 'Elara.CompileAction'
+dispatchToAction :: Dispatch -> Elara.CompileAction
+dispatchToAction (DispatchBuild _ target) = Elara.CompileAndEmit (targetToBackend target)
+dispatchToAction (DispatchRun _ target) = Elara.CompileAndRun (targetToBackend target)
+
+targetToBackend :: RunTarget -> Elara.Backend
+targetToBackend TargetInterpreter = Elara.Interpreter
+targetToBackend TargetJVM = Elara.JVM
+
+-- | Execute the JVM output via @java -cp <outDir>:jvm-stdlib Main@.
+executeJVM :: CompilerSettings -> IO ()
+executeJVM settings =
+    callProcess "java" ["-cp", settings.outputDir <> ":jvm-stdlib", "Main"]
 
 main :: IO ()
 main = do
@@ -198,206 +176,41 @@ main = do
         runSettingsParser Elara.version "Elara Compiler"
 
     let compilerSettings = toCompilerSettings dispatch settings
-    run dispatch compilerSettings `finally` cleanup
+        action = dispatchToAction dispatch
+    run action compilerSettings `finally` cleanup
   where
-    run :: Dispatch -> CompilerSettings -> IO ()
-    run dispatch compilerSettings = do
-        (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
-            result <- runError @SomeReportableError $ runElaraWrapped dispatch compilerSettings
+    run :: Elara.CompileAction -> CompilerSettings -> IO ()
+    run action compilerSettings = do
+        start <- getCPUTime
+        (diagnostics, mResult) <- runEff $ runDiagnosticWriter $ do
+            result <- runError @SomeReportableError $ uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
             case result of
-                Left (callStack, error) -> do
-                    report error
+                Left (callStack, err) -> do
+                    report err
                     printPretty callStack
-                    pure mempty
-                Right () -> pass
+                    pure Nothing
+                Right r -> pure (Just r)
 
         printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
 
-dumpGraph :: (HasCallStack, Pretty m, Foldable f) => f m -> (m -> Text) -> Text -> Eff '[IOE] ()
-dumpGraph graph nameFunc suffix = do
-    let dump m = do
-            let contents = pretty m
-            let fileName = toString (outDirName <> "/" <> nameFunc m <> suffix)
-            let rendered = layoutSmart defaultLayoutOptions contents
-            withFile fileName WriteMode $ \fileHandle -> do
-                hSetEncoding fileHandle utf8
-                renderIO fileHandle rendered
-                hFlush fileHandle
+        whenJust mResult $ \result -> do
+            when (action == Elara.CompileAndRun Elara.JVM) $
+                executeJVM compilerSettings
 
-    traverse_ (liftIO . dump) graph
-
-runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => Dispatch -> CompilerSettings -> Eff es ()
-runElaraWrapped dispatch settings = uniqueGenToGlobalIO $ do
-    runLogToStdoutAndFile $ runElara dispatch settings
-
--- | Whether the dispatch requires running the interpreter
-shouldRunInterpreter :: Dispatch -> Bool
-shouldRunInterpreter (DispatchRun _ TargetInterpreter) = True
-shouldRunInterpreter _ = False
-
--- | Whether the dispatch requires emitting JVM class files
-shouldEmitJVM :: Dispatch -> Bool
-shouldEmitJVM (DispatchBuild _ TargetJVM) = True
-shouldEmitJVM (DispatchRun _ TargetJVM) = True
-shouldEmitJVM _ = False
-
--- | Whether the dispatch requires executing the JVM output
-shouldRunJVM :: Dispatch -> Bool
-shouldRunJVM (DispatchRun _ TargetJVM) = True
-shouldRunJVM _ = False
-
--- | Whether this is a build (not run) command
-isBuildOnly :: Dispatch -> Bool
-isBuildOnly (DispatchBuild _ _) = True
-isBuildOnly _ = False
-
-runElara ::
-    ( Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
-    , IOE :> es
-    , Log (Doc AnsiStyle) :> es
-    , HasCallStack
-    ) =>
-    Dispatch -> CompilerSettings -> Eff es ()
-runElara dispatch settings@(CompilerSettings{dumpTargets}) = do
-    -- Get logging configuration from environment variables
-    logConfig <- liftIO getLogConfigFromEnv
-    let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
-    startedVar <- liftIO $ newIORef DHashMap.empty
-    depsVar <- liftIO $ newIORef mempty
-    runFileSystem $
-        uniqueGenToGlobalIO $
-            (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
-                runConcurrent $
-                    runErrorOrReport @ModulePathError $
-                        Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)) $
-                            do
-                                start <- liftIO getCPUTime
-                                liftIO (createDirectoryIfMissing True outDirName)
-
-                                files <-
-                                    toList <$> Rock.fetch Elara.Query.InputFiles
-
-                                when (DumpLexed `Set.member` dumpTargets) $ do
-                                    lexed <- for files $ \file -> do
-                                        fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
-
-                                    inject $ dumpGraph lexed (toText . takeBaseName . fst) ".lexed.elr"
-                                    logDebug "Dumped lexed files"
-
-                                moduleNames <- for files $ \file -> do
-                                    (Module (Located _ m)) <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedFile file
-                                    pure (m.name ^. unlocated)
-
-                                runErrorOrReport @(WParseErrorBundle _ _) $
-                                    dumpGraphInfo Elara.Query.ParsedModule (DumpParsed `Set.member` dumpTargets) moduleNames "parsed" ".parsed.elr"
-
-                                runErrorOrReport @DesugarError $
-                                    dumpGraphInfo Elara.Query.DesugaredModule (DumpDesugared `Set.member` dumpTargets) moduleNames "desugared" ".desugared.elr"
-
-                                runErrorOrReport @RenameError $
-                                    dumpGraphInfo Elara.Query.RenamedModule (DumpRenamed `Set.member` dumpTargets) moduleNames "renamed" ".renamed.elr"
-
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo (Elara.Query.ModuleByName @Shunted) (DumpShunted `Set.member` dumpTargets) moduleNames "shunted" ".shunted.elr"
-
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.TypeCheckedModule (DumpTyped `Set.member` dumpTargets) moduleNames "typed" ".typed.elr"
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core" ".core.elr"
-
-                                runErrorOrReport @ShuntError $
-                                    dumpGraphInfo Elara.Query.GetANFCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.anf" ".core.anf.elr"
-
-                                runErrorOrReport @ClosureLiftError $
-                                    dumpGraphInfo Elara.Query.GetClosureLiftedModule (DumpCore `Set.member` dumpTargets) moduleNames "core.closure_lifted" ".core.closure_lifted.elr"
-
-                                dumpGraphInfo Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
-
-                                -- Run interpreter if requested
-                                when (shouldRunInterpreter dispatch) $
-                                    Interpreter.runInterpreterOutput $
-                                        Interpreter.runInterpreter Interpreter.run
-
-                                -- Emit JVM class files if targeting JVM
-                                when (shouldEmitJVM dispatch) $ do
-                                    -- Dump JVM IR if requested
-                                    when (DumpIR `Set.member` dumpTargets) $ do
-                                        irModules <- for moduleNames $ \m ->
-                                            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
-                                        inject $ dumpGraph irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
-                                        logDebug "Dumped JVM IR modules"
-
-                                    -- Dump ClassFiles if requested
-                                    when (DumpJVM `Set.member` dumpTargets) $ do
-                                        classFiles <- for moduleNames $ \m ->
-                                            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
-                                        inject $ dumpGraph (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
-
-                                    -- Compile and write class files to disk
-                                    for_ moduleNames $ \modName -> do
-                                        classBytes <-
-                                            runErrorOrReport @JVMLoweringError $
-                                                runErrorOrReport @CodeConverterError $
-                                                    Rock.fetch (Elara.Query.GetJVMClassBytes modName)
-                                        fps <- for classBytes $ \(fp, bytes) -> do
-                                            let fullPath = "build/" <> fp
-                                            liftIO $ createAndWriteFile fullPath bytes
-                                            pure fullPath
-                                        logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
-
-                                    logDebug "Emitted JVM class files"
-
-                                end <- liftIO getCPUTime
-                                let t :: Double
-                                    t = fromIntegral (end - start) * 1e-9
-                                logInfo
-                                    ( Style.varName "Successfully"
-                                        <+> (if isBuildOnly dispatch then "compiled" else "ran")
-                                        <+> Style.punctuation (pretty (length files))
-                                        <> " source files in "
-                                        <> Style.punctuation
-                                            ( fromString (printf "%.2f" t)
-                                                <> "ms!"
-                                            )
-                                    )
-
-                                -- Execute JVM output after compilation
-                                when (shouldRunJVM dispatch) $ do
-                                    logInfo "Executing JVM output..."
-                                    liftIO $ callProcess "java" ["-cp", "build:jvm-stdlib", "Main"]
-
-dumpGraphInfo ::
-    ( Subset xs es
-    , Rock.Rock Elara.Query.Query :> es
-    , HasCallStack
-    , StructuredDebug :> es
-    , IOE :> es
-    , Pretty module'
-    , Dumpable module'
-    , StructuredDebug :> xs
-    ) =>
-    (ModuleName -> Elara.Query.Query xs module') -> Bool -> [ModuleName] -> Text -> Text -> Eff es ()
-dumpGraphInfo query when' moduleNames stage suffix = do
-    when when' $ do
-        modules <- for moduleNames $ \m -> do
-            Rock.fetch $ query m
-        inject $ dumpGraph modules dumpName suffix
-        logDebug ("Dumped " <> pretty (length modules) <> " " <> pretty stage <> " modules")
-
-class Dumpable a where
-    dumpName :: a -> Text
-
-instance (ASTLocate ast (Module' ast) ~ Located (Module' ast), NameLike (ASTLocate ast ModuleName)) => Dumpable (Module ast) where
-    dumpName m = m ^. _Unwrapped % unlocated % field' @"name" % to nameText
-
-instance Dumpable (CoreModule bind) where
-    dumpName m = m ^. field' @"name" % to nameText
+            end <- getCPUTime
+            let t :: Double
+                t = fromIntegral (end - start) * 1e-9
+                verb = case action of
+                    Elara.CompileOnly -> "compiled"
+                    Elara.CompileAndEmit _ -> "compiled"
+                    Elara.CompileAndRun _ -> "ran"
+            printPretty
+                ( Style.varName "Successfully"
+                    <+> verb
+                    <+> Style.punctuation (pretty (length result.sourceFiles))
+                    <> " source files in "
+                    <> Style.punctuation (fromString (printf "%.2f" t) <> "ms!")
+                )
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply
-
-createAndWriteFile :: FilePath -> LByteString -> IO ()
-createAndWriteFile path content = do
-    createDirectoryIfMissing True $ takeDirectory path
-    writeFileLBS path content
