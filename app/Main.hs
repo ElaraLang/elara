@@ -41,14 +41,14 @@ import Elara.Interpreter qualified as Interpreter
 import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Utils (LexerError)
-import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, logWarning, minLogLevel, structuredDebugToLogWith)
+import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, logInfo, minLogLevel, structuredDebugToLogWith)
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Query qualified
 import Elara.ReadFile (ModulePathError)
 import Elara.Rename.Error (RenameError)
 import Elara.Rules qualified
-import Elara.Settings (CompilerSettings (..), DumpTarget (..), RunWithOption (..))
+import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Elara.Shunt.Error (ShuntError)
 import Error.Diagnose (Report (..), TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import JVM.Data.Abstract.ClassFile (ClassFile (..))
@@ -63,6 +63,7 @@ import System.CPUTime
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (hSetEncoding, utf8)
+import System.Process (callProcess)
 import Text.Printf
 import Prelude hiding (reader)
 
@@ -129,12 +130,23 @@ instance HasCodec DumpTarget where
                    ]
 
 data Dispatch
-    = DispatchBuild !FilePath
+    = DispatchBuild !FilePath !RunTarget
     | DispatchRun !FilePath !RunTarget
     deriving (Show, Eq)
 
 data RunTarget = TargetInterpreter | TargetJVM
     deriving (Show, Eq, Generic)
+
+targetParser :: Parser RunTarget
+targetParser =
+    setting
+        [ help "Execution target (interp, jvm)"
+        , option
+        , name "target"
+        , metavar "EXECUTION_TARGET"
+        , value TargetInterpreter
+        , reader viaStringCodec
+        ]
 
 instance HasParser Dispatch where
     settingsParser =
@@ -148,6 +160,7 @@ instance HasParser Dispatch where
                             , reader str
                             , metavar "MAIN_FILE"
                             ]
+                        <*> targetParser
                 , command "run" "Compile and run the program" $
                     DispatchRun
                         <$> setting
@@ -156,14 +169,7 @@ instance HasParser Dispatch where
                             , reader str
                             , metavar "MAIN_FILE"
                             ]
-                        <*> setting
-                            [ help "Execution target (interpreter, jvm)"
-                            , option
-                            , name "target"
-                            , metavar "EXECUTION_TARGET"
-                            , value TargetInterpreter
-                            , reader viaStringCodec
-                            ]
+                        <*> targetParser
                 ]
 
 instance HasCodec RunTarget where
@@ -173,15 +179,12 @@ toCompilerSettings :: Dispatch -> Settings -> CompilerSettings
 toCompilerSettings dispatch Settings{..} =
     let
         dumps = Set.fromList dumpTargets
-
-        (runWith, mainFile) = case dispatch of
-            DispatchBuild fp -> (RunWithNone, Just fp)
-            DispatchRun fp TargetInterpreter -> (RunWithInterpreter, Just fp)
-            DispatchRun fp TargetJVM -> (RunWithJVM, Just fp)
+        mainFile = case dispatch of
+            DispatchBuild fp _ -> Just fp
+            DispatchRun fp _ -> Just fp
      in
         CompilerSettings
             { dumpTargets = dumps
-            , runWith = runWith
             , mainFile = mainFile
             , sourceDirs = sourceDirs
             , programArgs = programArgs
@@ -195,12 +198,12 @@ main = do
         runSettingsParser Elara.version "Elara Compiler"
 
     let compilerSettings = toCompilerSettings dispatch settings
-    run compilerSettings `finally` cleanup
+    run dispatch compilerSettings `finally` cleanup
   where
-    run :: CompilerSettings -> IO ()
-    run compilerSettings = do
+    run :: Dispatch -> CompilerSettings -> IO ()
+    run dispatch compilerSettings = do
         (diagnostics, ()) <- runEff $ runDiagnosticWriter $ do
-            result <- runError @SomeReportableError $ runElaraWrapped compilerSettings
+            result <- runError @SomeReportableError $ runElaraWrapped dispatch compilerSettings
             case result of
                 Left (callStack, error) -> do
                     report error
@@ -223,9 +226,30 @@ dumpGraph graph nameFunc suffix = do
 
     traverse_ (liftIO . dump) graph
 
-runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => CompilerSettings -> Eff es ()
-runElaraWrapped settings = uniqueGenToGlobalIO $ do
-    runLogToStdoutAndFile $ runElara settings
+runElaraWrapped :: (Error SomeReportableError :> es, DiagnosticWriter (Doc AnsiStyle) :> es, IOE :> es) => Dispatch -> CompilerSettings -> Eff es ()
+runElaraWrapped dispatch settings = uniqueGenToGlobalIO $ do
+    runLogToStdoutAndFile $ runElara dispatch settings
+
+-- | Whether the dispatch requires running the interpreter
+shouldRunInterpreter :: Dispatch -> Bool
+shouldRunInterpreter (DispatchRun _ TargetInterpreter) = True
+shouldRunInterpreter _ = False
+
+-- | Whether the dispatch requires emitting JVM class files
+shouldEmitJVM :: Dispatch -> Bool
+shouldEmitJVM (DispatchBuild _ TargetJVM) = True
+shouldEmitJVM (DispatchRun _ TargetJVM) = True
+shouldEmitJVM _ = False
+
+-- | Whether the dispatch requires executing the JVM output
+shouldRunJVM :: Dispatch -> Bool
+shouldRunJVM (DispatchRun _ TargetJVM) = True
+shouldRunJVM _ = False
+
+-- | Whether this is a build (not run) command
+isBuildOnly :: Dispatch -> Bool
+isBuildOnly (DispatchBuild _ _) = True
+isBuildOnly _ = False
 
 runElara ::
     ( Error SomeReportableError :> es
@@ -234,8 +258,8 @@ runElara ::
     , Log (Doc AnsiStyle) :> es
     , HasCallStack
     ) =>
-    CompilerSettings -> Eff es ()
-runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
+    Dispatch -> CompilerSettings -> Eff es ()
+runElara dispatch settings@(CompilerSettings{dumpTargets}) = do
     -- Get logging configuration from environment variables
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
@@ -290,46 +314,46 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
 
                                 dumpGraphInfo Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
 
-                                if runWith == RunWithInterpreter
-                                    then
-                                        Interpreter.runInterpreterOutput $ Interpreter.runInterpreter Interpreter.run
-                                    else
-                                        if runWith == RunWithJVM
-                                            then do
-                                                -- Dump JVM IR if requested (using new query, memoized)
-                                                when (DumpIR `Set.member` dumpTargets) $ do
-                                                    irModules <- for moduleNames $ \m ->
-                                                        runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
-                                                    inject $ dumpGraph irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
-                                                    logDebug "Dumped JVM IR modules"
+                                -- Run interpreter if requested
+                                when (shouldRunInterpreter dispatch) $
+                                    Interpreter.runInterpreterOutput $
+                                        Interpreter.runInterpreter Interpreter.run
 
-                                                -- Dump ClassFiles if requested (using new query, memoized)
-                                                when (DumpJVM `Set.member` dumpTargets) $ do
-                                                    classFiles <- for moduleNames $ \m ->
-                                                        runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
-                                                    inject $ dumpGraph (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
+                                -- Emit JVM class files if targeting JVM
+                                when (shouldEmitJVM dispatch) $ do
+                                    -- Dump JVM IR if requested
+                                    when (DumpIR `Set.member` dumpTargets) $ do
+                                        irModules <- for moduleNames $ \m ->
+                                            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
+                                        inject $ dumpGraph irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
+                                        logDebug "Dumped JVM IR modules"
 
-                                                -- Compile and write class files to disk
-                                                for_ moduleNames $ \modName -> do
-                                                    classBytes <-
-                                                        runErrorOrReport @JVMLoweringError $
-                                                            runErrorOrReport @CodeConverterError $
-                                                                Rock.fetch (Elara.Query.GetJVMClassBytes modName)
-                                                    fps <- for classBytes $ \(fp, bytes) -> do
-                                                        let fullPath = "build/" <> fp
-                                                        liftIO $ createAndWriteFile fullPath bytes
-                                                        pure fullPath
-                                                    logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
+                                    -- Dump ClassFiles if requested
+                                    when (DumpJVM `Set.member` dumpTargets) $ do
+                                        classFiles <- for moduleNames $ \m ->
+                                            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
+                                        inject $ dumpGraph (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
 
-                                                logDebug "Emitted JVM class files"
-                                            else logWarning "Nothing to do. Use --run or --run-jvm to execute the compiled code."
+                                    -- Compile and write class files to disk
+                                    for_ moduleNames $ \modName -> do
+                                        classBytes <-
+                                            runErrorOrReport @JVMLoweringError $
+                                                runErrorOrReport @CodeConverterError $
+                                                    Rock.fetch (Elara.Query.GetJVMClassBytes modName)
+                                        fps <- for classBytes $ \(fp, bytes) -> do
+                                            let fullPath = "build/" <> fp
+                                            liftIO $ createAndWriteFile fullPath bytes
+                                            pure fullPath
+                                        logInfo ("Compiled " <> pretty modName <> " to " <> pretty fps <> "!")
+
+                                    logDebug "Emitted JVM class files"
 
                                 end <- liftIO getCPUTime
                                 let t :: Double
                                     t = fromIntegral (end - start) * 1e-9
                                 logInfo
                                     ( Style.varName "Successfully"
-                                        <+> (if runWith == RunWithNone then "compiled" else "ran")
+                                        <+> (if isBuildOnly dispatch then "compiled" else "ran")
                                         <+> Style.punctuation (pretty (length files))
                                         <> " source files in "
                                         <> Style.punctuation
@@ -337,6 +361,11 @@ runElara settings@(CompilerSettings{dumpTargets, runWith}) = do
                                                 <> "ms!"
                                             )
                                     )
+
+                                -- Execute JVM output after compilation
+                                when (shouldRunJVM dispatch) $ do
+                                    logInfo "Executing JVM output..."
+                                    liftIO $ callProcess "java" ["-cp", "build:jvm-stdlib", "Main"]
 
 dumpGraphInfo ::
     ( Subset xs es

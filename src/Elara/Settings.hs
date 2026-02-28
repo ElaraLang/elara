@@ -3,8 +3,6 @@ module Elara.Settings where
 data CompilerSettings = CompilerSettings
     { dumpTargets :: Set DumpTarget
     -- ^ Which compilation stages to dump
-    , runWith :: RunWithOption
-    -- ^ How to run the compiled program
     , mainFile :: Maybe FilePath
     -- ^ The main file to compile/run
     , sourceDirs :: [FilePath]
@@ -31,14 +29,7 @@ defaultSettings :: CompilerSettings
 defaultSettings =
     CompilerSettings
         { dumpTargets = mempty
-        , runWith = RunWithNone
         , mainFile = Nothing
         , sourceDirs = []
         , programArgs = []
         }
-
-data RunWithOption
-    = RunWithNone
-    | RunWithInterpreter
-    | RunWithJVM
-    deriving (Eq, Show)
