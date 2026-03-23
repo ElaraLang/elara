@@ -20,6 +20,18 @@ spec = describe "Golden tests" $ do
     it "Counts to ten" $
         runGolden defaultSettings "count-to-ten"
 
+    it "Computes Fibonacci recursively" $
+        runGolden defaultSettings "recursion"
+
+    it "Currying and partial application" $
+        runGolden defaultSettings "currying"
+
+    it "Tuples and pattern matching on tuples" $
+        runGolden defaultSettings "tuples"
+
+    it "Type aliases" $
+        runGolden defaultSettings "type-aliases"
+
 runGolden :: CompilerSettings -> FilePath -> GoldenTest String
 runGolden settings goldenName = do
     let inputPrefix = "test/test_resources/golden_inputs/"
