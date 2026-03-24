@@ -36,7 +36,6 @@
     flake-parts.lib.mkFlake { inherit inputs; } (
       { ... }:
       {
-        debug = true;
         systems = import inputs.systems;
         imports = [
           inputs.treefmt-nix.flakeModule
@@ -62,6 +61,7 @@
               programs.toml-sort.enable = true;
             };
             pre-commit.settings.hooks.treefmt.enable = true;
+            devShells.pre-commit = config.pre-commit.devShell;
           };
         flake =
           let
@@ -77,7 +77,7 @@
                   default = config.pkgs.mkShell {
                     inputsFrom = [
                       config.outputs.devShells.dev # the devshell that hix provides
-                      self.allSystems.${config.system}.pre-commit.devShell # the pre-commit devshell
+                      self.devShells.${config.system}.pre-commit # the pre-commit devshell
                     ];
                     buildInputs = with config.pkgs; [
                       just
@@ -283,9 +283,15 @@
               }
             );
           in
-          # Remove gen-overrides app: it evaluates cabal2nix derivations for all
-          # systems (including aarch64-darwin) which fails on x86_64-linux CI.
-          hixFlake
+          # Strip non-standard hix outputs that fail the Nix flake schema
+          # validator when merged by flake-parts, and remove gen-overrides app
+          # which evaluates cabal2nix for all systems and fails cross-platform.
+          builtins.removeAttrs hixFlake [
+            "debug"
+            "legacyPackages"
+            "lib"
+            "overrides"
+          ]
           // {
             apps = builtins.mapAttrs (_system: apps: builtins.removeAttrs apps [ "gen-overrides" ]) (
               hixFlake.apps or { }
