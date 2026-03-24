@@ -75,6 +75,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve module system significantly making it more flexible - ([3e78ed5](https://github.com/ElaraLang/elara/commit/3e78ed5e43b2e67a9b940ea15683ba2c9f9c5ce6)) 
 - Add a half-finished `getArgs` primitive - ([35c7de6](https://github.com/ElaraLang/elara/commit/35c7de641e9a0ab1638030c81da8cc31d83f6863)) 
 - Allow passing custom program arguments - ([10e7e15](https://github.com/ElaraLang/elara/commit/10e7e1532566554fabcefcf0b0faf2ef28bc0887)) 
+- Improve parser errors - ([54f3e0b](https://github.com/ElaraLang/elara/commit/54f3e0bb9297ecc88a6f522bbd241a524776b4b0)) 
 
 ### 🐛 Bug Fixes
 
@@ -113,6 +114,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* Fix parser alternative orders - ([1951046](https://github.com/ElaraLang/elara/commit/195104600aee123588f6718405bed9fe9a10b565)) 
 - *(parser)* Fix parse errors having incorrect location information - ([5b814b9](https://github.com/ElaraLang/elara/commit/5b814b97774c37142db4089862c3ebc10e2c9030)) 
 - *(parser)* Allow comments at start of module - ([5a1f9f4](https://github.com/ElaraLang/elara/commit/5a1f9f4c71f791e28189eb637d86ca2ab52f4a7a)) 
+- *(parser)* Fix parser crashing on incomplete expressions - ([502bbe6](https://github.com/ElaraLang/elara/commit/502bbe677ce6cda97456eacd8201171853145332)) 
 - *(prim)* Add primitive kind for List - ([3773ad0](https://github.com/ElaraLang/elara/commit/3773ad0ff3bad9e0506a1cee98d27b3e4916de89)) 
 - *(prim)* Add missing primitive type `Bool` to primitiveTypes - ([dd369a3](https://github.com/ElaraLang/elara/commit/dd369a35f30a07ef4f54f5f080a460d7177d7091)) 
 - *(rename)* Fix renaming of recursive lets in a block - ([264db37](https://github.com/ElaraLang/elara/commit/264db37d935fef117d5183b28280b48613631faa)) 
@@ -171,6 +173,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix mdbook maybe - ([305c095](https://github.com/ElaraLang/elara/commit/305c095754f76bff60e2cee1df885aff54983440)) 
 - Remove broken import - ([7dfd182](https://github.com/ElaraLang/elara/commit/7dfd182a03b38f5aa6124397c6044debf308d178)) 
 - Increase thread delay in golden tests - ([bae881f](https://github.com/ElaraLang/elara/commit/bae881f42212a1c3b578e41b4973c02354c21226)) 
+- Improve error message on module not parsing - ([2d7c76c](https://github.com/ElaraLang/elara/commit/2d7c76cc0e57eefee17de1e2795d0bcc405143fa)) 
 
 ### 🚜 Refactor
 
@@ -201,6 +204,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(main)* Re-implement all --dump-X flags - ([eb6613a](https://github.com/ElaraLang/elara/commit/eb6613a16e34f540effe85397a49356f9d15fedb)) 
 - *(main)* Tidy up dumping logic - ([c175c9c](https://github.com/ElaraLang/elara/commit/c175c9c475710a4603817e6f89b11f2780d0761e)) 
 - *(main)* Improve main output - ([4109106](https://github.com/ElaraLang/elara/commit/4109106c9c796ddaaf26ce44283effcf624469af)) 
+- *(main)* Support running and building JVM and interpreter - ([94166c8](https://github.com/ElaraLang/elara/commit/94166c8d4acd2d41af28f12f985b28cf6a8a1ca9)) 
+- *(main)* Extract compiler entrypoints into library - ([096029a](https://github.com/ElaraLang/elara/commit/096029a3d54b1c3a05cf4c6742acd1586436af2e)) 
 - *(nix)* :building_construction: Move from haskell-flake to hix - ([fe16f77](https://github.com/ElaraLang/elara/commit/fe16f77513eea306bee9673db4e4ed0664e4e3b2)) 
 - *(parser)* :mute: Remove debug logging from parser - ([61b6c3c](https://github.com/ElaraLang/elara/commit/61b6c3c1d514a837952c7ab73489c6177a01f382)) 
 - *(parser)* Small refactor to parser code - ([0cd07e0](https://github.com/ElaraLang/elara/commit/0cd07e0b9222b22d000bf00382ed9ae91f42dd86)) 
@@ -343,6 +348,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Tidy up and fix many tests - ([a67709e](https://github.com/ElaraLang/elara/commit/a67709e1aa40c3874e04d22cf3a90aeb6639a30d)) 
 - Fix flaky golden tests by introducing separate output effect - ([6b024d7](https://github.com/ElaraLang/elara/commit/6b024d7e0bfdb407fa84a8fdb006cd49389424a7)) 
 - Speed up test execution - ([6327395](https://github.com/ElaraLang/elara/commit/6327395d60dc76af8d0dbc158a699d56b794da3e)) 
+- More golden tests - ([d8ed43a](https://github.com/ElaraLang/elara/commit/d8ed43a4174618a00554929e9666e0923a888698)) 
+- Many more golden tests including negative tests - ([9ce8f2c](https://github.com/ElaraLang/elara/commit/9ce8f2cf5f97477f65bb887a4b5aa1c921bbe9dd)) 
+- Add Core tests - ([01da56f](https://github.com/ElaraLang/elara/commit/01da56f206840ee8431d20293a5e125a1d9cccfc)) 
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -376,6 +384,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Update flake inputs - ([ec8550e](https://github.com/ElaraLang/elara/commit/ec8550efe2fc6bda905889f81fe11c2a6dadda84)) 
 - Fix h2jvm input url - ([494d3b7](https://github.com/ElaraLang/elara/commit/494d3b74ff2b80334d01802e9ab4f14dab4230eb)) 
 - Update nix inputs - ([38f9947](https://github.com/ElaraLang/elara/commit/38f99473b5b6eec3f47704bc0834e34df0bcdaed)) 
+- Update nix inputs - ([3105181](https://github.com/ElaraLang/elara/commit/31051818c2b4c6d49b3be61b59e81227c3ccadef)) 
 
 ### Unfinished
 
