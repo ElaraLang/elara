@@ -2,7 +2,7 @@
   description = "Elara Programming Language";
   inputs = {
     hix = {
-      url = "github:tek/hix?ref=0.9.1";
+      url = "github:tek/hix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
