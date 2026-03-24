@@ -1,0 +1,21 @@
+import Prelude
+import Elara.Prim
+import String
+
+-- makeAdder captures n in a closure
+def makeAdder : Int -> Int -> Int
+let makeAdder n = \x -> n + x
+
+-- apply takes a function and applies it
+def apply : (a -> b) -> a -> b
+let apply f x = f x
+
+let main =
+    let add10 = makeAdder 10
+    let add20 = makeAdder 20
+    let r1 = add10 5
+    let r2 = add20 5
+    let r3 = apply add10 100
+    println (toString r1) *>
+    println (toString r2) *>
+    println (toString r3)

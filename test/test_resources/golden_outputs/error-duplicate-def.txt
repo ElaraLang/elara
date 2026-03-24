@@ -1,0 +1,13 @@
+[error E1005]: Duplicate declaration names: JustLet main
+     ╭──▶ test/test_resources/golden_inputs/error-duplicate-def.elr@4:1-4:26
+     │
+   4 │ let main = println "first"
+     • ┬──────────────────────── 
+     • ╰╸ Name is used here
+   5 │ let main = println "second"
+     • ┬───────────────────────── 
+     • ╰╸ And also here
+     •
+     │ Note: Having multiple variables with the same name makes it impossible to tell which one you want to use!
+     │ Hint: Rename one of the declarations
+─────╯

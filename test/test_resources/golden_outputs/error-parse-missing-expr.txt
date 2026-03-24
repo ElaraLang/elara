@@ -1,0 +1,7 @@
+[error E0001A]: Module not found: Main
+     •
+     │ Note: Looked in: [ stdlib/Main.elr
+     │       , stdlib/Main/mod.elr
+     │       , test/test_resources/golden_inputs/Main.elr
+     │       , test/test_resources/golden_inputs/Main/mod.elr ]
+─────╯

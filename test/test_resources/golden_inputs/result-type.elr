@@ -1,0 +1,25 @@
+import Prelude
+import Elara.Prim
+import Result qualified
+import String
+
+def safeDivR : Int -> Int -> Result.Result String Int
+let safeDivR x y =
+    if y == 0 then
+        Result.Err "division by zero"
+    else
+        Result.Ok (x / y)
+
+def showResult : Result.Result String Int -> String
+let showResult r =
+    match r with
+        Result.Ok v -> "Ok: " ++ toString v
+        Result.Err e -> "Err: " ++ e
+
+let main =
+    let r1 = safeDivR 10 3
+    let r2 = safeDivR 10 0
+    let r3 = Result.map (\x -> x * 2) r1
+    println (showResult r1) *>
+    println (showResult r2) *>
+    println (showResult r3)

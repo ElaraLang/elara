@@ -1,0 +1,8 @@
+import Prelude
+import Elara.Prim
+
+let main =
+    println "one" *>
+    println "two" *>
+    println "three" *>
+    println "done"

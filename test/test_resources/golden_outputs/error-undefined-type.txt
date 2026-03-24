@@ -1,0 +1,7 @@
+[error E0001A]: Module not found: NonExistentModule
+     •
+     │ Note: Looked in: [ stdlib/NonExistentModule.elr
+     │       , stdlib/NonExistentModule/mod.elr
+     │       , test/test_resources/golden_inputs/NonExistentModule.elr
+     │       , test/test_resources/golden_inputs/NonExistentModule/mod.elr ]
+─────╯

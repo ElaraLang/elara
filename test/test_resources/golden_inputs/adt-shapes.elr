@@ -1,0 +1,24 @@
+import Prelude
+import Elara.Prim
+import String
+
+-- ADT with multiple constructors of different arities
+type Shape =
+    Circle Int
+    | Rectangle Int Int
+    | Square Int
+
+def area : Shape -> Int
+let area shape =
+    match shape with
+        Circle r -> 3 * r * r
+        Rectangle w h -> w * h
+        Square s -> s * s
+
+let main =
+    let c = Circle 5
+    let r = Rectangle 4 6
+    let s = Square 3
+    println (toString (area c)) *>
+    println (toString (area r)) *>
+    println (toString (area s))

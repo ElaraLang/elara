@@ -38,6 +38,7 @@ spec :: Spec
 spec = describe "Infers types correctly" $ do
     literalTests
     it "infers literals" prop_literalTypesInvariants
+    additionalLiteralTests
     Unify.spec
 
 runInfer :: forall loc a. loc ~ SourceRegion => _ -> IO (Either SomeReportableError (a, Constraint loc))
@@ -97,6 +98,35 @@ prop_literalTypesInvariants = property $ do
     case ty of
         TypeConstructor{} -> pass
         other -> annotateShow other *> failure
+
+-- | Additional literal type inference tests
+additionalLiteralTests :: Spec
+additionalLiteralTests = describe "Additional Literal Type Inference" $ do
+    it "infers Char literal correctly" $ do
+        let charExpr = mkExpr (Char 'a')
+        result <- runInfer @SourceRegion $ generateConstraints charExpr
+        result `shouldSucceed` \((_, ty), _) -> do
+            case ty of
+                TypeConstructor{} -> pass
+                other -> expectationFailure $ "Expected TypeConstructor for Char, got: " ++ show other
+
+    it "infers Unit literal correctly" $ do
+        let unitExpr = mkExpr Unit
+        result <- runInfer @SourceRegion $ generateConstraints unitExpr
+        result `shouldSucceed` \((_, ty), _) -> do
+            case ty of
+                TypeConstructor{} -> pass
+                other -> expectationFailure $ "Expected TypeConstructor for Unit, got: " ++ show other
+
+    it "infers negative Int literal correctly" $ do
+        result <- runInfer @SourceRegion $ generateConstraints (mkIntExpr (-42))
+        result `shouldSucceed` \((_, ty), _) -> do
+            isPrimType (mkPrimQual intName) ty `shouldBe` True
+
+    it "infers empty String correctly" $ do
+        result <- runInfer @SourceRegion $ generateConstraints (mkStringExpr "")
+        result `shouldSucceed` \((_, ty), _) -> do
+            isPrimType (mkPrimQual stringName) ty `shouldBe` True
 
 -- | Helper to assert that inference succeeded
 shouldSucceed :: Either SomeReportableError b -> (b -> IO a3) -> IO a3

@@ -1,0 +1,21 @@
+import Prelude
+import Elara.Prim
+import String
+
+type Expr =
+    Num Int
+    | Add Expr Expr
+    | Neg Expr
+
+def eval : Expr -> Int
+let eval e =
+    match e with
+        Num n -> n
+        Add a b -> eval a + eval b
+        Neg a -> 0 - eval a
+
+let main =
+    -- (3 + 4) + (-(5)) = 2
+    let expr = Add (Add (Num 3) (Num 4)) (Neg (Num 5))
+    let result = eval expr
+    println (toString result)

@@ -1,0 +1,27 @@
+import Prelude
+import Elara.Prim
+import String
+
+def identity : a -> a
+let identity x = x
+
+def const : a -> b -> a
+let const x y = x
+
+def flip : (a -> b -> c) -> b -> a -> c
+let flip f x y = f y x
+
+def sub : Int -> Int -> Int
+let sub x y = x - y
+
+let main =
+    let idInt = identity 5
+    let idStr = identity "Hello"
+    let alwaysTen = const 10
+    let ten = alwaysTen "ignored"
+    let flippedSub = flip sub
+    let res = flippedSub 10 4
+    println (toString idInt) *>
+    println idStr *>
+    println (toString ten) *>
+    println (toString res)

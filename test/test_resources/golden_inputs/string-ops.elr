@@ -1,0 +1,16 @@
+import Prelude
+import Elara.Prim
+import String
+import List
+
+let main =
+    -- String concatenation
+    let greeting = "Hello" ++ " " ++ "World"
+    -- String to list and back
+    let chars = stringToList "abc"
+    let back = stringFromList chars
+    -- Join
+    let joined = join ", " ["one", "two", "three"]
+    println greeting *>
+    println back *>
+    println joined

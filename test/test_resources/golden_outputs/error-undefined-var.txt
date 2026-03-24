@@ -1,0 +1,7 @@
+[error E1001]: Unknown variable name: nonExistentFunction
+     ╭──▶ test/test_resources/golden_inputs/error-undefined-var.elr@4:31-4:50
+     │
+   4 │ let main = println (toString (nonExistentFunction 42))
+     •                               ┬────────────────── 
+     •                               ╰╸ referenced here
+─────╯
