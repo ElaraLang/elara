@@ -70,6 +70,7 @@
               {
                 compiler = "ghc912";
                 systems = import inputs.systems;
+                compat.enable = false;
                 envs.dev.ghcid.enable = false;
                 outputs.devShells = {
                   # extending the default devshell to add the pre-commit hooks and some other nice things
