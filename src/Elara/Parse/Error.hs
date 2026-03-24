@@ -118,7 +118,9 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
 
     errorRegion :: MP.ParseError s ElaraParseError -> [SourceRegion]
     errorRegion (MP.TrivialError _ (Just (Tokens ts)) _) = toList $ view sourceRegion <$> ts
-    errorRegion (MP.TrivialError{}) = error "Impossible: TrivialError without tokens"
+    errorRegion (MP.TrivialError _ (Just (Label _)) _) = []
+    errorRegion (MP.TrivialError _ (Just MP.EndOfInput) _) = []
+    errorRegion (MP.TrivialError _ Nothing _) = []
     errorRegion (MP.FancyError _ errs) =
         Set.toList errs >>= \case
             MP.ErrorFail _ -> []
