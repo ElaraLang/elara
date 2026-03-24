@@ -107,6 +107,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(main)* Fix file locked error when dumping certain information - ([bd87a13](https://github.com/ElaraLang/elara/commit/bd87a132b083b23cca49066b8b57314dc91d279e)) 
 - *(main)* Fix mainFile being undefined in Main - ([04e166f](https://github.com/ElaraLang/elara/commit/04e166f60032b066b3dc9fb2537b8732aa00e137)) 
 - *(nix)* Try fix ci - ([0953b70](https://github.com/ElaraLang/elara/commit/0953b70c4983f8c9335da20b630d563712e8f78e)) 
+- *(nix)* Remove compat checks to prevent hix trying to build with old GHCs - ([7e2afe7](https://github.com/ElaraLang/elara/commit/7e2afe7c4aa50adc720a532f1661b17524c5587e)) 
 - *(parser)* :bug: Fix type declaration parsing wrt indents - ([53f148b](https://github.com/ElaraLang/elara/commit/53f148beae28c2ef2465cc2fdd080206f556b2d9)) 
 - *(parser)* :bug: Fix operators as variables (eg `(+)`) not being correctly parsed - ([55de02d](https://github.com/ElaraLang/elara/commit/55de02dcaeb34707588f2824b12a1f25bc6e382c)) 
 - *(parser)* :bug: Fix Nested Constructor Patterns not being correctly parsed - ([bfae8ac](https://github.com/ElaraLang/elara/commit/bfae8acea7d3225329b40f1e588361d2f01a1451)) 
