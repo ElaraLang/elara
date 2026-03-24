@@ -14,6 +14,7 @@ import Elara.AST.Region (Located (Located), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
+import Elara.Error (ReportableError (report))
 import Elara.JVM.Query qualified
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
@@ -50,7 +51,9 @@ rules compilerSettings key = case key of
                         runError @(WParseErrorBundle TokenStream ElaraParseError) $
                             Rock.fetch (Elara.Query.ParsedFile mainPath)
                     case parsedOrError of
-                        Left _ -> pure Nothing
+                        Left (_, err) -> do
+                            report err
+                            pure Nothing
                         Right (Module (Located _ m)) ->
                             if m ^. field' @"name" % unlocated == mn
                                 then pure (Just mainPath)
