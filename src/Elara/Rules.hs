@@ -6,7 +6,7 @@ module Elara.Rules where
 import Data.Generics.Product (field')
 import Data.Text qualified as Text
 import Effectful
-import Effectful.Error.Static (runError, throwError)
+import Effectful.Error.Static (runError, throwError, throwError_)
 import Effectful.State.Static.Local qualified as Local
 import Elara.AST.Module (Module (..))
 import Elara.AST.Name (ModuleName (..))
@@ -14,7 +14,7 @@ import Elara.AST.Region (Located (Located), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
-import Elara.Error (ReportableError (report))
+import Elara.Error (SomeReportableError (..))
 import Elara.JVM.Query qualified
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
@@ -51,9 +51,8 @@ rules compilerSettings key = case key of
                         runError @(WParseErrorBundle TokenStream ElaraParseError) $
                             Rock.fetch (Elara.Query.ParsedFile mainPath)
                     case parsedOrError of
-                        Left (_, err) -> do
-                            report err
-                            pure Nothing
+                        Left (cs, err) -> do
+                            withFrozenCallStack $ throwError_ (SomeReportableError err)
                         Right (Module (Located _ m)) ->
                             if m ^. field' @"name" % unlocated == mn
                                 then pure (Just mainPath)

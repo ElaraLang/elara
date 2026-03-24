@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-if-no-else.elr:4:1:
+                 |
+               4 | 
+                 | ^
+               unexpected end of input
+               expecting 'else' branch
+
+     ╭──▶ test/test_resources/golden_inputs/error-if-no-else.elr@4:1-4:2
+     │
+   4 │ <no line>
+     • ┬
+     • ├╸ unexpected end of input
+     • ╰╸ expecting 'else' branch
+─────╯

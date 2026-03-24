@@ -164,8 +164,8 @@ charL = locatedExpr (Char <$> charLiteral) <?> "char"
 match :: Parser FrontendExpr
 match = locatedExpr $ do
     token_ TokenMatch
-    expr <- exprBlock element
-    token_ TokenWith
+    expr <- exprBlock element <?> "expression after 'match'"
+    token_ TokenWith <?> "'with' keyword after match expression"
 
     let emptyMatchBody =
             token_ TokenLeftBrace *> token_ TokenRightBrace $> []
@@ -188,7 +188,7 @@ lambda = locatedExpr $ do
     bsLoc <- located (token_ TokenBackslash)
 
     args <- located (many patParser)
-    arrLoc <- located (token_ TokenRightArrow)
+    arrLoc <- located (token_ TokenRightArrow <?> "'->' after lambda parameters")
 
     let emptyLambdaLoc = spanningRegion' (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
     let failEmptyBody =
@@ -202,13 +202,13 @@ lambda = locatedExpr $ do
 ifElse :: Parser FrontendExpr
 ifElse = locatedExpr $ do
     token_ TokenIf
-    condition <- exprParser
+    condition <- exprParser <?> "condition after 'if'"
     _ <- optional lineSeparator
-    token_ TokenThen
-    thenBranch <- exprBlock element
+    token_ TokenThen <?> "'then' keyword after condition"
+    thenBranch <- exprBlock element <?> "expression after 'then'"
     _ <- optional lineSeparator
-    token_ TokenElse
-    elseBranch <- exprBlock element
+    token_ TokenElse <?> "'else' branch"
+    elseBranch <- exprBlock element <?> "expression after 'else'"
     pure (If condition thenBranch elseBranch)
 
 letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
@@ -245,9 +245,9 @@ letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl
 letInExpression = locatedExpr $ do
     (name, patterns, e) <- letPreamble
     optional lineSeparator -- if the body is a nested block, there will be a line separator at the end
-    token_ TokenIn
+    token_ TokenIn <?> "'in' keyword after let binding"
 
-    body <- exprBlock element
+    body <- exprBlock element <?> "expression after 'in'"
     pure (LetIn name patterns e body)
 
 letStatement :: Parser FrontendExpr
@@ -261,7 +261,7 @@ tuple = locatedExpr $ do
     firstElement <- exprParser
     token_ TokenComma
     otherElements <- sepEndBy1' exprParser (token_ TokenComma)
-    token_ TokenRightParen
+    token_ TokenRightParen <?> "')' to close tuple"
     pure $ Tuple (AtLeast2List.fromHeadAndTail firstElement otherElements)
 
 list :: Parser FrontendExpr
@@ -269,5 +269,5 @@ list = locatedExpr $ do
     token_ TokenLeftBracket
 
     elements <- sepEndBy exprParser (token_ TokenComma)
-    token_ TokenRightBracket
+    token_ TokenRightBracket <?> "']' to close list"
     pure $ List elements

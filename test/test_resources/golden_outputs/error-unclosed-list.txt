@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-unclosed-list.elr:5:1:
+                 |
+               5 | 
+                 | ^
+               unexpected end of line
+               expecting ']' to close list, expression, or operator
+
+     ╭──▶ test/test_resources/golden_inputs/error-unclosed-list.elr@5:1-5:1
+     │
+   5 │ <no line>
+     • 
+     • ├╸ unexpected end of line
+     • ╰╸ expecting ']' to close list, expression, or operator
+─────╯

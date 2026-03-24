@@ -153,8 +153,8 @@ tokenRepr = \case
     TokenUnderscore -> "_"
     TokenIndent -> "<INDENT>"
     TokenDedent -> "<DEDENT>"
-    TokenLineSeparator -> "<LINESEP>"
-    TokenEOF -> "<EOF>"
+    TokenLineSeparator -> "end of line"
+    TokenEOF -> "end of input"
 
 unsafeTokenText :: Token -> Text
 unsafeTokenText = \case

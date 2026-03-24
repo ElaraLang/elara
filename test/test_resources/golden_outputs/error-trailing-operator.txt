@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-trailing-operator.elr:3:14:
+                 |
+               3 | let main = 1 +
+                 |              ^
+               unexpected end of input
+               expecting expression
+
+     ╭──▶ test/test_resources/golden_inputs/error-trailing-operator.elr@3:14-3:15
+     │
+   3 │ let main = 1 +
+     •              ┬
+     •              ├╸ unexpected end of input
+     •              ╰╸ expecting expression
+─────╯

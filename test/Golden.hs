@@ -81,6 +81,15 @@ spec = describe "Golden tests" $ do
         it "Duplicate definition" $
             runGoldenError defaultSettings "error-duplicate-def"
 
+        it "If expression without else branch" $
+            runGoldenError defaultSettings "error-if-no-else"
+
+        it "Unclosed list literal" $
+            runGoldenError defaultSettings "error-unclosed-list"
+
+        it "Trailing operator with no right operand" $
+            runGoldenError defaultSettings "error-trailing-operator"
+
 runGolden :: CompilerSettings -> FilePath -> GoldenTest String
 runGolden settings goldenName = do
     let inputPrefix = "test/test_resources/golden_inputs/"
