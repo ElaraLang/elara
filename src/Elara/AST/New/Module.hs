@@ -31,14 +31,15 @@ data Import' loc p = Import'
     }
     deriving (Generic)
 
-{- | Exposing now takes loc so that exposition name references
-can be properly unlocated when loc = ()
--}
+-- | Exposing list for modules and imports
 data Exposing loc p
-    = ExposingAll
-    | ExposingSome [Exposition loc p]
+    = -- | Expose everything
+      ExposingAll
+    | -- | Expose only the listed items
+      ExposingSome [Exposition loc p]
     deriving (Generic)
 
+-- | A single item in an exposing list
 data Exposition loc p
     = ExposedValue (ValueOccurrence p loc)
     | ExposedOp (OperatorOccurrence p loc)
@@ -46,6 +47,8 @@ data Exposition loc p
     | ExposedTypeAndAllConstructors (TypeOccurrence p loc)
     deriving (Generic)
 
--- | Placeholder Pretty instance. TODO: proper implementation.
+{- | Pretty-print a module (just shows the module name; full pretty-printing
+requires PrettyPhase/PrettyExtensions and should use prettyModule from Pretty)
+-}
 instance Pretty (Locate loc ModuleName) => Pretty (Module loc p) where
     pretty (Module _ m) = pretty (moduleName m)

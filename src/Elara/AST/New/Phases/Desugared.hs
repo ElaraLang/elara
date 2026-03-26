@@ -50,6 +50,10 @@ instance ElaraPhase Desugared where
     type TypeSyntaxExtension Desugared loc = TupleTypeExtension loc Desugared
     type DeclBodyExtension Desugared loc = Void -- ValueTypeDef merged during desugar
 
+    -- Value declaration fields (eliminated after desugar)
+    type ValueDeclPatterns Desugared loc = ()
+    type ValueDeclTypeAnnotation Desugared loc = ()
+
     -- Declaration metadata
     type ValueDeclMetadata Desugared loc = Maybe (Type loc Desugared) -- merged type signature
     type TypeDeclMetadata Desugared loc = NoExtension

@@ -23,7 +23,8 @@ module Boilerplate (
     -- * Pattern Matching Helpers
     ensureExpressionMatches,
     shouldMatch,
-) where
+)
+where
 
 import Common (diagShouldSucceed)
 import Control.Exception (throwIO)
@@ -84,10 +85,6 @@ import Test.Syd (expectationFailure)
 import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Megaparsec (runParserT)
 import Text.Show
-
---------------------------------------------------------------------------------
--- Expression Loading
---------------------------------------------------------------------------------
 
 -- | Load and rename an expression from source text
 loadRenamedExpr' ::
@@ -157,10 +154,6 @@ loadShuntedExpr' source = runQueryEffects $ do
 loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewS.ShuntedExpr)
 loadShuntedExprIO source = finaliseEffects $ loadShuntedExpr' source
 
---------------------------------------------------------------------------------
--- Effect Runners
---------------------------------------------------------------------------------
-
 -- | Run effects needed for query-based tests
 runQueryEffects ::
     IOE :> r =>
@@ -176,7 +169,7 @@ runQueryEffects eff = do
         . Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar testRules)
         $ eff
 
--- | Finalize effects and collect diagnostics
+-- | Finalise effects and collect diagnostics
 finaliseEffects ::
     Eff [Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), IOE] a ->
     IO (Diagnostic (Doc AnsiStyle), Maybe a)
@@ -190,10 +183,6 @@ finaliseEffects eff = do
                 pure Nothing
             Right r -> pure (Just r)
     pure (diagnostics, r)
-
---------------------------------------------------------------------------------
--- Test Assertions
---------------------------------------------------------------------------------
 
 -- | Assert that a pipeline result succeeds (for sydtest)
 pipelineResShouldSucceed :: _ => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> IO b
@@ -218,10 +207,6 @@ evalPipelineRes m = do
     case x of
         Just ok -> pure ok
         Nothing -> failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
-
---------------------------------------------------------------------------------
--- Test Data
---------------------------------------------------------------------------------
 
 -- | Rename state with fake operators for testing
 operatorRenameState :: RenameState
@@ -267,11 +252,7 @@ fakeTypeEnvironment =
     intToIntToInt = Function testRegion intType (Function testRegion intType intType)
     intToIntToBool = Function testRegion intType (Function testRegion intType boolType)
 
---------------------------------------------------------------------------------
--- Internal Helpers
---------------------------------------------------------------------------------
-
--- | Minimal rules for testing - only handles errors
+-- | Minimal rules for testing that just errors out for any query
 testRules :: HasCallStack => Rock.Rules Elara.Query.Query
 testRules = \case
     _other -> error "No rule for this query in test environment"
@@ -297,10 +278,6 @@ mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
 mkFakeOp :: OpName -> VarRef OpName
 mkFakeOp name = Global (testLocated (qualifiedTest name))
 
---------------------------------------------------------------------------------
--- Pattern Matching Helpers (Template Haskell)
---------------------------------------------------------------------------------
-
 -- | Create a pattern matching assertion for hedgehog
 ensureExpressionMatches :: HasCallStack => Q Pat -> Q Exp
 ensureExpressionMatches qpat = do
@@ -320,6 +297,7 @@ newtype Shown = Shown String deriving (Lift)
 instance Show Shown where
     show (Shown s) = s
 
+-- | Strip qualifiers from a pattern for better error messages
 stripQualifiers :: Pat -> Pat
 stripQualifiers = transformOf gplate $ \case
     ConP name t ps -> ConP (stripQualifiersName name) t ps

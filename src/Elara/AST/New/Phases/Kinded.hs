@@ -42,6 +42,9 @@ instance ElaraPhase Kinded where
     type TypeSyntaxExtension Kinded loc = Void
     type DeclBodyExtension Kinded loc = Void
 
+    type ValueDeclPatterns Kinded loc = ()
+    type ValueDeclTypeAnnotation Kinded loc = ()
+
     type ValueDeclMetadata Kinded loc = Maybe (Type loc Kinded)
     type TypeDeclMetadata Kinded loc = ElaraKind
 

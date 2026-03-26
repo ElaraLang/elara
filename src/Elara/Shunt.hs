@@ -23,22 +23,22 @@ module Elara.Shunt (
     ShuntPipelineEffects,
     OpLookup,
     HasOpLookup,
-) where
+)
+where
 
 import Data.Generics.Wrapped
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
-
+import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.New.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
 import Elara.AST.New.Module qualified as NewModule
 import Elara.AST.New.Phase (NoExtension (..))
+import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.New.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
 import Elara.AST.New.Phases.Renamed qualified as NewR
 import Elara.AST.New.Phases.Shunted qualified as NewS
 import Elara.AST.New.Types qualified as New
-
-import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
 import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion', unlocated)
 import Elara.AST.VarRef
 import Elara.ConstExpr
@@ -53,10 +53,24 @@ import Elara.Rename.Error (RenameError)
 import Elara.Rules.Generic ()
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
-import Relude.Extra (secondF)
 import Rock (Rock)
 import Rock qualified
 import Prelude hiding (modify')
+
+-- PhaseCoerce instances for Renamed → Shunted (type families resolve identically)
+instance PhaseCoerce (New.Type SourceRegion NewR.Renamed) (New.Type SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (New.Type' SourceRegion NewR.Renamed) (New.Type' SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (New.TypeDeclaration SourceRegion NewR.Renamed) (New.TypeDeclaration SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (NewModule.Exposing SourceRegion NewR.Renamed) (NewModule.Exposing SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (NewModule.Exposition SourceRegion NewR.Renamed) (NewModule.Exposition SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (NewModule.Import SourceRegion NewR.Renamed) (NewModule.Import SourceRegion NewS.Shunted)
+
+instance PhaseCoerce (NewModule.Import' SourceRegion NewR.Renamed) (NewModule.Import' SourceRegion NewS.Shunted)
 
 {- | The default precedence for an operator if none is specified
 >>> defaultPrecedence
@@ -163,10 +177,6 @@ type ShuntPipelineEffects es =
 -- | Constraint synonym for having an operator lookup in the effects (as an implicit parameter)
 type HasOpLookup es = (?lookup :: OpLookup es)
 
---------------------------------------------------------------------------------
--- Module-level shunting (New Types)
---------------------------------------------------------------------------------
-
 -- | Shunt a renamed module using the given operator lookup function
 shuntWith ::
     forall es.
@@ -176,23 +186,9 @@ shuntWith ::
     Eff es (NewModule.Module SourceRegion NewS.Shunted)
 shuntWith opL (NewModule.Module loc m') = do
     declarations' <- traverse (shuntDeclaration opL) m'.moduleDeclarations
-    let exposing' = coerceExposing m'.moduleExposing
-    let imports' = coerceImport <$> m'.moduleImports
+    let exposing' = phaseCoerce m'.moduleExposing
+    let imports' = phaseCoerce <$> m'.moduleImports
     pure $ NewModule.Module loc $ NewModule.Module' m'.moduleName exposing' imports' declarations'
-
--- | Coerce exposing from Renamed to Shunted (types are structurally identical)
-coerceExposing :: NewModule.Exposing SourceRegion NewR.Renamed -> NewModule.Exposing SourceRegion NewS.Shunted
-coerceExposing NewModule.ExposingAll = NewModule.ExposingAll
-coerceExposing (NewModule.ExposingSome es) = NewModule.ExposingSome (coerceExposition <$> es)
-
-coerceExposition :: NewModule.Exposition SourceRegion NewR.Renamed -> NewModule.Exposition SourceRegion NewS.Shunted
-coerceExposition (NewModule.ExposedValue v) = NewModule.ExposedValue v
-coerceExposition (NewModule.ExposedOp o) = NewModule.ExposedOp o
-coerceExposition (NewModule.ExposedType t) = NewModule.ExposedType t
-coerceExposition (NewModule.ExposedTypeAndAllConstructors t) = NewModule.ExposedTypeAndAllConstructors t
-
-coerceImport :: NewModule.Import SourceRegion NewR.Renamed -> NewModule.Import SourceRegion NewS.Shunted
-coerceImport (NewModule.Import loc i) = NewModule.Import loc $ NewModule.Import' i.importModuleName i.importAs i.importQualified (coerceExposing i.importExposing)
 
 -- | Shunt a single declaration
 shuntDeclaration ::
@@ -217,12 +213,12 @@ shuntDeclarationBody opL (New.DeclarationBody bloc body') = New.DeclarationBody 
     go :: New.DeclarationBody' SourceRegion NewR.Renamed -> Eff es (New.DeclarationBody' SourceRegion NewS.Shunted)
     go (New.ValueDeclaration name val pats mTy mTypeMeta anns) = do
         val' <- let ?lookup = opL in fixExpr val
-        let mTypeMeta' = fmap coerceType mTypeMeta
+        let mTypeMeta' = fmap phaseCoerce mTypeMeta
         anns' <- traverse (let ?lookup = opL in shuntAnnotation) anns
-        pure $ New.ValueDeclaration name val' [] Nothing mTypeMeta' anns'
+        pure $ New.ValueDeclaration name val' () () mTypeMeta' anns'
     go (New.TypeDeclarationBody name vars typeDecl mKind _meta anns) = do
         anns' <- traverse (let ?lookup = opL in shuntAnnotation) anns
-        pure $ New.TypeDeclarationBody name vars (coerceTypeDeclaration typeDecl) (fmap coerceType mKind) NoExtension anns'
+        pure $ New.TypeDeclarationBody name vars (phaseCoerce typeDecl) (fmap phaseCoerce mKind) NoExtension anns'
     go (New.DeclBodyExtension v) = absurd v
 
 -- | Shunt an annotation
@@ -230,10 +226,6 @@ shuntAnnotation :: (ShuntPipelineEffects r, HasOpLookup r) => New.Annotation Sou
 shuntAnnotation (New.Annotation name args) = do
     args' <- traverse (\(New.AnnotationArg e) -> New.AnnotationArg <$> fixExpr e) args
     pure $ New.Annotation name args'
-
---------------------------------------------------------------------------------
--- Expression shunting (New Types)
---------------------------------------------------------------------------------
 
 {- | Fix the operators in an expression to the correct precedence and shunt it
 The main entry point for this module that simply combines 'fixOperators' and 'shuntExpr'
@@ -312,7 +304,7 @@ shuntExpr ::
     Eff r NewS.ShuntedExpr
 shuntExpr (New.Expr loc meta e') = do
     (shunted, meta') <- shuntExpr' loc e'
-    pure $ New.Expr loc (coerceType <$> meta <|> meta') shunted
+    pure $ New.Expr loc (phaseCoerce <$> meta <|> meta') shunted
   where
     shuntExpr' :: SourceRegion -> NewR.RenamedExpr' -> Eff r (NewS.ShuntedExpr', Maybe NewS.ShuntedType)
     shuntExpr' _ (New.EInt i) = pure (New.EInt i, Nothing)
@@ -324,7 +316,7 @@ shuntExpr (New.Expr loc meta e') = do
     shuntExpr' _ (New.ECon NoExtension v) = pure (New.ECon NoExtension v, Nothing)
     shuntExpr' _ (New.ELam NoExtension (TypedLambdaParam v meta') e) = do
         e' <- fixExpr e
-        let meta'' = coerceType <$> meta'
+        let meta'' = phaseCoerce <$> meta'
         pure (New.ELam NoExtension (TypedLambdaParam v meta'') e', Nothing)
     shuntExpr' _ (New.EApp NoExtension f x) = do
         f' <- fixExpr f
@@ -332,7 +324,7 @@ shuntExpr (New.Expr loc meta e') = do
         pure (New.EApp NoExtension f' x', Nothing)
     shuntExpr' _ (New.ETyApp e t) = do
         e' <- fixExpr e
-        pure (New.ETyApp e' (coerceType t), Nothing)
+        pure (New.ETyApp e' (phaseCoerce t), Nothing)
     shuntExpr' _ (New.EIf cond then' else') = do
         cond' <- fixExpr cond
         then'' <- fixExpr then'
@@ -354,7 +346,7 @@ shuntExpr (New.Expr loc meta e') = do
         pure (New.EBlock es', Nothing)
     shuntExpr' _ (New.EAnn e t) = do
         e' <- fixExpr e
-        pure (New.EAnn e' (coerceType t), Nothing)
+        pure (New.EAnn e' (phaseCoerce t), Nothing)
     shuntExpr' _ (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r))) = do
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
@@ -395,7 +387,7 @@ exprLoc (New.Expr loc _ _) = loc
 
 -- | Shunt a pattern (trivial conversion since Renamed and Shunted patterns are structurally identical)
 shuntPattern :: NewR.RenamedPattern -> Eff r NewS.ShuntedPattern
-shuntPattern (New.Pattern loc meta p') = New.Pattern loc (coerceType <$> meta) <$> shuntPattern' p'
+shuntPattern (New.Pattern loc meta p') = New.Pattern loc (phaseCoerce <$> meta) <$> shuntPattern' p'
   where
     shuntPattern' :: NewR.RenamedPattern' -> Eff r NewS.ShuntedPattern'
     shuntPattern' (New.PVar v) = pure (New.PVar v)
@@ -407,25 +399,3 @@ shuntPattern (New.Pattern loc meta p') = New.Pattern loc (coerceType <$> meta) <
     shuntPattern' (New.PChar c) = pure (New.PChar c)
     shuntPattern' New.PUnit = pure New.PUnit
     shuntPattern' (New.PExtension v) = absurd v
-
---------------------------------------------------------------------------------
--- Type coercion (Renamed -> Shunted)
---------------------------------------------------------------------------------
-
--- | Coerce a type from Renamed to Shunted (types are structurally identical between these phases)
-coerceType :: New.Type SourceRegion NewR.Renamed -> New.Type SourceRegion NewS.Shunted
-coerceType (New.Type loc () t') = New.Type loc () (coerceType' t')
-
-coerceType' :: New.Type' SourceRegion NewR.Renamed -> New.Type' SourceRegion NewS.Shunted
-coerceType' (New.TVar v) = New.TVar v
-coerceType' (New.TFun t1 t2) = New.TFun (coerceType t1) (coerceType t2)
-coerceType' New.TUnit = New.TUnit
-coerceType' (New.TApp t1 t2) = New.TApp (coerceType t1) (coerceType t2)
-coerceType' (New.TUserDefined n) = New.TUserDefined n
-coerceType' (New.TRecord fields) = New.TRecord (secondF coerceType fields)
-coerceType' (New.TList t) = New.TList (coerceType t)
-coerceType' (New.TExtension v) = absurd v
-
-coerceTypeDeclaration :: New.TypeDeclaration SourceRegion NewR.Renamed -> New.TypeDeclaration SourceRegion NewS.Shunted
-coerceTypeDeclaration (New.ADT ctors) = New.ADT (secondF (fmap coerceType) ctors)
-coerceTypeDeclaration (New.Alias t) = New.Alias (coerceType t)

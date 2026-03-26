@@ -108,8 +108,8 @@ data DeclarationBody' loc p
     = ValueDeclaration
         (TopValueBinder p loc)
         (Expr loc p)
-        [Pattern loc p]
-        (Maybe (Type loc p))
+        (ValueDeclPatterns p loc)
+        (ValueDeclTypeAnnotation p loc)
         (ValueDeclMetadata p loc)
         [Annotation loc p]
     | TypeDeclarationBody

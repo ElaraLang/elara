@@ -25,6 +25,7 @@ library
       Elara.AST.New.Instances
       Elara.AST.New.Module
       Elara.AST.New.Phase
+      Elara.AST.New.PhaseCoerce
       Elara.AST.New.Pretty
       Elara.AST.New.Traversal
       Elara.AST.New.Types

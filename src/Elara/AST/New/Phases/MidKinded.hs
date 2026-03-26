@@ -41,6 +41,9 @@ instance ElaraPhase MidKinded where
     type TypeSyntaxExtension MidKinded loc = Void
     type DeclBodyExtension MidKinded loc = Void
 
+    type ValueDeclPatterns MidKinded loc = ()
+    type ValueDeclTypeAnnotation MidKinded loc = ()
+
     type ValueDeclMetadata MidKinded loc = Maybe (Type loc MidKinded)
     type TypeDeclMetadata MidKinded loc = NoExtension
 

@@ -3,7 +3,8 @@
 
 module Elara.AST.New.Pretty where
 
-import Elara.AST.Name (LowerAlphaName)
+import Elara.AST.Name (LowerAlphaName, ModuleName)
+import Elara.AST.New.Module (Exposing (..), Exposition (..), Import (..), Import' (..), Module (..), Module' (..))
 import Elara.AST.New.Phase
 import Elara.AST.New.Types
 import Elara.Data.Pretty (Pretty (..))
@@ -44,6 +45,8 @@ class PrettyPhase p where
     prettyExpressionMeta :: forall loc. ExpressionMeta p loc -> Maybe (Doc AnsiStyle)
     prettyPatternMeta :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => PatternMeta p loc -> Maybe (Doc AnsiStyle)
     prettyTypeMeta :: forall loc. TypeMeta p loc -> Maybe (Doc AnsiStyle)
+    prettyValueDeclPatterns :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => ValueDeclPatterns p loc -> Doc AnsiStyle
+    prettyValueDeclPatterns _ = mempty
 
 -- | Pretty-printing for phase-specific extension constructors
 class PrettyExtensions p where
@@ -141,3 +144,43 @@ prettyBinaryOperator :: forall loc p. (PrettyPhase p, PrettyPhaseLoc p loc) => B
 prettyBinaryOperator = \case
     SymOp _ op -> prettyOperatorOccurrence @p @loc op
     InfixedOp _ name -> "`" <> prettyInfixedOccurrence @p @loc name <> "`"
+
+-- | Pretty-print a type declaration (ADT or alias)
+prettyTypeDeclaration :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TypeDeclaration loc p -> Doc AnsiStyle
+prettyTypeDeclaration = \case
+    ADT ctors -> vsep (map prettyCtor (toList ctors))
+      where
+        prettyCtor (name, args) =
+            prettyConstructorBinder @p @loc name <+> hsep (map prettyType args)
+    Alias t -> prettyType t
+
+-- | Pretty-print a declaration body
+prettyDeclarationBody :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => DeclarationBody' loc p -> Doc AnsiStyle
+prettyDeclarationBody = \case
+    ValueDeclaration name expr pats _mTy _meta _anns ->
+        "let"
+            <+> prettyTopValueBinder @p @loc name
+            <+> prettyValueDeclPatterns @p @loc pats
+            <+> "="
+            <+> prettyExpr expr
+    TypeDeclarationBody name vars typeDecl _mKind _meta _anns ->
+        "type"
+            <+> prettyTopTypeBinder @p @loc name
+            <+> hsep (map (prettyTypeVariable @p @loc) vars)
+            <+> "="
+            <+> prettyTypeDeclaration typeDecl
+    DeclBodyExtension ext -> prettyDeclBodyExtension @p @loc ext
+
+-- | Pretty-print a declaration
+prettyDeclaration :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Declaration loc p -> Doc AnsiStyle
+prettyDeclaration (Declaration _ (Declaration' _ (DeclarationBody _ body))) =
+    prettyDeclarationBody @loc @p body
+
+-- | Pretty-print a module with all its declarations
+prettyModule :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (Locate loc ModuleName)) => Module loc p -> Doc AnsiStyle
+prettyModule (Module _ m) =
+    "module"
+        <+> pretty (moduleName m)
+        <> line
+        <> line
+        <> vsep (map prettyDeclaration (moduleDeclarations m))

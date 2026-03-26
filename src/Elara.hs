@@ -36,9 +36,7 @@ import Effectful.FileSystem (FileSystem, runFileSystem)
 import Elara.AST.Name (ModuleName, NameLike, nameText)
 import Elara.AST.New.Module qualified as New
 import Elara.AST.New.Phase (Locate)
-import Elara.AST.New.Phases.Frontend qualified as NewFrontend
 import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Types qualified as NewAST
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)

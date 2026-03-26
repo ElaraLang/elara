@@ -42,6 +42,8 @@ type CoreConstraint (c :: Kind.Type -> Kind.Constraint) loc p =
     , c (PatternExtension p loc)
     , c (TypeSyntaxExtension p loc)
     , c (DeclBodyExtension p loc)
+    , c (ValueDeclPatterns p loc)
+    , c (ValueDeclTypeAnnotation p loc)
     , c (ValueDeclMetadata p loc)
     , c (TypeDeclMetadata p loc)
     )

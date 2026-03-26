@@ -14,6 +14,7 @@ import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName, unqualified)
 import Elara.AST.New.Module qualified as NewModule
 import Elara.AST.New.Phase (NoExtension (..))
+import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.New.Phases.Kinded (KindedType)
 import Elara.AST.New.Phases.Kinded qualified as NewK
 import Elara.AST.New.Phases.Renamed (TypedLambdaParam (..))
@@ -51,7 +52,15 @@ import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 import Optics (over, view)
 import Relude.Extra (bimapF, fmapToSnd, secondF)
 import Rock qualified
-import Unsafe.Coerce (unsafeCoerce)
+
+-- PhaseCoerce instances for Shunted → Typed (Exposing/Import type families are identical)
+instance PhaseCoerce (NewModule.Exposing SourceRegion Shunted) (NewModule.Exposing SourceRegion Typed)
+
+instance PhaseCoerce (NewModule.Exposition SourceRegion Shunted) (NewModule.Exposition SourceRegion Typed)
+
+instance PhaseCoerce (NewModule.Import SourceRegion Shunted) (NewModule.Import SourceRegion Typed)
+
+instance PhaseCoerce (NewModule.Import' SourceRegion Shunted) (NewModule.Import' SourceRegion Typed)
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r
@@ -365,10 +374,8 @@ inferModule ::
     Eff r (NewModule.Module SourceRegion Typed)
 inferModule (NewModule.Module loc m') = do
     typedDecls <- traverse inferDeclaration m'.moduleDeclarations
-    -- Exposing and Import structures are representationally identical between Shunted and Typed
-    -- since all occurrence types (ValueOccurrence, TypeOccurrence, etc.) are the same in both phases
-    let typedExposing = unsafeCoerce m'.moduleExposing :: NewModule.Exposing SourceRegion Typed
-        typedImports = unsafeCoerce m'.moduleImports :: [NewModule.Import SourceRegion Typed]
+    let typedExposing = phaseCoerce m'.moduleExposing :: NewModule.Exposing SourceRegion Typed
+        typedImports = phaseCoerce m'.moduleImports :: [NewModule.Import SourceRegion Typed]
     pure $ NewModule.Module loc $ NewModule.Module' m'.moduleName typedExposing typedImports typedDecls
 
 -- | Add's a declaration's name and expected type to the type environment
@@ -414,17 +421,15 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
         New.DeclarationBody' SourceRegion Shunted ->
         Eff r (New.DeclarationBody' SourceRegion Typed)
     inferDeclarationBody' = \case
-        New.ValueDeclaration name e pats mTy _valueTypeMeta anns -> do
+        New.ValueDeclaration name e () () _valueTypeMeta anns -> do
             expectedType <- traverse (inferTypeKind >=> astTypeToGeneralisedInferType) _valueTypeMeta
             logDebug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             logDebug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
             addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
             typedAnns <- traverse inferAnnotation anns
-            -- pats and mTy come from Shunted but need Typed phase.
-            -- pats are always empty after desugaring (multi-param was desugared to lambdas)
-            -- mTy is the user annotation; both phases have the same representation for these fields
-            pure (New.ValueDeclaration name typedExpr (unsafeCoerce pats) (unsafeCoerce mTy) (Polytype polytype) typedAnns)
+
+            pure (New.ValueDeclaration name typedExpr () () (Polytype polytype) typedAnns)
         New.TypeDeclarationBody name tyVars bodyDecl _mKind NoExtension anns -> do
             (kind, decl') <- inferKind (name ^. unlocated) tyVars bodyDecl
             case decl' of

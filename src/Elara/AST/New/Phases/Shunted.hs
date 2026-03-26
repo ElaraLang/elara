@@ -42,6 +42,9 @@ instance ElaraPhase Shunted where
     type TypeSyntaxExtension Shunted loc = Void
     type DeclBodyExtension Shunted loc = Void
 
+    type ValueDeclPatterns Shunted loc = ()
+    type ValueDeclTypeAnnotation Shunted loc = ()
+
     type ValueDeclMetadata Shunted loc = Maybe (Type loc Shunted)
     type TypeDeclMetadata Shunted loc = NoExtension
 

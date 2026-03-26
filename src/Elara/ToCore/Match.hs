@@ -49,7 +49,7 @@ import Data.Text (toLower)
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
-import Elara.AST.New.Phases.Typed (Typed, TypedPattern)
+import Elara.AST.New.Phases.Typed (TypedPattern)
 import Elara.AST.New.Types qualified as New
 import Elara.AST.Region
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
@@ -217,8 +217,8 @@ For every constructor @C@ that appears in the column:
 1. Generate a @Case C@ branch.
 2. Inside that branch, @x@ is unwrapped into fields @f1, f2...@.
 3. Construct a new sub-matrix for this branch:
-   - For rows matching @C f1 f2@, we replace @C f1 f2@ with @f1, f2@.
-   - For default rows @_@, we expand @_@ into @_ _@ (one wild for each field).
+  - For rows matching @C f1 f2@, we replace @C f1 f2@ with @f1, f2@.
+  - For default rows @_@, we expand @_@ into @_ _@ (one wild for each field).
 4. Recurse on the sub-matrix with new scrutinees @[f1, f2, ...rest]@.
 -}
 compileConstructorCases ::
@@ -373,8 +373,8 @@ partitionRows = foldr go (M.empty, M.empty, [])
 
 1. Records the binding if the head was 'PVar' (binds @x = s0@).
 2. Expands the head into @n@ wildcards to match the arity of the constructor.
-   e.g. if matching 'Just' (arity 1), `_` becomes `_` (matching the payload).
-   e.g. if matching 'Either' (arity 2), `_` becomes `_ _`.
+  e.g. if matching 'Just' (arity 1), `_` becomes `_` (matching the payload).
+  e.g. if matching 'Either' (arity 2), `_` becomes `_ _`.
 -}
 expandDefaultRow ::
     Int ->

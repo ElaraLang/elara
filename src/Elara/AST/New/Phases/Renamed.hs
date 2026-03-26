@@ -56,6 +56,10 @@ instance ElaraPhase Renamed where
     type TypeSyntaxExtension Renamed loc = Void -- tuple types gone
     type DeclBodyExtension Renamed loc = Void
 
+    -- Value declaration fields (eliminated after desugar)
+    type ValueDeclPatterns Renamed loc = ()
+    type ValueDeclTypeAnnotation Renamed loc = ()
+
     -- Declaration metadata
     type ValueDeclMetadata Renamed loc = Maybe (Type loc Renamed)
     type TypeDeclMetadata Renamed loc = NoExtension

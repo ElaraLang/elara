@@ -342,7 +342,7 @@ renameDeclaration decl@(New.Declaration dloc (New.Declaration' mn body)) = do
         let qualifiedName =
                 sequenceA $
                     Qualified name (thisMod.moduleName ^. unlocated)
-        pure $ New.ValueDeclaration qualifiedName val' [] Nothing mTypeMeta' anns'
+        pure $ New.ValueDeclaration qualifiedName val' () () mTypeMeta' anns'
     renameDeclarationBody' (New.TypeDeclarationBody name vars typeDecl _mKind _meta anns) = do
         vars' <- traverse uniquify vars
         let varAliases = zip vars vars' :: [(Located LowerAlphaName, Located (Unique LowerAlphaName))]

@@ -1,8 +1,9 @@
+{-# LANGUAGE TypeData #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.New.Phases.Typed where
 
-import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
+import Elara.AST.Name (OpName, Qualified, TypeName, VarName)
 import Elara.AST.New.Phase
 import Elara.AST.New.Phases.Renamed (TypedLambdaParam)
 import Elara.AST.New.Types qualified as AST
@@ -14,7 +15,7 @@ import Elara.TypeInfer.Type (Monotype)
 import Elara.TypeInfer.Type qualified as Infer
 import Elara.TypeInfer.Unique (UniqueTyVar)
 
-data Typed
+type data Typed
 
 instance ElaraPhase Typed where
     type ValueOccurrence Typed loc = Locate loc (VarRef VarName)
@@ -45,18 +46,31 @@ instance ElaraPhase Typed where
     type TypeSyntaxExtension Typed loc = Void
     type DeclBodyExtension Typed loc = Void
 
+    type ValueDeclPatterns Typed loc = ()
+    type ValueDeclTypeAnnotation Typed loc = ()
+
     type ValueDeclMetadata Typed loc = Infer.Type SourceRegion
     type TypeDeclMetadata Typed loc = ElaraKind
 
 -- Type aliases (qualified AST to avoid clash with Infer.Type)
 type TypedExpr = AST.Expr SourceRegion Typed
+
 type TypedExpr' = AST.Expr' SourceRegion Typed
+
 type TypedPattern = AST.Pattern SourceRegion Typed
+
 type TypedPattern' = AST.Pattern' SourceRegion Typed
+
 type TypedType = AST.Type SourceRegion Typed
+
 type TypedType' = AST.Type' SourceRegion Typed
+
 type TypedDeclaration = AST.Declaration SourceRegion Typed
+
 type TypedDeclaration' = AST.Declaration' SourceRegion Typed
+
 type TypedDeclarationBody = AST.DeclarationBody SourceRegion Typed
+
 type TypedDeclarationBody' = AST.DeclarationBody' SourceRegion Typed
+
 type TypedTypeDeclaration = AST.TypeDeclaration SourceRegion Typed

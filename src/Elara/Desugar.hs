@@ -12,6 +12,7 @@ import Effectful.State.Static.Local qualified as Eff
 import Elara.AST.New.Extensions
 import Elara.AST.New.Module qualified as NewModule
 import Elara.AST.New.Phase (NoExtension (..))
+import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.New.Phases.Desugared (DesugaredExpressionExtension (..))
 import Elara.AST.New.Phases.Desugared qualified as NewD
 import Elara.AST.New.Phases.Frontend qualified as Frontend
@@ -28,6 +29,11 @@ import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Rock qualified
 import Prelude hiding (Op)
+
+instance PhaseCoerce (NewModule.Exposing SourceRegion Frontend.Frontend) (NewModule.Exposing SourceRegion NewD.Desugared)
+instance PhaseCoerce (NewModule.Exposition SourceRegion Frontend.Frontend) (NewModule.Exposition SourceRegion NewD.Desugared)
+instance PhaseCoerce (NewModule.Import SourceRegion Frontend.Frontend) (NewModule.Import SourceRegion NewD.Desugared)
+instance PhaseCoerce (NewModule.Import' SourceRegion Frontend.Frontend) (NewModule.Import' SourceRegion NewD.Desugared)
 
 type Desugar a = Eff DesugarPipelineEffects a
 
@@ -54,26 +60,12 @@ desugar ::
     Desugar (NewModule.Module SourceRegion NewD.Desugared)
 desugar (NewModule.Module loc (NewModule.Module' name exposing imports decls)) = do
     decls' <- desugarDeclarations name decls
-    pure (NewModule.Module loc (NewModule.Module' name (coerceExposing exposing) (map coerceImport imports) decls'))
+    pure (NewModule.Module loc (NewModule.Module' name (phaseCoerce exposing) (map phaseCoerce imports) decls'))
 
 desugarDeclarations :: Located ModuleName -> [New.Declaration SourceRegion Frontend.Frontend] -> Desugar [New.Declaration SourceRegion NewD.Desugared]
 desugarDeclarations mn decls = do
     genPartials decls
     completePartials mn
-
-coerceExposing :: NewModule.Exposing SourceRegion Frontend.Frontend -> NewModule.Exposing SourceRegion NewD.Desugared
-coerceExposing NewModule.ExposingAll = NewModule.ExposingAll
-coerceExposing (NewModule.ExposingSome exps) = NewModule.ExposingSome (map coerceExposition exps)
-
-coerceExposition :: NewModule.Exposition SourceRegion Frontend.Frontend -> NewModule.Exposition SourceRegion NewD.Desugared
-coerceExposition (NewModule.ExposedValue v) = NewModule.ExposedValue v
-coerceExposition (NewModule.ExposedOp o) = NewModule.ExposedOp o
-coerceExposition (NewModule.ExposedType t) = NewModule.ExposedType t
-coerceExposition (NewModule.ExposedTypeAndAllConstructors t) = NewModule.ExposedTypeAndAllConstructors t
-
-coerceImport :: NewModule.Import SourceRegion Frontend.Frontend -> NewModule.Import SourceRegion NewD.Desugared
-coerceImport (NewModule.Import loc (NewModule.Import' name as' qual exp')) =
-    NewModule.Import loc (NewModule.Import' name as' qual (coerceExposing exp'))
 
 assertPartialNamesEqual :: Eq a => (PartialDeclaration, Located a) -> (PartialDeclaration, Located a) -> Desugar ()
 assertPartialNamesEqual (p1, n1) (p2, n2) = if n1 ^. unlocated == n2 ^. unlocated then pass else throwError (PartialNamesNotEqual p1 p2)
@@ -97,9 +89,9 @@ resolvePartialDeclaration :: PartialDeclaration -> Desugar (New.DeclarationBody 
 resolvePartialDeclaration (Immediate _ body) = pure body
 resolvePartialDeclaration (JustDef _ _ ty _) = throwError (DefWithoutLet ty)
 resolvePartialDeclaration (JustLet n sr e mAnn) =
-    pure (New.DeclarationBody sr (New.ValueDeclaration n e [] Nothing Nothing (fromMaybe [] mAnn)))
+    pure (New.DeclarationBody sr (New.ValueDeclaration n e () () Nothing (fromMaybe [] mAnn)))
 resolvePartialDeclaration (AllDecl n sr ty e ann) =
-    pure (New.DeclarationBody sr (New.ValueDeclaration n e [] Nothing (Just ty) ann))
+    pure (New.DeclarationBody sr (New.ValueDeclaration n e () () (Just ty) ann))
 
 genPartials :: [New.Declaration SourceRegion Frontend.Frontend] -> Desugar ()
 genPartials = traverse_ genPartial
