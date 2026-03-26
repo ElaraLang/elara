@@ -21,30 +21,23 @@ library
       Elara
       Effectful.Error.Extra
       Effectful.State.Extra
-      Elara.AST.Desugared
-      Elara.AST.Frontend
-      Elara.AST.Generic
-      Elara.AST.Generic.Common
-      Elara.AST.Generic.Instances
-      Elara.AST.Generic.Instances.DataPlated
-      Elara.AST.Generic.Instances.Pretty
-      Elara.AST.Generic.Instances.Simple
-      Elara.AST.Generic.Instances.StripLocation
-      Elara.AST.Generic.Pattern
-      Elara.AST.Generic.Types
-      Elara.AST.Generic.Utils
-      Elara.AST.Introspection
-      Elara.AST.Kinded
-      Elara.AST.Module
+      Elara.AST.New.Extensions
+      Elara.AST.New.Instances
+      Elara.AST.New.Module
+      Elara.AST.New.Phase
+      Elara.AST.New.Pretty
+      Elara.AST.New.Traversal
+      Elara.AST.New.Types
+      Elara.AST.New.Phases.Desugared
+      Elara.AST.New.Phases.Frontend
+      Elara.AST.New.Phases.Frontend.Pretty
+      Elara.AST.New.Phases.Kinded
+      Elara.AST.New.Phases.MidKinded
+      Elara.AST.New.Phases.Renamed
+      Elara.AST.New.Phases.Shunted
+      Elara.AST.New.Phases.Typed
       Elara.AST.Name
-      Elara.AST.Pretty
       Elara.AST.Region
-      Elara.AST.Renamed
-      Elara.AST.Select
-      Elara.AST.Shunted
-      Elara.AST.StripLocation
-      Elara.AST.Typed
-      Elara.AST.Unlocated
       Elara.AST.VarRef
       Elara.ConstExpr
       Elara.Core
@@ -301,6 +294,7 @@ test-suite elara-test
       Arbitrary.Type
       Boilerplate
       Common
+      Normalise
       CoreToCore
       HedgehogSyd
       Golden

@@ -5,7 +5,6 @@
 module Elara.Core.Pretty where
 
 import Elara.AST.Name (unqualified)
-import Elara.AST.Pretty
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Core.ANF qualified as ANF

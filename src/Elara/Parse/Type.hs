@@ -1,12 +1,11 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
-import Data.Generics.Wrapped
-import Elara.AST.Frontend (FrontendType, FrontendType')
-import Elara.AST.Generic (Type (..), Type' (..))
-import Elara.AST.Generic.Common (NoFieldValue (NoFieldValue))
 import Elara.AST.Name (LowerAlphaName)
-import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion)
+import Elara.AST.New.Extensions (TupleTypeExtension (..))
+import Elara.AST.New.Phases.Frontend
+import Elara.AST.New.Types
+import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion')
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
@@ -14,6 +13,9 @@ import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
 import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
+
+typeRegion :: FrontendType -> SourceRegion
+typeRegion (Type loc _ _) = loc
 
 type' :: Parser FrontendType
 type' =
@@ -32,19 +34,20 @@ typeNotApplication =
         ]
 
 locatedType :: Parser FrontendType' -> Parser FrontendType
-locatedType = (Type . (,NoFieldValue) <$>) . located
+locatedType p = (\(Located sr node) -> Type sr () node) <$> located p
 
 constructorApplication :: Parser (FrontendType -> FrontendType -> FrontendType)
-constructorApplication = liftedBinaryType pass (const TypeConstructorApplication)
+constructorApplication = liftedBinaryType pass (const TApp)
 
 functionType :: Parser (FrontendType -> FrontendType -> FrontendType)
-functionType = liftedBinaryType (token_ TokenRightArrow) (const FunctionType)
+functionType = liftedBinaryType (token_ TokenRightArrow) (const TFun)
 
+liftedBinaryType :: Parser op -> (op -> FrontendType -> FrontendType -> FrontendType') -> Parser (FrontendType -> FrontendType -> FrontendType)
 liftedBinaryType op f = do
     op' <- op
     let create l r =
-            let region = enclosingRegion' (l ^. _Unwrapped % _1 % sourceRegion) (r ^. _Unwrapped % _1 % sourceRegion)
-             in Located region (f op' l r) ^. to (Type . (,NoFieldValue))
+            let region = enclosingRegion' (typeRegion l) (typeRegion r)
+             in Type region () (f op' l r)
     pure create
 
 typeTerm :: Parser FrontendType
@@ -63,22 +66,21 @@ typeTerm =
 typeVar :: Parser FrontendType
 typeVar =
     locatedType $
-        TypeVar <$> located varId
+        TVar <$> located varId
 
 unit :: Parser FrontendType
 unit =
-    locatedType $ do
-        unit <- located (token_ TokenLeftParen *> token_ TokenRightParen)
-        pure (UnitType unit)
+    locatedType $
+        TUnit <$ (token_ TokenLeftParen *> token_ TokenRightParen)
 
 namedType :: Parser FrontendType
 namedType =
-    locatedType $ UserDefinedType <$> located conName
+    locatedType $ TUserDefined <$> located conName
 
 recordType :: Parser FrontendType
 recordType = locatedType $ inBraces $ do
     fields <- sepBy1' recordField (token_ TokenComma)
-    pure $ RecordType fields
+    pure $ TRecord fields
   where
     recordField :: Parser (Located LowerAlphaName, FrontendType)
     recordField = do
@@ -97,11 +99,11 @@ tupleType = locatedType $ inParens $ do
     t <- type'
     token_ TokenComma
     ts <- sepBy1' type' (token_ TokenComma)
-    pure $ TupleType (AtLeast2List.fromHeadAndTail t ts)
+    pure $ TExtension (TupleType (AtLeast2List.fromHeadAndTail t ts))
 
 listType :: Parser FrontendType
 listType = locatedType $ do
     token_ TokenLeftBracket
     t <- type'
     token_ TokenRightBracket
-    pure $ ListType t
+    pure $ TList t

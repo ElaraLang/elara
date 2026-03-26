@@ -265,6 +265,13 @@ instance Substitutable Monotype loc where
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
 
+instance Eq loc => Substitutable Type loc where
+    substitute tv t (Lifted m) = Lifted (substitute tv t m)
+    substitute tv t (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substitute tv t c) (substitute tv t m))
+
+    substituteAll s (Lifted m) = Lifted (substituteAll s m)
+    substituteAll s (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substituteAll s c) (substituteAll s m))
+
 instance Pretty loc => Pretty (Type loc) where
     pretty (Polytype poly) = pretty poly
     pretty (Lifted m) = pretty m

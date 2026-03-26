@@ -1,9 +1,9 @@
 [error E3011]: Type mismatch in call to 'Elara.Prim.(+)'
-     ╭──▶ test/test_resources/golden_inputs/error-type-mismatch.elr@4:21-4:24
+     ╭──▶ test/test_resources/golden_inputs/error-type-mismatch.elr@4:22-4:23
      │
    4 │ let main = println (1 + "hello")
-     •                     ┬── ┬───── 
-     •                     ╰────╸ expected Int
+     •                      ┬  ┬───── 
+     •                      ╰───╸ expected Int
      •                         ╰╸ but found String
      •
      │ Note: while checking argument 1 of 'Elara.Prim.(+)'

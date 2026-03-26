@@ -48,10 +48,10 @@ import Data.Matrix qualified as Mat
 import Data.Text (toLower)
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
-import Elara.AST.Generic.Types qualified as AST
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
+import Elara.AST.New.Phases.Typed (Typed, TypedPattern)
+import Elara.AST.New.Types qualified as New
 import Elara.AST.Region
-import Elara.AST.Typed as Typed
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
 import Elara.Core qualified as Core
 import Elara.Core.Analysis qualified as Core
@@ -117,18 +117,19 @@ buildMatrix1 branches =
 
 -- | Convert a TypedPattern into our normalized NPat form.
 toNPat :: TypedPattern -> NPat
-toNPat (AST.Pattern (Located _ pat, _t)) = go pat
+toNPat (New.Pattern _ _ pat) = go pat
   where
     go = \case
-        AST.IntegerPattern i -> PLit (Core.Int i)
-        AST.FloatPattern f -> PLit (Core.Double f)
-        AST.StringPattern s -> PLit (Core.String s)
-        AST.CharPattern c -> PLit (Core.Char c)
-        AST.UnitPattern -> PLit Core.Unit
-        AST.WildcardPattern -> PWild
-        AST.VarPattern (Located _ uvn) -> PVar uvn
-        AST.ConstructorPattern (Located _ qn) ps ->
+        New.PInt i -> PLit (Core.Int i)
+        New.PFloat f -> PLit (Core.Double f)
+        New.PString s -> PLit (Core.String s)
+        New.PChar c -> PLit (Core.Char c)
+        New.PUnit -> PLit Core.Unit
+        New.PWildcard -> PWild
+        New.PVar (Located _ uvn) -> PVar uvn
+        New.PCon (Located _ qn) ps ->
             PCon qn (map toNPat ps)
+        New.PExtension v -> absurd v
 
 -- | A function that resolves a constructor name to its DataCon.
 type ConResolver m = Qualified TypeName -> m Core.DataCon

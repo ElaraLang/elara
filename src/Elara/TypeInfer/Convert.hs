@@ -2,22 +2,36 @@ module Elara.TypeInfer.Convert where
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
-import Elara.AST.Generic.Types (freeTypeVars)
-import Elara.AST.Generic.Types qualified as Generic
-import Elara.AST.Kinded
 import Elara.AST.Name
+import Elara.AST.New.Phases.Kinded (Kinded, KindedType, KindedType')
+import Elara.AST.New.Types qualified as New
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
-import Elara.AST.Shunted ()
 import Elara.Data.Kind
 import Elara.Data.Pretty
+import Elara.Data.Unique (Unique)
 import Elara.Error (ReportableError (..))
-import Elara.Prim (charName, intName, mkPrimQual, stringName)
+import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
+import Elara.TypeInfer.Unique (UniqueTyVar)
+
+-- | Collect free type variables from a type
+freeTypeVars :: KindedType -> [Located (Unique LowerAlphaName)]
+freeTypeVars (New.Type _ _ t') = freeTypeVars' t'
+  where
+    freeTypeVars' :: KindedType' -> [Located (Unique LowerAlphaName)]
+    freeTypeVars' (New.TVar v) = [v]
+    freeTypeVars' (New.TFun t1 t2) = freeTypeVars t1 <> freeTypeVars t2
+    freeTypeVars' New.TUnit = []
+    freeTypeVars' (New.TApp t1 t2) = freeTypeVars t1 <> freeTypeVars t2
+    freeTypeVars' (New.TUserDefined _) = []
+    freeTypeVars' (New.TRecord fields) = concatMap (freeTypeVars . snd) fields
+    freeTypeVars' (New.TList t) = freeTypeVars t
+    freeTypeVars' (New.TExtension v) = absurd v
 
 astTypeToGeneralisedInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Type SourceRegion)
-astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
-    let ftvs = freeTypeVars t
-    let skolems = fmap convertTyVar ftvs
+astTypeToGeneralisedInferType t@(New.Type loc kind t') = do
+    let ftvs = ordNub $ freeTypeVars t
+    let skolems = fmap (view unlocated . convertTyVar) ftvs
     asInferType <- astTypeToInferType' loc t'
 
     case skolems of
@@ -25,40 +39,40 @@ astTypeToGeneralisedInferType t@(Generic.Type (Located loc t', kind)) = do
         _ -> pure $ Polytype (Forall loc skolems (EmptyConstraint loc) asInferType)
 
 astTypeToInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion)
-astTypeToInferType t@(Generic.Type (Located loc t', kind)) = do
+astTypeToInferType (New.Type loc _kind t') = do
     astTypeToInferType' loc t'
 
 astTypeToInferTypeWithKind :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion, ElaraKind)
-astTypeToInferTypeWithKind t@(Generic.Type (Located loc t', kind)) = do
+astTypeToInferTypeWithKind (New.Type loc kind t') = do
     asInferType <- astTypeToInferType' loc t'
     pure (asInferType, kind)
 
-convertTyVar name = fmap (Just . nameText) (name ^. unlocated)
+convertTyVar :: Located (Unique LowerAlphaName) -> Located UniqueTyVar
+convertTyVar = fmap (fmap (Just . nameText))
 
 astTypeToInferType' :: Error TypeConvertError :> r => SourceRegion -> KindedType' -> Eff r (Monotype SourceRegion)
-astTypeToInferType' loc (Generic.TypeVar name) = do
-    pure $ TypeVar loc $ UnificationVar $ convertTyVar name -- idk if this should ever be a skolem variable? i dont think so
-astTypeToInferType' loc (Generic.FunctionType i o) = do
+astTypeToInferType' loc (New.TVar name) = do
+    pure $ TypeVar loc $ UnificationVar $ view unlocated $ convertTyVar name
+astTypeToInferType' loc (New.TFun i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
     pure $ Function loc i' o'
-astTypeToInferType' loc (Generic.UnitType x) = do
+astTypeToInferType' loc New.TUnit = do
     pure $ TypeConstructor loc (mkPrimQual "()") []
-astTypeToInferType' _ (Generic.ListType t) = do
-    t' <- astTypeToInferType t
+astTypeToInferType' _ (New.TList _t) = do
     throwError $ NotSupported "List types are not supported yet"
-astTypeToInferType' _ (Generic.RecordType fields) = do
+astTypeToInferType' _ (New.TRecord _fields) = do
     throwError $ NotSupported "Record types are not supported yet"
-astTypeToInferType' loc (Generic.TypeConstructorApplication ctor arg) = do
+astTypeToInferType' loc (New.TApp ctor arg) = do
     ctor' <- astTypeToInferType ctor
     arg' <- astTypeToInferType arg
     case ctor' of
         TypeConstructor _ name args -> do
             pure $ TypeConstructor loc name (args ++ [arg'])
-        other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
--- custom types
-astTypeToInferType' loc (Generic.UserDefinedType name) = do
+        _other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
+astTypeToInferType' loc (New.TUserDefined name) = do
     pure $ TypeConstructor loc (name ^. unlocated) []
+astTypeToInferType' _ (New.TExtension v) = absurd v
 
 assertMonotype :: Error TypeConvertError :> r => Type SourceRegion -> Eff r (Monotype SourceRegion)
 assertMonotype (Lifted t) = pure t

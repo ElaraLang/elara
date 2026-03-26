@@ -1,14 +1,16 @@
 module Parse.Expressions where
 
 import Arbitrary.AST (genExpr)
-import Common (stripInParens)
-import Elara.AST.Generic
-import Elara.AST.Generic.Pattern
 import Elara.AST.Name
-import Elara.AST.StripLocation
+import Elara.AST.New.Extensions
+import Elara.AST.New.Phase (NoExtension (..))
+import Elara.AST.New.Phases.Frontend
+import Elara.AST.New.Phases.Frontend.Pretty ()
+import Elara.AST.New.Types
 import Elara.Parse.Expression (exprParser)
 import Hedgehog hiding (Var)
 import NeatInterpolation (text)
+import Normalise (mkExpr, mkPat, stripExpr, stripNewInParens)
 import Orphans ()
 import Parse.Common
 import Print (showPrettyUnannotated)
@@ -23,88 +25,97 @@ spec = describe "Parses expressions correctly" $ do
 
 weirdEdgeCases :: Spec
 weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
-    it "Parses the funky lambda thing properly" $ property $ do
-        "(\\x -> x + 2) 3"
-            `shouldParseExpr` functionCall
-                ( Expr
-                    ( InParens
-                        ( Expr
-                            ( Lambda
-                                [Pattern (VarPattern (LowerAlphaName "x"), Nothing)]
-                                ( Expr
-                                    ( BinaryOperator
-                                        ( MkBinaryOperator (SymOp "+")
-                                        , Expr (Var (MaybeQualified "x" Nothing), Nothing)
-                                        , Expr (Int 2, Nothing)
+    it "Parses the funky lambda thing properly" $
+        property $
+            "(\\x -> x + 2) 3"
+                `shouldParseExpr` mkExpr
+                    ( EApp
+                        NoExtension
+                        ( mkExpr
+                            ( EExtension
+                                ( FrontendInParens
+                                    ( InParensExpression
+                                        ( mkExpr
+                                            ( EExtension
+                                                ( FrontendMultiLam
+                                                    [mkPat (PVar (NormalVarName (LowerAlphaName "x")))]
+                                                    ( mkExpr
+                                                        ( EExtension
+                                                            ( FrontendBinaryOperator
+                                                                ( BinaryOperatorExpression
+                                                                    (SymOp () (MaybeQualified "+" Nothing))
+                                                                    (mkExpr (EVar NoExtension (MaybeQualified (NormalVarName (LowerAlphaName "x")) Nothing)))
+                                                                    (mkExpr (EInt 2))
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
                                         )
-                                    , Nothing
                                     )
                                 )
-                            , Nothing
                             )
                         )
-                    , Nothing
+                        (mkExpr (EInt 3))
                     )
-                )
-                (Expr (Int 3, Nothing))
-    it "Parses the weird let-in thing properly" $ property $ do
-        "let a  = 0 in {let a  = -98905857 }"
-            `shouldParseExpr` Expr
-                ( LetIn
-                    "a"
-                    []
-                    (Expr (Int 0, Nothing))
-                    ( Expr
-                        ( Let
-                            (NormalVarName (LowerAlphaName "a"))
-                            []
-                            (Expr (Int (-98905857), Nothing))
-                        , Nothing
+    it "Parses the weird let-in thing properly" $
+        property $
+            "let a  = 0 in {let a  = -98905857 }"
+                `shouldParseExpr` mkExpr
+                    ( ELetIn
+                        NoExtension
+                        (NormalVarName (LowerAlphaName "a"))
+                        (mkExpr (EInt 0))
+                        ( mkExpr
+                            ( ELet
+                                NoExtension
+                                (NormalVarName (LowerAlphaName "a"))
+                                (mkExpr (EInt (-98905857)))
+                            )
                         )
                     )
-                , Nothing
-                )
 
 arbitraryExpr :: Spec
 arbitraryExpr = it "Arbitrary expressions parse prettyPrinted" $ property $ do
     expr <- forAll genExpr
-    let parsePretty s = fmap stripLocation <$> lexAndParse exprParser s
-
-    trippingParse expr showPrettyUnannotated (fmap (fmap stripInParens) . parsePretty)
+    let parsePretty s = fmap (stripExpr . stripNewInParens) <$> lexAndParse exprParser s
+    trippingParse expr showPrettyUnannotated parsePretty
 
 lets :: Spec
 lets = describe "Parses lets correctly" $ do
-    it "Parses a simple let-in correctly" $ withTests 1 $ property $ do
-        "let x = 1 in x"
-            `shouldParseExpr` Expr
-                ( LetIn
-                    "x"
-                    []
-                    (Expr (Int 1, Nothing))
-                    (Expr (Var (MaybeQualified "x" Nothing), Nothing))
-                , Nothing
-                )
+    it "Parses a simple let-in correctly" $
+        withTests 1 $
+            property $
+                "let x = 1 in x"
+                    `shouldParseExpr` mkExpr
+                        ( ELetIn
+                            NoExtension
+                            (NormalVarName (LowerAlphaName "x"))
+                            (mkExpr (EInt 1))
+                            (mkExpr (EVar NoExtension (MaybeQualified (NormalVarName (LowerAlphaName "x")) Nothing)))
+                        )
 
-    it "Parses a nested let correctly" $ withTests 1 $ property $ do
-        [text|
+    it "Parses a nested let correctly" $
+        withTests 1 $
+            property $
+                [text|
         let x =
-                let y = 
+                let y =
                         1
                 in y
         in x|]
-            `shouldParseExpr` Expr
-                ( LetIn
-                    "x"
-                    []
-                    ( Expr
-                        ( LetIn
-                            (NormalVarName (LowerAlphaName "y"))
-                            []
-                            (Expr (Int 1, Nothing))
-                            (Expr (Var "y", Nothing))
-                        , Nothing
+                    `shouldParseExpr` mkExpr
+                        ( ELetIn
+                            NoExtension
+                            (NormalVarName (LowerAlphaName "x"))
+                            ( mkExpr
+                                ( ELetIn
+                                    NoExtension
+                                    (NormalVarName (LowerAlphaName "y"))
+                                    (mkExpr (EInt 1))
+                                    (mkExpr (EVar NoExtension (MaybeQualified (NormalVarName (LowerAlphaName "y")) Nothing)))
+                                )
+                            )
+                            (mkExpr (EVar NoExtension (MaybeQualified (NormalVarName (LowerAlphaName "x")) Nothing)))
                         )
-                    )
-                    (Expr (Var (MaybeQualified "x" Nothing), Nothing))
-                , Nothing
-                )

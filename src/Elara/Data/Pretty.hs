@@ -1,4 +1,5 @@
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -17,6 +18,8 @@ module Elara.Data.Pretty (
     renderStrict,
     prettyToText,
     prettyToUnannotatedText,
+    prettyStringExpr,
+    prettyBlockExpr,
 )
 where
 
@@ -201,6 +204,22 @@ instance (Pretty k, Pretty v) => Pretty (HashMap k v) where
 
 instance Pretty k => Pretty (HashSet k) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
+
+prettyStringExpr :: Text -> Doc AnsiStyle
+prettyStringExpr = dquotes . pretty
+
+prettyBlockExpr :: (?contextFree :: Bool, Pretty a, Foldable t) => t a -> Doc AnsiStyle
+prettyBlockExpr b = do
+    let open = if ?contextFree then "{ " else flatAlt "" "{ "
+        close = if ?contextFree then "}" else flatAlt "" " }"
+        separator = if ?contextFree then "; " else flatAlt "" "; "
+        arrange = if ?contextFree then identity else group . align
+    arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
+  where
+    encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
+    encloseSep' contextFree open' close' _ [] = open' <> close'
+    encloseSep' True open' close' sep' (x : xs) = open' <> x <> foldr (\y ys -> sep' <> y <> ys) close' xs
+    encloseSep' False open' close' sep' items = encloseSep open' close' sep' items
 
 -- Generic instances
 

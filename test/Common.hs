@@ -6,16 +6,12 @@ module Common (
     diagShouldFail,
     evalReportableM,
 
-    -- * AST Utilities
-    stripInParens,
-
     -- * Effect Runners
     runUnique,
 ) where
 
 import Control.Exception.Safe (MonadCatch)
 import Effectful (Eff, IOE, runEff, runPureEff)
-import Elara.AST.Generic (Expr (..), Expr' (..))
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Error (ReportableError, report, runDiagnosticWriter)
@@ -56,14 +52,6 @@ evalReportableM m = do
             let (x, _) = runPureEff $ runDiagnosticWriter $ report err
             failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) x
         Right ok -> pure ok
-
-{- | Remove any 'InParens' wrappers from an expression
-Useful for comparing the overall structure of expressions without worrying about parentheses
--}
-stripInParens :: _ => Expr ast -> Expr ast
-stripInParens = transform $ \case
-    (Expr (InParens x, _)) -> x
-    x -> x
 
 -- | Run an effectful computation that requires unique generation
 runUnique :: MonadIO m => Eff [UniqueGen, IOE] a -> m a

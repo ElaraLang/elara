@@ -15,10 +15,9 @@ module Parse.Common (
 
 import Effectful (runPureEff)
 import Effectful.Error.Static (runError)
-import Elara.AST.Generic (Expr, Pattern)
-import Elara.AST.Select (UnlocatedAST (..))
-import Elara.AST.StripLocation (StripLocation (..))
-import Elara.AST.Unlocated ()
+import Elara.AST.New.Phases.Frontend (Frontend)
+import Elara.AST.New.Phases.Frontend.Pretty ()
+import Elara.AST.New.Types qualified as New
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..), unWParseErrorBundle)
@@ -30,6 +29,7 @@ import Elara.Parse.Stream (TokenStream (..))
 import Elara.ReadFile (FileContents (..))
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
+import Normalise (stripExpr, stripPattern)
 import Print (showPretty)
 import Test.QuickCheck (Property, counterexample, ioProperty, property)
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty, runParserT)
@@ -67,17 +67,15 @@ lexAndParse parser source = do
     let tokenStream = TokenStream (toText source) tokens False
     pure $ parseWith parser fp (toText source) tokenStream
 
-shouldParsePattern :: MonadTest m => Text -> Pattern UnlocatedFrontend -> m ()
+shouldParsePattern :: MonadTest m => Text -> New.Pattern () Frontend -> m ()
 shouldParsePattern source expected = withFrozenCallStack $ do
     parsed <- lexAndParse patParser source >>= evalEitherParseError
-    let stripped :: Pattern UnlocatedFrontend = stripLocation parsed
-    diff stripped (==) expected
+    diff (stripPattern parsed) (==) expected
 
-shouldParseExpr :: MonadTest m => Text -> Expr UnlocatedFrontend -> m ()
+shouldParseExpr :: MonadTest m => Text -> New.Expr () Frontend -> m ()
 shouldParseExpr source expected = withFrozenCallStack $ do
     parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError
-    let stripped :: Expr UnlocatedFrontend = stripLocation parsed
-    diff stripped (==) expected
+    diff (stripExpr parsed) (==) expected
 
 shouldFailToParse :: MonadTest m => Text -> m ()
 shouldFailToParse source = withFrozenCallStack $ do

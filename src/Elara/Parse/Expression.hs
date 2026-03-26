@@ -4,11 +4,12 @@ module Elara.Parse.Expression (exprParser, locatedExpr, letPreamble, element, re
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
-import Elara.AST.Frontend
-import Elara.AST.Generic (BinaryOperator (..), BinaryOperator' (..), Expr (Expr), Expr' (..))
 import Elara.AST.Name (VarName (..), nameText)
-import Elara.AST.Region (Located (..), enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
-import Elara.AST.Select (LocatedAST (Frontend))
+import Elara.AST.New.Extensions
+import Elara.AST.New.Phase (NoExtension (..))
+import Elara.AST.New.Phases.Frontend
+import Elara.AST.New.Types
+import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
@@ -19,12 +20,17 @@ import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varN
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
 import Elara.Prim qualified as Prim
-import Elara.Utils (curry3)
 import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
 
+-- | Helper to get the SourceRegion from a new-style Expr
+exprRegion :: FrontendExpr -> SourceRegion
+exprRegion (Expr loc _ _) = loc
+
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
-locatedExpr = fmap (\x -> Expr (x, Nothing)) . located
+locatedExpr p = do
+    Located loc node <- located p
+    pure $ Expr loc () node
 
 exprParser :: Parser FrontendExpr
 exprParser =
@@ -55,19 +61,19 @@ statement =
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 
 -- | Parser for binary operators like (+), (-), (&&), etc.
-binOp = infixOp operator (curry3 BinaryOperator)
+binOp = infixOp operator (\op l r -> EExtension (FrontendBinaryOperator (BinaryOperatorExpression op l r)))
 
 -- | Parser for the list constructor (::)
-cons = infixOp consName (curry3 BinaryOperator)
+cons = infixOp consName (\op l r -> EExtension (FrontendBinaryOperator (BinaryOperatorExpression op l r)))
   where
     consName :: Parser FrontendBinaryOperator
     consName = do
         l <- located (token_ TokenDoubleColon)
-        let y = Infixed (Prim.cons `withLocationOf` l) :: BinaryOperator' Frontend
-        pure $ MkBinaryOperator (y `withLocationOf` l)
+        let Located loc _ = l
+        pure $ InfixedOp loc (Prim.cons `withLocationOf` l)
 
 -- | Parser for function application (treated as an infix operator with no operator)
-functionCall = infixOp pass (\_ f x -> FunctionCall f x)
+functionCall = infixOp pass (\_ f x -> EApp NoExtension f x)
 
 -- | Creates an infix operator parser that parses the operator, merges the regions, and wraps the result in `Expr`
 infixOp ::
@@ -80,20 +86,24 @@ infixOp ::
 infixOp opParser mkExpr = do
     op <- opParser
     pure $ \l r ->
-        let region = enclosingRegion' (l ^. sourceRegion) (r ^. sourceRegion)
-         in Expr (Located region (mkExpr op l r), Nothing)
+        let region = enclosingRegion' (exprRegion l) (exprRegion r)
+         in Expr region () (mkExpr op l r)
 
 -- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
 operator :: Parser FrontendBinaryOperator
-operator = MkBinaryOperator <$> (asciiOp <|> infixOp) <?> "operator"
+operator = (asciiOp <|> infixOp) <?> "operator"
   where
-    asciiOp :: Parser (Located FrontendBinaryOperator')
-    asciiOp = located $ SymOp <$> located opName
-    infixOp = located $ do
-        token_ TokenBacktick
-        op <- located varOrConName
-        token_ TokenBacktick
-        pure $ Infixed op
+    asciiOp :: Parser FrontendBinaryOperator
+    asciiOp = do
+        Located loc op <- located (located opName)
+        pure $ SymOp loc op
+    infixOp = do
+        Located loc inner <- located $ do
+            token_ TokenBacktick
+            op <- located varOrConName
+            token_ TokenBacktick
+            pure op
+        pure $ InfixedOp loc inner
 
 expression :: Parser FrontendExpr
 expression =
@@ -122,23 +132,20 @@ reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 parensExpr :: Parser FrontendExpr
 parensExpr = do
     Located loc e <- located (inParens (exprParser <* optional lineSeparator))
-    pure $ Expr (Located loc (InParens e), Nothing)
+    pure $ Expr loc () (EExtension (FrontendInParens (InParensExpression e)))
 
 variable :: Parser FrontendExpr
 variable =
     locatedExpr $
-        Var <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
+        EVar NoExtension <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
   where
     validName var = nameText var `Set.member` reservedWords
 
 constructor :: Parser FrontendExpr
 constructor = locatedExpr $ do
     con <- located (failIfDotAfter conName)
-    pure $ Constructor con
+    pure $ ECon NoExtension con
   where
-    -- Nasty hacky function that causes the parser to fail if the next token is a dot
-    -- This is needed for cases like @a Prelude.+ b@. Without this function, it will parse as @(a Prelude) + (b)@, since module names and type names look the same.
-    -- Having this parser fail means that the exprParser for function calls can't extend too far if there's a dot, causing it to get parsed as the intended @(Prelude.+) a b@
     failIfDotAfter :: Parser a -> Parser a
     failIfDotAfter p = do
         res <- p
@@ -147,19 +154,19 @@ constructor = locatedExpr $ do
         pure res
 
 unit :: Parser FrontendExpr
-unit = locatedExpr (Unit <$ unitLiteral) <?> "unit"
+unit = locatedExpr (EUnit <$ unitLiteral) <?> "unit"
 
 int :: Parser FrontendExpr
-int = locatedExpr (Int <$> integerLiteral) <?> "int"
+int = locatedExpr (EInt <$> integerLiteral) <?> "int"
 
 float :: Parser FrontendExpr
-float = locatedExpr (Float <$> floatLiteral) <?> "float"
+float = locatedExpr (EFloat <$> floatLiteral) <?> "float"
 
 string :: Parser FrontendExpr
-string = locatedExpr (String <$> stringLiteral) <?> "string"
+string = locatedExpr (EString <$> stringLiteral) <?> "string"
 
 charL :: Parser FrontendExpr
-charL = locatedExpr (Char <$> charLiteral) <?> "char"
+charL = locatedExpr (EChar <$> charLiteral) <?> "char"
 
 match :: Parser FrontendExpr
 match = locatedExpr $ do
@@ -171,9 +178,9 @@ match = locatedExpr $ do
             token_ TokenLeftBrace *> token_ TokenRightBrace $> []
     let normalMatchBody = toList <$> block identity one (matchCase <?> "match case")
     cases <-
-        (try emptyMatchBody <?> "empty match body") -- allow empty match blocks
+        (try emptyMatchBody <?> "empty match body")
             <|> (normalMatchBody <?> "match body")
-    pure $ Match expr cases
+    pure $ EMatch expr cases
   where
     matchCase :: Parser (FrontendPattern, FrontendExpr)
     matchCase = do
@@ -197,7 +204,8 @@ lambda = locatedExpr $ do
                     (EmptyLambda emptyLambdaLoc)
 
     res <- failEmptyBody <|> exprBlock element
-    pure (Lambda args res)
+    let Located _ patterns = args
+    pure $ EExtension (FrontendMultiLam patterns res)
 
 ifElse :: Parser FrontendExpr
 ifElse = locatedExpr $ do
@@ -209,7 +217,7 @@ ifElse = locatedExpr $ do
     _ <- optional lineSeparator
     token_ TokenElse <?> "'else' branch"
     elseBranch <- exprBlock element <?> "expression after 'else'"
-    pure (If condition thenBranch elseBranch)
+    pure (EIf condition thenBranch elseBranch)
 
 letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
 letPreamble = do
@@ -241,19 +249,23 @@ letPreamble = do
             )
                 <?> "backticked name"
 
-letInExpression :: Parser FrontendExpr -- TODO merge this, Declaration.valueDecl, and letInExpression into 1 tidier thing
+letInExpression :: Parser FrontendExpr
 letInExpression = locatedExpr $ do
     (name, patterns, e) <- letPreamble
-    optional lineSeparator -- if the body is a nested block, there will be a line separator at the end
+    optional lineSeparator
     token_ TokenIn <?> "'in' keyword after let binding"
 
     body <- exprBlock element <?> "expression after 'in'"
-    pure (LetIn name patterns e body)
+    pure $ case patterns of
+        [] -> ELetIn NoExtension name e body
+        _ -> EExtension (FrontendLetInWithPatterns name patterns e body)
 
 letStatement :: Parser FrontendExpr
 letStatement = locatedExpr $ do
     (name, patterns, e) <- letPreamble
-    pure (Let name patterns e)
+    pure $ case patterns of
+        [] -> ELet NoExtension name e
+        _ -> EExtension (FrontendLetWithPatterns name patterns e)
 
 tuple :: Parser FrontendExpr
 tuple = locatedExpr $ do
@@ -262,7 +274,7 @@ tuple = locatedExpr $ do
     token_ TokenComma
     otherElements <- sepEndBy1' exprParser (token_ TokenComma)
     token_ TokenRightParen <?> "')' to close tuple"
-    pure $ Tuple (AtLeast2List.fromHeadAndTail firstElement otherElements)
+    pure $ EExtension (FrontendTuple (TupleExpression (AtLeast2List.fromHeadAndTail firstElement otherElements)))
 
 list :: Parser FrontendExpr
 list = locatedExpr $ do
@@ -270,4 +282,4 @@ list = locatedExpr $ do
 
     elements <- sepEndBy exprParser (token_ TokenComma)
     token_ TokenRightBracket <?> "']' to close list"
-    pure $ List elements
+    pure $ EExtension (FrontendList (ListExpression elements))

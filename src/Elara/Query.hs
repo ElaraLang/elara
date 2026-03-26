@@ -24,14 +24,19 @@ import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
 import Data.Kind (Constraint)
+import Data.Kind qualified as Kind
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local
-import Elara.AST.Generic (Annotation, Declaration, Select)
-import Elara.AST.Module
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
+import Elara.AST.New.Module qualified as NewModule
+import Elara.AST.New.Phase (ElaraPhase (..))
+import Elara.AST.New.Phases.Desugared qualified as NewD
+import Elara.AST.New.Phases.Frontend qualified as NewF
+import Elara.AST.New.Phases.Renamed qualified as NewR
+import Elara.AST.New.Phases.Shunted qualified as NewS
+import Elara.AST.New.Phases.Typed (Typed, TypedExpr)
+import Elara.AST.New.Types qualified as New
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Select
-import Elara.AST.Typed (TypedExpr)
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core qualified as Core
@@ -58,7 +63,8 @@ import Elara.Settings (CompilerSettings)
 import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator (OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
-import Elara.TypeInfer.Type (Polytype, Type)
+import Elara.TypeInfer.Type (Polytype)
+import Elara.TypeInfer.Type qualified as Infer
 import Elara.TypeInfer.Unique
 import JVM.Data.Abstract.ClassFile (ClassFile)
 import JVM.Data.Convert.Monad (CodeConverterError)
@@ -91,21 +97,24 @@ data Query (es :: [Effect]) a where
     -- | Query to get the lexed tokens of a specific file
     LexedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error LexerError])) [Lexeme]
     -- | Query to get the parsed module from a file's contents and lexed tokens
-    ParsedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)])) (Module Frontend)
+    ParsedFile :: FilePath -> Query (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)])) (NewModule.Module SourceRegion NewF.Frontend)
     -- | Query to get a parsed module by module name
     ParsedModule ::
         ModuleName ->
         Query
             (WithRock (ConsQueryEffects '[Error (WParseErrorBundle TokenStream ElaraParseError)]))
-            (Module Frontend)
+            (NewModule.Module SourceRegion NewF.Frontend)
     -- \* Desugaring and Renaming Queries
     DesugaredModule ::
         ModuleName ->
-        Query (WithRock (ConsQueryEffects '[Error DesugarError])) (Module Desugared)
-    RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (Module Renamed)
+        Query (WithRock (ConsQueryEffects '[Error DesugarError])) (NewModule.Module SourceRegion NewD.Desugared)
+    RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (NewModule.Module SourceRegion NewR.Renamed)
+    ShuntedModule ::
+        ModuleName ->
+        Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (NewModule.Module SourceRegion NewS.Shunted)
     -- | Lookup a module by name
     ModuleByName ::
-        forall (ast :: LocatedAST).
+        forall ast.
         ( Typeable ast
         , SupportsQuery QueryModuleByName ast
         , HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)
@@ -113,7 +122,7 @@ data Query (es :: [Effect]) a where
         ModuleName -> Query (QueryEffectsOf QueryModuleByName ast) (QueryReturnTypeOf QueryModuleByName ast)
     --  | Lookup a declaration by name, which may not exist
     DeclarationByName ::
-        forall (ast :: LocatedAST).
+        forall ast.
         ( Typeable ast
         , SupportsQuery QueryDeclarationByName ast
         ) =>
@@ -123,7 +132,7 @@ data Query (es :: [Effect]) a where
             (QueryReturnTypeOf QueryDeclarationByName ast)
     --  | Lookup a declaration by name, which must exist, throwing an 'InternalError' if not found
     RequiredDeclarationByName ::
-        forall (ast :: LocatedAST).
+        forall ast.
         ( Typeable ast
         , SupportsQuery QueryRequiredDeclarationByName ast
         ) =>
@@ -133,17 +142,17 @@ data Query (es :: [Effect]) a where
             (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
     -- | Looks up the declaration for a data constructor
     ConstructorDeclaration ::
-        forall (ast :: LocatedAST).
-        (Typeable ast, Show (Select ConRef ast), Ord (Select ConRef ast), Hashable (Select ConRef ast), SupportsQuery QueryConstructorDeclaration ast) =>
+        forall ast.
+        (Typeable ast, Show (ConstructorOccurrence ast SourceRegion), Ord (ConstructorOccurrence ast SourceRegion), Hashable (ConstructorOccurrence ast SourceRegion), ElaraPhase ast, SupportsQuery QueryConstructorDeclaration ast) =>
         QueryArgsOf QueryConstructorDeclaration ast ->
         Query (QueryEffectsOf QueryConstructorDeclaration ast) (QueryReturnTypeOf QueryConstructorDeclaration ast)
     DeclarationAnnotations ::
-        forall (ast :: LocatedAST).
+        forall ast.
         (Typeable ast, SupportsQuery DeclarationAnnotations ast) =>
         QueryArgsOf QueryDeclarationByName ast ->
         Query (QueryEffectsOf DeclarationAnnotations ast) (QueryReturnTypeOf DeclarationAnnotations ast)
     DeclarationAnnotationsOfType ::
-        forall (ast :: LocatedAST).
+        forall ast.
         ( Typeable ast
         , SupportsQuery DeclarationAnnotationsOfType ast
         ) =>
@@ -161,9 +170,9 @@ data Query (es :: [Effect]) a where
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
     -- \* Type and Kind Inference Queries
-    TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (Module Typed)
+    TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (NewModule.Module SourceRegion Typed)
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
-    TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Type loc)
+    TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Infer.Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
     -- | Get Information about a type alias
@@ -173,12 +182,12 @@ data Query (es :: [Effect]) a where
         {- | The type alias's type variables and body, if it exists
         \* To Core Queries
         -}
-        Query (WithRock (ConsQueryEffects '[])) (Maybe ([UniqueTyVar], Type SourceRegion))
+        Query (WithRock (ConsQueryEffects '[])) (Maybe ([UniqueTyVar], Infer.Type SourceRegion))
     -- \* Core Queries
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
     GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
-    TypeCheckedDeclaration :: Qualified Name -> Query (WithRock (ConsQueryEffects '[])) (Declaration Typed)
+    TypeCheckedDeclaration :: Qualified Name -> Query (WithRock (ConsQueryEffects '[])) (New.Declaration SourceRegion Typed)
     -- \* Core To Core
     GetOptimisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetANFCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule (ANF.TopLevelBind Core.Var))
@@ -203,18 +212,18 @@ type data QueryType
     | DeclarationAnnotationsOfType
 
 type family QueryReturnTypeOf (q :: QueryType) ast = r where
-    QueryReturnTypeOf QueryDeclarationByName ast = Maybe (Declaration ast)
-    QueryReturnTypeOf QueryRequiredDeclarationByName ast = Declaration ast
-    QueryReturnTypeOf QueryModuleByName ast = Module ast
-    QueryReturnTypeOf QueryConstructorDeclaration ast = Declaration ast
-    QueryReturnTypeOf DeclarationAnnotations ast = [Annotation ast]
-    QueryReturnTypeOf DeclarationAnnotationsOfType ast = [Annotation ast]
+    QueryReturnTypeOf QueryDeclarationByName ast = Maybe (New.Declaration SourceRegion ast)
+    QueryReturnTypeOf QueryRequiredDeclarationByName ast = New.Declaration SourceRegion ast
+    QueryReturnTypeOf QueryModuleByName ast = NewModule.Module SourceRegion ast
+    QueryReturnTypeOf QueryConstructorDeclaration ast = New.Declaration SourceRegion ast
+    QueryReturnTypeOf DeclarationAnnotations ast = [New.Annotation SourceRegion ast]
+    QueryReturnTypeOf DeclarationAnnotationsOfType ast = [New.Annotation SourceRegion ast]
 
 type family QueryArgsOf (q :: QueryType) ast where
     QueryArgsOf QueryDeclarationByName ast = Qualified Name
     QueryArgsOf QueryRequiredDeclarationByName ast = Qualified Name
     QueryArgsOf QueryModuleByName ast = ModuleName
-    QueryArgsOf QueryConstructorDeclaration ast = (Select ConRef ast)
+    QueryArgsOf QueryConstructorDeclaration ast = ConstructorOccurrence ast SourceRegion
     QueryArgsOf DeclarationAnnotations ast = Qualified Name
     -- \| Args are (declaration name, type name)
     QueryArgsOf DeclarationAnnotationsOfType ast =
@@ -226,7 +235,7 @@ class
     ( Typeable ast
     , HasMinimumQueryEffects (QueryEffectsOf q ast)
     ) =>
-    SupportsQuery (q :: QueryType) (ast :: LocatedAST)
+    SupportsQuery (q :: QueryType) (ast :: Kind.Type)
     where
     {- | Effects that are "unique" to this query.
     Effects included in 'MinimumQueryEffects' should not be included here as they are expected to always be present
@@ -237,7 +246,7 @@ class
 
     query :: HasCallStack => QueryArgsOf q ast -> Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
 
-type family SupportsQueries (qs :: [QueryType]) (ast :: LocatedAST) = (c :: Constraint) where
+type family SupportsQueries (qs :: [QueryType]) ast = (c :: Constraint) where
     SupportsQueries '[] ast = ()
     SupportsQueries (q ': qs) ast =
         ( SupportsQuery q ast

@@ -9,8 +9,9 @@ module Elara.Parse.Error where
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Frontend (FrontendExpr)
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
+import Elara.AST.New.Instances ()
+import Elara.AST.New.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error

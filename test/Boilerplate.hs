@@ -36,15 +36,17 @@ import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local qualified as Eff
-import Elara.AST.Generic hiding (TypeVar)
-import Elara.AST.Module
 import Elara.AST.Name hiding (Name)
+import Elara.AST.New.Module qualified as NewModule
+import Elara.AST.New.Phases.Desugared qualified as NewD
+import Elara.AST.New.Phases.Renamed qualified as NewR
+import Elara.AST.New.Phases.Shunted qualified as NewS
+import Elara.AST.New.Types qualified as New
 import Elara.AST.Region
-import Elara.AST.Select
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
-import Elara.Desugar
+import Elara.Desugar (desugarExpr)
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Lexer.Reader
@@ -73,6 +75,7 @@ import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
+import Optics (gplate, transformOf)
 import Print (printPretty)
 import Region (qualifiedTest, testLocated, testRegion)
 import Rock qualified
@@ -94,7 +97,7 @@ loadRenamedExpr' ::
     , Error SomeReportableError :> w
     ) =>
     Text ->
-    Eff w (Expr Renamed)
+    Eff w NewR.RenamedExpr
 loadRenamedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
@@ -104,16 +107,16 @@ loadRenamedExpr' source = runQueryEffects $ do
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
     runReader Nothing $
-        runReader (Nothing @(Module Desugared)) $
+        runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
             evalState operatorRenameState $
                 runErrorOrReport @RenameError $
-                    renameExpr desugared
+                    renameExpr newDesugared
 
 -- | Load and rename an expression (IO version)
-loadRenamedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr Renamed))
+loadRenamedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewR.RenamedExpr)
 loadRenamedExprIO source = finaliseEffects $ loadRenamedExpr' source
 
 -- | Load, rename, and shunt an expression using the fake operator table
@@ -124,7 +127,7 @@ loadShuntedExpr' ::
     , Error SomeReportableError :> w
     ) =>
     Text ->
-    Eff w (Expr Shunted)
+    Eff w NewS.ShuntedExpr
 loadShuntedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
@@ -134,24 +137,24 @@ loadShuntedExpr' source = runQueryEffects $ do
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
-    renamed <-
+    newRenamed <-
         runReader Nothing $
-            runReader (Nothing @(Module Desugared)) $
+            runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
                 evalState operatorRenameState $
                     runErrorOrReport @RenameError $
-                        renameExpr desugared
+                        renameExpr newDesugared
 
     -- Shunt the expression using the fake operator table
     runErrorOrReport @ShuntError $
         fmap fst $
             Eff.runWriter @(Set ShuntWarning) $
                 let ?lookup = fakeOpLookup
-                 in fixExpr renamed
+                 in fixExpr newRenamed
 
 -- | Load and shunt an expression (IO version)
-loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr Shunted))
+loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewS.ShuntedExpr)
 loadShuntedExprIO source = finaliseEffects $ loadShuntedExpr' source
 
 --------------------------------------------------------------------------------

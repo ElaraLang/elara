@@ -1,9 +1,8 @@
 module Elara.Parse.Indents where
 
-import Data.Generics.Wrapped
-import Elara.AST.Frontend
-import Elara.AST.Generic (Expr (Expr), Expr' (..))
-import Elara.AST.Region (Located (..), sourceRegion)
+import Elara.AST.New.Phases.Frontend
+import Elara.AST.New.Types (Expr (..), Expr' (..))
+import Elara.AST.Region (SourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
@@ -42,13 +41,12 @@ block mergeFunction single exprParser =
 exprBlock :: Parser FrontendExpr -> Parser FrontendExpr
 exprBlock = block merge identity
   where
+    exprRegion :: FrontendExpr -> SourceRegion
+    exprRegion (Expr loc _ _) = loc
+
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
         single :| [] -> single
-        x :| xs -> do
-            let expressions' = view _Unwrapped <$> (x :| xs)
-            let region = Region.spanningRegion' (view (_1 % sourceRegion) <$> expressions')
-            let asBlock = \case
-                    single :| [] -> Expr single
-                    o -> Expr (Located region (Block $ Expr <$> o), Nothing)
-            asBlock expressions'
+        _ -> do
+            let region = Region.spanningRegion' (exprRegion <$> expressions)
+            Expr region () (EBlock expressions)

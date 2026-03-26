@@ -27,18 +27,19 @@ module Elara (
 
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
-import Data.Generics.Wrapped (_Unwrapped)
 import Data.Set qualified as Set
 import Effectful (Eff, IOE, Subset, (:>))
 import Effectful.Colog
 import Effectful.Concurrent (Concurrent, runConcurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
-import Elara.AST.Generic
-import Elara.AST.Module
 import Elara.AST.Name (ModuleName, NameLike, nameText)
+import Elara.AST.New.Module qualified as New
+import Elara.AST.New.Phase (Locate)
+import Elara.AST.New.Phases.Frontend qualified as NewFrontend
+import Elara.AST.New.Phases.Shunted qualified as NewS
+import Elara.AST.New.Types qualified as NewAST
 import Elara.AST.Region
-import Elara.AST.Select
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Pretty
@@ -184,11 +185,11 @@ resolveModules ::
 resolveModules = do
     files <- toList <$> Rock.fetch Elara.Query.InputFiles
     modNames <- for files $ \file -> do
-        (Module (Located _ m)) <-
+        (New.Module _ m) <-
             runErrorOrReport @(WParseErrorBundle _ _) $
                 Rock.fetch $
                     Elara.Query.ParsedFile file
-        pure (m.name ^. unlocated)
+        pure (New.moduleName m ^. unlocated)
     pure (zip modNames files)
 
 -- | Dump whichever stages are enabled in 'CompilerSettings'.
@@ -229,17 +230,17 @@ dumpStages settings resolved = do
             runErrorOrReport @error $
                 dumpGraphInfo outDir nameFunc query (target `Set.member` dumpTargets) moduleNames name suffix
 
-        moduleNameFunc :: (ASTLocate ast (Module' ast) ~ Located (Module' ast), NameLike (ASTLocate ast ModuleName)) => Module ast -> Text
-        moduleNameFunc m = m ^. _Unwrapped % unlocated % field' @"name" % to nameText
-
         coreNameFunc :: CoreModule bind -> Text
         coreNameFunc m = m ^. field' @"name" % to nameText
 
-    dumpGraphInfo' @(WParseErrorBundle _ _) moduleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
-    dumpGraphInfo' @DesugarError moduleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"
-    dumpGraphInfo' @RenameError moduleNameFunc Elara.Query.RenamedModule DumpRenamed "renamed" ".renamed.elr"
-    dumpGraphInfo' @ShuntError moduleNameFunc (Elara.Query.ModuleByName @Shunted) DumpShunted "shunted" ".shunted.elr"
-    dumpGraphInfo' @ShuntError moduleNameFunc Elara.Query.TypeCheckedModule DumpTyped "typed" ".typed.elr"
+        newModuleNameFunc :: NameLike (Locate loc ModuleName) => New.Module loc p -> Text
+        newModuleNameFunc (New.Module _ m) = New.moduleName m ^. to nameText
+
+    dumpGraphInfo' @(WParseErrorBundle _ _) newModuleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
+    dumpGraphInfo' @DesugarError newModuleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"
+    dumpGraphInfo' @RenameError newModuleNameFunc Elara.Query.RenamedModule DumpRenamed "renamed" ".renamed.elr"
+    dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @NewS.Shunted) DumpShunted "shunted" ".shunted.elr"
+    dumpGraphInfo' @ShuntError newModuleNameFunc Elara.Query.TypeCheckedModule DumpTyped "typed" ".typed.elr"
     dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetCoreModule DumpCore "core" ".core.elr"
     dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetANFCoreModule DumpCore "core.anf" ".core.anf.elr"
     dumpGraphInfo' @ClosureLiftError coreNameFunc Elara.Query.GetClosureLiftedModule DumpCore "core.closure_lifted" ".core.closure_lifted.elr"
