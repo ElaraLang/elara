@@ -2,13 +2,13 @@
 
 module Elara.AST.New.Phases.Shunted where
 
-import Data.Data (Data)
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
 import Elara.AST.New.Phase
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam)
+import Elara.AST.New.Pretty
 import Elara.AST.New.Types
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.VarRef (VarRef)
+import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
 
 data Shunted deriving (Show, Eq, Ord, Generic)
@@ -56,3 +56,27 @@ type ShuntedPattern' = Pattern' SourceRegion Shunted
 type ShuntedType = Type SourceRegion Shunted
 type ShuntedDeclaration = Declaration SourceRegion Shunted
 type ShuntedTypeDeclaration = TypeDeclaration SourceRegion Shunted
+
+instance PrettyPhase Shunted where
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder = pretty
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable = pretty
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder = prettyTypedLambdaParam
+    prettyExpressionMeta Nothing = Nothing
+    prettyExpressionMeta (Just t) = Just (prettyType t)
+    prettyPatternMeta Nothing = Nothing
+    prettyPatternMeta (Just t) = Just (prettyType t)
+    prettyTypeMeta () = Nothing
+
+instance PrettyExtensions Shunted where
+    prettyExpressionExtension = absurd
+    prettyPatternExtension = absurd
+    prettyTypeSyntaxExtension = absurd
+    prettyDeclBodyExtension = absurd

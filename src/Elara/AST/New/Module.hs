@@ -6,7 +6,6 @@ module Elara.AST.New.Module where
 import Elara.AST.Name (ModuleName)
 import Elara.AST.New.Phase (ElaraPhase (..), Locate)
 import Elara.AST.New.Types (Declaration)
-import Elara.Data.Pretty (Pretty (..))
 
 -- | Module with location and phase parameters
 data Module loc p = Module !loc (Module' loc p)
@@ -46,9 +45,3 @@ data Exposition loc p
     | ExposedType (TypeOccurrence p loc)
     | ExposedTypeAndAllConstructors (TypeOccurrence p loc)
     deriving (Generic)
-
-{- | Pretty-print a module (just shows the module name; full pretty-printing
-requires PrettyPhase/PrettyExtensions and should use prettyModule from Pretty)
--}
-instance Pretty (Locate loc ModuleName) => Pretty (Module loc p) where
-    pretty (Module _ m) = pretty (moduleName m)

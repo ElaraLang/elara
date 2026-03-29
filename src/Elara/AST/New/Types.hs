@@ -103,6 +103,10 @@ data Declaration' loc p = Declaration'
 data DeclarationBody loc p = DeclarationBody !loc (DeclarationBody' loc p)
     deriving (Generic)
 
+-- | Lambda binder with optional type annotation, used from Renamed onward
+data TypedLambdaParam v loc p = TypedLambdaParam v (PatternMeta p loc)
+    deriving (Generic)
+
 -- | Declaration body syntax
 data DeclarationBody' loc p
     = ValueDeclaration

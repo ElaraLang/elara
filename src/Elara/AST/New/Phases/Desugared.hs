@@ -5,9 +5,12 @@ module Elara.AST.New.Phases.Desugared where
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.New.Extensions
 import Elara.AST.New.Phase
+import Elara.AST.New.Pretty
 import Elara.AST.New.Types
 import Elara.AST.Region (SourceRegion)
-import Elara.Data.AtLeast2List (AtLeast2List)
+import Elara.Data.Pretty (Pretty (..))
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 {- | Desugared AST stage. Key changes from Frontend:
 * Lambdas have exactly 1 argument (multi-arg desugared into nested)
@@ -68,14 +71,55 @@ data DesugaredExpressionExtension loc
 
 -- Type aliases
 type DesugaredExpr = Expr SourceRegion Desugared
+
 type DesugaredExpr' = Expr' SourceRegion Desugared
+
 type DesugaredPattern = Pattern SourceRegion Desugared
+
 type DesugaredPattern' = Pattern' SourceRegion Desugared
+
 type DesugaredType = Type SourceRegion Desugared
+
 type DesugaredType' = Type' SourceRegion Desugared
+
 type DesugaredDeclaration = Declaration SourceRegion Desugared
+
 type DesugaredDeclaration' = Declaration' SourceRegion Desugared
+
 type DesugaredDeclarationBody = DeclarationBody SourceRegion Desugared
+
 type DesugaredDeclarationBody' = DeclarationBody' SourceRegion Desugared
+
 type DesugaredTypeDeclaration = TypeDeclaration SourceRegion Desugared
+
 type DesugaredBinaryOperator = BinaryOperator SourceRegion Desugared
+
+instance PrettyPhase Desugared where
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder = pretty
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable = pretty
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder = prettyPattern
+    prettyExpressionMeta () = Nothing
+    prettyPatternMeta Nothing = Nothing
+    prettyPatternMeta (Just t) = Just (prettyType t)
+    prettyTypeMeta () = Nothing
+
+instance PrettyExtensions Desugared where
+    prettyExpressionExtension = prettyDesugaredExprExt
+    prettyPatternExtension = prettyListTuplePatternExt
+    prettyTypeSyntaxExtension = prettyTupleTypeExt
+    prettyDeclBodyExtension = absurd
+
+prettyDesugaredExprExt :: forall loc. (PrettyPhase Desugared, PrettyPhaseLoc Desugared loc) => DesugaredExpressionExtension loc -> Doc AnsiStyle
+prettyDesugaredExprExt = \case
+    DesugaredBinaryOperator ext -> prettyBinaryOperatorExt ext
+    DesugaredInParens ext -> prettyInParensExt ext
+    DesugaredList ext -> prettyListExprExt ext
+    DesugaredTuple ext -> prettyTupleExprExt ext

@@ -5,11 +5,13 @@ module Elara.AST.New.Phases.Typed where
 
 import Elara.AST.Name (OpName, Qualified, TypeName, VarName)
 import Elara.AST.New.Phase
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam)
+import Elara.AST.New.Pretty
+import Elara.AST.New.Types (TypedLambdaParam (..))
 import Elara.AST.New.Types qualified as AST
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Kind (ElaraKind)
+import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Monotype)
 import Elara.TypeInfer.Type qualified as Infer
@@ -74,3 +76,25 @@ type TypedDeclarationBody = AST.DeclarationBody SourceRegion Typed
 type TypedDeclarationBody' = AST.DeclarationBody' SourceRegion Typed
 
 type TypedTypeDeclaration = AST.TypeDeclaration SourceRegion Typed
+
+instance PrettyPhase Typed where
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder = pretty
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable = pretty
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder = prettyTypedLambdaParam
+    prettyExpressionMeta t = Just (pretty t)
+    prettyPatternMeta t = Just (pretty t)
+    prettyTypeMeta k = Just (pretty k)
+
+instance PrettyExtensions Typed where
+    prettyExpressionExtension = absurd
+    prettyPatternExtension = absurd
+    prettyTypeSyntaxExtension = absurd
+    prettyDeclBodyExtension = absurd

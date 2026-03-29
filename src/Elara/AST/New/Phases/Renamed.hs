@@ -1,14 +1,35 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Renamed where
+module Elara.AST.New.Phases.Renamed (
+    Renamed,
+    RenamedExpressionExtension (..),
+    TypedLambdaParam (..),
+    RenamedExpr,
+    RenamedExpr',
+    RenamedPattern,
+    RenamedPattern',
+    RenamedType,
+    RenamedType',
+    RenamedDeclaration,
+    RenamedDeclaration',
+    RenamedDeclarationBody,
+    RenamedDeclarationBody',
+    RenamedTypeDeclaration,
+    RenamedBinaryOperator,
+)
+where
 
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName, VarOrConName)
 import Elara.AST.New.Extensions
 import Elara.AST.New.Phase
+import Elara.AST.New.Pretty
 import Elara.AST.New.Types
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.VarRef (VarRef)
+import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 {- | Renamed AST stage. Key changes from Desugared:
 * All names are fully qualified or uniquified
@@ -17,10 +38,6 @@ import Elara.Data.Unique (Unique)
 * Binary operators and InParens still present (removed at Shunt)
 -}
 data Renamed
-
--- | Lambda binder with optional type annotation, used from Renamed onward
-data TypedLambdaParam v loc p = TypedLambdaParam v (PatternMeta p loc)
-    deriving (Generic)
 
 instance ElaraPhase Renamed where
     -- Occurrences (now qualified/resolved)
@@ -72,14 +89,54 @@ data RenamedExpressionExtension loc
 
 -- Type aliases
 type RenamedExpr = Expr SourceRegion Renamed
+
 type RenamedExpr' = Expr' SourceRegion Renamed
+
 type RenamedPattern = Pattern SourceRegion Renamed
+
 type RenamedPattern' = Pattern' SourceRegion Renamed
+
 type RenamedType = Type SourceRegion Renamed
+
 type RenamedType' = Type' SourceRegion Renamed
+
 type RenamedDeclaration = Declaration SourceRegion Renamed
+
 type RenamedDeclaration' = Declaration' SourceRegion Renamed
+
 type RenamedDeclarationBody = DeclarationBody SourceRegion Renamed
+
 type RenamedDeclarationBody' = DeclarationBody' SourceRegion Renamed
+
 type RenamedTypeDeclaration = TypeDeclaration SourceRegion Renamed
+
 type RenamedBinaryOperator = BinaryOperator SourceRegion Renamed
+
+instance PrettyPhase Renamed where
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder = pretty
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable = pretty
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder = prettyTypedLambdaParam
+    prettyExpressionMeta Nothing = Nothing
+    prettyExpressionMeta (Just t) = Just (prettyType t)
+    prettyPatternMeta Nothing = Nothing
+    prettyPatternMeta (Just t) = Just (prettyType t)
+    prettyTypeMeta () = Nothing
+
+instance PrettyExtensions Renamed where
+    prettyExpressionExtension = prettyRenamedExprExt
+    prettyPatternExtension = absurd
+    prettyTypeSyntaxExtension = absurd
+    prettyDeclBodyExtension = absurd
+
+prettyRenamedExprExt :: forall loc. (PrettyPhase Renamed, PrettyPhaseLoc Renamed loc) => RenamedExpressionExtension loc -> Doc AnsiStyle
+prettyRenamedExprExt = \case
+    RenamedBinaryOperator ext -> prettyBinaryOperatorExt ext
+    RenamedInParens ext -> prettyInParensExt ext

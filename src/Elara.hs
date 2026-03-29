@@ -23,7 +23,8 @@ module Elara (
     dumpStages,
     emitJVM,
     runInterpreter,
-) where
+)
+where
 
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
@@ -34,6 +35,7 @@ import Effectful.Concurrent (Concurrent, runConcurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Elara.AST.Name (ModuleName, NameLike, nameText)
+import Elara.AST.New.Instances ()
 import Elara.AST.New.Module qualified as New
 import Elara.AST.New.Phase (Locate)
 import Elara.AST.New.Phases.Shunted qualified as NewS
@@ -219,8 +221,7 @@ dumpStages settings resolved = do
         dumpGraph outDir lexed (toText . takeBaseName . fst) ".lexed.elr"
         logDebug "Dumped lexed files"
 
-    let
-        dumpGraphInfo' ::
+    let dumpGraphInfo' ::
             forall error module' xs.
             (ReportableError error, Subset xs (Error error : es), Pretty module', StructuredDebug :> xs) =>
             (module' -> Text) -> (ModuleName -> Elara.Query.Query xs module') -> DumpTarget -> Text -> Text -> Eff es ()

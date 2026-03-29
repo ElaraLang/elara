@@ -5,8 +5,12 @@ module Elara.AST.New.Phases.Frontend where
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
 import Elara.AST.New.Extensions
 import Elara.AST.New.Phase
+import Elara.AST.New.Pretty
 import Elara.AST.New.Types
-import Elara.AST.Region (Located, SourceRegion)
+import Elara.AST.Region (SourceRegion)
+import Elara.Data.Pretty (Pretty (..))
+import Prettyprinter (Doc, hsep, parens, (<+>))
+import Prettyprinter.Render.Terminal (AnsiStyle)
 
 {- | The Frontend AST stage, produced by the parser.
 Closest to source syntax: multi-arg lambdas, let-patterns, binary operators, etc.
@@ -102,3 +106,46 @@ type FrontendDeclarationBody' = DeclarationBody' SourceRegion Frontend
 type FrontendTypeDeclaration = TypeDeclaration SourceRegion Frontend
 
 type FrontendBinaryOperator = BinaryOperator SourceRegion Frontend
+
+instance PrettyPhase Frontend where
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder = pretty
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable = pretty
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder = prettyPattern
+    prettyValueDeclPatterns pats = case pats of
+        [] -> mempty
+        _ -> " " <> hsep (map prettyPattern pats)
+    prettyExpressionMeta () = Nothing
+    prettyPatternMeta Nothing = Nothing
+    prettyPatternMeta (Just t) = Just (prettyType t)
+    prettyTypeMeta () = Nothing
+
+instance PrettyExtensions Frontend where
+    prettyExpressionExtension = prettyFrontendExprExt
+    prettyPatternExtension = prettyListTuplePatternExt
+    prettyTypeSyntaxExtension = prettyTupleTypeExt
+    prettyDeclBodyExtension = prettyFrontendDeclBodyExt
+
+prettyFrontendExprExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpressionExtension loc -> Doc AnsiStyle
+prettyFrontendExprExt = \case
+    FrontendMultiLam pats body ->
+        parens ("\\" <> hsep (map prettyPattern pats) <+> "->" <+> parens (prettyExpr body))
+    FrontendLetWithPatterns binder pats val ->
+        "let" <+> pretty binder <+> hsep (map prettyPattern pats) <+> "=" <+> prettyExpr val
+    FrontendLetInWithPatterns binder pats val body ->
+        "let" <+> pretty binder <+> hsep (map prettyPattern pats) <+> "=" <+> prettyExpr val <+> "in" <+> prettyExpr body
+    FrontendBinaryOperator ext -> prettyBinaryOperatorExt ext
+    FrontendInParens ext -> prettyInParensExt ext
+    FrontendList ext -> prettyListExprExt ext
+    FrontendTuple ext -> prettyTupleExprExt ext
+
+prettyFrontendDeclBodyExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendDeclBodyExtension loc -> Doc AnsiStyle
+prettyFrontendDeclBodyExt (FrontendValueTypeDef name ty _annotations) =
+    "def" <+> pretty name <+> ":" <+> prettyType ty
