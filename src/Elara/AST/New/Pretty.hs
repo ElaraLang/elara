@@ -116,9 +116,9 @@ prettyExpr' = \case
                     <> indent 2 (vsep (map prettyExpr (toList es)))
             _ ->
                 "let" <+> prettyValueBinder @p @loc binder <+> "=" <+> prettyExpr val
-    EBlock exprs -> case toList exprs of
-        [x] -> prettyExpr x
-        (x : rest) -> prettyExpr x <> line <> indent 2 (vsep (map prettyExpr rest))
+    EBlock exprs -> case exprs of
+        x :| [] -> prettyExpr x
+        x :| rest -> prettyExpr x <> line <> indent 2 (vsep (map prettyExpr rest))
     EAnn e t -> prettyExpr e <+> ":" <+> prettyType t
     EExtension ext -> prettyExpressionExtension @p @loc ext
   where
