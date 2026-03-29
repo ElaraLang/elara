@@ -18,17 +18,15 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Elara
       Effectful.Error.Extra
       Effectful.State.Extra
+      Elara
+      Elara.AST.Name
       Elara.AST.New.Extensions
       Elara.AST.New.Instances
       Elara.AST.New.Module
       Elara.AST.New.Phase
       Elara.AST.New.PhaseCoerce
-      Elara.AST.New.Pretty
-      Elara.AST.New.Traversal
-      Elara.AST.New.Types
       Elara.AST.New.Phases.Desugared
       Elara.AST.New.Phases.Frontend
       Elara.AST.New.Phases.Frontend.Pretty
@@ -37,7 +35,9 @@ library
       Elara.AST.New.Phases.Renamed
       Elara.AST.New.Phases.Shunted
       Elara.AST.New.Phases.Typed
-      Elara.AST.Name
+      Elara.AST.New.Pretty
+      Elara.AST.New.Traversal
+      Elara.AST.New.Types
       Elara.AST.Region
       Elara.AST.VarRef
       Elara.ConstExpr
@@ -78,13 +78,13 @@ library
       Elara.JVM.Error
       Elara.JVM.IR
       Elara.JVM.Lower
-      Elara.JVM.Query
       Elara.JVM.Lower.ADT
       Elara.JVM.Lower.Expr
       Elara.JVM.Lower.Function
       Elara.JVM.Lower.Match
       Elara.JVM.Lower.Monad
       Elara.JVM.Lower.Util
+      Elara.JVM.Query
       Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer
@@ -109,6 +109,7 @@ library
       Elara.Parse.Stream
       Elara.Parse.Type
       Elara.Pipeline
+      Elara.Pretty.Common
       Elara.Prim
       Elara.Prim.Core
       Elara.Prim.Rename
@@ -295,8 +296,6 @@ test-suite elara-test
       Arbitrary.Type
       Boilerplate
       Common
-      Normalise
-      CoreToCore
       HedgehogSyd
       Golden
       Infer
@@ -312,7 +311,6 @@ test-suite elara-test
       Parse.Patterns
       Region
       Shunt
-      ToANF
   hs-source-dirs:
       test
   default-extensions:

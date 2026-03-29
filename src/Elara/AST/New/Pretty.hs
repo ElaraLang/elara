@@ -10,8 +10,9 @@ import Elara.AST.New.Module (Module (..), Module' (..))
 import Elara.AST.New.Phase
 import Elara.AST.New.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
-import Elara.Data.Pretty (Pretty (..))
-import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, parens, punctuate, vsep, (<+>))
+import Elara.Data.Pretty (Pretty (..), indentDepth)
+import Elara.Pretty.Common (prettyCtorsInline, prettyMatchAlt, prettyMatchAlts)
+import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, nest, parens, punctuate, vsep, (<+>))
 import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
 
@@ -103,10 +104,15 @@ prettyExpr' = \case
         "match"
             <+> prettyExpr scrut
             <+> "with"
-            <> line
-            <> indent 4 (vsep (map prettyAlt alts))
+            <> prettyMatchAlts 4 (map prettyAlt alts)
     ELetIn _ binder val body ->
-        "let" <+> prettyValueBinder @p @loc binder <+> "=" <+> prettyExpr val <+> "in" <+> prettyExpr body
+        group
+            ( "let"
+                <+> prettyValueBinder @p @loc binder
+                <+> "="
+                <+> prettyExpr val
+                <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
+            )
     ELet _ binder val ->
         case val of
             Expr _ _ (EBlock es) ->
@@ -118,11 +124,11 @@ prettyExpr' = \case
                 "let" <+> prettyValueBinder @p @loc binder <+> "=" <+> prettyExpr val
     EBlock exprs -> case exprs of
         x :| [] -> prettyExpr x
-        x :| rest -> prettyExpr x <> line <> indent 2 (vsep (map prettyExpr rest))
+        x :| rest -> prettyExpr x <> line <> vsep (map prettyExpr rest)
     EAnn e t -> prettyExpr e <+> ":" <+> prettyType t
     EExtension ext -> prettyExpressionExtension @p @loc ext
   where
-    prettyAlt (pat, body) = prettyPattern pat <+> "->" <+> prettyExpr body
+    prettyAlt (pat, body) = prettyMatchAlt (prettyPattern pat) (prettyExpr body)
 
 prettyExprAtom :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Expr loc p -> Doc AnsiStyle
 prettyExprAtom e@(Expr _ _ node) = case node of
@@ -201,20 +207,11 @@ prettyBinaryOperator = \case
 prettyTypeDeclaration :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TypeDeclaration loc p -> Doc AnsiStyle
 prettyTypeDeclaration = \case
     ADT ctors ->
-        let ctorDocs = fmap prettyCtor ctors
-         in case ctorDocs of
-                single :| [] -> single
-                (first :| rest) ->
-                    group
-                        ( flatAlt
-                            (first <> mconcat (map (\d -> line <> "| " <> d) rest))
-                            (first <+> hsep (map ("| " <>) rest))
-                        )
-      where
-        prettyCtor (name, args) =
-            prettyConstructorBinder @p @loc name <> case args of
-                [] -> mempty
-                _ -> " " <> hsep (map prettyTypeAtom args)
+        let prettyCtor (name, args) =
+                prettyConstructorBinder @p @loc name <> case args of
+                    [] -> mempty
+                    _ -> " " <> hsep (map prettyTypeAtom args)
+         in prettyCtorsInline (map prettyCtor (toList ctors))
     Alias t -> prettyType t
 
 -- | Pretty-print a type in "atom" position (parenthesized if compound)
@@ -241,11 +238,13 @@ prettyTypeAppFun t@(Type _ _ node) = case node of
 prettyDeclarationBody :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => DeclarationBody' loc p -> Doc AnsiStyle
 prettyDeclarationBody = \case
     ValueDeclaration name expr pats _mTy _meta _anns ->
-        "let"
-            <+> prettyTopValueBinder @p @loc name
-            <> prettyValueDeclPatterns @p @loc pats
-            <+> "="
-            <+> prettyExpr expr
+        group
+            ( "let"
+                <+> prettyTopValueBinder @p @loc name
+                <> prettyValueDeclPatterns @p @loc pats
+                <+> "="
+                <> nest indentDepth (flatAlt (line <> prettyExpr expr) (" " <> prettyExpr expr))
+            )
             <> line
     TypeDeclarationBody name vars typeDecl _mKind _meta _anns ->
         prettyTypeDeclBody name vars typeDecl <> line
@@ -258,14 +257,7 @@ prettyTypeDeclBody name vars = \case
         let ctorDocs = map prettyCtor (toList ctors)
          in case ctorDocs of
                 [] -> header <+> "="
-                [single] -> header <+> "=" <+> single
-                (first : rest) ->
-                    header
-                        <+> group
-                            ( flatAlt
-                                ("=" <+> line <> indent 2 (first <+> vsep (map ("| " <>) rest)))
-                                ("=" <+> first <+> hsep (map ("| " <>) rest))
-                            )
+                _ -> header <+> "=" <+> prettyCtorsInline ctorDocs
   where
     header =
         "type" <+> prettyTopTypeBinder @p @loc name <> case vars of

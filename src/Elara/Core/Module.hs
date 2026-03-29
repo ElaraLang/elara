@@ -71,10 +71,12 @@ instance Pretty CoreTypeDecl where
 
 instance Pretty CoreTypeDeclBody where
     pretty (CoreTypeAlias t) = prettyTy t
-    pretty (CoreDataDecl _tyCon dcs) = prettyCtorsInline (pretty <$> dcs)
+    pretty (CoreDataDecl (Core.TyCon _ Core.Prim) _) = "<primitive>"
+    pretty (CoreDataDecl _ []) = "{}"
+    pretty (CoreDataDecl _ dcs) = prettyCtorsInline (pretty <$> dcs)
 
 prettyTdef :: CoreTypeDecl -> Doc AnsiStyle
 prettyTdef (CoreTypeDecl name kind tvs body) =
-    keyword "type" <+> pretty name <+> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
+    keyword "type" <+> pretty name <> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
 
 makeFields ''CoreModule

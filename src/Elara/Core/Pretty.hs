@@ -54,7 +54,11 @@ instance {-# OVERLAPS #-} PrettyVar v => Pretty (Expr v) where
 prettyTLLam :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> Doc AnsiStyle
 prettyTLLam b e =
     let (params, body) = collectLamParams b e
-     in "\\" <> hsep params <+> "->" <+> prettyExpr body
+     in group
+            ( flatAlt
+                ("\\" <> hsep params <+> "->" <> line <> indent indentDepth (prettyExpr body))
+                ("\\" <> hsep params <+> "->" <+> prettyExpr body)
+            )
 
 collectLamParams :: (PrettyVar v1, PrettyVar v2) => v1 -> Expr v2 -> ([Doc AnsiStyle], Expr v2)
 collectLamParams first (Lam b e) =
@@ -66,16 +70,11 @@ prettyExpr :: (Pretty (Expr v), PrettyVar v, HasCallStack) => Expr v -> Doc Ansi
 prettyExpr (Lam b e) = prettyTLLam b e
 prettyExpr (TyLam b e) = prettyTLLam b e
 prettyExpr (Let bindings e) =
-    group
-        ( flatAlt
-            (vsep [keyword "let" <+> prettyVdefg bindings <+> keyword "in", prettyExpr e])
-            (keyword "let" <+> prettyVdefg bindings <+> keyword "in" <+> prettyExpr e)
-        )
-prettyExpr (Match e of' alts) =
+    vsep [keyword "let" <+> prettyVdefg bindings, keyword "in" <+> prettyExpr e]
+prettyExpr (Match e _of' alts) =
     keyword "match"
         <+> prettyExpr e
         <+> keyword "with"
-        <> maybe "" ((" " <>) . pretty) of'
         <> prettyMatchAlts indentDepth (map prettyAlt alts)
 prettyExpr other = prettyExpr1 other
 
@@ -111,13 +110,9 @@ prettyVBind = prettyVar False True
 prettyAlt :: (PrettyVar a, PrettyVar v) => (AltCon, [a], Expr v) -> Doc AnsiStyle
 prettyAlt (con, vars, body) =
     pretty con
-        <> if null vars
-            then mempty
-            else
-                " "
-                    <> hsep (prettyVarArg <$> vars)
-                    <+> "->"
-                    <+> prettyExpr body
+        <> (if null vars then mempty else " " <> hsep (prettyVarArg <$> vars))
+        <+> "->"
+        <+> prettyExpr body
 
 instance Pretty Literal where
     pretty = \case

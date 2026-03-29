@@ -9,8 +9,9 @@ import Elara.AST.New.Pretty
 import Elara.AST.New.Types
 import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty (Pretty (..))
-import Prettyprinter (Doc, hsep, parens, (<+>))
+import Prettyprinter (Doc, flatAlt, group, hsep, line, parens, (<+>))
 import Prettyprinter.Render.Terminal (AnsiStyle)
+import Prelude hiding (group)
 
 {- | The Frontend AST stage, produced by the parser.
 Closest to source syntax: multi-arg lambdas, let-patterns, binary operators, etc.
@@ -140,7 +141,14 @@ prettyFrontendExprExt = \case
     FrontendLetWithPatterns binder pats val ->
         "let" <+> pretty binder <+> hsep (map prettyPattern pats) <+> "=" <+> prettyExpr val
     FrontendLetInWithPatterns binder pats val body ->
-        "let" <+> pretty binder <+> hsep (map prettyPattern pats) <+> "=" <+> prettyExpr val <+> "in" <+> prettyExpr body
+        group
+            ( "let"
+                <+> pretty binder
+                <+> hsep (map prettyPattern pats)
+                <+> "="
+                <+> prettyExpr val
+                <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
+            )
     FrontendBinaryOperator ext -> prettyBinaryOperatorExt ext
     FrontendInParens ext -> prettyInParensExt ext
     FrontendList ext -> prettyListExprExt ext

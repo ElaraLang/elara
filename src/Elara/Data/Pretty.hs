@@ -1,5 +1,4 @@
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -19,10 +18,10 @@ module Elara.Data.Pretty (
     prettyToText,
     prettyToUnannotatedText,
     prettyStringExpr,
-    prettyBlockExpr,
 )
 where
 
+import Data.HashMap.Strict qualified as HM
 import Data.Map qualified as Map (toList)
 import Elara.Data.Pretty.Styles qualified as Styles
 import Elara.Width qualified as Width
@@ -34,8 +33,6 @@ import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
 import Prettyprinter.Render.Text qualified as Pretty.Text
 import Prelude hiding (group)
-
-import Data.HashMap.Strict qualified as HM
 
 indentDepth :: Int
 indentDepth = 4
@@ -207,19 +204,6 @@ instance Pretty k => Pretty (HashSet k) where
 
 prettyStringExpr :: Text -> Doc AnsiStyle
 prettyStringExpr = dquotes . pretty
-
-prettyBlockExpr :: (?contextFree :: Bool, Pretty a, Foldable t) => t a -> Doc AnsiStyle
-prettyBlockExpr b = do
-    let open = if ?contextFree then "{ " else flatAlt "" "{ "
-        close = if ?contextFree then "}" else flatAlt "" " }"
-        separator = if ?contextFree then "; " else flatAlt "" "; "
-        arrange = if ?contextFree then identity else group . align
-    arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
-  where
-    encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-    encloseSep' _contextFree open' close' _ [] = open' <> close'
-    encloseSep' True open' close' sep' (x : xs) = open' <> x <> foldr (\y ys -> sep' <> y <> ys) close' xs
-    encloseSep' False open' close' sep' items = encloseSep open' close' sep' items
 
 -- Generic instances
 

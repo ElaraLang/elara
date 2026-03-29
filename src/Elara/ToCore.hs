@@ -21,7 +21,7 @@ import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
-import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (CoreDataDecl))
+import Elara.Core.Module (CoreDeclaration (..), CoreModule (..), CoreTypeDecl (..), CoreTypeDeclBody (CoreDataDecl, CoreTypeAlias))
 import Elara.Core.Pretty ()
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
@@ -306,7 +306,7 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                             cleanedTypeDeclName
                             kind
                             (fmap (mkTypeVar . view unlocated) tvs)
-                            (CoreDataDecl tyCon [])
+                            (CoreTypeAlias t')
                     ]
             New.DeclBodyExtension v -> absurd v
 
