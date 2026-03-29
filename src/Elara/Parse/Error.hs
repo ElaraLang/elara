@@ -40,7 +40,7 @@ parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
-parseErrorSources (InvalidConstantExpression a b) = [todo]
+parseErrorSources (InvalidConstantExpression _a _b) = [todo]
 parseErrorSources (ModuleNameMismatch _ declaredLoc) = [view sourceRegion declaredLoc]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where

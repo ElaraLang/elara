@@ -2,12 +2,11 @@
 
 module Elara.Data.Unique.Effect where
 
-import Effectful (Eff, Effect, IOE, liftIO, (:>))
-import Effectful.Dispatch.Dynamic (interpret, reinterpret)
+import Effectful (Eff, Effect, IOE, (:>))
+import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.State.Static.Shared
 import Effectful.TH (makeEffect)
 import Elara.Data.Unique (Unique (..), UniqueId (..), UniqueSupply (..), globalUniqueSupply)
-import System.IO.Unsafe (unsafePerformIO)
 
 data UniqueGen :: Effect where
     NewUniqueNum :: UniqueGen m Int

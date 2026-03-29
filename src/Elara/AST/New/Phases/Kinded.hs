@@ -4,7 +4,6 @@ module Elara.AST.New.Phases.Kinded where
 
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
 import Elara.AST.New.Phase
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam)
 import Elara.AST.New.Types
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.VarRef (VarRef)

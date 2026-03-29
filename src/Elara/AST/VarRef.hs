@@ -11,7 +11,6 @@ import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located (..))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
-import Elara.Data.Unwrap (Unwrap (unwrap))
 
 type data VarRefKind = LocatedVarRefKind | UnlocatedVarRefKind | IgnoreLocVarRefKind
 

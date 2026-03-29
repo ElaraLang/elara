@@ -217,7 +217,7 @@ prettyBlockExpr b = do
     arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
   where
     encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-    encloseSep' contextFree open' close' _ [] = open' <> close'
+    encloseSep' _contextFree open' close' _ [] = open' <> close'
     encloseSep' True open' close' sep' (x : xs) = open' <> x <> foldr (\y ys -> sep' <> y <> ys) close' xs
     encloseSep' False open' close' sep' items = encloseSep open' close' sep' items
 

@@ -21,10 +21,10 @@ import Effectful.Writer.Static.Local
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.New.Phase (NoExtension (..))
 import Elara.AST.New.Phases.Renamed (TypedLambdaParam (..))
-import Elara.AST.New.Phases.Shunted (Shunted, ShuntedExpr, ShuntedExpr', ShuntedPattern, ShuntedPattern')
+import Elara.AST.New.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
 import Elara.AST.New.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.New.Types qualified as New
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion)
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty
@@ -163,7 +163,7 @@ generateConstraints' expr' =
                     varType <- case varName of
                         Local (Located _ n) -> lookupLocalVar n
                         Global (Located _ n) -> lookupType (TermVarKey n)
-                    debug ("Var: " <> pretty varName <> " : " <> pretty varType)
+                    logDebug ("Var: " <> pretty varName <> " : " <> pretty varType)
                     -- (v:forall a.Q1 => t1) in G
                     (instantiated, tyApps) <- instantiate varType
 
@@ -209,7 +209,7 @@ generateConstraints' expr' =
                     -- Create constraint with context about this being a function application
                     let ctx = Just $ CheckingFunctionArgument 1 fnName exprLoc
                     let equalityConstraint = equalityWithContext exprLoc t1 (Function e1Loc t2 (TypeVar e2Loc resultTyVar)) e1Loc e2Loc ctx
-                    debug (pretty equalityConstraint)
+                    logDebug (pretty equalityConstraint)
                     tell equalityConstraint
 
                     pure (New.EApp NoExtension e1' e2', TypeVar e2Loc resultTyVar)
@@ -237,12 +237,12 @@ generateConstraints' expr' =
 
                     let isRecursive = isRecursiveIn varName varExpr
 
-                    debug ("isRecursive?: " <> pretty isRecursive)
+                    logDebug ("isRecursive?: " <> pretty isRecursive)
                     maybeGeneralised <-
                         if not isRecursive
                             then do
                                 generalised <- generalise varType
-                                debug (pretty varType <> " -> generalised: " <> pretty generalised)
+                                logDebug (pretty varType <> " -> generalised: " <> pretty generalised)
                                 pure (Polytype generalised)
                             else pure (Lifted varType)
 
@@ -287,7 +287,7 @@ generateConstraints' expr' =
 
                     cases' <- for (zip [1 ..] cases) $ \(branchIdx, (pattern, body)) -> scoped @(LocalTypeEnvironment _) $ do
                         -- Q ; G |- p1 : t1
-                        (typedPattern, patternType) <- generatePatternConstraints pattern eType
+                        (typedPattern, _patternType) <- generatePatternConstraints pattern eType
 
                         -- Q ; G |- e1 : t2
                         (typedBody, bodyType) <- generateConstraints body
@@ -328,7 +328,7 @@ For example, in the case of a simple option type @type Option a = Some a | None@
 we say that the pattern `Some x` has type `Option a` rather than @a -> Option a@
 -}
 generatePatternConstraints :: ConstraintGenEffects r loc => ShuntedPattern -> Monotype loc -> Eff r (TypedPattern, Monotype loc)
-generatePatternConstraints (New.Pattern loc _expectedType pattern') over = debugWith ("generatePatternConstraints: <pattern at " <> pretty loc <> ">") $ do
+generatePatternConstraints (New.Pattern loc _expectedType pattern') over = logDebugWith ("generatePatternConstraints: <pattern at " <> pretty loc <> ">") $ do
     (typedPattern', monotype) <- generatePatternConstraints' pattern' over
     let patternCtx = Just $ CheckingPattern loc
     tell (equalityWithContext loc monotype over loc (monotypeLoc over) patternCtx)
@@ -344,7 +344,7 @@ generatePatternConstraints' ::
     Monotype loc ->
     Eff r (TypedPattern', Monotype loc)
 generatePatternConstraints' pattern' over =
-    debugWith "generatePatternConstraints': <pattern>" $
+    logDebugWith "generatePatternConstraints': <pattern>" $
         let patternLoc = monotypeLoc over
          in case pattern' of
                 New.PWildcard -> pure (New.PWildcard, over)
@@ -358,7 +358,7 @@ generatePatternConstraints' pattern' over =
                     modify (addLocalType varName (Lifted $ TypeVar loc varType))
 
                     pure (New.PVar (Located loc varName), TypeVar loc varType)
-                New.PCon ctor'@(Located loc ctor) args -> do
+                New.PCon ctor'@(Located _loc ctor) args -> do
                     -- lookup the signature of the constructor
                     t <- lookupType (DataConKey ctor)
                     debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
@@ -370,12 +370,12 @@ generatePatternConstraints' pattern' over =
                     -- and emitting a single equality constraint @x -> y -> Z = a_1 -> b_1 -> ... -> Z@
 
                     (instantiatedT, typeApps) <- instantiate t
-                    debug $ "instantiatedT: " <> pretty instantiatedT
-                    debug $ "tyApps: " <> pretty typeApps
+                    logDebug $ "instantiatedT: " <> pretty instantiatedT
+                    logDebug $ "tyApps: " <> pretty typeApps
                     let argTys = functionMonotypeArgs instantiatedT
                     let res = functionMonotypeResult instantiatedT
-                    debug $ "argTys: " <> pretty argTys
-                    debug $ "res: " <> pretty res
+                    logDebug $ "argTys: " <> pretty argTys
+                    logDebug $ "res: " <> pretty res
 
                     when (length argTys /= length args) $ do
                         ctx <- ask @ContextStack
@@ -395,7 +395,7 @@ generatePatternConstraints' pattern' over =
 
 instantiate :: forall r loc. ConstraintGenEffects r loc => Type loc -> Eff r (Monotype loc, [TypeVariable])
 instantiate (Lifted t) = pure (t, [])
-instantiate pt@(Polytype (Forall loc tyVars constraint t)) = debugWith ("instantiate: " <> pretty pt) $ do
+instantiate pt@(Polytype (Forall loc tyVars constraint t)) = logDebugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
     let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap (TypeVar loc) fresh)
     let instantiatedConstraint =
@@ -421,7 +421,7 @@ simplifyConstraint ::
     Constraint loc -> Set UniqueTyVar -> Constraint loc -> Eff r (Constraint loc, Substitution loc)
 simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <> pretty (given, wanted)) $ do
     givenSubst <- reduceGiven given
-    debug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
+    logDebug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
     runReader tch (solve (substituteAll givenSubst wanted))
 
 reduceGiven ::
@@ -505,7 +505,7 @@ unify a b = do
     unify' (TypeVar _ a) (TypeVar _ b) | a == b = pure (mempty, mempty)
     unify' (TypeVar _ (UnificationVar a)) b = unifyVar a b
     unify' a (TypeVar _ (UnificationVar b)) = unifyVar b a
-    unify' t1@(TypeConstructor l1 a as) t2@(TypeConstructor l2 b bs)
+    unify' t1@(TypeConstructor l1 a as) t2@(TypeConstructor _l2 b bs)
         | a == b =
             if length as /= length bs
                 then do
@@ -602,7 +602,7 @@ unifyVar ::
     Monotype loc ->
     Eff r (Constraint loc, Substitution loc)
 unifyVar a t = do
-    debug $ "bind " <> pretty a <> " to " <> pretty t
+    logDebug $ "bind " <> pretty a <> " to " <> pretty t
     bindVar a t
   where
     bindVar :: UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
@@ -612,7 +612,7 @@ unifyVar a t = do
         throwError $ mkUnifyError (OccursCheck (UnificationVar tv)) tvType t (monotypeLoc t) ctx
     bindVar tv t = do
         tch <- ask @(Set UniqueTyVar)
-        debug ("bindVar " <> pretty tv <> " to " <> pretty t)
+        logDebug ("bindVar " <> pretty tv <> " to " <> pretty t)
         if member tv tch
             then pure (EmptyConstraint (monotypeLoc t), substitution (tv, t))
             else pure (simpleEquality (monotypeLoc t) (TypeVar (monotypeLoc t) $ UnificationVar tv) t, mempty)

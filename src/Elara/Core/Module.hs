@@ -1,5 +1,4 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
@@ -12,9 +11,10 @@ import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
 import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, prettyBlockExpr, (<+>))
+import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
 import Elara.Data.TopologicalGraph (HasDependencies (..))
+import Elara.Pretty.Common (prettyCtorsInline)
 
 data CoreModule bind = CoreModule
     { name :: !ModuleName
@@ -71,7 +71,7 @@ instance Pretty CoreTypeDecl where
 
 instance Pretty CoreTypeDeclBody where
     pretty (CoreTypeAlias t) = prettyTy t
-    pretty (CoreDataDecl tyCon dcs) = let ?contextFree = True in prettyBlockExpr (pretty <$> dcs)
+    pretty (CoreDataDecl _tyCon dcs) = prettyCtorsInline (pretty <$> dcs)
 
 prettyTdef :: CoreTypeDecl -> Doc AnsiStyle
 prettyTdef (CoreTypeDecl name kind tvs body) =

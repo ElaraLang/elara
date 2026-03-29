@@ -2,8 +2,8 @@
 
 module Elara.Error.Effect where
 
-import Effectful (Dispatch (Dynamic), DispatchOf, Eff, Effect, (:>))
-import Effectful.Dispatch.Dynamic (interpret, reinterpret)
+import Effectful (Dispatch (Dynamic), DispatchOf, Eff, Effect)
+import Effectful.Dispatch.Dynamic (reinterpret)
 import Effectful.State.Static.Local
 import Effectful.TH (makeEffect)
 import Error.Diagnose.Diagnostic (Diagnostic)

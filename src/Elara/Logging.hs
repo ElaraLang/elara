@@ -195,11 +195,6 @@ enrichWithTime = cmapM $ \msg -> do
     time <- liftIO getCurrentTime
     pure msg{emTime = Just time}
 
--- | Enrich ElaraMessage with call stack (co-log enrichment pattern)
-enrichWithStack :: HasCallStack => LogAction m ElaraMessage -> LogAction m ElaraMessage
-enrichWithStack = cmap $ \msg ->
-    msg{emStack = Just callStack}
-
 {- | Format ElaraMessage to Doc AnsiStyle using co-log's cmap pattern
 This is where we convert our structured message to the final output format
 -}
@@ -381,8 +376,8 @@ structuredDebugToLogWith config = reinterpret @_ (S.evalState ([] :: [T.Text]) .
     LogWith stack level msg act -> logWithScope env stack level [] msg act
     LogWithNS stack level names msg act -> logWithScope env stack level names msg act
     -- Namespace context operation
-    WithAppendedNamespace stack names act -> withNamespaceHelper env names act False
-    WithNewNamespace stack names act -> withNamespaceHelper env names act True
+    WithAppendedNamespace _stack names act -> withNamespaceHelper env names act False
+    WithNewNamespace _stack names act -> withNamespaceHelper env names act True
   where
     -- Get the co-log LogAction with all filters and enrichments applied
     logAction :: LogAction (Eff (S.State Int : S.State [T.Text] : r)) ElaraMessage

@@ -24,6 +24,8 @@ type TypeVar = Unique LowerAlphaName
 
 instance Pretty ElaraKind where
     pretty TypeKind = Style.typeName "Type"
+    pretty (KindScheme vars k) =
+        "forall" <+> hsep (map (Style.varName . ("k" <>) . pretty) vars) <> "." <+> pretty k
     pretty (FunctionKind l r) = pretty l <> " -> " <> pretty r
     pretty (VarKind v) = Style.varName ("k" <> pretty v)
 

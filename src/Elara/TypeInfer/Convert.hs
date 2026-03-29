@@ -3,7 +3,7 @@ module Elara.TypeInfer.Convert where
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
 import Elara.AST.Name
-import Elara.AST.New.Phases.Kinded (Kinded, KindedType, KindedType')
+import Elara.AST.New.Phases.Kinded (KindedType, KindedType')
 import Elara.AST.New.Types qualified as New
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
 import Elara.Data.Kind
@@ -12,7 +12,6 @@ import Elara.Data.Unique (Unique)
 import Elara.Error (ReportableError (..))
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
-import Elara.TypeInfer.Unique (UniqueTyVar)
 
 -- | Collect free type variables from a type
 freeTypeVars :: KindedType -> [Located (Unique LowerAlphaName)]
@@ -29,7 +28,7 @@ freeTypeVars (New.Type _ _ t') = freeTypeVars' t'
     freeTypeVars' (New.TExtension v) = absurd v
 
 astTypeToGeneralisedInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Type SourceRegion)
-astTypeToGeneralisedInferType t@(New.Type loc kind t') = do
+astTypeToGeneralisedInferType t@(New.Type loc _kind t') = do
     let ftvs = ordNub $ freeTypeVars t
     let skolems = fmap (view unlocated . convertTyVar) ftvs
     asInferType <- astTypeToInferType' loc t'

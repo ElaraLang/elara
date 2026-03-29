@@ -70,7 +70,7 @@ normalizeModuleName (ModuleName parts) = ModuleName (fmap Text.toLower parts)
 buildModuleIndex :: CompilerSettings -> Eff '[FileSystem] ModuleIndex
 buildModuleIndex settings = do
     let mainFileDir = case settings.mainFile of
-            Just fp -> [] -- TODO: if we have a
+            Just _fp -> [] -- TODO: if we have a
             Nothing -> []
     let roots =
             ordNub $

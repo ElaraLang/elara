@@ -140,7 +140,7 @@ lookupTyCon qn = debugWithResult ("lookupTyCon: " <> pretty qn) $ do
 
 runGetDataConQuery ::
     Qualified TypeName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe DataCon)
-runGetDataConQuery qn = debugWith ("runGetDataConQuery: " <> pretty qn) $ do
+runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
     coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
     let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody" % _As @"CoreDataDecl" % _2 % each
     let matchingDataCon = find (\(DataCon name _ _) -> name == fmap nameText qn) decls
@@ -155,7 +155,7 @@ runGetTyConQuery qn
     | qn == mkPrimQual (nameText floatName) = pure $ Just floatCon
     | qn == mkPrimQual (nameText unitName) = pure $ Just unitCon
     | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
-    | otherwise = debugWith ("runGetTyConQuery: " <> pretty qn) $ do
+    | otherwise = logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
         let name = NTypeName . TypeName <$> qn
         typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
         Just
@@ -259,10 +259,10 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
             _ -> pass
 
     -- Process declarations (type declarations become CoreType, value declarations handled via SCCs)
-    decls <- fmap concat $ for m.moduleDeclarations $ \decl@(New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) -> do
+    decls <- fmap concat $ for m.moduleDeclarations $ \(New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) -> do
         case body' of
             New.ValueDeclaration{} -> pure []
-            New.TypeDeclarationBody n tvs (New.ADT ctors) _maybeTy kind _annotations -> debugWith ("Type decl: " <+> pretty n) $ do
+            New.TypeDeclarationBody n tvs (New.ADT ctors) _maybeTy kind _annotations -> logDebugWith ("Type decl: " <+> pretty n) $ do
                 let cleanedTypeDeclName = nameText <$> (n ^. unlocated)
                 let tyCon =
                         TyCon
@@ -270,7 +270,7 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                             ( TyADT
                                 (fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors))
                             )
-                debug (pretty tyCon)
+                logDebug (pretty tyCon)
                 registerTyCon tyCon
                 ctors' <- for (toList ctors) $ \(Located _ ctorName, ctorArgs) -> do
                     ctorArgs' <- traverse astTypeToCore ctorArgs

@@ -2,10 +2,8 @@
 
 module Elara.AST.New.Types where
 
-import Data.Kind qualified as Kind
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.New.Phase
-import Elara.AST.Region (Located)
 
 -- | Expression node with location and metadata
 data Expr loc p = Expr !loc !(ExpressionMeta p loc) (Expr' loc p)
