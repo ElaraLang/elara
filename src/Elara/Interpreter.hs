@@ -73,6 +73,7 @@ data ElaraState = ElaraState
 instance Pretty ElaraState
 
 data StateSource = FromGlobal | FromClosure deriving (Generic)
+
 instance Pretty StateSource
 
 data InterpreterError
@@ -98,6 +99,7 @@ instance Pretty InterpreterError where
     pretty (TypeMismatch expected actual) =
         "Type mismatch: expected" <+> Style.bold (pretty expected) <+> "but got" <+> Style.bold (prettyValueWithType actual)
     pretty x = gpretty x
+
 instance ReportableError InterpreterError
 
 data Value
@@ -437,8 +439,11 @@ apply f' a' = do
                 IOAction io -> do
                     pure $ IOAction $ do
                         val <- io
-                        apply a' val
-                _ -> throwError_ TypeMismatch{expected = "IO", actual = a'}
+                        rhsValue <- apply a' val
+                        case rhsValue of
+                            IOAction rhsIo -> rhsIo
+                            _ -> throwError_ TypeMismatch{expected = "IO", actual = rhsValue}
+                _ -> throwError_ TypeMismatch{expected = "IO", actual = fst}
         Ctor c args | typeArity c.dataConType < length args -> do
             throwError_ $ NotAFunction f'
         Ctor c args -> do
@@ -532,9 +537,7 @@ loadTypeDecl (CoreTypeDecl _ _ _ (CoreDataDecl _ cons)) = do
 loadTypeDecl (CoreTypeDecl _ _ _ (CoreTypeAlias _)) = pass
 
 evalIO :: Interpreter r => Value -> Eff r Value
-evalIO (IOAction io) = do
-    val <- inject io
-    evalIO val
+evalIO (IOAction io) = inject io
 evalIO other = pure other
 
 -- | Looks for a value Main.main in the bindings and runs it
