@@ -344,6 +344,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* :mute: Remove debug logging from parser - ([5878aa7](https://github.com/ElaraLang/elara/commit/5878aa7a760e35bde772a008bae76bf1dde84224)) 
 - *(shunter)* Tidy up code - ([f319d2d](https://github.com/ElaraLang/elara/commit/f319d2d7d1ee9d9ea723e01519f41391cf647779)) 
 - *(tests)* Make test function slightly more readable - ([0841c00](https://github.com/ElaraLang/elara/commit/0841c00935f2ceaebca6faf459001e1ee1858307)) 
+- *(tests)* Remove redundant imports - ([c73a00e](https://github.com/ElaraLang/elara/commit/c73a00e5caf3986f2742788f8ac455c5ef55fb7c)) 
 - *(to-core)* :mute: Remove old debug message - ([eda6d02](https://github.com/ElaraLang/elara/commit/eda6d02197fd1e57653362d2960cd8e36ded82ec)) 
 - *(to-core)* :loud_sound: Improve debug logging for ToCore - ([7c5e6dc](https://github.com/ElaraLang/elara/commit/7c5e6dc0691e371720d1c301bb601cf492fc7496)) 
 - *(to-core)* :art: Format code and add some debug logging - ([14d19f7](https://github.com/ElaraLang/elara/commit/14d19f798c01a94e54194c102d0940f76c7e606f)) 
