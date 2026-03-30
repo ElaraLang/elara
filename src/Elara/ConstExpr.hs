@@ -1,25 +1,56 @@
--- | A teeny tiny interpreter for evaluating constant expressions, eg annotation values
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Elara.ConstExpr where
 
-import Effectful
-import Elara.AST.Generic (AnnotationArg (..), Expr (..), Expr' (..), RUnlocate (..))
+import Elara.AST.Extensions (InParensExtension (..), ListExprExtension (..), TupleExprExtension (..))
+import Elara.AST.Phase (ExpressionExtension)
+import Elara.AST.Phases.Desugared (Desugared, DesugaredExpressionExtension (..))
+import Elara.AST.Phases.Frontend (Frontend, FrontendExpressionExtension (..))
+import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
+import Elara.AST.Types qualified as New
+import Elara.Data.AtLeast2List (AtLeast2List)
 
 data ConstVal
     = ConstInt Integer
     | ConstString Text
     | ConstChar Char
     | ConstUnit
+    | ConstList [ConstVal]
+    | ConstTuple (AtLeast2List ConstVal)
     deriving (Show, Eq)
 
-interpretAnnotationArg :: RUnlocate ast => AnnotationArg ast -> Eff r ConstVal
-interpretAnnotationArg (AnnotationArg e) = interpretAnnotationArg' e
+class InterpretConstExpr p where
+    interpretExprExtension :: ExpressionExtension p loc -> Maybe ConstVal
 
-interpretAnnotationArg' :: forall ast r. RUnlocate ast => Expr ast -> Eff r ConstVal
-interpretAnnotationArg' (Expr (le, _)) = interpretAnnotationArg'' (le ^. rUnlocated @_ @ast @(Expr' ast))
+interpretExpr :: forall p loc. InterpretConstExpr p => New.Expr loc p -> Maybe ConstVal
+interpretExpr (New.Expr _ _ e') = interpretExpr' e'
 
-interpretAnnotationArg'' :: Expr' ast -> Eff r ConstVal
-interpretAnnotationArg'' (Int n) = pure $ ConstInt n
-interpretAnnotationArg'' (String s) = pure $ ConstString s
-interpretAnnotationArg'' (Char c) = pure $ ConstChar c
-interpretAnnotationArg'' Unit = pure ConstUnit
-interpretAnnotationArg'' other = error "Non-constant expression in annotation: " -- TODO
+interpretExpr' :: forall p loc. InterpretConstExpr p => New.Expr' loc p -> Maybe ConstVal
+interpretExpr' (New.EInt n) = Just $ ConstInt n
+interpretExpr' (New.EString s) = Just $ ConstString s
+interpretExpr' (New.EChar c) = Just $ ConstChar c
+interpretExpr' New.EUnit = Just ConstUnit
+interpretExpr' (New.EExtension ext) = interpretExprExtension @p @loc ext
+interpretExpr' _ = Nothing
+
+interpretNewAnnotationArg :: forall p loc. InterpretConstExpr p => New.AnnotationArg loc p -> Maybe ConstVal
+interpretNewAnnotationArg (New.AnnotationArg e) = interpretExpr e
+
+instance InterpretConstExpr Frontend where
+    interpretExprExtension = \case
+        FrontendInParens (InParensExpression inner) -> interpretExpr inner
+        FrontendList (ListExpression elems) -> ConstList <$> traverse interpretExpr elems
+        FrontendTuple (TupleExpression elems) -> ConstTuple <$> traverse interpretExpr elems
+        _ -> Nothing
+
+instance InterpretConstExpr Desugared where
+    interpretExprExtension = \case
+        DesugaredInParens (InParensExpression inner) -> interpretExpr inner
+        DesugaredList (ListExpression elems) -> ConstList <$> traverse interpretExpr elems
+        DesugaredTuple (TupleExpression elems) -> ConstTuple <$> traverse interpretExpr elems
+        _ -> Nothing
+
+instance InterpretConstExpr Renamed where
+    interpretExprExtension = \case
+        RenamedInParens (InParensExpression inner) -> interpretExpr inner
+        RenamedBinaryOperator{} -> Nothing

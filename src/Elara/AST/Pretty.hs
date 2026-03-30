@@ -1,178 +1,318 @@
-{-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-{- | Common module for all the different AST pretty impls.
-This includes functions for pretty printing in both context-free and context-sensitive forms
--}
 module Elara.AST.Pretty where
 
-import Data.Generics.Wrapped
-import Elara.AST.Generic.Types
-import Elara.AST.Select (ASTSelector (..), ForSelector (ForValueDecl))
-import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles
+import Elara.AST.Extensions
+import Elara.AST.Module (Module (..), Module' (..))
+import Elara.AST.Name (LowerAlphaName, ModuleName)
+import Elara.AST.Phase
+import Elara.AST.Types
+import Elara.Data.AtLeast2List qualified as AtLeast2List
+import Elara.Data.Pretty (Pretty (..), indentDepth)
+import Elara.Pretty.Common (prettyCtorsInline, prettyMatchAlt, prettyMatchAlts)
+import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, nest, parens, punctuate, vsep, (<+>))
+import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
 
-none :: [()]
-none = []
+-- | Constraint alias for all the Pretty constraints needed at a given loc
+type PrettyPhaseLoc p loc =
+    ( Pretty (ValueOccurrence p loc)
+    , Pretty (ConstructorOccurrence p loc)
+    , Pretty (TypeOccurrence p loc)
+    , Pretty (OperatorOccurrence p loc)
+    , Pretty (InfixedOccurrence p loc)
+    , Pretty (ValueBinder p loc)
+    , Pretty (TopValueBinder p loc)
+    , Pretty (TopTypeBinder p loc)
+    , Pretty (TypeVariable p loc)
+    , Pretty (ConstructorBinder p loc)
+    , Pretty (Locate loc LowerAlphaName)
+    )
 
-{- | A 'Nothing' value for 'Maybe' 'Doc's
-Useful for avoiding type annotations
--}
-nothing :: Maybe ()
-nothing = Nothing
+class PrettyPhase p where
+    prettyValueOccurrence :: forall loc. PrettyPhaseLoc p loc => ValueOccurrence p loc -> Doc AnsiStyle
+    default prettyValueOccurrence :: forall loc. Pretty (ValueOccurrence p loc) => ValueOccurrence p loc -> Doc AnsiStyle
+    prettyValueOccurrence = pretty
+    prettyConstructorOccurrence :: forall loc. PrettyPhaseLoc p loc => ConstructorOccurrence p loc -> Doc AnsiStyle
+    default prettyConstructorOccurrence :: forall loc. Pretty (ConstructorOccurrence p loc) => ConstructorOccurrence p loc -> Doc AnsiStyle
+    prettyConstructorOccurrence = pretty
+    prettyTypeOccurrence :: forall loc. PrettyPhaseLoc p loc => TypeOccurrence p loc -> Doc AnsiStyle
+    default prettyTypeOccurrence :: forall loc. Pretty (TypeOccurrence p loc) => TypeOccurrence p loc -> Doc AnsiStyle
+    prettyTypeOccurrence = pretty
+    prettyOperatorOccurrence :: forall loc. PrettyPhaseLoc p loc => OperatorOccurrence p loc -> Doc AnsiStyle
+    default prettyOperatorOccurrence :: forall loc. Pretty (OperatorOccurrence p loc) => OperatorOccurrence p loc -> Doc AnsiStyle
+    prettyOperatorOccurrence = pretty
+    prettyInfixedOccurrence :: forall loc. PrettyPhaseLoc p loc => InfixedOccurrence p loc -> Doc AnsiStyle
+    default prettyInfixedOccurrence :: forall loc. Pretty (InfixedOccurrence p loc) => InfixedOccurrence p loc -> Doc AnsiStyle
+    prettyInfixedOccurrence = pretty
+    prettyValueBinder :: forall loc. PrettyPhaseLoc p loc => ValueBinder p loc -> Doc AnsiStyle
+    default prettyValueBinder :: forall loc. Pretty (ValueBinder p loc) => ValueBinder p loc -> Doc AnsiStyle
+    prettyValueBinder = pretty
+    prettyTopValueBinder :: forall loc. PrettyPhaseLoc p loc => TopValueBinder p loc -> Doc AnsiStyle
+    default prettyTopValueBinder :: forall loc. Pretty (TopValueBinder p loc) => TopValueBinder p loc -> Doc AnsiStyle
+    prettyTopValueBinder = pretty
+    prettyTopTypeBinder :: forall loc. PrettyPhaseLoc p loc => TopTypeBinder p loc -> Doc AnsiStyle
+    default prettyTopTypeBinder :: forall loc. Pretty (TopTypeBinder p loc) => TopTypeBinder p loc -> Doc AnsiStyle
+    prettyTopTypeBinder = pretty
+    prettyTypeVariable :: forall loc. PrettyPhaseLoc p loc => TypeVariable p loc -> Doc AnsiStyle
+    default prettyTypeVariable :: forall loc. Pretty (TypeVariable p loc) => TypeVariable p loc -> Doc AnsiStyle
+    prettyTypeVariable = pretty
+    prettyConstructorBinder :: forall loc. PrettyPhaseLoc p loc => ConstructorBinder p loc -> Doc AnsiStyle
+    default prettyConstructorBinder :: forall loc. Pretty (ConstructorBinder p loc) => ConstructorBinder p loc -> Doc AnsiStyle
+    prettyConstructorBinder = pretty
+    prettyLambdaBinder :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => LambdaBinder p loc -> Doc AnsiStyle
+    prettyExpressionMeta :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => ExpressionMeta p loc -> Maybe (Doc AnsiStyle)
+    prettyPatternMeta :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => PatternMeta p loc -> Maybe (Doc AnsiStyle)
+    prettyTypeMeta :: forall loc. TypeMeta p loc -> Maybe (Doc AnsiStyle)
+    prettyValueDeclPatterns :: forall loc. (PrettyPhaseLoc p loc, PrettyExtensions p) => ValueDeclPatterns p loc -> Doc AnsiStyle
+    prettyValueDeclPatterns _ = mempty
 
-prettyStringExpr :: Text -> Doc AnsiStyle
-prettyStringExpr = dquotes . pretty
+-- | Pretty-printing for phase-specific extension constructors
+class PrettyExtensions p where
+    prettyExpressionExtension :: forall loc. (PrettyPhase p, PrettyPhaseLoc p loc) => ExpressionExtension p loc -> Doc AnsiStyle
+    prettyPatternExtension :: forall loc. (PrettyPhase p, PrettyPhaseLoc p loc) => PatternExtension p loc -> Doc AnsiStyle
+    prettyTypeSyntaxExtension :: forall loc. (PrettyPhase p, PrettyPhaseLoc p loc) => TypeSyntaxExtension p loc -> Doc AnsiStyle
+    prettyDeclBodyExtension :: forall loc. (PrettyPhase p, PrettyPhaseLoc p loc) => DeclBodyExtension p loc -> Doc AnsiStyle
 
-prettyCharExpr :: Char -> Doc AnsiStyle
-prettyCharExpr = squotes . escapeChar
+-- | Pretty-print an expression. Only 2 constraints!
+prettyExpr :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Expr loc p -> Doc AnsiStyle
+prettyExpr (Expr _ meta node) =
+    let pe = prettyExpr' @loc @p node
+        te = prettyExpressionMeta @p @loc meta
+     in case te of
+            Nothing -> pe
+            Just t -> pe <+> ":" <+> t
 
-prettyLambdaExpr :: (?contextFree :: Bool, Pretty a, Pretty b) => [a] -> b -> Doc AnsiStyle
-prettyLambdaExpr args body = parens (if ?contextFree then prettyCTFLambdaExpr else prettyLambdaExpr')
+prettyExpr' :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Expr' loc p -> Doc AnsiStyle
+prettyExpr' = \case
+    EInt i -> pretty i
+    EFloat f -> pretty f
+    EString s -> "\"" <> pretty s <> "\""
+    EChar c -> "'" <> pretty c <> "'"
+    EUnit -> "()"
+    EVar _ v -> prettyValueOccurrence @p @loc v
+    ECon _ c -> prettyConstructorOccurrence @p @loc c
+    ELam _ binder body ->
+        "\\" <> prettyLambdaBinder @p @loc binder <+> "->" <+> prettyExpr body
+    EApp _ f x -> prettyExprAppFun f <+> prettyExprAtom x
+    ETyApp e t -> prettyExprAppFun e <+> "@" <> prettyTypeAtom t
+    EIf cond then_ else_ ->
+        "if" <+> prettyExpr cond <+> "then" <+> prettyExpr then_ <+> "else" <+> prettyExpr else_
+    EMatch scrut alts ->
+        "match"
+            <+> prettyExpr scrut
+            <+> "with"
+            <> prettyMatchAlts 4 (map prettyAlt alts)
+    ELetIn _ binder val body ->
+        group
+            ( "let"
+                <+> prettyValueBinder @p @loc binder
+                <+> "="
+                <+> prettyExpr val
+                <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
+            )
+    ELet _ binder val ->
+        case val of
+            Expr _ _ (EBlock es) ->
+                "let"
+                    <+> prettyValueBinder @p @loc binder
+                    <+> line
+                    <> indent 2 (vsep (map prettyExpr (toList es)))
+            _ ->
+                "let" <+> prettyValueBinder @p @loc binder <+> "=" <+> prettyExpr val
+    EBlock exprs -> case exprs of
+        x :| [] -> prettyExpr x
+        x :| rest -> prettyExpr x <> line <> vsep (map prettyExpr rest)
+    EAnn e t -> prettyExpr e <+> ":" <+> prettyType t
+    EExtension ext -> prettyExpressionExtension @p @loc ext
   where
-    prettyCTFLambdaExpr =
-        "\\"
-            <+> hsep (pretty <$> args)
-            <+> "->"
-            <+> parens (pretty body)
+    prettyAlt (pat, body) = prettyMatchAlt (prettyPattern pat) (prettyExpr body)
 
-    prettyLambdaExpr' = group (flatAlt long short)
+prettyExprAtom :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Expr loc p -> Doc AnsiStyle
+prettyExprAtom e@(Expr _ _ node) = case node of
+    EVar{} -> prettyExpr e
+    ECon{} -> prettyExpr e
+    EInt{} -> prettyExpr e
+    EFloat{} -> prettyExpr e
+    EString{} -> prettyExpr e
+    EChar{} -> prettyExpr e
+    EUnit{} -> prettyExpr e
+    _ -> parens (prettyExpr e)
+
+prettyExprAppFun :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Expr loc p -> Doc AnsiStyle
+prettyExprAppFun e@(Expr _ _ node) = case node of
+    EVar{} -> prettyExpr e
+    ECon{} -> prettyExpr e
+    EApp{} -> prettyExpr e
+    EInt{} -> prettyExpr e
+    EFloat{} -> prettyExpr e
+    EString{} -> prettyExpr e
+    EChar{} -> prettyExpr e
+    EUnit{} -> prettyExpr e
+    _ -> parens (prettyExpr e)
+
+-- | Pretty-print a pattern
+prettyPattern :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pattern loc p -> Doc AnsiStyle
+prettyPattern (Pattern _ meta node) =
+    let pp = prettyPattern' @loc @p node
+        te = prettyPatternMeta @p @loc meta
+     in case te of
+            Nothing -> pp
+            Just t -> pp <+> ":" <+> t
+
+prettyPattern' :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pattern' loc p -> Doc AnsiStyle
+prettyPattern' = \case
+    PVar v -> prettyValueBinder @p @loc v
+    PCon c ps -> prettyConstructorOccurrence @p @loc c <+> hsep (map prettyPattern ps)
+    PWildcard -> "_"
+    PInt i -> pretty i
+    PFloat f -> pretty f
+    PString s -> "\"" <> pretty s <> "\""
+    PChar c -> "'" <> pretty c <> "'"
+    PUnit -> "()"
+    PExtension ext -> prettyPatternExtension @p @loc ext
+
+-- | Pretty-print a type
+prettyType :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Type loc p -> Doc AnsiStyle
+prettyType (Type _ meta node) =
+    let pt = prettyType' @loc @p node
+        te = prettyTypeMeta @p @loc meta
+     in case te of
+            Nothing -> pt
+            Just k -> pt <+> ":" <+> k
+
+prettyType' :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Type' loc p -> Doc AnsiStyle
+prettyType' = \case
+    TVar v -> prettyTypeVariable @p @loc v
+    TFun a b -> prettyTypeAtom a <+> "->" <+> prettyType b
+    TUnit -> "()"
+    TApp f x -> prettyTypeAppFun f <+> prettyTypeAtom x
+    TUserDefined name -> prettyTypeOccurrence @p @loc name
+    TRecord fields -> "{" <+> hsep (punctuate "," (map prettyField (toList fields))) <+> "}"
       where
-        short =
-            "\\"
-                <+> hsep (pretty <$> args)
-                <+> "->"
-                <+> pretty body
+        prettyField :: (Locate loc LowerAlphaName, Type loc p) -> Doc AnsiStyle
+        prettyField (name, ty) = pretty name <+> ":" <+> prettyType ty
+    TList t -> "[" <+> prettyType t <+> "]"
+    TExtension ext -> prettyTypeSyntaxExtension @p @loc ext
 
-        long =
-            align
-                ("\\" <+> hsep (pretty <$> args) <+> "->" <> hardline <> nest indentDepth (pretty body))
+-- | Pretty-print a binary operator
+prettyBinaryOperator :: forall loc p. (PrettyPhase p, PrettyPhaseLoc p loc) => BinaryOperator loc p -> Doc AnsiStyle
+prettyBinaryOperator = \case
+    SymOp _ op -> prettyOperatorOccurrence @p @loc op
+    InfixedOp _ name -> "`" <> prettyInfixedOccurrence @p @loc name <> "`"
 
-prettyFunctionCall :: (?contextFree :: Bool, Pretty a, Pretty b) => a -> b -> Doc AnsiStyle
-prettyFunctionCall e1' e2' = parens (if ?contextFree then short else group (flatAlt long short))
+-- | Pretty-print a type declaration (ADT or alias)
+prettyTypeDeclaration :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TypeDeclaration loc p -> Doc AnsiStyle
+prettyTypeDeclaration = \case
+    ADT ctors ->
+        let prettyCtor (name, args) =
+                prettyConstructorBinder @p @loc name <> case args of
+                    [] -> mempty
+                    _ -> " " <> hsep (map prettyTypeAtom args)
+         in prettyCtorsInline (map prettyCtor (toList ctors))
+    Alias t -> prettyType t
+
+-- | Pretty-print a type in "atom" position (parenthesized if compound)
+prettyTypeAtom :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Type loc p -> Doc AnsiStyle
+prettyTypeAtom t@(Type _ _ node) = case node of
+    TVar{} -> prettyType t
+    TUnit -> prettyType t
+    TUserDefined{} -> prettyType t
+    TList{} -> prettyType t
+    TRecord{} -> prettyType t
+    _ -> parens (prettyType t)
+
+prettyTypeAppFun :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Type loc p -> Doc AnsiStyle
+prettyTypeAppFun t@(Type _ _ node) = case node of
+    TVar{} -> prettyType t
+    TUnit -> prettyType t
+    TUserDefined{} -> prettyType t
+    TList{} -> prettyType t
+    TRecord{} -> prettyType t
+    TApp{} -> prettyType t
+    _ -> parens (prettyType t)
+
+-- | Pretty-print a declaration body
+prettyDeclarationBody :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => DeclarationBody' loc p -> Doc AnsiStyle
+prettyDeclarationBody = \case
+    ValueDeclaration name expr pats _mTy _meta _anns ->
+        group
+            ( "let"
+                <+> prettyTopValueBinder @p @loc name
+                <> prettyValueDeclPatterns @p @loc pats
+                <+> "="
+                <> nest indentDepth (flatAlt (line <> prettyExpr expr) (" " <> prettyExpr expr))
+            )
+            <> line
+    TypeDeclarationBody name vars typeDecl _mKind _meta _anns ->
+        prettyTypeDeclBody name vars typeDecl <> line
+    DeclBodyExtension ext -> prettyDeclBodyExtension @p @loc ext
+
+prettyTypeDeclBody :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TopTypeBinder p loc -> [TypeVariable p loc] -> TypeDeclaration loc p -> Doc AnsiStyle
+prettyTypeDeclBody name vars = \case
+    Alias t -> header <+> "=" <+> prettyType t
+    ADT ctors ->
+        let ctorDocs = map prettyCtor (toList ctors)
+         in case ctorDocs of
+                [] -> header <+> "="
+                _ -> header <+> "=" <+> prettyCtorsInline ctorDocs
   where
-    short = pretty e1' <+> pretty e2'
-    long = pretty e1' <> hardline <> indent indentDepth (pretty e2')
+    header =
+        "type" <+> prettyTopTypeBinder @p @loc name <> case vars of
+            [] -> mempty
+            _ -> " " <> hsep (map (prettyTypeVariable @p @loc) vars)
+    prettyCtor (cname, args) =
+        prettyConstructorBinder @p @loc cname <> case args of
+            [] -> mempty
+            _ -> " " <> hsep (map prettyTypeAtom args)
 
-prettyFunctionCallExpr :: (?contextFree :: Bool, RUnlocate ast, Pretty (Expr ast)) => Expr ast -> Expr ast -> Bool -> Doc AnsiStyle
-prettyFunctionCallExpr e1 e2 tyApp = prettyFunctionCall e1' e2'
-  where
-    e1' = parensIf (?contextFree && shouldParen e1) (pretty e1)
-    e2' = tyApp' <> parensIf (?contextFree && shouldParen e2) (pretty e2)
-    tyApp' = if tyApp then "@" else ""
+-- | Pretty-print a declaration
+prettyDeclaration :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Declaration loc p -> Doc AnsiStyle
+prettyDeclaration (Declaration _ (Declaration' _ (DeclarationBody _ body))) =
+    prettyDeclarationBody @loc @p body
 
-prettyIfExpr :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc AnsiStyle
-prettyIfExpr e1 e2 e3 = parens (keyword "if" <+> pretty e1 <+> keyword "then" <+> pretty e2 <+> keyword "else" <+> pretty e3)
+-- | Pretty-print a module with all its declarations
+prettyModule :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (Locate loc ModuleName)) => Module loc p -> Doc AnsiStyle
+prettyModule (Module _ m) =
+    "module"
+        <+> pretty (moduleName m)
+        <> line
+        <> line
+        <> vsep (map prettyDeclaration (moduleDeclarations m))
 
-prettyBinaryOperatorExpr :: (Pretty b, Pretty (Expr ast), RUnlocate ast) => Expr ast -> b -> Expr ast -> Doc AnsiStyle
-prettyBinaryOperatorExpr e1 o e2 =
-    parens
-        ( parensIf (shouldParen e1) (pretty e1)
-            <+> pretty o
-            <+> parensIf (shouldParen e2) (pretty e2)
-        )
+-- | Pretty-print a typed lambda parameter (used by Renamed, Shunted, Typed)
+prettyTypedLambdaParam :: forall loc v p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty v) => TypedLambdaParam v loc p -> Doc AnsiStyle
+prettyTypedLambdaParam (TypedLambdaParam v meta) =
+    case prettyPatternMeta @p @loc meta of
+        Nothing -> pretty v
+        Just t -> parens (pretty v <+> ":" <+> t)
 
-prettyTupleExpr :: Pretty a => NonEmpty a -> Doc AnsiStyle
-prettyTupleExpr l = parens (hsep (punctuate "," (pretty <$> toList l)))
+-- | Pretty-print a binary operator expression extension
+prettyBinaryOperatorExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => BinaryOperatorExtension loc p -> Doc AnsiStyle
+prettyBinaryOperatorExt (BinaryOperatorExpression op lhs rhs) =
+    prettyExprAtom lhs <+> prettyBinaryOperator op <+> prettyExpr rhs
 
-prettyMatchExpr :: (Pretty a1, Pretty a2, Foldable t, ?contextFree :: Bool) => a1 -> t a2 -> Doc AnsiStyle
-prettyMatchExpr e m = parens (keyword "match" <+> pretty e <+> keyword "with" <+> prettyBlockExpr m)
+-- | Pretty-print a parenthesized expression extension
+prettyInParensExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => InParensExtension loc p -> Doc AnsiStyle
+prettyInParensExt (InParensExpression e) = prettyExpr e
 
-prettyMatchBranch :: (Pretty a1, Pretty a2) => (a1, a2) -> Doc AnsiStyle
-prettyMatchBranch (p, e) = pretty p <+> punctuation "->" <+> pretty e
+-- | Pretty-print a list expression extension
+prettyListExprExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => ListExprExtension loc p -> Doc AnsiStyle
+prettyListExprExt (ListExpression es) = "[" <+> hsep (punctuate "," (map prettyExpr es)) <+> "]"
 
-prettyLetInExpr ::
-    (Pretty a1, Pretty a2, ?contextFree :: Bool, RUnlocate ast, Pretty (Expr ast)) =>
-    a1 ->
-    [a2] ->
-    Expr ast ->
-    Expr ast ->
-    Doc AnsiStyle
-prettyLetInExpr v ps e1 e2 =
-    keyword "let"
-        <+> pretty v
-        <+> hsep (pretty <$> ps)
-        <+> "="
-        <+> blockParensIf (?contextFree && shouldBrace e1) (pretty e1)
-        <+> keyword "in"
-        <+> blockParensIf (?contextFree && shouldBrace e2) (pretty e2)
+-- | Pretty-print a tuple expression extension
+prettyTupleExprExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TupleExprExtension loc p -> Doc AnsiStyle
+prettyTupleExprExt (TupleExpression items) = parens (hsep (punctuate "," (map prettyExpr (AtLeast2List.toList items))))
 
-shouldBrace :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
-shouldBrace x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr' ast of
-    Block _ -> False
-    Let{} -> True
-    LetIn{} -> True
-    _ -> False
+-- | Pretty-print a list/tuple/cons pattern extension
+prettyListTuplePatternExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => ListTuplePatternExtension loc p -> Doc AnsiStyle
+prettyListTuplePatternExt = \case
+    ListPattern ps -> "[" <+> hsep (punctuate "," (map prettyPattern ps)) <+> "]"
+    TuplePattern ps -> parens (hsep (punctuate "," (map prettyPattern (toList ps))))
+    ConsPattern hd tl -> parens (prettyPattern hd <+> "::" <+> prettyPattern tl)
 
-shouldParen :: forall astK (ast :: astK). RUnlocate ast => Expr ast -> Bool
-shouldParen x = case (x ^. _Unwrapped % _1 % to (rUnlocate @astK @ast)) :: Expr' ast of
-    Block _ -> True
-    Let{} -> True
-    LetIn{} -> True
-    _ -> False
-
-prettyLetExpr :: (Pretty a1, Pretty a2, RUnlocate ast, ?contextFree :: Bool, Pretty (Expr ast)) => a1 -> [a2] -> Expr ast -> Doc AnsiStyle
-prettyLetExpr v ps e =
-    keyword "let"
-        <+> pretty v
-        <+> hsep (pretty <$> ps)
-        <+> punctuation "="
-        <+> blockParensIf (?contextFree && shouldBrace e) (pretty e)
-
-prettyBlockExpr :: (Pretty a, Foldable t, ?contextFree :: Bool) => t a -> Doc AnsiStyle
-prettyBlockExpr b = do
-    let open = if ?contextFree then "{ " else flatAlt "" "{ "
-        close = if ?contextFree then "}" else flatAlt "" " }"
-        separator = if ?contextFree then "; " else flatAlt "" "; "
-        arrange = if ?contextFree then identity else group . align
-
-    arrange (encloseSep' ?contextFree open close separator (pretty <$> toList b))
-
-encloseSep' :: Bool -> Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-encloseSep' contextFree = if contextFree then encloseSepUnarranged else encloseSep
-  where
-    encloseSepUnarranged :: Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle -> [Doc AnsiStyle] -> Doc AnsiStyle
-    encloseSepUnarranged open close _ [] = open <> close
-    encloseSepUnarranged open close sep (x : xs) = open <> x <> foldr (\y ys -> sep <> y <> ys) close xs
-
-prettyConstructorPattern :: (Pretty a1, Pretty a2) => a1 -> [a2] -> Doc AnsiStyle
-prettyConstructorPattern c p = parens (pretty c <+> hsep (pretty <$> p))
-
-prettyList :: (Pretty a, ?contextFree :: Bool) => [a] -> Doc AnsiStyle
-prettyList l =
-    if ?contextFree
-        then encloseSep' ?contextFree "[ " " ]" ", " (pretty <$> l)
-        else list (pretty <$> l)
-
-prettyConsPattern :: (Pretty a1, Pretty a2) => a1 -> a2 -> Doc AnsiStyle
-prettyConsPattern e1 e2 = parens (pretty e1 <+> "::" <+> pretty e2)
-
-prettyValueDeclaration ::
-    forall ast a1 a2 a3.
-    (Pretty a1, Pretty a2, Pretty a3, Pretty (Select (Annotations ForValueDecl) ast)) =>
-    a1 -> a2 -> Maybe a3 -> ValueDeclAnnotations ast -> Doc AnsiStyle
-prettyValueDeclaration name e expectedType anns =
-    let defLine = (\x -> prettyValueTypeDef @ast name x Nothing) <$> expectedType
-        annLine = prettyValueDeclAnnotations anns
-        rest =
-            [ keyword "let" <+> pretty name <+> punctuation "="
-            , indent indentDepth (pretty e)
-            , "" -- add a newline
-            ]
-     in vsep (annLine : maybeToList defLine <> rest)
-
-prettyValueDeclAnnotations :: Pretty (Select (Annotations ForValueDecl) ast) => ValueDeclAnnotations ast -> Doc AnsiStyle
-prettyValueDeclAnnotations (ValueDeclAnnotations x) = pretty x
-
-prettyValueTypeDef :: forall ast a1 a2. (Pretty a1, Pretty a2, Pretty (Select (Annotations ForValueDecl) ast)) => a1 -> a2 -> Maybe (ValueDeclAnnotations ast) -> Doc AnsiStyle
-prettyValueTypeDef name t anns =
-    let annLine = fmap ("#" <>) (prettyValueDeclAnnotations <$> anns)
-     in vsep [fromMaybe "" annLine, keyword "def" <+> pretty name <+> punctuation ":" <+> pretty t]
-
-prettyTypeDeclaration :: (Pretty a1, Pretty a2, Pretty a3) => a1 -> [a2] -> a3 -> TypeDeclAnnotations ast -> Doc AnsiStyle
-prettyTypeDeclaration name vars t _ =
-    vsep
-        [ keyword "type" <+> typeName (pretty name) <+> hsep (varName . pretty <$> vars)
-        , indent indentDepth (punctuation "=" <+> pretty t)
-        , "" -- add a newline
-        ]
+-- | Pretty-print a tuple type extension
+prettyTupleTypeExt :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => TupleTypeExtension loc p -> Doc AnsiStyle
+prettyTupleTypeExt (TupleType items) = parens (hsep (punctuate "," (map prettyType (AtLeast2List.toList items))))

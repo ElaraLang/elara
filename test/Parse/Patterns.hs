@@ -3,12 +3,15 @@ module Parse.Patterns where
 import Arbitrary.AST (genPattern)
 import Arbitrary.Literals (genDouble, genInteger)
 import Arbitrary.Names (genLowerAlphaText)
-import Elara.AST.Generic
+import Elara.AST.Extensions (ListTuplePatternExtension (..))
 import Elara.AST.Name
-import Elara.AST.StripLocation
+import Elara.AST.Phases.Frontend ()
+import Elara.AST.Phases.Frontend.Pretty ()
+import Elara.AST.Types (Pattern' (..))
 import Elara.Parse.Pattern (patParser)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
+import Normalise (mkPat, stripNewInParens, stripPattern)
 import Orphans ()
 import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern, trippingParse)
 import Print (showPrettyUnannotated)
@@ -19,7 +22,7 @@ spec :: Spec
 spec = describe "Parses patterns correctly" $ do
     it "Arbitrary patterns parse prettyPrinted" $ property $ do
         expr <- forAll genPattern
-        let parsePretty s = fmap stripLocation <$> lexAndParse patParser s
+        let parsePretty s = fmap stripPattern <$> lexAndParse patParser s
         trippingParse expr showPrettyUnannotated parsePretty
 
     terminalPatterns
@@ -30,29 +33,27 @@ terminalPatterns :: Spec
 terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
     it "Parses arbitrary var patterns correctly" $ property $ do
         expr <- forAll genLowerAlphaText
-        expr `shouldParsePattern` Pattern (VarPattern (LowerAlphaName expr), Nothing)
+        expr `shouldParsePattern` mkPat (PVar (NormalVarName (LowerAlphaName expr)))
 
-    it "Parses wildcard pattern correctly" $ property $ do
-        "_" `shouldParsePattern` Pattern (WildcardPattern, Nothing)
+    it "Parses wildcard pattern correctly" $ property $ "_" `shouldParsePattern` mkPat PWildcard
 
-    it "Parses unit pattern correctly" $ property $ do
-        "()" `shouldParsePattern` Pattern (UnitPattern, Nothing)
+    it "Parses unit pattern correctly" $ property $ "()" `shouldParsePattern` mkPat PUnit
 
     it "Parses arbitrary int literal patterns correctly" $ property $ do
         i <- forAll genInteger
-        show i `shouldParsePattern` Pattern (IntegerPattern i, Nothing)
+        show i `shouldParsePattern` mkPat (PInt i)
 
     it "Parses arbitrary float literal patterns correctly" $ property $ do
         i <- forAll genDouble
-        show i `shouldParsePattern` Pattern (FloatPattern i, Nothing)
+        show i `shouldParsePattern` mkPat (PFloat i)
 
     it "Parses arbitrary char literal patterns correctly" $ property $ do
         i <- forAll Gen.unicode
-        show i `shouldParsePattern` Pattern (CharPattern i, Nothing)
+        show i `shouldParsePattern` mkPat (PChar i)
 
     it "Parses arbitrary string literal patterns correctly" $ property $ do
         i <- forAll genLowerAlphaText
-        show i `shouldParsePattern` Pattern (StringPattern i, Nothing)
+        show i `shouldParsePattern` mkPat (PString i)
 
 consPatterns :: Spec
 consPatterns = describe "Parses cons patterns" $ do
@@ -62,79 +63,79 @@ consPatterns = describe "Parses cons patterns" $ do
 
     it "Parses correct cons patterns correctly" $ property $ do
         "(x :: xs)"
-            `shouldParsePattern` Pattern
-                ( ConsPattern
-                    ( Pattern (VarPattern "x", Nothing)
-                    , Pattern (VarPattern "xs", Nothing)
+            `shouldParsePattern` mkPat
+                ( PExtension
+                    ( ConsPattern
+                        (mkPat (PVar (NormalVarName "x")))
+                        (mkPat (PVar (NormalVarName "xs")))
                     )
-                , Nothing
                 )
 
         "(x :: xs :: xss)"
-            `shouldParsePattern` Pattern
-                ( ConsPattern
-                    ( Pattern (VarPattern "x", Nothing)
-                    , Pattern
-                        ( ConsPattern
-                            ( Pattern (VarPattern "xs", Nothing)
-                            , Pattern (VarPattern "xss", Nothing)
+            `shouldParsePattern` mkPat
+                ( PExtension
+                    ( ConsPattern
+                        (mkPat (PVar (NormalVarName "x")))
+                        ( mkPat
+                            ( PExtension
+                                ( ConsPattern
+                                    (mkPat (PVar (NormalVarName "xs")))
+                                    (mkPat (PVar (NormalVarName "xss")))
+                                )
                             )
-                        , Nothing
                         )
                     )
-                , Nothing
                 )
 
 constructorPatterns :: Spec
 constructorPatterns = describe "Parses constructor parens" $ do
-    it "Parses constructor patterns correctly" $ property $ do
-        "ZeroArity" `shouldParsePattern` Pattern (ConstructorPattern "ZeroArity" [], Nothing)
+    it "Parses constructor patterns correctly" $ property $ "ZeroArity" `shouldParsePattern` mkPat (PCon "ZeroArity" [])
 
-    it "Parses single constructor pattern without parens" $ property $ do
-        "TwoArgs 1 2"
-            `shouldParsePattern` Pattern
-                ( ConstructorPattern
-                    "TwoArgs"
-                    [Pattern (IntegerPattern 1, Nothing), Pattern (IntegerPattern 2, Nothing)]
-                , Nothing
-                )
+    it "Parses single constructor pattern without parens" $
+        property $
+            "TwoArgs 1 2"
+                `shouldParsePattern` mkPat
+                    ( PCon
+                        "TwoArgs"
+                        [mkPat (PInt 1), mkPat (PInt 2)]
+                    )
 
-    it "Parses constructor patterns with parens correctly" $ property $ do
-        "(TwoArgs one two)"
-            `shouldParsePattern` Pattern
-                ( ConstructorPattern
-                    "TwoArgs"
-                    [Pattern (VarPattern "one", Nothing), Pattern (VarPattern "two", Nothing)]
-                , Nothing
-                )
+    it "Parses constructor patterns with parens correctly" $
+        property $
+            "(TwoArgs one two)"
+                `shouldParsePattern` mkPat
+                    ( PCon
+                        "TwoArgs"
+                        [ mkPat (PVar (NormalVarName "one"))
+                        , mkPat (PVar (NormalVarName "two"))
+                        ]
+                    )
 
-    it "Parses nested constructor patterns correctly" $ property $ do
-        "(TwoArgs (OneArg one) (OneArg two))"
-            `shouldParsePattern` Pattern
-                ( ConstructorPattern
-                    "TwoArgs"
-                    [ Pattern
-                        ( ConstructorPattern
-                            "OneArg"
-                            [Pattern (VarPattern "one", Nothing)]
-                        , Nothing
-                        )
-                    , Pattern
-                        ( ConstructorPattern
-                            "OneArg"
-                            [Pattern (VarPattern "two", Nothing)]
-                        , Nothing
-                        )
-                    ]
-                , Nothing
-                )
-    it "Parses nested unary constructor patterns correctly" $ property $ do
-        "Tuple2 Nil _"
-            `shouldParsePattern` Pattern
-                ( ConstructorPattern
-                    "Tuple2"
-                    [ Pattern (ConstructorPattern "Nil" [], Nothing)
-                    , Pattern (WildcardPattern, Nothing)
-                    ]
-                , Nothing
-                )
+    it "Parses nested constructor patterns correctly" $
+        property $
+            "(TwoArgs (OneArg one) (OneArg two))"
+                `shouldParsePattern` mkPat
+                    ( PCon
+                        "TwoArgs"
+                        [ mkPat
+                            ( PCon
+                                "OneArg"
+                                [mkPat (PVar (NormalVarName "one"))]
+                            )
+                        , mkPat
+                            ( PCon
+                                "OneArg"
+                                [mkPat (PVar (NormalVarName "two"))]
+                            )
+                        ]
+                    )
+    it "Parses nested unary constructor patterns correctly" $
+        property $
+            "Tuple2 Nil _"
+                `shouldParsePattern` mkPat
+                    ( PCon
+                        "Tuple2"
+                        [ mkPat (PCon "Nil" [])
+                        , mkPat PWildcard
+                        ]
+                    )

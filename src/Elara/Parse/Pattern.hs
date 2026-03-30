@@ -2,16 +2,20 @@ module Elara.Parse.Pattern (patParser) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.List.NonEmpty ((<|))
-import Elara.AST.Frontend
-import Elara.AST.Generic (Pattern (..), Pattern' (..))
-import Elara.AST.Region (Located, unlocated)
+import Elara.AST.Extensions (ListTuplePatternExtension (..))
+import Elara.AST.Name (VarName (NormalVarName))
+import Elara.AST.Phases.Frontend
+import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion')
+import Elara.AST.Types (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
-import Elara.Parse.Combinators (liftedBinary, sepBy1', sepEndBy1')
+import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Literal
 import Elara.Parse.Names (conName, varId)
 import Elara.Parse.Primitives (Parser, inParens, located, token_)
-import Print (debugPretty)
-import Text.Megaparsec (choice, sepEndBy, sepEndBy1, try, (<?>))
+import Text.Megaparsec (choice, sepEndBy, try, (<?>))
+
+patternRegion :: FrontendPattern -> SourceRegion
+patternRegion (Pattern loc _ _) = loc
 
 atomicPatParser :: Parser FrontendPattern
 atomicPatParser =
@@ -41,29 +45,28 @@ rpat =
         ]
         <?> "pattern"
 
-unannotatedPattern :: Iso' FrontendPattern (Located FrontendPattern')
-unannotatedPattern = iso (\(Pattern (e, _)) -> e) (\x -> Pattern (x, Nothing))
-
--- TODO: refactor this to allow for more than just cons patterns eg data (:=:) a b = a :=: b; f (x :=: y) = x + y
 cons :: Parser (FrontendPattern -> FrontendPattern -> FrontendPattern)
-cons = liftedBinary (token_ TokenDoubleColon) (const (curry ConsPattern)) unannotatedPattern
+cons = do
+    token_ TokenDoubleColon
+    pure $ \l r ->
+        let region = enclosingRegion' (patternRegion l) (patternRegion r)
+         in Pattern region Nothing (PExtension (ConsPattern l r))
 
 locatedPattern :: Parser FrontendPattern' -> Parser FrontendPattern
-locatedPattern = ((\x -> Pattern (x, Nothing)) <$>) . located
+locatedPattern p = (\(Located sr node) -> Pattern sr Nothing node) <$> located p
 
 varPattern :: Parser FrontendPattern
-varPattern = locatedPattern (VarPattern <$> located varId)
+varPattern = locatedPattern (PVar . fmap NormalVarName <$> located varId)
 
 wildcardPattern :: Parser FrontendPattern
-wildcardPattern = locatedPattern (WildcardPattern <$ token_ TokenUnderscore)
+wildcardPattern = locatedPattern (PWildcard <$ token_ TokenUnderscore)
 
 listPattern :: Parser FrontendPattern
 listPattern = locatedPattern $ do
     token_ TokenLeftBracket
-
     elements <- sepEndBy patParser (token_ TokenComma)
     token_ TokenRightBracket
-    pure $ ListPattern elements
+    pure $ PExtension (ListPattern elements)
 
 tuplePattern :: Parser FrontendPattern
 tuplePattern = locatedPattern $ do
@@ -72,38 +75,26 @@ tuplePattern = locatedPattern $ do
         token_ TokenComma
         rest <- sepBy1' patParser (token_ TokenComma)
         pure (first <| rest)
-    pure $ TuplePattern elements
-
--- consPattern :: Parser FrontendPattern
--- consPattern i = locatedPattern $ do
---     (head', tail') <- do
---         head' <- pat' (i + 1)
---         token_ TokenDoubleColon
---         endHead
---         tail' <- pat' (i + 1)
---         pure (head', tail')
-
---     pure $ ConsPattern head' tail'
+    pure $ PExtension (TuplePattern elements)
 
 unaryConstructorPattern :: Parser FrontendPattern
 unaryConstructorPattern = locatedPattern $ do
     con <- located conName
-    pure $ ConstructorPattern con []
+    pure $ PCon con []
 
 constructorPattern :: Parser FrontendPattern
 constructorPattern = locatedPattern $ do
     con <- located conName
-
     args <- many atomicPatParser
-    pure $ ConstructorPattern con args
+    pure $ PCon con args
 
 literalPattern :: Parser FrontendPattern
 literalPattern =
     locatedPattern $
         choice
-            [ IntegerPattern <$> integerLiteral
-            , FloatPattern <$> floatLiteral
-            , StringPattern <$> stringLiteral
-            , CharPattern <$> charLiteral
-            , UnitPattern <$ unitLiteral
+            [ PInt <$> integerLiteral
+            , PFloat <$> floatLiteral
+            , PString <$> stringLiteral
+            , PChar <$> charLiteral
+            , PUnit <$ unitLiteral
             ]

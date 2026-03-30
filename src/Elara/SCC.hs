@@ -2,18 +2,16 @@
 
 module Elara.SCC where
 
-import Data.Generics.Product (HasField' (field'))
-import Data.Generics.Wrapped (_Unwrapped)
 import Data.Graph (SCC (..), stronglyConnComp)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Effectful
-import Elara.AST.Generic.Common
-import Elara.AST.Generic.Types
 import Elara.AST.Name
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Shunted (Shunted)
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located (..), unlocated)
-import Elara.AST.Select
-import Elara.AST.Shunted
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Error (runErrorOrReport)
 import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)
@@ -22,7 +20,7 @@ import Elara.Query.Effects (ConsQueryEffects)
 import Elara.SCC.Type
 import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
-import Optics
+import Optics (view)
 import Rock qualified
 
 runFreeVarsQuery ::
@@ -34,30 +32,15 @@ runFreeVarsQuery ::
 runFreeVarsQuery name = do
     declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
 
-    let body = declaration ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated
+    let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body)) = declaration
 
     let x = case body of
-            Value _ e NoFieldValue _ _ ->
+            New.ValueDeclaration _ e _ _ _ _ ->
                 patternDependencies e <> valueDependencies e
-            TypeDeclaration{} -> mempty
+            New.TypeDeclarationBody{} -> mempty
+            New.DeclBodyExtension v -> absurd v
 
     pure x
-
--- runFreeTypesQuery ::
---     SupportsQuery QueryRequiredDeclarationByName Shunted =>
---     Qualified VarName ->
---     Eff
---         (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
---         (HashSet (Qualified TypeName))
--- runFreeTypesQuery name = do
---     declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
---     let body = declaration ^. _Unwrapped % unlocated % field' @"body" % _Unwrapped % unlocated
---     let x = case body of
---             Value _ e NoFieldValue _ _ -> typeDependencies e
---             TypeDeclaration name tvs typeDecl annotations ->
---                 case typeDecl ^. unlocated  of
---                     Alias t -> typeDependencies t
---     pure x
 
 runReachableSubgraphQuery :: Qualified VarName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) ReachableSubgraph
 runReachableSubgraphQuery name = do
@@ -73,7 +56,7 @@ runReachableSubgraphQuery name = do
         go seen edges (b : bs) = do
             depsAll <- Rock.fetch (Elara.Query.FreeVarsOf b)
             let depsSame = HS.filter ((== rootMod) . moduleOf) depsAll
-            -- only enqueue deps we haven’t seen yet
+            -- only enqueue deps we haven't seen yet
             let newDeps = HS.difference depsSame seen
             let seen' = HS.insert b (HS.union seen newDeps)
             let edges' = HM.insertWith HS.union b depsSame edges
@@ -103,33 +86,40 @@ sccContainingRoot g@ReachableSubgraph{root} =
         AcyclicSCC v -> v == root
         CyclicSCC vs -> root `elem` vs
 
-concatHashSetOf :: forall k is a1 a2 b. (Is k A_Fold, Hashable b) => Optic' k is a1 a2 -> (a2 -> HashSet b) -> a1 -> HashSet b
-concatHashSetOf l f a =
-    let folded = toListOf l a -- we do this so we don't need a2 to be hashable
-     in foldMap f folded
+-- | Collect free variable references from an expression (manual recursion replacing cosmosOf plate)
+valueDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
+valueDependencies (New.Expr _ _ e') = case e' of
+    New.EVar NoExtension (Located _ (Global (Located _ qn))) -> one qn
+    New.EVar _ _ -> mempty
+    New.ECon _ _ -> mempty
+    New.EInt _ -> mempty
+    New.EFloat _ -> mempty
+    New.EString _ -> mempty
+    New.EChar _ -> mempty
+    New.EUnit -> mempty
+    New.ELam _ _ body -> valueDependencies body
+    New.EApp _ f x -> valueDependencies f <> valueDependencies x
+    New.ETyApp e _ -> valueDependencies e
+    New.EIf c t f -> valueDependencies c <> valueDependencies t <> valueDependencies f
+    New.EMatch e cases -> valueDependencies e <> foldMap (\(_, b) -> valueDependencies b) cases
+    New.ELetIn _ _ e1 e2 -> valueDependencies e1 <> valueDependencies e2
+    New.ELet _ _ e1 -> valueDependencies e1
+    New.EBlock exprs -> foldMap valueDependencies exprs
+    New.EAnn e _ -> valueDependencies e
+    New.EExtension v -> absurd v
 
-valueDependencies :: ShuntedExpr -> HashSet (Qualified VarName)
-valueDependencies =
-    concatHashSetOf (cosmosOn (_Unwrapped % _1 % unlocated)) names
-  where
-    names :: ShuntedExpr' -> HashSet (Qualified VarName)
-    names (Var (Located _ (Global e))) = one (e ^. unlocated)
-    names _ = mempty
+-- | Collect pattern dependencies (currently always empty but kept for completeness)
+patternDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
+patternDependencies _ = mempty
 
-patternDependencies :: ShuntedExpr -> HashSet (Qualified VarName)
-patternDependencies =
-    foldOf (gplate % to patternDependencies')
-  where
-    patternDependencies' :: ShuntedPattern -> HashSet (Qualified VarName)
-    patternDependencies' = concatHashSetOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
-    names :: ShuntedPattern' -> HashSet (Qualified VarName)
-    -- i think this will always be empty but just in case
-    names _ = mempty
-
-typeDependencies :: ShuntedType -> HashSet (Qualified Name)
-typeDependencies =
-    concatHashSetOf (cosmosOnOf (_Unwrapped % _1 % unlocated) gplate) names
-  where
-    names :: ShuntedType' -> HashSet (Qualified Name)
-    names (UserDefinedType (Located _ e)) = one (NTypeName <$> e)
-    names _ = mempty
+-- | Collect type dependencies from a shunted type
+typeDependencies :: NewS.ShuntedType -> HashSet (Qualified Name)
+typeDependencies (New.Type _ _ t') = case t' of
+    New.TUserDefined (Located _ e) -> one (NTypeName <$> e)
+    New.TFun t1 t2 -> typeDependencies t1 <> typeDependencies t2
+    New.TApp t1 t2 -> typeDependencies t1 <> typeDependencies t2
+    New.TList t -> typeDependencies t
+    New.TRecord fields -> foldMap (typeDependencies . snd) (toList fields)
+    New.TVar _ -> mempty
+    New.TUnit -> mempty
+    New.TExtension v -> absurd v

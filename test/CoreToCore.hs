@@ -1,4 +1,6 @@
--- | Tests for Core-to-Core optimization passes
+{-# LANGUAGE ImportQualifiedPost #-}
+
+-- | Tests for Core-to-Core optimisation passes
 module CoreToCore (spec) where
 
 import Elara.AST.Name (ModuleName (..), Qualified (..))
@@ -24,11 +26,11 @@ intType = Core.ConTy intCon
 
 -- | Create a Prelude operator reference (for + etc.)
 preludeOp :: Text -> CoreExpr
-preludeOp name = Var (mkGlobalVar ("Prelude" :| []) name intType)
+preludeOp name = Var (mkGlobalVar ("Elara" :| ["Prim"]) name intType)
 
 -- | Create an Elara.Prim operator reference (for |> etc.)
 primOp :: Text -> CoreExpr
-primOp name = Var (mkGlobalVar ("Elara" :| ["Prim"]) name intType)
+primOp name = Var (mkGlobalVar ("Prelude" :| []) name intType)
 
 spec :: Spec
 spec = describe "Core-to-Core optimizations" $ do

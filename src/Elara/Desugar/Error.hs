@@ -1,12 +1,11 @@
 module Elara.Desugar.Error where
 
-import Data.Generics.Wrapped (_Unwrapped)
-import Elara.AST.Desugared
-import Elara.AST.Frontend (FrontendPattern)
-import Elara.AST.Generic
+import Elara.AST.Instances ()
 import Elara.AST.Name
+import Elara.AST.Phases.Desugared
+import Elara.AST.Phases.Frontend qualified as Frontend
 import Elara.AST.Region
-import Elara.AST.Select
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
@@ -14,27 +13,29 @@ import Error.Diagnose
 
 data DesugarError
     = DefWithoutLet DesugaredType
-    | InfixWithoutDeclaration (Located Name) SourceRegion (ValueDeclAnnotations Desugared)
+    | InfixWithoutDeclaration (Located Name) SourceRegion [New.Annotation SourceRegion Desugared]
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
-    | TuplePatternTooShort FrontendPattern
+    | TuplePatternTooShort (New.Pattern SourceRegion Frontend.Frontend)
     deriving (Typeable, Show, Generic)
 
 instance Exception DesugarError
 
-instance Pretty DesugarError
+instance Pretty DesugarError where
+    pretty = viaShow
 
 instance ReportableError DesugarError where
     getReport (DefWithoutLet ty) =
-        Just $
-            Err
-                (Just Codes.defWithoutLet)
-                ("Def without let at" <+> pretty ty)
-                [ (sourceRegionToDiagnosePosition $ view (_Unwrapped % _1 % sourceRegion) ty, This "Def without let here")
-                ]
-                [ Note "A 'def' must always be followed by a let binding"
-                , Hint "Try adding a 'let' binding after the 'def'"
-                ]
+        let New.Type sr _ _ = ty
+         in Just $
+                Err
+                    (Just Codes.defWithoutLet)
+                    ("Def without let at" <+> pretty sr)
+                    [ (sourceRegionToDiagnosePosition sr, This "Def without let here")
+                    ]
+                    [ Note "A 'def' must always be followed by a let binding"
+                    , Hint "Try adding a 'let' binding after the 'def'"
+                    ]
     getReport (DuplicateDeclaration a b) =
         Just $
             Err
@@ -51,15 +52,16 @@ instance ReportableError DesugarError where
     getReport (InfixWithoutDeclaration n _ l) =
         Just $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
     getReport (TuplePatternTooShort p) =
-        Just $
-            Err
-                (Just Codes.tuplePatternTooShort)
-                "Tuple patterns must have at least 2 elements"
-                [(sourceRegionToDiagnosePosition $ view sourceRegion p, This "This tuple pattern is too short")]
-                [ Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
-                , Note "This is likely an internal error, as these cases should be caught by the parser"
-                , Hint "If you want an empty tuple, use ()"
-                ]
+        let New.Pattern sr _ _ = p
+         in Just $
+                Err
+                    (Just Codes.tuplePatternTooShort)
+                    "Tuple patterns must have at least 2 elements"
+                    [(sourceRegionToDiagnosePosition sr, This "This tuple pattern is too short")]
+                    [ Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
+                    , Note "This is likely an internal error, as these cases should be caught by the parser"
+                    , Hint "If you want an empty tuple, use ()"
+                    ]
 
 {- | A partial declaration stores a desugared part of a declaration
 This allows merging of declarations with the same name
@@ -83,21 +85,21 @@ data PartialDeclaration
         -- | The *overall* region of the declaration, not just the body!
         SourceRegion
         DesugaredType
-        (Maybe (ValueDeclAnnotations Desugared))
+        (Maybe [New.Annotation SourceRegion Desugared])
     | JustLet
         (Located VarName)
         SourceRegion
         DesugaredExpr
-        (Maybe (ValueDeclAnnotations Desugared))
-    | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr (ValueDeclAnnotations Desugared)
-    | Immediate Name DesugaredDeclarationBody
+        (Maybe [New.Annotation SourceRegion Desugared])
+    | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr [New.Annotation SourceRegion Desugared]
+    | Immediate Name (New.DeclarationBody SourceRegion Desugared)
     deriving (Typeable, Show, Generic)
 
 partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _ _) = sr
 partialDeclarationSourceRegion (JustLet _ sr _ _) = sr
 partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
-partialDeclarationSourceRegion (Immediate _ (DeclarationBody (Located sr _))) = sr
+partialDeclarationSourceRegion (Immediate _ (New.DeclarationBody sr _)) = sr
 
 instance Pretty PartialDeclaration where
     pretty (JustDef n _ _ _) = "JustDef" <+> pretty n

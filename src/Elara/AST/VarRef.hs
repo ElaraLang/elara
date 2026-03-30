@@ -9,10 +9,8 @@ import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located (..))
-import Elara.AST.StripLocation (StripLocation (stripLocation))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
-import Elara.Data.Unwrap (Unwrap (unwrap))
 
 type data VarRefKind = LocatedVarRefKind | UnlocatedVarRefKind | IgnoreLocVarRefKind
 
@@ -49,6 +47,8 @@ type IgnoreLocVarRef n = VarRef' IgnoreLocVarRefKind n
 
 type UnlocatedVarRef n = VarRef' UnlocatedVarRefKind n
 
+deriving instance (Typeable n, Data n) => Data (UnlocatedVarRef n)
+
 varRefVal :: forall c n. _ => VarRef' c n -> VarRefImpl c n
 varRefVal (Global n) = mapVarRefImpl @c @(Qualified n) @n (view name) n
 varRefVal (Local n) = mapVarRefImpl @c @(Unique n) @n (view uniqueVal) n
@@ -75,24 +75,11 @@ instance (Pretty n, Pretty (VarRefImpl c (Qualified n)), Pretty (VarRefImpl c (U
     pretty (Global n) = pretty n
     pretty (Local n) = pretty n
 
-instance StripLocation (Located (VarRef a)) (VarRef a) where
-    stripLocation = unwrap
-
-instance StripLocation (Located (VarRef a)) (UnlocatedVarRef a) where
-    stripLocation = unwrap . fmap stripLocation
-
-instance StripLocation (VarRef a) (UnlocatedVarRef a) where
-    stripLocation v = case v of
-        Global q -> Global (stripLocation q)
-        Local u -> Local (stripLocation u)
-
 deriving instance (Show (VarRefImpl c (Qualified n)), Show (VarRefImpl c (Unique n))) => Show (VarRef' c n)
 
 deriving instance (Eq (VarRefImpl c (Qualified n)), Eq (VarRefImpl c (Unique n))) => Eq (VarRef' c n)
 
 deriving instance (Ord (VarRefImpl c (Qualified n)), Ord (VarRefImpl c (Unique n))) => Ord (VarRef' c n)
-
-deriving instance (Typeable c, Typeable n, Data (VarRefImpl c (Qualified n)), Data (VarRefImpl c (Unique n))) => Data (VarRef' c n)
 
 instance (Generic (VarRef' c n), ToJSON (VarRefImpl c (Unique n)), ToJSON (VarRefImpl c (Qualified n))) => ToJSON (VarRef' c n) where
     toJSON (Global n) = toJSON n

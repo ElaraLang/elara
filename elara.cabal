@@ -18,33 +18,27 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Elara
       Effectful.Error.Extra
       Effectful.State.Extra
-      Elara.AST.Desugared
-      Elara.AST.Frontend
-      Elara.AST.Generic
-      Elara.AST.Generic.Common
-      Elara.AST.Generic.Instances
-      Elara.AST.Generic.Instances.DataPlated
-      Elara.AST.Generic.Instances.Pretty
-      Elara.AST.Generic.Instances.Simple
-      Elara.AST.Generic.Instances.StripLocation
-      Elara.AST.Generic.Pattern
-      Elara.AST.Generic.Types
-      Elara.AST.Generic.Utils
-      Elara.AST.Introspection
-      Elara.AST.Kinded
+      Elara
+      Elara.AST.Extensions
+      Elara.AST.Instances
       Elara.AST.Module
       Elara.AST.Name
+      Elara.AST.Phase
+      Elara.AST.PhaseCoerce
+      Elara.AST.Phases.Desugared
+      Elara.AST.Phases.Frontend
+      Elara.AST.Phases.Frontend.Pretty
+      Elara.AST.Phases.Kinded
+      Elara.AST.Phases.MidKinded
+      Elara.AST.Phases.Renamed
+      Elara.AST.Phases.Shunted
+      Elara.AST.Phases.Typed
       Elara.AST.Pretty
       Elara.AST.Region
-      Elara.AST.Renamed
-      Elara.AST.Select
-      Elara.AST.Shunted
-      Elara.AST.StripLocation
-      Elara.AST.Typed
-      Elara.AST.Unlocated
+      Elara.AST.Traversal
+      Elara.AST.Types
       Elara.AST.VarRef
       Elara.ConstExpr
       Elara.Core
@@ -84,13 +78,13 @@ library
       Elara.JVM.Error
       Elara.JVM.IR
       Elara.JVM.Lower
-      Elara.JVM.Query
       Elara.JVM.Lower.ADT
       Elara.JVM.Lower.Expr
       Elara.JVM.Lower.Function
       Elara.JVM.Lower.Match
       Elara.JVM.Lower.Monad
       Elara.JVM.Lower.Util
+      Elara.JVM.Query
       Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer
@@ -115,6 +109,7 @@ library
       Elara.Parse.Stream
       Elara.Parse.Type
       Elara.Pipeline
+      Elara.Pretty.Common
       Elara.Prim
       Elara.Prim.Core
       Elara.Prim.Rename
@@ -301,7 +296,6 @@ test-suite elara-test
       Arbitrary.Type
       Boilerplate
       Common
-      CoreToCore
       HedgehogSyd
       Golden
       Infer
@@ -317,7 +311,6 @@ test-suite elara-test
       Parse.Patterns
       Region
       Shunt
-      ToANF
   hs-source-dirs:
       test
   default-extensions:

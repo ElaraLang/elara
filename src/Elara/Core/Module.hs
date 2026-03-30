@@ -1,5 +1,4 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
@@ -7,7 +6,6 @@ module Elara.Core.Module where
 
 import Data.Generics.Product
 import Elara.AST.Name (ModuleName, Qualified)
-import Elara.AST.Pretty (prettyBlockExpr)
 import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
@@ -16,6 +14,7 @@ import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
 import Elara.Data.TopologicalGraph (HasDependencies (..))
+import Elara.Pretty.Common (prettyCtorsInline)
 
 data CoreModule bind = CoreModule
     { name :: !ModuleName
@@ -29,14 +28,14 @@ instance HasDependencies (CoreModule CoreBind) where
     key = view (field @"name")
 
     dependencies m = do
-        m ^.. field @"declarations" % (gplate @(Qualified Text)) % field @"qualifier"
+        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
 
 instance HasDependencies (CoreModule (ANF.TopLevelBind Core.Var)) where
     type Key (CoreModule (ANF.TopLevelBind Core.Var)) = ModuleName
     key = view (field @"name")
 
     dependencies m = do
-        m ^.. field @"declarations" % (gplate @(Qualified Text)) % field @"qualifier"
+        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
 
 data CoreDeclaration bind
     = CoreValue bind
@@ -72,10 +71,12 @@ instance Pretty CoreTypeDecl where
 
 instance Pretty CoreTypeDeclBody where
     pretty (CoreTypeAlias t) = prettyTy t
-    pretty (CoreDataDecl tyCon dcs) = let ?contextFree = True in prettyBlockExpr (pretty <$> dcs)
+    pretty (CoreDataDecl (Core.TyCon _ Core.Prim) _) = "<primitive>"
+    pretty (CoreDataDecl _ []) = "{}"
+    pretty (CoreDataDecl _ dcs) = prettyCtorsInline (pretty <$> dcs)
 
 prettyTdef :: CoreTypeDecl -> Doc AnsiStyle
 prettyTdef (CoreTypeDecl name kind tvs body) =
-    keyword "type" <+> pretty name <+> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
+    keyword "type" <+> pretty name <> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
 
 makeFields ''CoreModule

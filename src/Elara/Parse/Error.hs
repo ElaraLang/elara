@@ -9,8 +9,9 @@ module Elara.Parse.Error where
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
-import Elara.AST.Frontend (FrontendExpr)
+import Elara.AST.Instances ()
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
+import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
@@ -39,7 +40,7 @@ parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
-parseErrorSources (InvalidConstantExpression a b) = [todo]
+parseErrorSources (InvalidConstantExpression _a _b) = [todo]
 parseErrorSources (ModuleNameMismatch _ declaredLoc) = [view sourceRegion declaredLoc]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where

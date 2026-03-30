@@ -10,7 +10,7 @@ import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
 
 import Elara.Data.Unique.Effect
-import Elara.Logging (StructuredDebug, debug, debugWith, traceFn)
+import Elara.Logging (StructuredDebug, logDebug, logDebugWith, traceFn)
 
 {- | Convert a Core expression to ANF
 For example:
@@ -40,7 +40,7 @@ type ToANF r =
 
 toANF :: ToANF r => Core.CoreExpr -> Eff r (ANF.Expr Core.Var)
 toANF expr =
-    debugWith ("toANF " <> pretty expr) $
+    logDebugWith ("toANF " <> pretty expr) $
         toANFRec expr (pure . ANF.CExpr)
 
 toANFCont :: ToANF r => Core.CoreExpr -> ContT (ANF.Expr Core.Var) (Eff r) (ANF.AExpr Core.Var)
@@ -62,7 +62,7 @@ toANF' (Core.Lam b e) cont = evalContT $ do
     -- convert the body to ANF, making sure to not lift it out too far
     e' <- lift $ toANFRec e (pure . ANF.CExpr)
     lift $ cont $ ANF.Lam b e'
-toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
+toANF' other k = logDebugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
     v <- lift $ Elara.Data.Unique.Effect.makeUnique "var"
 
     lift $ toANFRec other $ \e -> do
@@ -70,7 +70,7 @@ toANF' other k = debugWith ("toANF' " <> pretty other <> ":") $ evalContT $ do
         let id = Core.Id (Local v) exprType Nothing
 
         l' <- lift $ k $ ANF.Var id
-        lift $ debug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
+        lift $ logDebug $ "Creating let " <> pretty id <> " = " <> pretty e <> " in " <> pretty l'
         pure $ ANF.Let (NonRecursive (id, e)) l'
 
 toANFRec ::
@@ -92,10 +92,10 @@ toANFRec (Core.Match bind as cases) k = evalContT $ do
         pure (con, bs, e')
     k $ ANF.Match bind as cases'
 toANFRec (Core.Let (NonRecursive (b, e)) body) k = evalContT $ do
-    lift $ debug $ "ToANF-ing" <> pretty b
+    lift $ logDebug $ "ToANF-ing" <> pretty b
     e' <- toANFCont e
     body' <- lift $ toANFRec body k
-    lift $ debug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
+    lift $ logDebug $ "Let " <> pretty b <> " = " <> pretty e' <> " in " <> pretty body'
     pure $ ANF.Let (NonRecursive (b, ANF.AExpr e')) body'
 toANFRec (Core.Let (Recursive binds) body) _ = evalContT $ do
     bs' <- for binds $ \(bindVar, bindValue) -> do

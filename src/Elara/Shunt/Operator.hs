@@ -1,10 +1,10 @@
 module Elara.Shunt.Operator (OpTable, Associativity (..), Precedence, mkPrecedence, OpInfo (..), prettyOp, prettyOpTable) where
 
 import Data.Map qualified as Map
-import Elara.AST.Generic.Types (BinaryOperator (..), BinaryOperator' (..))
 import Elara.AST.Name
-import Elara.AST.Region (unlocated)
-import Elara.AST.Renamed
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
@@ -40,10 +40,9 @@ data Associativity
     | NonAssociative
     deriving (Show, Eq, Ord)
 
-prettyOp :: RenamedBinaryOperator -> Doc AnsiStyle
-prettyOp (MkBinaryOperator op') = Style.operator $ case op' ^. unlocated of
-    SymOp opName -> pretty (opName ^. unlocated)
-    Infixed vn -> "`" <> pretty vn <> "`"
+prettyOp :: New.BinaryOperator SourceRegion NewR.Renamed -> Doc AnsiStyle
+prettyOp (New.SymOp _ opRef) = Style.operator $ pretty opRef
+prettyOp (New.InfixedOp _ vn) = Style.operator $ "`" <> pretty vn <> "`"
 
 prettyOpTable :: OpTable -> Doc AnsiStyle
 prettyOpTable table = brackets (vsep (map prettyOpInfo (Map.toList table)))

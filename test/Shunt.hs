@@ -2,25 +2,24 @@
 module Shunt (spec) where
 
 import Boilerplate (loadShuntedExprIO, pipelineResShouldSucceed)
-import Elara.AST.Generic.Types (Expr (..), Expr' (..))
-import Elara.AST.Region (Located (..))
-import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr')
+import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
+import Elara.AST.Types qualified as New
 import Test.Syd
 
 -- | Extract the 'ShuntedExpr'' from a 'ShuntedExpr'
 unExpr :: ShuntedExpr -> ShuntedExpr'
-unExpr (Expr (Located _ e, _)) = e
+unExpr (New.Expr _ _ e') = e'
 
 -- | Check that an expression is a function call and return @(fn, arg)@ if so
 asFunctionCall :: ShuntedExpr -> Maybe (ShuntedExpr, ShuntedExpr)
 asFunctionCall e = case unExpr e of
-    FunctionCall fn arg -> Just (fn, arg)
+    New.EApp _ fn arg -> Just (fn, arg)
     _ -> Nothing
 
 -- | Check that an expression is an integer literal with a specific value
 isInt :: Integer -> ShuntedExpr -> Bool
 isInt n e = case unExpr e of
-    Int m -> n == m
+    New.EInt m -> n == m
     _ -> False
 
 spec :: Spec
@@ -38,7 +37,7 @@ spec = describe "Shunts operators correctly" $ do
                         isInt 1 one `shouldBe` True
                         -- The innermost should be a Var (the + operator)
                         case unExpr plusVar of
-                            Var _ -> pass
+                            New.EVar _ _ -> pass
                             other -> expectationFailure $ "Expected Var for operator, got: " ++ show other
                     Nothing -> expectationFailure "Expected inner FunctionCall for curried operator"
             Nothing -> expectationFailure "Expected FunctionCall at top level"

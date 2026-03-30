@@ -21,12 +21,12 @@ generalise ty = do
     let generalized = Forall (monotypeLoc ty) (toList uniVars) (EmptyConstraint $ monotypeLoc ty) ty
     pure generalized
 
-removeSkolems :: Monotype loc -> Monotype loc
+removeSkolems :: Generic loc => Monotype loc -> Monotype loc
 removeSkolems ty = do
     let ftvs = ftv ty
 
     transformOf
-        gplate
+        plate
         ( \case
             TypeVar loc tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar loc (UnificationVar tv')
             other -> other

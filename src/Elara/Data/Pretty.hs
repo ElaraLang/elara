@@ -17,9 +17,11 @@ module Elara.Data.Pretty (
     renderStrict,
     prettyToText,
     prettyToUnannotatedText,
+    prettyStringExpr,
 )
 where
 
+import Data.HashMap.Strict qualified as HM
 import Data.Map qualified as Map (toList)
 import Elara.Data.Pretty.Styles qualified as Styles
 import Elara.Width qualified as Width
@@ -31,8 +33,6 @@ import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
 import Prettyprinter.Render.Text qualified as Pretty.Text
 import Prelude hiding (group)
-
-import Data.HashMap.Strict qualified as HM
 
 indentDepth :: Int
 indentDepth = 4
@@ -201,6 +201,9 @@ instance (Pretty k, Pretty v) => Pretty (HashMap k v) where
 
 instance Pretty k => Pretty (HashSet k) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
+
+prettyStringExpr :: Text -> Doc AnsiStyle
+prettyStringExpr = dquotes . pretty
 
 -- Generic instances
 

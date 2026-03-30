@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Elara.Core where
 
 import Data.Data (Data)
@@ -6,6 +9,7 @@ import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
+import GHC.Generics (Rep)
 import Prelude hiding (Alt)
 
 data TypeVariable = TypeVariable
@@ -30,9 +34,9 @@ instance Ord Var where
     compare (TyVar _) (Id{}) = LT
     compare (Id{}) (TyVar _) = GT
 
-instance Hashable Var where
-    hashWithSalt s (TyVar t) = hashWithSalt s t
-    hashWithSalt s (Id v _ _) = hashWithSalt s v
+-- instance Hashable Var where
+--   hashWithSalt s (TyVar t) = hashWithSalt s t
+--   hashWithSalt s (Id v _ _) = hashWithSalt s v
 
 data Expr b
     = Var b
@@ -45,22 +49,7 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Typeable, Generic)
 
-instance Plated (Expr b) where
-    plate = traversalVL $ \f -> \case
-        Var b -> pure (Var b)
-        Lit l -> pure (Lit l)
-        App a b -> App <$> f a <*> f b
-        TyApp a b -> TyApp <$> f a <*> pure b
-        Lam b e -> Lam b <$> f e
-        TyLam t e -> TyLam t <$> f e
-        Let b e -> Let <$> f' b <*> f e
-          where
-            f' = \case
-                G.Recursive bs -> G.Recursive <$> traverse (traverse f) bs
-                G.NonRecursive (b, e) -> G.NonRecursive . (,) b <$> f e
-        Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
-          where
-            traverse3 f (a, b, c) = (,,) a b <$> f c
+instance Generic b => Plated (Expr b) (Expr b)
 
 type CoreExpr = Expr Var
 
@@ -121,13 +110,9 @@ data TyConDetails
     | Prim
     deriving (Show, Eq, Data, Ord, Generic)
 
-instance Plated Type where
-    plate = traversalVL $ \f -> \case
-        TyVarTy tv -> pure (TyVarTy tv)
-        FuncTy a b -> FuncTy <$> f a <*> f b
-        AppTy a b -> AppTy <$> f a <*> f b
-        ConTy n -> pure (ConTy n)
-        ForAllTy tv t -> ForAllTy tv <$> f t
+instance
+    forall x.
+    (Generic x, SafeGPlate (Rep x) Type, GPlate Type x) => Plated Type x
 
 -- | The arity of a function type
 typeArity :: Type -> Int
@@ -173,20 +158,20 @@ data Literal
     | Unit
     deriving (Show, Eq, Data, Generic, Ord)
 
-instance Hashable b => Hashable (Expr b)
+-- instance (Hashable b) => Hashable (Expr b)
 
-instance Hashable b => Hashable (Bind b)
+-- instance (Hashable b) => Hashable (Bind b)
 
 instance Hashable Literal
 
-instance Hashable AltCon
+-- instance Hashable AltCon
 
-instance Hashable DataCon
+-- instance Hashable DataCon
 
-instance Hashable Type
+-- instance Hashable Type
 
-instance Hashable TyCon
+-- instance Hashable TyCon
 
-instance Hashable TyConDetails
+-- instance Hashable TyConDetails
 
-instance Hashable TypeVariable
+-- instance Hashable TypeVariable

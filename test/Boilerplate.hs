@@ -23,7 +23,8 @@ module Boilerplate (
     -- * Pattern Matching Helpers
     ensureExpressionMatches,
     shouldMatch,
-) where
+)
+where
 
 import Common (diagShouldSucceed)
 import Control.Exception (throwIO)
@@ -36,15 +37,16 @@ import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local qualified as Eff
-import Elara.AST.Generic hiding (TypeVar)
-import Elara.AST.Module
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name hiding (Name)
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
-import Elara.AST.Select
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
-import Elara.Desugar
+import Elara.Desugar (desugarExpr)
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Lexer.Reader
@@ -82,10 +84,6 @@ import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Megaparsec (runParserT)
 import Text.Show
 
---------------------------------------------------------------------------------
--- Expression Loading
---------------------------------------------------------------------------------
-
 -- | Load and rename an expression from source text
 loadRenamedExpr' ::
     forall w.
@@ -94,7 +92,7 @@ loadRenamedExpr' ::
     , Error SomeReportableError :> w
     ) =>
     Text ->
-    Eff w (Expr Renamed)
+    Eff w NewR.RenamedExpr
 loadRenamedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
@@ -104,16 +102,16 @@ loadRenamedExpr' source = runQueryEffects $ do
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
     runReader Nothing $
-        runReader (Nothing @(Module Desugared)) $
+        runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
             evalState operatorRenameState $
                 runErrorOrReport @RenameError $
-                    renameExpr desugared
+                    renameExpr newDesugared
 
 -- | Load and rename an expression (IO version)
-loadRenamedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr Renamed))
+loadRenamedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewR.RenamedExpr)
 loadRenamedExprIO source = finaliseEffects $ loadRenamedExpr' source
 
 -- | Load, rename, and shunt an expression using the fake operator table
@@ -124,7 +122,7 @@ loadShuntedExpr' ::
     , Error SomeReportableError :> w
     ) =>
     Text ->
-    Eff w (Expr Shunted)
+    Eff w NewS.ShuntedExpr
 loadShuntedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     Elara.Error.addFile fp (toString source)
@@ -134,29 +132,25 @@ loadShuntedExpr' source = runQueryEffects $ do
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    desugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
-    renamed <-
+    newRenamed <-
         runReader Nothing $
-            runReader (Nothing @(Module Desugared)) $
+            runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
                 evalState operatorRenameState $
                     runErrorOrReport @RenameError $
-                        renameExpr desugared
+                        renameExpr newDesugared
 
     -- Shunt the expression using the fake operator table
     runErrorOrReport @ShuntError $
         fmap fst $
             Eff.runWriter @(Set ShuntWarning) $
                 let ?lookup = fakeOpLookup
-                 in fixExpr renamed
+                 in fixExpr newRenamed
 
 -- | Load and shunt an expression (IO version)
-loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe (Expr Shunted))
+loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewS.ShuntedExpr)
 loadShuntedExprIO source = finaliseEffects $ loadShuntedExpr' source
-
---------------------------------------------------------------------------------
--- Effect Runners
---------------------------------------------------------------------------------
 
 -- | Run effects needed for query-based tests
 runQueryEffects ::
@@ -173,7 +167,7 @@ runQueryEffects eff = do
         . Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar testRules)
         $ eff
 
--- | Finalize effects and collect diagnostics
+-- | Finalise effects and collect diagnostics
 finaliseEffects ::
     Eff [Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), IOE] a ->
     IO (Diagnostic (Doc AnsiStyle), Maybe a)
@@ -187,10 +181,6 @@ finaliseEffects eff = do
                 pure Nothing
             Right r -> pure (Just r)
     pure (diagnostics, r)
-
---------------------------------------------------------------------------------
--- Test Assertions
---------------------------------------------------------------------------------
 
 -- | Assert that a pipeline result succeeds (for sydtest)
 pipelineResShouldSucceed :: _ => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> IO b
@@ -215,10 +205,6 @@ evalPipelineRes m = do
     case x of
         Just ok -> pure ok
         Nothing -> failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
-
---------------------------------------------------------------------------------
--- Test Data
---------------------------------------------------------------------------------
 
 -- | Rename state with fake operators for testing
 operatorRenameState :: RenameState
@@ -264,11 +250,7 @@ fakeTypeEnvironment =
     intToIntToInt = Function testRegion intType (Function testRegion intType intType)
     intToIntToBool = Function testRegion intType (Function testRegion intType boolType)
 
---------------------------------------------------------------------------------
--- Internal Helpers
---------------------------------------------------------------------------------
-
--- | Minimal rules for testing - only handles errors
+-- | Minimal rules for testing that just errors out for any query
 testRules :: HasCallStack => Rock.Rules Elara.Query.Query
 testRules = \case
     _other -> error "No rule for this query in test environment"
@@ -294,10 +276,6 @@ mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
 mkFakeOp :: OpName -> VarRef OpName
 mkFakeOp name = Global (testLocated (qualifiedTest name))
 
---------------------------------------------------------------------------------
--- Pattern Matching Helpers (Template Haskell)
---------------------------------------------------------------------------------
-
 -- | Create a pattern matching assertion for hedgehog
 ensureExpressionMatches :: HasCallStack => Q Pat -> Q Exp
 ensureExpressionMatches qpat = do
@@ -317,6 +295,7 @@ newtype Shown = Shown String deriving (Lift)
 instance Show Shown where
     show (Shown s) = s
 
+-- | Strip qualifiers from a pattern for better error messages
 stripQualifiers :: Pat -> Pat
 stripQualifiers = transformOf gplate $ \case
     ConP name t ps -> ConP (stripQualifiersName name) t ps

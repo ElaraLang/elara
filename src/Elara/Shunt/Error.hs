@@ -1,9 +1,10 @@
 module Elara.Shunt.Error where
 
-import Elara.AST.Generic.Types
+import Elara.AST.Instances ()
 import Elara.AST.Name
-import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, sourceRegionToDiagnosePosition)
-import Elara.AST.Renamed (RenamedBinaryOperator, RenamedDeclarationBody)
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
@@ -12,17 +13,22 @@ import Elara.Error.Codes qualified as Codes
 import Elara.Shunt.Operator
 import Error.Diagnose
 
+-- | Helper to get the source region from a binary operator
+binaryOpLoc :: New.BinaryOperator SourceRegion p -> SourceRegion
+binaryOpLoc (New.SymOp loc _) = loc
+binaryOpLoc (New.InfixedOp loc _) = loc
+
 data ShuntError
-    = SamePrecedenceError !(RenamedBinaryOperator, OpInfo) !(RenamedBinaryOperator, OpInfo)
+    = SamePrecedenceError !(New.BinaryOperator SourceRegion NewR.Renamed, OpInfo) !(New.BinaryOperator SourceRegion NewR.Renamed, OpInfo)
     | UnknownOperator !Name !ModuleName
     | LocalOperatorInfoNotSupported !(Located (Unique Name))
     deriving (Show)
 
 instance Exception ShuntError
 instance ReportableError ShuntError where
-    report (SamePrecedenceError (op1@(MkBinaryOperator op1'), a1) (op2@(MkBinaryOperator op2'), a2)) = do
-        let op1Src = sourceRegionToDiagnosePosition $ op1' ^. sourceRegion
-        let op2Src = sourceRegionToDiagnosePosition $ op2' ^. sourceRegion
+    report (SamePrecedenceError (op1, a1) (op2, a2)) = do
+        let op1Src = sourceRegionToDiagnosePosition $ binaryOpLoc op1
+        let op2Src = sourceRegionToDiagnosePosition $ binaryOpLoc op2
         writeReport $
             Err
                 (Just Codes.samePrecedence)
@@ -57,18 +63,17 @@ instance ReportableError ShuntError where
                 ]
 
 data ShuntWarning
-    = UnknownPrecedence OpTable RenamedDeclarationBody
+    = UnknownPrecedence OpTable (Located Name)
     deriving (Show, Eq, Ord)
 
 instance ReportableError ShuntWarning where
-    report (UnknownPrecedence opTable lOperator) = do
-        let opSrc = sourceRegionToDiagnosePosition $ lOperator ^. declarationBodyName % sourceRegion
-
+    report (UnknownPrecedence opTable operatorName) = do
+        let opSrc = sourceRegionToDiagnosePosition $ operatorName ^. sourceRegion
         writeReport $
             Warn
                 (Just Codes.unknownPrecedence)
                 ( vsep
-                    [ "Unknown precedence/associativity for operator" <+> pretty (lOperator ^. declarationBodyName)
+                    [ "Unknown precedence/associativity for operator" <+> pretty operatorName
                         <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. "
                     , "Known Operators:" <+> prettyOpTable opTable
                     ]

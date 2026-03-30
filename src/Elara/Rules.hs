@@ -3,14 +3,13 @@
 
 module Elara.Rules where
 
-import Data.Generics.Product (field')
 import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static (runError, throwError, throwError_)
 import Effectful.State.Static.Local qualified as Local
-import Elara.AST.Module (Module (..))
+import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), unlocated)
+import Elara.AST.Region (Located (..), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
@@ -28,7 +27,7 @@ import Elara.ReadFile (ModulePathError (..), getInputFiles, runGetFileContentsQu
 import Elara.Rename (getRenamedModule)
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings (..), mainFile)
-import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery)
+import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
 import Elara.TypeInfer (runGetTypeAliasQuery, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedDeclarationQuery, runTypeCheckedExprQuery, runTypeOfQuery)
 import Rock qualified
@@ -53,8 +52,8 @@ rules compilerSettings key = case key of
                     case parsedOrError of
                         Left (cs, err) -> do
                             withFrozenCallStack $ throwError_ (SomeReportableError err)
-                        Right (Module (Located _ m)) ->
-                            if m ^. field' @"name" % unlocated == mn
+                        Right (Module _ m) ->
+                            if moduleName m ^. unlocated == mn
                                 then pure (Just mainPath)
                                 else pure Nothing
 
@@ -92,6 +91,7 @@ rules compilerSettings key = case key of
         Local.evalState primitiveRenameState $
             inject $
                 getRenamedModule mn
+    ShuntedModule mn -> inject $ runGetShuntedModuleQuery mn
     ModuleByName @ast mn -> query @QueryModuleByName @ast mn
     DeclarationByName @ast name -> query @QueryDeclarationByName @ast name
     RequiredDeclarationByName @ast name -> query @QueryRequiredDeclarationByName @ast name

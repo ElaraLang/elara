@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Types used by the type inference engine
@@ -34,7 +35,8 @@ module Elara.TypeInfer.Type (
     Substitution (..),
     Substitutable (..),
     substitution,
-) where
+)
+where
 
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
@@ -121,8 +123,6 @@ equalityWithContext loc left right leftUsage rightUsage ctx =
         , eqContext = ctx
         }
 
-instance Plated (Constraint loc)
-
 emptyLocation :: SourceRegion
 emptyLocation = generatedSourceRegion Nothing
 
@@ -178,6 +178,8 @@ data Monotype (loc :: Kind.Type)
     | -- | A function type τ₁ → τ₂
       Function loc (Monotype loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
+
+instance Generic loc => Plated (Monotype loc) (Monotype loc)
 
 monotypeLoc :: Monotype loc -> loc
 monotypeLoc (TypeVar loc _) = loc
@@ -264,6 +266,13 @@ instance Substitutable Monotype loc where
 
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
+
+instance Eq loc => Substitutable Type loc where
+    substitute tv t (Lifted m) = Lifted (substitute tv t m)
+    substitute tv t (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substitute tv t c) (substitute tv t m))
+
+    substituteAll s (Lifted m) = Lifted (substituteAll s m)
+    substituteAll s (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substituteAll s c) (substituteAll s m))
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Polytype poly) = pretty poly

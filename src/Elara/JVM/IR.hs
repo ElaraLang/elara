@@ -222,7 +222,7 @@ instance Pretty Method where
 instance Pretty Constructor where
     pretty (Constructor desc args body) =
         vsep
-            [ "constructor" <+> pretty (desc.returnDesc) <> tupled (map prettyArg args) <+> lbrace
+            [ "constructor" <+> pretty desc.returnDesc <> tupled (map prettyArg args) <+> lbrace
             , indent 4 $ vsep (map pretty body)
             , rbrace
             ]
@@ -253,9 +253,9 @@ instance Pretty Instruction where
         "if" <+> parens (pretty cond) <+> "goto" <+> pretty trueLabel <+> "else goto" <+> pretty falseLabel <> semi
     pretty (JumpIfPrimitiveBool cond trueLabel falseLabel) =
         "if_primitive" <+> parens (pretty cond) <+> "goto" <+> pretty trueLabel <+> "else goto" <+> pretty falseLabel <> semi
-    pretty (SetField fieldClass field fieldType val) =
+    pretty (SetField _fieldClass field _fieldType val) =
         "this." <> pretty field <+> "=" <+> pretty val <> semi
-    pretty (Super superName args) =
+    pretty (Super _superName args) =
         "super" <> tupled (map pretty args) <> semi
 
 instance Pretty Expr where

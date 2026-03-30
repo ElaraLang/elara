@@ -11,11 +11,11 @@ import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local (runWriter)
-import Elara.AST.Generic.Types (Expr (..), Expr' (..))
 import Elara.AST.Name (Qualified, TypeName)
+import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Shunted (ShuntedExpr, ShuntedExpr')
-import Elara.Data.Pretty (AnsiStyle, Doc)
+import Elara.AST.Types qualified as New
+import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
 import Elara.Error.Effect (evalDiagnosticWriter)
 import Elara.Prim (floatName, intName, mkPrimQual, stringName)
@@ -29,7 +29,7 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Infer.Unify qualified as Unify
 import Print (prettyToString)
-import Region (testLocated)
+import Region (testRegion)
 import Test.Syd
 import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
@@ -103,7 +103,7 @@ prop_literalTypesInvariants = property $ do
 additionalLiteralTests :: Spec
 additionalLiteralTests = describe "Additional Literal Type Inference" $ do
     it "infers Char literal correctly" $ do
-        let charExpr = mkExpr (Char 'a')
+        let charExpr = mkExpr New.EChar 'a'
         result <- runInfer @SourceRegion $ generateConstraints charExpr
         result `shouldSucceed` \((_, ty), _) -> do
             case ty of
@@ -111,7 +111,7 @@ additionalLiteralTests = describe "Additional Literal Type Inference" $ do
                 other -> expectationFailure $ "Expected TypeConstructor for Char, got: " ++ show other
 
     it "infers Unit literal correctly" $ do
-        let unitExpr = mkExpr Unit
+        let unitExpr = mkExpr' New.EUnit
         result <- runInfer @SourceRegion $ generateConstraints unitExpr
         result `shouldSucceed` \((_, ty), _) -> do
             case ty of
@@ -136,16 +136,20 @@ shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
 
 -- | Create a 'ShuntedExpr' representing an integer literal
 mkIntExpr :: Int -> ShuntedExpr
-mkIntExpr i = mkExpr (Int $ fromIntegral i)
+mkIntExpr i = mkExpr' (New.EInt $ fromIntegral i)
 
 -- | Create a 'ShuntedExpr' representing a float literal
 mkFloatExpr :: Double -> ShuntedExpr
-mkFloatExpr f = mkExpr (Float f)
+mkFloatExpr f = mkExpr' (New.EFloat f)
 
 -- | Create a 'ShuntedExpr' representing a string literal
 mkStringExpr :: Text -> ShuntedExpr
-mkStringExpr s = mkExpr (String s)
+mkStringExpr s = mkExpr' (New.EString s)
 
 -- | Helper to create a 'ShuntedExpr' from a 'ShuntedExpr''
-mkExpr :: ShuntedExpr' -> ShuntedExpr
-mkExpr expr = Expr (testLocated expr, Nothing)
+mkExpr' :: ShuntedExpr' -> ShuntedExpr
+mkExpr' = New.Expr testRegion Nothing
+
+-- | Helper to create a 'ShuntedExpr' from a constructor taking one argument
+mkExpr :: (a -> ShuntedExpr') -> a -> ShuntedExpr
+mkExpr f x = mkExpr' (f x)

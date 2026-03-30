@@ -3,53 +3,54 @@
 -- | AST agnostic implementations of rules
 module Elara.Rules.Generic where
 
-import Data.Generics.Product (HasField' (..))
-import Data.Generics.Wrapped (_Unwrapped)
 import Effectful
 import Effectful.Exception
-import Elara.AST.Generic.Types
-import Elara.AST.Introspection
-import Elara.AST.Module
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
-import Elara.AST.Region
-import Elara.AST.Select
+import Elara.AST.Phase (ElaraPhase (..))
+import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error.Internal
 import Elara.Query
 import Elara.Query.Effects
 import Elara.Query.Errors
-import Optics (filtered, has)
 import Rock qualified
+
+-- | Helper to get the name from a declaration (works for phases with Located Qualified binders)
+declarationName ::
+    ( ElaraPhase p
+    , TopValueBinder p loc ~ Located (Qualified VarName)
+    , TopTypeBinder p loc ~ Located (Qualified TypeName)
+    ) =>
+    New.Declaration loc p -> Name
+declarationName (New.Declaration _ (New.Declaration' _ body)) =
+    let New.DeclarationBody _ body' = body
+     in case body' of
+            New.ValueDeclaration n _ _ _ _ _ -> toName (n ^. unlocated)
+            New.TypeDeclarationBody n _ _ _ _ _ -> toName (n ^. unlocated)
+            New.DeclBodyExtension _ -> error "declarationName: unexpected extension"
 
 instance
     ( SupportsQuery QueryModuleByName ast
     , HasMinimumQueryEffects (QueryEffectsOf QueryDeclarationByName ast)
     , Rock.Rock Query :> QueryEffectsOf QueryDeclarationByName ast
     , Typeable ast
-    , RUnlocate ast
+    , ElaraPhase ast
+    , TopValueBinder ast SourceRegion ~ Located (Qualified VarName)
+    , TopTypeBinder ast SourceRegion ~ Located (Qualified TypeName)
     , Subset
         (QueryEffectsOf QueryModuleByName ast)
         (QueryEffectsOf QueryDeclarationByName ast)
-    , QueryReturnTypeOf QueryModuleByName ast ~ Module ast
-    , ToName (Select (ASTName ForValueDecl) ast)
-    , ToName (Select (ASTName ForType) ast)
-    , -- TODO these are stupid and we should find a way to remove them
-      CleanupLocated (Located (Select (ASTName ForType) ast)) ~ Located (Select (ASTName ForType) ast)
-    , CleanupLocated (Located (Select (ASTName ForValueDecl) ast)) ~ Located (Select (ASTName ForValueDecl) ast)
+    , QueryReturnTypeOf QueryModuleByName ast ~ NewModule.Module SourceRegion ast
     ) =>
     SupportsQuery QueryDeclarationByName ast
     where
     type QuerySpecificEffectsOf QueryDeclarationByName ast = StandardQueryError ast
     query (Qualified name modName) = do
-        mod :: Module ast <- Rock.fetch $ ModuleByName @ast modName
-
+        NewModule.Module _ m' <- Rock.fetch $ ModuleByName @ast modName
         let matchingBodies =
-                mod
-                    ^.. _Unwrapped @(Module ast) @(Module ast) @(ASTLocate ast (Module' ast))
-                    % rUnlocated @_ @ast @(Module' ast)
-                    % field' @"declarations"
-                    % each
-                    % filtered (\b -> b ^. (declarationName @ast) % (rUnlocated @_ @ast @Name) == name)
+                filter (\d -> declarationName d == name) m'.moduleDeclarations
 
         case matchingBodies of
             [] -> pure Nothing
@@ -58,76 +59,37 @@ instance
 
 instance
     ( HasMinimumQueryEffects (QueryEffectsOf QueryConstructorDeclaration ast)
-    , Select ConRef ast ~ Qualified TypeName
+    , ConstructorOccurrence ast SourceRegion ~ Located (Qualified TypeName)
+    , ConstructorBinder ast SourceRegion ~ Located (Qualified TypeName)
+    , ElaraPhase ast
     , Subset
         (QueryEffectsOf QueryModuleByName ast)
         (QueryEffectsOf QueryConstructorDeclaration ast)
-    , RUnlocate ast
     , SupportsQuery QueryModuleByName ast
     , Typeable ast
     , Rock.Rock Query :> QueryEffectsOf QueryConstructorDeclaration ast
-    , Pretty (Select ADTParam ast)
-    , Pretty (ASTLocate ast (Select (ASTName ForType) ast))
-    , Pretty (ASTLocate ast (Select ASTTypeVar ast))
-    , Pretty (ASTLocate ast (TypeDeclaration ast))
-    , Pretty (ASTLocate ast (Declaration' ast))
-    , CleanupLocated (Located (Select ConstructorName ast)) ~ Located (Select ConstructorName ast)
-    , Select ConstructorName ast ~ Qualified TypeName
-    , QueryReturnTypeOf QueryConstructorDeclaration ast ~ Declaration ast
+    , QueryReturnTypeOf QueryConstructorDeclaration ast ~ New.Declaration SourceRegion ast
+    , QueryReturnTypeOf QueryModuleByName ast ~ NewModule.Module SourceRegion ast
     ) =>
     SupportsQuery QueryConstructorDeclaration ast
     where
-    query qn@(Qualified typeName modName) = do
-        mod <- Rock.fetch $ ModuleByName @ast modName
+    query qn@(Located _ (Qualified typeName modName)) = do
+        NewModule.Module _ m' <- Rock.fetch $ ModuleByName @ast modName
         let matchingBodies =
-                mod
-                    ^.. _Unwrapped @(Module ast) @(Module ast) @(ASTLocate ast (Module' ast))
-                    % rUnlocated @_ @ast @(Module' ast)
-                    % field' @"declarations"
-                    % each
-                    % filtered
-                        ( has
-                            ( _Unwrapped
-                                % rUnlocated @_ @ast @(Declaration' ast)
-                                % field' @"body"
-                                % _Unwrapped
-                                % rUnlocated @_ @ast @(DeclarationBody' ast)
-                                % _Ctor' @"TypeDeclaration"
-                                % _3
-                                % rUnlocated @_ @ast @(TypeDeclaration ast)
-                                % _Ctor' @"ADT"
-                                % each
-                                % _1
-                                % rUnlocated @_ @ast @(Select ConstructorName ast)
-                                % filtered (== qn)
-                            )
-                        )
+                filter (hasConstructor qn) m'.moduleDeclarations
+
         case matchingBodies of
             [decl] -> pure decl
-            [] -> throwIO $ RequiredDeclNotFound (toName <$> qn)
+            [] -> throwIO $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
             _ -> throwIO $ DuplicateDeclAfterDesugar modName (toName typeName)
 
-instance
-    ( SupportsQuery QueryRequiredDeclarationByName ast
-    , Typeable ast
-    , RUnlocate ast
-    , IntrospectableAnnotations ast
-    ) =>
-    SupportsQuery DeclarationAnnotations ast
-    where
-    query qn = do
-        decl <- Rock.fetch $ RequiredDeclarationByName @ast qn
-        let body =
-                decl
-                    ^. _Unwrapped
-                    % rUnlocated @_ @ast @(Declaration' ast)
-                    % field' @"body"
-                    % _Unwrapped
-                    % rUnlocated @_ @ast @(DeclarationBody' ast)
-        case body of
-            Value{_valueAnnotations = annotations} -> pure (getAnnotations @ast @ForValueDecl (annotations ^. _Unwrapped))
-            ValueTypeDef _ _ annotations -> pure (getAnnotations @ast @ForValueDecl (annotations ^. _Unwrapped)) -- i am fairly sure this branch should never be hit
-            TypeDeclaration{typeAnnotations = annotations} -> pure (getAnnotations @ast @ForTypeDecl (annotations ^. field' @"typeDeclAnnotations"))
+-- | Check if a declaration contains a type declaration with the given constructor name
+hasConstructor :: (ElaraPhase ast, ConstructorBinder ast SourceRegion ~ Located (Qualified TypeName)) => Located (Qualified TypeName) -> New.Declaration SourceRegion ast -> Bool
+hasConstructor (Located _ qn) (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
+    case body' of
+        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
+            any (\(Located _ cn, _) -> cn == qn) ctors
+        _ -> False
 
 instance
     ( SupportsQuery QueryDeclarationByName ast
@@ -148,37 +110,37 @@ instance
             Nothing -> throwIO $ RequiredDeclNotFound name
 
 instance
+    ( SupportsQuery QueryRequiredDeclarationByName ast
+    , Typeable ast
+    , DeclBodyExtension ast SourceRegion ~ Void
+    ) =>
+    SupportsQuery DeclarationAnnotations ast
+    where
+    query qn = do
+        New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) <- Rock.fetch $ RequiredDeclarationByName @ast qn
+        case body' of
+            New.ValueDeclaration _ _ _ _ _ anns -> pure anns
+            New.TypeDeclarationBody _ _ _ _ _ anns -> pure anns
+            New.DeclBodyExtension v -> absurd v
+
+instance
     ( Typeable ast
-    , RUnlocate ast
     , SupportsQuery DeclarationAnnotations ast
     , SupportsQuery QueryConstructorDeclaration ast
-    , annName ~ Qualified TypeName
-    , Select AnnotationName ast ~ annName
-    , Select ConRef ast ~ annName
-    , Ord annName
-    , Hashable annName
-    , CleanupLocated (Located annName) ~ Located annName
-    , CleanupLocated
-        (ASTLocate' ast (Select (ASTName ForType) ast))
-        ~ CleanupLocated (ASTLocate' ast (Qualified TypeName))
+    , ElaraPhase ast
+    , ConstructorOccurrence ast SourceRegion ~ Located (Qualified TypeName)
+    , TypeOccurrence ast SourceRegion ~ Located (Qualified TypeName)
+    , TopTypeBinder ast SourceRegion ~ Located (Qualified TypeName)
     ) =>
     SupportsQuery DeclarationAnnotationsOfType ast
     where
     type QuerySpecificEffectsOf DeclarationAnnotationsOfType ast = StandardQueryError ast
-    query (declName@(Qualified name modName), annName) = do
+    query (Qualified name modName, annName) = do
         annotations <- Rock.fetch $ DeclarationAnnotations @ast (Qualified name modName)
 
-        fmap catMaybes $ for annotations $ \ann -> do
-            let name = ann ^. field' @"annotationName" % rUnlocated @_ @ast @(Select AnnotationName ast)
-            annotationDecl <- Rock.fetch (ConstructorDeclaration @ast name)
-
-            let body =
-                    annotationDecl
-                        ^. _Unwrapped
-                        % rUnlocated @_ @ast @(Declaration' ast)
-                        % field' @"body"
-                        % _Unwrapped
-                        % rUnlocated @_ @ast @(DeclarationBody' ast)
-            case body of
-                TypeDeclaration{_typeDeclarationName = tName} | tName ^. rUnlocated @_ @ast @annName == annName -> pure (Just ann)
+        fmap catMaybes $ for annotations $ \(New.Annotation annotName _args) -> do
+            annotDecl <- Rock.fetch (ConstructorDeclaration @ast annotName)
+            let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) = annotDecl
+            case body' of
+                New.TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (New.Annotation annotName _args))
                 _ -> pure Nothing

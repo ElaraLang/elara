@@ -1,16 +1,15 @@
 module Elara.Rename.Error where
 
 import Data.Generics.Product
-import Data.Generics.Wrapped (_Unwrapped)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Data.Text.Metrics (levenshtein)
-import Elara.AST.Desugared
-import Elara.AST.Generic.Instances ()
-import Elara.AST.Module
+import Elara.AST.Instances ()
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
+import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
-import Elara.AST.Select
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 
@@ -30,13 +29,13 @@ data RenameError
         -- | The name that was unknown
         (Located Name)
         -- | The module we're renaming that the unknown name was referenced in
-        (Maybe (Module Desugared))
+        (Maybe (NewModule.Module SourceRegion NewD.Desugared))
         -- | All known names
         (Map name (NonEmpty (VarRef name)))
     | AmbiguousVarName (Located Name) (NonEmpty (VarRef VarName))
     | AmbiguousTypeName (Located Name) (NonEmpty (VarRef TypeName))
-    | NativeDefUnsupported (Located DesugaredDeclaration')
-    | BlockEndsWithLet DesugaredExpr (Maybe DesugaredDeclarationBody)
+    | NativeDefUnsupported (Located (New.Declaration' SourceRegion NewD.Desugared))
+    | BlockEndsWithLet (New.Expr SourceRegion NewD.Desugared) (Maybe (New.DeclarationBody SourceRegion NewD.Desugared))
     | UnknownCurrentModule
     | RecursiveTypeAlias (Located (Qualified TypeName)) (Located (Qualified TypeName))
     | ModuleNameMismatch (Located ModuleName) (Located ModuleName)
@@ -109,7 +108,7 @@ instance ReportableError RenameError where
         let namesThatMightveBeenIntendedButNotImported =
                 case m of
                     Nothing -> []
-                    Just m -> case filter (not . isImportedBy m) allNames of
+                    Just m' -> case filter (not . isImportedBy m') allNames of
                         [] -> []
                         ns ->
                             [ Hint $
@@ -119,17 +118,17 @@ instance ReportableError RenameError where
                                     , "Try importing one of the modules."
                                     ]
                             ]
-        let prettyVarRef n@(Local{}) = pretty (toName $ view unlocated $ varRefVal n) <+> "(local variable)"
-            prettyVarRef (Global (Located _ (Qualified n m))) = pretty (toName n) <+> "(imported from" <+> pretty m <> ")"
+        let prettyVarRef n'@(Local{}) = pretty (toName $ view unlocated $ varRefVal n') <+> "(local variable)"
+            prettyVarRef (Global (Located _ (Qualified n' m'))) = pretty (toName n') <+> "(imported from" <+> pretty m' <> ")"
             possibleTypos = case m of
                 Nothing -> []
-                Just m ->
+                Just m' ->
                     let intendedText = nameText n
                         isTypo name = levenshtein (nameText name) intendedText < 3
                         typos =
                             Map.filterWithKey
                                 (\k _ -> isTypo k)
-                                (NonEmpty.filter (\x -> isImportedBy m (toName <$> x)) <$> namesMap)
+                                (NonEmpty.filter (\x -> isImportedBy m' (toName <$> x)) <$> namesMap)
                      in case join (Map.elems typos) of
                             [] -> []
                             ts ->
@@ -153,13 +152,13 @@ instance ReportableError RenameError where
                 "Native definitions are not supported"
                 []
                 []
-    report (BlockEndsWithLet l decl) =
+    report (BlockEndsWithLet (New.Expr loc _ _) decl) =
         writeReport $
             Err
                 Nothing
                 "Block ends with let"
-                ( (l ^. _Unwrapped % _1 % sourceRegion % to sourceRegionToDiagnosePosition, This "let occurs here")
-                    : maybe [] (\d -> [(d ^. _Unwrapped % sourceRegion % to sourceRegionToDiagnosePosition, Where "as part of this declaration")]) decl
+                ( (sourceRegionToDiagnosePosition loc, This "let occurs here")
+                    : maybe [] (\(New.DeclarationBody dloc _) -> [(sourceRegionToDiagnosePosition dloc, Where "as part of this declaration")]) decl
                 )
                 [ Note "Blocks cannot end with let statements, as they are not expressions."
                 , Hint "Perhaps you meant to use a let ... in construct?"
