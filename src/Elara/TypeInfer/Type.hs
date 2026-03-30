@@ -121,8 +121,6 @@ equalityWithContext loc left right leftUsage rightUsage ctx =
         , eqContext = ctx
         }
 
-instance Plated (Constraint loc)
-
 emptyLocation :: SourceRegion
 emptyLocation = generatedSourceRegion Nothing
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Elara.Core where
 
 import Data.Data (Data)
@@ -45,22 +47,7 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Typeable, Generic)
 
-instance Plated (Expr b) where
-    plate = traversalVL $ \f -> \case
-        Var b -> pure (Var b)
-        Lit l -> pure (Lit l)
-        App a b -> App <$> f a <*> f b
-        TyApp a b -> TyApp <$> f a <*> pure b
-        Lam b e -> Lam b <$> f e
-        TyLam t e -> TyLam t <$> f e
-        Let b e -> Let <$> f' b <*> f e
-          where
-            f' = \case
-                G.Recursive bs -> G.Recursive <$> traverse (traverse f) bs
-                G.NonRecursive (b, e) -> G.NonRecursive . (,) b <$> f e
-        Match e b as -> Match <$> f e <*> pure b <*> traverse (traverse3 f) as
-          where
-            traverse3 f (a, b, c) = (,,) a b <$> f c
+instance SafePlated (Expr b) => Plated (Expr b)
 
 type CoreExpr = Expr Var
 
@@ -121,13 +108,7 @@ data TyConDetails
     | Prim
     deriving (Show, Eq, Data, Ord, Generic)
 
-instance Plated Type where
-    plate = traversalVL $ \f -> \case
-        TyVarTy tv -> pure (TyVarTy tv)
-        FuncTy a b -> FuncTy <$> f a <*> f b
-        AppTy a b -> AppTy <$> f a <*> f b
-        ConTy n -> pure (ConTy n)
-        ForAllTy tv t -> ForAllTy tv <$> f t
+instance Plated Type
 
 -- | The arity of a function type
 typeArity :: Type -> Int

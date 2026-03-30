@@ -238,3 +238,10 @@ instance (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pretty (Ty
 
 instance (PrettyPhase p, PrettyPhaseLoc p loc) => Pretty (BinaryOperator loc p) where
     pretty = prettyBinaryOperator
+
+-- Plated instances
+instance (Generic (Expr loc p), GPlate (Expr loc p) (Expr loc p), SafePlated (Expr loc p)) => Plated (Expr loc p)
+
+instance (Generic (Pattern loc p), GPlate (Pattern loc p) (Pattern loc p), SafePlated (Pattern loc p)) => Plated (Pattern loc p)
+
+instance (Generic (Type loc p), GPlate (Type loc p) (Type loc p), SafePlated (Type loc p)) => Plated (Type loc p)
