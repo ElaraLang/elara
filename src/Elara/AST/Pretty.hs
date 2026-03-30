@@ -90,7 +90,7 @@ prettyExpr' = \case
     EInt i -> pretty i
     EFloat f -> pretty f
     EString s -> "\"" <> pretty s <> "\""
-    EChar c -> "'" <> pretty (show c) <> "'"
+    EChar c -> "'" <> pretty c <> "'"
     EUnit -> "()"
     EVar _ v -> prettyValueOccurrence @p @loc v
     ECon _ c -> prettyConstructorOccurrence @p @loc c
@@ -170,7 +170,7 @@ prettyPattern' = \case
     PInt i -> pretty i
     PFloat f -> pretty f
     PString s -> "\"" <> pretty s <> "\""
-    PChar c -> "'" <> pretty (show c) <> "'"
+    PChar c -> "'" <> pretty c <> "'"
     PUnit -> "()"
     PExtension ext -> prettyPatternExtension @p @loc ext
 
