@@ -263,7 +263,7 @@ parseExprWith ::
     [Elara.Lexer.Token.Lexeme] ->
     Eff '[StructuredDebug] (Either (WParseErrorBundle TokenStream ElaraParseError) a)
 parseExprWith parser fp source tokens = do
-    let tokenStream = TokenStream source tokens False
+    let tokenStream = TokenStream source tokens False 0
     first WParseErrorBundle <$> runParserT parser fp tokenStream
 
 -- | Create an OpLookup from the fake operator table

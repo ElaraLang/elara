@@ -79,4 +79,4 @@ getParsedModuleQuery mn = do
             pure $ Module loc (modInner{moduleName = Located (nameLoc ^. sourceRegion) mn})
 
 createTokenStream :: Text -> [Lexeme] -> TokenStream
-createTokenStream i tokens = TokenStream i tokens False
+createTokenStream i tokens = TokenStream i tokens False 0

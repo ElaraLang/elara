@@ -45,17 +45,14 @@ ignoringIndents p = do
     void $ optional (token_ TokenDedent) -- this can get leftover because p wouldn't have consumed it
     pure r
 
-{- | A parser that records the location information of the tokens it consumes.
-TODO this is not going to perform very well as it's O(n) in the total number of input tokens
-A future solution will be to store the number of tokens consumed in the 'TokenStream' and use that to calculate
-the spanning region, but that's effort at the moment.
--}
+-- | A parser that records the location information of the tokens it consumes.
 located :: Parser a -> Parser (Located a)
 located p = do
-    startTokens <- tokenStreamTokens . stateInput <$> getParserState
+    startState <- stateInput <$> getParserState
     val <- p
-    endStream <- tokenStreamTokens . stateInput <$> getParserState
-    let diff = length startTokens - length endStream
+    endState <- stateInput <$> getParserState
+    let startTokens = tokenStreamTokens startState
+    let diff = tokensConsumed endState - tokensConsumed startState
     let tokensDiff = take diff startTokens
     let tokensRegion = case tokensDiff of
             [] -> error "empty?"

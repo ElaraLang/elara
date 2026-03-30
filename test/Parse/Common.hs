@@ -64,7 +64,7 @@ lexAndParse ::
 lexAndParse parser source = do
     let fp = "<tests>"
     tokens <- evalEither $ runPureEff $ runError $ ignoreStructuredDebug $ readTokensWith (FileContents fp (toText source))
-    let tokenStream = TokenStream (toText source) tokens False
+    let tokenStream = TokenStream (toText source) tokens False 0
     pure $ parseWith parser fp (toText source) tokenStream
 
 shouldParsePattern :: MonadTest m => Text -> New.Pattern () Frontend -> m ()
