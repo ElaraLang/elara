@@ -1,15 +1,23 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | A teeny tiny interpreter for evaluating constant expressions, eg annotation values</span></span><span>
-</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html"><span class="hs-identifier">Elara.ConstExpr</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-3"></span><span>
-</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span>
-</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Generic.html"><span class="hs-identifier">Elara.AST.Generic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#AnnotationArg"><span class="hs-identifier">AnnotationArg</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr"><span class="hs-identifier">Expr</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr%27"><span class="hs-identifier">Expr'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier">RUnlocate</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-6"></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">data</span><span> </span><span id="ConstVal"><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-var">ConstVal</span></a></span></span><span>
-</span><span id="line-8"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="ConstInt"><span class="annot"><a href="Elara.ConstExpr.html#ConstInt"><span class="hs-identifier hs-var">ConstInt</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
-</span><span id="line-9"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstString"><span class="annot"><a href="Elara.ConstExpr.html#ConstString"><span class="hs-identifier hs-var">ConstString</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-10"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstChar"><span class="annot"><a href="Elara.ConstExpr.html#ConstChar"><span class="hs-identifier hs-var">ConstChar</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
-</span><span id="line-11"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstUnit"><span class="annot"><a href="Elara.ConstExpr.html#ConstUnit"><span class="hs-identifier hs-var">ConstUnit</span></a></span></span><span>
-</span><span id="line-12"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680187752"><span id="local-6989586621680187764"><span id="local-6989586621680187768"><span class="annot"><span class="annottext">Int -&gt; ConstVal -&gt; ShowS
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE AllowAmbiguousTypes #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html"><span class="hs-identifier">Elara.ConstExpr</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html"><span class="hs-identifier">Elara.AST.Extensions</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExtension"><span class="hs-identifier">InParensExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html#ListExprExtension"><span class="hs-identifier">ListExprExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExprExtension"><span class="hs-identifier">TupleExprExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phase.html"><span class="hs-identifier">Elara.AST.Phase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phase.html#ExpressionExtension"><span class="hs-identifier">ExpressionExtension</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html"><span class="hs-identifier">Elara.AST.Phases.Desugared</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier">Desugared</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredExpressionExtension"><span class="hs-identifier">DesugaredExpressionExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html"><span class="hs-identifier">Elara.AST.Phases.Frontend</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier">Frontend</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpressionExtension"><span class="hs-identifier">FrontendExpressionExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html"><span class="hs-identifier">Elara.AST.Phases.Renamed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#Renamed"><span class="hs-identifier">Renamed</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#RenamedExpressionExtension"><span class="hs-identifier">RenamedExpressionExtension</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Types.html"><span class="hs-identifier">Elara.AST.Types</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">New</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html"><span class="hs-identifier">Elara.Data.AtLeast2List</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier">AtLeast2List</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="ConstVal"><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-var">ConstVal</span></a></span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="ConstInt"><span class="annot"><a href="Elara.ConstExpr.html#ConstInt"><span class="hs-identifier hs-var">ConstInt</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstString"><span class="annot"><a href="Elara.ConstExpr.html#ConstString"><span class="hs-identifier hs-var">ConstString</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstChar"><span class="annot"><a href="Elara.ConstExpr.html#ConstChar"><span class="hs-identifier hs-var">ConstChar</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstUnit"><span class="annot"><a href="Elara.ConstExpr.html#ConstUnit"><span class="hs-identifier hs-var">ConstUnit</span></a></span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstList"><span class="annot"><a href="Elara.ConstExpr.html#ConstList"><span class="hs-identifier hs-var">ConstList</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConstTuple"><span class="annot"><a href="Elara.ConstExpr.html#ConstTuple"><span class="hs-identifier hs-var">ConstTuple</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680118446"><span id="local-6989586621680118465"><span id="local-6989586621680118469"><span class="annot"><span class="annottext">Int -&gt; ConstVal -&gt; ShowS
 [ConstVal] -&gt; ShowS
 ConstVal -&gt; String
 (Int -&gt; ConstVal -&gt; ShowS)
@@ -22,7 +30,7 @@ $cshow :: ConstVal -&gt; String
 show :: ConstVal -&gt; String
 $cshowList :: [ConstVal] -&gt; ShowS
 showList :: [ConstVal] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680187773"><span id="local-6989586621680187784"><span class="annot"><span class="annottext">ConstVal -&gt; ConstVal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680118474"><span id="local-6989586621680118490"><span class="annot"><span class="annottext">ConstVal -&gt; ConstVal -&gt; Bool
 (ConstVal -&gt; ConstVal -&gt; Bool)
 -&gt; (ConstVal -&gt; ConstVal -&gt; Bool) -&gt; Eq ConstVal
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -31,77 +39,200 @@ $c== :: ConstVal -&gt; ConstVal -&gt; Bool
 $c/= :: ConstVal -&gt; ConstVal -&gt; Bool
 /= :: ConstVal -&gt; ConstVal -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-13"></span><span>
-</span><span id="line-14"></span><span id="local-6989586621680187688"><span id="local-6989586621680187691"><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg"><span class="hs-identifier hs-type">interpretAnnotationArg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187688"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187688"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680187691"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span></span></span><span>
-</span><span id="line-15"></span><span id="interpretAnnotationArg"><span class="annot"><span class="annottext">interpretAnnotationArg :: forall {a} (ast :: a) (r :: [Effect]).
-RUnlocate ast =&gt;
-AnnotationArg ast -&gt; Eff r ConstVal
-</span><a href="Elara.ConstExpr.html#interpretAnnotationArg"><span class="hs-identifier hs-var hs-var">interpretAnnotationArg</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span id="local-6989586621680187792"><span class="annot"><span class="annottext">Expr ast
-</span><a href="#local-6989586621680187792"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr ast -&gt; Eff r ConstVal
-forall {a} (ast :: a) (r :: [Effect]).
-RUnlocate ast =&gt;
-Expr ast -&gt; Eff r ConstVal
-</span><a href="Elara.ConstExpr.html#interpretAnnotationArg%27"><span class="hs-identifier hs-var">interpretAnnotationArg'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr ast
-</span><a href="#local-6989586621680187792"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27"><span class="hs-identifier hs-type">interpretAnnotationArg'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680187698"><span class="annot"><a href="#local-6989586621680187698"><span class="hs-identifier hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680187699"><span class="annot"><a href="#local-6989586621680187699"><span class="hs-identifier hs-type">r</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#RUnlocate"><span class="hs-identifier hs-type">RUnlocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187698"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187698"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680187699"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span>
-</span><span id="line-18"></span><span id="interpretAnnotationArg%27"><span class="annot"><span class="annottext">interpretAnnotationArg' :: forall {a} (ast :: a) (r :: [Effect]).
-RUnlocate ast =&gt;
-Expr ast -&gt; Eff r ConstVal
-</span><a href="Elara.ConstExpr.html#interpretAnnotationArg%27"><span class="hs-identifier hs-var hs-var">interpretAnnotationArg'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680187801"><span class="annot"><span class="annottext">ASTLocate ast (Expr' ast)
-</span><a href="#local-6989586621680187801"><span class="hs-identifier hs-var">le</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Select (ASTType ForExpr) ast
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' ast -&gt; Eff r ConstVal
-forall {a} (ast :: a) (r :: [Effect]). Expr' ast -&gt; Eff r ConstVal
-</span><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var">interpretAnnotationArg''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ASTLocate ast (Expr' ast)
-</span><a href="#local-6989586621680187801"><span class="hs-identifier hs-var">le</span></a></span><span> </span><span class="annot"><span class="annottext">ASTLocate ast (Expr' ast)
--&gt; Optic' A_Getter NoIx (ASTLocate ast (Expr' ast)) (Expr' ast)
--&gt; Expr' ast
-forall k s (is :: IxList) a.
-Is k A_Getter =&gt;
-s -&gt; Optic' k is s a -&gt; a
-</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">forall ast (ast1 :: ast) a.
-(RUnlocate ast1, CleanupLocated (Located a) ~ Located a) =&gt;
-Getter (ASTLocate ast1 a) a
-</span><a href="Elara.AST.Generic.Types.html#rUnlocated"><span class="hs-identifier hs-var">rUnlocated</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680187698"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187698"><span class="hs-identifier hs-type">ast</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-19"></span><span>
-</span><span id="line-20"></span><span id="local-6989586621680187717"><span id="local-6989586621680187718"><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-type">interpretAnnotationArg''</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Generic.Types.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680187717"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680187718"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span></span></span><span>
-</span><span id="line-21"></span><span id="interpretAnnotationArg%27%27"><span class="annot"><span class="annottext">interpretAnnotationArg'' :: forall {a} (ast :: a) (r :: [Effect]). Expr' ast -&gt; Eff r ConstVal
-</span><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var hs-var">interpretAnnotationArg''</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Int"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span id="local-6989586621680187819"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680187819"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Eff r ConstVal
-forall a. a -&gt; Eff r a
-forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
-</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Eff r ConstVal) -&gt; ConstVal -&gt; Eff r ConstVal
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">class</span><span> </span><span id="InterpretConstExpr"><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-var">InterpretConstExpr</span></a></span></span><span> </span><span id="local-6989586621680118411"><span class="annot"><a href="#local-6989586621680118411"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-23"></span><span>    </span><span id="interpretExprExtension"><span class="annot"><a href="Elara.ConstExpr.html#interpretExprExtension"><span class="hs-identifier hs-type">interpretExprExtension</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680118410"><span class="annot"><a href="Elara.AST.Phase.html#ExpressionExtension"><span class="hs-identifier hs-type">ExpressionExtension</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118411"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118410"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-type">interpretExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680118389"><span class="annot"><a href="#local-6989586621680118389"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span id="local-6989586621680118391"><span class="annot"><a href="#local-6989586621680118391"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118389"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">New.Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118391"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118389"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span>
+</span><span id="line-26"></span><span id="interpretExpr"><span class="annot"><span class="annottext">interpretExpr :: forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var hs-var">interpretExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">New.Expr</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ExpressionMeta p loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118499"><span class="annot"><span class="annottext">Expr' loc p
+</span><a href="#local-6989586621680118499"><span class="hs-identifier hs-var">e'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' loc p -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr' loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' loc p
+</span><a href="#local-6989586621680118499"><span class="hs-identifier hs-var">e'</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-type">interpretExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680118399"><span class="annot"><a href="#local-6989586621680118399"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span id="local-6989586621680118400"><span class="annot"><a href="#local-6989586621680118400"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118399"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr%27"><span class="hs-identifier hs-type">New.Expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118400"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118399"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span>
+</span><span id="line-29"></span><span id="interpretExpr%27"><span class="annot"><span class="annottext">interpretExpr' :: forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr' loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var hs-var">interpretExpr'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EInt"><span class="hs-identifier hs-type">New.EInt</span></a></span><span> </span><span id="local-6989586621680118504"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680118504"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Maybe ConstVal
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Maybe ConstVal) -&gt; ConstVal -&gt; Maybe ConstVal
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; ConstVal
 </span><a href="Elara.ConstExpr.html#ConstInt"><span class="hs-identifier hs-var">ConstInt</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680187819"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-22"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var">interpretAnnotationArg''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#String"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span id="local-6989586621680187821"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680187821"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Eff r ConstVal
-forall a. a -&gt; Eff r a
-forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
-</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Eff r ConstVal) -&gt; ConstVal -&gt; Eff r ConstVal
+</span><a href="#local-6989586621680118504"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-30"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EString"><span class="hs-identifier hs-type">New.EString</span></a></span><span> </span><span id="local-6989586621680118506"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680118506"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Maybe ConstVal
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Maybe ConstVal) -&gt; ConstVal -&gt; Maybe ConstVal
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ConstVal
 </span><a href="Elara.ConstExpr.html#ConstString"><span class="hs-identifier hs-var">ConstString</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680187821"><span class="hs-identifier hs-var">s</span></a></span><span>
-</span><span id="line-23"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var">interpretAnnotationArg''</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Generic.Types.html#Char"><span class="hs-identifier hs-type">Char</span></a></span><span> </span><span id="local-6989586621680187823"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680187823"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Eff r ConstVal
-forall a. a -&gt; Eff r a
-forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
-</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Eff r ConstVal) -&gt; ConstVal -&gt; Eff r ConstVal
+</span><a href="#local-6989586621680118506"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EChar"><span class="hs-identifier hs-type">New.EChar</span></a></span><span> </span><span id="local-6989586621680118508"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680118508"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Maybe ConstVal
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(ConstVal -&gt; Maybe ConstVal) -&gt; ConstVal -&gt; Maybe ConstVal
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ConstVal
 </span><a href="Elara.ConstExpr.html#ConstChar"><span class="hs-identifier hs-var">ConstChar</span></a></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680187823"><span class="hs-identifier hs-var">c</span></a></span><span>
-</span><span id="line-24"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var">interpretAnnotationArg''</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' ast
-</span><a href="Elara.AST.Generic.Types.html#Unit"><span class="hs-identifier hs-var">Unit</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Eff r ConstVal
-forall a. a -&gt; Eff r a
-forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
-</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">ConstVal
+</span><a href="#local-6989586621680118508"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' loc p
+</span><a href="Elara.AST.Types.html#EUnit"><span class="hs-identifier hs-var">New.EUnit</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConstVal -&gt; Maybe ConstVal
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ConstVal
 </span><a href="Elara.ConstExpr.html#ConstUnit"><span class="hs-identifier hs-var">ConstUnit</span></a></span><span>
-</span><span id="line-25"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretAnnotationArg%27%27"><span class="hs-identifier hs-var">interpretAnnotationArg''</span></a></span><span> </span><span id="local-6989586621680187825"><span class="annot"><span class="annottext">Expr' ast
-</span><a href="#local-6989586621680187825"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Eff r ConstVal
-forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
-</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><span class="hs-string">&quot;Non-constant expression in annotation: &quot;</span></span><span> </span><span class="hs-comment">-- TODO</span><span>
-</span><span id="line-26"></span></pre></body></html>
+</span><span id="line-33"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EExtension"><span class="hs-identifier hs-type">New.EExtension</span></a></span><span> </span><span id="local-6989586621680118511"><span class="annot"><span class="annottext">ExpressionExtension p loc
+</span><a href="#local-6989586621680118511"><span class="hs-identifier hs-var">ext</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (p :: k) loc.
+InterpretConstExpr p =&gt;
+ExpressionExtension p loc -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+ExpressionExtension p loc -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExprExtension"><span class="hs-identifier hs-var">interpretExprExtension</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680118399"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680118400"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ExpressionExtension p loc
+</span><a href="#local-6989586621680118511"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretExpr%27"><span class="hs-identifier hs-var">interpretExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' loc p
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ConstVal
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.ConstExpr.html#interpretNewAnnotationArg"><span class="hs-identifier hs-type">interpretNewAnnotationArg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680118414"><span class="annot"><a href="#local-6989586621680118414"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span id="local-6989586621680118415"><span class="annot"><a href="#local-6989586621680118415"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118414"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">New.AnnotationArg</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118415"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680118414"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#ConstVal"><span class="hs-identifier hs-type">ConstVal</span></a></span><span>
+</span><span id="line-37"></span><span id="interpretNewAnnotationArg"><span class="annot"><span class="annottext">interpretNewAnnotationArg :: forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+AnnotationArg loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretNewAnnotationArg"><span class="hs-identifier hs-var hs-var">interpretNewAnnotationArg</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">New.AnnotationArg</span></a></span><span> </span><span id="local-6989586621680118516"><span class="annot"><span class="annottext">Expr loc p
+</span><a href="#local-6989586621680118516"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr loc p -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc p
+</span><a href="#local-6989586621680118516"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>    </span><span id="local-6989586621680118533"><span class="annot"><span class="annottext">interpretExprExtension :: forall loc. ExpressionExtension Frontend loc -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExprExtension"><span class="hs-identifier hs-var hs-var hs-var">interpretExprExtension</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendInParens"><span class="hs-identifier hs-type">FrontendInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680118536"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680118536"><span class="hs-identifier hs-var">inner</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680118536"><span class="hs-identifier hs-var">inner</span></a></span><span>
+</span><span id="line-42"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendList"><span class="hs-identifier hs-type">FrontendList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680118539"><span class="annot"><span class="annottext">[Expr loc Frontend]
+</span><a href="#local-6989586621680118539"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ConstVal] -&gt; ConstVal
+</span><a href="Elara.ConstExpr.html#ConstList"><span class="hs-identifier hs-var">ConstList</span></a></span><span> </span><span class="annot"><span class="annottext">([ConstVal] -&gt; ConstVal) -&gt; Maybe [ConstVal] -&gt; Maybe ConstVal
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr loc Frontend -&gt; Maybe ConstVal)
+-&gt; [Expr loc Frontend] -&gt; Maybe [ConstVal]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; [a] -&gt; f [b]
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr loc Frontend]
+</span><a href="#local-6989586621680118539"><span class="hs-identifier hs-var">elems</span></a></span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendTuple"><span class="hs-identifier hs-type">FrontendTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680118544"><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend)
+</span><a href="#local-6989586621680118544"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">AtLeast2List ConstVal -&gt; ConstVal
+</span><a href="Elara.ConstExpr.html#ConstTuple"><span class="hs-identifier hs-var">ConstTuple</span></a></span><span> </span><span class="annot"><span class="annottext">(AtLeast2List ConstVal -&gt; ConstVal)
+-&gt; Maybe (AtLeast2List ConstVal) -&gt; Maybe ConstVal
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr loc Frontend -&gt; Maybe ConstVal)
+-&gt; AtLeast2List (Expr loc Frontend)
+-&gt; Maybe (AtLeast2List ConstVal)
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; AtLeast2List a -&gt; f (AtLeast2List b)
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend)
+</span><a href="#local-6989586621680118544"><span class="hs-identifier hs-var">elems</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><span class="annottext">ExpressionExtension Frontend loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe ConstVal
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621680118556"><span class="annot"><span class="annottext">interpretExprExtension :: forall loc. ExpressionExtension Desugared loc -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExprExtension"><span class="hs-identifier hs-var hs-var hs-var">interpretExprExtension</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-48"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredInParens"><span class="hs-identifier hs-type">DesugaredInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680118558"><span class="annot"><span class="annottext">Expr loc Desugared
+</span><a href="#local-6989586621680118558"><span class="hs-identifier hs-var">inner</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Desugared -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Desugared
+</span><a href="#local-6989586621680118558"><span class="hs-identifier hs-var">inner</span></a></span><span>
+</span><span id="line-49"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredList"><span class="hs-identifier hs-type">DesugaredList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680118560"><span class="annot"><span class="annottext">[Expr loc Desugared]
+</span><a href="#local-6989586621680118560"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ConstVal] -&gt; ConstVal
+</span><a href="Elara.ConstExpr.html#ConstList"><span class="hs-identifier hs-var">ConstList</span></a></span><span> </span><span class="annot"><span class="annottext">([ConstVal] -&gt; ConstVal) -&gt; Maybe [ConstVal] -&gt; Maybe ConstVal
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr loc Desugared -&gt; Maybe ConstVal)
+-&gt; [Expr loc Desugared] -&gt; Maybe [ConstVal]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; [a] -&gt; f [b]
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Desugared -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr loc Desugared]
+</span><a href="#local-6989586621680118560"><span class="hs-identifier hs-var">elems</span></a></span><span>
+</span><span id="line-50"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredTuple"><span class="hs-identifier hs-type">DesugaredTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680118562"><span class="annot"><span class="annottext">AtLeast2List (Expr loc Desugared)
+</span><a href="#local-6989586621680118562"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">AtLeast2List ConstVal -&gt; ConstVal
+</span><a href="Elara.ConstExpr.html#ConstTuple"><span class="hs-identifier hs-var">ConstTuple</span></a></span><span> </span><span class="annot"><span class="annottext">(AtLeast2List ConstVal -&gt; ConstVal)
+-&gt; Maybe (AtLeast2List ConstVal) -&gt; Maybe ConstVal
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr loc Desugared -&gt; Maybe ConstVal)
+-&gt; AtLeast2List (Expr loc Desugared)
+-&gt; Maybe (AtLeast2List ConstVal)
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; AtLeast2List a -&gt; f (AtLeast2List b)
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Desugared -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AtLeast2List (Expr loc Desugared)
+</span><a href="#local-6989586621680118562"><span class="hs-identifier hs-var">elems</span></a></span><span>
+</span><span id="line-51"></span><span>        </span><span class="annot"><span class="annottext">ExpressionExtension Desugared loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe ConstVal
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.ConstExpr.html#InterpretConstExpr"><span class="hs-identifier hs-type">InterpretConstExpr</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#Renamed"><span class="hs-identifier hs-type">Renamed</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-54"></span><span>    </span><span id="local-6989586621680118566"><span class="annot"><span class="annottext">interpretExprExtension :: forall loc. ExpressionExtension Renamed loc -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExprExtension"><span class="hs-identifier hs-var hs-var hs-var">interpretExprExtension</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#RenamedInParens"><span class="hs-identifier hs-type">RenamedInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680118568"><span class="annot"><span class="annottext">Expr loc Renamed
+</span><a href="#local-6989586621680118568"><span class="hs-identifier hs-var">inner</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Renamed -&gt; Maybe ConstVal
+forall {k} (p :: k) loc.
+InterpretConstExpr p =&gt;
+Expr loc p -&gt; Maybe ConstVal
+</span><a href="Elara.ConstExpr.html#interpretExpr"><span class="hs-identifier hs-var">interpretExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Renamed
+</span><a href="#local-6989586621680118568"><span class="hs-identifier hs-var">inner</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#RenamedBinaryOperator"><span class="hs-identifier hs-type">RenamedBinaryOperator</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe ConstVal
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-57"></span></pre></body></html>

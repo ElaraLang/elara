@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html"><span class="hs-identifier">Elara.AST.Extensions</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Types.html"><span class="hs-identifier">Elara.AST.Types</span></a></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html"><span class="hs-identifier">Elara.Data.AtLeast2List</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier">AtLeast2List</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="annot"><span class="hs-comment">-- | Binary operator expression extension (Frontend, Desugared, Renamed)</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">data</span><span> </span><span id="BinaryOperatorExtension"><span class="annot"><a href="Elara.AST.Extensions.html#BinaryOperatorExtension"><span class="hs-identifier hs-var">BinaryOperatorExtension</span></a></span></span><span> </span><span id="local-6989586621680112768"><span class="annot"><a href="#local-6989586621680112768"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112769"><span class="annot"><a href="#local-6989586621680112769"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-8"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="BinaryOperatorExpression"><span class="annot"><a href="Elara.AST.Extensions.html#BinaryOperatorExpression"><span class="hs-identifier hs-var">BinaryOperatorExpression</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#BinaryOperator"><span class="hs-identifier hs-type">BinaryOperator</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112768"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112769"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112768"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112769"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112768"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112769"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112774"><span id="local-6989586621680112776"><span class="annot"><span class="annottext">(forall x.
+ BinaryOperatorExtension loc p
+ -&gt; Rep (BinaryOperatorExtension loc p) x)
+-&gt; (forall x.
+    Rep (BinaryOperatorExtension loc p) x
+    -&gt; BinaryOperatorExtension loc p)
+-&gt; Generic (BinaryOperatorExtension loc p)
+forall x.
+Rep (BinaryOperatorExtension loc p) x
+-&gt; BinaryOperatorExtension loc p
+forall x.
+BinaryOperatorExtension loc p
+-&gt; Rep (BinaryOperatorExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (BinaryOperatorExtension loc p) x
+-&gt; BinaryOperatorExtension loc p
+forall loc k (p :: k) x.
+BinaryOperatorExtension loc p
+-&gt; Rep (BinaryOperatorExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+BinaryOperatorExtension loc p
+-&gt; Rep (BinaryOperatorExtension loc p) x
+from :: forall x.
+BinaryOperatorExtension loc p
+-&gt; Rep (BinaryOperatorExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (BinaryOperatorExtension loc p) x
+-&gt; BinaryOperatorExtension loc p
+to :: forall x.
+Rep (BinaryOperatorExtension loc p) x
+-&gt; BinaryOperatorExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="annot"><span class="hs-comment">-- | Parenthesized expression extension (Frontend, Desugared, Renamed)</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">newtype</span><span> </span><span id="InParensExtension"><span class="annot"><a href="Elara.AST.Extensions.html#InParensExtension"><span class="hs-identifier hs-var">InParensExtension</span></a></span></span><span> </span><span id="local-6989586621680112781"><span class="annot"><a href="#local-6989586621680112781"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112782"><span class="annot"><a href="#local-6989586621680112782"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="InParensExpression"><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-var">InParensExpression</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112781"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112782"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112785"><span id="local-6989586621680112787"><span class="annot"><span class="annottext">(forall x.
+ InParensExtension loc p -&gt; Rep (InParensExtension loc p) x)
+-&gt; (forall x.
+    Rep (InParensExtension loc p) x -&gt; InParensExtension loc p)
+-&gt; Generic (InParensExtension loc p)
+forall x.
+Rep (InParensExtension loc p) x -&gt; InParensExtension loc p
+forall x.
+InParensExtension loc p -&gt; Rep (InParensExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (InParensExtension loc p) x -&gt; InParensExtension loc p
+forall loc k (p :: k) x.
+InParensExtension loc p -&gt; Rep (InParensExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+InParensExtension loc p -&gt; Rep (InParensExtension loc p) x
+from :: forall x.
+InParensExtension loc p -&gt; Rep (InParensExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (InParensExtension loc p) x -&gt; InParensExtension loc p
+to :: forall x.
+Rep (InParensExtension loc p) x -&gt; InParensExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><span class="hs-comment">-- | List literal expression extension (Frontend, Desugared)</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">newtype</span><span> </span><span id="ListExprExtension"><span class="annot"><a href="Elara.AST.Extensions.html#ListExprExtension"><span class="hs-identifier hs-var">ListExprExtension</span></a></span></span><span> </span><span id="local-6989586621680112789"><span class="annot"><a href="#local-6989586621680112789"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112790"><span class="annot"><a href="#local-6989586621680112790"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ListExpression"><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-var">ListExpression</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112789"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112790"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112793"><span id="local-6989586621680112795"><span class="annot"><span class="annottext">(forall x.
+ ListExprExtension loc p -&gt; Rep (ListExprExtension loc p) x)
+-&gt; (forall x.
+    Rep (ListExprExtension loc p) x -&gt; ListExprExtension loc p)
+-&gt; Generic (ListExprExtension loc p)
+forall x.
+Rep (ListExprExtension loc p) x -&gt; ListExprExtension loc p
+forall x.
+ListExprExtension loc p -&gt; Rep (ListExprExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (ListExprExtension loc p) x -&gt; ListExprExtension loc p
+forall loc k (p :: k) x.
+ListExprExtension loc p -&gt; Rep (ListExprExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+ListExprExtension loc p -&gt; Rep (ListExprExtension loc p) x
+from :: forall x.
+ListExprExtension loc p -&gt; Rep (ListExprExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (ListExprExtension loc p) x -&gt; ListExprExtension loc p
+to :: forall x.
+Rep (ListExprExtension loc p) x -&gt; ListExprExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="annot"><span class="hs-comment">-- | Tuple literal expression extension (Frontend, Desugared)</span></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">newtype</span><span> </span><span id="TupleExprExtension"><span class="annot"><a href="Elara.AST.Extensions.html#TupleExprExtension"><span class="hs-identifier hs-var">TupleExprExtension</span></a></span></span><span> </span><span id="local-6989586621680112797"><span class="annot"><a href="#local-6989586621680112797"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112798"><span class="annot"><a href="#local-6989586621680112798"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TupleExpression"><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-var">TupleExpression</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112797"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112798"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112801"><span id="local-6989586621680112803"><span class="annot"><span class="annottext">(forall x.
+ TupleExprExtension loc p -&gt; Rep (TupleExprExtension loc p) x)
+-&gt; (forall x.
+    Rep (TupleExprExtension loc p) x -&gt; TupleExprExtension loc p)
+-&gt; Generic (TupleExprExtension loc p)
+forall x.
+Rep (TupleExprExtension loc p) x -&gt; TupleExprExtension loc p
+forall x.
+TupleExprExtension loc p -&gt; Rep (TupleExprExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (TupleExprExtension loc p) x -&gt; TupleExprExtension loc p
+forall loc k (p :: k) x.
+TupleExprExtension loc p -&gt; Rep (TupleExprExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+TupleExprExtension loc p -&gt; Rep (TupleExprExtension loc p) x
+from :: forall x.
+TupleExprExtension loc p -&gt; Rep (TupleExprExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (TupleExprExtension loc p) x -&gt; TupleExprExtension loc p
+to :: forall x.
+Rep (TupleExprExtension loc p) x -&gt; TupleExprExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><span class="hs-comment">-- | List/tuple/cons pattern extensions (Frontend, Desugared)</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">data</span><span> </span><span id="ListTuplePatternExtension"><span class="annot"><a href="Elara.AST.Extensions.html#ListTuplePatternExtension"><span class="hs-identifier hs-var">ListTuplePatternExtension</span></a></span></span><span> </span><span id="local-6989586621680112805"><span class="annot"><a href="#local-6989586621680112805"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112806"><span class="annot"><a href="#local-6989586621680112806"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="ListPattern"><span class="annot"><a href="Elara.AST.Extensions.html#ListPattern"><span class="hs-identifier hs-var">ListPattern</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112805"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112806"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="TuplePattern"><span class="annot"><a href="Elara.AST.Extensions.html#TuplePattern"><span class="hs-identifier hs-var">TuplePattern</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112805"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112806"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ConsPattern"><span class="annot"><a href="Elara.AST.Extensions.html#ConsPattern"><span class="hs-identifier hs-var">ConsPattern</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112805"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112806"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112805"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112806"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112812"><span id="local-6989586621680112814"><span class="annot"><span class="annottext">(forall x.
+ ListTuplePatternExtension loc p
+ -&gt; Rep (ListTuplePatternExtension loc p) x)
+-&gt; (forall x.
+    Rep (ListTuplePatternExtension loc p) x
+    -&gt; ListTuplePatternExtension loc p)
+-&gt; Generic (ListTuplePatternExtension loc p)
+forall x.
+Rep (ListTuplePatternExtension loc p) x
+-&gt; ListTuplePatternExtension loc p
+forall x.
+ListTuplePatternExtension loc p
+-&gt; Rep (ListTuplePatternExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (ListTuplePatternExtension loc p) x
+-&gt; ListTuplePatternExtension loc p
+forall loc k (p :: k) x.
+ListTuplePatternExtension loc p
+-&gt; Rep (ListTuplePatternExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+ListTuplePatternExtension loc p
+-&gt; Rep (ListTuplePatternExtension loc p) x
+from :: forall x.
+ListTuplePatternExtension loc p
+-&gt; Rep (ListTuplePatternExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (ListTuplePatternExtension loc p) x
+-&gt; ListTuplePatternExtension loc p
+to :: forall x.
+Rep (ListTuplePatternExtension loc p) x
+-&gt; ListTuplePatternExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><span class="hs-comment">-- | Tuple type extension (Frontend, Desugared)</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">newtype</span><span> </span><span id="TupleTypeExtension"><span class="annot"><a href="Elara.AST.Extensions.html#TupleTypeExtension"><span class="hs-identifier hs-var">TupleTypeExtension</span></a></span></span><span> </span><span id="local-6989586621680112816"><span class="annot"><a href="#local-6989586621680112816"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680112817"><span class="annot"><a href="#local-6989586621680112817"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TupleType"><span class="annot"><a href="Elara.AST.Extensions.html#TupleType"><span class="hs-identifier hs-var">TupleType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.AtLeast2List.html#AtLeast2List"><span class="hs-identifier hs-type">AtLeast2List</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112816"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680112817"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680112821"><span id="local-6989586621680112823"><span class="annot"><span class="annottext">(forall x.
+ TupleTypeExtension loc p -&gt; Rep (TupleTypeExtension loc p) x)
+-&gt; (forall x.
+    Rep (TupleTypeExtension loc p) x -&gt; TupleTypeExtension loc p)
+-&gt; Generic (TupleTypeExtension loc p)
+forall x.
+Rep (TupleTypeExtension loc p) x -&gt; TupleTypeExtension loc p
+forall x.
+TupleTypeExtension loc p -&gt; Rep (TupleTypeExtension loc p) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall loc k (p :: k) x.
+Rep (TupleTypeExtension loc p) x -&gt; TupleTypeExtension loc p
+forall loc k (p :: k) x.
+TupleTypeExtension loc p -&gt; Rep (TupleTypeExtension loc p) x
+$cfrom :: forall loc k (p :: k) x.
+TupleTypeExtension loc p -&gt; Rep (TupleTypeExtension loc p) x
+from :: forall x.
+TupleTypeExtension loc p -&gt; Rep (TupleTypeExtension loc p) x
+$cto :: forall loc k (p :: k) x.
+Rep (TupleTypeExtension loc p) x -&gt; TupleTypeExtension loc p
+to :: forall x.
+Rep (TupleTypeExtension loc p) x -&gt; TupleTypeExtension loc p
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span></pre></body></html>
