@@ -11,8 +11,7 @@ import Elara.Core.Generic (Bind (..))
 import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
-import Elara.Pretty.Common (prettyMatchAlt, prettyMatchAlts)
-import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, parens, vsep, (<+>))
+import Elara.Pretty.Common (prettyMatchAlts)
 import Prettyprinter.Render.Terminal qualified as Style
 import Prelude hiding (Alt, group)
 
@@ -111,8 +110,8 @@ prettyAlt :: (PrettyVar a, PrettyVar v) => (AltCon, [a], Expr v) -> Doc AnsiStyl
 prettyAlt (con, vars, body) =
     pretty con
         <> (if null vars then mempty else " " <> hsep (prettyVarArg <$> vars))
-        <+> "->"
-        <+> prettyExpr body
+            <+> "->"
+            <+> prettyExpr body
 
 instance Pretty Literal where
     pretty = \case

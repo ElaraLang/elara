@@ -28,14 +28,14 @@ instance HasDependencies (CoreModule CoreBind) where
     key = view (field @"name")
 
     dependencies m = do
-        m ^.. field @"declarations" % (gplate @(Qualified Text)) % field @"qualifier"
+        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
 
 instance HasDependencies (CoreModule (ANF.TopLevelBind Core.Var)) where
     type Key (CoreModule (ANF.TopLevelBind Core.Var)) = ModuleName
     key = view (field @"name")
 
     dependencies m = do
-        m ^.. field @"declarations" % (gplate @(Qualified Text)) % field @"qualifier"
+        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
 
 data CoreDeclaration bind
     = CoreValue bind

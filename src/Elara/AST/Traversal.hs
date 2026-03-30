@@ -39,7 +39,7 @@ class TraverseExtensions p where
 -- | Traverse all immediate sub-expressions of an expression node
 traverseExprExprs ::
     forall loc p f.
-    (Applicative f, Plated (Expr loc p)) =>
+    (Applicative f, Plated (Expr loc p) (Expr loc p)) =>
     (Expr loc p -> f (Expr loc p)) ->
     Expr loc p ->
     f (Expr loc p)
@@ -48,7 +48,7 @@ traverseExprExprs = traverseOf plate
 -- | Traverse all immediate sub-patterns of a pattern node
 traversePatternPats ::
     forall loc p f.
-    (Applicative f, Plated (Pattern loc p)) =>
+    (Applicative f, Plated (Pattern loc p) (Pattern loc p)) =>
     (Pattern loc p -> f (Pattern loc p)) ->
     Pattern loc p ->
     f (Pattern loc p)
@@ -57,7 +57,7 @@ traversePatternPats = traverseOf plate
 -- | Traverse all immediate sub-types of a type node
 traverseTypeTypes ::
     forall loc p f.
-    (Applicative f, Plated (Type loc p)) =>
+    (Applicative f, Plated (Type loc p) (Type loc p)) =>
     (Type loc p -> f (Type loc p)) ->
     Type loc p ->
     f (Type loc p)

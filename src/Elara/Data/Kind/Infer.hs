@@ -478,7 +478,7 @@ replaceKindVarWithFreshKindVar kind var = do
 
     pure $
         transformOf
-            gplate
+            plate
             ( \case
                 VarKind v | v == var -> VarKind kindvar
                 other -> other
@@ -490,7 +490,7 @@ replaceInState var kind = do
     occursCheck var kind
 
     s <- get @InferState
-    let subst = transformOf gplate (\case VarKind v | v == var -> kind; other -> other)
+    let subst = transformOf plate (\case VarKind v | v == var -> kind; other -> other)
     let s' =
             s
                 { kindEnv = Map.map subst s.kindEnv

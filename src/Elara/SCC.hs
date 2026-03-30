@@ -86,7 +86,7 @@ sccContainingRoot g@ReachableSubgraph{root} =
         AcyclicSCC v -> v == root
         CyclicSCC vs -> root `elem` vs
 
--- | Collect free variable references from an expression (manual recursion replacing cosmosOf gplate)
+-- | Collect free variable references from an expression (manual recursion replacing cosmosOf plate)
 valueDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
 valueDependencies (New.Expr _ _ e') = case e' of
     New.EVar NoExtension (Located _ (Global (Located _ qn))) -> one qn

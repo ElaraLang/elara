@@ -59,7 +59,7 @@ module Elara.Logging (
     filterByNamespace,
 ) where
 
-import Colog.Core.Action (LogAction (..), cmap, cmapM)
+import Colog.Core.Action (LogAction (..), cmapM)
 import Data.Text qualified as T
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Effectful (Dispatch (..), DispatchOf, Eff, Effect, IOE, (:>))

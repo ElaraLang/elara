@@ -31,7 +31,7 @@ newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
 
 instance ToJSON c => ToJSON (Unique c)
 
-instance ToJSON UniqueId
+-- instance ToJSON UniqueId
 
 instance Show UniqueId where
     show (UniqueId (Unique _ uniqueId)) = Text.Show.show uniqueId
@@ -75,4 +75,4 @@ instance Pretty UniqueId where
 
 instance Hashable b => Hashable (Unique b)
 
-instance Hashable UniqueId
+-- instance Hashable UniqueId

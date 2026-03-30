@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -16,6 +17,7 @@ import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
 import Elara.AST.Pretty
 import Elara.AST.Types
 import Elara.Data.Pretty
+import GHC.Generics (Rep)
 
 -- | Constraint alias for all the type family components needed for Show/Eq/Ord
 type CoreConstraint (c :: Kind.Type -> Kind.Constraint) loc p =
@@ -239,9 +241,26 @@ instance (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pretty (Ty
 instance (PrettyPhase p, PrettyPhaseLoc p loc) => Pretty (BinaryOperator loc p) where
     pretty = prettyBinaryOperator
 
--- Plated instances
-instance (Generic (Expr loc p), GPlate (Expr loc p) (Expr loc p), SafePlated (Expr loc p)) => Plated (Expr loc p)
+instance
+    forall c loc phase.
+    ( Generic c
+    , SafeGPlate (Rep c) (Expr loc phase)
+    , GPlate (Expr loc phase) c
+    ) =>
+    Plated (Expr loc phase) c
 
-instance (Generic (Pattern loc p), GPlate (Pattern loc p) (Pattern loc p), SafePlated (Pattern loc p)) => Plated (Pattern loc p)
+instance
+    forall c loc phase.
+    ( Generic c
+    , SafeGPlate (Rep c) (Pattern loc phase)
+    , GPlate (Pattern loc phase) c
+    ) =>
+    Plated (Pattern loc phase) c
 
-instance (Generic (Type loc p), GPlate (Type loc p) (Type loc p), SafePlated (Type loc p)) => Plated (Type loc p)
+instance
+    forall c loc phase.
+    ( Generic c
+    , SafeGPlate (Rep c) (Type loc phase)
+    , GPlate (Type loc phase) c
+    ) =>
+    Plated (Type loc phase) c

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Types used by the type inference engine
@@ -34,7 +35,8 @@ module Elara.TypeInfer.Type (
     Substitution (..),
     Substitutable (..),
     substitution,
-) where
+)
+where
 
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
@@ -176,6 +178,8 @@ data Monotype (loc :: Kind.Type)
     | -- | A function type τ₁ → τ₂
       Function loc (Monotype loc) (Monotype loc)
     deriving (Generic, Show, Eq, Ord)
+
+instance Generic loc => Plated (Monotype loc) (Monotype loc)
 
 monotypeLoc :: Monotype loc -> loc
 monotypeLoc (TypeVar loc _) = loc

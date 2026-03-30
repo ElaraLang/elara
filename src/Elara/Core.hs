@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.Core where
@@ -8,6 +9,7 @@ import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
 import Elara.TypeInfer.Unique
+import GHC.Generics (Rep)
 import Prelude hiding (Alt)
 
 data TypeVariable = TypeVariable
@@ -32,9 +34,9 @@ instance Ord Var where
     compare (TyVar _) (Id{}) = LT
     compare (Id{}) (TyVar _) = GT
 
-instance Hashable Var where
-    hashWithSalt s (TyVar t) = hashWithSalt s t
-    hashWithSalt s (Id v _ _) = hashWithSalt s v
+-- instance Hashable Var where
+--   hashWithSalt s (TyVar t) = hashWithSalt s t
+--   hashWithSalt s (Id v _ _) = hashWithSalt s v
 
 data Expr b
     = Var b
@@ -47,7 +49,7 @@ data Expr b
     | Match (Expr b) (Maybe b) [Alt b]
     deriving (Show, Eq, Data, Typeable, Generic)
 
-instance SafePlated (Expr b) => Plated (Expr b)
+instance Generic b => Plated (Expr b) (Expr b)
 
 type CoreExpr = Expr Var
 
@@ -108,7 +110,9 @@ data TyConDetails
     | Prim
     deriving (Show, Eq, Data, Ord, Generic)
 
-instance Plated Type
+instance
+    forall x.
+    (Generic x, SafeGPlate (Rep x) Type, GPlate Type x) => Plated Type x
 
 -- | The arity of a function type
 typeArity :: Type -> Int
@@ -154,20 +158,20 @@ data Literal
     | Unit
     deriving (Show, Eq, Data, Generic, Ord)
 
-instance Hashable b => Hashable (Expr b)
+-- instance (Hashable b) => Hashable (Expr b)
 
-instance Hashable b => Hashable (Bind b)
+-- instance (Hashable b) => Hashable (Bind b)
 
 instance Hashable Literal
 
-instance Hashable AltCon
+-- instance Hashable AltCon
 
-instance Hashable DataCon
+-- instance Hashable DataCon
 
-instance Hashable Type
+-- instance Hashable Type
 
-instance Hashable TyCon
+-- instance Hashable TyCon
 
-instance Hashable TyConDetails
+-- instance Hashable TyConDetails
 
-instance Hashable TypeVariable
+-- instance Hashable TypeVariable
