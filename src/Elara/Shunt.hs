@@ -141,10 +141,9 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
     assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, associativityAnnotationName)
     fixity <- case fixityAnns of
         [] -> pure Nothing
-        [New.Annotation _ [fixityArg]] -> do
-            i <- interpretNewAnnotationArg fixityArg
-            case i of
-                ConstInt n | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
+        [New.Annotation _ [fixityArg]] ->
+            case interpretNewAnnotationArg fixityArg of
+                Just (ConstInt n) | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
                 _invalid -> pure Nothing
         _invalid -> pure Nothing
 
