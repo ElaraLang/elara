@@ -35,7 +35,7 @@ pattern Infix mn op a b <-
 constantFold :: CoreExprPass
 constantFold = transform f
   where
-    f (Infix ("Prelude" :| []) "+" (Lit (Int a)) (Lit (Int b))) = Lit (Int (a + b))
+    f (Infix ("Elara" :| ["Prim"]) "+" (Lit (Int a)) (Lit (Int b))) = Lit (Int (a + b))
     f other = other
 
 -- | Performs beta reduction on the Core AST to reduce redundant lambdas
@@ -54,7 +54,7 @@ uselessLetInline = transform f
 pipeInline :: CoreExprPass
 pipeInline = transform f
   where
-    f (Infix ("Elara" :| ["Prim"]) "|>" a b) = App b a
+    f (Infix ("Prelude" :| []) "|>" a b) = App b a
     f other = other
 
 subst :: Var -> Expr Var -> Expr Var -> CoreExpr
