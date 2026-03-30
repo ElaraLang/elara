@@ -81,6 +81,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(annotations)* Fix crash and make prim compile - ([4824e9f](https://github.com/ElaraLang/elara/commit/4824e9faf4b3164221e6ec7bf0748b90f6164689)) 
 - *(ast)* :rotating_light: Fix tests etc not compiling - ([56a2dfb](https://github.com/ElaraLang/elara/commit/56a2dfb33f6eb27d9a68a44bc818a0d7e071f2c4)) 
+- *(ast)* Significantly simplify (sort of) `Plated` stuff - ([1b75979](https://github.com/ElaraLang/elara/commit/1b75979182e01eb44720bfbb440fc9505e8361b6)) 
 - *(cabal)* Make sure we compile with -threaded - ([4d9d4c5](https://github.com/ElaraLang/elara/commit/4d9d4c54a006e4a95923056ceb6cda847c4dfa85)) 
 - *(core)* :bug: Fix lambda ANF transformations - ([a3c86e9](https://github.com/ElaraLang/elara/commit/a3c86e98eebadfc0a4416876e673e212ab036d61)) 
 - *(core)* :bug: Fix recursive lets (aptly) infinite looping when being converted to ANF - ([34a0633](https://github.com/ElaraLang/elara/commit/34a063303e27f825a41787172ee4366ef8c75a4e)) 
@@ -92,10 +93,12 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* :bug: Fix recursive let binds not being converted to ANF correctly - ([d6ffdee](https://github.com/ElaraLang/elara/commit/d6ffdee9bcff8039d2d8e969ed1f17007c6f298b)) 
 - *(core)* Correct implementation of equalUnderSubst function and tidy up code - ([b96b7fc](https://github.com/ElaraLang/elara/commit/b96b7fc329e405a1b47a0d80713f91dec276c2ab)) 
 - *(core)* Fix bug in `FreeCoreVars` implementation for ANF - ([2f7af58](https://github.com/ElaraLang/elara/commit/2f7af588312fac37f684ea651605ec383edfc6eb)) 
+- *(core)* Make optimisations work with latest stdlib structure - ([19e66d7](https://github.com/ElaraLang/elara/commit/19e66d77f530cdba24c8fba7c0503ebb639bfa23)) 
 - *(docs)* Fix readthedocs confgi - ([c26df0e](https://github.com/ElaraLang/elara/commit/c26df0ed9f22a00ad59aa0f875233156e10da7a6)) 
 - *(flake)* :bug: Update flake.lock and flake.nix for dependency resolution (NO MORE DEPENDENCY HELL) - ([3762c6d](https://github.com/ElaraLang/elara/commit/3762c6d0e8f830b450699353ce27f9c975b2ff63)) 
 - *(flake)* Tidy up nix and fix various dependency bugs - ([65bd7d4](https://github.com/ElaraLang/elara/commit/65bd7d4e8c130dd631df5aca4a3c6294855fb20b)) 
 - *(interpreter)* Allow interpreting thunk functions - ([5d23bd9](https://github.com/ElaraLang/elara/commit/5d23bd9f60316ae2b45931df7bb16994f4ddc50f)) 
+- *(interpreter)* Fix incorrect evaluation of >>= - ([7b032e4](https://github.com/ElaraLang/elara/commit/7b032e45f93552f4d982f6c5b6a8d362f32bdb0c)) 
 - *(lexer)* Make lexer much more robust and flexible about the indentation levels it accepts - ([ac594d3](https://github.com/ElaraLang/elara/commit/ac594d3557ccede823221de511ba80b2372913b7)) 
 - *(lexer)* Improve location information of fake lexer tokens - ([7ad7db2](https://github.com/ElaraLang/elara/commit/7ad7db2fa437c64f92ea8d76deb4652deeed176c)) 
 - *(lexer)* Improve lexing of explicit layout - ([cabc5ad](https://github.com/ElaraLang/elara/commit/cabc5adca63b2a19f371f49af45cc2c21e1d6482)) 
@@ -108,6 +111,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(main)* Fix mainFile being undefined in Main - ([04e166f](https://github.com/ElaraLang/elara/commit/04e166f60032b066b3dc9fb2537b8732aa00e137)) 
 - *(nix)* Try fix ci - ([0953b70](https://github.com/ElaraLang/elara/commit/0953b70c4983f8c9335da20b630d563712e8f78e)) 
 - *(nix)* Remove compat checks to prevent hix trying to build with old GHCs - ([7e2afe7](https://github.com/ElaraLang/elara/commit/7e2afe7c4aa50adc720a532f1661b17524c5587e)) 
+- *(nix)* Fix nix flake failing on aarch64-darwin - ([63c3b0a](https://github.com/ElaraLang/elara/commit/63c3b0af4aa7db1a08a09bb803fc37ffb61350f5)) 
 - *(parser)* :bug: Fix type declaration parsing wrt indents - ([53f148b](https://github.com/ElaraLang/elara/commit/53f148beae28c2ef2465cc2fdd080206f556b2d9)) 
 - *(parser)* :bug: Fix operators as variables (eg `(+)`) not being correctly parsed - ([55de02d](https://github.com/ElaraLang/elara/commit/55de02dcaeb34707588f2824b12a1f25bc6e382c)) 
 - *(parser)* :bug: Fix Nested Constructor Patterns not being correctly parsed - ([bfae8ac](https://github.com/ElaraLang/elara/commit/bfae8acea7d3225329b40f1e588361d2f01a1451)) 
@@ -119,6 +123,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parser)* Fix parser crashing on incomplete expressions - ([502bbe6](https://github.com/ElaraLang/elara/commit/502bbe677ce6cda97456eacd8201171853145332)) 
 - *(prim)* Add primitive kind for List - ([3773ad0](https://github.com/ElaraLang/elara/commit/3773ad0ff3bad9e0506a1cee98d27b3e4916de89)) 
 - *(prim)* Add missing primitive type `Bool` to primitiveTypes - ([dd369a3](https://github.com/ElaraLang/elara/commit/dd369a35f30a07ef4f54f5f080a460d7177d7091)) 
+- *(query)* Fix incorrect query type - ([1c0a5c8](https://github.com/ElaraLang/elara/commit/1c0a5c8da7c8b70d49230c428d18e81f6806cbae)) 
 - *(rename)* Fix renaming of recursive lets in a block - ([264db37](https://github.com/ElaraLang/elara/commit/264db37d935fef117d5183b28280b48613631faa)) 
 - *(rename)* Allow implicit type variables in tuple signatures - ([6425e4f](https://github.com/ElaraLang/elara/commit/6425e4fe846b0b5ba7d3952bb3b9eed8cda679ea)) 
 - *(renamer)* Now qualifies type names - ([0c25cad](https://github.com/ElaraLang/elara/commit/0c25cade010b873a4a3fead0cc3df7dad5b64f3e)) 
@@ -180,6 +185,14 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🚜 Refactor
 
 - *(ast)* Significantly tidy up StripLocation code - ([9038613](https://github.com/ElaraLang/elara/commit/90386138910aba933c333a213620e50cc9522fa5)) 
+- *(ast)* Complete rewrite of AST structure to require far fewer hacks - ([c0a14f2](https://github.com/ElaraLang/elara/commit/c0a14f2e5a66f4cf783ff09d7a7a832ded047612)) 
+- *(ast)* Improve documentation and coercions - ([736a88e](https://github.com/ElaraLang/elara/commit/736a88ed941e8fe496da810da12e81953af03f50)) 
+- *(ast)* Significantly improve pretty output - ([0565358](https://github.com/ElaraLang/elara/commit/05653588243ba63b49585a3d64384fc021cf04cf)) 
+- *(ast)* :loud_sound: Improve pretty printer output even more - ([003400c](https://github.com/ElaraLang/elara/commit/003400c73a1aee55ba408064235cb51f97a13d66)) 
+- *(ast)* Introduce safe `Plated` alternative - ([d9c4cc7](https://github.com/ElaraLang/elara/commit/d9c4cc7119cfe94f3a4d8d167b7f4fcc758c26ad)) 
+- *(ast)* Move back to original module path - ([d13320a](https://github.com/ElaraLang/elara/commit/d13320a52b16bfdafe62198ce95cb8741103799f)) 
+- *(ast)* Fix pretty output of chars - ([ea823ab](https://github.com/ElaraLang/elara/commit/ea823ab7f0816feba526b213719c7da9f6ab6146)) 
+- *(ast)* Improve handling of ConstExpr and make it extensible - ([945208e](https://github.com/ElaraLang/elara/commit/945208ee16d8046d356d7308f4a84c58b961f1a7)) 
 - *(codegen)* :lipstick: Add parentheses to toString generation - ([6e35e1b](https://github.com/ElaraLang/elara/commit/6e35e1be79ab7a74c3032b76e9d6d7c68c5a6465)) 
 - *(codegen)* :lipstick: Improve pretty instance for NamedMethodDescriptor - ([6b5e843](https://github.com/ElaraLang/elara/commit/6b5e843a3c474011a07357fcd92d059eb11e8030)) 
 - *(codegen)* :loud_sound: Use StructuredLog in codegen - ([e65670a](https://github.com/ElaraLang/elara/commit/e65670a4dd42ff9350406c349455a305a9e2a3da)) 
@@ -228,6 +241,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(shunter)* Improve display of unknown precedence warning - ([eb4a2ff](https://github.com/ElaraLang/elara/commit/eb4a2ff921da460ddba0217cc635f06f5a9db662)) 
 - *(stdlib)* Use nicer syntax in string.elr - ([7e0374a](https://github.com/ElaraLang/elara/commit/7e0374ad1e3248154ca871c571545496be5a4f4d)) 
 - *(stdlib)* Tidy source.elr - ([6339b5d](https://github.com/ElaraLang/elara/commit/6339b5db4ae2052c6eedb1cf27c47ee123500706)) 
+- *(stdlib)* Add explicit module declaration for Char - ([8fb2bfa](https://github.com/ElaraLang/elara/commit/8fb2bfaf9663f5cff6498cc41b2f67d7a3b2d6a5)) 
 - *(tests)* Re-enable all tests, refactoring code where necessary - ([25b3c10](https://github.com/ElaraLang/elara/commit/25b3c100207da26209be10da05bece2e27db597f)) 
 - *(to-core)* :loud_sound: Improve error messages in Core.Analysis.exprType - ([86e4f40](https://github.com/ElaraLang/elara/commit/86e4f40791f385010615dccc84367e775184f7db)) 
 - *(to-core)* Move to-core to query system - ([cc65b7b](https://github.com/ElaraLang/elara/commit/cc65b7b9193cab3d7769dfaab94ef85fd7d3f1f2)) 
@@ -274,6 +288,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve `todo` error - ([4e6ce4a](https://github.com/ElaraLang/elara/commit/4e6ce4a0aece5cfd1078a8b57be6a662116fcc37)) 
 - Improve handling of unit primitive - ([99147ec](https://github.com/ElaraLang/elara/commit/99147ec0c6bd53f45a1b15c26dc2bedf5af444d9)) 
 - Fix ModuleIndex with main file in source root - ([7091fda](https://github.com/ElaraLang/elara/commit/7091fda0fed9de9118b77c95a0b0e407f1d90afb)) 
+- Remove weird pattern match - ([c93b00d](https://github.com/ElaraLang/elara/commit/c93b00d93b40c80657780ddc7714487aa728560c)) 
 
 ### 📚 Documentation
 
@@ -356,12 +371,14 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### ⚙️ Miscellaneous Tasks
 
+- *(tests)* Remove old imports - ([55aa06f](https://github.com/ElaraLang/elara/commit/55aa06fec084027aeee9766eb7bce148c358d120)) 
 - :fire: Remove old unused Grammar directory - ([f7d2f31](https://github.com/ElaraLang/elara/commit/f7d2f3182d7a9723102baf503b5950d64346c8c8)) 
 - Only build with Ubuntu - ([7aae66b](https://github.com/ElaraLang/elara/commit/7aae66b112f23ae6513613c0f68ddff9dce8f530)) 
 - Run cabal update - ([7776593](https://github.com/ElaraLang/elara/commit/77765933779047287df59ced94cdfb973cf764d5)) 
 - Fix Ci(?) - ([de1615a](https://github.com/ElaraLang/elara/commit/de1615a2446fe12cf4cd21a67f55f366c4d27fca)) 
 - Remove stupid useless stan warning - ([caba225](https://github.com/ElaraLang/elara/commit/caba2254c24b81cf17d26bcbff358e728fcc2d91)) 
 - Fix another stupid stan warning - ([bd818e4](https://github.com/ElaraLang/elara/commit/bd818e45c50f8ca6c9b397d05dc5c56284b15b67)) 
+- Substantial tidy up - ([d68e3ca](https://github.com/ElaraLang/elara/commit/d68e3ca7e82ff8b143e97852c540eb69a30fdb63)) 
 
 ### ◀️ Revert
 
