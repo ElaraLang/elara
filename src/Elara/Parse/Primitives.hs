@@ -45,7 +45,7 @@ ignoringIndents p = do
     void $ optional (token_ TokenDedent) -- this can get leftover because p wouldn't have consumed it
     pure r
 
-{- | A parser that records the location information of the tokens it consumes. -}
+-- | A parser that records the location information of the tokens it consumes.
 located :: Parser a -> Parser (Located a)
 located p = do
     startState <- stateInput <$> getParserState
