@@ -43,7 +43,6 @@ import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
@@ -76,7 +75,6 @@ import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
-import Optics (gplate, transformOf)
 import Print (printPretty)
 import Region (qualifiedTest, testLocated, testRegion)
 import Rock qualified
