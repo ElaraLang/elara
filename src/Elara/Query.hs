@@ -158,8 +158,8 @@ data Query (es :: [Effect]) a where
         ) =>
         QueryArgsOf DeclarationAnnotationsOfType ast ->
         Query
-            (QueryEffectsOf DeclarationAnnotations ast)
-            (QueryReturnTypeOf DeclarationAnnotations ast)
+            (QueryEffectsOf DeclarationAnnotationsOfType ast)
+            (QueryReturnTypeOf DeclarationAnnotationsOfType ast)
     -- \* Shunting Queries
     GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
