@@ -11,7 +11,7 @@ import Elara.AST.Types (Pattern' (..))
 import Elara.Parse.Pattern (patParser)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
-import Normalise (mkPat, stripNewInParens, stripPattern)
+import Normalise (mkPat, stripPattern)
 import Orphans ()
 import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern, trippingParse)
 import Print (showPrettyUnannotated)
