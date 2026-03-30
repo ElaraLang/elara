@@ -7,11 +7,11 @@ import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Effectful
 import Elara.AST.Name
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Shunted (Shunted)
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Shunted (Shunted)
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Error (runErrorOrReport)
 import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)

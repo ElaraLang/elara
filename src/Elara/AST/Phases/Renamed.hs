@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Renamed (
+module Elara.AST.Phases.Renamed (
     Renamed,
     RenamedExpressionExtension (..),
     TypedLambdaParam (..),
@@ -19,12 +19,12 @@ module Elara.AST.New.Phases.Renamed (
 )
 where
 
+import Elara.AST.Extensions
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName, VarOrConName)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types
+import Elara.AST.Phase
+import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)

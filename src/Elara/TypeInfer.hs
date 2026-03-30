@@ -11,19 +11,19 @@ import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local (runWriter)
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName, unqualified)
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
-import Elara.AST.New.Phases.Kinded (KindedType)
-import Elara.AST.New.Phases.Kinded qualified as NewK
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam (..))
-import Elara.AST.New.Phases.Shunted (Shunted)
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr')
-import Elara.AST.New.Phases.Typed qualified as NewT
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.PhaseCoerce (PhaseCoerce (..))
+import Elara.AST.Phases.Kinded (KindedType)
+import Elara.AST.Phases.Kinded qualified as NewK
+import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
+import Elara.AST.Phases.Shunted (Shunted)
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr')
+import Elara.AST.Phases.Typed qualified as NewT
 import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated, withLocationOf)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind, KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)

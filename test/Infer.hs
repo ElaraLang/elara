@@ -12,9 +12,9 @@ import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local (runWriter)
 import Elara.AST.Name (Qualified, TypeName)
-import Elara.AST.New.Phases.Shunted (ShuntedExpr, ShuntedExpr')
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
 import Elara.Error.Effect (evalDiagnosticWriter)

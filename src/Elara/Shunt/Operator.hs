@@ -2,9 +2,9 @@ module Elara.Shunt.Operator (OpTable, Associativity (..), Precedence, mkPreceden
 
 import Data.Map qualified as Map
 import Elara.AST.Name
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style

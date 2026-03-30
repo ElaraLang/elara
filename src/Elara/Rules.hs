@@ -7,8 +7,8 @@ import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static (runError, throwError, throwError_)
 import Effectful.State.Static.Local qualified as Local
+import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.New.Module (Module (..), Module' (..))
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)

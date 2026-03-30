@@ -1,12 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Shunted where
+module Elara.AST.Phases.Shunted where
 
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
-import Elara.AST.New.Phase
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types
+import Elara.AST.Phase
+import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)

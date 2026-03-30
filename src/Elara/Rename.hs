@@ -21,14 +21,14 @@ import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
 
 -- New AST types (primary)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Desugared (DesugaredExpressionExtension (..))
-import Elara.AST.New.Phases.Desugared qualified as NewD
-import Elara.AST.New.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Extensions
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Types qualified as New
 
 import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), OpName (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion', generatedSourceRegion, sourceRegion, spanningRegion', unlocated, withLocationOf)

@@ -9,14 +9,14 @@ import Effectful.Error.Static qualified as Eff
 import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
 
-import Elara.AST.New.Extensions
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
-import Elara.AST.New.Phases.Desugared (DesugaredExpressionExtension (..))
-import Elara.AST.New.Phases.Desugared qualified as NewD
-import Elara.AST.New.Phases.Frontend qualified as Frontend
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Extensions
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.PhaseCoerce (PhaseCoerce (..))
+import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Frontend qualified as Frontend
+import Elara.AST.Types qualified as New
 
 import Elara.AST.Name hiding (name)
 import Elara.AST.Region

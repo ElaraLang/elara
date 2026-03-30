@@ -1,10 +1,10 @@
 module Elara.Parse.Declaration where
 
 import Elara.AST.Name (ModuleName)
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, unlocated)
+import Elara.AST.Types
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Logging (logDebug)

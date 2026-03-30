@@ -4,12 +4,12 @@ import Data.Generics.Product
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Data.Text.Metrics (levenshtein)
+import Elara.AST.Instances ()
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
-import Elara.AST.New.Instances ()
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phases.Desugared qualified as NewD
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 

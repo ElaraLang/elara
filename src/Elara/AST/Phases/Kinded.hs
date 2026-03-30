@@ -1,11 +1,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Kinded where
+module Elara.AST.Phases.Kinded where
 
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
-import Elara.AST.New.Phase
-import Elara.AST.New.Types
+import Elara.AST.Phase
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Unique (Unique)

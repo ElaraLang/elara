@@ -2,11 +2,11 @@ module Elara.Parse.Pattern (patParser) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.List.NonEmpty ((<|))
+import Elara.AST.Extensions (ListTuplePatternExtension (..))
 import Elara.AST.Name (VarName (NormalVarName))
-import Elara.AST.New.Extensions (ListTuplePatternExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types (Pattern (..), Pattern' (..))
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion')
+import Elara.AST.Types (Pattern (..), Pattern' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Literal

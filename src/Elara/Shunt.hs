@@ -30,16 +30,16 @@ import Data.Generics.Wrapped
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
+import Elara.AST.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
-import Elara.AST.New.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.PhaseCoerce (PhaseCoerce (..))
-import Elara.AST.New.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.PhaseCoerce (PhaseCoerce (..))
+import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion', unlocated)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.ConstExpr
 import Elara.Data.Unique (Unique (Unique))

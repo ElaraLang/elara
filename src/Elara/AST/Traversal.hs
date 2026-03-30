@@ -1,10 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Traversal where
+module Elara.AST.Traversal where
 
-import Elara.AST.New.Instances ()
-import Elara.AST.New.Phase
-import Elara.AST.New.Types
+import Elara.AST.Instances ()
+import Elara.AST.Phase
+import Elara.AST.Types
 import Prelude
 
 {- | Traversal class for phase-specific extension constructors.

@@ -1,11 +1,11 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
+import Elara.AST.Extensions (TupleTypeExtension (..))
 import Elara.AST.Name (LowerAlphaName)
-import Elara.AST.New.Extensions (TupleTypeExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion')
+import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')

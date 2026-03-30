@@ -34,11 +34,11 @@ import Effectful.Colog
 import Effectful.Concurrent (Concurrent, runConcurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
+import Elara.AST.Instances ()
+import Elara.AST.Module qualified as New
 import Elara.AST.Name (ModuleName, NameLike, nameText)
-import Elara.AST.New.Instances ()
-import Elara.AST.New.Module qualified as New
-import Elara.AST.New.Phase (Locate)
-import Elara.AST.New.Phases.Shunted qualified as NewS
+import Elara.AST.Phase (Locate)
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)

@@ -21,24 +21,24 @@ library
       Effectful.Error.Extra
       Effectful.State.Extra
       Elara
+      Elara.AST.Extensions
+      Elara.AST.Instances
+      Elara.AST.Module
       Elara.AST.Name
-      Elara.AST.New.Extensions
-      Elara.AST.New.Instances
-      Elara.AST.New.Module
-      Elara.AST.New.Phase
-      Elara.AST.New.PhaseCoerce
-      Elara.AST.New.Phases.Desugared
-      Elara.AST.New.Phases.Frontend
-      Elara.AST.New.Phases.Frontend.Pretty
-      Elara.AST.New.Phases.Kinded
-      Elara.AST.New.Phases.MidKinded
-      Elara.AST.New.Phases.Renamed
-      Elara.AST.New.Phases.Shunted
-      Elara.AST.New.Phases.Typed
-      Elara.AST.New.Pretty
-      Elara.AST.New.Traversal
-      Elara.AST.New.Types
+      Elara.AST.Phase
+      Elara.AST.PhaseCoerce
+      Elara.AST.Phases.Desugared
+      Elara.AST.Phases.Frontend
+      Elara.AST.Phases.Frontend.Pretty
+      Elara.AST.Phases.Kinded
+      Elara.AST.Phases.MidKinded
+      Elara.AST.Phases.Renamed
+      Elara.AST.Phases.Shunted
+      Elara.AST.Phases.Typed
+      Elara.AST.Pretty
       Elara.AST.Region
+      Elara.AST.Traversal
+      Elara.AST.Types
       Elara.AST.VarRef
       Elara.ConstExpr
       Elara.Core

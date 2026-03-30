@@ -3,11 +3,11 @@ module Parse.Patterns where
 import Arbitrary.AST (genPattern)
 import Arbitrary.Literals (genDouble, genInteger)
 import Arbitrary.Names (genLowerAlphaText)
+import Elara.AST.Extensions (ListTuplePatternExtension (..))
 import Elara.AST.Name
-import Elara.AST.New.Extensions (ListTuplePatternExtension (..))
-import Elara.AST.New.Phases.Frontend ()
-import Elara.AST.New.Phases.Frontend.Pretty ()
-import Elara.AST.New.Types (Pattern' (..))
+import Elara.AST.Phases.Frontend ()
+import Elara.AST.Phases.Frontend.Pretty ()
+import Elara.AST.Types (Pattern' (..))
 import Elara.Parse.Pattern (patParser)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen

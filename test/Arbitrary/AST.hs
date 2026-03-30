@@ -4,11 +4,11 @@ module Arbitrary.AST where
 
 import Arbitrary.Literals
 import Arbitrary.Names
+import Elara.AST.Extensions
 import Elara.AST.Name (VarName (..), VarOrConName (VarName))
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Frontend
+import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen

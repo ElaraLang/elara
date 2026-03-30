@@ -1,10 +1,10 @@
 module Elara.Shunt.Error where
 
+import Elara.AST.Instances ()
 import Elara.AST.Name
-import Elara.AST.New.Instances ()
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique

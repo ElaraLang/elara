@@ -2,9 +2,9 @@
 
 module Elara.Parse.Module where
 
+import Elara.AST.Module (Exposing (..), Exposition (..), Import (..), Import' (..), Module (..), Module' (..))
 import Elara.AST.Name
-import Elara.AST.New.Module (Exposing (..), Exposition (..), Import (..), Import' (..), Module (..), Module' (..))
-import Elara.AST.New.Phases.Frontend (Frontend)
+import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Region
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Declaration (declaration)

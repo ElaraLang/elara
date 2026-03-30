@@ -21,10 +21,10 @@ module Normalise (
 )
 where
 
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Extensions
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion, unlocated)
+import Elara.AST.Types
 import Relude.Extra (bimapF)
 
 mkExpr :: Expr' () Frontend -> Expr () Frontend

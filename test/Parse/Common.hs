@@ -15,9 +15,9 @@ module Parse.Common (
 
 import Effectful (runPureEff)
 import Effectful.Error.Static (runError)
-import Elara.AST.New.Phases.Frontend (Frontend)
-import Elara.AST.New.Phases.Frontend.Pretty ()
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Frontend (Frontend)
+import Elara.AST.Phases.Frontend.Pretty ()
+import Elara.AST.Types qualified as New
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..), unWParseErrorBundle)

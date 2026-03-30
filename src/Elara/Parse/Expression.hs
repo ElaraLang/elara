@@ -4,12 +4,12 @@ module Elara.Parse.Expression (exprParser, locatedExpr, letPreamble, element, re
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
+import Elara.AST.Extensions
 import Elara.AST.Name (VarName (..), nameText)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
+import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')

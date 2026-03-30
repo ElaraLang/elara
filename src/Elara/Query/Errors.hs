@@ -2,9 +2,9 @@ module Elara.Query.Errors where
 
 import Effectful
 import Effectful.Error.Static
-import Elara.AST.New.Phases.Desugared (Desugared)
-import Elara.AST.New.Phases.Renamed (Renamed)
-import Elara.AST.New.Phases.Shunted (Shunted)
+import Elara.AST.Phases.Desugared (Desugared)
+import Elara.AST.Phases.Renamed (Renamed)
+import Elara.AST.Phases.Shunted (Shunted)
 import Elara.Desugar.Error
 import Elara.Rename.Error
 import Elara.Shunt.Error

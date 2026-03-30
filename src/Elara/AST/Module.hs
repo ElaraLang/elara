@@ -1,11 +1,11 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Module where
+module Elara.AST.Module where
 
 import Elara.AST.Name (ModuleName)
-import Elara.AST.New.Phase (ElaraPhase (..), Locate)
-import Elara.AST.New.Types (Declaration)
+import Elara.AST.Phase (ElaraPhase (..), Locate)
+import Elara.AST.Types (Declaration)
 
 -- | Module with location and phase parameters
 data Module loc p = Module !loc (Module' loc p)

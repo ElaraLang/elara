@@ -5,7 +5,7 @@
 The idea here is that each phase / stage has a different instance which provides different types for shared constructs,
 along with adding their own phase-specific extension syntax and metadata.
 -}
-module Elara.AST.New.Phase where
+module Elara.AST.Phase where
 
 import Data.Kind qualified as Kind
 import Elara.AST.Region (Located, SourceRegion)

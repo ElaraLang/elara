@@ -49,9 +49,9 @@ import Data.Text (toLower)
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
-import Elara.AST.New.Phases.Typed (TypedPattern)
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Typed (TypedPattern)
 import Elara.AST.Region
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
 import Elara.Core qualified as Core
 import Elara.Core.Analysis qualified as Core

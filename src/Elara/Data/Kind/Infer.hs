@@ -37,12 +37,12 @@ import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
-import Elara.AST.New.Phase
-import Elara.AST.New.Phases.Kinded qualified as NewK
-import Elara.AST.New.Phases.MidKinded qualified as NewM
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase
+import Elara.AST.Phases.Kinded qualified as NewK
+import Elara.AST.Phases.MidKinded qualified as NewM
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located, SourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)

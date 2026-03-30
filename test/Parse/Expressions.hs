@@ -1,12 +1,12 @@
 module Parse.Expressions where
 
 import Arbitrary.AST (genExpr)
+import Elara.AST.Extensions
 import Elara.AST.Name
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Phases.Frontend.Pretty ()
-import Elara.AST.New.Types
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Frontend
+import Elara.AST.Phases.Frontend.Pretty ()
+import Elara.AST.Types
 import Elara.Parse.Expression (exprParser)
 import Hedgehog hiding (Var)
 import NeatInterpolation (text)

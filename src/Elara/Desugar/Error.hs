@@ -1,11 +1,11 @@
 module Elara.Desugar.Error where
 
+import Elara.AST.Instances ()
 import Elara.AST.Name
-import Elara.AST.New.Instances ()
-import Elara.AST.New.Phases.Desugared
-import Elara.AST.New.Phases.Frontend qualified as Frontend
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Desugared
+import Elara.AST.Phases.Frontend qualified as Frontend
 import Elara.AST.Region
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes

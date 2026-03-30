@@ -11,13 +11,13 @@ import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam (..))
-import Elara.AST.New.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
+import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))

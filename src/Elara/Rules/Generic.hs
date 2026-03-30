@@ -5,11 +5,11 @@ module Elara.Rules.Generic where
 
 import Effectful
 import Effectful.Exception
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (ElaraPhase (..))
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (ElaraPhase (..))
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error.Internal
 import Elara.Query

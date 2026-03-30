@@ -2,19 +2,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Elara.AST.New.Instances where
+module Elara.AST.Instances where
 
 import Data.Kind qualified as Kind
+import Elara.AST.Extensions
+import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, ModuleName)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Module
-import Elara.AST.New.Phase
-import Elara.AST.New.Phases.Desugared (Desugared, DesugaredExpressionExtension (..))
-import Elara.AST.New.Phases.Frontend (Frontend, FrontendDeclBodyExtension (..), FrontendExpressionExtension (..))
-import Elara.AST.New.Phases.Frontend.Pretty ()
-import Elara.AST.New.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types
+import Elara.AST.Phase
+import Elara.AST.Phases.Desugared (Desugared, DesugaredExpressionExtension (..))
+import Elara.AST.Phases.Frontend (Frontend, FrontendDeclBodyExtension (..), FrontendExpressionExtension (..))
+import Elara.AST.Phases.Frontend.Pretty ()
+import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
+import Elara.AST.Pretty
+import Elara.AST.Types
 import Elara.Data.Pretty
 
 -- | Constraint alias for all the type family components needed for Show/Eq/Ord

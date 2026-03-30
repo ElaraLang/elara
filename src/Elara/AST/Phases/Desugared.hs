@@ -1,13 +1,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Desugared where
+module Elara.AST.Phases.Desugared where
 
+import Elara.AST.Extensions
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types
+import Elara.AST.Phase
+import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types
 import Elara.Data.Pretty (Pretty (..))
 import Prettyprinter (Doc)
 import Prettyprinter.Render.Terminal (AnsiStyle)

@@ -1,14 +1,14 @@
 {-# LANGUAGE TypeData #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Phases.Typed where
+module Elara.AST.Phases.Typed where
 
 import Elara.AST.Name (OpName, Qualified, TypeName, VarName)
-import Elara.AST.New.Phase
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types (TypedLambdaParam (..))
-import Elara.AST.New.Types qualified as AST
+import Elara.AST.Phase
+import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types (TypedLambdaParam (..))
+import Elara.AST.Types qualified as AST
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (Pretty (..))

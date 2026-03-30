@@ -1,9 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Types where
+module Elara.AST.Types where
 
 import Elara.AST.Name (LowerAlphaName, ModuleName)
-import Elara.AST.New.Phase
+import Elara.AST.Phase
 
 -- | Expression node with location and metadata
 data Expr loc p = Expr !loc !(ExpressionMeta p loc) (Expr' loc p)

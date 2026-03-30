@@ -2,13 +2,13 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.New.Pretty where
+module Elara.AST.Pretty where
 
+import Elara.AST.Extensions
+import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (LowerAlphaName, ModuleName)
-import Elara.AST.New.Extensions
-import Elara.AST.New.Module (Module (..), Module' (..))
-import Elara.AST.New.Phase
-import Elara.AST.New.Types
+import Elara.AST.Phase
+import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty (Pretty (..), indentDepth)
 import Elara.Pretty.Common (prettyCtorsInline, prettyMatchAlt, prettyMatchAlts)

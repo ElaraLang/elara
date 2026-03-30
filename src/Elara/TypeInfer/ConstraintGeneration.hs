@@ -19,12 +19,12 @@ import Effectful.State.Extra (scoped)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
-import Elara.AST.New.Phase (NoExtension (..))
-import Elara.AST.New.Phases.Renamed (TypedLambdaParam (..))
-import Elara.AST.New.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
-import Elara.AST.New.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
+import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
+import Elara.AST.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty

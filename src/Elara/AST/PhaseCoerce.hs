@@ -9,7 +9,7 @@
 Uses GHC Generics to structurally convert, so it will fail to compile if the phases diverge —
 unlike @unsafeCoerce@, this is refactor-safe.
 -}
-module Elara.AST.New.PhaseCoerce (
+module Elara.AST.PhaseCoerce (
     PhaseCoerce (..),
     GPhaseCoerce (..),
 )

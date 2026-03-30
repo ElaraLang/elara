@@ -37,13 +37,13 @@ import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local qualified as Eff
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name hiding (Name)
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phases.Desugared qualified as NewD
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)

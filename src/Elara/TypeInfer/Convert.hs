@@ -3,9 +3,9 @@ module Elara.TypeInfer.Convert where
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
 import Elara.AST.Name
-import Elara.AST.New.Phases.Kinded (KindedType, KindedType')
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Kinded (KindedType, KindedType')
 import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)

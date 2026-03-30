@@ -1,9 +1,9 @@
 module Elara.Parse.Annotation where
 
-import Elara.AST.New.Extensions (InParensExtension (..), ListExprExtension (..), TupleExprExtension (..))
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types
+import Elara.AST.Extensions (InParensExtension (..), ListExprExtension (..), TupleExprExtension (..))
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error (ElaraParseError (..))
 import Elara.Parse.Expression (exprParser)

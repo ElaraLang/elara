@@ -7,16 +7,16 @@ property tests that check @parse . pretty == id@.
 These are necessarily orphan instances (Frontend defined in parent module,
 Pretty class defined in Elara.Data.Pretty).
 -}
-module Elara.AST.New.Phases.Frontend.Pretty (
+module Elara.AST.Phases.Frontend.Pretty (
     prettyExprRoundTrip,
     prettyPatternRoundTrip,
 ) where
 
-import Elara.AST.New.Extensions
-import Elara.AST.New.Phase ()
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Pretty
-import Elara.AST.New.Types
+import Elara.AST.Extensions
+import Elara.AST.Phase ()
+import Elara.AST.Phases.Frontend
+import Elara.AST.Pretty
+import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty (Pretty (..), escapeChar)
 import Prettyprinter hiding (Pretty (..))

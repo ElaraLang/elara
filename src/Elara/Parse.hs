@@ -3,9 +3,9 @@ module Elara.Parse (getParsedModuleQuery, getParsedFileQuery) where
 import Effectful (Eff, inject)
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
+import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.New.Module (Module (..), Module' (..))
-import Elara.AST.New.Phases.Frontend (Frontend)
+import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Region
 import Elara.Error (runErrorOrReport)
 import Elara.Lexer.Token (Lexeme)

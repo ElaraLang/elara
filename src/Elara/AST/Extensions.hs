@@ -1,6 +1,6 @@
-module Elara.AST.New.Extensions where
+module Elara.AST.Extensions where
 
-import Elara.AST.New.Types
+import Elara.AST.Types
 import Elara.Data.AtLeast2List (AtLeast2List)
 
 -- | Binary operator expression extension (Frontend, Desugared, Renamed)

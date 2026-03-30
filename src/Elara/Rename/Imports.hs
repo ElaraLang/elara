@@ -1,9 +1,9 @@
 -- | This module mostly just exists to be a circuit breaker :)
 module Elara.Rename.Imports (isImportedBy) where
 
+import Elara.AST.Module
 import Elara.AST.Name (MaybeQualified (..), ModuleName, Name (..), Qualified (..))
-import Elara.AST.New.Module
-import Elara.AST.New.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
 import Elara.AST.VarRef
 

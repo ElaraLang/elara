@@ -1,7 +1,7 @@
 module Elara.ConstExpr where
 
 import Effectful
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Types qualified as New
 
 data ConstVal
     = ConstInt Integer

@@ -27,16 +27,16 @@ import Data.Kind (Constraint)
 import Data.Kind qualified as Kind
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local
+import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
-import Elara.AST.New.Module qualified as NewModule
-import Elara.AST.New.Phase (ElaraPhase (..))
-import Elara.AST.New.Phases.Desugared qualified as NewD
-import Elara.AST.New.Phases.Frontend qualified as NewF
-import Elara.AST.New.Phases.Renamed qualified as NewR
-import Elara.AST.New.Phases.Shunted qualified as NewS
-import Elara.AST.New.Phases.Typed (Typed, TypedExpr)
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phase (ElaraPhase (..))
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Frontend qualified as NewF
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Phases.Typed (Typed, TypedExpr)
 import Elara.AST.Region (SourceRegion)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core qualified as Core

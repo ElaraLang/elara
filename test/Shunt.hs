@@ -2,8 +2,8 @@
 module Shunt (spec) where
 
 import Boilerplate (loadShuntedExprIO, pipelineResShouldSucceed)
-import Elara.AST.New.Phases.Shunted (ShuntedExpr, ShuntedExpr')
-import Elara.AST.New.Types qualified as New
+import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
+import Elara.AST.Types qualified as New
 import Test.Syd
 
 -- | Extract the 'ShuntedExpr'' from a 'ShuntedExpr'

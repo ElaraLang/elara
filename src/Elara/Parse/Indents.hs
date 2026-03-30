@@ -1,9 +1,9 @@
 module Elara.Parse.Indents where
 
-import Elara.AST.New.Phases.Frontend
-import Elara.AST.New.Types (Expr (..), Expr' (..))
+import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Region qualified as Region (spanningRegion')
+import Elara.AST.Types (Expr (..), Expr' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Primitives (Parser, token_)
