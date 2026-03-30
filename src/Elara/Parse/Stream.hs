@@ -16,6 +16,8 @@ data TokenStream = TokenStream
     -- ^ The list of tokens remaining to be parsed
     , skipIndents :: Bool
     -- ^ Whether to skip Indent tokens encountered during parsing
+    , tokensConsumed :: !Int
+    -- ^ The number of tokens consumed from the stream
     }
     deriving (Show, Eq)
 
@@ -31,26 +33,26 @@ instance Stream TokenStream where
     chunkLength Proxy = length
     chunkEmpty Proxy = null
 
-    take1_ stream@(TokenStream _str tokens skip)
-        | skip = case dropWhile (isIndent . view unlocated) tokens of
-            [] -> Nothing
-            (t : ts) -> Just (t, stream{tokenStreamTokens = ts})
+    take1_ (TokenStream str tokens skip consumed)
+        | skip = case span (isIndent . view unlocated) tokens of
+            (_, []) -> Nothing
+            (skipped, t : ts) -> Just (t, TokenStream str ts skip (consumed + length skipped + 1))
         | otherwise = case tokens of
             [] -> Nothing
-            (t : ts) -> Just (t, stream{tokenStreamTokens = ts})
+            (t : ts) -> Just (t, TokenStream str ts skip (consumed + 1))
 
-    takeN_ n (TokenStream str s skipIndents)
-        | n <= 0 = Just ([], TokenStream str s skipIndents)
+    takeN_ n (TokenStream str s skipIndents consumed)
+        | n <= 0 = Just ([], TokenStream str s skipIndents consumed)
         | null s = Nothing
         | otherwise =
-            let (x, s') = takeWhile_ (const True) (TokenStream str s skipIndents)
+            let (x, s') = takeWhile_ (const True) (TokenStream str s skipIndents consumed)
              in case takeN_ (n - length x) s' of
                     Nothing -> Nothing
                     Just (xs, s'') -> Just (x ++ xs, s'')
 
-    takeWhile_ f (TokenStream str s skipIndents) =
+    takeWhile_ f (TokenStream str s skipIndents consumed) =
         let (x, s') = span f s
-         in (x, TokenStream str s' skipIndents) -- Again, preserve 'str'
+         in (x, TokenStream str s' skipIndents (consumed + length x)) -- Again, preserve 'str'
 
 instance VisualStream TokenStream where
     showTokens Proxy =
@@ -71,6 +73,7 @@ instance TraversableStream TokenStream where
                     { tokenStreamInput = fullText
                     , tokenStreamTokens = postLexemes
                     , skipIndents = pstateInput.skipIndents
+                    , tokensConsumed = pstateInput.tokensConsumed + length preLexemes
                     }
             , pstateOffset = max pstateOffset o
             , pstateSourcePos = newSourcePos
