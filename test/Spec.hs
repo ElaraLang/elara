@@ -1,3 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 import CoreToCore qualified
 import Golden qualified
 import Infer qualified

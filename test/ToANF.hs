@@ -1,3 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Tests for Core to ANF conversion
 module ToANF (spec) where
 

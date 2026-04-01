@@ -1,4 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
@@ -39,7 +41,6 @@ import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Rock qualified
-import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -52,7 +53,7 @@ data ToCoreError
     deriving (Show)
 
 instance ReportableError ToCoreError where
-    report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
+    report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "A top-level let binding was encountered. This is likely a bug in the compiler." [] []
     report (UnknownConstructor (Located _ qn) syms) =
         writeReport $
             Err
@@ -78,13 +79,13 @@ instance ReportableError ToCoreError where
                 )
                 []
                 []
-    report (UnknownLambdaType _t) = writeReport $ Err (Just "UnknownLambdaType") todo [] []
-    report (UnsolvedTypeSnuckIn _t) = do
+    report (UnknownLambdaType t) = writeReport $ Err (Just "UnknownLambdaType") (vcat ["Unknown lambda type:", pretty t]) [] []
+    report (UnsolvedTypeSnuckIn t) = do
         writeReport $
             Err
                 (Just "UnsolvedTypeSnuckIn")
-                (vcat [todo, pretty $ prettyCallStack callStack])
-                [ todo
+                (vcat ["An unsolved type snuck into the Core conversion:", pretty t, pretty $ prettyCallStack callStack])
+                [ "This is likely a bug in the compiler."
                 ]
                 []
     report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
