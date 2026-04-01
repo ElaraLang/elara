@@ -67,8 +67,7 @@ generateConstructor parentClass (className, fields) = do
     let methodArgs = map (\(u, t, _) -> (u, t)) argsWithUniques
     let body =
             IR.Super parentClass []
-                : [IR.SetField className fname t (IR.LocalVar u t) | (u, t, fname) <- argsWithUniques]
-                ++ [IR.Return Nothing]
+                : foldr (\(u, t, fname) acc -> IR.SetField className fname t (IR.LocalVar u t) : acc) [IR.Return Nothing] argsWithUniques
 
     entryLabel <- makeUnique "constructor_entry"
     pure $
@@ -142,7 +141,7 @@ generateEqualsMethod (className, fields) = do
     -- Generate field check blocks with short-circuit
     -- Note: compareField returns primitive boolean from Objects.equals,
     -- so we use JumpIfPrimitiveBool instead of JumpIf
-    let fieldChecks = zipWith3 makeFieldCheck fieldCheckLabels fields (drop 1 fieldCheckLabels ++ [returnTrueLabel])
+    let fieldChecks = zipWith3 makeFieldCheck fieldCheckLabels fields (foldr (:) [returnTrueLabel] (drop 1 fieldCheckLabels))
         makeFieldCheck label field nextLabel =
             IR.Block
                 label
@@ -161,7 +160,7 @@ generateEqualsMethod (className, fields) = do
                 [ IR.IReturn (IR.PrimitiveLitBool False)
                 ]
 
-    let methodBody = [entryBlock, castBlock] ++ fieldChecks ++ [returnTrueBlock, returnFalseBlock]
+    let methodBody = entryBlock : castBlock : (fieldChecks ++ [returnTrueBlock, returnFalseBlock])
     let primitiveBooleanReturn = JVM.TypeReturn (JVM.PrimitiveFieldType JVM.Boolean)
 
     pure $ buildInstanceMethod "equals" [(objParamUnique, objFieldType)] primitiveBooleanReturn methodBody
