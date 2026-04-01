@@ -1,4 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
@@ -39,7 +41,6 @@ import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
 import Error.Diagnose (Report (..))
 import Rock qualified
-import TODO (todo)
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
