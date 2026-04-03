@@ -27,6 +27,6 @@ let main =
     let squared = map (\x -> x * x) numbers
     let large = filter (\x -> x > 3) squared
     
-    println ("Original: " ++ listToString numbers) >>
-    println ("Squared: " ++ listToString squared) >>
+    println ("Original: " ++ listToString numbers) *>
+    println ("Squared: " ++ listToString squared) *>
     println ("> 3: " ++ listToString large)
