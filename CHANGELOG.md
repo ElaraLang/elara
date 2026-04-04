@@ -361,6 +361,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(interpreter)* Add & refactor golden tests - ([4d2513f](https://github.com/ElaraLang/elara/commit/4d2513f49f0c9a6d8c28c246e3eb705bdf8e2c89)) 
 - *(parser)* :white_check_mark: Improve tests of parser and lexer - ([5aad58c](https://github.com/ElaraLang/elara/commit/5aad58cb93b148eadc1fae34a1a5cee92a6ce966)) 
 - *(parser)* Fix arbitrary generator for operators - ([f4218fe](https://github.com/ElaraLang/elara/commit/f4218fea4772c013b8f5b3b79a5f4ead328ceae9)) 
+- *(renamer)* Add test cases for renamer errors - ([150df7b](https://github.com/ElaraLang/elara/commit/150df7bb8ffcb4a4d9c68bfea0311b31da93efd9)) 
 - *(tests)* Fix test rules not compiling - ([961f0dd](https://github.com/ElaraLang/elara/commit/961f0dd599326d34b563881ceb95bf7a14496c76)) 
 - *(type-infer)* :white_check_mark: Improve behaviour of applicableTyApp and test cases - ([06ad585](https://github.com/ElaraLang/elara/commit/06ad585f6d548bef257ea10eccd592394bd21e14)) 
 - :bug: Fix unit test compilation! - ([cefd2aa](https://github.com/ElaraLang/elara/commit/cefd2aa1ed624e7ce29f4f3370e43011cd99fc35)) 
