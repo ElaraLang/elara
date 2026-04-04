@@ -410,6 +410,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix h2jvm input url - ([494d3b7](https://github.com/ElaraLang/elara/commit/494d3b74ff2b80334d01802e9ab4f14dab4230eb)) 
 - Update nix inputs - ([38f9947](https://github.com/ElaraLang/elara/commit/38f99473b5b6eec3f47704bc0834e34df0bcdaed)) 
 - Update nix inputs - ([3105181](https://github.com/ElaraLang/elara/commit/31051818c2b4c6d49b3be61b59e81227c3ccadef)) 
+- Fix Fourmolu not detecting some test files correctly - ([259f47d](https://github.com/ElaraLang/elara/commit/259f47d32d714ea19ce29347a1f2999761fe3a33)) 
 
 ### Unfinished
 
