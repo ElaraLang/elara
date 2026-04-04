@@ -296,14 +296,17 @@ test-suite elara-test
       Arbitrary.Type
       Boilerplate
       Common
-      HedgehogSyd
+      CoreToCore
       Golden
+      HedgehogSyd
       Infer
       Infer.Unify
       Lex
       Lex.Common
       Lex.Indents
       LiftClosures
+      Logging
+      Normalise
       Orphans
       Parse
       Parse.Common
@@ -311,6 +314,7 @@ test-suite elara-test
       Parse.Patterns
       Region
       Shunt
+      ToANF
   hs-source-dirs:
       test
   default-extensions:

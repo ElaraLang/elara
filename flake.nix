@@ -54,7 +54,6 @@
               programs.nixfmt.enable = true;
               programs.fourmolu.enable = true;
               programs.fourmolu.package = pkgs.haskell.packages.ghc912.fourmolu;
-              programs.fourmolu.ghcOpts = [ ];
               programs.hlint.enable = true;
               programs.hlint.package = pkgs.haskell.packages.ghc912.hlint;
               programs.yamlfmt.enable = true;
@@ -252,31 +251,6 @@
                         "hspec-megaparsec"
                       ];
                       source-dirs = "test";
-                      component = {
-                        other-modules = [
-                          "Arbitrary.AST"
-                          "Arbitrary.Literals"
-                          "Arbitrary.Names"
-                          "Arbitrary.Type"
-                          "Boilerplate"
-                          "Common"
-                          "HedgehogSyd"
-                          "Golden"
-                          "Infer"
-                          "Infer.Unify"
-                          "Lex"
-                          "Lex.Common"
-                          "Lex.Indents"
-                          "LiftClosures"
-                          "Orphans"
-                          "Parse"
-                          "Parse.Common"
-                          "Parse.Expressions"
-                          "Parse.Patterns"
-                          "Region"
-                          "Shunt"
-                        ];
-                      };
                     };
                   };
                 };

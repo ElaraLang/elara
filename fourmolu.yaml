@@ -1,4 +1,2 @@
 indentation: 4
 single-constraint-parens: never
-ghc-opts:
-  - -XImportQualifiedPost
