@@ -375,6 +375,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - More golden tests - ([d8ed43a](https://github.com/ElaraLang/elara/commit/d8ed43a4174618a00554929e9666e0923a888698)) 
 - Many more golden tests including negative tests - ([9ce8f2c](https://github.com/ElaraLang/elara/commit/9ce8f2cf5f97477f65bb887a4b5aa1c921bbe9dd)) 
 - Add Core tests - ([01da56f](https://github.com/ElaraLang/elara/commit/01da56f206840ee8431d20293a5e125a1d9cccfc)) 
+- :fire: Remove now-redundant pragmas - ([f3c11bc](https://github.com/ElaraLang/elara/commit/f3c11bc7b55475aa3978e414e7b5164c25e8d3f1)) 
 
 ### ⚙️ Miscellaneous Tasks
 
