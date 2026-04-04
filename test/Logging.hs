@@ -1,16 +1,20 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Logging where
 
 import Data.Text qualified as T
-import Effectful
-import Effectful.Colog qualified as Log
 import Elara.Data.Pretty
 import Elara.Logging
-import Test.Hspec
+import Test.Syd
 
--- | Test that log levels are correctly ordered
+-- | Local predicate combining level and namespace filtering logic
+shouldLog :: LogConfig -> LogLevel -> [T.Text] -> Bool
+shouldLog config level ns =
+    level >= minLogLevel config
+        && case namespaceFilter config of
+            Nothing -> True
+            Just filterNs -> filterNs `isPrefixOf` ns
+
 spec :: Spec
 spec = do
     describe "LogLevel" $ do
@@ -44,17 +48,12 @@ spec = do
 
     describe "Pretty LogLevel" $ do
         it "formats log levels" $ do
-            prettyToText (pretty Debug) `shouldContain` "DEBUG"
-            prettyToText (pretty Info) `shouldContain` "INFO"
-            prettyToText (pretty Warning) `shouldContain` "WARN"
-            prettyToText (pretty Error) `shouldContain` "ERROR"
+            toString (prettyToText (pretty Debug)) `shouldContain` "DEBUG"
+            toString (prettyToText (pretty Info)) `shouldContain` "INFO"
+            toString (prettyToText (pretty Warning)) `shouldContain` "WARN"
+            toString (prettyToText (pretty Error)) `shouldContain` "ERROR"
 
     describe "getLogConfigFromEnv" $ do
-        it "reads environment variables" $ do
-            -- This test would need environment setup
-            -- For now, just verify the function exists
-            _ <- getLogConfigFromEnv
-            pass
-
-main :: IO ()
-main = hspec spec
+        it "returns a valid config" $ do
+            config <- getLogConfigFromEnv
+            minLogLevel config `shouldSatisfy` (`elem` [Debug, Info, Warning, Error])
