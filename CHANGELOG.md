@@ -359,6 +359,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🧪 Testing
 
 - *(interpreter)* Add & refactor golden tests - ([4d2513f](https://github.com/ElaraLang/elara/commit/4d2513f49f0c9a6d8c28c246e3eb705bdf8e2c89)) 
+- *(logging)* Fix a test having the wrong module name somehow - ([563b375](https://github.com/ElaraLang/elara/commit/563b375cc70ff6dd2d2c62aa32801d8be9c116db)) 
+- *(logging)* Fix stupid broken logging test - ([35ad779](https://github.com/ElaraLang/elara/commit/35ad77929e27ac6553c924d89830749e74c6e35f)) 
 - *(parser)* :white_check_mark: Improve tests of parser and lexer - ([5aad58c](https://github.com/ElaraLang/elara/commit/5aad58cb93b148eadc1fae34a1a5cee92a6ce966)) 
 - *(parser)* Fix arbitrary generator for operators - ([f4218fe](https://github.com/ElaraLang/elara/commit/f4218fea4772c013b8f5b3b79a5f4ead328ceae9)) 
 - *(renamer)* Add test cases for renamer errors - ([150df7b](https://github.com/ElaraLang/elara/commit/150df7bb8ffcb4a4d9c68bfea0311b31da93efd9)) 
