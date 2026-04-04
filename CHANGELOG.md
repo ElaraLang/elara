@@ -383,6 +383,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Remove stupid useless stan warning - ([caba225](https://github.com/ElaraLang/elara/commit/caba2254c24b81cf17d26bcbff358e728fcc2d91)) 
 - Fix another stupid stan warning - ([bd818e4](https://github.com/ElaraLang/elara/commit/bd818e45c50f8ca6c9b397d05dc5c56284b15b67)) 
 - Substantial tidy up - ([d68e3ca](https://github.com/ElaraLang/elara/commit/d68e3ca7e82ff8b143e97852c540eb69a30fdb63)) 
+- Use nothing-but-nix for more storage space - ([bcd2d6a](https://github.com/ElaraLang/elara/commit/bcd2d6a16af035f38e02eb7a53947ced378a3c35)) 
 
 ### ◀️ Revert
 
