@@ -1,7 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LoggingSpec where
+module Logging where
 
 import Data.Text qualified as T
 import Effectful
