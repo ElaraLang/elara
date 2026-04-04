@@ -2,7 +2,7 @@
 module Elara.Prim.Core where
 
 import Effectful
-import Elara.AST.Name (ModuleName (..), NameLike (nameText), Qualified (..))
+import Elara.AST.Name (NameLike (nameText), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
@@ -10,19 +10,19 @@ import Elara.Data.Unique.Effect
 import Elara.Prim (charName, doubleName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
 
 trueCtorName :: Qualified Text
-trueCtorName = Qualified "True" (ModuleName ("Elara" :| ["Prim"]))
+trueCtorName = mkPrimQual "True"
 
 falseCtorName :: Qualified Text
-falseCtorName = Qualified "False" (ModuleName ("Elara" :| ["Prim"]))
+falseCtorName = mkPrimQual "False"
 
 emptyListCtorName :: IsString s => Qualified s
-emptyListCtorName = Qualified "Nil" (ModuleName ("Elara" :| ["Prim"]))
+emptyListCtorName = mkPrimQual "Nil"
 
 consCtorName :: IsString s => Qualified s
-consCtorName = Qualified "Cons" (ModuleName ("Elara" :| ["Prim"]))
+consCtorName = mkPrimQual "Cons"
 
 tuple2CtorName :: Qualified Text
-tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
+tuple2CtorName = mkPrimQual "Tuple2"
 
 -- tuple2CtorType :: Member UniqueGen r => Sem r Type
 -- tuple2CtorType = do
@@ -33,7 +33,7 @@ tuple2CtorName = Qualified "Tuple2" (ModuleName ("Elara" :| ["Prim"]))
 --     pure $ ForAllTy tvA (ForAllTy tvB (FuncTy (TyVarTy tvA) (FuncTy (TyVarTy tvB) tuple2Con)))
 
 fetchPrimitiveName :: Qualified Text
-fetchPrimitiveName = Qualified "elaraPrimitive" (ModuleName ("Elara" :| ["Prim"]))
+fetchPrimitiveName = mkPrimQual "elaraPrimitive"
 
 boolCon :: TyCon
 boolCon = TyCon (mkPrimQual "Bool") (TyADT [trueCtorName, falseCtorName])

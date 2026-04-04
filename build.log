@@ -1,0 +1,290 @@
+Build profile: -w ghc-9.12.2 -O1
+In order, the following will be built (use -v for more details):
+ - elara-0.1.0 (lib) (file src/Elara/TypeInfer/Render.hs changed)
+ - elara-0.1.0 (exe:elara) (configuration changed)
+Preprocessing library for elara-0.1.0...
+Building library for elara-0.1.0...
+[ 56 of 135] Compiling Elara.Prim       ( src/Elara/Prim.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim.dyn_o ) [Source file changed]
+[ 57 of 135] Compiling Elara.TypeInfer.Render ( src/Elara/TypeInfer/Render.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Render.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Render.dyn_o ) [Source file changed]
+[ 58 of 135] Compiling Elara.TypeInfer.Error ( src/Elara/TypeInfer/Error.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Error.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Error.dyn_o ) [Elara.TypeInfer.Render changed]
+[ 59 of 135] Compiling Elara.Prim.Rename ( src/Elara/Prim/Rename.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim/Rename.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim/Rename.dyn_o ) [Elara.Prim changed]
+[ 61 of 135] Compiling Elara.Prim.Core  ( src/Elara/Prim/Core.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim/Core.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Prim/Core.dyn_o ) [Source file changed]
+[ 63 of 135] Compiling Elara.Core.Analysis ( src/Elara/Core/Analysis.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Analysis.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Analysis.dyn_o ) [Elara.Prim.Core changed]
+[ 64 of 135] Compiling Elara.Core.ToANF ( src/Elara/Core/ToANF.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/ToANF.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/ToANF.dyn_o ) [Elara.Core.Analysis changed]
+[ 65 of 135] Compiling Elara.Core.Pretty ( src/Elara/Core/Pretty.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Pretty.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Pretty.dyn_o ) [Elara.Core.ToANF changed]
+[ 66 of 135] Compiling Elara.JVM.Error  ( src/Elara/JVM/Error.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Error.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Error.dyn_o ) [Elara.Core.Pretty changed]
+[ 67 of 135] Compiling Elara.JVM.Lower.Monad ( src/Elara/JVM/Lower/Monad.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Monad.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Monad.dyn_o ) [Elara.JVM.Error changed]
+[ 68 of 135] Compiling Elara.JVM.Lower.Util ( src/Elara/JVM/Lower/Util.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Util.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Util.dyn_o ) [Elara.JVM.Lower.Monad changed]
+[ 69 of 135] Compiling Elara.JVM.Lower.ADT ( src/Elara/JVM/Lower/ADT.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/ADT.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/ADT.dyn_o ) [Elara.JVM.Lower.Monad changed]
+[ 70 of 135] Compiling Elara.JVM.Lower.Match ( src/Elara/JVM/Lower/Match.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Match.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Match.dyn_o ) [Elara.Core.Analysis changed]
+[ 71 of 135] Compiling Elara.JVM.Lower.Function ( src/Elara/JVM/Lower/Function.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Function.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Function.dyn_o ) [Elara.JVM.Error changed]
+[ 72 of 135] Compiling Elara.JVM.Lower.Expr ( src/Elara/JVM/Lower/Expr.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Expr.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower/Expr.dyn_o ) [Elara.Core.Analysis changed]
+[ 73 of 135] Compiling Elara.Core.Module ( src/Elara/Core/Module.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Module.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/Module.dyn_o ) [Elara.Core.Pretty changed]
+[ 74 of 135] Compiling Elara.JVM.Lower  ( src/Elara/JVM/Lower.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Lower.dyn_o ) [Elara.Core.Module changed]
+[ 75 of 135] Compiling Elara.Core.LiftClosures.Error ( src/Elara/Core/LiftClosures/Error.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures/Error.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures/Error.dyn_o ) [Elara.Core.Pretty changed]
+[ 76 of 135] Compiling Elara.Core.LiftClosures.Util ( src/Elara/Core/LiftClosures/Util.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures/Util.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures/Util.dyn_o ) [Elara.Core.Analysis changed]
+[ 81 of 135] Compiling Elara.TypeInfer.Convert ( src/Elara/TypeInfer/Convert.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Convert.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Convert.dyn_o ) [Elara.Prim changed]
+[ 85 of 135] Compiling Elara.ToCore.Match ( src/Elara/ToCore/Match.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/ToCore/Match.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/ToCore/Match.dyn_o ) [Elara.Core.Analysis changed]
+[104 of 135] Compiling Elara.Query      ( src/Elara/Query.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Query.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Query.dyn_o ) [Elara.Core.LiftClosures.Error changed]
+[105 of 135] Compiling Elara.TypeInfer.Monad ( src/Elara/TypeInfer/Monad.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Monad.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/Monad.dyn_o ) [Elara.Query changed]
+[106 of 135] Compiling Elara.TypeInfer.ConstraintGeneration ( src/Elara/TypeInfer/ConstraintGeneration.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/ConstraintGeneration.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer/ConstraintGeneration.dyn_o ) [Elara.Prim changed]
+src/Elara/TypeInfer/ConstraintGeneration.hs:32:47: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘debugWith’ from module ‘Elara.Logging’ is redundant
+   |
+32 | import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, logDebug, logDebugWith)
+   |                                               ^^^^^^^^^
+
+src/Elara/TypeInfer/ConstraintGeneration.hs:364:21: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debug’ (imported from Elara.Logging): "Use logDebug"
+    |
+364 |                     debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
+    |                     ^^^^^
+
+src/Elara/TypeInfer/ConstraintGeneration.hs:458:72: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘l2’
+    |
+458 | unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor l2 b bs)
+    |                                                                        ^^
+
+[107 of 135] Compiling Elara.ToCore     ( src/Elara/ToCore.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/ToCore.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/ToCore.dyn_o ) [Source file changed]
+src/Elara/ToCore.hs:81:82: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘todo’ (imported from TODO): "TODO"
+   |
+81 |     report (UnknownLambdaType _t) = writeReport $ Err (Just "UnknownLambdaType") todo [] []
+   |                                                                                  ^^^^
+
+src/Elara/ToCore.hs:86:24: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘todo’ (imported from TODO): "TODO"
+   |
+86 |                 (vcat [todo, pretty $ prettyCallStack callStack])
+   |                        ^^^^
+
+src/Elara/ToCore.hs:87:19: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘todo’ (imported from TODO): "TODO"
+   |
+87 |                 [ todo
+   |                   ^^^^
+
+src/Elara/ToCore.hs:217:9: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+217 |         debugWith ("sccToCore: AcyclicSCC " <> pretty name) $ do
+    |         ^^^^^^^^^
+
+src/Elara/ToCore.hs:224:9: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+224 |         debugWith ("sccToCore: CyclicSCC " <> pretty (fmap fst binds)) $ do
+    |         ^^^^^^^^^
+
+src/Elara/ToCore.hs:293:21: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debug’ (imported from Elara.Logging): "Use logDebug"
+    |
+293 |                     debug $ "Ctor: " <+> pretty ctorName <+> " with type: " <+> pretty ctorType
+    |                     ^^^^^
+
+src/Elara/ToCore.hs:349:20: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+349 |         Nothing -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+    |                    ^^^^^^^^^
+
+src/Elara/ToCore.hs:441:13: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debug’ (imported from Elara.Logging): "Use logDebug"
+    |
+441 |             debug $ "Let-binding" <+> pretty vn <+> ":" <+> pretty e1Meta <+> "=" <+> pretty e1'
+    |             ^^^^^
+
+src/Elara/ToCore.hs:443:13: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debug’ (imported from Elara.Logging): "Use logDebug"
+    |
+443 |             debug $ "Recursive?" <+> pretty bindingIsRecursive
+    |             ^^^^^
+
+[108 of 135] Compiling Elara.Rules.Generic ( src/Elara/Rules/Generic.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rules/Generic.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rules/Generic.dyn_o ) [Elara.Query changed]
+src/Elara/Rules/Generic.hs:13:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Elara.Data.Pretty’ is redundant
+      except perhaps to import instances from ‘Elara.Data.Pretty’
+    To import instances alone, use: import Elara.Data.Pretty()
+   |
+13 | import Elara.Data.Pretty
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+[109 of 135] Compiling Elara.Rename     ( src/Elara/Rename.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rename.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rename.dyn_o ) [Elara.Prim changed]
+src/Elara/Rename.hs:26:123: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘OpName’ from module ‘Elara.AST.Name’ is redundant
+   |
+26 | import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), OpName (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+   |                                                                                                                           ^^^^^^^^^^^
+
+src/Elara/Rename.hs:48:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Elara.Query.Errors’ is redundant
+      except perhaps to import instances from ‘Elara.Query.Errors’
+    To import instances alone, use: import Elara.Query.Errors()
+   |
+48 | import Elara.Query.Errors (StandardQueryError)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/Elara/Rename.hs:523:22: warning: [GHC-40910] [-Wunused-local-binds]
+    Defined but not used: ‘eloc’
+    |
+523 |         let New.Expr eloc _ e'' = e'
+    |                      ^^^^
+
+src/Elara/Rename.hs:601:20: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘ploc’
+    |
+601 |     renamePattern' ploc (New.PCon cn ps) = do
+    |                    ^^^^
+
+[110 of 135] Compiling Elara.Shunt      ( src/Elara/Shunt.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Shunt.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Shunt.dyn_o ) [Elara.Prim changed]
+src/Elara/Shunt.hs:214:39: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘pats’
+    |
+214 |     go (New.ValueDeclaration name val pats mTy mTypeMeta anns) = do
+    |                                       ^^^^
+
+src/Elara/Shunt.hs:214:44: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘mTy’
+    |
+214 |     go (New.ValueDeclaration name val pats mTy mTypeMeta anns) = do
+    |                                            ^^^
+
+src/Elara/Shunt.hs:362:9: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘e'’
+    |
+362 |         e'@(New.Expr _ _ inner) <- fixExpr e
+    |         ^^
+
+[111 of 135] Compiling Elara.SCC        ( src/Elara/SCC.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/SCC.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/SCC.dyn_o ) [Elara.Query changed]
+src/Elara/SCC.hs:13:40: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘unlocated’
+    from module ‘Elara.AST.Region’ is redundant
+   |
+13 | import Elara.AST.Region (Located (..), unlocated)
+   |                                        ^^^^^^^^^
+
+src/Elara/SCC.hs:23:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Optics’ is redundant
+      except perhaps to import instances from ‘Optics’
+    To import instances alone, use: import Optics()
+   |
+23 | import Optics (view)
+   | ^^^^^^^^^^^^^^^^^^^^
+
+[112 of 135] Compiling Elara.Query.Common ( src/Elara/Query/Common.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Query/Common.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Query/Common.dyn_o ) [Elara.Query changed]
+[113 of 135] Compiling Elara.Lexer.Reader ( src/Elara/Lexer/Reader.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Lexer/Reader.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Lexer/Reader.dyn_o ) [Elara.Query changed]
+[114 of 135] Compiling Elara.JVM.Query  ( src/Elara/JVM/Query.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Query.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/JVM/Query.dyn_o ) [Elara.JVM.Error changed]
+[115 of 135] Compiling Elara.Interpreter ( src/Elara/Interpreter.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Interpreter.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Interpreter.dyn_o ) [Elara.Core.Module changed]
+src/Elara/Interpreter.hs:457:1: warning: [GHC-62161] [-Wincomplete-patterns]
+    Pattern match(es) are non-exhaustive
+    In an equation for ‘interpretBinding’:
+        Patterns of type ‘Elara.Core.Generic.Bind Var Expr’ not matched:
+            NonRecursive ((TyVar _), _)
+    |
+457 | interpretBinding (NonRecursive (Id v _ _, e)) = logDebugWith ("interpretBinding: " <> pretty v) $ do
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...
+
+[116 of 135] Compiling Elara.Data.Kind.Infer ( src/Elara/Data/Kind/Infer.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Data/Kind/Infer.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Data/Kind/Infer.dyn_o ) [Elara.Prim changed]
+src/Elara/Data/Kind/Infer.hs:211:25: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+211 | elaborate tName tvs t = debugWith ("elaborate: " <> pretty tName) $ do
+    |                         ^^^^^^^^^
+
+[117 of 135] Compiling Elara.TypeInfer  ( src/Elara/TypeInfer.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/TypeInfer.dyn_o ) [Elara.Data.Kind.Infer changed]
+src/Elara/TypeInfer.hs:178:34: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+178 | seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
+    |                                  ^^^^^^^^^
+
+src/Elara/TypeInfer.hs:189:60: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘debugWith’ (imported from Elara.Logging):
+    "Use logDebugWith"
+    |
+189 |     for_ typeDecls $ \(name, typeVars, declBody, _anns) -> debugWith ("Seeding declaration: " <> pretty name) $ do
+    |                                                            ^^^^^^^^^
+
+src/Elara/TypeInfer.hs:520:48: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘undefined’
+    (imported from Prelude, but defined in Relude.Debug):
+    "'undefined' function remains in code"
+    |
+520 |         _ -> throwError $ UnresolvedConstraint undefined finalConstraint
+    |                                                ^^^^^^^^^
+
+[118 of 135] Compiling Elara.Core.LiftClosures ( src/Elara/Core/LiftClosures.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/LiftClosures.dyn_o ) [Elara.Core.Analysis changed]
+[126 of 135] Compiling Elara.Parse.Expression ( src/Elara/Parse/Expression.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Expression.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Expression.dyn_o ) [Elara.Prim changed]
+[127 of 135] Compiling Elara.Parse.Annotation ( src/Elara/Parse/Annotation.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Annotation.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Annotation.dyn_o ) [Elara.Parse.Expression changed]
+[128 of 135] Compiling Elara.Parse.Declaration ( src/Elara/Parse/Declaration.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Declaration.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Declaration.dyn_o ) [Elara.Parse.Annotation changed]
+src/Elara/Parse/Declaration.hs:6:54: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘sourceRegion’
+    from module ‘Elara.AST.Region’ is redundant
+  |
+6 | import Elara.AST.Region (Located (..), SourceRegion, sourceRegion, unlocated)
+  |                                                      ^^^^^^^^^^^^
+
+[129 of 135] Compiling Elara.Parse.Module ( src/Elara/Parse/Module.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Module.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse/Module.dyn_o ) [Elara.Parse.Declaration changed]
+[130 of 135] Compiling Elara.Parse      ( src/Elara/Parse.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Parse.dyn_o ) [Elara.Parse.Module changed]
+[131 of 135] Compiling Elara.Desugar    ( src/Elara/Desugar.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Desugar.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Desugar.dyn_o ) [Elara.Query changed]
+[132 of 135] Compiling Elara.Core.TypeCheck ( src/Elara/Core/TypeCheck.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/TypeCheck.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Core/TypeCheck.dyn_o ) [Elara.Core.Analysis changed]
+src/Elara/Core/TypeCheck.hs:210:23: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘t’
+    |
+210 | typeCheckA (ANF.TyLam t e) = todo
+    |                       ^
+
+src/Elara/Core/TypeCheck.hs:210:25: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘e’
+    |
+210 | typeCheckA (ANF.TyLam t e) = todo
+    |                         ^
+
+src/Elara/Core/TypeCheck.hs:210:30: warning: [GHC-63394] [-Wdeprecations]
+    In the use of ‘todo’ (imported from TODO): "TODO"
+    |
+210 | typeCheckA (ANF.TyLam t e) = todo
+    |                              ^^^^
+
+src/Elara/Core/TypeCheck.hs:236:18: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘x’
+    |
+236 | equalUnderSubst' x y = False
+    |                  ^
+
+src/Elara/Core/TypeCheck.hs:236:20: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘y’
+    |
+236 | equalUnderSubst' x y = False
+    |                    ^
+
+[133 of 135] Compiling Elara.CoreToCore ( src/Elara/CoreToCore.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/CoreToCore.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/CoreToCore.dyn_o ) [Elara.Core.LiftClosures.Error changed]
+[134 of 135] Compiling Elara.Rules      ( src/Elara/Rules.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rules.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara/Rules.dyn_o ) [Elara.Core.LiftClosures changed]
+src/Elara/Rules.hs:12:26: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘Located’ from module ‘Elara.AST.Region’ is redundant
+   |
+12 | import Elara.AST.Region (Located (..), unlocated)
+   |                          ^^^^^^^^^^^^
+
+src/Elara/Rules.hs:53:31: warning: [GHC-40910] [-Wunused-matches]
+    Defined but not used: ‘cs’
+   |
+53 |                         Left (cs, err) -> do
+   |                               ^^
+
+[135 of 135] Compiling Elara            ( src/Elara.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara.o, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/build/Elara.dyn_o ) [Elara.Core.LiftClosures.Error changed]
+Configuring executable 'elara' for elara-0.1.0...
+Warning: [option-rtsopts] 'ghc-options: -rtsopts' has no effect for libraries.
+It should only be used for executables.
+Warning: [option-with-rtsopts] 'ghc-options: -with-rtsopts' has no effect for
+libraries. It should only be used for executables.
+Preprocessing executable 'elara' for elara-0.1.0...
+Building executable 'elara' for elara-0.1.0...
+[2 of 2] Compiling Main             ( app/Main.hs, dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/x/elara/build/elara/elara-tmp/Main.o ) [Elara changed]
+[3 of 3] Linking dist-newstyle/build/aarch64-osx/ghc-9.12.2/elara-0.1.0/x/elara/build/elara/elara [Objects changed]

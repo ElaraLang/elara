@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
 
@@ -29,7 +27,7 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Prim (charName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
+import Elara.Prim (PrimType (..), isPrimTypeName, mkPrimQual)
 import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -107,6 +105,18 @@ primCtorSymbolTable =
             [(mkPrimQual "IO", ioCon)]
         )
 
+-- | Map a 'PrimType' to its corresponding Core 'TyCon'.
+primTypeToCon :: PrimType -> TyCon
+primTypeToCon = \case
+    PrimInt -> intCon
+    PrimFloat -> floatCon
+    PrimDouble -> doubleCon
+    PrimString -> stringCon
+    PrimChar -> charCon
+    PrimIO -> ioCon
+    PrimUnit -> unitCon
+    PrimBool -> boolCon
+
 lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Eff r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
@@ -148,14 +158,9 @@ runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
 
 runGetTyConQuery ::
     Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
-runGetTyConQuery qn
-    | qn == mkPrimQual (nameText intName) = pure $ Just intCon
-    | qn == mkPrimQual (nameText charName) = pure $ Just charCon
-    | qn == mkPrimQual (nameText stringName) = pure $ Just stringCon
-    | qn == mkPrimQual (nameText floatName) = pure $ Just floatCon
-    | qn == mkPrimQual (nameText unitName) = pure $ Just unitCon
-    | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
-    | otherwise = logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
+runGetTyConQuery qn = case isPrimTypeName (TypeName <$> qn) of
+    Just pt -> pure $ Just (primTypeToCon pt)
+    Nothing -> logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
         let name = NTypeName . TypeName <$> qn
         typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
         Just
@@ -337,14 +342,9 @@ typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCor
 typeToCore (Type.TypeConstructor _ qn ts) = do
     let name = fmap (view _Unwrapped) qn
     ts' <- traverse typeToCore ts
-
-    if
-        | name == mkPrimQual (nameText intName) -> pure $ foldl' Core.AppTy (Core.ConTy intCon) ts'
-        | name == mkPrimQual (nameText charName) -> pure $ foldl' Core.AppTy (Core.ConTy charCon) ts'
-        | name == mkPrimQual (nameText stringName) -> pure $ foldl' Core.AppTy (Core.ConTy stringCon) ts'
-        | name == mkPrimQual (nameText unitName) -> pure $ foldl' Core.AppTy (Core.ConTy unitCon) ts'
-        | name == mkPrimQual (nameText ioName) -> pure $ foldl' Core.AppTy (Core.ConTy ioCon) ts'
-        | otherwise -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+    case isPrimTypeName qn of
+        Just pt -> pure $ foldl' Core.AppTy (Core.ConTy (primTypeToCon pt)) ts'
+        Nothing -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
             tyCon <- lookupTyCon name
             pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
 
@@ -357,17 +357,12 @@ astTypeToCore (New.Type _ _ t') = case t' of
     New.TFun t1 t2 -> Core.FuncTy <$> astTypeToCore t1 <*> astTypeToCore t2
     New.TUnit -> pure $ Core.ConTy unitCon
     New.TApp t1 t2 -> Core.AppTy <$> astTypeToCore t1 <*> astTypeToCore t2
-    New.TUserDefined (Located _ qn) -> do
-        let name = nameText <$> qn
-        if
-            | name == mkPrimQual (nameText intName) -> pure $ Core.ConTy intCon
-            | name == mkPrimQual (nameText charName) -> pure $ Core.ConTy charCon
-            | name == mkPrimQual (nameText stringName) -> pure $ Core.ConTy stringCon
-            | name == mkPrimQual (nameText unitName) -> pure $ Core.ConTy unitCon
-            | name == mkPrimQual (nameText ioName) -> pure $ Core.ConTy ioCon
-            | otherwise -> do
-                tyCon <- lookupTyCon name
-                pure $ Core.ConTy tyCon
+    New.TUserDefined (Located _ qn) -> case isPrimTypeName qn of
+        Just pt -> pure $ Core.ConTy (primTypeToCon pt)
+        Nothing -> do
+            let name = nameText <$> qn
+            tyCon <- lookupTyCon name
+            pure $ Core.ConTy tyCon
     New.TRecord _fields -> error "astTypeToCore: Record types not yet supported in Core"
     New.TList t1 -> do
         t1' <- astTypeToCore t1

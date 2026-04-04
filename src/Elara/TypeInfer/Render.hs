@@ -8,24 +8,17 @@ module Elara.TypeInfer.Render (
     renderPolytype,
 ) where
 
-import Elara.AST.Name (NameLike (nameText), Qualified (..), TypeName (..))
+import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Prim (primModuleName)
+import Elara.Prim (isPrimTypeName, primTypeInfo, primUserFacingName)
 import Elara.TypeInfer.Type (Monotype (..), Polytype (..), Type (..), TypeVariable (..))
 
 -- | Map internal primitive names to user-friendly names
 renderTypeName :: Qualified TypeName -> Doc AnsiStyle
-renderTypeName qn
-    | qualifier qn == primModuleName = case nameText (_qualifiedName qn) of
-        "Prim_Char" -> Style.typeName "Char"
-        "Prim_String" -> Style.typeName "String"
-        "Prim_Int" -> Style.typeName "Int"
-        "Prim_Float" -> Style.typeName "Float"
-        "Prim_Double" -> Style.typeName "Double"
-        "Prim_IO" -> Style.typeName "IO"
-        other -> Style.typeName (pretty other)
-    | otherwise = Style.typeName (pretty (_qualifiedName qn))
+renderTypeName qn = case isPrimTypeName qn of
+    Just pt -> Style.typeName (pretty (primUserFacingName (primTypeInfo pt)))
+    Nothing -> Style.typeName (pretty (_qualifiedName qn))
 
 -- | Render a monotype with user-friendly names
 renderMonotype :: Monotype loc -> Doc AnsiStyle
