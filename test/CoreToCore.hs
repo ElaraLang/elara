@@ -1,5 +1,3 @@
-{-# LANGUAGE ImportQualifiedPost #-}
-
 -- | Tests for Core-to-Core optimisation passes
 module CoreToCore (spec) where
 
