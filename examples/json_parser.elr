@@ -2,7 +2,7 @@
 Its error messages are quite basic but it demonstrates a "real" application 
 -/
 module Main
-import Prelude
+import Prelude hiding ((*>))
 import Option
 import Elara.Prim
 import List
@@ -201,6 +201,6 @@ let json = jsonNull <|> jsonInt <|> jsonString <|> jsonArray <|> jsonObject
 
 
 let main = 
-    match runParser json "[{\"a\": 1}, 12345, null, ]" with
+    match runParser json "[{\"a\": 1}, 12345, null]" with
             Result.Err e -> println ("Failed to parse: " ++ e)
-            Result.Ok (result, _) -> println (toString result)
+            Result.Ok (result, _) -> println (toString result) -- This branch should succeed!

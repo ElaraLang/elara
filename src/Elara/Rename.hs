@@ -6,7 +6,7 @@ This stage handles:
 1. Renaming all variables, types, and type variables, adding module qualification or unique suffixes to avoid name clashes
 2. Desugaring any "first-class" pattern matches into normal match expressions (eg '\[] -> 1' to '\x -> match x with [] -> 1')
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
-   Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
+  Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
 module Elara.Rename (getRenamedModule, renameExpr, InnerRename) where
 
@@ -23,15 +23,14 @@ import Effectful.State.Static.Local qualified as Eff
 -- New AST types (primary)
 import Elara.AST.Extensions
 import Elara.AST.Module qualified as NewModule
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), OpName (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
 import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
 import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Types qualified as New
-
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), OpName (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
 import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion', generatedSourceRegion, sourceRegion, spanningRegion', unlocated, withLocationOf)
+import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
 import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.Pretty
@@ -48,7 +47,7 @@ import Elara.Query qualified
 import Elara.Query.Effects
 import Elara.Query.Errors (StandardQueryError)
 import Elara.Rename.Error
-import Elara.Rename.Imports (isImportedBy)
+import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy)
 import Elara.Rename.State
 import Print (showColored)
 import Rock qualified
@@ -88,7 +87,7 @@ getRenamedModule mn = do
 
 instance SupportsQuery QueryModuleByName NewR.Renamed where
     type QuerySpecificEffectsOf QueryModuleByName NewR.Renamed = '[Eff.Error RenameError]
-    query mn = do
+    query mn =
         Eff.evalState primitiveRenameState $
             inject $
                 getRenamedModule mn
@@ -171,17 +170,29 @@ sortDeclarations = pure
 -}
 rename :: Rename r => NewModule.Module SourceRegion NewD.Desugared -> Eff r (NewModule.Module SourceRegion NewR.Renamed)
 rename m@(NewModule.Module loc m') = do
-    addImportsToContext (m'.moduleImports)
-    traverse_ addDeclarationToContext (m'.moduleDeclarations)
-    exposing' <- renameExposing (m'.moduleName ^. unlocated) (m'.moduleExposing)
-    imports' <- traverse renameImport (m'.moduleImports)
-    declarations' <- Eff.runReader (Just m) (traverse renameDeclaration (m'.moduleDeclarations))
+    addImportsToContext m'.moduleImports
+    traverse_ addDeclarationToContext m'.moduleDeclarations
+    exposing' <- renameExposing (m'.moduleName ^. unlocated) m'.moduleExposing
+    imports' <- traverse renameImport m'.moduleImports
+    declarations' <- Eff.runReader (Just m) (traverse renameDeclaration m'.moduleDeclarations)
     sorted <- sortDeclarations declarations'
-    pure (NewModule.Module loc (NewModule.Module' (m'.moduleName) exposing' imports' sorted))
+    pure (NewModule.Module loc (NewModule.Module' m'.moduleName exposing' imports' sorted))
   where
-    renameExposing :: Rename r => ModuleName -> NewModule.Exposing SourceRegion NewD.Desugared -> Eff r (NewModule.Exposing SourceRegion NewR.Renamed)
+    renameExposing ::
+        Rename r =>
+        ModuleName ->
+        NewModule.Exposing SourceRegion NewD.Desugared ->
+        Eff r (NewModule.Exposing SourceRegion NewR.Renamed)
     renameExposing _ NewModule.ExposingAll = pure NewModule.ExposingAll
     renameExposing mn (NewModule.ExposingSome es) = NewModule.ExposingSome <$> traverse (renameExposition mn) es
+
+    renameExposingOrHiding ::
+        Rename r =>
+        ModuleName ->
+        NewModule.ImportExposingOrHiding SourceRegion NewD.Desugared ->
+        Eff r (NewModule.ImportExposingOrHiding SourceRegion NewR.Renamed)
+    renameExposingOrHiding mn (NewModule.ImportExposing exp) = NewModule.ImportExposing <$> renameExposing mn exp
+    renameExposingOrHiding mn (NewModule.ImportHiding hid) = NewModule.ImportHiding <$> traverse (renameExposition mn) hid
 
     renameExposition :: Rename r => ModuleName -> NewModule.Exposition SourceRegion NewD.Desugared -> Eff r (NewModule.Exposition SourceRegion NewR.Renamed)
     renameExposition mn (NewModule.ExposedValue vn) = do
@@ -198,7 +209,7 @@ rename m@(NewModule.Module loc m') = do
 
     renameImport :: Rename r => NewModule.Import SourceRegion NewD.Desugared -> Eff r (NewModule.Import SourceRegion NewR.Renamed)
     renameImport (NewModule.Import iloc (NewModule.Import' name as' qual exp')) = do
-        exp'' <- renameExposing (name ^. unlocated) exp'
+        exp'' <- renameExposingOrHiding (name ^. unlocated) exp'
         pure $ NewModule.Import iloc (NewModule.Import' name as' qual exp'')
 
 addImportsToContext :: Rename r => [NewModule.Import SourceRegion NewD.Desugared] -> Eff r ()
@@ -208,7 +219,7 @@ addImportToContext :: Rename r => NewModule.Import SourceRegion NewD.Desugared -
 addImportToContext (NewModule.Import _ imp) =
     addModuleToContext
         imp.importModuleName
-        imp.importExposing
+        imp.importExposingOrHiding
         imp.importQualified
 
 getModuleFromName :: Rename r => Located ModuleName -> Eff r (NewModule.Module SourceRegion NewD.Desugared)
@@ -225,34 +236,52 @@ getModuleFromName mn = do
                 (actualName `withLocationOf` m'.moduleName)
     pure m
 
--- | Add all exposed declarations from a module to the renaming context
+{- | Add all exposed declarations from a module to the renaming context.
+This is used when we import a module, adding all the imported names to the context so we can resolve them when we see them in the code.
+-}
 addModuleToContext ::
     Rename r =>
     Located ModuleName ->
-    NewModule.Exposing SourceRegion NewD.Desugared ->
+    NewModule.ImportExposingOrHiding SourceRegion NewD.Desugared ->
     Bool ->
     Eff r ()
-addModuleToContext mn exposing qualified = do
+addModuleToContext mn importSpec qualified = do
     imported <- getModuleFromName mn
     let NewModule.Module _ importedMod = imported
     let allDecls = importedMod.moduleDeclarations
-    let exposed = case exposing of
-            NewModule.ExposingAll -> allDecls
-            NewModule.ExposingSome _ -> filter (isExposingAndExists imported . declarationName) allDecls
+    let thisMn = mn ^. unlocated
+
+    -- Phase 1: what the imported module itself publicly exports
+    let moduleExported = filter (isExposingAndExists imported . declarationName) allDecls
+
+    -- Phase 2: apply the import clause against the module's exports, with validation
+    toAdd <- case importSpec of
+        NewModule.ImportExposing NewModule.ExposingAll ->
+            pure moduleExported
+        NewModule.ImportExposing (NewModule.ExposingSome importList) -> do
+            for_ importList $ \expo ->
+                unless (any (\d -> isExposition thisMn (declarationName d) expo) moduleExported) $
+                    throwError $
+                        NonExistentModuleDeclaration thisMn (expositionToLocatedName expo)
+            pure $ filter (\d -> any (isExposition thisMn (declarationName d)) importList) moduleExported
+        NewModule.ImportHiding hidingList -> do
+            for_ hidingList $ \expo ->
+                unless (any (\d -> isExposition thisMn (declarationName d) expo) moduleExported) $
+                    throwError $
+                        NonExistentModuleDeclaration thisMn (expositionToLocatedName expo)
+            pure $ filter (\d -> not $ any (isExposition thisMn (declarationName d)) hidingList) moduleExported
 
     unless qualified $
-        traverse_ addDeclarationToContext exposed
+        traverse_ addDeclarationToContext toAdd
 
     when qualified $ do
-        let (ModuleName parts) = mn ^. unlocated
+        let (ModuleName parts) = thisMn
         let simpleModuleName = last parts
         let isPrincipalType decl =
                 case declarationName decl of
                     NTypeName tn -> tn == TypeName simpleModuleName
                     _ -> False
-
-        let principalTypes = filter isPrincipalType exposed
-        traverse_ addDeclarationToContext principalTypes
+        traverse_ addDeclarationToContext (filter isPrincipalType toAdd)
 
 -- | Get the name of a declaration
 declarationName :: New.Declaration SourceRegion NewD.Desugared -> Name
@@ -282,10 +311,9 @@ addDeclarationToContext decl@(New.Declaration _ (New.Declaration' declMN body)) 
     let New.DeclarationBody _ body' = body
     case body' of
         -- Add all the constructor names to context
-        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ -> do
-            for_ ctors $ \(cn, _) ->
-                let tn = cn ^. unlocated
-                 in Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
+        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ -> for_ ctors $ \(cn, _) ->
+            let tn = cn ^. unlocated
+             in Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
         _ -> pass
 
 -- | Ensure that a name exists in the context and is exposed

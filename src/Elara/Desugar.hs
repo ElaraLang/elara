@@ -8,18 +8,16 @@ import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
-
 import Elara.AST.Extensions
 import Elara.AST.Module qualified as NewModule
+import Elara.AST.Name hiding (name)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
 import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Frontend qualified as Frontend
-import Elara.AST.Types qualified as New
-
-import Elara.AST.Name hiding (name)
 import Elara.AST.Region
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Desugar.Error
 import Elara.Error (runErrorOrReport)
@@ -30,10 +28,15 @@ import Elara.Query.Effects (ConsQueryEffects)
 import Rock qualified
 import Prelude hiding (Op)
 
-instance PhaseCoerce (NewModule.Exposing SourceRegion Frontend.Frontend) (NewModule.Exposing SourceRegion NewD.Desugared)
-instance PhaseCoerce (NewModule.Exposition SourceRegion Frontend.Frontend) (NewModule.Exposition SourceRegion NewD.Desugared)
-instance PhaseCoerce (NewModule.Import SourceRegion Frontend.Frontend) (NewModule.Import SourceRegion NewD.Desugared)
-instance PhaseCoerce (NewModule.Import' SourceRegion Frontend.Frontend) (NewModule.Import' SourceRegion NewD.Desugared)
+instance PhaseCoerce (NewModule.Exposing loc Frontend.Frontend) (NewModule.Exposing loc NewD.Desugared)
+
+instance PhaseCoerce (NewModule.Exposition loc Frontend.Frontend) (NewModule.Exposition loc NewD.Desugared)
+
+instance PhaseCoerce (NewModule.Import loc Frontend.Frontend) (NewModule.Import loc NewD.Desugared)
+
+instance PhaseCoerce (NewModule.Import' loc Frontend.Frontend) (NewModule.Import' loc NewD.Desugared)
+
+instance PhaseCoerce (NewModule.ImportExposingOrHiding loc Frontend.Frontend) (NewModule.ImportExposingOrHiding loc NewD.Desugared)
 
 type Desugar a = Eff DesugarPipelineEffects a
 
@@ -281,8 +284,8 @@ desugarPattern p@(New.Pattern loc meta p') = do
 
 For example, @\a (b, c) 1 -> e@ becomes
 @\a -> \b_1 -> \c_1 -> match b_1 with
-                            (b, c) -> match 1 with
-                                        1 -> e@
+                           (b, c) -> match 1 with
+                                       1 -> e@
 
 However, converting the matches would require renaming, and we're not able to do that yet.
 Instead, we unfold the lambda, but keep the patterns, and the renamer handles the match conversion.

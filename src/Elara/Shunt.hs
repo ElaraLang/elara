@@ -57,20 +57,21 @@ import Rock (Rock)
 import Rock qualified
 import Prelude hiding (modify')
 
--- PhaseCoerce instances for Renamed → Shunted (type families resolve identically)
-instance PhaseCoerce (New.Type SourceRegion NewR.Renamed) (New.Type SourceRegion NewS.Shunted)
+instance PhaseCoerce (New.Type loc NewR.Renamed) (New.Type loc NewS.Shunted)
 
-instance PhaseCoerce (New.Type' SourceRegion NewR.Renamed) (New.Type' SourceRegion NewS.Shunted)
+instance PhaseCoerce (New.Type' loc NewR.Renamed) (New.Type' loc NewS.Shunted)
 
-instance PhaseCoerce (New.TypeDeclaration SourceRegion NewR.Renamed) (New.TypeDeclaration SourceRegion NewS.Shunted)
+instance PhaseCoerce (New.TypeDeclaration loc NewR.Renamed) (New.TypeDeclaration loc NewS.Shunted)
 
-instance PhaseCoerce (NewModule.Exposing SourceRegion NewR.Renamed) (NewModule.Exposing SourceRegion NewS.Shunted)
+instance PhaseCoerce (NewModule.Exposing loc NewR.Renamed) (NewModule.Exposing loc NewS.Shunted)
 
-instance PhaseCoerce (NewModule.Exposition SourceRegion NewR.Renamed) (NewModule.Exposition SourceRegion NewS.Shunted)
+instance PhaseCoerce (NewModule.Exposition loc NewR.Renamed) (NewModule.Exposition loc NewS.Shunted)
 
-instance PhaseCoerce (NewModule.Import SourceRegion NewR.Renamed) (NewModule.Import SourceRegion NewS.Shunted)
+instance PhaseCoerce (NewModule.Import loc NewR.Renamed) (NewModule.Import loc NewS.Shunted)
 
-instance PhaseCoerce (NewModule.Import' SourceRegion NewR.Renamed) (NewModule.Import' SourceRegion NewS.Shunted)
+instance PhaseCoerce (NewModule.Import' loc NewR.Renamed) (NewModule.Import' loc NewS.Shunted)
+
+instance PhaseCoerce (NewModule.ImportExposingOrHiding loc NewR.Renamed) (NewModule.ImportExposingOrHiding loc NewS.Shunted)
 
 {- | The default precedence for an operator if none is specified
 >>> defaultPrecedence

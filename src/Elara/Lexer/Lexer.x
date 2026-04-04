@@ -115,6 +115,7 @@ tokens :-
       module                 { simpleTok TokenModule } 
       import                 { simpleTok TokenImport }
       qualified              { simpleTok TokenQualified }
+      hiding                 { simpleTok TokenHiding }
 
       -- Symbols
       \;                     { simpleTok TokenSemicolon }

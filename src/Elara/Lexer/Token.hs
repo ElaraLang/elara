@@ -72,6 +72,7 @@ data Token
     | TokenAs
     | TokenQualified
     | TokenExposing
+    | TokenHiding
     | TokenWhere
     | TokenForall
     | TokenClass
@@ -137,6 +138,7 @@ tokenRepr = \case
     TokenAs -> "as"
     TokenQualified -> "qualified"
     TokenExposing -> "exposing"
+    TokenHiding -> "hiding"
     TokenWhere -> "where"
     TokenForall -> "forall"
     TokenClass -> "class"

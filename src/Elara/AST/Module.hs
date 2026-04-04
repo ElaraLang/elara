@@ -26,8 +26,18 @@ data Import' loc p = Import'
     { importModuleName :: Locate loc ModuleName
     , importAs :: Maybe (Locate loc ModuleName)
     , importQualified :: Bool
-    , importExposing :: Exposing loc p
+    , importExposingOrHiding :: ImportExposingOrHiding loc p
+    {- ^ Whether this import has an exposing or hiding clause, and if so, what it exposes or hides.
+    This field is not a 'Maybe' because the lack of an @exposing@ or @hiding@ clause is equivalent to 'ExposingAll'
+    -}
     }
+    deriving (Generic)
+
+data ImportExposingOrHiding loc p
+    = -- | The import exposes only the listed items
+      ImportExposing (Exposing loc p)
+    | -- | The import hides the listed items, exposing everything else
+      ImportHiding [Exposition loc p]
     deriving (Generic)
 
 -- | Exposing list for modules and imports

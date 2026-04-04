@@ -2,7 +2,7 @@
 
 module Elara.Parse.Module where
 
-import Elara.AST.Module (Exposing (..), Exposition (..), Import (..), Import' (..), Module (..), Module' (..))
+import Elara.AST.Module (Exposing (..), Exposition (..), Import (..), Import' (..), ImportExposingOrHiding (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Region
@@ -43,6 +43,9 @@ header = do
     mExposing <- exposing'
     pure (moduleName', mExposing)
 
+{- | Parse the @exposing@ part of a module header or import.
+This parser can succeed with an empty input, in which case it returns 'ExposingAll', which is the default when an exposition is not specified.
+-}
 exposing' :: Parser (Exposing SourceRegion Frontend)
 exposing' =
     fromMaybe ExposingAll
@@ -51,6 +54,11 @@ exposing' =
                 token_ TokenExposing
                 ExposingSome <$> oneOrCommaSeparatedInParens exposition
             )
+
+exposingOrHiding :: Parser (ImportExposingOrHiding SourceRegion Frontend)
+exposingOrHiding =
+    (ImportHiding <$> (token_ TokenHiding *> oneOrCommaSeparatedInParens exposition))
+        <|> (ImportExposing <$> exposing') -- this has to be the backup case, as it accepts an empty input
 
 exposition :: Parser (Exposition SourceRegion Frontend)
 exposition = exposedValue <|> exposedOp
@@ -69,5 +77,10 @@ import' = do
         as <- optional . located $ do
             token_ TokenAs
             Parse.moduleName
-        Import' moduleName' as isQualified <$> exposing'
+
+        Import'
+            moduleName'
+            as
+            isQualified
+            <$> exposingOrHiding
     pure $ Import loc inner

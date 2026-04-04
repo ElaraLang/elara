@@ -221,6 +221,8 @@ deriving instance CoreConstraint Show loc p => Show (Import loc p)
 
 deriving instance CoreConstraint Show loc p => Show (Import' loc p)
 
+deriving instance CoreConstraint Show loc p => Show (ImportExposingOrHiding loc p)
+
 deriving instance CoreConstraint Show loc p => Show (Exposing loc p)
 
 deriving instance CoreConstraint Show loc p => Show (Exposition loc p)

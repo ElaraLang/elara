@@ -65,7 +65,7 @@ defWithoutLet :: ErrorCode
 defWithoutLet = "E1006"
 
 partialNamesNotEqual :: ErrorCode
-partialNamesNotEqual = "[Internal] E1007"
+partialNamesNotEqual = "E1007"
 
 tooManyDeclarations :: ErrorCode
 tooManyDeclarations = "E1008"
@@ -81,6 +81,21 @@ duplicateFixityAnnotations = "E10011"
 
 tuplePatternTooShort :: ErrorCode
 tuplePatternTooShort = "E10012"
+
+unknownTypeVariable :: ErrorCode
+unknownTypeVariable = "E10013"
+
+blockEndsWithLet :: ErrorCode
+blockEndsWithLet = "E10014"
+
+recursiveTypeAlias :: ErrorCode
+recursiveTypeAlias = "E10015"
+
+nativeDefUnsupported :: ErrorCode
+nativeDefUnsupported = "E10016"
+
+unknownCurrentModule :: ErrorCode
+unknownCurrentModule = "[Internal] E10017"
 
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"

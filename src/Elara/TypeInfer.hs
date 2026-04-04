@@ -11,7 +11,7 @@ import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local (runWriter)
-import Elara.AST.Module qualified as NewModule
+import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName, unqualified)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
@@ -22,9 +22,8 @@ import Elara.AST.Phases.Shunted (Shunted)
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr')
 import Elara.AST.Phases.Typed qualified as NewT
-import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated, withLocationOf)
+import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated)
 import Elara.AST.Types qualified as New
-import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind, KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
 import Elara.Data.Kind.Infer qualified as Kind
@@ -32,7 +31,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, logDebug, logDebugWith)
+import Elara.Logging (StructuredDebug, debugWith, logDebug, logDebugWith)
 import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
 import Elara.Rules.Generic ()
@@ -49,18 +48,18 @@ import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, simpleEquality, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
-import Optics (over, view)
 import Relude.Extra (bimapF, fmapToSnd, secondF)
 import Rock qualified
 
--- PhaseCoerce instances for Shunted → Typed (Exposing/Import type families are identical)
-instance PhaseCoerce (NewModule.Exposing SourceRegion Shunted) (NewModule.Exposing SourceRegion Typed)
+instance PhaseCoerce (Exposing loc Shunted) (Exposing loc Typed)
 
-instance PhaseCoerce (NewModule.Exposition SourceRegion Shunted) (NewModule.Exposition SourceRegion Typed)
+instance PhaseCoerce (Exposition loc Shunted) (Exposition loc Typed)
 
-instance PhaseCoerce (NewModule.Import SourceRegion Shunted) (NewModule.Import SourceRegion Typed)
+instance PhaseCoerce (Import loc Shunted) (Import loc Typed)
 
-instance PhaseCoerce (NewModule.Import' SourceRegion Shunted) (NewModule.Import' SourceRegion Typed)
+instance PhaseCoerce (Import' loc Shunted) (Import' loc Typed)
+
+instance PhaseCoerce (ImportExposingOrHiding loc Shunted) (ImportExposingOrHiding loc Typed)
 
 type InferPipelineEffects r =
     ( StructuredDebug :> r
@@ -80,7 +79,7 @@ runGetTypeCheckedModuleQuery ::
             '[ Rock.Rock Elara.Query.Query
              ]
         )
-        (NewModule.Module SourceRegion Typed)
+        (Module SourceRegion Typed)
 runGetTypeCheckedModuleQuery mn = do
     shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
     r <- runInferEffects $ evalState initialInferState (inferModule shunted)
@@ -143,7 +142,7 @@ runGetTypeAliasQuery name = do
     let modName = qualifier name
     mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted modName
 
-    let NewModule.Module _ m' = mod
+    let Module _ m' = mod
     let targetTypeName = name ^. unqualified
     let found = find (matchesTypeName targetTypeName) m'.moduleDeclarations
 
@@ -179,7 +178,7 @@ seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, HasCallStack, _
 seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
     mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
-    let NewModule.Module _ m' = mod
+    let Module _ m' = mod
 
     -- Extract type declarations
     let typeDecls = mapMaybe extractTypeDecl m'.moduleDeclarations
@@ -276,7 +275,7 @@ inferSCC scc = do
 runTypeCheckedExprQuery :: Qualified VarName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedExpr
 runTypeCheckedExprQuery name = do
     mod <- Rock.fetch $ TypeCheckedModule (qualifier name)
-    let NewModule.Module _ m' = mod
+    let Module _ m' = mod
     case find (matchesValueName name) m'.moduleDeclarations of
         Just (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ (New.ValueDeclaration _ e _ _ _ _)))) -> pure e
         _ -> error $ "could not find declaration for " <> show name
@@ -370,13 +369,13 @@ collectPatternConstructors (New.Pattern _ _ p') = case p' of
 inferModule ::
     forall r.
     (InferPipelineEffects r, Infer SourceRegion r) =>
-    NewModule.Module SourceRegion Shunted ->
-    Eff r (NewModule.Module SourceRegion Typed)
-inferModule (NewModule.Module loc m') = do
+    Module SourceRegion Shunted ->
+    Eff r (Module SourceRegion Typed)
+inferModule (Module loc m') = do
     typedDecls <- traverse inferDeclaration m'.moduleDeclarations
-    let typedExposing = phaseCoerce m'.moduleExposing :: NewModule.Exposing SourceRegion Typed
-        typedImports = phaseCoerce m'.moduleImports :: [NewModule.Import SourceRegion Typed]
-    pure $ NewModule.Module loc $ NewModule.Module' m'.moduleName typedExposing typedImports typedDecls
+    let typedExposing = phaseCoerce m'.moduleExposing :: Exposing SourceRegion Typed
+        typedImports = phaseCoerce m'.moduleImports :: [Import SourceRegion Typed]
+    pure $ Module loc $ Module' m'.moduleName typedExposing typedImports typedDecls
 
 -- | Add's a declaration's name and expected type to the type environment
 seedDeclaration ::
