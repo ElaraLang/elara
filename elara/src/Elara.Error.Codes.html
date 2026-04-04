@@ -23,7 +23,7 @@ The remaining digits are arbitrary and should be incremented for each new error 
 Some errors are internal, rather than user-facing (i.e. something internal has gone wrong if they are thrown).
   These errors' codes should be prefixed with @[Internal]@.
 -}</span></span><span>
-</span><span id="line-26"></span><span class="hs-keyword">type</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680080654"><span class="annot"><a href="#local-6989586621680080654"><span class="hs-identifier hs-type">ann</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621680080654"><span class="hs-identifier hs-type">ann</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">type</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680083921"><span class="annot"><a href="#local-6989586621680083921"><span class="hs-identifier hs-type">ann</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621680083921"><span class="hs-identifier hs-type">ann</span></a></span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="annot"><a href="Elara.Error.Codes.html#fileReadError"><span class="hs-identifier hs-type">fileReadError</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
 </span><span id="line-29"></span><span id="fileReadError"><span class="annot"><span class="annottext">fileReadError :: ErrorCode
@@ -93,7 +93,7 @@ Some errors are internal, rather than user-facing (i.e. something internal has g
 </span><span id="line-67"></span><span class="annot"><a href="Elara.Error.Codes.html#partialNamesNotEqual"><span class="hs-identifier hs-type">partialNamesNotEqual</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
 </span><span id="line-68"></span><span id="partialNamesNotEqual"><span class="annot"><span class="annottext">partialNamesNotEqual :: ErrorCode
 </span><a href="Elara.Error.Codes.html#partialNamesNotEqual"><span class="hs-identifier hs-var hs-var">partialNamesNotEqual</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
-</span><span class="hs-string">&quot;[Internal] E1007&quot;</span></span><span>
+</span><span class="hs-string">&quot;E1007&quot;</span></span><span>
 </span><span id="line-69"></span><span>
 </span><span id="line-70"></span><span class="annot"><a href="Elara.Error.Codes.html#tooManyDeclarations"><span class="hs-identifier hs-type">tooManyDeclarations</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
 </span><span id="line-71"></span><span id="tooManyDeclarations"><span class="annot"><span class="annottext">tooManyDeclarations :: ErrorCode
@@ -120,59 +120,84 @@ Some errors are internal, rather than user-facing (i.e. something internal has g
 </span><a href="Elara.Error.Codes.html#tuplePatternTooShort"><span class="hs-identifier hs-var hs-var">tuplePatternTooShort</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E10012&quot;</span></span><span>
 </span><span id="line-84"></span><span>
-</span><span id="line-85"></span><span class="annot"><a href="Elara.Error.Codes.html#samePrecedence"><span class="hs-identifier hs-type">samePrecedence</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-86"></span><span id="samePrecedence"><span class="annot"><span class="annottext">samePrecedence :: ErrorCode
+</span><span id="line-85"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownTypeVariable"><span class="hs-identifier hs-type">unknownTypeVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-86"></span><span id="unknownTypeVariable"><span class="annot"><span class="annottext">unknownTypeVariable :: ErrorCode
+</span><a href="Elara.Error.Codes.html#unknownTypeVariable"><span class="hs-identifier hs-var hs-var">unknownTypeVariable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><span class="hs-string">&quot;E10013&quot;</span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="annot"><a href="Elara.Error.Codes.html#blockEndsWithLet"><span class="hs-identifier hs-type">blockEndsWithLet</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-89"></span><span id="blockEndsWithLet"><span class="annot"><span class="annottext">blockEndsWithLet :: ErrorCode
+</span><a href="Elara.Error.Codes.html#blockEndsWithLet"><span class="hs-identifier hs-var hs-var">blockEndsWithLet</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><span class="hs-string">&quot;E10014&quot;</span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="annot"><a href="Elara.Error.Codes.html#recursiveTypeAlias"><span class="hs-identifier hs-type">recursiveTypeAlias</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-92"></span><span id="recursiveTypeAlias"><span class="annot"><span class="annottext">recursiveTypeAlias :: ErrorCode
+</span><a href="Elara.Error.Codes.html#recursiveTypeAlias"><span class="hs-identifier hs-var hs-var">recursiveTypeAlias</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><span class="hs-string">&quot;E10015&quot;</span></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="annot"><a href="Elara.Error.Codes.html#nativeDefUnsupported"><span class="hs-identifier hs-type">nativeDefUnsupported</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-95"></span><span id="nativeDefUnsupported"><span class="annot"><span class="annottext">nativeDefUnsupported :: ErrorCode
+</span><a href="Elara.Error.Codes.html#nativeDefUnsupported"><span class="hs-identifier hs-var hs-var">nativeDefUnsupported</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><span class="hs-string">&quot;E10016&quot;</span></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownCurrentModule"><span class="hs-identifier hs-type">unknownCurrentModule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-98"></span><span id="unknownCurrentModule"><span class="annot"><span class="annottext">unknownCurrentModule :: ErrorCode
+</span><a href="Elara.Error.Codes.html#unknownCurrentModule"><span class="hs-identifier hs-var hs-var">unknownCurrentModule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
+</span><span class="hs-string">&quot;[Internal] E10017&quot;</span></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="annot"><a href="Elara.Error.Codes.html#samePrecedence"><span class="hs-identifier hs-type">samePrecedence</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-101"></span><span id="samePrecedence"><span class="annot"><span class="annottext">samePrecedence :: ErrorCode
 </span><a href="Elara.Error.Codes.html#samePrecedence"><span class="hs-identifier hs-var hs-var">samePrecedence</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E2001&quot;</span></span><span>
-</span><span id="line-87"></span><span>
-</span><span id="line-88"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownOperator"><span class="hs-identifier hs-type">unknownOperator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-89"></span><span id="unknownOperator"><span class="annot"><span class="annottext">unknownOperator :: ErrorCode
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownOperator"><span class="hs-identifier hs-type">unknownOperator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-104"></span><span id="unknownOperator"><span class="annot"><span class="annottext">unknownOperator :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownOperator"><span class="hs-identifier hs-var hs-var">unknownOperator</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E2002&quot;</span></span><span>
-</span><span id="line-90"></span><span>
-</span><span id="line-91"></span><span class="annot"><a href="Elara.Error.Codes.html#localOperatorInfoNotSupported"><span class="hs-identifier hs-type">localOperatorInfoNotSupported</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-92"></span><span id="localOperatorInfoNotSupported"><span class="annot"><span class="annottext">localOperatorInfoNotSupported :: ErrorCode
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><a href="Elara.Error.Codes.html#localOperatorInfoNotSupported"><span class="hs-identifier hs-type">localOperatorInfoNotSupported</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-107"></span><span id="localOperatorInfoNotSupported"><span class="annot"><span class="annottext">localOperatorInfoNotSupported :: ErrorCode
 </span><a href="Elara.Error.Codes.html#localOperatorInfoNotSupported"><span class="hs-identifier hs-var hs-var">localOperatorInfoNotSupported</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E2003&quot;</span></span><span>
-</span><span id="line-93"></span><span>
-</span><span id="line-94"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownPrecedence"><span class="hs-identifier hs-type">unknownPrecedence</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-95"></span><span id="unknownPrecedence"><span class="annot"><span class="annottext">unknownPrecedence :: ErrorCode
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownPrecedence"><span class="hs-identifier hs-type">unknownPrecedence</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-110"></span><span id="unknownPrecedence"><span class="annot"><span class="annottext">unknownPrecedence :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownPrecedence"><span class="hs-identifier hs-var hs-var">unknownPrecedence</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;W2001&quot;</span></span><span>
-</span><span id="line-96"></span><span>
-</span><span id="line-97"></span><span class="hs-comment">-- Type check errors</span><span>
-</span><span id="line-98"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownVariableTC"><span class="hs-identifier hs-type">unknownVariableTC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-99"></span><span id="unknownVariableTC"><span class="annot"><span class="annottext">unknownVariableTC :: ErrorCode
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- Type check errors</span><span>
+</span><span id="line-113"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownVariableTC"><span class="hs-identifier hs-type">unknownVariableTC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-114"></span><span id="unknownVariableTC"><span class="annot"><span class="annottext">unknownVariableTC :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownVariableTC"><span class="hs-identifier hs-var hs-var">unknownVariableTC</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E3001&quot;</span></span><span>
-</span><span id="line-100"></span><span>
-</span><span id="line-101"></span><span class="annot"><a href="Elara.Error.Codes.html#coreTypeMismatch"><span class="hs-identifier hs-type">coreTypeMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-102"></span><span id="coreTypeMismatch"><span class="annot"><span class="annottext">coreTypeMismatch :: ErrorCode
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="annot"><a href="Elara.Error.Codes.html#coreTypeMismatch"><span class="hs-identifier hs-type">coreTypeMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-117"></span><span id="coreTypeMismatch"><span class="annot"><span class="annottext">coreTypeMismatch :: ErrorCode
 </span><a href="Elara.Error.Codes.html#coreTypeMismatch"><span class="hs-identifier hs-var hs-var">coreTypeMismatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E3002&quot;</span></span><span>
-</span><span id="line-103"></span><span>
-</span><span id="line-104"></span><span class="annot"><a href="Elara.Error.Codes.html#typeMismatch"><span class="hs-identifier hs-type">typeMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-105"></span><span id="typeMismatch"><span class="annot"><span class="annottext">typeMismatch :: ErrorCode
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="annot"><a href="Elara.Error.Codes.html#typeMismatch"><span class="hs-identifier hs-type">typeMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-120"></span><span id="typeMismatch"><span class="annot"><span class="annottext">typeMismatch :: ErrorCode
 </span><a href="Elara.Error.Codes.html#typeMismatch"><span class="hs-identifier hs-var hs-var">typeMismatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E3010&quot;</span></span><span>
-</span><span id="line-106"></span><span>
-</span><span id="line-107"></span><span class="annot"><a href="Elara.Error.Codes.html#typeConstructorMismatch"><span class="hs-identifier hs-type">typeConstructorMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-108"></span><span id="typeConstructorMismatch"><span class="annot"><span class="annottext">typeConstructorMismatch :: ErrorCode
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="annot"><a href="Elara.Error.Codes.html#typeConstructorMismatch"><span class="hs-identifier hs-type">typeConstructorMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-123"></span><span id="typeConstructorMismatch"><span class="annot"><span class="annottext">typeConstructorMismatch :: ErrorCode
 </span><a href="Elara.Error.Codes.html#typeConstructorMismatch"><span class="hs-identifier hs-var hs-var">typeConstructorMismatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E3011&quot;</span></span><span>
-</span><span id="line-109"></span><span>
-</span><span id="line-110"></span><span class="annot"><a href="Elara.Error.Codes.html#occursCheckFailed"><span class="hs-identifier hs-type">occursCheckFailed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-111"></span><span id="occursCheckFailed"><span class="annot"><span class="annottext">occursCheckFailed :: ErrorCode
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="annot"><a href="Elara.Error.Codes.html#occursCheckFailed"><span class="hs-identifier hs-type">occursCheckFailed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-126"></span><span id="occursCheckFailed"><span class="annot"><span class="annottext">occursCheckFailed :: ErrorCode
 </span><a href="Elara.Error.Codes.html#occursCheckFailed"><span class="hs-identifier hs-var hs-var">occursCheckFailed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E3012&quot;</span></span><span>
-</span><span id="line-112"></span><span>
-</span><span id="line-113"></span><span class="annot"><a href="Elara.Error.Codes.html#invokeStaticLocal"><span class="hs-identifier hs-type">invokeStaticLocal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-114"></span><span id="invokeStaticLocal"><span class="annot"><span class="annottext">invokeStaticLocal :: ErrorCode
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="annot"><a href="Elara.Error.Codes.html#invokeStaticLocal"><span class="hs-identifier hs-type">invokeStaticLocal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-129"></span><span id="invokeStaticLocal"><span class="annot"><span class="annottext">invokeStaticLocal :: ErrorCode
 </span><a href="Elara.Error.Codes.html#invokeStaticLocal"><span class="hs-identifier hs-var hs-var">invokeStaticLocal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E4001&quot;</span></span><span>
-</span><span id="line-115"></span><span>
-</span><span id="line-116"></span><span class="annot"><a href="Elara.Error.Codes.html#localVariableNotFound"><span class="hs-identifier hs-type">localVariableNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-117"></span><span id="localVariableNotFound"><span class="annot"><span class="annottext">localVariableNotFound :: ErrorCode
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="annot"><a href="Elara.Error.Codes.html#localVariableNotFound"><span class="hs-identifier hs-type">localVariableNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-132"></span><span id="localVariableNotFound"><span class="annot"><span class="annottext">localVariableNotFound :: ErrorCode
 </span><a href="Elara.Error.Codes.html#localVariableNotFound"><span class="hs-identifier hs-var hs-var">localVariableNotFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc ann
 </span><span class="hs-string">&quot;E4002&quot;</span></span><span>
-</span><span id="line-118"></span></pre></body></html>
+</span><span id="line-133"></span></pre></body></html>

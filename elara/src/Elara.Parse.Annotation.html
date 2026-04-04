@@ -41,16 +41,16 @@ forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f [a]
 </span><span id="line-20"></span><span>    </span><span class="annot"><span class="annottext">Token -&gt; Parser ()
 </span><a href="Elara.Parse.Primitives.html#token_"><span class="hs-identifier hs-var">token_</span></a></span><span> </span><span class="annot"><span class="annottext">Token
 </span><a href="Elara.Lexer.Token.html#TokenHash"><span class="hs-identifier hs-var">TokenHash</span></a></span><span>
-</span><span id="line-21"></span><span>    </span><span id="local-6989586621680154044"><span class="annot"><a href="#local-6989586621680154044"><span class="hs-identifier hs-var">annName</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621680157551"><span class="annot"><a href="#local-6989586621680157551"><span class="hs-identifier hs-var">annName</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
 -&gt; Parser (Located (MaybeQualified TypeName))
 forall a. Parser a -&gt; Parser (Located a)
 </span><a href="Elara.Parse.Primitives.html#located"><span class="hs-identifier hs-var">located</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (MaybeQualified TypeName)
 </span><a href="Elara.Parse.Names.html#conName"><span class="hs-identifier hs-var">conName</span></a></span><span>
 </span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span>    </span><span id="local-6989586621680154046"><span class="annot"><a href="#local-6989586621680154046"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">many</span></span><span> </span><span class="annot"><a href="Elara.Parse.Annotation.html#constExpr"><span class="hs-identifier hs-type">constExpr</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span id="local-6989586621680157553"><span class="annot"><a href="#local-6989586621680157553"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">many</span></span><span> </span><span class="annot"><a href="Elara.Parse.Annotation.html#constExpr"><span class="hs-identifier hs-type">constExpr</span></a></span><span>
 </span><span id="line-24"></span><span>
 </span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">void</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">optional</span></span><span> </span><span class="annot"><a href="Elara.Parse.Indents.html#lineSeparator"><span class="hs-identifier hs-type">lineSeparator</span></a></span><span> </span><span class="hs-comment">-- if the annotation ends with a new line</span><span>
-</span><span id="line-26"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680154044"><span class="hs-identifier hs-type">annName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680154046"><span class="hs-identifier hs-type">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680157551"><span class="hs-identifier hs-type">annName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680157553"><span class="hs-identifier hs-type">args</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="annot"><a href="Elara.Parse.Annotation.html#constExpr"><span class="hs-identifier hs-type">constExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-29"></span><span id="constExpr"><span class="annot"><span class="annottext">constExpr :: ParsecT
@@ -59,9 +59,9 @@ forall a. Parser a -&gt; Parser (Located a)
   (Eff '[StructuredDebug])
   (AnnotationArg SourceRegion Frontend)
 </span><a href="Elara.Parse.Annotation.html#constExpr"><span class="hs-identifier hs-var hs-var">constExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-30"></span><span>    </span><span id="local-6989586621680154053"><span class="annot"><a href="#local-6989586621680154053"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser FrontendExpr
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621680157560"><span class="annot"><a href="#local-6989586621680157560"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser FrontendExpr
 </span><a href="Elara.Parse.Expression.html#exprParser"><span class="hs-identifier hs-var">exprParser</span></a></span><span>
-</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Elara.Parse.Annotation.html#validateConstExpr"><span class="hs-identifier hs-type">validateConstExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680154053"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Elara.Parse.Annotation.html#validateConstExpr"><span class="hs-identifier hs-type">validateConstExpr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680157560"><span class="hs-identifier hs-type">e</span></a></span><span>
 </span><span id="line-32"></span><span>
 </span><span id="line-33"></span><span class="annot"><a href="Elara.Parse.Annotation.html#validateConstExpr"><span class="hs-identifier hs-type">validateConstExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr"><span class="hs-identifier hs-type">FrontendExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span id="validateConstExpr"><span class="annot"><span class="annottext">validateConstExpr :: FrontendExpr
@@ -70,48 +70,48 @@ forall a. Parser a -&gt; Parser (Located a)
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="Elara.Parse.Annotation.html#validateConstExpr"><span class="hs-identifier hs-var hs-var">validateConstExpr</span></a></span></span><span> </span><span id="local-6989586621680154096"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="Elara.Parse.Annotation.html#validateConstExpr"><span class="hs-identifier hs-var hs-var">validateConstExpr</span></a></span></span><span> </span><span id="local-6989586621680157603"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FrontendExpr
 -&gt; ParsecT
      ElaraParseError
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621680154097"><span class="hs-identifier hs-type">validateConstExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr"><span class="hs-identifier hs-type">FrontendExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-37"></span><span>    </span><span id="local-6989586621680154097"><span class="annot"><span class="annottext">validateConstExpr' :: FrontendExpr
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621680157604"><span class="hs-identifier hs-type">validateConstExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr"><span class="hs-identifier hs-type">FrontendExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621680157604"><span class="annot"><span class="annottext">validateConstExpr' :: FrontendExpr
 -&gt; ParsecT
      ElaraParseError
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var hs-var">validateConstExpr'</span></a></span></span><span> </span><span id="local-6989586621680154098"><span class="annot"><span class="annottext">focus :: FrontendExpr
-</span><a href="#local-6989586621680154098"><span class="hs-identifier hs-var">focus</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var hs-var">validateConstExpr'</span></a></span></span><span> </span><span id="local-6989586621680157605"><span class="annot"><span class="annottext">focus :: FrontendExpr
+</span><a href="#local-6989586621680157605"><span class="hs-identifier hs-var">focus</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ExpressionMeta Frontend SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680154100"><span class="annot"><span class="annottext">Expr' SourceRegion Frontend
-</span><a href="#local-6989586621680154100"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680157607"><span class="annot"><span class="annottext">Expr' SourceRegion Frontend
+</span><a href="#local-6989586621680157607"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FrontendExpr
 -&gt; Expr' SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154098"><span class="hs-identifier hs-var">focus</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' SourceRegion Frontend
-</span><a href="#local-6989586621680154100"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157605"><span class="hs-identifier hs-var">focus</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' SourceRegion Frontend
+</span><a href="#local-6989586621680157607"><span class="hs-identifier hs-var">x</span></a></span><span>
 </span><span id="line-38"></span><span>
-</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-type">validateConstExpr''</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr"><span class="hs-identifier hs-type">FrontendExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr%27"><span class="hs-identifier hs-type">FrontendExpr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>    </span><span id="local-6989586621680154101"><span class="annot"><span class="annottext">validateConstExpr'' :: FrontendExpr
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-type">validateConstExpr''</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr"><span class="hs-identifier hs-type">FrontendExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpr%27"><span class="hs-identifier hs-type">FrontendExpr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Parse.Primitives.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-type">AnnotationArg</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>    </span><span id="local-6989586621680157608"><span class="annot"><span class="annottext">validateConstExpr'' :: FrontendExpr
 -&gt; Expr' SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154101"><span class="hs-identifier hs-var hs-var">validateConstExpr''</span></a></span></span><span> </span><span id="local-6989586621680154103"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154103"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EVar"><span class="hs-identifier hs-type">EVar</span></a></span><span> </span><span class="annot"><span class="annottext">VariableExtension Frontend
+</span><a href="#local-6989586621680157608"><span class="hs-identifier hs-var hs-var">validateConstExpr''</span></a></span></span><span> </span><span id="local-6989586621680157610"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157610"><span class="hs-identifier hs-var">var</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EVar"><span class="hs-identifier hs-type">EVar</span></a></span><span> </span><span class="annot"><span class="annottext">VariableExtension Frontend
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueOccurrence Frontend SourceRegion
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
@@ -122,10 +122,10 @@ forall a. Parser a -&gt; Parser (Located a)
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154103"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-41"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154106"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154106"><span class="hs-identifier hs-var">lam</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELam"><span class="hs-identifier hs-type">ELam</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157610"><span class="hs-identifier hs-var">var</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157613"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157613"><span class="hs-identifier hs-var">lam</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELam"><span class="hs-identifier hs-type">ELam</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -134,10 +134,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154106"><span class="hs-identifier hs-var">lam</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154108"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154108"><span class="hs-identifier hs-var">if'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EIf"><span class="hs-identifier hs-type">EIf</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157613"><span class="hs-identifier hs-var">lam</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157615"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157615"><span class="hs-identifier hs-var">if'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EIf"><span class="hs-identifier hs-type">EIf</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -146,10 +146,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154108"><span class="hs-identifier hs-var">if'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154110"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154110"><span class="hs-identifier hs-var">match</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EMatch"><span class="hs-identifier hs-type">EMatch</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157615"><span class="hs-identifier hs-var">if'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157617"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157617"><span class="hs-identifier hs-var">match</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EMatch"><span class="hs-identifier hs-type">EMatch</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -158,10 +158,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154110"><span class="hs-identifier hs-var">match</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154112"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154112"><span class="hs-identifier hs-var">let'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELet"><span class="hs-identifier hs-type">ELet</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157617"><span class="hs-identifier hs-var">match</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157619"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157619"><span class="hs-identifier hs-var">let'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELet"><span class="hs-identifier hs-type">ELet</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -170,10 +170,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154112"><span class="hs-identifier hs-var">let'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154114"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154114"><span class="hs-identifier hs-var">let'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELetIn"><span class="hs-identifier hs-type">ELetIn</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157619"><span class="hs-identifier hs-var">let'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157621"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157621"><span class="hs-identifier hs-var">let'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ELetIn"><span class="hs-identifier hs-type">ELetIn</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -182,10 +182,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154114"><span class="hs-identifier hs-var">let'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-46"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154116"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154116"><span class="hs-identifier hs-var">block</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EBlock"><span class="hs-identifier hs-type">EBlock</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157621"><span class="hs-identifier hs-var">let'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157623"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157623"><span class="hs-identifier hs-var">block</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EBlock"><span class="hs-identifier hs-type">EBlock</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -194,10 +194,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154116"><span class="hs-identifier hs-var">block</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-47"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154118"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154118"><span class="hs-identifier hs-var">app</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ETyApp"><span class="hs-identifier hs-type">ETyApp</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157623"><span class="hs-identifier hs-var">block</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157625"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157625"><span class="hs-identifier hs-var">app</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ETyApp"><span class="hs-identifier hs-type">ETyApp</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -206,10 +206,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154118"><span class="hs-identifier hs-var">app</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-48"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154120"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154120"><span class="hs-identifier hs-var">int</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EInt"><span class="hs-identifier hs-type">EInt</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157625"><span class="hs-identifier hs-var">app</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157627"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157627"><span class="hs-identifier hs-var">int</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EInt"><span class="hs-identifier hs-type">EInt</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -221,9 +221,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154120"><span class="hs-identifier hs-var">int</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154123"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154123"><span class="hs-identifier hs-var">float</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EFloat"><span class="hs-identifier hs-type">EFloat</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157627"><span class="hs-identifier hs-var">int</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157630"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157630"><span class="hs-identifier hs-var">float</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EFloat"><span class="hs-identifier hs-type">EFloat</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -235,9 +235,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154123"><span class="hs-identifier hs-var">float</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154125"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154125"><span class="hs-identifier hs-var">string</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EString"><span class="hs-identifier hs-type">EString</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157630"><span class="hs-identifier hs-var">float</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157632"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157632"><span class="hs-identifier hs-var">string</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EString"><span class="hs-identifier hs-type">EString</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -249,9 +249,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154125"><span class="hs-identifier hs-var">string</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154127"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154127"><span class="hs-identifier hs-var">char</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EChar"><span class="hs-identifier hs-type">EChar</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157632"><span class="hs-identifier hs-var">string</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157634"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157634"><span class="hs-identifier hs-var">char</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EChar"><span class="hs-identifier hs-type">EChar</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -263,9 +263,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154127"><span class="hs-identifier hs-var">char</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-52"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154129"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154129"><span class="hs-keyword hs-var">unit</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Types.html#EUnit"><span class="hs-identifier hs-type">EUnit</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157634"><span class="hs-identifier hs-var">char</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157636"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157636"><span class="hs-keyword hs-var">unit</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Types.html#EUnit"><span class="hs-identifier hs-type">EUnit</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -277,9 +277,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154129"><span class="hs-keyword hs-var">unit</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-53"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154131"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154131"><span class="hs-identifier hs-var">con</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ECon"><span class="hs-identifier hs-type">ECon</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
+</span><a href="#local-6989586621680157636"><span class="hs-keyword hs-var">unit</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157638"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157638"><span class="hs-identifier hs-var">con</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#ECon"><span class="hs-identifier hs-type">ECon</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -291,12 +291,12 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154131"><span class="hs-identifier hs-var">con</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154133"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154133"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EApp"><span class="hs-identifier hs-type">EApp</span></a></span><span> </span><span class="annot"><span class="annottext">ApplicationExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680154135"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154135"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680154136"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154136"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680157638"><span class="hs-identifier hs-var">con</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157640"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157640"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EApp"><span class="hs-identifier hs-type">EApp</span></a></span><span> </span><span class="annot"><span class="annottext">ApplicationExtension Frontend
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680157642"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157642"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680157643"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157643"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-55"></span><span>        </span><span class="annot"><span class="annottext">ParsecT
   ElaraParseError
   TokenStream
@@ -323,8 +323,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154135"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157642"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">ParsecT
   ElaraParseError
   TokenStream
@@ -351,8 +351,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154136"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157643"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-57"></span><span>        </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
@@ -365,11 +365,11 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154133"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-58"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154137"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EExtension"><span class="hs-identifier hs-type">EExtension</span></a></span><span> </span><span id="local-6989586621680154139"><span class="annot"><span class="annottext">ExpressionExtension Frontend SourceRegion
-</span><a href="#local-6989586621680154139"><span class="hs-identifier hs-var">extExpr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ExpressionExtension Frontend SourceRegion
-</span><a href="#local-6989586621680154139"><span class="hs-identifier hs-var">extExpr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680157640"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157644"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EExtension"><span class="hs-identifier hs-type">EExtension</span></a></span><span> </span><span id="local-6989586621680157646"><span class="annot"><span class="annottext">ExpressionExtension Frontend SourceRegion
+</span><a href="#local-6989586621680157646"><span class="hs-identifier hs-var">extExpr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ExpressionExtension Frontend SourceRegion
+</span><a href="#local-6989586621680157646"><span class="hs-identifier hs-var">extExpr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-59"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendBinaryOperator"><span class="hs-identifier hs-type">FrontendBinaryOperator</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
@@ -379,8 +379,8 @@ forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-60"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendMultiLam"><span class="hs-identifier hs-type">FrontendMultiLam</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
@@ -390,8 +390,8 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetWithPatterns"><span class="hs-identifier hs-type">FrontendLetWithPatterns</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
@@ -401,8 +401,8 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetInWithPatterns"><span class="hs-identifier hs-type">FrontendLetInWithPatterns</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
@@ -412,10 +412,10 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-63"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendInParens"><span class="hs-identifier hs-type">FrontendInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680154146"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154146"><span class="hs-identifier hs-var">inner</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendInParens"><span class="hs-identifier hs-type">FrontendInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680157653"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157653"><span class="hs-identifier hs-var">inner</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-64"></span><span>            </span><span class="annot"><span class="annottext">ParsecT
   ElaraParseError
   TokenStream
@@ -442,8 +442,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154146"><span class="hs-identifier hs-var">inner</span></a></span><span>
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157653"><span class="hs-identifier hs-var">inner</span></a></span><span>
 </span><span id="line-65"></span><span>            </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
@@ -456,9 +456,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-66"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendList"><span class="hs-identifier hs-type">FrontendList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680154149"><span class="annot"><span class="annottext">[FrontendExpr]
-</span><a href="#local-6989586621680154149"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendList"><span class="hs-identifier hs-type">FrontendList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680157656"><span class="annot"><span class="annottext">[FrontendExpr]
+</span><a href="#local-6989586621680157656"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-67"></span><span>            </span><span class="annot"><span class="annottext">(FrontendExpr
  -&gt; ParsecT
       ElaraParseError
@@ -475,8 +475,8 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">[FrontendExpr]
-</span><a href="#local-6989586621680154149"><span class="hs-identifier hs-var">elems</span></a></span><span>
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">[FrontendExpr]
+</span><a href="#local-6989586621680157656"><span class="hs-identifier hs-var">elems</span></a></span><span>
 </span><span id="line-68"></span><span>            </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
@@ -489,9 +489,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-69"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendTuple"><span class="hs-identifier hs-type">FrontendTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680154153"><span class="annot"><span class="annottext">AtLeast2List FrontendExpr
-</span><a href="#local-6989586621680154153"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendTuple"><span class="hs-identifier hs-type">FrontendTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680157660"><span class="annot"><span class="annottext">AtLeast2List FrontendExpr
+</span><a href="#local-6989586621680157660"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-70"></span><span>            </span><span class="annot"><span class="annottext">(FrontendExpr
  -&gt; ParsecT
       ElaraParseError
@@ -508,11 +508,11 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
      TokenStream
      (Eff '[StructuredDebug])
      (AnnotationArg SourceRegion Frontend)
-</span><a href="#local-6989586621680154097"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AtLeast2List FrontendExpr -&gt; [FrontendExpr]
+</span><a href="#local-6989586621680157604"><span class="hs-identifier hs-var">validateConstExpr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AtLeast2List FrontendExpr -&gt; [FrontendExpr]
 forall a. AtLeast2List a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">AtLeast2List FrontendExpr
-</span><a href="#local-6989586621680154153"><span class="hs-identifier hs-var">elems</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680157660"><span class="hs-identifier hs-var">elems</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-71"></span><span>            </span><span class="annot"><span class="annottext">AnnotationArg SourceRegion Frontend
 -&gt; ParsecT
      ElaraParseError
@@ -525,9 +525,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; AnnotationArg SourceRegion Frontend
 forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 </span><a href="Elara.AST.Types.html#AnnotationArg"><span class="hs-identifier hs-var">AnnotationArg</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154137"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621680154101"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680154155"><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154155"><span class="hs-identifier hs-var">ann</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EAnn"><span class="hs-identifier hs-type">EAnn</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
+</span><a href="#local-6989586621680157644"><span class="hs-identifier hs-var">ext</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621680157608"><span class="hs-identifier hs-var">validateConstExpr''</span></a></span><span> </span><span id="local-6989586621680157662"><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157662"><span class="hs-identifier hs-var">ann</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#EAnn"><span class="hs-identifier hs-type">EAnn</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraParseError
 -&gt; ParsecT
      ElaraParseError
      TokenStream
@@ -536,6 +536,6 @@ forall {k} loc (p :: k). Expr loc p -&gt; AnnotationArg loc p
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">customFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FrontendExpr -&gt; FrontendExpr -&gt; ElaraParseError
 </span><a href="Elara.Parse.Error.html#InvalidConstantExpression"><span class="hs-identifier hs-var">InvalidConstantExpression</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154096"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
-</span><a href="#local-6989586621680154155"><span class="hs-identifier hs-var">ann</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680157603"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">FrontendExpr
+</span><a href="#local-6989586621680157662"><span class="hs-identifier hs-var">ann</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-73"></span></pre></body></html>

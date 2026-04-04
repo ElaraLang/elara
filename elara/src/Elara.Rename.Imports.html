@@ -1,34 +1,166 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | This module mostly just exists to be a circuit breaker :)</span></span><span>
-</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Rename.Imports.html"><span class="hs-identifier">Elara.Rename.Imports</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier">isImportedBy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Rename.Imports.html"><span class="hs-identifier">Elara.Rename.Imports</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier">isImportedBy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier">isExposition</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier">expositionToLocatedName</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-3"></span><span>
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Module.html"><span class="hs-identifier">Elara.AST.Module</span></a></span><span>
-</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier">ModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier">Name</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier">MaybeQualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier">ModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier">Name</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier">Qualified</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html"><span class="hs-identifier">Elara.AST.Phases.Desugared</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">NewD</span></span><span>
 </span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span>
 </span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
 </span><span id="line-9"></span><span>
-</span><span id="line-10"></span><span class="annot"><span class="hs-comment">{- | Tests that m imports n
-This is determined by 2 conditions:
-n's module name is in the import list of m
-n is exposed by the import
+</span><span id="line-10"></span><span class="annot"><span class="hs-comment">{- | Tests whether an 'Exposition' entry matches a given 'Name' from a module.
+
+The qualifier in an 'Exposition' entry may be 'Nothing' (as is the case for entries in import
+statements, which are unqualified in source) or @'Just' q@ (as is the case for entries in a
+module's own @exposing@ list). A 'Nothing' qualifier is treated as a wildcard and matches any
+module; a @'Just' q@ qualifier must equal @mn@.
 -}</span></span><span>
-</span><span id="line-15"></span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier hs-type">isImportedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier hs-type">VarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-16"></span><span id="isImportedBy"><span class="annot"><span class="annottext">isImportedBy :: Module SourceRegion Desugared -&gt; VarRef Name -&gt; Bool
+</span><span id="line-17"></span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-type">isExposition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Exposition"><span class="hs-identifier hs-type">Exposition</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-18"></span><span id="isExposition"><span class="annot"><span class="annottext">isExposition :: ModuleName -&gt; Name -&gt; Exposition SourceRegion Desugared -&gt; Bool
+</span><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var hs-var">isExposition</span></a></span></span><span> </span><span id="local-6989586621680122150"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122150"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-type">NVarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-type">OperatorVarName</span></a></span><span> </span><span id="local-6989586621680122153"><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122153"><span class="hs-identifier hs-var">opn</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedOp"><span class="hs-identifier hs-type">ExposedOp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122157"><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122157"><span class="hs-identifier hs-var">opn'</span></a></span></span><span> </span><span id="local-6989586621680122158"><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122158"><span class="hs-identifier hs-var">mq</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122153"><span class="hs-identifier hs-var">opn</span></a></span><span> </span><span class="annot"><span class="annottext">OpName -&gt; OpName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122157"><span class="hs-identifier hs-var">opn'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; (ModuleName -&gt; Bool) -&gt; Maybe ModuleName -&gt; Bool
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122150"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122158"><span class="hs-identifier hs-var">mq</span></a></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span id="local-6989586621680122161"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122161"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-type">NVarName</span></a></span><span> </span><span id="local-6989586621680122162"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122162"><span class="hs-identifier hs-var">vn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedValue"><span class="hs-identifier hs-type">ExposedValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122164"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122164"><span class="hs-identifier hs-var">vn'</span></a></span></span><span> </span><span id="local-6989586621680122165"><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122165"><span class="hs-identifier hs-var">mq</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122162"><span class="hs-identifier hs-var">vn</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122164"><span class="hs-identifier hs-var">vn'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; (ModuleName -&gt; Bool) -&gt; Maybe ModuleName -&gt; Bool
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122161"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122165"><span class="hs-identifier hs-var">mq</span></a></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span id="local-6989586621680122166"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122166"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-type">NTypeName</span></a></span><span> </span><span id="local-6989586621680122168"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122168"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedType"><span class="hs-identifier hs-type">ExposedType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122170"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122170"><span class="hs-identifier hs-var">tn'</span></a></span></span><span> </span><span id="local-6989586621680122171"><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122171"><span class="hs-identifier hs-var">mq</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122168"><span class="hs-identifier hs-var">tn</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; TypeName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122170"><span class="hs-identifier hs-var">tn'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; (ModuleName -&gt; Bool) -&gt; Maybe ModuleName -&gt; Bool
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122166"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122171"><span class="hs-identifier hs-var">mq</span></a></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span id="local-6989586621680122172"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122172"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-type">NTypeName</span></a></span><span> </span><span id="local-6989586621680122173"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122173"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedTypeAndAllConstructors"><span class="hs-identifier hs-type">ExposedTypeAndAllConstructors</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122175"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122175"><span class="hs-identifier hs-var">tn'</span></a></span></span><span> </span><span id="local-6989586621680122176"><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122176"><span class="hs-identifier hs-var">mq</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122173"><span class="hs-identifier hs-var">tn</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; TypeName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122175"><span class="hs-identifier hs-var">tn'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; (ModuleName -&gt; Bool) -&gt; Maybe ModuleName -&gt; Bool
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122172"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><a href="#local-6989586621680122176"><span class="hs-identifier hs-var">mq</span></a></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Exposition SourceRegion Desugared
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><span class="hs-comment">-- | Extract a 'Located Name' from an 'Exposition' for error reporting</span></span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier hs-type">expositionToLocatedName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Exposition"><span class="hs-identifier hs-type">Exposition</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
+</span><span id="line-30"></span><span id="expositionToLocatedName"><span class="annot"><span class="annottext">expositionToLocatedName :: Exposition SourceRegion Desugared -&gt; Located Name
+</span><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier hs-var hs-var">expositionToLocatedName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedValue"><span class="hs-identifier hs-type">ExposedValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680122177"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122177"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122178"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122178"><span class="hs-identifier hs-var">vn</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Name -&gt; Located Name
+forall a. SourceRegion -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-var">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122177"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680122178"><span class="hs-identifier hs-var">vn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier hs-var">expositionToLocatedName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedOp"><span class="hs-identifier hs-type">ExposedOp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680122179"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122179"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122180"><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122180"><span class="hs-identifier hs-var">opn</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Name -&gt; Located Name
+forall a. SourceRegion -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-var">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122179"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Name
+</span><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-var">NVarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpName -&gt; VarName
+</span><a href="Elara.AST.Name.html#OperatorVarName"><span class="hs-identifier hs-var">OperatorVarName</span></a></span><span> </span><span class="annot"><span class="annottext">OpName
+</span><a href="#local-6989586621680122180"><span class="hs-identifier hs-var">opn</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier hs-var">expositionToLocatedName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedType"><span class="hs-identifier hs-type">ExposedType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680122181"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122181"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122182"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122182"><span class="hs-identifier hs-var">tn</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Name -&gt; Located Name
+forall a. SourceRegion -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-var">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122181"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Name
+</span><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-var">NTypeName</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122182"><span class="hs-identifier hs-var">tn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Elara.Rename.Imports.html#expositionToLocatedName"><span class="hs-identifier hs-var">expositionToLocatedName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedTypeAndAllConstructors"><span class="hs-identifier hs-type">ExposedTypeAndAllConstructors</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680122183"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122183"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-type">MaybeQualified</span></a></span><span> </span><span id="local-6989586621680122184"><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122184"><span class="hs-identifier hs-var">tn</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe ModuleName
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Name -&gt; Located Name
+forall a. SourceRegion -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-var">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680122183"><span class="hs-identifier hs-var">sr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Name
+</span><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-var">NTypeName</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621680122184"><span class="hs-identifier hs-var">tn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="annot"><span class="hs-comment">{- | Tests that @m@ imports @n@
+This is determined by 2 conditions:
+1. @n@'s module name is in the import list of @m@
+2. @n@ is exposed by the import
+-}</span></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier hs-type">isImportedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier hs-type">VarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-41"></span><span id="isImportedBy"><span class="annot"><span class="annottext">isImportedBy :: Module SourceRegion Desugared -&gt; VarRef Name -&gt; Bool
 </span><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier hs-var hs-var">isImportedBy</span></a></span></span><span> </span><span class="annot"><span class="annottext">Module SourceRegion Desugared
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Local"><span class="hs-identifier hs-type">Local</span></a></span><span> </span><span class="annot"><span class="annottext">VarRefImpl LocatedVarRefKind (Unique Name)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-comment">-- we always assume a local variable exists, even if it doesn't. this condition is checked elsewhere</span><span>
-</span><span id="line-17"></span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier hs-var">isImportedBy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118844"><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118844"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680118848"><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680118848"><span class="hs-identifier hs-var">n'</span></a></span></span><span> </span><span id="local-6989586621680118849"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118849"><span class="hs-identifier hs-var">nameMod</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118849"><span class="hs-identifier hs-var">nameMod</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+</span><span id="line-42"></span><span class="annot"><a href="Elara.Rename.Imports.html#isImportedBy"><span class="hs-identifier hs-var">isImportedBy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680122204"><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122204"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span id="local-6989586621680122207"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680122207"><span class="hs-identifier hs-var">n'</span></a></span></span><span> </span><span id="local-6989586621680122208"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122208"><span class="hs-identifier hs-var">nameMod</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122208"><span class="hs-identifier hs-var">nameMod</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118844"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
+</span><a href="#local-6989586621680122204"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
 -&gt; Optic' A_Lens NoIx (Located ModuleName) ModuleName -&gt; ModuleName
 forall k s (is :: IxList) a.
 Is k A_Getter =&gt;
@@ -37,44 +169,44 @@ s -&gt; Optic' k is s a -&gt; a
 forall a b. Lens (Located a) (Located b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared -&gt; Name -&gt; ModuleName -&gt; Bool
-</span><a href="#local-6989586621680118853"><span class="hs-identifier hs-var">isImportedBy'</span></a></span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118844"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680118848"><span class="hs-identifier hs-var">n'</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118849"><span class="hs-identifier hs-var">nameMod</span></a></span><span>
-</span><span id="line-19"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-20"></span><span>    </span><span class="annot"><a href="#local-6989586621680118853"><span class="hs-identifier hs-type">isImportedBy'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-21"></span><span>    </span><span id="local-6989586621680118853"><span class="annot"><span class="annottext">isImportedBy' :: Module' SourceRegion Desugared -&gt; Name -&gt; ModuleName -&gt; Bool
-</span><a href="#local-6989586621680118853"><span class="hs-identifier hs-var hs-var">isImportedBy'</span></a></span></span><span> </span><span id="local-6989586621680118854"><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118854"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span id="local-6989586621680118855"><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680118855"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680118856"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118856"><span class="hs-identifier hs-var">nameMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-22"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680118857"><span class="annot"><span class="annottext">imports' :: [Import SourceRegion Desugared]
-</span><a href="#local-6989586621680118857"><span class="hs-identifier hs-var hs-var">imports'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118854"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleImports</span><span>
-</span><span id="line-23"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122212"><span class="hs-identifier hs-var">isImportedBy'</span></a></span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122204"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680122207"><span class="hs-identifier hs-var">n'</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122208"><span class="hs-identifier hs-var">nameMod</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621680122212"><span class="hs-identifier hs-type">isImportedBy'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Module%27"><span class="hs-identifier hs-type">Module'</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-46"></span><span>    </span><span id="local-6989586621680122212"><span class="annot"><span class="annottext">isImportedBy' :: Module' SourceRegion Desugared -&gt; Name -&gt; ModuleName -&gt; Bool
+</span><a href="#local-6989586621680122212"><span class="hs-identifier hs-var hs-var">isImportedBy'</span></a></span></span><span> </span><span id="local-6989586621680122213"><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122213"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span id="local-6989586621680122214"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680122214"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680122215"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122215"><span class="hs-identifier hs-var">nameMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-47"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680122216"><span class="annot"><span class="annottext">imports' :: [Import SourceRegion Desugared]
+</span><a href="#local-6989586621680122216"><span class="hs-identifier hs-var hs-var">imports'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122213"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleImports</span><span>
+</span><span id="line-48"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ModuleName
 -&gt; [Import SourceRegion Desugared]
 -&gt; Maybe (Import SourceRegion Desugared)
-</span><a href="#local-6989586621680118858"><span class="hs-identifier hs-var">findImport</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118856"><span class="hs-identifier hs-var">nameMod</span></a></span><span> </span><span class="annot"><span class="annottext">[Import SourceRegion Desugared]
-</span><a href="#local-6989586621680118857"><span class="hs-identifier hs-var">imports'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-24"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Import SourceRegion Desugared)
+</span><a href="#local-6989586621680122217"><span class="hs-identifier hs-var">findImport</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122215"><span class="hs-identifier hs-var">nameMod</span></a></span><span> </span><span class="annot"><span class="annottext">[Import SourceRegion Desugared]
+</span><a href="#local-6989586621680122216"><span class="hs-identifier hs-var">imports'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-49"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Import SourceRegion Desugared)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-25"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118860"><span class="annot"><span class="annottext">Import' SourceRegion Desugared
-</span><a href="#local-6989586621680118860"><span class="hs-identifier hs-var">imp</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-26"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Import' SourceRegion Desugared
-</span><a href="#local-6989586621680118860"><span class="hs-identifier hs-var">imp</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">importExposing</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-27"></span><span>                    </span><span class="annot"><span class="annottext">Exposing SourceRegion Desugared
+</span><span id="line-50"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680122219"><span class="annot"><span class="annottext">Import' SourceRegion Desugared
+</span><a href="#local-6989586621680122219"><span class="hs-identifier hs-var">imp</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Import' SourceRegion Desugared
+</span><a href="#local-6989586621680122219"><span class="hs-identifier hs-var">imp</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">importExposingOrHiding</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-52"></span><span>                    </span><span class="annot"><a href="Elara.AST.Module.html#ImportExposing"><span class="hs-identifier hs-type">ImportExposing</span></a></span><span> </span><span class="annot"><span class="annottext">Exposing SourceRegion Desugared
 </span><a href="Elara.AST.Module.html#ExposingAll"><span class="hs-identifier hs-var">ExposingAll</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-28"></span><span>                    </span><span class="annot"><a href="Elara.AST.Module.html#ExposingSome"><span class="hs-identifier hs-type">ExposingSome</span></a></span><span> </span><span id="local-6989586621680118863"><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
-</span><a href="#local-6989586621680118863"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Exposition SourceRegion Desugared -&gt; Bool)
+</span><span id="line-53"></span><span>                    </span><span class="annot"><a href="Elara.AST.Module.html#ImportExposing"><span class="hs-identifier hs-type">ImportExposing</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposingSome"><span class="hs-identifier hs-type">ExposingSome</span></a></span><span> </span><span id="local-6989586621680122223"><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
+</span><a href="#local-6989586621680122223"><span class="hs-identifier hs-var">es</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Exposition SourceRegion Desugared -&gt; Bool)
 -&gt; [Exposition SourceRegion Desugared] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Name -&gt; Exposition SourceRegion Desugared -&gt; Bool
-</span><a href="#local-6989586621680118865"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
-</span><a href="#local-6989586621680118854"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
+</span><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122213"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
 -&gt; Optic' A_Lens NoIx (Located ModuleName) ModuleName -&gt; ModuleName
 forall k s (is :: IxList) a.
 Is k A_Getter =&gt;
@@ -82,24 +214,44 @@ s -&gt; Optic' k is s a -&gt; a
 </span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located ModuleName) ModuleName
 forall a b. Lens (Located a) (Located b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Name
-</span><a href="#local-6989586621680118855"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
-</span><a href="#local-6989586621680118863"><span class="hs-identifier hs-var">es</span></a></span><span>
-</span><span id="line-29"></span><span>    </span><span class="annot"><a href="#local-6989586621680118858"><span class="hs-identifier hs-type">findImport</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-30"></span><span>    </span><span id="local-6989586621680118858"><span class="annot"><span class="annottext">findImport :: ModuleName
+</span><a href="#local-6989586621680122214"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
+</span><a href="#local-6989586621680122223"><span class="hs-identifier hs-var">es</span></a></span><span>
+</span><span id="line-54"></span><span>                    </span><span class="annot"><a href="Elara.AST.Module.html#ImportHiding"><span class="hs-identifier hs-type">ImportHiding</span></a></span><span> </span><span id="local-6989586621680122226"><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
+</span><a href="#local-6989586621680122226"><span class="hs-identifier hs-var">hidings</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-55"></span><span>                        </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; Bool -&gt; Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Exposition SourceRegion Desugared -&gt; Bool)
+-&gt; [Exposition SourceRegion Desugared] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Name -&gt; Exposition SourceRegion Desugared -&gt; Bool
+</span><a href="Elara.Rename.Imports.html#isExposition"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Module' SourceRegion Desugared
+</span><a href="#local-6989586621680122213"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
+-&gt; Optic' A_Lens NoIx (Located ModuleName) ModuleName -&gt; ModuleName
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located ModuleName) ModuleName
+forall a b. Lens (Located a) (Located b) a b
+</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621680122214"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Exposition SourceRegion Desugared]
+</span><a href="#local-6989586621680122226"><span class="hs-identifier hs-var">hidings</span></a></span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="#local-6989586621680122217"><span class="hs-identifier hs-type">findImport</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621680122217"><span class="annot"><span class="annottext">findImport :: ModuleName
 -&gt; [Import SourceRegion Desugared]
 -&gt; Maybe (Import SourceRegion Desugared)
-</span><a href="#local-6989586621680118858"><span class="hs-identifier hs-var hs-var">findImport</span></a></span></span><span> </span><span id="local-6989586621680118866"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118866"><span class="hs-identifier hs-var">mn'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Import SourceRegion Desugared -&gt; Bool)
+</span><a href="#local-6989586621680122217"><span class="hs-identifier hs-var hs-var">findImport</span></a></span></span><span> </span><span id="local-6989586621680122228"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122228"><span class="hs-identifier hs-var">mn'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Import SourceRegion Desugared -&gt; Bool)
 -&gt; [Import SourceRegion Desugared]
 -&gt; Maybe (Import SourceRegion Desugared)
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">find</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Import"><span class="hs-identifier hs-type">Import</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680118868"><span class="annot"><span class="annottext">Import' SourceRegion Desugared
-</span><a href="#local-6989586621680118868"><span class="hs-identifier hs-var">imp</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118866"><span class="hs-identifier hs-var">mn'</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680122230"><span class="annot"><span class="annottext">Import' SourceRegion Desugared
+</span><a href="#local-6989586621680122230"><span class="hs-identifier hs-var">imp</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680122228"><span class="hs-identifier hs-var">mn'</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Import' SourceRegion Desugared
-</span><a href="#local-6989586621680118868"><span class="hs-identifier hs-var">imp</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">importModuleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
+</span><a href="#local-6989586621680122230"><span class="hs-identifier hs-var">imp</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">importModuleName</span><span> </span><span class="annot"><span class="annottext">Located ModuleName
 -&gt; Optic' A_Lens NoIx (Located ModuleName) ModuleName -&gt; ModuleName
 forall k s (is :: IxList) a.
 Is k A_Getter =&gt;
@@ -107,102 +259,4 @@ s -&gt; Optic' k is s a -&gt; a
 </span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located ModuleName) ModuleName
 forall a b. Lens (Located a) (Located b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span>    </span><span class="annot"><a href="#local-6989586621680118865"><span class="hs-identifier hs-type">isExposition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Module.html#Exposition"><span class="hs-identifier hs-type">Exposition</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">NewD.Desugared</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-33"></span><span>    </span><span id="local-6989586621680118865"><span class="annot"><span class="annottext">isExposition :: ModuleName -&gt; Name -&gt; Exposition SourceRegion Desugared -&gt; Bool
-</span><a href="#local-6989586621680118865"><span class="hs-identifier hs-var hs-var">isExposition</span></a></span></span><span> </span><span id="local-6989586621680118869"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118869"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NVarName"><span class="hs-identifier hs-type">NVarName</span></a></span><span> </span><span id="local-6989586621680118871"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621680118871"><span class="hs-identifier hs-var">vn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedValue"><span class="hs-identifier hs-type">ExposedValue</span></a></span><span> </span><span id="local-6989586621680118873"><span class="annot"><span class="annottext">ValueOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118873"><span class="hs-identifier hs-var">vn'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Maybe ModuleName -&gt; MaybeQualified VarName
-forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
-</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621680118871"><span class="hs-identifier hs-var">vn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
-forall a. a -&gt; Maybe a
-</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118869"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MaybeQualified VarName -&gt; MaybeQualified VarName -&gt; Bool
-forall a. Eq a =&gt; a -&gt; a -&gt; Bool
-</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified VarName)
-ValueOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118873"><span class="hs-identifier hs-var">vn'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified VarName)
--&gt; Optic'
-     A_Lens
-     NoIx
-     (Located (MaybeQualified VarName))
-     (MaybeQualified VarName)
--&gt; MaybeQualified VarName
-forall k s (is :: IxList) a.
-Is k A_Getter =&gt;
-s -&gt; Optic' k is s a -&gt; a
-</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
-  A_Lens
-  NoIx
-  (Located (MaybeQualified VarName))
-  (MaybeQualified VarName)
-forall a b. Lens (Located a) (Located b) a b
-</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span>
-</span><span id="line-34"></span><span>    </span><span class="annot"><a href="#local-6989586621680118865"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span id="local-6989586621680118875"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118875"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-type">NTypeName</span></a></span><span> </span><span id="local-6989586621680118877"><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680118877"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedType"><span class="hs-identifier hs-type">ExposedType</span></a></span><span> </span><span id="local-6989586621680118879"><span class="annot"><span class="annottext">TypeOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118879"><span class="hs-identifier hs-var">tn'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Maybe ModuleName -&gt; MaybeQualified TypeName
-forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
-</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680118877"><span class="hs-identifier hs-var">tn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
-forall a. a -&gt; Maybe a
-</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118875"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MaybeQualified TypeName -&gt; MaybeQualified TypeName -&gt; Bool
-forall a. Eq a =&gt; a -&gt; a -&gt; Bool
-</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified TypeName)
-TypeOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118879"><span class="hs-identifier hs-var">tn'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified TypeName)
--&gt; Optic'
-     A_Lens
-     NoIx
-     (Located (MaybeQualified TypeName))
-     (MaybeQualified TypeName)
--&gt; MaybeQualified TypeName
-forall k s (is :: IxList) a.
-Is k A_Getter =&gt;
-s -&gt; Optic' k is s a -&gt; a
-</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
-  A_Lens
-  NoIx
-  (Located (MaybeQualified TypeName))
-  (MaybeQualified TypeName)
-forall a b. Lens (Located a) (Located b) a b
-</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><a href="#local-6989586621680118865"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span id="local-6989586621680118880"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118880"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#NTypeName"><span class="hs-identifier hs-type">NTypeName</span></a></span><span> </span><span id="local-6989586621680118881"><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680118881"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#ExposedTypeAndAllConstructors"><span class="hs-identifier hs-type">ExposedTypeAndAllConstructors</span></a></span><span> </span><span id="local-6989586621680118883"><span class="annot"><span class="annottext">TypeOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118883"><span class="hs-identifier hs-var">tn'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Maybe ModuleName -&gt; MaybeQualified TypeName
-forall name. name -&gt; Maybe ModuleName -&gt; MaybeQualified name
-</span><a href="Elara.AST.Name.html#MaybeQualified"><span class="hs-identifier hs-var">MaybeQualified</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
-</span><a href="#local-6989586621680118881"><span class="hs-identifier hs-var">tn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; Maybe ModuleName
-forall a. a -&gt; Maybe a
-</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680118880"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MaybeQualified TypeName -&gt; MaybeQualified TypeName -&gt; Bool
-forall a. Eq a =&gt; a -&gt; a -&gt; Bool
-</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified TypeName)
-TypeOccurrence Desugared SourceRegion
-</span><a href="#local-6989586621680118883"><span class="hs-identifier hs-var">tn'</span></a></span><span> </span><span class="annot"><span class="annottext">Located (MaybeQualified TypeName)
--&gt; Optic'
-     A_Lens
-     NoIx
-     (Located (MaybeQualified TypeName))
-     (MaybeQualified TypeName)
--&gt; MaybeQualified TypeName
-forall k s (is :: IxList) a.
-Is k A_Getter =&gt;
-s -&gt; Optic' k is s a -&gt; a
-</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
-  A_Lens
-  NoIx
-  (Located (MaybeQualified TypeName))
-  (MaybeQualified TypeName)
-forall a b. Lens (Located a) (Located b) a b
-</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621680118865"><span class="hs-identifier hs-var">isExposition</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Name
-</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Exposition SourceRegion Desugared
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-37"></span></pre></body></html>
+</span><span id="line-58"></span></pre></body></html>

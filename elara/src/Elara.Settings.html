@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680077362"><span id="local-6989586621680077363"></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Settings.html"><span class="hs-identifier">Elara.Settings</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680080624"><span id="local-6989586621680080625"></span></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Settings.html"><span class="hs-identifier">Elara.Settings</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">data</span><span> </span><span id="CompilerSettings"><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-var">CompilerSettings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CompilerSettings"><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-var">CompilerSettings</span></a></span></span><span>
 </span><span id="line-4"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="dumpTargets"><span class="annot"><span class="annottext">CompilerSettings -&gt; Set DumpTarget
@@ -17,7 +17,7 @@
 </span><a href="Elara.Settings.html#outputDir"><span class="hs-identifier hs-var hs-var">outputDir</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
 </span><span id="line-13"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Directory for build artifacts (e.g. JVM class files, dump output)</span></span><span>
 </span><span id="line-14"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-15"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680077371"><span id="local-6989586621680077385"><span id="local-6989586621680077389"><span class="annot"><span class="annottext">Int -&gt; CompilerSettings -&gt; ShowS
+</span><span id="line-15"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680080633"><span id="local-6989586621680080647"><span id="local-6989586621680080651"><span class="annot"><span class="annottext">Int -&gt; CompilerSettings -&gt; ShowS
 [CompilerSettings] -&gt; ShowS
 CompilerSettings -&gt; FilePath
 (Int -&gt; CompilerSettings -&gt; ShowS)
@@ -32,7 +32,7 @@ $cshow :: CompilerSettings -&gt; FilePath
 show :: CompilerSettings -&gt; FilePath
 $cshowList :: [CompilerSettings] -&gt; ShowS
 showList :: [CompilerSettings] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077397"><span id="local-6989586621680077409"><span class="annot"><span class="annottext">CompilerSettings -&gt; CompilerSettings -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080659"><span id="local-6989586621680080671"><span class="annot"><span class="annottext">CompilerSettings -&gt; CompilerSettings -&gt; Bool
 (CompilerSettings -&gt; CompilerSettings -&gt; Bool)
 -&gt; (CompilerSettings -&gt; CompilerSettings -&gt; Bool)
 -&gt; Eq CompilerSettings
@@ -53,7 +53,7 @@ $c/= :: CompilerSettings -&gt; CompilerSettings -&gt; Bool
 </span><span id="line-24"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DumpCore"><span class="annot"><a href="Elara.Settings.html#DumpCore"><span class="hs-identifier hs-var">DumpCore</span></a></span></span><span>
 </span><span id="line-25"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DumpIR"><span class="annot"><a href="Elara.Settings.html#DumpIR"><span class="hs-identifier hs-var">DumpIR</span></a></span></span><span>
 </span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DumpJVM"><span class="annot"><a href="Elara.Settings.html#DumpJVM"><span class="hs-identifier hs-var">DumpJVM</span></a></span></span><span>
-</span><span id="line-27"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680077426"><span id="local-6989586621680077428"><span id="local-6989586621680077431"><span class="annot"><span class="annottext">Int -&gt; DumpTarget -&gt; ShowS
+</span><span id="line-27"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680080688"><span id="local-6989586621680080690"><span id="local-6989586621680080693"><span class="annot"><span class="annottext">Int -&gt; DumpTarget -&gt; ShowS
 [DumpTarget] -&gt; ShowS
 DumpTarget -&gt; FilePath
 (Int -&gt; DumpTarget -&gt; ShowS)
@@ -68,7 +68,7 @@ $cshow :: DumpTarget -&gt; FilePath
 show :: DumpTarget -&gt; FilePath
 $cshowList :: [DumpTarget] -&gt; ShowS
 showList :: [DumpTarget] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077434"><span id="local-6989586621680077439"><span class="annot"><span class="annottext">DumpTarget -&gt; DumpTarget -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080696"><span id="local-6989586621680080701"><span class="annot"><span class="annottext">DumpTarget -&gt; DumpTarget -&gt; Bool
 (DumpTarget -&gt; DumpTarget -&gt; Bool)
 -&gt; (DumpTarget -&gt; DumpTarget -&gt; Bool) -&gt; Eq DumpTarget
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -76,7 +76,7 @@ $c== :: DumpTarget -&gt; DumpTarget -&gt; Bool
 == :: DumpTarget -&gt; DumpTarget -&gt; Bool
 $c/= :: DumpTarget -&gt; DumpTarget -&gt; Bool
 /= :: DumpTarget -&gt; DumpTarget -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077444"><span id="local-6989586621680077448"><span id="local-6989586621680077452"><span id="local-6989586621680077456"><span id="local-6989586621680077459"><span id="local-6989586621680077462"><span id="local-6989586621680077465"><span class="annot"><span class="annottext">Eq DumpTarget
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080706"><span id="local-6989586621680080710"><span id="local-6989586621680080714"><span id="local-6989586621680080718"><span id="local-6989586621680080721"><span id="local-6989586621680080724"><span id="local-6989586621680080727"><span class="annot"><span class="annottext">Eq DumpTarget
 Eq DumpTarget =&gt;
 (DumpTarget -&gt; DumpTarget -&gt; Ordering)
 -&gt; (DumpTarget -&gt; DumpTarget -&gt; Bool)
@@ -113,7 +113,7 @@ $cmax :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget
 max :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget
 $cmin :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget
 min :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077473"><span id="local-6989586621680077480"><span id="local-6989586621680077485"><span id="local-6989586621680077491"><span id="local-6989586621680077494"><span id="local-6989586621680077499"><span id="local-6989586621680077505"><span id="local-6989586621680077509"><span class="annot"><span class="annottext">Int -&gt; DumpTarget
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080735"><span id="local-6989586621680080742"><span id="local-6989586621680080747"><span id="local-6989586621680080753"><span id="local-6989586621680080756"><span id="local-6989586621680080761"><span id="local-6989586621680080767"><span id="local-6989586621680080771"><span class="annot"><span class="annottext">Int -&gt; DumpTarget
 DumpTarget -&gt; Int
 DumpTarget -&gt; [DumpTarget]
 DumpTarget -&gt; DumpTarget
@@ -154,14 +154,14 @@ $cenumFromTo :: DumpTarget -&gt; DumpTarget -&gt; [DumpTarget]
 enumFromTo :: DumpTarget -&gt; DumpTarget -&gt; [DumpTarget]
 $cenumFromThenTo :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget -&gt; [DumpTarget]
 enumFromThenTo :: DumpTarget -&gt; DumpTarget -&gt; DumpTarget -&gt; [DumpTarget]
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077517"><span id="local-6989586621680077519"><span class="annot"><span class="annottext">DumpTarget
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080779"><span id="local-6989586621680080781"><span class="annot"><span class="annottext">DumpTarget
 DumpTarget -&gt; DumpTarget -&gt; Bounded DumpTarget
 forall a. a -&gt; a -&gt; Bounded a
 $cminBound :: DumpTarget
 minBound :: DumpTarget
 $cmaxBound :: DumpTarget
 maxBound :: DumpTarget
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Bounded</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680077525"><span id="local-6989586621680077527"><span class="annot"><span class="annottext">(forall x. DumpTarget -&gt; Rep DumpTarget x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Bounded</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680080787"><span id="local-6989586621680080789"><span class="annot"><span class="annottext">(forall x. DumpTarget -&gt; Rep DumpTarget x)
 -&gt; (forall x. Rep DumpTarget x -&gt; DumpTarget) -&gt; Generic DumpTarget
 forall x. Rep DumpTarget x -&gt; DumpTarget
 forall x. DumpTarget -&gt; Rep DumpTarget x
