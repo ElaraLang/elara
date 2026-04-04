@@ -90,6 +90,19 @@ spec = describe "Golden tests" $ do
         it "Trailing operator with no right operand" $
             runGoldenError defaultSettings "error-trailing-operator"
 
+        describe "Rename error golden tests" $ do
+            it "Explicit import of a name that doesn't exist in the module" $
+                runGoldenError defaultSettings "error-rename-nonexistent-import"
+
+            it "Type alias body references an unbound type variable" $
+                runGoldenError defaultSettings "error-rename-unknown-type-var"
+
+            it "Block whose last statement is a let binding" $
+                runGoldenError defaultSettings "error-rename-block-ends-with-let"
+
+            it "Type alias that refers to itself" $
+                runGoldenError defaultSettings "error-rename-recursive-alias"
+
 runGolden :: CompilerSettings -> FilePath -> GoldenTest String
 runGolden settings goldenName = do
     let inputPrefix = "test/test_resources/golden_inputs/"

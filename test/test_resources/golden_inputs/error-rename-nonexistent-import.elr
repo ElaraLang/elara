@@ -1,0 +1,4 @@
+import Elara.Prim
+import Prelude (nonExistent)
+
+let main = println "hello"

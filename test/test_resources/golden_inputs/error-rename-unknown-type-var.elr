@@ -1,0 +1,6 @@
+import Elara.Prim
+import Prelude
+
+type Alias = a
+
+let main = println "hello"

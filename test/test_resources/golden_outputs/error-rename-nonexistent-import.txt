@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-rename-nonexistent-import.elr:2:16:
+                 |
+               2 | import Prelude (nonExistent)
+                 |                ^
+               unexpected (
+               expecting end of input
+
+     ╭──▶ test/test_resources/golden_inputs/error-rename-nonexistent-import.elr@2:16-2:17
+     │
+   2 │ import Prelude (nonExistent)
+     •                ┬ 
+     •                ├╸ unexpected (
+     •                ╰╸ expecting end of input
+─────╯

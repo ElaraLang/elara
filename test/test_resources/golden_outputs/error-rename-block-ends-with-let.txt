@@ -1,0 +1,14 @@
+[error E10014]: Block ends with a let binding
+     ╭──▶ test/test_resources/golden_inputs/error-rename-block-ends-with-let.elr@5:5-5:14
+     │
+   4 │ ╭┤ let main =
+   5 │ │      let x = 1
+     • │      ┬────────
+     • │      ╰╸ this let has no body
+   6 │ ├┤ <no line>
+     • │ 
+     • ╰╸ inside this declaration
+     •
+     │ Note: Blocks must end with an expression, not a let binding.
+     │ Hint: Perhaps you meant to use a let ... in construct?
+─────╯

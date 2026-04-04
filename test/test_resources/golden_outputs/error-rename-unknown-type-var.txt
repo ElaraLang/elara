@@ -1,0 +1,4 @@
+[error E10013]: Unknown type variable: a
+     •
+     │ Hint: Type variables must be bound in the enclosing type declaration or forall.
+─────╯

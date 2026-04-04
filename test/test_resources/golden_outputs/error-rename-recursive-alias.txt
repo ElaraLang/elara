@@ -1,0 +1,14 @@
+[error E10015]: Recursive type alias: Main.Foo
+     ╭──▶ test/test_resources/golden_inputs/error-rename-recursive-alias.elr@1:1-1:1
+     │
+   1 │ import Elara.Prim
+     •  
+     • ╰╸ refers back to itself here
+     •
+   4 │ type Foo = Foo
+     •      ┬── 
+     •      ╰╸ alias defined here
+     •
+     │ Note: Type aliases cannot be recursive.
+     │ Hint: Define a data type instead: use `|` to create an ADT with a single constructor.
+─────╯
