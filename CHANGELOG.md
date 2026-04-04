@@ -76,6 +76,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add a half-finished `getArgs` primitive - ([35c7de6](https://github.com/ElaraLang/elara/commit/35c7de641e9a0ab1638030c81da8cc31d83f6863)) 
 - Allow passing custom program arguments - ([10e7e15](https://github.com/ElaraLang/elara/commit/10e7e1532566554fabcefcf0b0faf2ef28bc0887)) 
 - Improve parser errors - ([54f3e0b](https://github.com/ElaraLang/elara/commit/54f3e0bb9297ecc88a6f522bbd241a524776b4b0)) 
+- Add support for `hiding` declarations in imports - ([d803bec](https://github.com/ElaraLang/elara/commit/d803bec7a9a637a7b20b536ceec269e2bb060dc5)) 
 
 ### 🐛 Bug Fixes
 
@@ -95,6 +96,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(core)* Fix bug in `FreeCoreVars` implementation for ANF - ([2f7af58](https://github.com/ElaraLang/elara/commit/2f7af588312fac37f684ea651605ec383edfc6eb)) 
 - *(core)* Make optimisations work with latest stdlib structure - ([19e66d7](https://github.com/ElaraLang/elara/commit/19e66d77f530cdba24c8fba7c0503ebb639bfa23)) 
 - *(docs)* Fix readthedocs confgi - ([c26df0e](https://github.com/ElaraLang/elara/commit/c26df0ed9f22a00ad59aa0f875233156e10da7a6)) 
+- *(examples)* Fix example using wrong IO sequence operator - ([99073aa](https://github.com/ElaraLang/elara/commit/99073aa0dc885c9c9eeb1880aa761faa0abce03c)) 
+- *(examples)* Ditto for another example - ([d4f45d7](https://github.com/ElaraLang/elara/commit/d4f45d7b7a113a1d70efb519bcf16eceab4cb6f1)) 
 - *(flake)* :bug: Update flake.lock and flake.nix for dependency resolution (NO MORE DEPENDENCY HELL) - ([3762c6d](https://github.com/ElaraLang/elara/commit/3762c6d0e8f830b450699353ce27f9c975b2ff63)) 
 - *(flake)* Tidy up nix and fix various dependency bugs - ([65bd7d4](https://github.com/ElaraLang/elara/commit/65bd7d4e8c130dd631df5aca4a3c6294855fb20b)) 
 - *(interpreter)* Allow interpreting thunk functions - ([5d23bd9](https://github.com/ElaraLang/elara/commit/5d23bd9f60316ae2b45931df7bb16994f4ddc50f)) 
