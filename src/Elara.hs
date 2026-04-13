@@ -155,7 +155,7 @@ withCompilerEnv ::
 withCompilerEnv settings action = do
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
-    startedVar <- liftIO $ newIORef DHashMap.empty
+    startedVar <- liftIO $ newMVar DHashMap.empty
     depsVar <- liftIO $ newIORef mempty
     runFileSystem $
         uniqueGenToGlobalIO $
