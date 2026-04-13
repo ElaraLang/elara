@@ -3,7 +3,7 @@
 module Elara.AST.Phases.Desugared where
 
 import Elara.AST.Extensions
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
@@ -25,7 +25,7 @@ instance ElaraPhase Desugared where
     type ConstructorOccurrence Desugared loc = Locate loc (MaybeQualified TypeName)
     type TypeOccurrence Desugared loc = Locate loc (MaybeQualified TypeName)
     type OperatorOccurrence Desugared loc = Locate loc (MaybeQualified OpName)
-    type InfixedOccurrence Desugared loc = Locate loc (MaybeQualified VarOrConName)
+    type InfixedOccurrence Desugared loc = Locate loc (MaybeQualified Name)
 
     -- Binders (same as Frontend)
     type ValueBinder Desugared loc = Locate loc VarName

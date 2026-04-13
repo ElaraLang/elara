@@ -127,9 +127,9 @@ instance ReportableError RenameError where
                 [Hint "Type variables must be bound in the enclosing type declaration or forall."]
     report (UnknownName n m names) = do
         let nameKind = case n of
-                Located _ (NVarName (NormalVarName _)) -> "variable"
-                Located _ (NVarName (OperatorVarName _)) -> "operator"
-                Located _ (NTypeName _) -> "type"
+                Located _ (NameValue _) -> "variable"
+                Located _ (NameOp _) -> "operator"
+                Located _ (NameType _) -> "type"
         -- search all names to suggest imports / similar names
         let namesMap = Map.mapKeys toName names
         let allNames = maybe [] toList (fmap toName <<$>> Map.lookup (n ^. unlocated) namesMap)

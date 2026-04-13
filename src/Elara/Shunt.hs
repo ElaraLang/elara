@@ -32,7 +32,7 @@ import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
 import Elara.AST.Module qualified as NewModule
-import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
+import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
@@ -211,7 +211,7 @@ shuntDeclarationBody ::
 shuntDeclarationBody opL (New.DeclarationBody bloc body') = New.DeclarationBody bloc <$> go body'
   where
     go :: New.DeclarationBody' SourceRegion NewR.Renamed -> Eff es (New.DeclarationBody' SourceRegion NewS.Shunted)
-    go (New.ValueDeclaration name val pats mTy mTypeMeta anns) = do
+    go (New.ValueDeclaration name val _ _ mTypeMeta anns) = do
         val' <- let ?lookup = opL in fixExpr val
         let mTypeMeta' = fmap phaseCoerce mTypeMeta
         anns' <- traverse (let ?lookup = opL in shuntAnnotation) anns
@@ -236,15 +236,11 @@ fixExpr e = do
     shuntExpr fixed
 
 -- | Convert an operator to its qualified 'Name' for lookup
-opNameOf :: New.BinaryOperator SourceRegion NewR.Renamed -> IgnoreLocVarRef Name
 opNameOf (New.SymOp _ (Located _ opRef)) =
     case opRef of
-        Global (Located l (Qualified n m)) -> Global (IgnoreLocation (Located l (Qualified (NVarName (OperatorVarName n)) m)))
-        Local (Located l (Unique n i)) -> Local (IgnoreLocation (Located l (Unique (NVarName (OperatorVarName n)) i)))
-opNameOf (New.InfixedOp _ vn) = ignoreLocation (toName <$> vn)
-  where
-    toName (VarName n) = NVarName (NormalVarName n)
-    toName (ConName n) = NTypeName n
+        Global (Located l (Qualified n m)) -> Global (IgnoreLocation (Located l (Qualified (NameOp n) m)))
+        Local (Located l (Unique n i)) -> Local (IgnoreLocation (Located l (Unique (NameOp n) i)))
+opNameOf (New.InfixedOp _ vn) = ignoreLocation vn
 
 {- | Fix the operators in an expression to the correct precedence.
 For example given @((+) = 1l) and ((*) = 2r)@,
@@ -359,7 +355,7 @@ shuntExpr (New.Expr loc meta e') = do
         pure (New.EApp NoExtension leftCall r', Nothing)
     shuntExpr' _ (New.EExtension (RenamedInParens (InParensExpression e))) = do
         -- Remove parens and just return the inner expression
-        e'@(New.Expr _ _ inner) <- fixExpr e
+        New.Expr _ _ inner <- fixExpr e
         pure (inner, Nothing)
 
 -- | Convert an operator reference into an expression (for turning binary ops into function calls)
@@ -373,13 +369,17 @@ operatorToExpr (New.SymOp opLoc (Located _ opRef)) =
      in (New.EVar NoExtension varRef, opLoc)
 operatorToExpr (New.InfixedOp opLoc inName) =
     case inName of
-        Global (Located l (Qualified (VarName n) m)) ->
+        Global (Located l (Qualified (NameValue n) m)) ->
             (New.EVar NoExtension (Located l (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
-        Global (Located l (Qualified (ConName n) m)) ->
+        Global (Located l (Qualified (NameOp n) m)) ->
+            (New.EVar NoExtension (Located l (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
+        Global (Located l (Qualified (NameType n) m)) ->
             (New.ECon NoExtension (Located l (Qualified n m)), opLoc)
-        Local (Located l (Unique (VarName n) i)) ->
+        Local (Located l (Unique (NameValue n) i)) ->
             (New.EVar NoExtension (Located l (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
-        Local (Located _ (Unique (ConName _) _)) -> error "Shouldn't have local con names"
+        Local (Located l (Unique (NameOp n) i)) ->
+            (New.EVar NoExtension (Located l (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
+        Local (Located _ (Unique (NameType _) _)) -> error "Shouldn't have local con names"
 
 -- | Get the location of an expression
 exprLoc :: New.Expr SourceRegion p -> SourceRegion

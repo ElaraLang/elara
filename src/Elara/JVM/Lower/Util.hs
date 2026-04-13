@@ -8,7 +8,7 @@ import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
-import Elara.Prim (primModuleName)
+import Elara.Prim (OpaquePrim (..))
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Name
 import JVM.Data.Abstract.Type qualified as JVM
@@ -39,30 +39,22 @@ lowerType t = case t of
         lowerType inner -- erase forall quantifiers
     Core.ConTy (Core.TyCon name details) ->
         case details of
-            Core.Prim ->
-                lowerPrimType name
+            Core.Prim p ->
+                lowerPrimType p
             Core.TyADT _ ->
                 JVM.ObjectFieldType (qualifiedTextToClass name)
             Core.TyAlias inner ->
                 lowerType inner
 
--- | Map Primitive Names to JVM Types
-lowerPrimType :: Qualified Text -> JVM.FieldType
-lowerPrimType q@(Qualified name modName) =
-    case modName of
-        m | m == primModuleName ->
-            case name of
-                "Int" -> JVM.ObjectFieldType "java.lang.Integer"
-                "String" -> JVM.ObjectFieldType "Elara.String"
-                "Bool" -> JVM.ObjectFieldType "java.lang.Boolean"
-                "Char" -> JVM.ObjectFieldType "java.lang.Character"
-                "Double" -> JVM.ObjectFieldType "java.lang.Double"
-                "Unit" -> JVM.ObjectFieldType "Elara.Unit"
-                "()" -> JVM.ObjectFieldType "Elara.Unit"
-                "IO" -> JVM.ObjectFieldType "Elara.IO"
-                _ -> error $ "Unknown primitive type: " <> show q
-        other ->
-            error $ "Type not recognized as primitive: " <> show other
+-- | Map an opaque primitive directly to its JVM type — no string lookups needed.
+lowerPrimType :: OpaquePrim -> JVM.FieldType
+lowerPrimType = \case
+    PrimInt -> JVM.ObjectFieldType "java.lang.Integer"
+    PrimString -> JVM.ObjectFieldType "Elara.String"
+    PrimChar -> JVM.ObjectFieldType "java.lang.Character"
+    PrimDouble -> JVM.ObjectFieldType "java.lang.Double"
+    PrimFloat -> JVM.ObjectFieldType "java.lang.Float"
+    PrimIO -> JVM.ObjectFieldType "Elara.IO"
 
 -- | Generate field name for constructor field by index
 fieldNameForIndex :: Int -> Text

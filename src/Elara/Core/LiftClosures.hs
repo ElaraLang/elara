@@ -233,6 +233,7 @@ liftClosuresA' ::
     Eff r (AExpr Core.Var)
 liftClosuresA' other@(ANF.Var{}) = pure other
 liftClosuresA' (ANF.Lit l) = pure $ Lit l
+liftClosuresA' (ANF.ANFPrimOp op t) = pure $ ANFPrimOp op t
 liftClosuresA' (ANF.Lam v body) = do
     (liftedId, _) <- createTopLevelLambda v body
     pure $ Var liftedId

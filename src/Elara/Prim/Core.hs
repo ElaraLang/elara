@@ -7,7 +7,7 @@ import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Unique.Effect
-import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), falseCtorName, knownTypeInfo, mkPrimQual, trueCtorName, wiredInPrimCtors)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), falseCtorName, knownTypeInfo, mkPrimQual, trueCtorName, unitCtorName, wiredInPrimCtors)
 
 -- | Build a 'TyCon' for a wired-in primitive, deriving constructors from the registry
 wiredInTyCon :: WiredInPrim -> TyCon
@@ -59,11 +59,8 @@ trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon
 falseCtor :: DataCon
 falseCtor = DataCon falseCtorName (ConTy boolCon) boolCon
 
-unitConName :: Qualified Text
-unitConName = mkPrimQual "Unit"
-
 unitCtor :: DataCon
-unitCtor = DataCon unitConName (ConTy unitCon) unitCon
+unitCtor = DataCon unitCtorName (ConTy unitCon) unitCon
 
 undefinedId :: UniqueGen :> r => Eff r Var
 undefinedId = do

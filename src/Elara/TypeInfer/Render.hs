@@ -11,13 +11,13 @@ module Elara.TypeInfer.Render (
 import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Prim (isPrimTypeName, primTypeInfo, primUserFacingName)
+import Elara.Prim (KnownTypeInfo (..), knownTypeInfo, lookupByQualifiedTypeName)
 import Elara.TypeInfer.Type (Monotype (..), Polytype (..), Type (..), TypeVariable (..))
 
 -- | Map internal primitive names to user-friendly names
 renderTypeName :: Qualified TypeName -> Doc AnsiStyle
-renderTypeName qn = case isPrimTypeName qn of
-    Just pt -> Style.typeName (pretty (primUserFacingName (primTypeInfo pt)))
+renderTypeName qn = case lookupByQualifiedTypeName qn of
+    Just kt -> Style.typeName (pretty (knownUserFacingName (knownTypeInfo kt)))
     Nothing -> Style.typeName (pretty (_qualifiedName qn))
 
 -- | Render a monotype with user-friendly names

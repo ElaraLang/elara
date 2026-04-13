@@ -254,7 +254,7 @@ seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qua
 seedSCC scc = do
     logDebug $ "Seeding SCC: " <> pretty (flattenSCC scc)
     for_ scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
         seedDeclaration decl
 
 inferSCC ::
@@ -266,7 +266,7 @@ inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     logDebug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> component)
+        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
         inferred <- inferDeclarationScheme decl
         pure (component, inferred)
 
@@ -318,7 +318,7 @@ runTypeCheckedDeclarationQuery name = do
             -- infer the entire SCC together to solve mutual recursion constraints.
             inferredDecls <- for scc $ \sccMemberName -> do
                 -- Fetch member source
-                memberDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> sccMemberName))
+                memberDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> sccMemberName))
                 inferDeclaration memberDecl
 
             case find (\d -> declarationName d == (name ^. unqualified)) inferredDecls of

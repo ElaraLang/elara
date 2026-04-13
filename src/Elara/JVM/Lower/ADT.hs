@@ -9,6 +9,7 @@ import Elara.JVM.Emit.Types (stringTypeName)
 import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
+import Elara.Prim qualified as Prim
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Name
 import JVM.Data.Abstract.Type qualified as JVM
@@ -200,7 +201,7 @@ generateElaraToStringMethod (className, fields) = do
                     let fieldAccess = IR.GetField (IR.This thisClassType) (JVM.ClassInfoType className) fieldName fieldType
 
                     -- Convert field to Elara/String using PrimOp ToString
-                    let fieldStr = IR.PrimOp IR.ToString [fieldAccess]
+                    let fieldStr = IR.PrimOp (IR.CorePrim Prim.PrimToString) [fieldAccess]
 
                     -- Add comma prefix if not the first field
                     if i == 0

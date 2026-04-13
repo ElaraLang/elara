@@ -9,6 +9,7 @@ import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
 import Elara.Data.Pretty
 import Elara.Logging (TraceableFn (..))
+import Elara.Prim qualified as Prim
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
 import Print (showPretty)
 
@@ -16,6 +17,7 @@ estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"
 estimateArity (Var (Id _ t _)) = typeArity t
 estimateArity (Lit _) = 0
+estimateArity (PrimOp op _) = Prim.primOpArity op
 estimateArity (App f _) = estimateArity f - 1
 estimateArity (TyApp f _) = estimateArity f
 estimateArity (Lam _ e) = 1 + estimateArity e
@@ -58,6 +60,7 @@ guesstimateExprType = TraceableFn $ \self v ->
         (Match _ _ alts) -> case alts of
             [] -> error "exprType: empty match"
             (_, _, e) : _ -> self e
+        (PrimOp _ t) -> pure t
 
 {- | Applies a function over the monotype of a potential forall expression
 For example, given a type `forall a. a -> a`, `overForAll` would apply the function to `a -> a`
@@ -84,6 +87,7 @@ class FreeCoreVars ast where
 instance FreeCoreVars Core.Expr where
     freeCoreVars (Core.Var v) = one v
     freeCoreVars (Core.Lit _) = Set.empty
+    freeCoreVars (Core.PrimOp{}) = Set.empty
     freeCoreVars (Core.App f x) = freeCoreVars f <> freeCoreVars x
     freeCoreVars (Core.TyApp f _) = freeCoreVars f
     freeCoreVars (Core.Lam b e) = Set.delete b (freeCoreVars e)
@@ -98,6 +102,7 @@ instance FreeCoreVars Core.Expr where
 instance FreeCoreVars ANF.AExpr where
     freeCoreVars (ANF.Var v) = one v
     freeCoreVars (ANF.Lit _) = Set.empty
+    freeCoreVars (ANF.ANFPrimOp{}) = Set.empty
     freeCoreVars (ANF.TyApp f _) = freeCoreVars f
     freeCoreVars (ANF.Lam b e) = Set.delete b (freeCoreVars e)
     freeCoreVars (ANF.TyLam _ e) = freeCoreVars e

@@ -47,6 +47,7 @@ import Elara.JVM.Emit.State
 import Elara.JVM.Emit.Types (stringTypeName)
 import Elara.JVM.IR as IR
 import Elara.Logging
+import Elara.Prim qualified as Prim
 import JVM.Data.Abstract.Builder (ClassBuilder, addAccessFlag, addField, addMethod, runClassBuilder, setName, setSuperClass)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, newLabel, runCodeBuilder)
 import JVM.Data.Abstract.ClassFile
@@ -185,9 +186,9 @@ buildClassFileMethod name accessFlags desc maxLocals className codeAttrs instruc
         }
 
 -- | Effects needed to emit JVM code to a method
-type EmitCode r = (StructuredDebug :> r, CodeBuilder :> r, State MethodCreationState :> r)
+type EmitCode r = (StructuredDebug :> r, CodeBuilder :> r, State MethodCreationState :> r, HasCallStack)
 
--- \| Emit a block of IR instructions
+-- | Emit a block of IR instructions
 emitIRBlock :: EmitCode r => IR.Block -> Eff r ()
 emitIRBlock (IR.Block label instrs) = do
     label' <- getLabel label
@@ -271,8 +272,8 @@ emitExpr expr = case expr of
     IR.PrimitiveLitBool True -> emit JVM.IConst1 >> pure (Just (PrimitiveClassInfoType JVM.Boolean))
     IR.PrimitiveLitBool False -> emit JVM.IConst0 >> pure (Just (PrimitiveClassInfoType JVM.Boolean))
     IR.LitUnit -> do
-        emit $ JVM.GetStatic (ClassInfoType "Elara.Unit") "unit" (ObjectFieldType "Elara.Unit")
-        pure $ Just (ClassInfoType "Elara.Unit")
+        emit $ JVM.GetStatic (ClassInfoType "Elara.Prim.Unit") "unit" (ObjectFieldType "Elara.Prim.Unit")
+        pure $ Just (ClassInfoType "Elara.Prim.Unit")
     IR.InstanceOf e t -> do
         emitExpr e
         emit $ Instanceof (fieldTypeToClassInfoType t)
@@ -385,7 +386,6 @@ emitExpr expr = case expr of
                         (ClassInfoType "Elara.Error")
                         "undefined"
                         (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/Object"))
-
                 pure $ Just (ClassInfoType "java/lang/Object")
             (IR.PatternMatchFailedError, []) -> do
                 emit $
@@ -394,60 +394,63 @@ emitExpr expr = case expr of
                         "patternMatchFail"
                         (MethodDescriptor [] (TypeReturn $ ObjectFieldType "java/lang/Object"))
                 pure $ Just (ClassInfoType "java/lang/Object")
-            (IR.IntAdd, [a, b]) -> emitBinaryIntOp "add" a b
-            (IR.IntSubtract, [a, b]) -> emitBinaryIntOp "minus" a b
-            (IR.IntMultiply, [a, b]) -> emitBinaryIntOp "times" a b
-            (IR.IntNegate, [a]) -> do
-                -- Get the curried function: Prelude.negate : Int -> Int
+            (IR.CorePrim Prim.PrimIntAdd, [a, b]) -> emitBinaryIntOp "add" a b
+            (IR.CorePrim Prim.PrimIntSubtract, [a, b]) -> emitBinaryIntOp "minus" a b
+            (IR.CorePrim Prim.PrimIntMultiply, [a, b]) -> emitBinaryIntOp "times" a b
+            (IR.CorePrim Prim.PrimIntDivide, [a, b]) -> emitBinaryIntOp "divide" a b
+            (IR.CorePrim Prim.PrimIntRemainder, [a, b]) -> emitBinaryIntOp "remainder" a b
+            (IR.CorePrim Prim.PrimIntNegate, [a]) -> do
                 emit $ GetStatic (ClassInfoType "Elara.Prelude") "negate" (ObjectFieldType "Elara.Func")
                 emitExpr a
                 emit $ JVM.InvokeInterface (ClassInfoType "Elara.Func") "run" (MethodDescriptor [javaObject] (TypeReturn javaObject))
                 emit $ CheckCast (ClassInfoType "java.lang.Integer")
                 pure $ Just (ClassInfoType "java.lang.Integer")
-            (IR.Println, [msg]) -> do
+            (IR.CorePrim Prim.PrimPrintln, [msg]) -> do
                 emitExpr msg
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.IO") "println" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn (ObjectFieldType "Elara.IO")))
                 pure $ Just (ClassInfoType "Elara.IO")
-            (IR.StringHead, [str]) -> emitStringMethod str "head" [] "java.lang.Character"
-            (IR.StringIsEmpty, [str]) -> do
+            (IR.CorePrim Prim.PrimStringHead, [str]) -> emitStringMethod str "head" [] "java.lang.Character"
+            (IR.CorePrim Prim.PrimStringIsEmpty, [str]) -> do
                 emitExpr str
                 emit $ JVM.InvokeVirtual (ClassInfoType stringTypeName) "isEmpty" (MethodDescriptor [] (TypeReturn $ PrimitiveFieldType JVM.Boolean))
                 primitiveBooleanToElaraBoolean
-            (IR.StringTail, [str]) -> emitStringMethod str "tail" [] stringTypeName
-            (IR.StringCons, [ch, str]) -> do
+            (IR.CorePrim Prim.PrimStringTail, [str]) -> emitStringMethod str "tail" [] stringTypeName
+            (IR.CorePrim Prim.PrimStringCons, [ch, str]) -> do
                 emitExpr str -- receiver
                 emitExpr ch -- argument
                 emit $ JVM.InvokeVirtual (ClassInfoType stringTypeName) "cons" (MethodDescriptor [ObjectFieldType "java.lang.Character"] (TypeReturn $ ObjectFieldType stringTypeName))
                 pure $ Just (ClassInfoType stringTypeName)
-            (IR.ToString, [obj]) -> do
+            (IR.CorePrim Prim.PrimToString, [obj]) -> do
                 emitExpr obj
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "toString" (MethodDescriptor [ObjectFieldType "java.lang.Object"] (TypeReturn $ ObjectFieldType stringTypeName))
                 pure $ Just (ClassInfoType stringTypeName)
-            (IR.PrimEquals, [a, b]) -> do
+            (IR.CorePrim Prim.PrimEquals, [a, b]) -> do
                 emitExpr a
                 emitExpr b
                 emit $ JVM.InvokeStatic (ClassInfoType "java.util.Objects") "equals" objectsEqualsDesc
                 primitiveBooleanToElaraBoolean
-            (IR.PrimCompare, [a, b]) -> do
+            (IR.CorePrim Prim.PrimCompare, [a, b]) -> do
                 emitExpr a
                 emitExpr b
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "compare" (MethodDescriptor [javaObject, javaObject] (TypeReturn $ ObjectFieldType "java.lang.Integer"))
                 pure $ Just (ClassInfoType "java.lang.Integer")
-            (IR.IOBind, [io, func]) -> do
+            (IR.CorePrim Prim.PrimIOBind, [io, func]) -> do
                 emitExpr io
                 emitExpr func
                 emit $ JVM.InvokeVirtual (ClassInfoType "Elara.IO") "bind" (MethodDescriptor [ObjectFieldType "Elara.Func"] (TypeReturn $ ObjectFieldType "Elara.IO"))
                 pure $ Just (ClassInfoType "Elara.IO")
-            (IR.DebugWithMsg, [msg, value]) -> do
+            (IR.CorePrim Prim.PrimDebugWithMsg, [msg, value]) -> do
                 emitExpr msg
                 emitExpr value
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "debugWithMsg" (MethodDescriptor [ObjectFieldType stringTypeName, javaObject] (TypeReturn javaObject))
                 pure $ Just (ClassInfoType "java.lang.Object")
-            (IR.ThrowError, [msg]) -> do
+            (IR.CorePrim Prim.PrimThrowError, [msg]) -> do
                 emitExpr msg
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "toString" (MethodDescriptor [javaObject] (TypeReturn $ ObjectFieldType stringTypeName))
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.Error") "throwError" (MethodDescriptor [ObjectFieldType stringTypeName] (TypeReturn javaObject))
                 pure $ Just (ClassInfoType "java/lang/Object")
+            (IR.CorePrim Prim.PrimReadFile, _) -> error "emitExpr: PrimReadFile not yet supported in JVM backend"
+            (IR.CorePrim Prim.PrimGetArgs, _) -> error "emitExpr: PrimGetArgs not yet supported in JVM backend"
             other -> error $ "emitExpr: Unhandled primitive operation: " <> prettyToText other
     IR.New className args -> do
         emit $ JVM.New (ClassInfoType className)

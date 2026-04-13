@@ -3,7 +3,7 @@
 module Elara.AST.Phases.Frontend where
 
 import Elara.AST.Extensions
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
@@ -24,7 +24,7 @@ instance ElaraPhase Frontend where
     type ConstructorOccurrence Frontend loc = Locate loc (MaybeQualified TypeName)
     type TypeOccurrence Frontend loc = Locate loc (MaybeQualified TypeName)
     type OperatorOccurrence Frontend loc = Locate loc (MaybeQualified OpName)
-    type InfixedOccurrence Frontend loc = Locate loc (MaybeQualified VarOrConName)
+    type InfixedOccurrence Frontend loc = Locate loc (MaybeQualified Name)
 
     -- Binders
     type ValueBinder Frontend loc = Locate loc VarName

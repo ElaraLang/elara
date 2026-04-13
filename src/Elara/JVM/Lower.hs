@@ -1,7 +1,7 @@
 module Elara.JVM.Lower (lowerModule) where
 
 import Effectful
-import Elara.AST.Name (NameLike (nameText), unqualified)
+import Elara.AST.Name (unqualified)
 import Elara.AST.VarRef
 import Elara.Core
 import Elara.Core qualified as Core
@@ -16,7 +16,6 @@ import Elara.JVM.Lower.Expr
 import Elara.JVM.Lower.Function
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
-import Elara.Prim (fetchPrimitiveName, mkPrimQual)
 import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Type qualified as JVM
@@ -181,28 +180,20 @@ lowerPrimitiveBinding ::
     Eff r (Maybe IR.Method)
 lowerPrimitiveBinding methodName type_ body =
     case body of
-        Core.App fun (Core.Lit (Core.String key)) ->
-            -- elaraPrimitive "primName"
-            case stripTyApps fun of
-                Core.Var (Core.Id (Global primName) _ _)
-                    | primName == mkPrimQual (nameText fetchPrimitiveName)
-                    , Just prim <- primitiveFromKey key -> do
-                        let argTys = functionTypeArgs type_
-                            jvmArgs = map lowerType argTys
-                            jvmRet = lowerType (functionTypeResult type_)
+        Core.PrimOp op _ -> do
+            let prim = IR.CorePrim op
+                argTys = functionTypeArgs type_
+                jvmArgs = map lowerType argTys
+                jvmRet = lowerType (functionTypeResult type_)
 
-                        argNames <- replicateM (length argTys) (makeUnique "arg")
-                        let methodArgs = zip argNames jvmArgs
-                            argExprs = [IR.LocalVar n t | (n, t) <- methodArgs]
-                            primExpr = IR.PrimOp prim argExprs
+            argNames <- replicateM (length argTys) (makeUnique "arg")
+            let methodArgs = zip argNames jvmArgs
+                argExprs = [IR.LocalVar n t | (n, t) <- methodArgs]
+                primExpr = IR.PrimOp prim argExprs
 
-                        entry <- makeUnique "prim_entry"
-                        let body = [IR.Block entry [IR.Return (Just primExpr)]]
-                        pure . Just $ buildStaticMethod methodName methodArgs jvmRet body
-                Core.Var (Core.Id (Global primName) _ _)
-                    | primName == mkPrimQual (nameText fetchPrimitiveName) ->
-                        error $ "Unknown primitive key in elaraPrimitive: " <> show key
-                _ -> pure Nothing
+            entry <- makeUnique "prim_entry"
+            let body = [IR.Block entry [IR.Return (Just primExpr)]]
+            pure . Just $ buildStaticMethod methodName methodArgs jvmRet body
         _ -> pure Nothing
 
 -- | Flatten nested lambdas into a list of arguments and the final body expression
@@ -258,27 +249,3 @@ lowerTypeDecl (CoreTypeDecl name _ _ typeBody) =
 
                     conClasses <- mapM (lowerDataCon baseClassName) dataCons
                     pure (baseClass : conClasses)
-
-primitiveFromKey :: Text -> Maybe IR.PrimOp
-primitiveFromKey key =
-    case key of
-        "+" -> Just IR.IntAdd
-        "-" -> Just IR.IntSubtract
-        "*" -> Just IR.IntMultiply
-        "negate" -> Just IR.IntNegate
-        "println" -> Just IR.Println
-        "stringCons" -> Just IR.StringCons
-        "stringHead" -> Just IR.StringHead
-        "stringIsEmpty" -> Just IR.StringIsEmpty
-        "stringTail" -> Just IR.StringTail
-        "toString" -> Just IR.ToString
-        "==" -> Just IR.PrimEquals
-        "compare" -> Just IR.PrimCompare
-        ">>=" -> Just IR.IOBind
-        "error" -> Just IR.ThrowError
-        "debugWithMsg" -> Just IR.DebugWithMsg
-        _ -> Nothing
-
-stripTyApps :: CoreExpr -> CoreExpr
-stripTyApps (Core.TyApp e _) = stripTyApps e
-stripTyApps e = e

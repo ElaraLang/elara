@@ -10,8 +10,9 @@ import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
 import Effectful.State.Extra (use', (.=))
 import Effectful.State.Static.Local
+import Elara.Data.Pretty
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug)
+import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
@@ -47,8 +48,9 @@ readToken = do
                     maybe readToken pure res
 
 readTokens :: LexMonad [Lexeme]
-readTokens = do
+readTokens = logDebugWith "readTokens" $ do
     tok <- readToken
+    logDebug $ "Read " <+> pretty tok
     case tok ^. unlocated of
         TokenEOF -> pure []
         _ -> do

@@ -6,7 +6,7 @@ import Effectful (Eff, Effect, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.State.Static.Shared
 import Effectful.TH (makeEffect)
-import Elara.Data.Unique (Unique (..), UniqueId (..), UniqueSupply (..), globalUniqueSupply)
+import Elara.Data.Unique (Unique (..), UniqueId (..), UniqueSupply (..), globalUniqueCounter)
 
 data UniqueGen :: Effect where
     NewUniqueNum :: UniqueGen m Int
@@ -23,16 +23,14 @@ uniqueGenToState = interpret $ \_ -> \case
                 put (UniqueSupply us)
                 pure u
 
--- | Interpret UniqueGen using a provided IORef UniqueSupply.
-uniqueGenToIORef :: IORef UniqueSupply -> IOE :> r => Eff (UniqueGen : r) a -> Eff r a
-uniqueGenToIORef ref = interpret $ \_ -> \case
-    NewUniqueNum -> liftIO $ atomicModifyIORef' ref $ \(UniqueSupply us) ->
-        case us of
-            [] -> (UniqueSupply [], error "Ran out of unique numbers")
-            (u : us') -> (UniqueSupply us', u)
-
+{- | Interpret UniqueGen using a global atomic Int counter.
+This avoids thunk build-up under CAS contention that occurs
+with the lazy-list-based UniqueSupply approach.
+-}
 uniqueGenToGlobalIO :: IOE :> r => Eff (UniqueGen : r) a -> Eff r a
-uniqueGenToGlobalIO = uniqueGenToIORef globalUniqueSupply
+uniqueGenToGlobalIO = interpret $ \_ -> \case
+    NewUniqueNum -> liftIO $ atomicModifyIORef' globalUniqueCounter $ \n ->
+        let n' = n + 1 in n' `seq` (n', n)
 
 makeUniqueId :: UniqueGen :> r => Eff r UniqueId
 makeUniqueId = UniqueId <$> makeUnique ()

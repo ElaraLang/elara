@@ -21,6 +21,8 @@ import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Rock qualified
 
+import Elara.Prim qualified as Prim
+
 type CoreExprPass = CoreExpr -> CoreExpr
 
 pattern Infix :: NonEmpty Text -> Text -> CoreExpr -> CoreExpr -> CoreExpr
@@ -35,7 +37,9 @@ pattern Infix mn op a b <-
 constantFold :: CoreExprPass
 constantFold = transform f
   where
-    f (Infix ("Elara" :| ["Prim"]) "+" (Lit (Int a)) (Lit (Int b))) = Lit (Int (a + b))
+    f (App (App (PrimOp Prim.PrimIntAdd _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a + b))
+    f (App (App (PrimOp Prim.PrimIntMultiply _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a * b))
+    f (App (App (PrimOp Prim.PrimIntSubtract _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a - b))
     f other = other
 
 -- | Performs beta reduction on the Core AST to reduce redundant lambdas

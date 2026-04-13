@@ -71,7 +71,7 @@ instance Pretty CoreTypeDecl where
 
 instance Pretty CoreTypeDeclBody where
     pretty (CoreTypeAlias t) = prettyTy t
-    pretty (CoreDataDecl (Core.TyCon _ Core.Prim) _) = "<primitive>"
+    pretty (CoreDataDecl (Core.TyCon _ (Core.Prim _)) _) = "<primitive>"
     pretty (CoreDataDecl _ []) = "{}"
     pretty (CoreDataDecl _ dcs) = prettyCtorsInline (pretty <$> dcs)
 

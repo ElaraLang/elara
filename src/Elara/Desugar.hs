@@ -131,12 +131,12 @@ genPartials = traverse_ genPartial
                     <> pretty bodyLoc
                     <> " for type "
                     <> pretty (n ^. unlocated)
-            pure (Immediate (NTypeName (n ^. unlocated)) (New.DeclarationBody bodyLoc decl'))
+            pure (Immediate (NameType (n ^. unlocated)) (New.DeclarationBody bodyLoc decl'))
 
         declBodyName :: New.DeclarationBody' SourceRegion Frontend.Frontend -> Located Name
-        declBodyName (New.ValueDeclaration n _ _ _ _ _) = NVarName <$> n
-        declBodyName (New.TypeDeclarationBody n _ _ _ _ _) = NTypeName <$> n
-        declBodyName (New.DeclBodyExtension (Frontend.FrontendValueTypeDef n _ _)) = NVarName <$> n
+        declBodyName (New.ValueDeclaration n _ _ _ _ _) = toName <$> n
+        declBodyName (New.TypeDeclarationBody n _ _ _ _ _) = NameType <$> n
+        declBodyName (New.DeclBodyExtension (Frontend.FrontendValueTypeDef n _ _)) = toName <$> n
 
 completePartials :: Located ModuleName -> Desugar [New.Declaration SourceRegion NewD.Desugared]
 completePartials mn = do

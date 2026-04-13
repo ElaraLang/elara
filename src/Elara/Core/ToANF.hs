@@ -56,6 +56,7 @@ toANF' ::
     Eff r (ANF.Expr Core.Var)
 toANF' (Core.Lit l) k = k $ ANF.Lit l
 toANF' (Core.Var v) k = k $ ANF.Var v
+toANF' (Core.PrimOp op t) k = k $ ANF.ANFPrimOp op t
 toANF' (Core.TyApp v t) k = toANF' v $ \v' -> k $ ANF.TyApp v' t
 toANF' (Core.TyLam t e) k = toANF' e $ \e' -> k $ ANF.TyLam t e'
 toANF' (Core.Lam b e) cont = evalContT $ do
@@ -125,3 +126,4 @@ fromANFAtom (ANF.Var v) = Core.Var v
 fromANFAtom (ANF.Lam b e) = Core.Lam b $ fromANF e
 fromANFAtom (ANF.TyLam l e) = Core.TyLam l $ fromANFAtom e
 fromANFAtom (ANF.TyApp e t) = Core.TyApp (fromANFAtom e) t
+fromANFAtom (ANF.ANFPrimOp op t) = Core.PrimOp op t

@@ -54,14 +54,10 @@ newtype TypeName = TypeName Text
 newtype OpName = OpName Text
     deriving (Ord, Show, Eq, Data, IsString, Generic)
 
-data VarOrConName
-    = VarName LowerAlphaName
-    | ConName TypeName
-    deriving (Ord, Show, Eq, Data, Generic)
-
 data Name
-    = NVarName VarName
-    | NTypeName TypeName
+    = NameValue LowerAlphaName
+    | NameType TypeName
+    | NameOp OpName
     deriving (Show, Eq, Ord, Data, Generic)
 
 instance Hashable Name
@@ -82,21 +78,36 @@ class NameLike name where
     moduleName :: name -> Maybe ModuleName
     moduleName _ = Nothing
 
+{- | The name of a top-level declaration, preserving whether it is a value or type binding.
+
+Unlike 'Name', this retains the original 'VarName' or 'TypeName' so callers can
+dispatch into the correct renaming-state map (keyed by 'VarName' / 'TypeName')
+without having to reconstruct a wrapper from the erased payload.
+-}
+data DeclName
+    = DeclVar VarName
+    | DeclType TypeName
+    deriving (Show, Eq, Ord, Data, Generic)
+
 class ToName name where
     toName :: name -> Name
 
-instance ToName VarOrConName where
-    toName (VarName n) = NVarName (NormalVarName n)
-    toName (ConName n) = NTypeName n
-
 instance ToName VarName where
-    toName = NVarName
+    toName (NormalVarName n) = NameValue n
+    toName (OperatorVarName n) = NameOp n
 
 instance ToName TypeName where
-    toName = NTypeName
+    toName = NameType
 
 instance ToName OpName where
-    toName = NVarName . OperatorVarName
+    toName = NameOp
+
+instance ToName LowerAlphaName where
+    toName = NameValue
+
+instance ToName DeclName where
+    toName (DeclVar vn) = toName vn
+    toName (DeclType tn) = toName tn
 
 instance ToName Name where
     toName = identity
@@ -152,24 +163,23 @@ instance NameLike n => NameLike (Unqualified n) where
     moduleName _ = Nothing
 
 instance NameLike Name where
-    nameText (NVarName name) = nameText name
-    nameText (NTypeName name) = nameText name
+    nameText (NameValue name) = nameText name
+    nameText (NameType name) = nameText name
+    nameText (NameOp name) = nameText name
 
-    fullNameText (NVarName name) = fullNameText name
-    fullNameText (NTypeName name) = fullNameText name
+    fullNameText (NameValue name) = fullNameText name
+    fullNameText (NameType name) = fullNameText name
+    fullNameText (NameOp name) = fullNameText name
 
-    moduleName (NVarName name) = moduleName name
-    moduleName (NTypeName name) = moduleName name
+    moduleName (NameValue name) = moduleName name
+    moduleName (NameType name) = moduleName name
+    moduleName (NameOp name) = moduleName name
 
-instance NameLike VarOrConName where
-    nameText (VarName name) = nameText name
-    nameText (ConName name) = nameText name
-
-    fullNameText (VarName name) = fullNameText name
-    fullNameText (ConName name) = fullNameText name
-
-    moduleName (VarName name) = moduleName name
-    moduleName (ConName name) = moduleName name
+instance NameLike DeclName where
+    nameText (DeclVar vn) = nameText vn
+    nameText (DeclType tn) = nameText tn
+    fullNameText (DeclVar vn) = fullNameText vn
+    fullNameText (DeclType tn) = fullNameText tn
 
 instance NameLike n => NameLike (Located n) where
     nameText = nameText . view unlocated
@@ -210,12 +220,12 @@ instance {-# OVERLAPPABLE #-} Pretty x => Pretty (Unqualified x) where
     pretty uq = pretty (uq ^. name)
 
 instance Pretty Name where
-    pretty (NVarName n) = pretty n
-    pretty (NTypeName n) = pretty n
+    pretty (NameValue name) = pretty name
+    pretty (NameType name) = pretty name
+    pretty (NameOp name) = pretty name
 
-instance Pretty VarOrConName where
-    pretty (VarName n) = pretty n
-    pretty (ConName n) = pretty n
+instance Pretty DeclName where
+    pretty = pretty . toName
 
 instance Pretty ModuleName where
     pretty (ModuleName m) = Style.moduleName (hcat (punctuate "." (fmap pretty (toList m))))

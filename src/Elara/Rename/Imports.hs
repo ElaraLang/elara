@@ -15,22 +15,25 @@ module's own @exposing@ list). A 'Nothing' qualifier is treated as a wildcard an
 module; a @'Just' q@ qualifier must equal @mn@.
 -}
 isExposition :: ModuleName -> Name -> Exposition SourceRegion NewD.Desugared -> Bool
-isExposition mn (NVarName (OperatorVarName opn)) (ExposedOp (Located _ (MaybeQualified opn' mq))) =
+isExposition mn (NameOp opn) (ExposedOp (Located _ (MaybeQualified opn' mq))) =
     opn == opn' && maybe True (== mn) mq
-isExposition mn (NVarName vn) (ExposedValue (Located _ (MaybeQualified vn' mq))) =
+isExposition mn (NameValue vn) (ExposedValue (Located _ (MaybeQualified (NormalVarName vn') mq))) =
     vn == vn' && maybe True (== mn) mq
-isExposition mn (NTypeName tn) (ExposedType (Located _ (MaybeQualified tn' mq))) =
+isExposition mn (NameOp opn) (ExposedValue (Located _ (MaybeQualified (OperatorVarName opn') mq))) =
+    opn == opn' && maybe True (== mn) mq
+isExposition mn (NameType tn) (ExposedType (Located _ (MaybeQualified tn' mq))) =
     tn == tn' && maybe True (== mn) mq
-isExposition mn (NTypeName tn) (ExposedTypeAndAllConstructors (Located _ (MaybeQualified tn' mq))) =
+isExposition mn (NameType tn) (ExposedTypeAndAllConstructors (Located _ (MaybeQualified tn' mq))) =
     tn == tn' && maybe True (== mn) mq
 isExposition _ _ _ = False
 
 -- | Extract a 'Located Name' from an 'Exposition' for error reporting
 expositionToLocatedName :: Exposition SourceRegion NewD.Desugared -> Located Name
-expositionToLocatedName (ExposedValue (Located sr (MaybeQualified vn _))) = Located sr (NVarName vn)
-expositionToLocatedName (ExposedOp (Located sr (MaybeQualified opn _))) = Located sr (NVarName (OperatorVarName opn))
-expositionToLocatedName (ExposedType (Located sr (MaybeQualified tn _))) = Located sr (NTypeName tn)
-expositionToLocatedName (ExposedTypeAndAllConstructors (Located sr (MaybeQualified tn _))) = Located sr (NTypeName tn)
+expositionToLocatedName (ExposedValue (Located sr (MaybeQualified (NormalVarName vn) _))) = Located sr (NameValue vn)
+expositionToLocatedName (ExposedValue (Located sr (MaybeQualified (OperatorVarName opn) _))) = Located sr (NameOp opn)
+expositionToLocatedName (ExposedOp (Located sr (MaybeQualified opn _))) = Located sr (NameOp opn)
+expositionToLocatedName (ExposedType (Located sr (MaybeQualified tn _))) = Located sr (NameType tn)
+expositionToLocatedName (ExposedTypeAndAllConstructors (Located sr (MaybeQualified tn _))) = Located sr (NameType tn)
 
 {- | Tests that @m@ imports @n@
 This is determined by 2 conditions:

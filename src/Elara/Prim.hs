@@ -1,13 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 
-{- | Stores information about the primitive types and functions of Elara.
-These are still written in the source code, with a special name and value.
-The compiler will then replace these with the actual primitive functions.
-
-This module is the single source of truth for primitive type metadata.
-Downstream modules ('Elara.TypeInfer.Render', 'Elara.ToCore', etc.)
-should use the registry functions here instead of hardcoding primitive names.
--}
+-- | Stores information about the primitive types and functions of Elara.
 module Elara.Prim (
     -- * Known Type Registry
     OpaquePrim (..),
@@ -67,10 +60,6 @@ import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourc
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..))
 
--- ────────────────────────────────────────────────────────────────────────────
--- Known Type Registry
--- ────────────────────────────────────────────────────────────────────────────
-
 {- | Opaque primitives: types with no source definition, backed directly by the backend.
 Each gets an internal @Prim_*@ name and a user-facing alias in @Elara.Prim.elr@.
 -}
@@ -85,7 +74,6 @@ data OpaquePrim
 
 {- | Wired-in primitives: defined as normal source code in @stdlib/Elara.Prim.elr@,
 but structurally required for the language to function (e.g. desugaring targets).
-This includes @Bool@, @List@, @Ordering@, and @Tuple2@.
 -}
 data WiredInPrim
     = WiredInBool
@@ -152,9 +140,7 @@ allWiredInPrims = universe
 allKnownTypes :: [KnownType]
 allKnownTypes = (KnownOpaque <$> allOpaquePrims) ++ (KnownWiredIn <$> allWiredInPrims)
 
-{- | Look up a known type by its internal 'TypeName' (e.g. @TypeName "Prim_Int"@).
-Used by 'Elara.TypeInfer.Render' to map internal names to user-facing ones.
--}
+-- | Look up a known type by its internal 'TypeName' (e.g. @TypeName "Prim_Int"@).
 lookupByInternalName :: TypeName -> Maybe KnownType
 lookupByInternalName tn = Map.lookup tn internalNameMap
   where
@@ -170,17 +156,13 @@ lookupByUserName name = Map.lookup name userNameMap
     userNameMap = Map.fromList [(knownUserFacingName (knownTypeInfo p), p) | p <- allKnownTypes]
     {-# NOINLINE userNameMap #-}
 
-{- | Check if a qualified type name refers to a known type.
-Used by 'Elara.ToCore' to short-circuit TyCon lookups.
--}
+-- | Check if a qualified type name refers to a known type.
 lookupByQualifiedTypeName :: Qualified TypeName -> Maybe KnownType
 lookupByQualifiedTypeName (Qualified tn modName)
     | modName == primModuleName = lookupByInternalName tn
     | otherwise = Nothing
 
-{- | Primitive operations, resolved from @elaraPrimitive@ string keys during ToCore.
-This is backend-agnostic; the JVM backend maps these to its own 'Elara.JVM.IR.PrimOp'.
--}
+-- | Primitive operations, resolved from @elaraPrimitive@ string keys during the ToCore stgae.
 data PrimOp
     = PrimIntAdd
     | PrimIntSubtract
@@ -205,9 +187,7 @@ data PrimOp
 
 instance Pretty PrimOp
 
-{- | Parse an @elaraPrimitive@ string key into a typed 'PrimOp'.
-This is the single source of truth for the string → PrimOp mapping.
--}
+-- | Parse an @elaraPrimitive@ string key into a typed 'PrimOp'.
 parsePrimOp :: Text -> Maybe PrimOp
 parsePrimOp = \case
     "+" -> Just PrimIntAdd
@@ -231,9 +211,7 @@ parsePrimOp = \case
     "getArgs" -> Just PrimGetArgs
     _ -> Nothing
 
-{- | The arity of each primitive operation (number of value arguments).
-Used by the interpreter for currying logic.
--}
+-- | The arity of each primitive operation.
 primOpArity :: PrimOp -> Int
 primOpArity = \case
     PrimIntAdd -> 2
@@ -256,10 +234,6 @@ primOpArity = \case
     PrimReadFile -> 1
     PrimGetArgs -> 0
 
--- ────────────────────────────────────────────────────────────────────────────
--- Module & Region Utilities
--- ────────────────────────────────────────────────────────────────────────────
-
 primModuleName :: ModuleName
 primModuleName = ModuleName ["Elara", "Prim"]
 
@@ -278,11 +252,7 @@ mkPrimVarRef c = generatedLocated (Just "<primitive>") (mkPrimQual c)
 elaraPrimitiveName :: IsString s => Qualified s
 elaraPrimitiveName = mkPrimQual "elaraPrimitive"
 
-{- | Type names to seed into the primitive rename state.
-Only opaque primitives — wired-in ADTs are discovered via normal imports.
-Note: @()@ (unit syntax) is seeded separately in 'Elara.Prim.Rename' since
-it uses a syntactic form that cannot appear as a module-level declaration.
--}
+-- | Type names to seed into the primitive rename state.
 primitiveTypes :: [TypeName]
 primitiveTypes =
     knownInternalName . knownTypeInfo . KnownOpaque <$> allOpaquePrims
@@ -302,13 +272,8 @@ rightAssociativeAnnotationName = mkPrimQual (TypeName "RightAssociative")
 nonAssociativeAnnotationName :: Qualified TypeName
 nonAssociativeAnnotationName = mkPrimQual (TypeName "NonAssociative")
 
--- ────────────────────────────────────────────────────────────────────────────
--- Kind Context
--- ────────────────────────────────────────────────────────────────────────────
-
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
-    -- Higher-kinded overrides must come first since Map.<> is left-biased
     fromList
         [ (knownQualified (knownTypeInfo (KnownOpaque PrimIO)), FunctionKind TypeKind TypeKind)
         , (knownQualified (knownTypeInfo (KnownWiredIn WiredInList)), FunctionKind TypeKind TypeKind)

@@ -4,6 +4,7 @@ module Elara.Core.ANF where
 import Data.Data (Data)
 import Elara.Core (AltCon, Literal, Type)
 import Elara.Core.Generic qualified as G
+import Elara.Prim qualified as Prim
 import Prelude hiding (Alt, group)
 
 -- | An atomic expression
@@ -13,6 +14,7 @@ data AExpr b
     | Lam b (Expr b)
     | TyApp (AExpr b) Type
     | TyLam Type (AExpr b)
+    | ANFPrimOp Prim.PrimOp Type
     deriving (Show, Eq, Data, Typeable, Generic)
 
 -- | A combinator expression

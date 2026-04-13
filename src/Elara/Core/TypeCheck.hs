@@ -208,6 +208,7 @@ typeCheckA (ANF.TyApp e t) = do
                     , source = (fromANFAtom e, fromANFAtom (ANF.TyApp e t))
                     }
 typeCheckA (ANF.TyLam t e) = todo
+typeCheckA (ANF.ANFPrimOp _ t) = pure t
 
 {- | Relation that defines 2 types as equal iff they are equal under a substitution of type variables
 For example @forall a. a@ and @forall b. b@ are equal in this relation,

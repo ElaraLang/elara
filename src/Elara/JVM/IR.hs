@@ -3,6 +3,7 @@ module Elara.JVM.IR where
 
 import Elara.Data.Pretty
 import Elara.Data.Unique
+import Elara.Prim qualified as Prim
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Name qualified as JVM
 import JVM.Data.Abstract.Type qualified as JVM
@@ -156,25 +157,20 @@ data CallType
         JVM.MethodDescriptor
     deriving (Show)
 
--- | Elara primitive operations
+{- | JVM-level primitive operations.
+
+'CorePrim' wraps a backend-agnostic 'Prim.PrimOp' that was lowered from a
+'Core.PrimOp' node.  'UndefinedError' and 'PatternMatchFailedError' are
+JVM-specific operations synthesised during lowering (they have no
+representation in Core).
+-}
 data PrimOp
-    = UndefinedError
-    | PatternMatchFailedError
-    | IntAdd -- Elara.Prim.(+) : Int -> Int -> Int
-    | IntSubtract -- Elara.Prim.(-) : Int -> Int -> Int
-    | IntMultiply -- Elara.Prim.(*) : Int -> Int -> Int
-    | IntNegate -- Elara.Prim.negate : Int -> Int
-    | PrimEquals -- Elara.Prim.(==) : a -> a -> Bool
-    | PrimCompare -- Elara.Prim.compare : a -> a -> Int
-    | IOBind -- Elara.Prelude.>>= : IO a -> (a -> IO b) -> IO b
-    | DebugWithMsg -- debugWithMsg : String -> a -> a
-    | ThrowError -- Elara.Error.error : String -> a
-    | Println -- Elara.Prelude.println : String -> IO ()
-    | StringCons -- Elara.Prim.stringCons : Char -> String -> String
-    | StringHead -- Elara.Prim.stringHead : String -> Char
-    | StringIsEmpty -- Elara.Prim.stringIsEmpty : String -> Bool
-    | StringTail -- Elara.Prim.stringTail : String -> String
-    | ToString -- Elara.Prim.toString : a -> String
+    = -- | A backend-agnostic primitive lowered from Core.
+      CorePrim Prim.PrimOp
+    | -- | Synthesised for @undefined@ calls; not representable in Core.
+      UndefinedError
+    | -- | Synthesised for non-exhaustive pattern matches; not representable in Core.
+      PatternMatchFailedError
     deriving (Show, Generic)
 
 instance Pretty PrimOp

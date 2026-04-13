@@ -29,8 +29,8 @@ import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
-import Elara.Logging (StructuredDebug, debug, debugWith, debugWithResult, logDebug, logDebugWith)
-import Elara.Prim (boolName, charName, floatName, intName, mkPrimQual, stringName, unitName)
+import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..))
@@ -134,11 +134,11 @@ generateConstraints' expr' =
     logDebugWith ("generateConstraints: <expr at " <> pretty (exprLocation expr') <> ">") $
         let New.Expr exprLoc _ exprBody = expr'
          in case exprBody of
-                New.EInt i -> pure (New.EInt i, TypeConstructor exprLoc (mkPrimQual intName) [])
-                New.EFloat f -> pure (New.EFloat f, TypeConstructor exprLoc (mkPrimQual floatName) [])
-                New.EString s -> pure (New.EString s, TypeConstructor exprLoc (mkPrimQual stringName) [])
-                New.EChar c -> pure (New.EChar c, TypeConstructor exprLoc (mkPrimQual charName) [])
-                New.EUnit -> pure (New.EUnit, TypeConstructor exprLoc (mkPrimQual unitName) [])
+                New.EInt i -> pure (New.EInt i, TypeConstructor exprLoc (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) [])
+                New.EFloat f -> pure (New.EFloat f, TypeConstructor exprLoc (knownQualified (knownTypeInfo (KnownOpaque PrimFloat))) [])
+                New.EString s -> pure (New.EString s, TypeConstructor exprLoc (knownQualified (knownTypeInfo (KnownOpaque PrimString))) [])
+                New.EChar c -> pure (New.EChar c, TypeConstructor exprLoc (knownQualified (knownTypeInfo (KnownOpaque PrimChar))) [])
+                New.EUnit -> pure (New.EUnit, TypeConstructor exprLoc (knownQualified (knownTypeInfo (KnownWiredIn WiredInUnit))) [])
                 New.ECon NoExtension ctorValue@(Located loc name) -> do
                     -- (v:forall a.Q1 => t1) in G
                     varType <- lookupType (DataConKey name)
@@ -264,7 +264,7 @@ generateConstraints' expr' =
 
                     -- Condition must be Bool
                     let condCtx = Just $ CheckingIfCondition exprLoc
-                    let condConstraint = equalityWithContext condLoc condType (TypeConstructor condLoc (mkPrimQual boolName) []) condLoc condLoc condCtx
+                    let condConstraint = equalityWithContext condLoc condType (TypeConstructor condLoc (knownQualified (knownTypeInfo (KnownWiredIn WiredInBool))) []) condLoc condLoc condCtx
                     tell condConstraint
 
                     -- Both branches must have the same type
@@ -348,11 +348,11 @@ generatePatternConstraints' pattern' over =
         let patternLoc = monotypeLoc over
          in case pattern' of
                 New.PWildcard -> pure (New.PWildcard, over)
-                New.PUnit -> pure (New.PUnit, TypeConstructor patternLoc (mkPrimQual "Unit") [])
-                New.PInt i -> pure (New.PInt i, TypeConstructor patternLoc (mkPrimQual intName) [])
-                New.PFloat f -> pure (New.PFloat f, TypeConstructor patternLoc (mkPrimQual "Float") [])
-                New.PString s -> pure (New.PString s, TypeConstructor patternLoc (mkPrimQual stringName) [])
-                New.PChar c -> pure (New.PChar c, TypeConstructor patternLoc (mkPrimQual charName) [])
+                New.PUnit -> pure (New.PUnit, TypeConstructor patternLoc (knownQualified (knownTypeInfo (KnownWiredIn WiredInUnit))) [])
+                New.PInt i -> pure (New.PInt i, TypeConstructor patternLoc (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) [])
+                New.PFloat f -> pure (New.PFloat f, TypeConstructor patternLoc (knownQualified (knownTypeInfo (KnownOpaque PrimFloat))) [])
+                New.PString s -> pure (New.PString s, TypeConstructor patternLoc (knownQualified (knownTypeInfo (KnownOpaque PrimString))) [])
+                New.PChar c -> pure (New.PChar c, TypeConstructor patternLoc (knownQualified (knownTypeInfo (KnownOpaque PrimChar))) [])
                 New.PVar (Located loc varName) -> do
                     varType <- UnificationVar <$> makeUniqueTyVar
                     modify (addLocalType varName (Lifted $ TypeVar loc varType))
@@ -361,7 +361,7 @@ generatePatternConstraints' pattern' over =
                 New.PCon ctor'@(Located _loc ctor) args -> do
                     -- lookup the signature of the constructor
                     t <- lookupType (DataConKey ctor)
-                    debug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
+                    logDebug ("generatePatternConstraints (ConstructorPattern): " <> pretty ctor <> " :: " <> pretty t)
 
                     -- if we have a constructor @Ctor : x -> y -> Z@
                     -- and pattern @Ctor a b@
@@ -455,7 +455,7 @@ unifyGiven ::
 unifyGiven _ (TypeVar _ a) b = bindGiven a b
 unifyGiven _ a (TypeVar _ b) = bindGiven b a
 unifyGiven constraint (Function _ a b) (Function _ c d) = unifyGivenMany constraint [a, b] [c, d]
-unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor l2 b bs)
+unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
     | a == b =
         if length as /= length bs
             then do

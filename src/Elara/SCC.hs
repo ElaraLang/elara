@@ -30,7 +30,7 @@ runFreeVarsQuery ::
         (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
         (HashSet (Qualified VarName))
 runFreeVarsQuery name = do
-    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
+    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
 
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body)) = declaration
 
@@ -115,7 +115,7 @@ patternDependencies _ = mempty
 -- | Collect type dependencies from a shunted type
 typeDependencies :: NewS.ShuntedType -> HashSet (Qualified Name)
 typeDependencies (New.Type _ _ t') = case t' of
-    New.TUserDefined (Located _ e) -> one (NTypeName <$> e)
+    New.TUserDefined (Located _ e) -> one (NameType <$> e)
     New.TFun t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TApp t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TList t -> typeDependencies t

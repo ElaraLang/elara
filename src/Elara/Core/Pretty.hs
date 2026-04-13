@@ -85,6 +85,7 @@ prettyExpr1 e = prettyExpr2 e
 prettyExpr2 :: (Pretty (Expr v), PrettyVar v) => Expr v -> Doc AnsiStyle
 prettyExpr2 (Var v) = prettyVar False False v
 prettyExpr2 (Lit l) = pretty l
+prettyExpr2 (PrimOp op _) = keyword (pretty (show op))
 prettyExpr2 e = parens (prettyExpr e)
 
 prettyVdefg :: (PrettyVar v, Pretty (expr v)) => Elara.Core.Generic.Bind v expr -> Doc AnsiStyle
@@ -147,7 +148,7 @@ instance Pretty TyCon where
     pretty (TyCon name _) = pretty (name ^. unqualified)
 
 instance Pretty TyConDetails where
-    pretty Prim = "Prim"
+    pretty (Prim p) = "Prim" <+> pretty (show p)
     pretty (TyAlias t) = "Alias:" <+> pretty t
     pretty (TyADT ctors) = "ADT:" <+> pretty ctors
 

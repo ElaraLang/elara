@@ -101,8 +101,12 @@ prettyPatternRoundTrip' = \case
     PCon c [] -> prettyConstructorOccurrence @Frontend @loc c
     PCon c ps -> parens (prettyConstructorOccurrence @Frontend @loc c <+> hsep (map prettyPatternRoundTrip ps))
     PWildcard -> "_"
-    PInt i -> pretty i
-    PFloat f -> pretty f
+    PInt i
+        | i < 0 -> parens (pretty i)
+        | otherwise -> pretty i
+    PFloat f
+        | f < 0 -> parens (pretty f)
+        | otherwise -> pretty f
     PString s -> "\"" <> pretty s <> "\""
     PChar c -> "'" <> pretty (escapeChar @Text c) <> "'"
     PUnit -> "()"

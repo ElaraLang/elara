@@ -40,7 +40,7 @@ parametrizedTok tc read' tokenLen matched = do
     let token = tc (read' matched)
     emitAt token (RealSourceRegion region)
 
-beginString :: _ -> LexAction
+beginString :: Int -> LexAction
 beginString stringSC len _ = do
     pos <- getPosition len
     lexSC .= stringSC

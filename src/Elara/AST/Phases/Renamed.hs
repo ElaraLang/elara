@@ -20,7 +20,7 @@ module Elara.AST.Phases.Renamed (
 where
 
 import Elara.AST.Extensions
-import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName, VarOrConName)
+import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName (..))
 import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
@@ -45,7 +45,7 @@ instance ElaraPhase Renamed where
     type ConstructorOccurrence Renamed loc = Locate loc (Qualified TypeName)
     type TypeOccurrence Renamed loc = Locate loc (Qualified TypeName)
     type OperatorOccurrence Renamed loc = Locate loc (VarRef OpName)
-    type InfixedOccurrence Renamed loc = VarRef VarOrConName
+    type InfixedOccurrence Renamed loc = VarRef Name
 
     -- Binders (uniquified)
     type ValueBinder Renamed loc = Locate loc (Unique VarName)
