@@ -90,6 +90,7 @@ instance HasCodec DumpTarget where
                    , (DumpCore, "core")
                    , (DumpIR, "ir")
                    , (DumpJVM, "jvm")
+                   , (DumpQueryGraph, "query-graph")
                    ]
 
 data Dispatch

@@ -26,8 +26,10 @@ module Elara (
 )
 where
 
+import Control.Concurrent (ThreadId)
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
+import Data.HashMap.Strict qualified as HashMap
 import Data.Set qualified as Set
 import Effectful (Eff, IOE, Subset, (:>))
 import Effectful.Colog
@@ -155,16 +157,32 @@ withCompilerEnv ::
 withCompilerEnv settings action = do
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
+        shouldTraceQueries = DumpQueryGraph `Set.member` settings.dumpTargets
     startedVar <- liftIO $ newMVar DHashMap.empty
     depsVar <- liftIO $ newIORef mempty
-    runFileSystem $
-        uniqueGenToGlobalIO $
-            (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
-                runConcurrent $
-                    runErrorOrReport @ModulePathError $
-                        Rock.runRock
-                            (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
-                            action
+    currentQueryVar <- liftIO $ newIORef HashMap.empty
+    edgesVar <- liftIO $ newIORef Set.empty
+    result <-
+        runFileSystem $
+            uniqueGenToGlobalIO $
+                (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
+                    runConcurrent $
+                        runErrorOrReport @ModulePathError $
+                            Rock.runRock
+                                ( if shouldTraceQueries
+                                    then
+                                        Rock.Memo.tracingRules
+                                            currentQueryVar
+                                            edgesVar
+                                            (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
+                                    else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
+                                )
+                                action
+    when shouldTraceQueries $ do
+        edges <- liftIO $ readIORef edgesVar
+        liftIO $ createDirectoryIfMissing True settings.outputDir
+        liftIO $ writeFile (settings.outputDir <> "/query-graph.d2") (queryEdgesToD2 edges)
+    pure result
 
 {- | Discover input files and resolve module names.
 Returns a list of (module name, source file path) pairs.
@@ -359,6 +377,11 @@ dumpGraphInfo outDir nameFunc query when' moduleNames stage suffix = do
             Rock.fetch $ query m
         dumpGraph outDir modules nameFunc suffix
         logDebug ("Dumped " <> pretty (length modules) <> " " <> pretty stage <> " modules")
+
+-- | Render a set of query dependency edges as a d2 diagram string.
+queryEdgesToD2 :: Set.Set (String, String) -> String
+queryEdgesToD2 edges =
+    concatMap (\(a, b) -> "\"" <> a <> "\" -> \"" <> b <> "\"\n") (Set.toList edges)
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do

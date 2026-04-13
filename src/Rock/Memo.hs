@@ -1,7 +1,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Rock.Memo (memoise, memoiseWithCycleDetection, withoutMemoisation, memoiseExplicit) where
+module Rock.Memo (memoise, memoiseWithCycleDetection, withoutMemoisation, memoiseExplicit, tracingRules) where
 
 import Control.Concurrent (ThreadId, myThreadId)
 import Control.Concurrent.MVar qualified as MVar
@@ -12,7 +12,9 @@ import Data.GADT.Compare (GEq)
 import Data.HashMap.Lazy qualified as HashMap
 import Data.Hashable
 import Data.List (isSuffixOf)
+import Data.List qualified as List
 import Data.List.NonEmpty ((<|))
+import Data.Set qualified as Set
 import Data.Some
 import Data.Typeable
 import Effectful (IOE, raise, (:>))
@@ -314,3 +316,45 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                     Just dep
                         | dep == threadId -> True
                         | otherwise -> go dep (tid : visited)
+
+{- | Wrap a 'Rules' computation to record query dependency edges.
+
+Each time query @child@ is fetched while query @parent@ is being evaluated,
+the edge @(parent, child)@ is written into @edgesVar@. Node names are the
+first word of @show key@, i.e. the constructor name without arguments.
+
+This allows us to reconstruct the call graph of queries after execution, for debugging or visualisation.
+@
+-}
+tracingRules ::
+    forall f.
+    (forall es a. Show (f es a)) =>
+    -- | Thread-local map of which query is currently being evaluated on each thread
+    IORef (HashMap.HashMap ThreadId String) ->
+    -- | Accumulated dependency edges
+    IORef (Set (String, String)) ->
+    Rules f ->
+    Rules f
+tracingRules currentVar edgesVar rules key = do
+    let keyName = case List.words (Prelude.show key) of
+            (w : _) -> w
+            [] -> Prelude.show key
+    threadId <- unsafeEff_ myThreadId
+    maybeParent <- unsafeEff_ $ HashMap.lookup threadId <$> readIORef currentVar
+    case maybeParent of
+        Just parent ->
+            unsafeEff_ $ atomicModifyIORef' edgesVar $ \edges ->
+                (Set.insert (parent, keyName) edges, ())
+        Nothing -> pass
+    unsafeEff $ \env -> do
+        prev <-
+            atomicModifyIORef' currentVar $ \m ->
+                (HashMap.insert threadId keyName m, HashMap.lookup threadId m)
+        let restoreVar =
+                atomicModifyIORef' currentVar $ \m ->
+                    ( case prev of
+                        Just p -> HashMap.insert threadId p m
+                        Nothing -> HashMap.delete threadId m
+                    , ()
+                    )
+        E.finally (unEff (rules key) env) restoreVar

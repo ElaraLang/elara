@@ -24,6 +24,7 @@ data DumpTarget
     | DumpCore
     | DumpIR
     | DumpJVM
+    | DumpQueryGraph
     deriving (Show, Eq, Ord, Enum, Bounded, Generic)
 
 -- | Default is simply an empty set
