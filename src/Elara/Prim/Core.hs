@@ -7,57 +7,51 @@ import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
 import Elara.Data.Kind (ElaraKind (TypeKind))
 import Elara.Data.Unique.Effect
-import Elara.Prim (charName, doubleName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), falseCtorName, knownTypeInfo, mkPrimQual, trueCtorName, wiredInPrimCtors)
 
-trueCtorName :: Qualified Text
-trueCtorName = mkPrimQual "True"
-
-falseCtorName :: Qualified Text
-falseCtorName = mkPrimQual "False"
-
-emptyListCtorName :: IsString s => Qualified s
-emptyListCtorName = mkPrimQual "Nil"
-
-consCtorName :: IsString s => Qualified s
-consCtorName = mkPrimQual "Cons"
-
-tuple2CtorName :: Qualified Text
-tuple2CtorName = mkPrimQual "Tuple2"
-
--- tuple2CtorType :: Member UniqueGen r => Sem r Type
--- tuple2CtorType = do
---     a <- makeUnique (Just "a")
---     b <- makeUnique (Just "b")
---     let tvA = TypeVariable a TypeKind
---     let tvB = TypeVariable b TypeKind
---     pure $ ForAllTy tvA (ForAllTy tvB (FuncTy (TyVarTy tvA) (FuncTy (TyVarTy tvB) tuple2Con)))
-
-fetchPrimitiveName :: Qualified Text
-fetchPrimitiveName = mkPrimQual "elaraPrimitive"
+-- | Build a 'TyCon' for a wired-in primitive, deriving constructors from the registry
+wiredInTyCon :: WiredInPrim -> TyCon
+wiredInTyCon p =
+    let info = knownTypeInfo (KnownWiredIn p)
+        ctors = wiredInPrimCtors p
+     in TyCon (nameText <$> knownQualified info) (TyADT ctors)
 
 boolCon :: TyCon
-boolCon = TyCon (mkPrimQual "Bool") (TyADT [trueCtorName, falseCtorName])
+boolCon = wiredInTyCon WiredInBool
 
-intCon :: TyCon
-intCon = TyCon (mkPrimQual $ nameText intName) Prim
+listCon :: TyCon
+listCon = wiredInTyCon WiredInList
 
-floatCon :: TyCon
-floatCon = TyCon (mkPrimQual $ nameText floatName) Prim
+tuple2Con :: TyCon
+tuple2Con = wiredInTyCon WiredInTuple2
 
-stringCon :: TyCon
-stringCon = TyCon (mkPrimQual $ nameText stringName) Prim
-
-charCon :: TyCon
-charCon = TyCon (mkPrimQual $ nameText charName) Prim
-
-doubleCon :: TyCon
-doubleCon = TyCon (mkPrimQual $ nameText doubleName) Prim
-
-ioCon :: TyCon
-ioCon = TyCon (mkPrimQual $ nameText ioName) Prim
+orderingCon :: TyCon
+orderingCon = wiredInTyCon WiredInOrdering
 
 unitCon :: TyCon
-unitCon = TyCon (mkPrimQual $ nameText unitName) Prim
+unitCon = wiredInTyCon WiredInUnit
+
+-- | Build a 'TyCon' for an opaque primitive.
+opaquePrimTyCon :: OpaquePrim -> TyCon
+opaquePrimTyCon p = TyCon (nameText <$> knownQualified (knownTypeInfo (KnownOpaque p))) (Prim p)
+
+intCon :: TyCon
+intCon = opaquePrimTyCon PrimInt
+
+floatCon :: TyCon
+floatCon = opaquePrimTyCon PrimFloat
+
+stringCon :: TyCon
+stringCon = opaquePrimTyCon PrimString
+
+charCon :: TyCon
+charCon = opaquePrimTyCon PrimChar
+
+doubleCon :: TyCon
+doubleCon = opaquePrimTyCon PrimDouble
+
+ioCon :: TyCon
+ioCon = opaquePrimTyCon PrimIO
 
 trueCtor :: DataCon
 trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon
@@ -65,11 +59,11 @@ trueCtor = DataCon trueCtorName (ConTy boolCon) boolCon
 falseCtor :: DataCon
 falseCtor = DataCon falseCtorName (ConTy boolCon) boolCon
 
+unitConName :: Qualified Text
+unitConName = mkPrimQual "Unit"
+
 unitCtor :: DataCon
 unitCtor = DataCon unitConName (ConTy unitCon) unitCon
-
-unitConName :: Qualified Text
-unitConName = mkPrimQual "()"
 
 undefinedId :: UniqueGen :> r => Eff r Var
 undefinedId = do

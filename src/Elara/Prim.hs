@@ -9,36 +9,24 @@ Downstream modules ('Elara.TypeInfer.Render', 'Elara.ToCore', etc.)
 should use the registry functions here instead of hardcoding primitive names.
 -}
 module Elara.Prim (
-    -- * Primitive Type Registry
-    PrimType (..),
-    PrimTypeInfo (..),
-    primTypeInfo,
-    lookupPrimByInternalName,
-    lookupPrimByUserName,
-    isPrimTypeName,
-    allPrimTypes,
+    -- * Known Type Registry
+    OpaquePrim (..),
+    WiredInPrim (..),
+    KnownType (..),
+    KnownTypeInfo (..),
+    knownTypeInfo,
+    wiredInPrimCtors,
+    lookupByInternalName,
+    lookupByUserName,
+    lookupByQualifiedTypeName,
+    allOpaquePrims,
+    allWiredInPrims,
+    allKnownTypes,
 
     -- * Primitive Operations
     PrimOp (..),
     parsePrimOp,
     primOpArity,
-
-    -- * Legacy Names (re-exported for compatibility)
-    consName,
-    cons,
-    fetchPrimitiveName,
-    fetchPrimitive,
-    stringName,
-    intName,
-    floatName,
-    unitName,
-    boolName,
-    trueName,
-    falseName,
-    charName,
-    doubleName,
-    ioName,
-    fullListName,
 
     -- * Module & Region Utilities
     primModuleName,
@@ -46,9 +34,7 @@ module Elara.Prim (
     primLocated,
     mkPrimQual,
     mkPrimVarRef,
-
-    -- * Collections
-    primitiveVars,
+    elaraPrimitiveName,
     primitiveTypes,
 
     -- * Fixity Annotations
@@ -60,94 +46,137 @@ module Elara.Prim (
 
     -- * Kind Context
     primKindCheckContext,
-) where
+
+    -- * Constructor Names
+    trueCtorName,
+    falseCtorName,
+    nilCtorName,
+    consCtorName,
+    tuple2CtorName,
+    ltCtorName,
+    eqCtorName,
+    gtCtorName,
+    unitCtorName,
+)
+where
 
 import Data.Data (Data)
 import Data.Map.Strict qualified as Map
-import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Qualified (..), TypeName (..), VarName (..), VarOrConName (..))
+import Elara.AST.Name (ModuleName (..), Qualified (..), TypeName (..))
 import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
-import Elara.AST.VarRef (VarRef, VarRef' (Global))
 import Elara.Data.Kind (ElaraKind (..))
+import Elara.Data.Pretty (Pretty (..))
 
 -- ────────────────────────────────────────────────────────────────────────────
--- Primitive Type Registry
+-- Known Type Registry
 -- ────────────────────────────────────────────────────────────────────────────
 
--- | All known primitive types. This is the single source of truth.
-data PrimType
+{- | Opaque primitives: types with no source definition, backed directly by the backend.
+Each gets an internal @Prim_*@ name and a user-facing alias in @Elara.Prim.elr@.
+-}
+data OpaquePrim
     = PrimInt
     | PrimFloat
     | PrimDouble
     | PrimString
     | PrimChar
     | PrimIO
-    | PrimUnit
-    | PrimBool
+    deriving (Eq, Ord, Show, Enum, Bounded, Data)
+
+{- | Wired-in primitives: defined as normal source code in @stdlib/Elara.Prim.elr@,
+but structurally required for the language to function (e.g. desugaring targets).
+This includes @Bool@, @List@, @Ordering@, and @Tuple2@.
+-}
+data WiredInPrim
+    = WiredInBool
+    | WiredInList
+    | WiredInTuple2
+    | WiredInOrdering
+    | WiredInUnit
     deriving (Eq, Ord, Show, Enum, Bounded)
 
--- | Core metadata for each primitive type (backend-agnostic).
-data PrimTypeInfo = PrimTypeInfo
-    { primInternalName :: !TypeName
+-- | All types the compiler needs to reference by name.
+data KnownType
+    = KnownOpaque OpaquePrim
+    | KnownWiredIn WiredInPrim
+    deriving (Eq, Ord, Show)
+
+-- | Core metadata for each known type.
+data KnownTypeInfo = KnownTypeInfo
+    { knownInternalName :: !TypeName
     -- ^ The internal compiler name, e.g. @TypeName "Prim_Int"@
-    , primUserFacingName :: !Text
+    , knownUserFacingName :: !Text
     -- ^ The user-visible name for error messages, e.g. @"Int"@
-    , primQualified :: !(Qualified TypeName)
+    , knownQualified :: !(Qualified TypeName)
     -- ^ Fully qualified, e.g. @Qualified (TypeName "Prim_Int") primModuleName@
     }
     deriving (Show)
 
--- | The registry: metadata for each primitive type.
-primTypeInfo :: PrimType -> PrimTypeInfo
-primTypeInfo = \case
-    PrimInt -> mkInfo "Prim_Int" "Int"
-    PrimFloat -> mkInfo "Prim_Float" "Float"
-    PrimDouble -> mkInfo "Prim_Double" "Double"
-    PrimString -> mkInfo "Prim_String" "String"
-    PrimChar -> mkInfo "Prim_Char" "Char"
-    PrimIO -> mkInfo "Prim_IO" "IO"
-    PrimUnit -> mkInfo "()" "()"
-    PrimBool -> mkInfo "Bool" "Bool"
+-- | The registry: metadata for each known type.
+knownTypeInfo :: KnownType -> KnownTypeInfo
+knownTypeInfo = \case
+    KnownOpaque PrimInt -> mkInfo "Prim_Int" "Int"
+    KnownOpaque PrimFloat -> mkInfo "Prim_Float" "Float"
+    KnownOpaque PrimDouble -> mkInfo "Prim_Double" "Double"
+    KnownOpaque PrimString -> mkInfo "Prim_String" "String"
+    KnownOpaque PrimChar -> mkInfo "Prim_Char" "Char"
+    KnownOpaque PrimIO -> mkInfo "Prim_IO" "IO"
+    KnownWiredIn WiredInBool -> mkInfo "Bool" "Bool"
+    KnownWiredIn WiredInList -> mkInfo "List" "List"
+    KnownWiredIn WiredInTuple2 -> mkInfo "Tuple2" "Tuple2"
+    KnownWiredIn WiredInOrdering -> mkInfo "Ordering" "Ordering"
+    KnownWiredIn WiredInUnit -> mkInfo "Unit" "Unit"
   where
-    mkInfo :: Text -> Text -> PrimTypeInfo
+    mkInfo :: Text -> Text -> KnownTypeInfo
     mkInfo internal user =
-        PrimTypeInfo
+        KnownTypeInfo
             (TypeName internal)
             user
             (mkPrimQual (TypeName internal))
 
--- | All primitive types (useful for iteration).
-allPrimTypes :: [PrimType]
-allPrimTypes = universe
+-- | The unqualified constructor names for each wired-in primitive.
+wiredInPrimCtors :: IsString s => WiredInPrim -> [Qualified s]
+wiredInPrimCtors = \case
+    WiredInBool -> [trueCtorName, falseCtorName]
+    WiredInList -> [nilCtorName, consCtorName]
+    WiredInTuple2 -> [tuple2CtorName]
+    WiredInOrdering -> [ltCtorName, eqCtorName, gtCtorName]
+    WiredInUnit -> [unitCtorName]
 
-{- | Look up a primitive type by its internal 'TypeName' (e.g. @TypeName "Prim_Int"@).
+allOpaquePrims :: [OpaquePrim]
+allOpaquePrims = universe
+
+allWiredInPrims :: [WiredInPrim]
+allWiredInPrims = universe
+
+allKnownTypes :: [KnownType]
+allKnownTypes = (KnownOpaque <$> allOpaquePrims) ++ (KnownWiredIn <$> allWiredInPrims)
+
+{- | Look up a known type by its internal 'TypeName' (e.g. @TypeName "Prim_Int"@).
 Used by 'Elara.TypeInfer.Render' to map internal names to user-facing ones.
 -}
-lookupPrimByInternalName :: TypeName -> Maybe PrimType
-lookupPrimByInternalName tn = Map.lookup tn internalNameMap
+lookupByInternalName :: TypeName -> Maybe KnownType
+lookupByInternalName tn = Map.lookup tn internalNameMap
   where
-    internalNameMap :: Map TypeName PrimType
-    internalNameMap = Map.fromList [(primInternalName (primTypeInfo p), p) | p <- allPrimTypes]
+    internalNameMap :: Map TypeName KnownType
+    internalNameMap = Map.fromList [(knownInternalName (knownTypeInfo p), p) | p <- allKnownTypes]
     {-# NOINLINE internalNameMap #-}
 
--- | Look up a primitive type by its user-facing name (e.g. @"Int"@).
-lookupPrimByUserName :: Text -> Maybe PrimType
-lookupPrimByUserName name = Map.lookup name userNameMap
+-- | Look up a known type by its user-facing name (e.g. @"Int"@).
+lookupByUserName :: Text -> Maybe KnownType
+lookupByUserName name = Map.lookup name userNameMap
   where
-    userNameMap :: Map Text PrimType
-    userNameMap = Map.fromList [(primUserFacingName (primTypeInfo p), p) | p <- allPrimTypes]
+    userNameMap :: Map Text KnownType
+    userNameMap = Map.fromList [(knownUserFacingName (knownTypeInfo p), p) | p <- allKnownTypes]
     {-# NOINLINE userNameMap #-}
 
-{- | Check if a qualified type name refers to a known primitive.
+{- | Check if a qualified type name refers to a known type.
 Used by 'Elara.ToCore' to short-circuit TyCon lookups.
 -}
-isPrimTypeName :: Qualified TypeName -> Maybe PrimType
-isPrimTypeName (Qualified tn modName)
-    | modName == primModuleName = lookupPrimByInternalName tn
+lookupByQualifiedTypeName :: Qualified TypeName -> Maybe KnownType
+lookupByQualifiedTypeName (Qualified tn modName)
+    | modName == primModuleName = lookupByInternalName tn
     | otherwise = Nothing
-
--- ────────────────────────────────────────────────────────────────────────────
--- Primitive Operations
--- ────────────────────────────────────────────────────────────────────────────
 
 {- | Primitive operations, resolved from @elaraPrimitive@ string keys during ToCore.
 This is backend-agnostic; the JVM backend maps these to its own 'Elara.JVM.IR.PrimOp'.
@@ -156,6 +185,8 @@ data PrimOp
     = PrimIntAdd
     | PrimIntSubtract
     | PrimIntMultiply
+    | PrimIntDivide
+    | PrimIntRemainder
     | PrimIntNegate
     | PrimPrintln
     | PrimToString
@@ -172,6 +203,8 @@ data PrimOp
     | PrimGetArgs
     deriving (Eq, Ord, Show, Enum, Bounded, Data, Generic)
 
+instance Pretty PrimOp
+
 {- | Parse an @elaraPrimitive@ string key into a typed 'PrimOp'.
 This is the single source of truth for the string → PrimOp mapping.
 -}
@@ -180,6 +213,8 @@ parsePrimOp = \case
     "+" -> Just PrimIntAdd
     "-" -> Just PrimIntSubtract
     "*" -> Just PrimIntMultiply
+    "/" -> Just PrimIntDivide
+    "%" -> Just PrimIntRemainder
     "negate" -> Just PrimIntNegate
     "println" -> Just PrimPrintln
     "toString" -> Just PrimToString
@@ -204,6 +239,8 @@ primOpArity = \case
     PrimIntAdd -> 2
     PrimIntSubtract -> 2
     PrimIntMultiply -> 2
+    PrimIntDivide -> 2
+    PrimIntRemainder -> 2
     PrimIntNegate -> 1
     PrimPrintln -> 1
     PrimToString -> 1
@@ -218,56 +255,6 @@ primOpArity = \case
     PrimDebugWithMsg -> 2
     PrimReadFile -> 1
     PrimGetArgs -> 0
-
--- ────────────────────────────────────────────────────────────────────────────
--- Legacy Individual Names (kept for backward compatibility)
--- These are now derived from the registry but exported with the same API.
--- ────────────────────────────────────────────────────────────────────────────
-
-consName :: TypeName
-consName = "::"
-
-cons :: MaybeQualified VarOrConName
-cons = MaybeQualified (ConName "Cons") (Just primModuleName)
-
-fetchPrimitiveName :: VarName
-fetchPrimitiveName = NormalVarName "elaraPrimitive"
-
-fetchPrimitive :: (VarRef VarName)
-fetchPrimitive = Global (mkPrimVarRef fetchPrimitiveName)
-
-stringName :: TypeName
-stringName = primInternalName (primTypeInfo PrimString)
-
-intName :: TypeName
-intName = primInternalName (primTypeInfo PrimInt)
-
-floatName :: TypeName
-floatName = primInternalName (primTypeInfo PrimFloat)
-
-unitName :: TypeName
-unitName = primInternalName (primTypeInfo PrimUnit)
-
-boolName :: TypeName
-boolName = primInternalName (primTypeInfo PrimBool)
-
-trueName :: TypeName
-trueName = TypeName "True"
-
-falseName :: TypeName
-falseName = TypeName "False"
-
-charName :: TypeName
-charName = primInternalName (primTypeInfo PrimChar)
-
-doubleName :: TypeName
-doubleName = primInternalName (primTypeInfo PrimDouble)
-
-ioName :: TypeName
-ioName = primInternalName (primTypeInfo PrimIO)
-
-fullListName :: IsString a => Qualified a
-fullListName = mkPrimQual "List"
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- Module & Region Utilities
@@ -288,15 +275,17 @@ mkPrimQual c = Qualified c primModuleName
 mkPrimVarRef :: c -> Located (Qualified c)
 mkPrimVarRef c = generatedLocated (Just "<primitive>") (mkPrimQual c)
 
--- ────────────────────────────────────────────────────────────────────────────
--- Collections & Fixity
--- ────────────────────────────────────────────────────────────────────────────
+elaraPrimitiveName :: IsString s => Qualified s
+elaraPrimitiveName = mkPrimQual "elaraPrimitive"
 
-primitiveVars :: [VarName]
-primitiveVars = [fetchPrimitiveName]
-
+{- | Type names to seed into the primitive rename state.
+Only opaque primitives — wired-in ADTs are discovered via normal imports.
+Note: @()@ (unit syntax) is seeded separately in 'Elara.Prim.Rename' since
+it uses a syntactic form that cannot appear as a module-level declaration.
+-}
 primitiveTypes :: [TypeName]
-primitiveTypes = [stringName, charName, intName, floatName, unitName, consName]
+primitiveTypes =
+    knownInternalName . knownTypeInfo . KnownOpaque <$> allOpaquePrims
 
 fixityAnnotationName :: Qualified TypeName
 fixityAnnotationName = mkPrimQual (TypeName "Fixity")
@@ -306,8 +295,10 @@ associativityAnnotationName = mkPrimQual (TypeName "Associativity")
 
 leftAssociativeAnnotationName :: Qualified TypeName
 leftAssociativeAnnotationName = mkPrimQual (TypeName "LeftAssociative")
+
 rightAssociativeAnnotationName :: Qualified TypeName
 rightAssociativeAnnotationName = mkPrimQual (TypeName "RightAssociative")
+
 nonAssociativeAnnotationName :: Qualified TypeName
 nonAssociativeAnnotationName = mkPrimQual (TypeName "NonAssociative")
 
@@ -317,8 +308,29 @@ nonAssociativeAnnotationName = mkPrimQual (TypeName "NonAssociative")
 
 primKindCheckContext :: Map (Qualified TypeName) ElaraKind
 primKindCheckContext =
-    -- assume all primitive types are kind Type
-    fromList ((\x -> (Qualified x primModuleName, TypeKind)) <$> primitiveTypes)
-        <> fromList
-            [ (Qualified ioName primModuleName, FunctionKind TypeKind TypeKind)
-            ] -- Except for IO which is kind Type -> Type
+    -- Higher-kinded overrides must come first since Map.<> is left-biased
+    fromList
+        [ (knownQualified (knownTypeInfo (KnownOpaque PrimIO)), FunctionKind TypeKind TypeKind)
+        , (knownQualified (knownTypeInfo (KnownWiredIn WiredInList)), FunctionKind TypeKind TypeKind)
+        , (knownQualified (knownTypeInfo (KnownWiredIn WiredInTuple2)), FunctionKind TypeKind (FunctionKind TypeKind TypeKind))
+        ]
+        <> fromList ((\kt -> (knownQualified (knownTypeInfo kt), TypeKind)) <$> allKnownTypes)
+
+trueCtorName, falseCtorName :: IsString s => Qualified s
+trueCtorName = mkPrimQual "True"
+falseCtorName = mkPrimQual "False"
+
+nilCtorName, consCtorName :: IsString s => Qualified s
+nilCtorName = mkPrimQual "Nil"
+consCtorName = mkPrimQual "Cons"
+
+tuple2CtorName :: IsString s => Qualified s
+tuple2CtorName = mkPrimQual "Tuple2"
+
+ltCtorName, eqCtorName, gtCtorName :: IsString s => Qualified s
+ltCtorName = mkPrimQual "LT"
+eqCtorName = mkPrimQual "EQ"
+gtCtorName = mkPrimQual "GT"
+
+unitCtorName :: IsString s => Qualified s
+unitCtorName = mkPrimQual "Unit"

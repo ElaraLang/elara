@@ -27,7 +27,8 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
 import Elara.Logging
-import Elara.Prim (PrimType (..), isPrimTypeName, mkPrimQual)
+import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
+import Elara.Prim qualified as Prim
 import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
@@ -97,25 +98,28 @@ primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
     CtorSymbolTable
         ( fromList
-            [ (trueCtorName, trueCtor)
-            , (falseCtorName, falseCtor)
+            [ (Prim.trueCtorName, trueCtor)
+            , (Prim.falseCtorName, falseCtor)
             ]
         )
         ( fromList
             [(mkPrimQual "IO", ioCon)]
         )
 
--- | Map a 'PrimType' to its corresponding Core 'TyCon'.
-primTypeToCon :: PrimType -> TyCon
-primTypeToCon = \case
-    PrimInt -> intCon
-    PrimFloat -> floatCon
-    PrimDouble -> doubleCon
-    PrimString -> stringCon
-    PrimChar -> charCon
-    PrimIO -> ioCon
-    PrimUnit -> unitCon
-    PrimBool -> boolCon
+-- | Map a 'KnownType' to its corresponding Core 'TyCon'.
+knownTypeToCon :: KnownType -> TyCon
+knownTypeToCon = \case
+    KnownOpaque PrimInt -> intCon
+    KnownOpaque PrimFloat -> floatCon
+    KnownOpaque PrimDouble -> doubleCon
+    KnownOpaque PrimString -> stringCon
+    KnownOpaque PrimChar -> charCon
+    KnownOpaque PrimIO -> ioCon
+    KnownWiredIn WiredInBool -> boolCon
+    KnownWiredIn WiredInList -> listCon
+    KnownWiredIn WiredInTuple2 -> tuple2Con
+    KnownWiredIn WiredInOrdering -> orderingCon
+    KnownWiredIn WiredInUnit -> unitCon
 
 lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Eff r DataCon
 lookupCtor qn = do
@@ -158,10 +162,10 @@ runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
 
 runGetTyConQuery ::
     Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
-runGetTyConQuery qn = case isPrimTypeName (TypeName <$> qn) of
-    Just pt -> pure $ Just (primTypeToCon pt)
+runGetTyConQuery qn = case lookupByQualifiedTypeName (TypeName <$> qn) of
+    Just kt -> pure $ Just (knownTypeToCon kt)
     Nothing -> logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
-        let name = NTypeName . TypeName <$> qn
+        let name = NameType . TypeName <$> qn
         typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
         Just
             <$> ( runErrorOrReport @ToCoreError $
@@ -342,8 +346,8 @@ typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCor
 typeToCore (Type.TypeConstructor _ qn ts) = do
     let name = fmap (view _Unwrapped) qn
     ts' <- traverse typeToCore ts
-    case isPrimTypeName qn of
-        Just pt -> pure $ foldl' Core.AppTy (Core.ConTy (primTypeToCon pt)) ts'
+    case lookupByQualifiedTypeName qn of
+        Just kt -> pure $ foldl' Core.AppTy (Core.ConTy (knownTypeToCon kt)) ts'
         Nothing -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
             tyCon <- lookupTyCon name
             pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
@@ -357,8 +361,8 @@ astTypeToCore (New.Type _ _ t') = case t' of
     New.TFun t1 t2 -> Core.FuncTy <$> astTypeToCore t1 <*> astTypeToCore t2
     New.TUnit -> pure $ Core.ConTy unitCon
     New.TApp t1 t2 -> Core.AppTy <$> astTypeToCore t1 <*> astTypeToCore t2
-    New.TUserDefined (Located _ qn) -> case isPrimTypeName qn of
-        Just pt -> pure $ Core.ConTy (primTypeToCon pt)
+    New.TUserDefined (Located _ qn) -> case lookupByQualifiedTypeName qn of
+        Just kt -> pure $ Core.ConTy (knownTypeToCon kt)
         Nothing -> do
             let name = nameText <$> qn
             tyCon <- lookupTyCon name
@@ -367,9 +371,6 @@ astTypeToCore (New.Type _ _ t') = case t' of
     New.TList t1 -> do
         t1' <- astTypeToCore t1
         pure $ Core.AppTy (Core.ConTy listCon) t1'
-      where
-        -- TODO: proper list TyCon
-        listCon = TyCon (mkPrimQual "List") (TyADT [])
     New.TExtension v -> absurd v
 
 conToVar :: DataCon -> Core.Var
@@ -381,12 +382,29 @@ stripVarRefLoc (Global (Located _ qn)) = Global qn
 stripVarRefLoc (Local (Located _ un)) = Local un
 
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Eff r CoreExpr
-toCore le@(New.Expr _ _ e) = moveTypeApplications <$> toCore' e
+toCore le@(New.Expr _ t e) = do
+    coreType <- typeToCore t
+    let resolvePrimOps :: CoreExpr -> CoreExpr
+        resolvePrimOps (Core.App fun (Core.Lit (Core.String key)))
+            | isPrimitiveFn (stripTyApps fun)
+            , Just op <- Prim.parsePrimOp key =
+                Core.PrimOp op coreType
+        resolvePrimOps x = x
+    resolvePrimOps . moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
     moveTypeApplications :: CoreExpr -> CoreExpr
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
     moveTypeApplications x = x
+
+    stripTyApps :: CoreExpr -> CoreExpr
+    stripTyApps (Core.TyApp e _) = stripTyApps e
+    stripTyApps e = e
+
+    isPrimitiveFn :: CoreExpr -> Bool
+    isPrimitiveFn (Core.Var (Core.Id (Global primName) _ _)) =
+        primName == Prim.elaraPrimitiveName
+    isPrimitiveFn _ = False
 
     toCore' :: InnerToCoreC r => TypedExpr' -> Eff r CoreExpr
     toCore' = \case

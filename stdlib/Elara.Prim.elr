@@ -6,7 +6,7 @@ type Float = Prim_Float
 type Char = Prim_Char
 type String = Prim_String
 type IO a = Prim_IO a
-type Unit = ()
+type Unit = | Unit
 
 type Bool = True | False
 
@@ -82,12 +82,6 @@ let debugWithMsg = elaraPrimitive "debugWithMsg"
 
 def println : a -> IO ()
 let println = elaraPrimitive "println"
-
-def readFile : String -> IO String
-let readFile = elaraPrimitive "readFile"
-
-def getArgs : IO (List String)
-let getArgs = elaraPrimitive "getArgs"
 
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) = elaraPrimitive ">>="

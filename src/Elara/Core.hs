@@ -8,6 +8,8 @@ import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
 import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
+import Elara.Prim (OpaquePrim)
+import Elara.Prim qualified as Prim
 import Elara.TypeInfer.Unique
 import GHC.Generics (Rep)
 import Prelude hiding (Alt)
@@ -47,6 +49,10 @@ data Expr b
     | TyLam Type (Expr b)
     | Let (Bind b) (Expr b)
     | Match (Expr b) (Maybe b) [Alt b]
+    | {- | A resolved primitive operation, including its instantiated type.
+      Applied via normal 'App' nodes, so currying works naturally.
+      -}
+      PrimOp Prim.PrimOp Type
     deriving (Show, Eq, Data, Typeable, Generic)
 
 instance Generic b => Plated (Expr b) (Expr b)
@@ -107,7 +113,8 @@ data TyConDetails
         -- | The ids of its 'DataCon's (constructors)
         [Qualified Text]
     | TyAlias Type
-    | Prim
+    | -- | An opaque primitive type backed directly by the backend.
+      Prim OpaquePrim
     deriving (Show, Eq, Data, Ord, Generic)
 
 instance
