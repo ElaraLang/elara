@@ -8,6 +8,7 @@ import Elara.Core qualified as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.CoreToCore (betaReduce, constantFold, coreToCoreExpr, fullCoreToCoreExpr, pipeInline, subst, uselessLetInline)
 import Elara.Data.Unique (Unique (..))
+import Elara.Prim qualified as Prim
 import Elara.Prim.Core (intCon)
 import Test.Syd
 
@@ -22,9 +23,9 @@ mkGlobalVar modParts name ty = Id (Global (Qualified name (ModuleName modParts))
 intType :: Core.Type
 intType = Core.ConTy intCon
 
--- | Create a Prelude operator reference (for + etc.)
-preludeOp :: Text -> CoreExpr
-preludeOp name = Var (mkGlobalVar ("Elara" :| ["Prim"]) name intType)
+-- | Create a PrimOp for a binary arithmetic operation.
+binPrimOp :: Prim.PrimOp -> CoreExpr
+binPrimOp op = Core.PrimOp op intType
 
 -- | Create an Elara.Prim operator reference (for |> etc.)
 primOp :: Text -> CoreExpr
@@ -43,34 +44,34 @@ constantFoldTests :: Spec
 constantFoldTests = describe "Constant folding" $ do
     it "folds integer addition" $ do
         -- 1 + 2 => 3
-        let expr = App (App (preludeOp "+") (Lit (Int 1))) (Lit (Int 2))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 1))) (Lit (Int 2))
         constantFold expr `shouldBe` Lit (Int 3)
 
     it "folds addition with zero" $ do
         -- 0 + 5 => 5
-        let expr = App (App (preludeOp "+") (Lit (Int 0))) (Lit (Int 5))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 0))) (Lit (Int 5))
         constantFold expr `shouldBe` Lit (Int 5)
 
     it "folds negative integers" $ do
         -- (-3) + 7 => 4
-        let expr = App (App (preludeOp "+") (Lit (Int (-3)))) (Lit (Int 7))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int (-3)))) (Lit (Int 7))
         constantFold expr `shouldBe` Lit (Int 4)
 
     it "does not fold non-literal operands" $ do
         -- x + 2 should remain unchanged
         let x = mkVar "x" intType
-        let expr = App (App (preludeOp "+") (Var x)) (Lit (Int 2))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) (Var x)) (Lit (Int 2))
         constantFold expr `shouldBe` expr
 
     it "folds nested additions" $ do
         -- (1 + 2) + 3 => 6
-        let inner = App (App (preludeOp "+") (Lit (Int 1))) (Lit (Int 2))
-        let expr = App (App (preludeOp "+") inner) (Lit (Int 3))
+        let inner = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 1))) (Lit (Int 2))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) inner) (Lit (Int 3))
         -- After one pass, inner folds to 3, then outer folds to 6
         constantFold expr `shouldBe` Lit (Int 6)
 
     it "does not fold non-Prelude +" $ do
-        -- Custom.+ 1 2 should not fold
+        -- Custom.+ 1 2 should not fold (still a Var, not a PrimOp)
         let customPlus = Var (mkGlobalVar ("Custom" :| []) "+" intType)
         let expr = App (App customPlus (Lit (Int 1))) (Lit (Int 2))
         constantFold expr `shouldBe` expr
@@ -86,9 +87,9 @@ betaReduceTests = describe "Beta reduction" $ do
     it "reduces with body referencing parameter" $ do
         -- (\x -> x + 1) 5 => 5 + 1
         let x = mkVar "x" intType
-        let body = App (App (preludeOp "+") (Var x)) (Lit (Int 1))
+        let body = App (App (binPrimOp Prim.PrimIntAdd) (Var x)) (Lit (Int 1))
         let expr = App (Lam x body) (Lit (Int 5))
-        let expected = App (App (preludeOp "+") (Lit (Int 5))) (Lit (Int 1))
+        let expected = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 5))) (Lit (Int 1))
         betaReduce expr `shouldBe` expected
 
     it "does not reduce non-applied lambdas" $ do
@@ -167,7 +168,7 @@ composedPassTests = describe "Composed passes" $ do
     it "coreToCoreExpr combines all passes" $ do
         -- (\x -> x) (1 + 2) => 3
         let x = mkVar "x" intType
-        let addExpr = App (App (preludeOp "+") (Lit (Int 1))) (Lit (Int 2))
+        let addExpr = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 1))) (Lit (Int 2))
         let expr = App (Lam x (Var x)) addExpr
         coreToCoreExpr expr `shouldBe` Lit (Int 3)
 
@@ -179,7 +180,7 @@ composedPassTests = describe "Composed passes" $ do
         fullCoreToCoreExpr expr `shouldBe` Lit (Int 5)
 
     it "fullCoreToCoreExpr is idempotent" $ do
-        let expr = App (App (preludeOp "+") (Lit (Int 1))) (Lit (Int 2))
+        let expr = App (App (binPrimOp Prim.PrimIntAdd) (Lit (Int 1))) (Lit (Int 2))
         let once = fullCoreToCoreExpr expr
         let twice = fullCoreToCoreExpr once
         once `shouldBe` twice

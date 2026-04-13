@@ -3,12 +3,12 @@
                4 | let main = println (if then 42)
                  |                        ^^^^
                unexpected then
-               expecting parenthesized expression or tuple expression
+               expecting condition after 'if'
 
      ╭──▶ test/test_resources/golden_inputs/error-parse-missing-expr.elr@4:24-4:28
      │
    4 │ let main = println (if then 42)
      •                        ┬─── 
      •                        ├╸ unexpected then
-     •                        ╰╸ expecting parenthesized expression or tuple expression
+     •                        ╰╸ expecting condition after 'if'
 ─────╯

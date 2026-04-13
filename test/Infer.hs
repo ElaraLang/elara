@@ -18,7 +18,7 @@ import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
 import Elara.Error.Effect (evalDiagnosticWriter)
-import Elara.Prim (floatName, intName, mkPrimQual, stringName)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
 import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Environment (InferError, emptyLocalTypeEnvironment)
@@ -65,19 +65,19 @@ literalTests = describe "Literal Type Inference" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkIntExpr 42)
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual intName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) ty `shouldBe` True
 
     it "infers Float type correctly" $ do
         result <- runInfer $ generateConstraints (mkFloatExpr 42.0)
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual floatName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimFloat))) ty `shouldBe` True
 
     it "infers String type correctly" $ do
         result <- runInfer $ generateConstraints (mkStringExpr "hello")
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual stringName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimString))) ty `shouldBe` True
 
 {- | Property test to ensure that literal types maintain invariants.
 Specifically, that the inferred type for literals is always a primitive type constructor.
@@ -121,12 +121,12 @@ additionalLiteralTests = describe "Additional Literal Type Inference" $ do
     it "infers negative Int literal correctly" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkIntExpr (-42))
         result `shouldSucceed` \((_, ty), _) -> do
-            isPrimType (mkPrimQual intName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) ty `shouldBe` True
 
     it "infers empty String correctly" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkStringExpr "")
         result `shouldSucceed` \((_, ty), _) -> do
-            isPrimType (mkPrimQual stringName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimString))) ty `shouldBe` True
 
 -- | Helper to assert that inference succeeded
 shouldSucceed :: Either SomeReportableError b -> (b -> IO a3) -> IO a3

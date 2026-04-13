@@ -55,9 +55,10 @@ import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..))
 import Elara.Parse.Expression
+import Elara.Parse.Grammar
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
-import Elara.Prim (boolName, intName, mkPrimQual, primModuleName)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo, primModuleName)
 import Elara.Prim.Rename
 import Elara.Query qualified
 import Elara.ReadFile
@@ -158,7 +159,7 @@ runQueryEffects ::
     Eff (Rock.Rock Elara.Query.Query : Concurrent : FileSystem : UniqueGen : StructuredDebug : r) a ->
     Eff r a
 runQueryEffects eff = do
-    startedVar <- liftIO $ newIORef DHashMap.empty
+    startedVar <- liftIO $ newMVar DHashMap.empty
     depsVar <- liftIO $ newIORef mempty
     ignoreStructuredDebug
         . uniqueGenToGlobalIO
@@ -245,8 +246,8 @@ fakeTypeEnvironment =
         & addType (DataConKey (Qualified "True" primModuleName)) (Lifted boolType)
         & addType (DataConKey (Qualified "False" primModuleName)) (Lifted boolType)
   where
-    intType = TypeConstructor testRegion (mkPrimQual intName) []
-    boolType = TypeConstructor testRegion (mkPrimQual boolName) []
+    intType = TypeConstructor testRegion (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) []
+    boolType = TypeConstructor testRegion (knownQualified (knownTypeInfo (KnownWiredIn WiredInBool))) []
     intToIntToInt = Function testRegion intType (Function testRegion intType intType)
     intToIntToBool = Function testRegion intType (Function testRegion intType boolType)
 
