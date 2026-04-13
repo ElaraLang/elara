@@ -215,6 +215,7 @@
                         "-threaded"
                         "-rtsopts"
                         "-with-rtsopts=-N"
+                        "-with-rtsopts=-K256k"
                       ];
                     };
                     library = {
@@ -249,6 +250,7 @@
                         "template-haskell"
                         "neat-interpolation"
                         "hspec-megaparsec"
+
                       ];
                       source-dirs = "test";
                     };
